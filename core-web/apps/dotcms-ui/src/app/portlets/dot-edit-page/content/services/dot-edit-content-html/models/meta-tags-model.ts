@@ -74,6 +74,7 @@ export interface SeoMetaTags {
     imageOgElements?: NodeListOf<Element>;
     descriptionOgElements?: NodeListOf<Element>;
     description?: string;
+    descriptionElements?: NodeListOf<Element>;
     'og:description'?: string;
     'og:image'?: string;
     'og:title'?: string;
@@ -119,7 +120,6 @@ export interface ImageMetaData {
 export interface OpenGraphOptions {
     getItems: (object: SeoMetaTags) => Observable<SeoRulesResult[]>;
     sort: number;
-    info: string;
 }
 
 export interface MetaTagsPreview {

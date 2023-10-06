@@ -39,29 +39,25 @@ describe('DotSetMetaTagsService', () => {
                             'HTML Title found, with an appropriate amount of content!',
                         'seo.resuls.tool.read.more': 'Read More',
                         'seo.resuls.tool.version': 'Version',
-                        'seo.rules.description.info':
-                            "The length of the description allowed will depend on the reader's device size; on the smallest size only about 110 characters are allowed.",
-                        'seo.rules.title.info':
-                            'HTML Title content should be between 30 and 60 characters.',
                         'seo.rules.og-title.not.found':
-                            'og:title metatag not found! Showing HTML Title instead.',
-                        'seo.rules.og-title.more.one.found': 'more than 1 og:title metatag found!',
+                            'og:title meta tag not found! Showing HTML Title instead.',
+                        'seo.rules.og-title.more.one.found': 'more than 1 og:title meta tag found!',
                         'seo.rules.og-title.more.one.found.empty':
-                            'og:title metatag found, but is empty!',
+                            'og:title meta tag found, but is empty!',
                         'seo.rules.og-title.greater':
-                            'og:title metatag found, but has more than 160 characters.',
+                            'og:title meta tag found, but has more than 160 characters.',
                         'seo.rules.og-title.less':
-                            'title metatag found, but has fewer than 30 characters of content.',
+                            'title meta tag found, but has fewer than 30 characters of content.',
                         'seo.rules.og-title.found':
-                            'og:title metatag found, with an appropriate amount of content!',
-                        'seo.rules.og-image.not.found': 'og:image metatag not found!',
-                        'seo.rules.og-image.more.one.found': 'more than 1 og:image metatag found!',
+                            'og:title meta tag found, with an appropriate amount of content!',
+                        'seo.rules.og-image.not.found': 'og:image meta tag not found!',
+                        'seo.rules.og-image.more.one.found': 'more than 1 og:image meta tag found!',
                         'seo.rules.og-image.more.one.found.empty':
-                            'og:image metatag found, but is empty!',
+                            'og:image meta tag found, but is empty!',
                         'seo.rules.og-image.over':
-                            'og:image metatag found, but image is over 8 MB.',
+                            'og:image meta tag found, but image is over 8 MB.',
                         'seo.rules.og-image.found':
-                            'og:image metatag found, with an appropriate sized image!',
+                            'og:image meta tag found, with an appropriate sized image!',
                         'seo.rules.twitter-card.not.found': 'twitter:card meta tag not found!',
                         'seo.rules.twitter-card.more.one.found':
                             'more than 1 twitter:card meta tag found!',
@@ -172,7 +168,7 @@ describe('DotSetMetaTagsService', () => {
         const twitterDescriptionElements = testDoc.querySelectorAll(
             'meta[name="twitter:description"]'
         );
-
+        const descriptionElements = testDoc.querySelectorAll('meta[name="description"]');
         const descriptionOgElements = testDoc.querySelectorAll('meta[property="og:description"]');
 
         expect(service.getMetaTags(testDoc)).toEqual({
@@ -190,7 +186,8 @@ describe('DotSetMetaTagsService', () => {
             twitterTitleElements,
             twitterImageElements,
             twitterDescriptionElements,
-            descriptionOgElements
+            descriptionOgElements,
+            descriptionElements
         });
     });
 
@@ -215,10 +212,10 @@ describe('DotSetMetaTagsService', () => {
         testDoc.head.appendChild(ogMetaDescriptionSecond);
 
         service.getMetaTagsResults(testDoc).subscribe((value) => {
-            expect(value[0].items[0].message).toEqual(
+            expect(value[5].items[0].message).toEqual(
                 'more than 1 <code>og:description</code> meta tag found!'
             );
-            expect(value[0].items[1].message).toEqual(
+            expect(value[5].items[1].message).toEqual(
                 '<code>og:description</code> meta tag found, but has fewer than 55 characters of content.'
             );
             done();
@@ -239,10 +236,10 @@ describe('DotSetMetaTagsService', () => {
 
         service.getMetaTagsResults(testDoc).subscribe((value) => {
             expect(value[2].items[0].message).toEqual(
-                'more than 1 <code>og:title</code> metatag found!'
+                'more than 1 <code>og:title</code> meta tag found!'
             );
             expect(value[2].items[1].message).toEqual(
-                'title metatag found, but has fewer than 30 characters of content.'
+                'title meta tag found, but has fewer than 30 characters of content.'
             );
             done();
         });

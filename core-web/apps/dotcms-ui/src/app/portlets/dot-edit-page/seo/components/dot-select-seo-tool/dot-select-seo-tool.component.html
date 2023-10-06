@@ -1,15 +1,30 @@
 <ng-container *ngIf="socialMedia; else deviceBlock">
-    <div class="dot-select-seo-tool__item" *ngIf="socialMedia; else deviceBlock">
-        <i class="dot-select-seo-tool__icon" [ngClass]="socialMediaIconClass"></i>
-        <h5 class="dot-select-seo-tool__title">{{ socialMediaTiles[socialMedia]?.label }}</h5>
-        <span class="dot-select-seo-tool__details">Social Media Preview Tile</span>
+    <div
+        class="dot-select-seo-tool__item"
+        *ngIf="socialMedia; else deviceBlock"
+        data-testId="select-seo-tool-item">
+        <i
+            class="dot-select-seo-tool__icon"
+            [ngClass]="socialMediaIconClass"
+            data-testId="select-seo-tool-icon"></i>
+        <h5 class="dot-select-seo-tool__title" data-testId="select-seo-tool-title">
+            {{ socialMediaTiles[socialMedia]?.label }}
+        </h5>
+        <span class="dot-select-seo-tool__details" data-testId="select-seo-tool-details"
+            >Social Media Preview Tile</span
+        >
     </div>
 </ng-container>
 <ng-template #deviceBlock>
-    <div class="dot-select-seo-tool__item">
-        <i class="dot-select-seo-tool__icon" [ngClass]="device?.icon"></i>
-        <h5 class="dot-select-seo-tool__title">{{ device?.name }}</h5>
-        <span class="dot-select-seo-tool__details">
+    <div class="dot-select-seo-tool__item" data-testId="select-seo-tool-item">
+        <i
+            class="dot-select-seo-tool__icon"
+            [ngClass]="device?.icon"
+            data-testId="select-seo-tool-icon"></i>
+        <h5 class="dot-select-seo-tool__title" data-testId="select-seo-tool-title">
+            {{ device?.name }}
+        </h5>
+        <span class="dot-select-seo-tool__details" data-testId="select-seo-tool-details">
             {{ device?.cssHeight | number }} x {{ device?.cssWidth | number }}
         </span>
     </div>

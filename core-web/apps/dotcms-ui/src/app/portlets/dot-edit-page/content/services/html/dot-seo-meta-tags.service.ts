@@ -107,8 +107,7 @@ export class DotSeoMetaTagsService {
                         keyIcon: keysValues.keyIcon,
                         keyColor: keysValues.keyColor,
                         items: items,
-                        sort: ogMap[key]?.sort,
-                        info: ogMap[key]?.info
+                        sort: ogMap[key]?.sort
                     };
                 });
             })
@@ -121,59 +120,49 @@ export class DotSeoMetaTagsService {
         return {
             [SEO_OPTIONS.FAVICON]: {
                 getItems: (metaTagsObject: SeoMetaTags) => of(this.getFaviconItems(metaTagsObject)),
-                sort: 1,
-                info: ''
+                sort: 1
             },
             [SEO_OPTIONS.DESCRIPTION]: {
                 getItems: (metaTagsObject: SeoMetaTags) =>
                     of(this.getDescriptionItems(metaTagsObject)),
-                sort: 3,
-                info: this.dotMessageService.get('seo.rules.description.info')
+                sort: 3
             },
             [SEO_OPTIONS.OG_DESCRIPTION]: {
                 getItems: (metaTagsObject: SeoMetaTags) =>
                     of(this.getOgDescriptionItems(metaTagsObject)),
-                sort: 4,
-                info: this.dotMessageService.get('seo.rules.description.info')
+                sort: 4
             },
             [SEO_OPTIONS.TITLE]: {
                 getItems: (metaTagsObject: SeoMetaTags) => of(this.getTitleItems(metaTagsObject)),
-                sort: 2,
-                info: this.dotMessageService.get('seo.rules.title.info')
+                sort: 2
             },
             [SEO_OPTIONS.OG_TITLE]: {
                 getItems: (metaTagsObject: SeoMetaTags) => of(this.getOgTitleItems(metaTagsObject)),
-                sort: 2,
-                info: this.dotMessageService.get('seo.rules.title.info')
+                sort: 2
             },
             [SEO_OPTIONS.OG_IMAGE]: {
                 getItems: (metaTagsObject: SeoMetaTags) => this.getOgImagesItems(metaTagsObject),
-                sort: 6,
-                info: ''
+                sort: 6
             },
             [SEO_OPTIONS.TWITTER_CARD]: {
                 getItems: (metaTagsObject: SeoMetaTags) =>
                     of(this.getTwitterCardItems(metaTagsObject)),
-                sort: 2,
-                info: ''
+                sort: 2
             },
             [SEO_OPTIONS.TWITTER_TITLE]: {
                 getItems: (metaTagsObject: SeoMetaTags) =>
                     of(this.getTwitterTitleItems(metaTagsObject)),
-                sort: 1,
-                info: ''
+                sort: 1
             },
             [SEO_OPTIONS.TWITTER_DESCRIPTION]: {
                 getItems: (metaTagsObject: SeoMetaTags) =>
                     of(this.getTwitterDescriptionItems(metaTagsObject)),
-                sort: 3,
-                info: ''
+                sort: 3
             },
             [SEO_OPTIONS.TWITTER_IMAGE]: {
                 getItems: (metaTagsObject: SeoMetaTags) =>
                     this.getTwitterImageItems(metaTagsObject),
-                sort: 4,
-                info: ''
+                sort: 4
             }
         };
     }
@@ -701,7 +690,6 @@ export class DotSeoMetaTagsService {
             [SEO_MEDIA_TYPES.TWITTER]: [
                 this.dotMessageService.get('seo.rules.read-more.twitter.learn'),
                 this.dotMessageService.get('seo.rules.read-more.twitter.suggest'),
-                this.dotMessageService.get('seo.rules.read-more.twitter.twitter-card'),
                 this.dotMessageService.get('seo.rules.read-more.twitter.twitter-title'),
                 this.dotMessageService.get('seo.rules.read-more.twitter.twitter-title.content'),
                 this.dotMessageService.get('seo.rules.read-more.twitter.length'),

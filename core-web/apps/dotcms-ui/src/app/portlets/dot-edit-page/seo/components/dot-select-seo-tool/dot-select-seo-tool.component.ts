@@ -1,4 +1,4 @@
-import { CommonModule, JsonPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnChanges } from '@angular/core';
 
 import { DotDeviceListItem } from '@dotcms/dotcms-models';
@@ -8,7 +8,7 @@ import { socialMediaTiles } from '../../../content/services/dot-edit-content-htm
 @Component({
     selector: 'dot-select-seo-tool',
     standalone: true,
-    imports: [CommonModule, JsonPipe],
+    imports: [CommonModule],
     templateUrl: './dot-select-seo-tool.component.html',
     styleUrls: ['./dot-select-seo-tool.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -20,6 +20,6 @@ export class DotSelectSeoToolComponent implements OnChanges {
     socialMediaTiles = socialMediaTiles;
 
     ngOnChanges() {
-        this.socialMediaIconClass = `pi pi-${this.socialMedia.toLowerCase()}`;
+        this.socialMediaIconClass = `pi pi-${this.socialMedia?.toLowerCase()}`;
     }
 }
