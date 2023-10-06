@@ -35,7 +35,6 @@
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
 <!-- dotCMS Block Editor -->
-<link rel="stylesheet" href="/html/css/dotcms-block-editor.css" />
 <script src="/html/dotcms-block-editor.js"></script>
 
 <style>
@@ -54,7 +53,6 @@
 	if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
 %>
 	<script src="/html/binary-field.js"></script>
-	<link rel="stylesheet" href="/html/css/binary-field.css" />
 <% } %>
 
 <script type="text/javascript">

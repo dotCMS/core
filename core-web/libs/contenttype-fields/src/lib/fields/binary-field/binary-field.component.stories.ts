@@ -50,18 +50,21 @@ export default {
                     provide: DotUploadService,
                     useValue: {
                         uploadFile: () => {
-                            return new Promise((resolve) => {
+                            return new Promise((resolve, reject) => {
                                 setTimeout(() => {
-                                    resolve({
-                                        fileName: 'Image.jpg',
-                                        folder: 'folder',
-                                        id: 'tempFileId',
-                                        image: true,
-                                        length: 10000,
-                                        mimeType: 'mimeType',
-                                        referenceUrl: 'referenceUrl',
-                                        thumbnailUrl: 'thumbnailUrl'
+                                    reject({
+                                        message: 'error URL'
                                     });
+                                    // resolve({
+                                    //     fileName: 'Image.jpg',
+                                    //     folder: 'folder',
+                                    //     id: 'tempFileId',
+                                    //     image: true,
+                                    //     length: 10000,
+                                    //     mimeType: 'mimeType',
+                                    //     referenceUrl: 'referenceUrl',
+                                    //     thumbnailUrl: 'thumbnailUrl'
+                                    // });
                                 }, 4000);
                             });
                         }

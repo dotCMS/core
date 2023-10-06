@@ -2,14 +2,14 @@
 
 :host ::ng-deep {
     display: block;
-    min-width: 32rem;
+    width: 32rem;
 
     .p-button {
         width: 100%;
     }
 
-    dot-field-validation-message {
-        height: $spacing-4; // Fix height to avoid jumping
+    .error-messsage__container {
+        min-height: $spacing-4; // Fix height to avoid jumping
     }
 }
 

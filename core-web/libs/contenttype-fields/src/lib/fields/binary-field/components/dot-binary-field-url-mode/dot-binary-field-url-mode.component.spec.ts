@@ -8,7 +8,7 @@ import { ButtonModule } from 'primeng/button';
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 
 import { DotBinaryFieldUrlModeComponent } from './dot-binary-field-url-mode.component';
-import { DotBinaryFieldUrlModeStore } from './store/store/dot-binary-field-url-mode.store';
+import { DotBinaryFieldUrlModeStore } from './store/dot-binary-field-url-mode.store';
 
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../../../utils/mock';
 import { TEMP_FILE_MOCK } from '../../store/binary-field.store.spec';

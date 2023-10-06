@@ -21,12 +21,12 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { takeUntil } from 'rxjs/operators';
+import { takeUntil, tap } from 'rxjs/operators';
 
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
-import { DotBinaryFieldUrlModeStore } from './store/store/dot-binary-field-url-mode.store';
+import { DotBinaryFieldUrlModeStore } from './store/dot-binary-field-url-mode.store';
 
 @Component({
     selector: 'dot-dot-binary-field-url-mode',
@@ -58,9 +58,8 @@ export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
         Validators.pattern(/^(ftp|http|https):\/\/[^ "]+$/)
     ];
 
-    readonly defaultError = 'dot.binary.field.action.import.from.url.error.message';
-    readonly vm$ = this.store.vm$;
-    readonly isLoading$ = this.store.isLoading$;
+    readonly invalidError = 'dot.binary.field.action.import.from.url.error.message';
+    readonly vm$ = this.store.vm$.pipe(tap(({ isLoading }) => this.toggleForm(isLoading)));
     readonly tempFileChanged$ = this.store.tempFile$;
     readonly form = new FormGroup({
         url: new FormControl('', this.validators)
@@ -71,11 +70,6 @@ export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
     constructor(private readonly store: DotBinaryFieldUrlModeStore) {
         this.tempFileChanged$.pipe(takeUntil(this.destroy$)).subscribe((tempFile) => {
             this.tempFileUploaded.emit(tempFile);
-            this.form.enable();
-        });
-
-        this.isLoading$.pipe(takeUntil(this.destroy$)).subscribe((isLoading) => {
-            isLoading ? this.form.disable() : this.form.enable();
         });
     }
 
@@ -100,11 +94,21 @@ export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
         this.abortController = new AbortController();
 
         this.store.uploadFileByUrl({ url, signal: this.abortController.signal });
-        this.form.reset({ url }); // Reset touch and dirty state
+        this.form.reset({ url }); // Reset form to initial state
     }
 
     cancelUpload(): void {
         this.abortController?.abort();
         this.cancel.emit();
+    }
+
+    resetError(isError: boolean): void {
+        if (isError) {
+            this.store.setError('');
+        }
+    }
+
+    private toggleForm(isLoading: boolean): void {
+        isLoading ? this.form.disable() : this.form.enable();
     }
 }
