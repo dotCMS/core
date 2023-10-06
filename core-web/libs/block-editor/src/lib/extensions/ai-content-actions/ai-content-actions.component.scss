@@ -4,16 +4,14 @@
     width: 12.5rem;
     padding: $spacing-1;
     margin-left: $spacing-8;
-    background-color: $white;
 
-    // list option
     .p-listbox-item {
         background-color: $white;
         padding: $spacing-2 $spacing-3;
 
         // accept option
         &:first-child {
-            background-color: var(--color-palette-primary-200);
+            background-color: $color-palette-primary-200;
         }
 
         // regenerate option
@@ -23,21 +21,23 @@
 
         // delete option
         &:last-child {
-            border-top: 1px solid $color-palette-gray-300 !important;
+            border-top: 1px solid $color-palette-gray-300;
         }
 
         &:hover {
-            background-color: var(--color-palette-primary-100);
-        }
-
-        // list option icon
-        i {
-            margin-right: $spacing-0;
-            color: $color-palette-gray-600;
+            background-color: $color-palette-primary-100;
         }
     }
 }
 
 .action-content {
+    display: flex;
+    align-items: center;
     color: $black;
+
+    // list option icon
+    i {
+        margin-right: $spacing-0;
+        color: $color-palette-gray-600;
+    }
 }

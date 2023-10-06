@@ -6,7 +6,7 @@ import tippy, { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
 
-import { takeUntil } from 'rxjs/operators';
+import { take, takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
@@ -92,7 +92,7 @@ export class AIContentActionsView {
 
         this.component.instance
             .getNewContent()
-            .pipe(takeUntil(this.destroy$))
+            .pipe(take(1), takeUntil(this.destroy$))
             .subscribe((newContent) => {
                 if (newContent) {
                     this.editor.commands.deleteSelection();
