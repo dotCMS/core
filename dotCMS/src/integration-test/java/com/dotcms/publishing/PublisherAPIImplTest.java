@@ -193,10 +193,46 @@ public class PublisherAPIImplTest {
                 getContentWithSeveralVersions(),
                 getUser(),
                 getExperiment()
-                //getExperimentVariantDifferentLayout() //for some rason it is failing on the cloud, we need to check it later
+                //getExperimentWithSystemTemplate() //for some reason it is failing on the cloud, we need to check it later
+                //getExperimentVariantDifferentLayout() //for some reason it is failing on the cloud, we need to check it later
         };
     }
 
+    private static TestAsset getExperimentWithSystemTemplate() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        ContentletDataGen.publish(experimentPage);
+
+        final Language language = APILocator.getLanguageAPI()
+                .getLanguage(experimentPage.getLanguageId());
+
+        final ContentType pageContentType = experimentPage.getContentType();
+        final Experiment experiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        final ExperimentVariant experimentNoDefaultVariant = experiment.trafficProportion().variants()
+                .stream()
+                .filter(experimentVariant -> !DEFAULT_VARIANT.name().equals(experimentVariant.id()))
+                .findFirst()
+                .orElseThrow();
+
+        final Variant variant = APILocator.getVariantAPI().get(experimentNoDefaultVariant.id())
+                .orElseThrow();
+
+        final Template variantTemplate = APILocator.getTemplateAPI().systemTemplate();
+        final Contentlet pageNewVersion = ContentletDataGen.createNewVersion(experimentPage, variant,
+                map(HTMLPageAssetAPI.TEMPLATE_FIELD,
+                        variantTemplate.getIdentifier()));
+        ContentletDataGen.publish(pageNewVersion);
+
+        return new TestAsset(experiment,
+                map(
+                        experiment, list(variant, experimentPage, pageNewVersion),
+                        experimentPage, list(host, template, pageContentType, language)
+                ),
+                "/bundlers-test/experiment/experiment.json", true, true);
+    }
 
     private static TestAsset getExperimentVariantDifferentLayout()
             throws DotDataException, DotSecurityException {
@@ -628,6 +664,11 @@ public class PublisherAPIImplTest {
             final String manifestFilePath = extractHere.getAbsolutePath() + File.separator +
                     ManifestBuilder.MANIFEST_NAME;
             final File manifestFile = new File(manifestFilePath);
+
+            if (testAsset.addExcludeForSystemTemplate()) {
+                manifestLines.addExcludes(map("Excluded System Folder/Host/Container/Template",
+                        list(APILocator.getTemplateAPI().systemTemplate())));
+            }
 
             assertManifestFile(manifestFile, manifestLines);
         }
@@ -1116,6 +1157,7 @@ public class PublisherAPIImplTest {
         String fileExpectedPath;
         boolean addLanguageVariableDependencies = true;
         Set<Object> otherVersions;
+        private boolean excludeForSystemTemplate;
 
         public TestAsset(
                 final Object asset,
@@ -1146,15 +1188,36 @@ public class PublisherAPIImplTest {
         public TestAsset(
                 final Object asset,
                 final Map<ManifestItem, Collection<ManifestItem>> dependencies,
+                final String fileExpectedPath,
+                final boolean addLanguageVariableDependencies,
+                final boolean excludeForSystemTemplate) {
+
+            this(asset, dependencies, null, fileExpectedPath, addLanguageVariableDependencies, excludeForSystemTemplate);
+        }
+
+        public TestAsset(
+                final Object asset,
+                final Map<ManifestItem, Collection<ManifestItem>> dependencies,
                 final Set<Object> otherVersions,
                 final String fileExpectedPath,
                 final boolean addLanguageVariableDependencies) {
+            this(asset, dependencies, otherVersions, fileExpectedPath, addLanguageVariableDependencies, false);
+        }
+
+        public TestAsset(
+                final Object asset,
+                final Map<ManifestItem, Collection<ManifestItem>> dependencies,
+                final Set<Object> otherVersions,
+                final String fileExpectedPath,
+                final boolean addLanguageVariableDependencies,
+                final boolean excludeForSystemTemplate) {
 
             this.asset = asset;
             this.dependencies = dependencies;
             this.fileExpectedPath = fileExpectedPath;
             this.addLanguageVariableDependencies = addLanguageVariableDependencies;
             this.otherVersions = otherVersions != null ? otherVersions : Collections.EMPTY_SET;
+            this.excludeForSystemTemplate = excludeForSystemTemplate;
         }
 
         public ManifestItemsMapTest manifestLines() {
@@ -1172,6 +1235,10 @@ public class PublisherAPIImplTest {
             return dependencies.values().stream()
                     .flatMap(dependencies -> dependencies.stream())
                     .collect(Collectors.toList());
+        }
+
+        public boolean addExcludeForSystemTemplate() {
+            return excludeForSystemTemplate;
         }
     }
 
