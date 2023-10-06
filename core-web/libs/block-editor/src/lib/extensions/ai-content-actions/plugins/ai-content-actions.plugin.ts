@@ -90,13 +90,16 @@ export class AIContentActionsView {
     private generateContent() {
         this.editor.commands.closeAIContentActions();
 
-        this.component.instance.getNewContent().subscribe((newContent) => {
-            if (newContent) {
-                this.editor.commands.deleteSelection();
-                this.editor.commands.insertAINode(newContent);
-                this.editor.commands.openAIContentActions();
-            }
-        });
+        this.component.instance
+            .getNewContent()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((newContent) => {
+                if (newContent) {
+                    this.editor.commands.deleteSelection();
+                    this.editor.commands.insertAINode(newContent);
+                    this.editor.commands.openAIContentActions();
+                }
+            });
     }
 
     private deleteContent() {

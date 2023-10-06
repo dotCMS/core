@@ -56,7 +56,7 @@ export const AIContentNode = Node.create({
     },
 
     renderHTML() {
-        return ['div'];
+        return ['div[ai-content]'];
     },
 
     addNodeView() {

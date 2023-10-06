@@ -1,34 +1,41 @@
 @use "variables" as *;
 
-// list option
-::ng-deep li {
-    background-color: $white !important;
-    padding: $spacing-2 $spacing-3 !important;
+.ai-actions-list {
+    width: 12.5rem;
+    padding: $spacing-1;
+    margin-left: $spacing-8;
+    background-color: $white;
 
-    // accept option
-    &:first-child {
-        background-color: var(--color-palette-primary-200) !important;
+    // list option
+    .p-listbox-item {
+        background-color: $white;
+        padding: $spacing-2 $spacing-3;
+
+        // accept option
+        &:first-child {
+            background-color: var(--color-palette-primary-200);
+        }
+
+        // regenerate option
+        &:nth-child(2) {
+            padding: $spacing-3;
+        }
+
+        // delete option
+        &:last-child {
+            border-top: 1px solid $color-palette-gray-300 !important;
+        }
+
+        &:hover {
+            background-color: var(--color-palette-primary-100);
+        }
+
+        // list option icon
+        i {
+            margin-right: $spacing-0;
+            color: $color-palette-gray-600;
+        }
     }
-
-    // regenerate option
-    &:nth-child(2) {
-        padding: $spacing-3 !important;
-    }
-
-    // delete option
-    &:last-child {
-        border-top: 1px solid $color-palette-gray-300 !important;
-    }
-
-    &:hover {
-        background-color: var(--color-palette-primary-100) !important;
-    }
-}
-
-// list option icon
-::ng-deep i {
-    margin-right: 0.2rem;
-    color: $color-palette-gray-600;
 }
 
 .action-content {

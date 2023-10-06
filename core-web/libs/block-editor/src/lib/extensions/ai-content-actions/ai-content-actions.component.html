@@ -1,12 +1,7 @@
 <p-listbox
     [options]="actionOptions"
-    [style]="{
-        width: '12.5rem',
-        padding: '0.5rem',
-        'margin-left': '3.75rem',
-        'background-color': '#fff'
-    }"
-    (onClick)="$event.value.callback()">
+    (onClick)="$event.value.callback()"
+    styleClass="ai-actions-list">
     <ng-template let-actionOption pTemplate="item">
         <div class="action-content">
             <i [class]="actionOption.icon"></i>
