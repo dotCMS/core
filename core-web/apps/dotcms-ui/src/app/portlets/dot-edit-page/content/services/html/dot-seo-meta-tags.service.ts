@@ -470,24 +470,16 @@ export class DotSeoMetaTagsService {
 
     private getTwitterCardItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
         const result: SeoRulesResult[] = [];
-        const titleCardElements = metaTagsObject['twitterCardElements'];
-        const titleCard = metaTagsObject['twitter:card'];
+        const twitterCardElements = metaTagsObject['twitterCardElements'];
+        const twitterCard = metaTagsObject['twitter:card'];
 
-        if (titleCardElements.length === 0) {
+        if (twitterCard === null || twitterCardElements?.length === 0) {
             result.push(
                 this.getErrorItem(this.dotMessageService.get('seo.rules.twitter-card.not.found'))
             );
         }
 
-        if (titleCardElements?.length > 1) {
-            result.push(
-                this.getErrorItem(
-                    this.dotMessageService.get('seo.rules.twitter-card.more.one.found')
-                )
-            );
-        }
-
-        if (titleCard && titleCard.length === 0) {
+        if (twitterCardElements.length > 0 && twitterCard?.length === 0) {
             result.push(
                 this.getErrorItem(
                     this.dotMessageService.get('seo.rules.twitter-card.more.one.found.empty')
@@ -495,7 +487,15 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (titleCard) {
+        if (twitterCardElements?.length > 1) {
+            result.push(
+                this.getErrorItem(
+                    this.dotMessageService.get('seo.rules.twitter-card.more.one.found')
+                )
+            );
+        }
+
+        if (twitterCard) {
             result.push(
                 this.getDoneItem(this.dotMessageService.get('seo.rules.twitter-card.found'))
             );
@@ -509,7 +509,7 @@ export class DotSeoMetaTagsService {
         const titleCardElements = metaTagsObject['twitterTitleElements'];
         const titleCard = metaTagsObject['twitter:title'];
 
-        if (titleCardElements.length === 0) {
+        if (titleCard === null || titleCardElements?.length === 0) {
             result.push(
                 this.getErrorItem(
                     this.dotMessageService.get('seo.rules.twitter-card-title.not.found')
@@ -525,13 +525,31 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (titleCard && titleCard.length === 0) {
+        if (titleCardElements.length > 0 && titleCard?.length === 0) {
             result.push(
                 this.getErrorItem(this.dotMessageService.get('seo.rules.twitter-card-title.empty'))
             );
         }
 
-        if (titleCard) {
+        if (titleCard?.length < SEO_LIMITS.MIN_TWITTER_TITLE_LENGTH) {
+            result.push(
+                this.getWarningItem(this.dotMessageService.get('seo.rules.twitter-card.title.less'))
+            );
+        }
+
+        if (titleCard?.length > SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH) {
+            result.push(
+                this.getWarningItem(
+                    this.dotMessageService.get('seo.rules.twitter-card.title.greater')
+                )
+            );
+        }
+
+        if (
+            titleCard &&
+            titleCard?.length > SEO_LIMITS.MIN_TWITTER_TITLE_LENGTH &&
+            titleCard?.length < SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH
+        ) {
             result.push(
                 this.getDoneItem(this.dotMessageService.get('seo.rules.twitter-card-title.found'))
             );
@@ -545,7 +563,7 @@ export class DotSeoMetaTagsService {
         const twitterDescriptionElements = metaTagsObject['twitterDescriptionElements'];
         const twitterDescription = metaTagsObject['twitter:description'];
 
-        if (twitterDescriptionElements.length === 0) {
+        if (twitterDescription === null || twitterDescriptionElements?.length === 0) {
             result.push(
                 this.getErrorItem(
                     this.dotMessageService.get('seo.rules.twitter-card-description.not.found')
@@ -576,7 +594,7 @@ export class DotSeoMetaTagsService {
             twitterDescription.length > SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH
         ) {
             result.push(
-                this.getErrorItem(
+                this.getWarningItem(
                     this.dotMessageService.get('seo.rules.twitter-card-description.greater')
                 )
             );
