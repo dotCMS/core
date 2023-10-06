@@ -62,8 +62,6 @@ jobs:
     steps:
       - name: Checkout core
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       - name: Set Common Vars
         run: |
           BUILD_ID=$(basename "${{ github.ref }}")

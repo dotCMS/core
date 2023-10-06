@@ -15,7 +15,6 @@ import { ConfirmPopup } from 'primeng/confirmpopup';
 import { Inplace } from 'primeng/inplace';
 import { Tooltip } from 'primeng/tooltip';
 
-import { DotCopyButtonComponent } from '@components/dot-copy-button/dot-copy-button.component';
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import {
     DEFAULT_VARIANT_ID,
@@ -25,7 +24,7 @@ import {
     ExperimentSteps
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
     getExperimentMock,

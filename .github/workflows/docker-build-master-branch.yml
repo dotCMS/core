@@ -1,4 +1,4 @@
-name: docker-build-master-branch
+name: Build/Push dotCMS docker image (master)
 on:
   push:
     branches:
@@ -15,8 +15,6 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       -
         name: Docker meta
         id: meta

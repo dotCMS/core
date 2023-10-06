@@ -3,6 +3,7 @@ package com.dotcms.api.client.files.traversal.task;
 import com.dotcms.api.client.files.traversal.data.Retriever;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.cli.common.HiddenFileFilter;
 import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.AssetView;
@@ -676,16 +677,6 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
                 lang(localPathStructure.language()).
                 sortOrder(0).
                 metadata(metadata);
-    }
-
-    /**
-     * FileFilter implementation to block hidden files and filter out system specific elements.
-     */
-    private static class HiddenFileFilter implements FileFilter {
-        @Override
-        public boolean accept(File file) {
-            return !(file.isFile() && file.isHidden());
-        }
     }
 
     /**
