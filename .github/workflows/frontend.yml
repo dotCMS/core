@@ -28,8 +28,6 @@ jobs:
     name: SonarQube
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       - uses: sonarsource/sonarqube-scan-action@master
         with:
           projectBaseDir: core-web
@@ -98,8 +96,6 @@ jobs:
     name: Frontend Checks
     steps: # what steps it will perform
       - uses: actions/checkout@v3 # checkout whatever branch the PR is using
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v3
         with:
           node-version: 16.14.2
