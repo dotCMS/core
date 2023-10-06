@@ -1,31 +1,35 @@
 @use "variables" as *;
 
-.ai-actions-list {
-    width: 12.5rem;
-    padding: $spacing-1;
-    margin-left: $spacing-8;
+:host ::ng-deep {
+    .p-listbox {
+        display: block;
+        width: 12.5rem;
+        padding: $spacing-1;
+        margin-left: $spacing-8;
 
-    .p-listbox-item {
-        background-color: $white;
-        padding: $spacing-2 $spacing-3;
+        li {
+            padding: $spacing-2 $spacing-3;
 
-        // accept option
-        &:first-child {
-            background-color: $color-palette-primary-200;
-        }
+            // accept option
+            &:first-child {
+                background-color: $color-palette-primary-200;
+            }
 
-        // regenerate option
-        &:nth-child(2) {
-            padding: $spacing-3;
-        }
+            // regenerate option
+            &:nth-child(2) {
+                padding: $spacing-3;
+                background-color: $white !important;
+            }
 
-        // delete option
-        &:last-child {
-            border-top: 1px solid $color-palette-gray-300;
-        }
+            // delete option
+            &:last-child {
+                border-top: 1px solid $color-palette-gray-300;
+                background-color: $white !important;
+            }
 
-        &:hover {
-            background-color: $color-palette-primary-100;
+            &:hover {
+                background-color: $color-palette-primary-100;
+            }
         }
     }
 }
