@@ -105,7 +105,9 @@ describe('DotSetMetaTagsService', () => {
                         'seo.rules.og-description.less':
                             'og:description meta tag found, but has fewer than 55 characters of content.',
                         'seo.rules.og-description.found':
-                            'og:description meta tag with valid content found!'
+                            'og:description meta tag with valid content found!',
+                        'seo.rules.description.more.one.found':
+                            'More than 1 Meta Description found!'
                     })
                 },
                 DotUploadService
@@ -199,7 +201,7 @@ describe('DotSetMetaTagsService', () => {
         });
     });
 
-    it('should that got more than one og-description error', (done) => {
+    it('should get more than one og-description error', (done) => {
         const ogMetaDescription = document.createElement('meta');
         ogMetaDescription.setAttribute('property', 'og:description');
         ogMetaDescription.setAttribute('content', 'BE');
@@ -222,7 +224,7 @@ describe('DotSetMetaTagsService', () => {
         });
     });
 
-    it('should that got more than one og:title error', (done) => {
+    it('should get more than one og:title error', (done) => {
         const ogMetaTitle = document.createElement('meta');
         ogMetaTitle.setAttribute('property', 'og:title');
         ogMetaTitle.setAttribute('content', 'Costa Rica Special Offer');
@@ -241,6 +243,26 @@ describe('DotSetMetaTagsService', () => {
             expect(value[2].items[1].message).toEqual(
                 'title meta tag found, but has fewer than 30 characters of content.'
             );
+            done();
+        });
+    });
+
+    it('should get more than description error', (done) => {
+        const description = document.createElement('meta');
+        description.setAttribute('name', 'description');
+        description.setAttribute('content', 'Costa Rica Special Offer');
+
+        testDoc.head.appendChild(description);
+
+        service.getMetaTagsResults(testDoc).subscribe((value) => {
+            expect(value[0].items[0].message).toEqual('More than 1 Meta Description found!');
+            done();
+        });
+    });
+
+    it('should get description found', (done) => {
+        service.getMetaTagsResults(testDoc).subscribe((value) => {
+            expect(value[0].items[0].message).toEqual('Meta Description found!');
             done();
         });
     });
