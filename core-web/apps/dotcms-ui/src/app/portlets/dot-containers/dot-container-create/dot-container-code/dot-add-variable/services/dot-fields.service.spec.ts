@@ -3,38 +3,41 @@ import { TestBed } from '@angular/core/testing';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotFieldsService } from './dot-fields.service';
+import { DOT_CONTENT_MAP, DotFieldsService } from './dot-fields.service';
 
 import { DotFieldContent, FieldTypes } from '../dot-add-variable.models';
 
 const mockDotMessageService = new MockDotMessageService({
-    'Content-Identifier-value': 'Content Identifier Value',
-    'Content-Identifier': 'Content Identifier',
-    'Image-Identifier': 'Identifier',
-    Image: 'Image',
-    'Image-Title': 'Title',
-    'Image-Extension': 'Extension',
-    'Image-Width': 'Width',
-    'Image-Height': 'Height',
-    'Host-Folder': 'Host Folder',
-    File: 'File',
-    'File-Identifier': 'Identifier',
-    'File-Extension': 'Extension',
-    'html-render': 'HTML Render',
-    'Binary-File': 'File',
     'Binary-File-Resized': 'Resized',
     'Binary-File-Thumbnail': 'Thumbnail',
-    'Selected-Value': 'Selected Value',
-    'Labels-Values': 'Labels & Values, e.g.: USA|US Canada|CA',
+    'Binary-File': 'File',
+    'Content-Identifier-value': 'Content Identifier Value',
+    'Content-Identifier': 'Content Identifier',
     'contenttypes.field.properties.data_type.values.date': 'Date',
-    'mm-dd-yyyy': '(mm-dd-yyyy)',
     'Date-Database-Format': 'Date Database Format',
-    'yyyy-mm-dd': '(yyyy-mm-dd)',
-    Time: 'Time',
-    'hh-mm-ss': '(hh:mm:ss)',
-    Date: 'Date',
+    'Date-Long-String': 'Date Long String (mm/dd/yyyy hh:mm:ss)',
     'Date-Short-String': 'Date Short String',
-    'Date-Long-String': 'Date Long String (mm/dd/yyyy hh:mm:ss)'
+    'File-Extension': 'Extension',
+    'File-Identifier': 'Identifier',
+    'hh-mm-ss': '(hh:mm:ss)',
+    'Host-Folder': 'Host Folder',
+    'html-render': 'HTML Render',
+    'Image-Extension': 'Extension',
+    'Image-Height': 'Height',
+    'Image-Identifier': 'Identifier',
+    'Image-Title': 'Title',
+    'Image-Width': 'Width',
+    'Labels-Values': 'Labels & Values, e.g.: USA|US Canada|CA',
+    'mm-dd-yyyy': '(mm-dd-yyyy)',
+    'Selected-Value': 'Selected Value',
+    'Selected-Values': 'Selected Values',
+    'yyyy-mm-dd': '(yyyy-mm-dd)',
+    Date: 'Date',
+    File: 'File',
+    Image: 'Image',
+    Options: 'Options',
+    Time: 'Time',
+    values: 'Values'
 });
 const mockContentTypeField = {
     variable: 'testVariable',
@@ -44,6 +47,7 @@ const mockContentTypeField = {
 
 describe('DotFieldsService', () => {
     let service: DotFieldsService;
+    const variable: string = mockContentTypeField.variable;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -92,55 +96,51 @@ describe('DotFieldsService', () => {
         it('should return the Image Identifier field', () => {
             expect(imageFields[0]).toBeTruthy();
             expect(imageFields[0].name).toBe('test: Identifier');
-            expect(imageFields[0].variable).toBe('testVariableImageIdentifier');
+            expect(imageFields[0].variable).toBe('testVariable.identifier');
             expect(imageFields[0].fieldTypeLabel).toBe('Test Content Type');
-            expect(imageFields[0].codeTemplate).toBe(
-                '$!{dotContentMap.testVariableImageIdentifier}'
-            );
+            expect(imageFields[0].codeTemplate).toBe('$!{dotContentMap.testVariable.identifier}');
         });
 
         it('should return the Image field', () => {
             expect(imageFields[1]).toBeTruthy();
             expect(imageFields[1].name).toBe('test: Image');
-            expect(imageFields[1].variable).toBe('testVariableImage');
+            expect(imageFields[1].variable).toBe('testVariable.image');
             expect(imageFields[1].fieldTypeLabel).toBe('Test Content Type');
             expect(imageFields[1].codeTemplate).toBe(
-                '#if ($UtilMethods.isSet(${testVariableImageURI}))\n    <img src="$!{dotContentMap.testVariableImageURI}" alt="$!{dotContentMap.testVariableImageTitle}" />\n#end'
+                `#if ($!{${DOT_CONTENT_MAP}.${variable}.rawUri})\n    <img src="$!{${DOT_CONTENT_MAP}.${variable}.rawUri}" alt="$!{${DOT_CONTENT_MAP}.${variable}.title}" />\n#elseif($!{${DOT_CONTENT_MAP}.${variable}.identifier})\n    <img src="/dA/\${${DOT_CONTENT_MAP}.${variable}.identifier}" alt="$!{${DOT_CONTENT_MAP}.${variable}.title}"/>\n#end`
             );
         });
 
         it('should return the Image Title field', () => {
             expect(imageFields[2]).toBeTruthy();
             expect(imageFields[2].name).toBe('test: Title');
-            expect(imageFields[2].variable).toBe('testVariableImageTitle');
+            expect(imageFields[2].variable).toBe('testVariable.title');
             expect(imageFields[2].fieldTypeLabel).toBe('Test Content Type');
-            expect(imageFields[2].codeTemplate).toBe('$!{dotContentMap.testVariableImageTitle}');
+            expect(imageFields[2].codeTemplate).toBe('$!{dotContentMap.testVariable.title}');
         });
 
         it('should return the Image Extension field', () => {
             expect(imageFields[3]).toBeTruthy();
             expect(imageFields[3].name).toBe('test: Extension');
-            expect(imageFields[3].variable).toBe('testVariableImageExtension');
+            expect(imageFields[3].variable).toBe('testVariable.extension');
             expect(imageFields[3].fieldTypeLabel).toBe('Test Content Type');
-            expect(imageFields[3].codeTemplate).toBe(
-                '$!{dotContentMap.testVariableImageExtension}'
-            );
+            expect(imageFields[3].codeTemplate).toBe('$!{dotContentMap.testVariable.extension}');
         });
 
         it('should return the Image Width field', () => {
             expect(imageFields[4]).toBeTruthy();
             expect(imageFields[4].name).toBe('test: Width');
-            expect(imageFields[4].variable).toBe('testVariableImageWidth');
+            expect(imageFields[4].variable).toBe('testVariable.width');
             expect(imageFields[4].fieldTypeLabel).toBe('Test Content Type');
-            expect(imageFields[4].codeTemplate).toBe('$!{dotContentMap.testVariableImageWidth}');
+            expect(imageFields[4].codeTemplate).toBe('$!{dotContentMap.testVariable.width}');
         });
 
         it('should return the Image Height field', () => {
             expect(imageFields[5]).toBeTruthy();
             expect(imageFields[5].name).toBe('test: Height');
-            expect(imageFields[5].variable).toBe('testVariableImageHeight');
+            expect(imageFields[5].variable).toBe('testVariable.height');
             expect(imageFields[5].fieldTypeLabel).toBe('Test Content Type');
-            expect(imageFields[5].codeTemplate).toBe('$!{dotContentMap.testVariableImageHeight}');
+            expect(imageFields[5].codeTemplate).toBe('$!{dotContentMap.testVariable.height}');
         });
     });
 
@@ -178,27 +178,27 @@ describe('DotFieldsService', () => {
         it('should return the File field', () => {
             expect(fileFields[0]).toBeTruthy();
             expect(fileFields[0].name).toBe('test: File');
-            expect(fileFields[0].variable).toBe('testVariableFile');
+            expect(fileFields[0].variable).toBe('testVariable.file');
             expect(fileFields[0].fieldTypeLabel).toBe('Test Content Type');
             expect(fileFields[0].codeTemplate).toBe(
-                '#if (${testVariableFileURI})\n    <a href="$!{dotContentMap.testVariableFileURI}">$!{dotContentMap.testVariableFileTitle}</a>\n#end'
+                `#if ($!{${DOT_CONTENT_MAP}.${variable}.rawUri})\n    <a href="$!{${DOT_CONTENT_MAP}.${variable}.rawUri}">$!{${DOT_CONTENT_MAP}.${variable}.title}</a>\n#elseif($!{${DOT_CONTENT_MAP}.${variable}.identifier})\n    <a href="/dA/\${${DOT_CONTENT_MAP}.${variable}.identifier}">$!{${DOT_CONTENT_MAP}.${variable}.title}</a>\n#end`
             );
         });
 
         it('should return the File Identifier field', () => {
             expect(fileFields[1]).toBeTruthy();
             expect(fileFields[1].name).toBe('test: Identifier');
-            expect(fileFields[1].variable).toBe('testVariableFileIdentifier');
+            expect(fileFields[1].variable).toBe('testVariable.identifier');
             expect(fileFields[1].fieldTypeLabel).toBe('Test Content Type');
-            expect(fileFields[1].codeTemplate).toBe('$!{dotContentMap.testVariableFileIdentifier}');
+            expect(fileFields[1].codeTemplate).toBe('$!{dotContentMap.testVariable.identifier}');
         });
 
         it('should return the File Extension field', () => {
             expect(fileFields[2]).toBeTruthy();
             expect(fileFields[2].name).toBe('test: Extension');
-            expect(fileFields[2].variable).toBe('testVariableFileExtension');
+            expect(fileFields[2].variable).toBe('testVariable.extension');
             expect(fileFields[2].fieldTypeLabel).toBe('Test Content Type');
-            expect(fileFields[2].codeTemplate).toBe('$!{dotContentMap.testVariableFileExtension}');
+            expect(fileFields[2].codeTemplate).toBe('$!{dotContentMap.testVariable.extension}');
         });
     });
 
@@ -238,30 +238,30 @@ describe('DotFieldsService', () => {
         it('should return the Binary File', () => {
             expect(binaryFields[0]).toBeTruthy();
             expect(binaryFields[0].name).toBe('test: File');
-            expect(binaryFields[0].variable).toBe('testVariableBinaryFile');
+            expect(binaryFields[0].variable).toBe('testVariable.file');
             expect(binaryFields[0].fieldTypeLabel).toBe('Test Content Type');
             expect(binaryFields[0].codeTemplate).toBe(
-                '#if ($UtilMethods.isSet(${testVariableBinaryFileURI}))\n    <a href="$!{dotContentMap.testVariableBinaryFileURI}?force_download=1&filename=$!{dotContentMap.testVariableBinaryFileTitle}">$!{dotContentMap.testVariableBinaryFileTitle}</a>\n#end'
+                `#if ($!{${DOT_CONTENT_MAP}.${variable}.rawUri})\n    <a href="$!{${DOT_CONTENT_MAP}.${variable}.rawUri}?force_download=1&filename=$!{${DOT_CONTENT_MAP}.${variable}.title}">$!{${DOT_CONTENT_MAP}.${variable}.title}</a>\n#end`
             );
         });
 
         it('should return the Binary File Resized', () => {
             expect(binaryFields[1]).toBeTruthy();
             expect(binaryFields[1].name).toBe('test: Resized');
-            expect(binaryFields[1].variable).toBe('testVariableBinaryFileResized');
+            expect(binaryFields[1].variable).toBe('testVariable.fileResized');
             expect(binaryFields[1].fieldTypeLabel).toBe('Test Content Type');
             expect(binaryFields[1].codeTemplate).toBe(
-                '#if ($UtilMethods.isSet(${testVariableBinaryFileURI}))\n    <img src="/contentAsset/resize-image/${ContentIdentifier}/testVariable?w=150&h=100&language_id=${language}" />\n#end'
+                `#if ($UtilMethods.isSet(\${${variable}BinaryFileURI}))\n    <img src="/contentAsset/resize-image/\${ContentIdentifier}/${variable}?w=150&h=100&language_id=\${language}" />\n#end`
             );
         });
 
         it('should return the Binary File Thumbnail', () => {
             expect(binaryFields[2]).toBeTruthy();
             expect(binaryFields[2].name).toBe('test: Thumbnail');
-            expect(binaryFields[2].variable).toBe('testVariableBinaryFileThumbnail');
+            expect(binaryFields[2].variable).toBe('testVariable.fileThumbnail');
             expect(binaryFields[2].fieldTypeLabel).toBe('Test Content Type');
             expect(binaryFields[2].codeTemplate).toBe(
-                '#if ($UtilMethods.isSet(${testVariableBinaryFileURI}))\n    <img src="/contentAsset/image-thumbnail/${ContentIdentifier}/testVariable?w=150&h=150&language_id=${language}" />\n#end'
+                `#if ($UtilMethods.isSet(\${${variable}BinaryFileURI}))\n    <img src="/contentAsset/image-thumbnail/\${ContentIdentifier}/${variable}?w=150&h=150&language_id=\${language}" />\n#end`
             );
         });
     });
@@ -274,25 +274,31 @@ describe('DotFieldsService', () => {
         });
 
         it('should return the Select fields', () => {
-            expect(selectFields.length).toBe(2);
+            expect(selectFields.length).toBe(3);
         });
 
         it('should return the Selected Value', () => {
             expect(selectFields[0]).toBeTruthy();
             expect(selectFields[0].name).toBe('test: Selected Value');
-            expect(selectFields[0].variable).toBe('testVariable');
+            expect(selectFields[0].variable).toBe('testVariable.selectValue');
             expect(selectFields[0].fieldTypeLabel).toBe('Test Content Type');
-            expect(selectFields[0].codeTemplate).toBe('$!{dotContentMap.testVariable}');
+            expect(selectFields[0].codeTemplate).toBe('$!{dotContentMap.testVariable.selectValue}');
         });
 
-        it('should return the labels and values', () => {
+        it('should return the options', () => {
             expect(selectFields[1]).toBeTruthy();
-            expect(selectFields[1].name).toBe('test: Labels & Values, e.g.: USA|US Canada|CA');
-            expect(selectFields[1].variable).toBe('testVariableSelectLabelsValues');
+            expect(selectFields[1].name).toBe('test: Options');
+            expect(selectFields[1].variable).toBe('testVariable.options');
             expect(selectFields[1].fieldTypeLabel).toBe('Test Content Type');
-            expect(selectFields[1].codeTemplate).toBe(
-                '$!{dotContentMap.testVariableSelectLabelsValues}'
-            );
+            expect(selectFields[1].codeTemplate).toBe('$!{dotContentMap.testVariable.options}');
+        });
+
+        it('should return the values', () => {
+            expect(selectFields[2]).toBeTruthy();
+            expect(selectFields[2].name).toBe('test: Values');
+            expect(selectFields[2].variable).toBe('testVariable.values');
+            expect(selectFields[2].fieldTypeLabel).toBe('Test Content Type');
+            expect(selectFields[2].codeTemplate).toBe('$!{dotContentMap.testVariable.values}');
         });
     });
 
@@ -304,25 +310,35 @@ describe('DotFieldsService', () => {
         });
 
         it('should return the Select fields', () => {
-            expect(multiSelectFields.length).toBe(2);
+            expect(multiSelectFields.length).toBe(3);
         });
 
-        it('should return the Selected Value', () => {
+        it('should return the Selected Values', () => {
             expect(multiSelectFields[0]).toBeTruthy();
-            expect(multiSelectFields[0].name).toBe('test: Selected Value');
-            expect(multiSelectFields[0].variable).toBe('testVariable');
+            expect(multiSelectFields[0].name).toBe('test: Selected Values');
+            expect(multiSelectFields[0].variable).toBe('testVariable.selectedValues');
             expect(multiSelectFields[0].fieldTypeLabel).toBe('Test Content Type');
-            expect(multiSelectFields[0].codeTemplate).toBe('$!{dotContentMap.testVariable}');
+            expect(multiSelectFields[0].codeTemplate).toBe(
+                '$!{dotContentMap.testVariable.selectedValues}'
+            );
         });
 
-        it('should return the labels and values', () => {
+        it('should return the options', () => {
             expect(multiSelectFields[1]).toBeTruthy();
-            expect(multiSelectFields[1].name).toBe('test: Labels & Values, e.g.: USA|US Canada|CA');
-            expect(multiSelectFields[1].variable).toBe('testVariableSelectLabelsValues');
+            expect(multiSelectFields[1].name).toBe('test: Options');
+            expect(multiSelectFields[1].variable).toBe('testVariable.options');
             expect(multiSelectFields[1].fieldTypeLabel).toBe('Test Content Type');
             expect(multiSelectFields[1].codeTemplate).toBe(
-                '$!{dotContentMap.testVariableSelectLabelsValues}'
+                '$!{dotContentMap.testVariable.options}'
             );
+        });
+
+        it('should return the values', () => {
+            expect(multiSelectFields[2]).toBeTruthy();
+            expect(multiSelectFields[2].name).toBe('test: Values');
+            expect(multiSelectFields[2].variable).toBe('testVariable.values');
+            expect(multiSelectFields[2].fieldTypeLabel).toBe('Test Content Type');
+            expect(multiSelectFields[2].codeTemplate).toBe('$!{dotContentMap.testVariable.values}');
         });
     });
 
@@ -334,25 +350,31 @@ describe('DotFieldsService', () => {
         });
 
         it('should return the Select fields', () => {
-            expect(radioFields.length).toBe(2);
+            expect(radioFields.length).toBe(3);
         });
 
         it('should return the Selected Value', () => {
             expect(radioFields[0]).toBeTruthy();
             expect(radioFields[0].name).toBe('test: Selected Value');
-            expect(radioFields[0].variable).toBe('testVariable');
+            expect(radioFields[0].variable).toBe('testVariable.selectValue');
             expect(radioFields[0].fieldTypeLabel).toBe('Test Content Type');
-            expect(radioFields[0].codeTemplate).toBe('$!{dotContentMap.testVariable}');
+            expect(radioFields[0].codeTemplate).toBe('$!{dotContentMap.testVariable.selectValue}');
         });
 
-        it('should return the labels and values', () => {
+        it('should return the options', () => {
             expect(radioFields[1]).toBeTruthy();
-            expect(radioFields[1].name).toBe('test: Labels & Values, e.g.: USA|US Canada|CA');
-            expect(radioFields[1].variable).toBe('testVariableRadioLabelsValues');
+            expect(radioFields[1].name).toBe('test: Options');
+            expect(radioFields[1].variable).toBe('testVariable.options');
             expect(radioFields[1].fieldTypeLabel).toBe('Test Content Type');
-            expect(radioFields[1].codeTemplate).toBe(
-                '$!{dotContentMap.testVariableRadioLabelsValues}'
-            );
+            expect(radioFields[1].codeTemplate).toBe('$!{dotContentMap.testVariable.options}');
+        });
+
+        it('should return the values', () => {
+            expect(radioFields[2]).toBeTruthy();
+            expect(radioFields[2].name).toBe('test: Values');
+            expect(radioFields[2].variable).toBe('testVariable.values');
+            expect(radioFields[2].fieldTypeLabel).toBe('Test Content Type');
+            expect(radioFields[2].codeTemplate).toBe('$!{dotContentMap.testVariable.values}');
         });
     });
 
@@ -364,25 +386,33 @@ describe('DotFieldsService', () => {
         });
 
         it('should return the Select fields', () => {
-            expect(checkboxFields.length).toBe(2);
+            expect(checkboxFields.length).toBe(3);
         });
 
-        it('should return the Selected Value', () => {
+        it('should return the Selected Values', () => {
             expect(checkboxFields[0]).toBeTruthy();
-            expect(checkboxFields[0].name).toBe('test: Selected Value');
-            expect(checkboxFields[0].variable).toBe('testVariable');
+            expect(checkboxFields[0].name).toBe('test: Selected Values');
+            expect(checkboxFields[0].variable).toBe('testVariable.selectedValues');
             expect(checkboxFields[0].fieldTypeLabel).toBe('Test Content Type');
-            expect(checkboxFields[0].codeTemplate).toBe('$!{dotContentMap.testVariable}');
+            expect(checkboxFields[0].codeTemplate).toBe(
+                '$!{dotContentMap.testVariable.selectedValues}'
+            );
         });
 
-        it('should return the labels and values', () => {
+        it('should return the options', () => {
             expect(checkboxFields[1]).toBeTruthy();
-            expect(checkboxFields[1].name).toBe('test: Labels & Values, e.g.: USA|US Canada|CA');
-            expect(checkboxFields[1].variable).toBe('testVariableCheckboxLabelsValues');
+            expect(checkboxFields[1].name).toBe('test: Options');
+            expect(checkboxFields[1].variable).toBe('testVariable.options');
             expect(checkboxFields[1].fieldTypeLabel).toBe('Test Content Type');
-            expect(checkboxFields[1].codeTemplate).toBe(
-                '$!{dotContentMap.testVariableCheckboxLabelsValues}'
-            );
+            expect(checkboxFields[1].codeTemplate).toBe('$!{dotContentMap.testVariable.options}');
+        });
+
+        it('should return the values', () => {
+            expect(checkboxFields[2]).toBeTruthy();
+            expect(checkboxFields[2].name).toBe('test: Values');
+            expect(checkboxFields[2].variable).toBe('testVariable.values');
+            expect(checkboxFields[2].fieldTypeLabel).toBe('Test Content Type');
+            expect(checkboxFields[2].codeTemplate).toBe('$!{dotContentMap.testVariable.values}');
         });
     });
 

@@ -4,6 +4,8 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { FieldTypes, DotFieldContent, GetFieldsFunction } from '../dot-add-variable.models';
 
+export const DOT_CONTENT_MAP = 'dotContentMap';
+
 @Injectable()
 export class DotFieldsService {
     private dotMessage = inject(DotMessageService);
@@ -11,17 +13,17 @@ export class DotFieldsService {
     // You can add here a new variable and add the custom code that it has
     private readonly getCodeTemplate: Record<string, (variable: string) => string> = {
         image: (variable) =>
-            `#if ($UtilMethods.isSet(\${${variable}ImageURI}))\n    <img src="$!{dotContentMap.${variable}ImageURI}" alt="$!{dotContentMap.${variable}ImageTitle}" />\n#end`,
+            `#if ($!{${DOT_CONTENT_MAP}.${variable}.rawUri})\n    <img src="$!{${DOT_CONTENT_MAP}.${variable}.rawUri}" alt="$!{${DOT_CONTENT_MAP}.${variable}.title}" />\n#elseif($!{${DOT_CONTENT_MAP}.${variable}.identifier})\n    <img src="/dA/\${${DOT_CONTENT_MAP}.${variable}.identifier}" alt="$!{${DOT_CONTENT_MAP}.${variable}.title}"/>\n#end`,
         file: (variable) =>
-            `#if (\${${variable}FileURI})\n    <a href="$!{dotContentMap.${variable}FileURI}">$!{dotContentMap.${variable}FileTitle}</a>\n#end`,
+            `#if ($!{${DOT_CONTENT_MAP}.${variable}.rawUri})\n    <a href="$!{${DOT_CONTENT_MAP}.${variable}.rawUri}">$!{${DOT_CONTENT_MAP}.${variable}.title}</a>\n#elseif($!{${DOT_CONTENT_MAP}.${variable}.identifier})\n    <a href="/dA/\${${DOT_CONTENT_MAP}.${variable}.identifier}">$!{${DOT_CONTENT_MAP}.${variable}.title}</a>\n#end`,
         binaryFile: (variable) =>
-            `#if ($UtilMethods.isSet(\${${variable}BinaryFileURI}))\n    <a href="$!{dotContentMap.${variable}BinaryFileURI}?force_download=1&filename=$!{dotContentMap.${variable}BinaryFileTitle}">$!{dotContentMap.${variable}BinaryFileTitle}</a>\n#end`,
+            `#if ($!{${DOT_CONTENT_MAP}.${variable}.rawUri})\n    <a href="$!{${DOT_CONTENT_MAP}.${variable}.rawUri}?force_download=1&filename=$!{${DOT_CONTENT_MAP}.${variable}.title}">$!{${DOT_CONTENT_MAP}.${variable}.title}</a>\n#end`,
         binaryResized: (variable) =>
             `#if ($UtilMethods.isSet(\${${variable}BinaryFileURI}))\n    <img src="/contentAsset/resize-image/\${ContentIdentifier}/${variable}?w=150&h=100&language_id=\${language}" />\n#end`,
         binaryThumbnailed: (variable) =>
             `#if ($UtilMethods.isSet(\${${variable}BinaryFileURI}))\n    <img src="/contentAsset/image-thumbnail/\${ContentIdentifier}/${variable}?w=150&h=150&language_id=\${language}" />\n#end`,
-        blockEditor: (variable) => `$dotContentMap.get('${variable}').toHtml()`,
-        default: (variable) => `$!{dotContentMap.${variable}}`
+        blockEditor: (variable) => `$${DOT_CONTENT_MAP}.get('${variable}').toHtml()`,
+        default: (variable) => `$!{${DOT_CONTENT_MAP}.${variable}}`
     };
 
     readonly contentIdentifierField: DotFieldContent = {
@@ -39,9 +41,9 @@ export class DotFieldsService {
         'Story-Block': (dotFieldContent) => this.getBlockEditorFields(dotFieldContent),
         Binary: (dotFieldContent) => this.getBinaryFields(dotFieldContent),
         Select: (dotFieldContent) => this.getSelectFields(dotFieldContent),
-        'Multi-Select': (dotFieldContent) => this.getSelectFields(dotFieldContent), // Select and Multiselect has the same custom fields
-        Radio: (dotFieldContent) => this.getRadioFields(dotFieldContent),
-        Checkbox: (dotFieldContent) => this.getCheckboxFields(dotFieldContent),
+        'Multi-Select': (dotFieldContent) => this.getMultiSelectFields(dotFieldContent),
+        Radio: (dotFieldContent) => this.getSelectFields(dotFieldContent), // Is the same as Select
+        Checkbox: (dotFieldContent) => this.getMultiSelectFields(dotFieldContent), // Is the same as MultiSelect
         Date: (dotFieldContent) => this.getDateFields(dotFieldContent),
         Time: (dotFieldContent) => this.getTimeFields(dotFieldContent),
         'Date-and-Time': (dotFieldContent) => this.getDateAndTimeFields(dotFieldContent),
@@ -72,7 +74,7 @@ export class DotFieldsService {
     }
 
     /**
-     * Get Image  Fields
+     * Get Image Fields
      *
      * @private
      * @param {DotFieldContent} { variable, name, fieldTypeLabel }
@@ -83,45 +85,45 @@ export class DotFieldsService {
         return [
             {
                 name: `${name}: ${this.dotMessage.get('Image-Identifier')}`,
-                variable: `${variable}ImageIdentifier`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}ImageIdentifier`),
+                variable: `${variable}.identifier`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}.identifier`),
                 fieldTypeLabel
             },
             {
                 name: `${name}: ${this.dotMessage.get('Image')}`,
-                variable: `${variable}Image`,
+                variable: `${variable}.image`,
                 codeTemplate: this.getCodeTemplate.image(variable),
                 fieldTypeLabel
             },
             {
                 name: `${name}: ${this.dotMessage.get('Image-Title')}`,
-                variable: `${variable}ImageTitle`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}ImageTitle`),
+                variable: `${variable}.title`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}.title`),
                 fieldTypeLabel
             },
             {
                 name: `${name}: ${this.dotMessage.get('Image-Extension')}`,
-                variable: `${variable}ImageExtension`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}ImageExtension`),
+                variable: `${variable}.extension`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}.extension`),
                 fieldTypeLabel
             },
             {
                 name: `${name}: ${this.dotMessage.get('Image-Width')}`,
-                variable: `${variable}ImageWidth`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}ImageWidth`),
+                variable: `${variable}.width`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}.width`),
                 fieldTypeLabel
             },
             {
                 name: `${name}: ${this.dotMessage.get('Image-Height')}`,
-                variable: `${variable}ImageHeight`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}ImageHeight`),
+                variable: `${variable}.height`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}.height`),
                 fieldTypeLabel
             }
         ];
     }
 
     /**
-     * Get File  Fields
+     * Get File Fields
      *
      * @private
      * @param {DotFieldContent} { variable, name, fieldTypeLabel }
@@ -132,27 +134,27 @@ export class DotFieldsService {
         return [
             {
                 name: `${name}: ${this.dotMessage.get('File')}`,
-                variable: `${variable}File`,
+                variable: `${variable}.file`,
                 codeTemplate: this.getCodeTemplate.file(variable),
                 fieldTypeLabel
             },
             {
                 name: `${name}: ${this.dotMessage.get('File-Identifier')}`,
-                variable: `${variable}FileIdentifier`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}FileIdentifier`),
+                variable: `${variable}.identifier`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}.identifier`),
                 fieldTypeLabel
             },
             {
                 name: `${name}: ${this.dotMessage.get('File-Extension')}`,
-                variable: `${variable}FileExtension`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}FileExtension`),
+                variable: `${variable}.extension`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}.extension`),
                 fieldTypeLabel
             }
         ];
     }
 
     /**
-     * Get BlockEditor  Fields
+     * Get BlockEditor Fields
      *
      * @private
      * @param {DotFieldContent} { variable, name, fieldTypeLabel }
@@ -175,7 +177,7 @@ export class DotFieldsService {
     }
 
     /**
-     * Get Host  Fields
+     * Get Host Fields
      *
      * @private
      * @param {DotFieldContent} { variable, name, fieldTypeLabel }
@@ -199,7 +201,7 @@ export class DotFieldsService {
     }
 
     /**
-     * Get Binary  Fields
+     * Get Binary Fields
      *
      * @private
      * @param {DotFieldContent} { variable, name, fieldTypeLabel }
@@ -214,33 +216,33 @@ export class DotFieldsService {
         return [
             {
                 name: `${name}: ${this.dotMessage.get('Binary-File')}`,
-                variable: `${variable}BinaryFile`,
+                variable: `${variable}.file`,
                 codeTemplate: this.getCodeTemplate.binaryFile(variable),
                 fieldTypeLabel
             },
             {
                 name: `${name}: ${this.dotMessage.get('Binary-File-Resized')}`,
-                variable: `${variable}BinaryFileResized`,
+                variable: `${variable}.fileResized`,
                 codeTemplate: this.getCodeTemplate.binaryResized(variable),
                 fieldTypeLabel
             },
             {
                 name: `${name}: ${this.dotMessage.get('Binary-File-Thumbnail')}`,
-                variable: `${variable}BinaryFileThumbnail`,
+                variable: `${variable}.fileThumbnail`,
                 codeTemplate: this.getCodeTemplate.binaryThumbnailed(variable),
                 fieldTypeLabel
             },
             {
                 name: `${name}: ${this.dotMessage.get('Binary-File-Size')}`,
-                variable: `${variable}FileSize`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}FileSize`),
+                variable: `${variable}.size`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}.size`),
                 fieldTypeLabel
             }
         ];
     }
 
     /**
-     * Get Select  Fields
+     * Get Select Fields
      *
      * @private
      * @param {DotFieldContent} { variable, name, fieldTypeLabel }
@@ -255,75 +257,64 @@ export class DotFieldsService {
         return [
             {
                 name: `${name}: ${this.dotMessage.get('Selected-Value')}`,
-                codeTemplate: this.getCodeTemplate.default(variable),
-                variable,
+                codeTemplate: this.getCodeTemplate.default(`${variable}.selectValue`),
+                variable: `${variable}.selectValue`,
                 fieldTypeLabel
             },
             {
-                name: `${name}: ${this.dotMessage.get('Labels-Values')}`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}SelectLabelsValues`),
-                variable: `${variable}SelectLabelsValues`,
+                name: `${name}: ${this.dotMessage.get('Options')}`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}.options`),
+                variable: `${variable}.options`,
+                fieldTypeLabel
+            },
+
+            // This values are in the object but they are not rendering in the code
+            {
+                name: `${name}: ${this.dotMessage.get('values')}`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}.values`),
+                variable: `${variable}.values`,
                 fieldTypeLabel
             }
         ];
     }
 
     /**
-     * Get Radio  Fields
+     * Get MultiSelect Fields
      *
      * @private
      * @param {DotFieldContent} { variable, name, fieldTypeLabel }
      * @return {*}  {DotFieldContent[]}
      * @memberof DotFieldsService
      */
-    private getRadioFields({ variable, name, fieldTypeLabel }: DotFieldContent): DotFieldContent[] {
-        return [
-            {
-                name: `${name}: ${this.dotMessage.get('Selected-Value')}`,
-                codeTemplate: this.getCodeTemplate.default(variable),
-                variable,
-                fieldTypeLabel
-            },
-            {
-                name: `${name}: ${this.dotMessage.get('Labels-Values')}`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}RadioLabelsValues`),
-                variable: `${variable}RadioLabelsValues`,
-                fieldTypeLabel
-            }
-        ];
-    }
-
-    /**
-     * Get Checkbox  Fields
-     *
-     * @private
-     * @param {DotFieldContent} { variable, name, fieldTypeLabel }
-     * @return {*}  {DotFieldContent[]}
-     * @memberof DotFieldsService
-     */
-    private getCheckboxFields({
+    private getMultiSelectFields({
         variable,
         name,
         fieldTypeLabel
     }: DotFieldContent): DotFieldContent[] {
         return [
             {
-                name: `${name}: ${this.dotMessage.get('Selected-Value')}`,
-                codeTemplate: this.getCodeTemplate.default(variable),
-                variable,
+                name: `${name}: ${this.dotMessage.get('Selected-Values')}`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}.selectedValues`),
+                variable: `${variable}.selectedValues`,
                 fieldTypeLabel
             },
             {
-                name: `${name}: ${this.dotMessage.get('Labels-Values')}`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}CheckboxLabelsValues`),
-                variable: `${variable}CheckboxLabelsValues`,
+                name: `${name}: ${this.dotMessage.get('Options')}`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}.options`),
+                variable: `${variable}.options`,
+                fieldTypeLabel
+            },
+            {
+                name: `${name}: ${this.dotMessage.get('values')}`,
+                codeTemplate: this.getCodeTemplate.default(`${variable}.values`),
+                variable: `${variable}.values`,
                 fieldTypeLabel
             }
         ];
     }
 
     /**
-     * Get Date  Fields
+     * Get Date Fields
      *
      * @private
      * @param {DotFieldContent} { variable, name, fieldTypeLabel }
@@ -340,6 +331,8 @@ export class DotFieldsService {
                 variable,
                 fieldTypeLabel
             },
+
+            // Missing format in the code
             {
                 name: `${name}: ${this.dotMessage.get(
                     'Date-Database-Format'
@@ -352,7 +345,7 @@ export class DotFieldsService {
     }
 
     /**
-     * Get Time  Fields
+     * Get Time Fields
      *
      * @private
      * @param {DotFieldContent} { variable, name, fieldTypeLabel }
@@ -360,6 +353,7 @@ export class DotFieldsService {
      * @memberof DotFieldsService
      */
     private getTimeFields({ variable, name, fieldTypeLabel }: DotFieldContent): DotFieldContent[] {
+        // This is retriving the full date instead of the Time
         return [
             {
                 name: `${name}: ${this.dotMessage.get('Time')} ${this.dotMessage.get('hh-mm-ss')}`,
@@ -371,7 +365,7 @@ export class DotFieldsService {
     }
 
     /**
-     * Get Date and Time  Fields
+     * Get Date and Time Fields
      *
      * @private
      * @param {DotFieldContent} { variable, name, fieldTypeLabel }
@@ -390,6 +384,8 @@ export class DotFieldsService {
                 variable,
                 fieldTypeLabel
             },
+
+            // The formats below are missing
             {
                 name: `${name}: ${this.dotMessage.get('Date-Short-String')} ${this.dotMessage.get(
                     'mm-dd-yyyy'
