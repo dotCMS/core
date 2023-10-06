@@ -316,13 +316,13 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (description?.length < SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH) {
+        if (description?.length < SEO_LIMITS.MIN_DESCRIPTION_LENGTH) {
             result.push(
                 this.getWarningItem(this.dotMessageService.get('seo.rules.description.less'))
             );
         }
 
-        if (description?.length > SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) {
+        if (description?.length > SEO_LIMITS.MAX_DESCRIPTION_LENGTH) {
             result.push(
                 this.getWarningItem(this.dotMessageService.get('seo.rules.description.greater'))
             );
