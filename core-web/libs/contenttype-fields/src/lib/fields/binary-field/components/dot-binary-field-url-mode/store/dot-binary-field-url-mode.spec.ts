@@ -1,4 +1,4 @@
-import { expect, describe } from '@jest/globals';
+import { expect, describe, jest } from '@jest/globals';
 import { SpectatorService, createServiceFactory } from '@ngneat/spectator';
 
 import { skip } from 'rxjs/operators';
@@ -7,21 +7,14 @@ import { DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import {
-    BINARY_FIELD_MODE,
-    BINARY_FIELD_STATUS,
-    BinaryFieldState,
-    DotBinaryFieldStore
-} from './binary-field.store';
+    DotBinaryFieldUrlModeState,
+    DotBinaryFieldUrlModeStore
+} from './dot-binary-field-url-mode.store';
 
-import { UI_MESSAGE_KEYS, getUiMessage } from '../../../utils/binary-field-utils';
-
-const INITIAL_STATE: BinaryFieldState = {
-    file: null,
+const INITIAL_STATE: DotBinaryFieldUrlModeState = {
     tempFile: null,
-    mode: BINARY_FIELD_MODE.DROPZONE,
-    status: BINARY_FIELD_STATUS.INIT,
-    UiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT),
-    dropZoneActive: false
+    isLoading: false,
+    error: ''
 };
 
 export const TEMP_FILE_MOCK: DotCMSTempFile = {
@@ -35,15 +28,15 @@ export const TEMP_FILE_MOCK: DotCMSTempFile = {
     mimeType: 'mimeType'
 };
 
-describe('DotBinaryFieldStore', () => {
-    let spectator: SpectatorService<DotBinaryFieldStore>;
-    let store: DotBinaryFieldStore;
+describe('DotBinaryFieldUrlModeStore', () => {
+    let spectator: SpectatorService<DotBinaryFieldUrlModeStore>;
+    let store: DotBinaryFieldUrlModeStore;
 
     let dotUploadService: DotUploadService;
     let initialState;
 
     const createStoreService = createServiceFactory({
-        service: DotBinaryFieldStore,
+        service: DotBinaryFieldUrlModeStore,
         providers: [
             {
                 provide: DotUploadService,
@@ -62,7 +55,7 @@ describe('DotBinaryFieldStore', () => {
 
     beforeEach(() => {
         spectator = createStoreService();
-        store = spectator.inject(DotBinaryFieldStore);
+        store = spectator.inject(DotBinaryFieldUrlModeStore);
         dotUploadService = spectator.inject(DotUploadService);
 
         store.setState(INITIAL_STATE);
@@ -76,15 +69,6 @@ describe('DotBinaryFieldStore', () => {
     });
 
     describe('Updaters', () => {
-        it('should set File', (done) => {
-            const mockFile = new File([''], 'filename');
-            store.setFile(mockFile);
-
-            store.file$.subscribe((file) => {
-                expect(file).toEqual(mockFile);
-                done();
-            });
-        });
         it('should set TempFile', (done) => {
             store.setTempFile(TEMP_FILE_MOCK);
 
@@ -93,37 +77,24 @@ describe('DotBinaryFieldStore', () => {
                 done();
             });
         });
-        it('should set UiMessage', (done) => {
-            const uiMessage = getUiMessage(UI_MESSAGE_KEYS.FILE_TYPE_MISMATCH);
-            store.setUiMessage(uiMessage);
+
+        it('should set isLoading', (done) => {
+            store.setIsLoading(true);
 
             store.vm$.subscribe((state) => {
-                expect(state.UiMessage).toEqual(uiMessage);
-                done();
-            });
-        });
-        it('should set Mode', (done) => {
-            store.setMode(BINARY_FIELD_MODE.EDITOR);
-
-            store.vm$.subscribe((state) => {
-                expect(state.mode).toBe(BINARY_FIELD_MODE.EDITOR);
-                done();
-            });
-        });
-        it('should set Status', (done) => {
-            store.setStatus(BINARY_FIELD_STATUS.PREVIEW);
-
-            store.vm$.subscribe((state) => {
-                expect(state.status).toBe(BINARY_FIELD_STATUS.PREVIEW);
+                expect(state.isLoading).toBeTruthy();
                 done();
             });
         });
 
-        it('should set DropZoneActive', (done) => {
-            store.setDropZoneActive(true);
+        it('should set error and isLoading to false', (done) => {
+            store.setIsLoading(true); // Set isLoading to true
+            store.setError('Request Error'); // Set error and isLoading to false
 
+            // Skip setIsLoading
             store.vm$.subscribe((state) => {
-                expect(state.dropZoneActive).toBe(true);
+                expect(state.error).toBe('Request Error');
+                expect(state.isLoading).toBeFalsy();
                 done();
             });
         });
@@ -131,35 +102,42 @@ describe('DotBinaryFieldStore', () => {
 
     describe('Actions', () => {
         describe('handleUploadFile', () => {
-            it('should set tempFile and status to PREVIEW when dropping a valid', (done) => {
-                const file = new File([''], 'filename');
-                const spyUploading = jest.spyOn(store, 'setUploading');
+            it('should set tempFile and loading to false', (done) => {
+                const spySetIsLoading = jest.spyOn(store, 'setIsLoading');
+                const abortController = new AbortController();
 
-                store.handleUploadFile(file);
+                store.uploadFileByUrl({
+                    url: 'url',
+                    signal: abortController.signal
+                });
 
                 // Skip initial state
                 store.tempFile$.pipe(skip(1)).subscribe((tempFile) => {
-                    expect(tempFile).toBe(TEMP_FILE_MOCK);
+                    expect(tempFile).toEqual(TEMP_FILE_MOCK);
                     done();
                 });
 
-                expect(spyUploading).toHaveBeenCalled();
+                expect(spySetIsLoading).toHaveBeenCalledWith(true);
             });
 
             it('should called tempFile API with 1MB', (done) => {
-                const file = new File([''], 'filename');
                 const spyOnUploadService = jest.spyOn(dotUploadService, 'uploadFile');
 
                 // 1MB
                 store.setMaxFileSize(1048576);
-                store.handleUploadFile(file);
+                const abortController = new AbortController();
+
+                store.uploadFileByUrl({
+                    url: 'url',
+                    signal: abortController.signal
+                });
 
                 // Skip initial state
                 store.tempFile$.pipe(skip(1)).subscribe(() => {
                     expect(spyOnUploadService).toHaveBeenCalledWith({
-                        file,
+                        file: 'url',
                         maxSize: '1MB',
-                        signal: null
+                        signal: abortController.signal
                     });
                     done();
                 });
