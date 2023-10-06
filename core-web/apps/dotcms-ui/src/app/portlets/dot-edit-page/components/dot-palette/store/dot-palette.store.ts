@@ -119,7 +119,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     // UPDATERS
     private readonly setContentlets = this.updater(
         (state: DotPaletteState, data: DotCMSContentlet[] | DotCMSContentType[]) => {
-            return { ...state, contentlets: data };
+            return { ...state, contentlets: data, totalRecords: data.length };
         }
     );
 
@@ -218,10 +218,8 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                                 response.jsonObjectView.contentlets
                             );
 
-                            this.setTotalRecords(contentlets.length);
                             this.setContentlets(contentlets);
                         } else {
-                            this.setTotalRecords(response.resultsSize);
                             this.setContentlets(response.jsonObjectView.contentlets);
                         }
                     });
