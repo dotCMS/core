@@ -204,6 +204,7 @@ export class DotBinaryFieldComponent implements OnInit {
 
     setTempFile(tempFile: DotCMSTempFile) {
         this.dotBinaryFieldStore.setTempFile(tempFile);
+        this.dialogOpen = false;
     }
 
     /**
