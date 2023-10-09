@@ -7,12 +7,19 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
-import { DotDropZoneComponent, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
+import {
+    DotDropZoneComponent,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe,
+    DotSpinnerModule
+} from '@dotcms/ui';
 
 import { DotBinaryFieldComponent } from './binary-field.component';
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
+import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
 import { DotBinaryFieldStore } from './store/binary-field.store';
 
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../utils/mock';
@@ -32,7 +39,10 @@ export default {
                 DotDropZoneComponent,
                 DotBinaryFieldUiMessageComponent,
                 DotMessagePipe,
-                DotSpinnerModule
+                DotSpinnerModule,
+                InputTextModule,
+                DotBinaryFieldUrlModeComponent,
+                DotFieldValidationMessageComponent
             ],
             providers: [
                 DotBinaryFieldStore,
@@ -40,18 +50,21 @@ export default {
                     provide: DotUploadService,
                     useValue: {
                         uploadFile: () => {
-                            return new Promise((resolve) => {
+                            return new Promise((resolve, reject) => {
                                 setTimeout(() => {
-                                    resolve({
-                                        fileName: 'Image.jpg',
-                                        folder: 'folder',
-                                        id: 'tempFileId',
-                                        image: true,
-                                        length: 10000,
-                                        mimeType: 'mimeType',
-                                        referenceUrl: 'referenceUrl',
-                                        thumbnailUrl: 'thumbnailUrl'
+                                    reject({
+                                        message: 'error URL'
                                     });
+                                    // resolve({
+                                    //     fileName: 'Image.jpg',
+                                    //     folder: 'folder',
+                                    //     id: 'tempFileId',
+                                    //     image: true,
+                                    //     length: 10000,
+                                    //     mimeType: 'mimeType',
+                                    //     referenceUrl: 'referenceUrl',
+                                    //     thumbnailUrl: 'thumbnailUrl'
+                                    // });
                                 }, 4000);
                             });
                         }
@@ -65,14 +78,14 @@ export default {
         })
     ],
     args: {
-        accept: 'image/*',
+        accept: ['image/*'],
         maxFileSize: 1000000,
         helperText: 'This field accepts only images with a maximum size of 1MB.'
     },
     argTypes: {
         accept: {
-            defaultValue: 'image/*',
-            control: 'string',
+            defaultValue: ['image/*'],
+            control: 'object',
             description: 'Accepted file types'
         },
         maxFileSize: {
