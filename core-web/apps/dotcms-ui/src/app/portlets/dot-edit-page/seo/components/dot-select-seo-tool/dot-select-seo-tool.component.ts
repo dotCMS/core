@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { DecimalPipe, NgClass, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnChanges } from '@angular/core';
 
 import { DotDeviceListItem } from '@dotcms/dotcms-models';
@@ -8,7 +8,7 @@ import { socialMediaTiles } from '../../../content/services/dot-edit-content-htm
 @Component({
     selector: 'dot-select-seo-tool',
     standalone: true,
-    imports: [CommonModule],
+    imports: [NgClass, NgIf, DecimalPipe],
     templateUrl: './dot-select-seo-tool.component.html',
     styleUrls: ['./dot-select-seo-tool.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

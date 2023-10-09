@@ -152,7 +152,7 @@ export const SEO_TAGS = [
     SEO_OPTIONS.TWITTER_IMAGE
 ];
 
-export const socialMediaTiles = {
+export const socialMediaTiles: Record<SEO_MEDIA_TYPES, SocialMediaOption> = {
     [SEO_MEDIA_TYPES.FACEBOOK]: {
         label: 'Facebook',
         value: SEO_MEDIA_TYPES.FACEBOOK,
