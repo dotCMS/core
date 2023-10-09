@@ -52,12 +52,25 @@ public class JsEngine implements ScriptEngine {
                         eval.execute(buildArgs(jsRequest, jsResponse, (Object[])contextParams.get("dot:arguments"))):
                         eval.execute(buildArgs(jsRequest, jsResponse, null));
             }
+
+            if (eval.isHostObject()) {
+                return eval.asHostObject();
+            }
+
+            if (isString(eval)) {
+                return eval.as(String.class);
+            }
+
             return CollectionsUtils.map("output", eval.asString(), "dotJSON", dotJSON);
         } catch (final IOException e) {
 
             Logger.error(this, e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private boolean isString(final Value eval) {
+        return eval.isString();
     }
 
     private Object[] buildArgs(final JsRequest request,

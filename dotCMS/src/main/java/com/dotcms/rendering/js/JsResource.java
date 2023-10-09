@@ -11,6 +11,7 @@ import com.dotcms.rest.PATCH;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.MultiPartUtils;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.HTTPMethod;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.CollectionsUtils;
@@ -25,6 +26,7 @@ import com.dotmarketing.util.json.JSONException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import org.apache.commons.compress.changes.ChangeSetResults;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
@@ -53,6 +55,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -563,26 +566,8 @@ public class JsResource {
 
             final Object result = scriptEngine.eval(request, response, javascriptReader, context);
 
-            if(dotJSON.size()==0) { // If dotJSON is not used let's return the raw evaluation of the velocity file
-
-                final HttpServletResponse wrapperResponse = null != context.get("response")?(HttpServletResponse) context.get("response"): response;
-                if (!wrapperResponse.isCommitted()) {
-
-                    final String contentType = (wrapperResponse != null && wrapperResponse.getContentType() != null) ?
-                            wrapperResponse.getContentType() : MediaType.TEXT_PLAIN_TYPE.toString();
-
-                    if (wrapperResponse != null && wrapperResponse.getHeaderNames() != null) {
-                        for (final String headerName : wrapperResponse.getHeaderNames()) {
-                            response.setHeader(headerName, wrapperResponse.getHeader(headerName));
-                        }
-                    }
-
-                    return UtilMethods.isSet(contentType)
-                            ? Response.ok(resultToString(result)).type(contentType).build()
-                            : Response.ok(resultToString(result)).type(MediaType.TEXT_PLAIN_TYPE).build();
-                }
-
-                return Response.status(wrapperResponse.getStatus()).build();
+            if (Objects.nonNull(result)) {
+                return JsResponseStrategyFactory.getInstance().get(result).apply(request, response, user, cache, context, result);
             }
         } catch(MethodInvocationException e) {
 
@@ -593,13 +578,9 @@ public class JsResource {
             }
         }
 
-        if(UtilMethods.isSet(dotJSON.get("errors"))) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(dotJSON.get("errors")).build();
-        }
-        // let's add it to cache
-        cache.add(request, user, dotJSON);
-        return Response.ok(dotJSON.getMap()).build();
+        return Response.serverError().build();
     }
+
 
     private String resultToString(final Object result) {
         if (result instanceof Map) {

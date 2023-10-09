@@ -59,6 +59,7 @@ public class JsResponse implements Serializable {
         Try.run(()->{
             this.response.setContentType("application/json");
             this.response.getWriter().write(json);
+            this.response.getWriter().flush();
         }).getOrElseThrow((e)->new RuntimeException(e));
 
         return this;

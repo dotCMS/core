@@ -26,8 +26,9 @@ public class JsHeaders implements Serializable {
     }
 
     @HostAccess.Export
-    public void append(final String name, final String value) {
+    public JsHeaders append(final String name, final String value) {
         this.headersMap.put(name, value);
+        return this;
     }
 
     @HostAccess.Export
@@ -47,9 +48,10 @@ public class JsHeaders implements Serializable {
     }
 
     @HostAccess.Export
-    public void set(final String name, final String value) {
+    public JsHeaders set(final String name, final String value) {
         // does not handle multiple values, set is the same of append
         this.append(name, value);
+        return this;
     }
 
     @HostAccess.Export
