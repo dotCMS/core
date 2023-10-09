@@ -2291,8 +2291,6 @@ public class BrowserAjax {
 		final Role[] roles = DwrUtil.getUserRoles(user);
 		final Folder parentFolder = this.folderAPI.find(parentFolderId, user, false);
 		final List<Folder> subFolders = this.folderAPI.findSubFolders(parentFolder, user, false);
-		// Sort the list by folder name
-		subFolders.sort(Comparator.comparing(Folder::getName));
 		final List<Map<String, Object>> foldersToReturn = new ArrayList<>(subFolders.size());
 		subFolders.forEach(folder -> {
 
