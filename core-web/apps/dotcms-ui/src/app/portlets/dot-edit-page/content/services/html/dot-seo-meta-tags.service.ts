@@ -335,11 +335,11 @@ export class DotSeoMetaTagsService {
         const title = metaTagsObject['title'];
         const titleElements = metaTagsObject['titleElements'];
 
-        if (!title || title?.length === 0) {
+        if (this.areAllFalsyOrEmpty([title, titleElements])) {
             result.push(this.getErrorItem(this.dotMessageService.get('seo.rules.title.not.found')));
         }
 
-        if (title && title?.length === 0) {
+        if (titleElements?.length >= 1 && this.areAllFalsyOrEmpty([title])) {
             result.push(
                 this.getErrorItem(this.dotMessageService.get('seo.rules.title.found.empty'))
             );
