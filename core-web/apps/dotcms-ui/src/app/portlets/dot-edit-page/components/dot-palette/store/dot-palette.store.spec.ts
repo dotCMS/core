@@ -254,7 +254,7 @@ describe('DotPaletteStore', () => {
             ] as unknown as DotCMSContentlet[]);
             expect(data.filter).toEqual('');
             expect(data.loading).toEqual(false);
-            expect(data.totalRecords).toEqual(20);
+            expect(data.totalRecords).toEqual(1); // changed due a filter the data in the store and the totalRecords now have the real amount of the array
             done();
         });
     });
