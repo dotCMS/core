@@ -70,7 +70,7 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
         this.allPreview = [
             {
                 hostName: this.hostName,
-                title: this.seoOGTags['og:title'],
+                title: this.seoOGTags['og:title']?.slice(0, SEO_LIMITS.MAX_OG_TITLE_LENGTH),
                 description: this.seoOGTags.description,
                 type: 'Desktop',
                 isMobile: false,
