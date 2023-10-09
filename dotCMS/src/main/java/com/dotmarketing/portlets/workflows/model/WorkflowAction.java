@@ -505,10 +505,21 @@ public class WorkflowAction implements Permissionable, Serializable{
 		
 	}
 
+	/**
+	 * Returns the metadata for this Workflow Action.
+	 *
+	 * @return A Map with the Action's metadata.
+	 */
 	public Map<String, Object> getMetadata(){
 		return this.metadata;
 	}
 
+	/**
+	 * Sets the metadata for this Workflow Action, which may include different configuration
+	 * properties or simple common-use attributes for the action in a single column.
+	 *
+	 * @param metadata A Map with the Action's metadata.
+	 */
 	public void setMetadata(final Map<String, Object> metadata){
 		this.metadata = metadata;
 	}
