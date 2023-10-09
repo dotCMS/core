@@ -8903,5 +8903,37 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         }
 
     }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#start(String, User)}
+     * When: Scheduling an Experiment
+     * Should: Generate a running id
+     */
+    @Test
+    public void scheduleExperiment_shouldGenerateRunningId() throws DotDataException, DotSecurityException {
+        final Instant startDate = Instant.now().plus(1, ChronoUnit.DAYS);
+        final Experiment experiment =  new ExperimentDataGen()
+                .scheduling(Scheduling.builder().startDate(startDate).build())
+                .nextPersisted();
+
+        APILocator.getExperimentsAPI().start(experiment.id().orElseThrow(), APILocator.systemUser());
+
+        try {
+            final Experiment experimentAfterScheduled = APILocator.getExperimentsAPI()
+                    .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                    .orElseThrow();
+
+            assertFalse(experimentAfterScheduled.runningIds().getAll().isEmpty());
+
+        } finally {
+            final Experiment experimentFromDB = APILocator.getExperimentsAPI()
+                    .find(experiment.getIdentifier(), APILocator.systemUser())
+                    .orElseThrow();
+
+            if (experimentFromDB.status() == Status.RUNNING) {
+                APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+            }
+        }
+    }
 }
 
