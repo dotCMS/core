@@ -299,10 +299,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (
-            descriptionElements.length >= 1 &&
-            this.areAllFalsyOrEmpty([description, descriptionElements])
-        ) {
+        if (descriptionElements.length >= 1 && this.areAllFalsyOrEmpty([description])) {
             result.push(
                 this.getErrorItem(this.dotMessageService.get('seo.rules.description.found.empty'))
             );
