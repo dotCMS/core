@@ -30,7 +30,6 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSClientFactory;
-import com.dotcms.cube.CubeJSClientFactoryImpl;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
@@ -57,7 +56,6 @@ import com.dotcms.experiments.model.TrafficProportion;
 
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.system.event.local.model.EventSubscriber;
-import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LicenseValiditySupplier;
@@ -86,7 +84,6 @@ import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.Condition;
@@ -604,7 +601,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
-    public Experiment forceStart(String experimentId, User user)
+    public Experiment forceStart(String experimentId, User user, Scheduling scheduling)
             throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
                 invalidLicenseMessageSupplier);
@@ -641,11 +638,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             endRunningExperimentIfNeeded(user, runningExperimentOnPage.get(), experimentToSave);
         }
         cancelScheduledExperimentsUponConflicts(experimentToSave, user);
-        return innerStart(experimentToSave, user, false);
+
+        return innerStart(experimentToSave.withScheduling(scheduling), user, false);
     }
 
     @Override
-    public Experiment forceScheduled(String experimentId, User user) throws DotDataException, DotSecurityException {
+    public Experiment forceScheduled(final String experimentId, final User user, final Scheduling scheduling)
+            throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
                 invalidLicenseMessageSupplier);
         DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
@@ -675,7 +674,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Optional<Experiment> runningExperimentOnPage = getRunningExperimentsOnPage(
                 user, persistedExperiment);
 
-        Scheduling scheduling = persistedExperiment.scheduling().orElseThrow();
         final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
 
         if(runningExperimentOnPage.isPresent()) {

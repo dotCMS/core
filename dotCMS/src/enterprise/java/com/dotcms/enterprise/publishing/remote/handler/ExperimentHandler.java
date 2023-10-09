@@ -178,14 +178,12 @@ public class ExperimentHandler implements IHandler {
 
 						asDraft = experimentsAPI.save(asDraft, APILocator.systemUser());
 
-						if(schedulingOptional.isPresent()) {
-							asDraft = asDraft.withScheduling(schedulingOptional.get());
-						}
-
 						if(experiment.status()==Status.RUNNING) {
-							experimentsAPI.forceStart(asDraft.id().orElseThrow(), APILocator.systemUser());
+							experimentsAPI.forceStart(asDraft.id().orElseThrow(),
+									APILocator.systemUser(), schedulingOptional.get());
 						} else {
-							experimentsAPI.forceScheduled(asDraft.id().orElseThrow(), APILocator.systemUser());
+							experimentsAPI.forceScheduled(asDraft.id().orElseThrow(),
+									APILocator.systemUser(), schedulingOptional.get());
 						}
 
 					} else if(experiment.status()==Status.ENDED && localExperiment.isPresent()

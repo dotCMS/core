@@ -76,8 +76,6 @@ jobs:
     steps:
       - name: Checkout core
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       - name: Set Common Vars
         id: set-common-vars
         run: |
