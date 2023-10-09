@@ -24,9 +24,11 @@ import {
     MetaTagsPreview,
     SeoMetaTags,
     SeoMetaTagsResult,
-    SEO_MEDIA_TYPES
+    SEO_MEDIA_TYPES,
+    SEO_LIMITS
 } from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
 import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-meta-tags.service';
+import { DotSelectSeoToolComponent } from '../dot-select-seo-tool/dot-select-seo-tool.component';
 
 @Component({
     selector: 'dot-results-seo-tool',
@@ -43,7 +45,8 @@ import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-me
         NgSwitchDefault,
         AsyncPipe,
         DotMessagePipe,
-        DotPipesModule
+        DotPipesModule,
+        DotSelectSeoToolComponent
     ],
     providers: [DotSeoMetaTagsService],
     templateUrl: './dot-results-seo-tool.component.html',
@@ -67,15 +70,22 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
         this.allPreview = [
             {
                 hostName: this.hostName,
-                title: this.seoOGTags['og:title'],
+                title: this.seoOGTags['og:title']?.slice(0, SEO_LIMITS.MAX_OG_TITLE_LENGTH),
                 description: this.seoOGTags.description,
                 type: 'Desktop',
                 isMobile: false,
                 image: this.seoOGTags['og:image'],
-                twitterTitle: this.seoOGTags['twitter:title'] ?? this.seoOGTags['og:title'],
+                twitterTitle:
+                    this.seoOGTags['twitter:title']?.slice(
+                        0,
+                        SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH
+                    ) ?? this.seoOGTags['og:title'],
                 twitterCard: this.seoOGTags['twitter:card'],
                 twitterDescription:
-                    this.seoOGTags['twitter:description'] ?? this.seoOGTags['og:description'],
+                    this.seoOGTags['twitter:description']?.slice(
+                        0,
+                        SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH
+                    ) ?? this.seoOGTags['og:description'],
                 twitterImage: this.seoOGTags['twitter:image']
             },
             {
