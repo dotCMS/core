@@ -377,19 +377,19 @@ export class DotSeoMetaTagsService {
         const titleOg = metaTagsObject['og:title'];
         const title = metaTagsObject['title'];
 
-        if (title && (!titleOg || titleOgElements?.length === 0)) {
+        if (title && this.areAllFalsyOrEmpty([titleOg, titleOgElements])) {
             result.push(
                 this.getErrorItem(this.dotMessageService.get('seo.rules.og-title.not.found'))
             );
         }
 
-        if (!titleOg && !title && titleElements?.length === 0 && titleOgElements?.length === 0) {
+        if (this.areAllFalsyOrEmpty([title, titleOg, titleElements, titleOgElements])) {
             result.push(
                 this.getErrorItem(this.dotMessageService.get('seo.rules.og-title.not.found.title'))
             );
         }
 
-        if (titleOgElements?.length >= 1 && titleOg?.length === 0) {
+        if (titleOgElements?.length >= 1 && this.areAllFalsyOrEmpty([titleOg])) {
             result.push(
                 this.getErrorItem(this.dotMessageService.get(' seo.rules.og-title.found.empty'))
             );
@@ -643,6 +643,12 @@ export class DotSeoMetaTagsService {
 
                 return of(result);
             })
+        );
+    }
+
+    private areAllFalsyOrEmpty(values: (string | NodeListOf<Element>)[]): boolean {
+        return values.every(
+            (value) => value === null || value === undefined || value?.length === 0
         );
     }
 
