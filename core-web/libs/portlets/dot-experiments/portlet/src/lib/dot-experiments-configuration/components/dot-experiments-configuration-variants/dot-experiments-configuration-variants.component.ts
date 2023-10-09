@@ -15,7 +15,6 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
 
-import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -28,7 +27,7 @@ import {
     StepStatus,
     Variant
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotCopyButtonComponent, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 import { DotExperimentsInlineEditTextComponent } from '../../../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
@@ -47,7 +46,7 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
         DotMessagePipe,
         DotIconModule,
         DotExperimentsConfigurationVariantsAddComponent,
-        DotCopyButtonModule,
+        DotCopyButtonComponent,
         DotExperimentsConfigurationItemsCountComponent,
         DotDynamicDirective,
 
