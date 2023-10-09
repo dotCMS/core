@@ -16,7 +16,6 @@ export interface BinaryFieldState {
     mode: BINARY_FIELD_MODE;
     status: BINARY_FIELD_STATUS;
     UiMessage: UiMessageI;
-    dialogOpen: boolean;
     dropZoneActive: boolean;
 }
 
@@ -38,7 +37,12 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     private _maxFileSizeInMB: number;
 
     // Selectors
-    readonly vm$ = this.select((state) => state);
+    readonly vm$ = this.select((state) => {
+        return {
+            ...state,
+            isLoading: state.status === BINARY_FIELD_STATUS.UPLOADING
+        };
+    });
 
     // File state
     readonly file$ = this.select((state) => state.file);
@@ -57,11 +61,6 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     readonly setFile = this.updater<File>((state, file) => ({
         ...state,
         file
-    }));
-
-    readonly setDialogOpen = this.updater<boolean>((state, dialogOpen) => ({
-        ...state,
-        dialogOpen
     }));
 
     readonly setDropZoneActive = this.updater<boolean>((state, dropZoneActive) => ({
@@ -111,18 +110,6 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         status: BINARY_FIELD_STATUS.ERROR
     }));
 
-    readonly openDialog = this.updater<BINARY_FIELD_MODE>((state, mode) => ({
-        ...state,
-        dialogOpen: true,
-        mode
-    }));
-
-    readonly closeDialog = this.updater((state) => ({
-        ...state,
-        dialogOpen: false,
-        mode: BINARY_FIELD_MODE.DROPZONE
-    }));
-
     readonly removeFile = this.updater((state) => ({
         ...state,
         file: null,
@@ -141,11 +128,6 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     readonly handleCreateFile = this.effect<{ name: string; code: string }>((fileDetails$) => {
         /* To be implemented */
         return fileDetails$.pipe();
-    });
-
-    readonly handleExternalSourceFile = this.effect<string>((url$) => {
-        /* To be implemented */
-        return url$.pipe();
     });
 
     /**
@@ -167,12 +149,8 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
             })
         ).pipe(
             tapResponse(
-                (tempFile) => {
-                    this.setTempFile(tempFile);
-                },
-                () => {
-                    this.setError(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR));
-                }
+                (tempFile) => this.setTempFile(tempFile),
+                () => this.setError(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR))
             )
         );
     }
