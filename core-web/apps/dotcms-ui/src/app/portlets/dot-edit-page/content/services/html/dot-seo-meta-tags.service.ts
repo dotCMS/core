@@ -436,7 +436,7 @@ export class DotSeoMetaTagsService {
                     );
                 }
 
-                if (imageOgElements.length === 0) {
+                if (this.areAllFalsyOrEmpty([imageOgElements, imageOg])) {
                     result.push(
                         this.getErrorItem(
                             this.dotMessageService.get('seo.rules.og-image.not.found')
@@ -462,13 +462,13 @@ export class DotSeoMetaTagsService {
         const twitterCardElements = metaTagsObject['twitterCardElements'];
         const twitterCard = metaTagsObject['twitter:card'];
 
-        if (twitterCard === null || twitterCardElements?.length === 0) {
+        if (this.areAllFalsyOrEmpty([twitterCard, twitterCardElements])) {
             result.push(
                 this.getErrorItem(this.dotMessageService.get('seo.rules.twitter-card.not.found'))
             );
         }
 
-        if (twitterCardElements.length > 0 && twitterCard?.length === 0) {
+        if (twitterCardElements.length >= 1 && this.areAllFalsyOrEmpty([twitterCard])) {
             result.push(
                 this.getErrorItem(
                     this.dotMessageService.get('seo.rules.twitter-card.more.one.found.empty')
@@ -498,7 +498,7 @@ export class DotSeoMetaTagsService {
         const titleCardElements = metaTagsObject['twitterTitleElements'];
         const titleCard = metaTagsObject['twitter:title'];
 
-        if (titleCard === null || titleCardElements?.length === 0) {
+        if (this.areAllFalsyOrEmpty([titleCard, titleCardElements])) {
             result.push(
                 this.getErrorItem(
                     this.dotMessageService.get('seo.rules.twitter-card-title.not.found')
@@ -514,7 +514,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (titleCardElements.length > 0 && titleCard?.length === 0) {
+        if (titleCardElements.length >= 1 && this.areAllFalsyOrEmpty([titleCard])) {
             result.push(
                 this.getErrorItem(this.dotMessageService.get('seo.rules.twitter-card-title.empty'))
             );
@@ -552,7 +552,7 @@ export class DotSeoMetaTagsService {
         const twitterDescriptionElements = metaTagsObject['twitterDescriptionElements'];
         const twitterDescription = metaTagsObject['twitter:description'];
 
-        if (twitterDescription === null || twitterDescriptionElements?.length === 0) {
+        if (this.areAllFalsyOrEmpty([twitterDescription, twitterDescriptionElements])) {
             result.push(
                 this.getErrorItem(
                     this.dotMessageService.get('seo.rules.twitter-card-description.not.found')
@@ -568,7 +568,10 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (twitterDescription && twitterDescription.length === 0) {
+        if (
+            twitterDescriptionElements.length >= 1 &&
+            this.areAllFalsyOrEmpty([twitterDescription])
+        ) {
             result.push(
                 this.getErrorItem(
                     this.dotMessageService.get(
@@ -619,7 +622,7 @@ export class DotSeoMetaTagsService {
                     );
                 }
 
-                if (twitterImageElements.length === 0) {
+                if (this.areAllFalsyOrEmpty([twitterImage, twitterImageElements])) {
                     result.push(
                         this.getErrorItem(
                             this.dotMessageService.get('seo.rules.twitter-image.not.found')
