@@ -99,6 +99,8 @@
         <argLine/>
         <skipTests>false</skipTests>
         <skip.surefire.tests>${skipTests}</skip.surefire.tests>
+
+        <immutables.version>2.9.0</immutables.version>
     </properties>
 
     <build>
