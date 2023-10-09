@@ -2,8 +2,13 @@ package com.dotcms.rendering.js;
 
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.rendering.engine.ScriptEngine;
+import com.dotcms.rendering.js.viewtools.UserJsViewTool;
 import com.dotcms.util.CollectionsUtils;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.VelocityUtil;
+import org.apache.velocity.tools.view.context.ChainedContext;
+import org.apache.velocity.tools.view.context.ViewContext;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
@@ -13,6 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Js script engine implementation
@@ -20,8 +26,35 @@ import java.util.Map;
  */
 public class JsEngine implements ScriptEngine {
 
+    private final Map<String, Class> jsViewToolMap = new ConcurrentHashMap<>();
+
+    {
+        this.addJsViewTool(UserJsViewTool.class);
+    }
+
     private static final String ENGINE_JS = "js";
     private final static JsDotLogger JS_DOT_LOGGER = new JsDotLogger();
+
+    /**
+     * Add a JsViewTool to the engine
+     * @param jsViewTool
+     */
+    public void addJsViewTool (final Class jsViewTool) {
+
+        if(JsViewTool.class.isAssignableFrom(jsViewTool)) {
+            this.jsViewToolMap.put(jsViewTool.getName(), jsViewTool);
+        }
+    }
+
+    /**
+     * Remove a JsViewTool from the engine
+     * @param jsViewTool
+     */
+    public void removeJsViewTool(final Class jsViewTool) {
+
+        this.jsViewToolMap.remove(jsViewTool.getName());
+    }
+
     @Override
     public Object eval(final HttpServletRequest request,
                        final HttpServletResponse response,
@@ -89,6 +122,42 @@ public class JsEngine implements ScriptEngine {
                           final Value bindings,
                           final Map<String, Object> contextParams) {
 
+        this.jsViewToolMap.entrySet().forEach(entry -> {
 
+                try {
+                    final Object instance = entry.getValue().newInstance();
+                    if (instance instanceof JsViewTool) {
+
+                        final JsViewTool jsViewTool = (JsViewTool)instance;
+                        initJsViewTool(request, response, jsViewTool);
+                        bindings.putMember(jsViewTool.getName(), instance);
+                    }
+                } catch (final InstantiationException | IllegalAccessException e) {
+
+                    Logger.error(this, e.getMessage(), e);
+                }
+            });
+        }
+
+    private void initJsViewTool(final HttpServletRequest request,
+                                final HttpServletResponse response,
+                                final JsViewTool instance) {
+
+        if (instance instanceof JsHttpServletResponseAware) {
+
+            JsHttpServletResponseAware.class.cast(instance).setResponse(response);
+        }
+
+        if (instance instanceof JsHttpServletRequestAware) {
+
+            JsHttpServletRequestAware.class.cast(instance).setRequest(request);
+        }
+
+        if (instance instanceof JsViewContextAware) {
+
+            final ViewContext velocityContext = new ChainedContext(VelocityUtil.getBasicContext(), request,
+                    response, Config.CONTEXT);
+            JsViewContextAware.class.cast(instance).setViewContext(velocityContext);
+        }
     }
 }
