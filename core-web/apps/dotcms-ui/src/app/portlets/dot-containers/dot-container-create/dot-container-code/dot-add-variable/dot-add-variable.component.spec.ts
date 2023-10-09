@@ -52,7 +52,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotAddVariableComponent } from './dot-add-variable.component';
 import { FilteredFieldTypes } from './dot-add-variable.models';
-import { DotFieldsService } from './services/dot-fields.service';
+import { DOT_CONTENT_MAP, DotFieldsService } from './services/dot-fields.service';
 
 @Component({
     selector: 'dot-form-dialog',
@@ -314,13 +314,13 @@ describe('DotAddVariableComponent', () => {
 
         it("should call dialog config on save with the custom codeTemplate when click on 'Add' button for Image field", () => {
             const dialog = de.query(
-                By.css(`[data-testId="${mockContentTypes.fields[2].variable}Image"]`)
+                By.css(`[data-testId="${mockContentTypes.fields[2].variable}.image"]`)
             );
 
             dialog.triggerEventHandler('click');
 
             expect(dialogConfig.data.onSave).toHaveBeenCalledWith(
-                `#if ($UtilMethods.isSet(\${${mockContentTypes.fields[2].variable}ImageURI}))\n    <img src="$!{dotContentMap.${mockContentTypes.fields[2].variable}ImageURI}" alt="$!{dotContentMap.${mockContentTypes.fields[2].variable}ImageTitle}" />\n#end`
+                `#if ($!{${DOT_CONTENT_MAP}.${mockContentTypes.fields[2].variable}.rawUri})\n    <img src="$!{${DOT_CONTENT_MAP}.${mockContentTypes.fields[2].variable}.rawUri}" alt="$!{${DOT_CONTENT_MAP}.${mockContentTypes.fields[2].variable}.title}" />\n#elseif($!{${DOT_CONTENT_MAP}.${mockContentTypes.fields[2].variable}.identifier})\n    <img src="/dA/\${${DOT_CONTENT_MAP}.${mockContentTypes.fields[2].variable}.identifier}" alt="$!{${DOT_CONTENT_MAP}.${mockContentTypes.fields[2].variable}.title}"/>\n#end`
             );
             expect(dialogRef.close).toHaveBeenCalled();
         });
