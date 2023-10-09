@@ -293,13 +293,16 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (!description || descriptionElements.length === 0) {
+        if (this.areAllFalsyOrEmpty([description, descriptionElements])) {
             result.push(
                 this.getErrorItem(this.dotMessageService.get('seo.rules.description.not.found'))
             );
         }
 
-        if (description?.length === 0) {
+        if (
+            descriptionElements.length >= 1 &&
+            this.areAllFalsyOrEmpty([description, descriptionElements])
+        ) {
             result.push(
                 this.getErrorItem(this.dotMessageService.get('seo.rules.description.found.empty'))
             );
