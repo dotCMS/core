@@ -1,4 +1,4 @@
-name: publish-dotcms-docker-image-on-release
+name: Build/Push dotCMS docker image (on release)
 on:
   push:
     branches:
@@ -32,7 +32,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ env.BUILD_ID }}
-          fetch-depth: 0
       - name: Set Common Vars
         run: |
           BUILD_HASH=$(git log -1 --pretty=%h)

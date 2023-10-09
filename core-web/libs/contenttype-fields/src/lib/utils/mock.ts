@@ -4,6 +4,8 @@ const MESSAGES_MOCK = {
     'dot.binary.field.action.choose.file': 'Choose File',
     'dot.binary.field.action.create.new.file': 'Create New File',
     'dot.binary.field.action.import.from.url': 'Import from URL',
+    'dot.binary.field.action.import.from.url.error.message':
+        'The URL you requested is not valid. Please try again.',
     'dot.binary.field.action.remove': 'Remove',
     'dot.binary.field.dialog.create.new.file.header': 'File Details',
     'dot.binary.field.dialog.import.from.url.header': 'URL',
@@ -15,7 +17,9 @@ const MESSAGES_MOCK = {
     'dot.binary.field.drag.and.drop.error.file.maxsize.exceeded.message':
         'The file weight <strong>exceeds the limits of {0}</strong>, please  <br /> reduce size before uploading.',
     'dot.binary.field.drag.and.drop.error.server.error.message':
-        '<strong>Something went wrong</strong>, please try again or <br/> contact our support team.'
+        '<strong>Something went wrong</strong>, please try again or <br/> contact our support team.',
+    'dot.common.cancel': 'Cancel',
+    'dot.common.import': 'Import'
 };
 
 export const CONTENTTYPE_FIELDS_MESSAGE_MOCK = new MockDotMessageService(MESSAGES_MOCK);

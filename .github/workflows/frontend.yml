@@ -28,8 +28,6 @@ jobs:
     name: SonarQube
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       - uses: sonarsource/sonarqube-scan-action@master
         with:
           projectBaseDir: core-web
@@ -112,7 +110,7 @@ jobs:
         id: lint
         working-directory: core-web
         run: |
-          if ! (npx nx affected --target=lint --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
+          if ! (npx nx affected --target=lint --base=origin/master --head=HEAD --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
             echo "name=:x: Lint" >>$GITHUB_OUTPUT
             echo "status=failure" >>$GITHUB_OUTPUT
             echo "color=#ff2400" >>$GITHUB_OUTPUT
@@ -122,7 +120,7 @@ jobs:
         id: test
         working-directory: core-web
         run: |
-          if ! (npx nx affected --target=test --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
+          if ! (npx nx affected --target=test --base=origin/master --head=HEAD --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
             echo "name=:x: Test" >>$GITHUB_OUTPUT
             echo "status=failure" >>$GITHUB_OUTPUT
             echo "color=#ff2400" >>$GITHUB_OUTPUT
