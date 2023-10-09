@@ -523,6 +523,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
         it('should call selected event', async () => {
             spyOn(dotPageStateService, 'setDevice');
+            spyOn(dotPageStateService, 'setSeoMedia');
             const dotSelector = de.query(By.css('[data-testId="dot-device-selector"]'));
             const event = {
                 identifier: 'string',
@@ -535,6 +536,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             dotSelector.triggerEventHandler('selected', event);
 
             expect(dotPageStateService.setDevice).toHaveBeenCalledWith(event);
+            expect(dotPageStateService.setSeoMedia).toHaveBeenCalledWith(null);
         });
     });
     describe('page does not have URLContentMap and feature flag is on', () => {
