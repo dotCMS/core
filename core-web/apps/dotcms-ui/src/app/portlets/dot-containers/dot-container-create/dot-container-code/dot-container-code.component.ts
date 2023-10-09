@@ -154,7 +154,7 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
             header: this.dotMessageService.get('Add-Variables'),
             data: {
                 contentTypeVariable: contentType.structureId,
-                onSave: (variable: string) => {
+                onSave: (codeTemplate: string) => {
                     const editor = this.monacoEditors[contentType.structureId];
 
                     const selections = editor.getSelections();
@@ -167,7 +167,7 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
                                 endLineNumber: selection.endLineNumber,
                                 endColumn: selection.endColumn
                             },
-                            text: variable
+                            text: codeTemplate
                         };
                     });
 
