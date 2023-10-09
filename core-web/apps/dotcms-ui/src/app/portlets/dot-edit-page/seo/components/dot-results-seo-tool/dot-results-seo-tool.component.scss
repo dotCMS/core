@@ -165,7 +165,8 @@
 
     .results-seo-tool__read-more-label {
         span {
-            display: inline-flex;
+            display: flex;
+            align-items: center;
             padding-left: $spacing-0;
         }
     }

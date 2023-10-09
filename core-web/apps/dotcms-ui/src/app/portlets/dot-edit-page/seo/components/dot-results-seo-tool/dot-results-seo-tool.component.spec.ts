@@ -192,21 +192,21 @@ describe('DotResultsSeoToolComponent', () => {
         });
     });
 
-    xit('should filter seo results by Linkedin seoMedia on changes', (done) => {
+    it('should filter seo results by Linkedin seoMedia on changes', (done) => {
         spectator.setInput({
             seoMedia: SEO_MEDIA_TYPES.LINKEDIN
         });
         spectator.detectChanges();
         spectator.component.currentResults$.subscribe((items) => {
             expect(items.length).toEqual(3);
-            expect(items[0].key).toEqual(seoOGTagsResultMock[1].key);
+            expect(items[0].key).toEqual(seoOGTagsResultMock[5].key);
             expect(items[1].key).toEqual(seoOGTagsResultMock[3].key);
             expect(items[2].key).toEqual(seoOGTagsResultMock[4].key);
             done();
         });
     });
 
-    xit('should render the result card title with title case', () => {
+    it('should render the result card title with title case', () => {
         const expectedTitle = 'Title';
         const expectedDescription = 'Description';
 

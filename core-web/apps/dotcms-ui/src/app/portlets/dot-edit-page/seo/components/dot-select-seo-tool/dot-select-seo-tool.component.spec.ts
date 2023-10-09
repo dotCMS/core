@@ -1,6 +1,7 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
-import { CommonModule } from '@angular/common';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotSelectSeoToolComponent } from './dot-select-seo-tool.component';
 
@@ -10,7 +11,14 @@ describe('DotSelectSeoToolComponent', () => {
     let spectator: Spectator<DotSelectSeoToolComponent>;
     const createComponent = createComponentFactory({
         component: DotSelectSeoToolComponent,
-        imports: [CommonModule],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    'seo.rules.media.preview.tile': 'Social Media Preview Tile'
+                })
+            }
+        ],
         declareComponent: false
     });
 
