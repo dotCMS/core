@@ -4,6 +4,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.business.APILocator;
@@ -38,11 +39,15 @@ import com.dotmarketing.portlets.workflows.model.transform.WorkflowTaskTransform
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.apache.commons.beanutils.BeanUtils;
+import org.postgresql.util.PGobject;
+
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -58,7 +63,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import org.apache.commons.beanutils.BeanUtils;
+
+import static com.dotmarketing.portlets.workflows.business.WorkflowSQL.INSERT_ACTION;
+import static com.dotmarketing.portlets.workflows.business.WorkflowSQL.UPDATE_ACTION;
 
 
 /**
@@ -73,7 +80,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     public static final int PARTITION_IN_SIZE = 100;
     private final WorkflowCache cache;
     private final WorkflowSQL sql;
-
+    private static final ObjectMapper JSON_MAPPER = DotObjectMapperProvider.getInstance()
+            .getDefaultObjectMapper();
 
     /**
      * Creates an instance of the {@link WorkFlowFactory}.
@@ -110,7 +118,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
      * @throws IllegalAccessException
      * @throws InvocationTargetException
      */
-    private WorkflowAction convertAction(Map<String, Object> row)
+    private WorkflowAction convertAction(final Map<String, Object> row)
             throws IllegalAccessException, InvocationTargetException {
         final WorkflowAction action = new WorkflowAction();
         row.put("schemeId", row.get("scheme_id"));
@@ -121,6 +129,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         row.put("requiresCheckout", row.get("requires_checkout"));
         row.put("showOn", WorkflowState.toSet(row.get("show_on")));
         row.put("roleHierarchyForAssign", row.get("use_role_hierarchy_assign"));
+        if (null != row.get("metadata")) {
+            row.put("metadata", Try.of(() -> JSON_MAPPER.readValue(((PGobject) row.get("metadata")).getValue(),
+                    Map.class)).getOrElse(new HashMap<String, Object>()));
+        }
         BeanUtils.copyProperties(action, row);
         action.setPushPublishActionlet(ActionletUtil.hasPushPublishActionlet(action));
         return action;
@@ -1752,7 +1764,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
         boolean isNew = true;
         if (UtilMethods.isSet(action.getId())) {
-
             isNew = !this.existsAction(action.getId());
         } else {
             action.setId(UUIDGenerator.generateUuid());
@@ -1761,7 +1772,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         final String nextStep = this.getNextStep(action);
         final DotConnect db = new DotConnect();
         if (isNew) {
-            db.setSQL(sql.INSERT_ACTION);
+            db.setSQL(INSERT_ACTION);
             db.addParam(action.getId());
             db.addParam(action.getSchemeId());
             db.addParam(action.getName());
@@ -1775,9 +1786,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             db.addParam(action.isRoleHierarchyForAssign());
             db.addParam(action.isRequiresCheckout());
             db.addParam(WorkflowState.toCommaSeparatedString(action.getShowOn()));
-            db.loadResult();
+            db.addJSONParam(action.getMetadata());
         } else {
-            db.setSQL(sql.UPDATE_ACTION);
+            db.setSQL(UPDATE_ACTION);
             db.addParam(action.getSchemeId());
             db.addParam(action.getName());
             db.addParam(action.getCondition());
@@ -1790,10 +1801,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             db.addParam(action.isRoleHierarchyForAssign());
             db.addParam(action.isRequiresCheckout());
             db.addParam(WorkflowState.toCommaSeparatedString(action.getShowOn()));
+            db.addJSONParam(action.getMetadata());
             db.addParam(action.getId());
-            db.loadResult();
         }
-
+        db.loadResult();
         final List<WorkflowStep> relatedProxiesSteps =
                 this.findProxiesSteps(action);
         relatedProxiesSteps.forEach(cache::removeActions);
@@ -1805,7 +1816,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         // update workflowScheme mod date
         final WorkflowScheme scheme = findScheme(action.getSchemeId());
         saveScheme(scheme);
-
     }
 
     /**

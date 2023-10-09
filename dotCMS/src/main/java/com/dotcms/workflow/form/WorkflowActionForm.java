@@ -2,13 +2,30 @@ package com.dotcms.workflow.form;
 
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import io.vavr.control.Try;
+
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+/**
+ * This class represents a Workflow Action Form used by different parts of the system, such as REST
+ * Endpoints. It is used to create, update and delete Workflow Actions in dotCMS.
+ *
+ * @author Jonathan Sanchez
+ * @since Dec 6th, 2017
+ */
 @JsonDeserialize(builder = WorkflowActionForm.Builder.class)
 public class WorkflowActionForm extends Validated {
 
@@ -17,7 +34,7 @@ public class WorkflowActionForm extends Validated {
     @NotNull
     private final String        schemeId;
 
-    // you can send an optional stepId for a new Action when you want to associated the action to the step in the same transaction.
+    // You can send an optional stepId for a new Action when you want to associate it to the step in the same transaction.
     private final String        stepId;
 
     @NotNull
@@ -39,6 +56,7 @@ public class WorkflowActionForm extends Validated {
     private final String        actionNextStep;
     private final String        actionNextAssign;
     private final String        actionCondition;
+    private Map<String, Object> metadata;
 
     public String getStepId() {
         return stepId;
@@ -100,6 +118,10 @@ public class WorkflowActionForm extends Validated {
         return actionCondition;
     }
 
+    public Map<String, Object> getMetadata() {
+        return this.metadata;
+    }
+
     @Override
     public String toString() {
         return "WorkflowActionForm{" +
@@ -118,6 +140,7 @@ public class WorkflowActionForm extends Validated {
                 ", actionNextStep='" + actionNextStep + '\'' +
                 ", actionNextAssign='" + actionNextAssign + '\'' +
                 ", actionCondition='" + actionCondition + '\'' +
+                ", metadata='" + metadata + '\'' +
                 '}';
     }
 
@@ -138,6 +161,7 @@ public class WorkflowActionForm extends Validated {
         this.actionAssignable           = builder.actionAssignable;
         this.actionRoleHierarchyForAssign = builder.actionRoleHierarchyForAssign;
         this.roleHierarchyForAssign     = (actionAssignable && actionRoleHierarchyForAssign);
+        this.metadata = builder.metadata;
         this.checkValid();
     }
 
@@ -177,7 +201,8 @@ public class WorkflowActionForm extends Validated {
 
         @JsonProperty(required = true)
         private Set<WorkflowState> showOn;
-
+        @JsonProperty()
+        private Map<String, Object> metadata;
 
        public Builder showOn(Set<WorkflowState> showOn) {
            this.showOn = showOn;
@@ -250,8 +275,46 @@ public class WorkflowActionForm extends Validated {
             return this;
         }
 
+        public Builder metadata(final Map<String, Object> metadata) {
+           this.metadata = metadata;
+           return this;
+        }
+
+           /**
+            * Marks this Workflow Action as a Separator. This is a special type of action that does
+            * not execute any sub-actions at all, as it simply groups X number of actions together
+            * in the UI. The result of this may be seen as the differentiation between Primary and
+            * Secondary Actions.
+            *
+            * @param schemeId The ID of the Workflow Scheme that this action belongs to.
+            * @param stepId   The ID of the Workflow Step that this action belongs to.
+            *
+            * @return The current {@link Builder} instance.
+            */
+        public Builder separator(final String schemeId, final String stepId) {
+            this.schemeId(schemeId);
+            this.stepId(stepId);
+            this.actionName(WorkflowAction.SEPARATOR);
+            this.actionAssignable(false);
+            this.actionCommentable(false);
+            this.requiresCheckout(false);
+            this.actionRoleHierarchyForAssign(false);
+            this.actionNextStep(WorkflowAction.CURRENT_STEP);
+            this.actionNextAssign(Try.of(() -> APILocator.getRoleAPI().loadRoleByKey(Role.CMS_ANONYMOUS_ROLE).getId())
+                    .getOrElseThrow(e -> new DotRuntimeException("Anonymous Role ID not found", e)));
+            this.actionCondition(WorkflowAction.SEPARATOR);
+            this.showOn(Arrays.stream(WorkflowState.values()).collect(java.util.stream.Collectors.toSet()));
+            if (null == this.metadata) {
+                this.metadata = new HashMap<>();
+            }
+            this.metadata.put("subtype", WorkflowAction.SEPARATOR);
+            return this;
+        }
+
         public WorkflowActionForm build() {
             return new WorkflowActionForm(this);
         }
+
     }
+
 }

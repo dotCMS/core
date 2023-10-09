@@ -2,6 +2,14 @@ package com.dotmarketing.portlets.workflows.business;
 
 import com.dotmarketing.db.DbConnectionFactory;
 
+/**
+ * This utility class provides all the SQL statements used to interact with the Workflow tables in
+ * dotCMS. Here you can find CRUD queries for Workflow Schemes, Steps, Actions, and the
+ * relationships between them.
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 abstract class WorkflowSQL {
 
 	protected static final String MYSQL = "MySQL";
@@ -22,19 +30,10 @@ abstract class WorkflowSQL {
 		return null;
 	}
 
-
-
 	static String SELECT_SCHEMES = "select * from workflow_scheme where (archived = ? or archived = ?) order by name";
 
 	static String SELECT_SCHEME= "select * from workflow_scheme where id = ?";
 	static String SELECT_SCHEME_NAME= "select * from workflow_scheme where name = ?";
-
-
-
-	protected static String SELECT_DEFAULT_SCHEME= "select * from workflow_scheme where default_scheme = " + DbConnectionFactory.getDBTrue() + " ";
-
-	protected static String UPDATE_SCHEME_SET_TO_DEFAULT= "update workflow_scheme set default_scheme = " + DbConnectionFactory.getDBTrue() + " where id = ? ";
-
 
 	static String SELECT_TASK_NULL_BY_STRUCT= "select task.* FROM workflow_task task INNER JOIN contentlet con ON con.identifier = task.webasset INNER JOIN contentlet_version_info cvi ON cvi.working_inode = con.inode"
 			+ " WHERE task.status is NULL AND con.structure_inode=?";
@@ -83,9 +82,10 @@ abstract class WorkflowSQL {
 
 	static String INSERT_ACTION_FOR_STEP = "insert into workflow_action_step(action_id, step_id, action_order) values (?,?,?)";
 	static String UPDATE_ACTION_FOR_STEP_ORDER = "update workflow_action_step set action_order=? where action_id=? and step_id=?";
-	static String INSERT_ACTION= "insert into workflow_action (id, scheme_id, name, condition_to_progress, next_step_id, next_assign, my_order, assignable, commentable, icon, use_role_hierarchy_assign, requires_checkout, show_on) values (?, ?, ?, ?, ?, ?, ?,?, ?, ?,?,?,?)";
-	//protected static String UPDATE_ACTION= "update  workflow_action set scheme_id=?, name=?,  condition_to_progress=?, next_step_id=?, next_assign=?, my_order=?, assignable=?, commentable=?, icon=?, use_role_hierarchy_assign=?,requires_checkout=?,requires_checkout_option=? where id=?";
-	static String UPDATE_ACTION= "update  workflow_action set scheme_id=?, name=?,  condition_to_progress=?, next_step_id=?, next_assign=?, my_order=?, assignable=?, commentable=?, icon=?, use_role_hierarchy_assign=?,requires_checkout=?,show_on=? where id=?";
+
+	static String INSERT_ACTION= "insert into workflow_action (id, scheme_id, name, condition_to_progress, next_step_id, next_assign, my_order, assignable, commentable, icon, use_role_hierarchy_assign, requires_checkout, show_on, metadata) values (?, ?, ?, ?, ?, ?, ?,?, ?, ?,?,?,?, ? ::jsonb)";
+
+	static String UPDATE_ACTION= "update  workflow_action set scheme_id=?, name=?,  condition_to_progress=?, next_step_id=?, next_assign=?, my_order=?, assignable=?, commentable=?, icon=?, use_role_hierarchy_assign=?,requires_checkout=?,show_on=?, metadata = ? ::jsonb where id=?";
 	static String DELETE_ACTION= "delete from workflow_action where id = ? ";
 	static String DELETE_ACTION_STEP     = "delete from workflow_action_step where action_id =? and step_id =? ";
 	static String DELETE_ACTIONS_STEP    = "delete from workflow_action_step where step_id   =? ";
@@ -96,8 +96,6 @@ abstract class WorkflowSQL {
 	static String UPDATE_STEP= "update workflow_step set name=?, scheme_id=?, my_order=?, resolved = ?, escalation_enable = ?, escalation_action=?, escalation_time = ? where id = ?";
 	static String DELETE_STEP= "delete from workflow_step where id = ?";
 	static String SELECT_STEP_BY_CONTENTLET= "select workflow_task.id as workflowid, workflow_step.* from workflow_step join workflow_task on workflow_task.status = workflow_step.id where workflow_task.webasset= ? and workflow_task.language_id = ?";
-	protected static String RESET_CONTENTLET_STEPS= "update workflow_task set status = ? where webasset= ?";
-	protected static String DELETE_CONTENTLET_STEPS= "delete from workflow_task where status = ? and webasset= ?";
 	static String SELECT_COUNT_CONTENTLES_BY_STEP= "select count(workflow_task.id) as count from workflow_task join workflow_step on workflow_task.status=workflow_step.id where workflow_step.id=?";
 
 	static String SELECT_ACTION_CLASSES_BY_CLASS= "select * from workflow_action_class where clazz = ? order by  my_order";
@@ -115,11 +113,7 @@ abstract class WorkflowSQL {
 	static String DELETE_ACTION_CLASS_PARAM_BY_ACTION_CLASS= "delete from workflow_action_class_pars where workflow_action_class_id =?";
 	static String DELETE_ACTION_CLASS_PARAM_BY_ID="delete from workflow_action_class_pars where id=?";
 
-	// chri
-    protected static String UPDATE_USER_ASSIGNTO_TASK = "update workflow_task set assigned_to = ? where id = ?";
     static String RETRIEVE_LAST_STEP_ACTIONID = "select  * from workflow_history where workflowtask_id = ? order by creation_date desc";
-    protected static String RETRIEVE_TASK = "select  * from workflow_history where workflowtask_id = ? order by creation_date desc";
-    // chri
 
     static String SELECT_EXPIRED_TASKS = "";
 
@@ -136,5 +130,5 @@ abstract class WorkflowSQL {
 
 	static String INSERT_WORKFLOW_COMMENT = "INSERT INTO workflow_comment (id, creation_date, posted_by, wf_comment, workflowtask_id) values (?,?,?,?,?)";
 	static String UPDATE_WORKFLOW_COMMENT = "UPDATE workflow_comment SET creation_date=?, posted_by=?, wf_comment=?, workflowtask_id=? WHERE id=?";
-}
 
+}

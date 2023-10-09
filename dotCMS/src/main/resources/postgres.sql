@@ -2144,9 +2144,10 @@ create table workflow_action(
 	commentable boolean default false,
 	requires_checkout boolean default false,
 	icon varchar(255) default 'defaultWfIcon',
-  show_on varchar(255) default 'LOCKED,UNLOCKED',
+    show_on varchar(255) default 'LOCKED,UNLOCKED',
 	use_role_hierarchy_assign bool default false,
-  scheme_id VARCHAR(36) NOT NULL
+    scheme_id VARCHAR(36) NOT NULL,
+    metadata JSONB NULL
 );
 
 CREATE TABLE workflow_action_step (action_id VARCHAR(36) NOT NULL, step_id VARCHAR(36) NOT NULL, action_order INT default 0);
