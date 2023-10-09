@@ -23,6 +23,12 @@ export class DotFieldsService {
         binaryThumbnailed: (variable) =>
             `#if ($UtilMethods.isSet(\${${variable}BinaryFileURI}))\n    <img src="/contentAsset/image-thumbnail/\${ContentIdentifier}/${variable}?w=150&h=150&language_id=\${language}" />\n#end`,
         blockEditor: (variable) => `$${DOT_CONTENT_MAP}.get('${variable}').toHtml()`,
+        dateDatabaseFormat: (variable) =>
+            `$date.format("yyyy-M-dd", $${DOT_CONTENT_MAP}.${variable})`,
+        dateShortFormat: (variable) => `$date.format("M-dd-yyyy", $${DOT_CONTENT_MAP}.${variable})`,
+        dateLongFormat: (variable) =>
+            `$date.format("M-dd-yyyy H:m:s", $${DOT_CONTENT_MAP}.${variable})`,
+        time: (variable) => `$date.format("H:m:s", $${DOT_CONTENT_MAP}.${variable})`,
         default: (variable) => `$!{${DOT_CONTENT_MAP}.${variable}}`
     };
 
@@ -267,8 +273,6 @@ export class DotFieldsService {
                 variable: `${variable}.options`,
                 fieldTypeLabel
             },
-
-            // This values are in the object but they are not rendering in the code
             {
                 name: `${name}: ${this.dotMessage.get('values')}`,
                 codeTemplate: this.getCodeTemplate.default(`${variable}.values`),
@@ -327,18 +331,16 @@ export class DotFieldsService {
                 name: `${name}: ${this.dotMessage.get(
                     'contenttypes.field.properties.data_type.values.date'
                 )} ${this.dotMessage.get('mm-dd-yyyy')}`,
-                codeTemplate: this.getCodeTemplate.default(variable),
+                codeTemplate: this.getCodeTemplate.dateShortFormat(variable),
                 variable,
                 fieldTypeLabel
             },
-
-            // Missing format in the code
             {
                 name: `${name}: ${this.dotMessage.get(
                     'Date-Database-Format'
                 )} ${this.dotMessage.get('yyyy-mm-dd')}`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}DBFormat`),
-                variable: `${variable}DBFormat`,
+                codeTemplate: this.getCodeTemplate.dateDatabaseFormat(`${variable}`),
+                variable: `${variable}.DBFormat`,
                 fieldTypeLabel
             }
         ];
@@ -357,7 +359,7 @@ export class DotFieldsService {
         return [
             {
                 name: `${name}: ${this.dotMessage.get('Time')} ${this.dotMessage.get('hh-mm-ss')}`,
-                codeTemplate: this.getCodeTemplate.default(variable),
+                codeTemplate: this.getCodeTemplate.time(variable),
                 variable,
                 fieldTypeLabel
             }
@@ -384,28 +386,26 @@ export class DotFieldsService {
                 variable,
                 fieldTypeLabel
             },
-
-            // The formats below are missing
             {
                 name: `${name}: ${this.dotMessage.get('Date-Short-String')} ${this.dotMessage.get(
                     'mm-dd-yyyy'
                 )}`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}ShortFormat`),
-                variable: `${variable}ShortFormat`,
+                codeTemplate: this.getCodeTemplate.dateShortFormat(`${variable}`),
+                variable: `${variable}.shortFormat`,
                 fieldTypeLabel
             },
             {
                 name: `${name}: ${this.dotMessage.get('Date-Long-String')}`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}LongFormat`),
-                variable: `${variable}LongFormat`,
+                codeTemplate: this.getCodeTemplate.dateLongFormat(`${variable}`),
+                variable: `${variable}.longFormat`,
                 fieldTypeLabel
             },
             {
                 name: `${name}: ${this.dotMessage.get(
                     'Date-Database-Format'
                 )} ${this.dotMessage.get('yyyy-mm-dd')}`,
-                codeTemplate: this.getCodeTemplate.default(`${variable}DBFormat`),
-                variable: `${variable}DBFormat`,
+                codeTemplate: this.getCodeTemplate.dateDatabaseFormat(`${variable}`),
+                variable: `${variable}.DBFormat`,
                 fieldTypeLabel
             }
         ];

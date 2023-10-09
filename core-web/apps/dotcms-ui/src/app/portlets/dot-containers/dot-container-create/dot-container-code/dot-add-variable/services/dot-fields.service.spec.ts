@@ -432,15 +432,19 @@ describe('DotFieldsService', () => {
             expect(dateFields[0].name).toBe('test: Date (mm-dd-yyyy)');
             expect(dateFields[0].variable).toBe('testVariable');
             expect(dateFields[0].fieldTypeLabel).toBe('Test Content Type');
-            expect(dateFields[0].codeTemplate).toBe('$!{dotContentMap.testVariable}');
+            expect(dateFields[0].codeTemplate).toBe(
+                `$date.format("M-dd-yyyy", $${DOT_CONTENT_MAP}.${variable})`
+            );
         });
 
         it('should return the Date Database Format field', () => {
             expect(dateFields[1]).toBeTruthy();
             expect(dateFields[1].name).toBe('test: Date Database Format (yyyy-mm-dd)');
-            expect(dateFields[1].variable).toBe('testVariableDBFormat');
+            expect(dateFields[1].variable).toBe('testVariable.DBFormat');
             expect(dateFields[1].fieldTypeLabel).toBe('Test Content Type');
-            expect(dateFields[1].codeTemplate).toBe('$!{dotContentMap.testVariableDBFormat}');
+            expect(dateFields[1].codeTemplate).toBe(
+                `$date.format("yyyy-M-dd", $${DOT_CONTENT_MAP}.${variable})`
+            );
         });
     });
 
@@ -460,7 +464,9 @@ describe('DotFieldsService', () => {
             expect(timeFields[0].name).toBe('test: Time (hh:mm:ss)');
             expect(timeFields[0].variable).toBe('testVariable');
             expect(timeFields[0].fieldTypeLabel).toBe('Test Content Type');
-            expect(timeFields[0].codeTemplate).toBe('$!{dotContentMap.testVariable}');
+            expect(timeFields[0].codeTemplate).toBe(
+                `$date.format("H:m:s", $${DOT_CONTENT_MAP}.${variable})`
+            );
         });
     });
 
@@ -486,27 +492,31 @@ describe('DotFieldsService', () => {
         it('should return the Date Short String Format', () => {
             expect(dateTimeFields[1]).toBeTruthy();
             expect(dateTimeFields[1].name).toBe('test: Date Short String (mm-dd-yyyy)');
-            expect(dateTimeFields[1].variable).toBe('testVariableShortFormat');
+            expect(dateTimeFields[1].variable).toBe('testVariable.shortFormat');
             expect(dateTimeFields[1].fieldTypeLabel).toBe('Test Content Type');
             expect(dateTimeFields[1].codeTemplate).toBe(
-                '$!{dotContentMap.testVariableShortFormat}'
+                `$date.format("M-dd-yyyy", $${DOT_CONTENT_MAP}.${variable})`
             );
         });
 
         it('should return the Date Long String Format', () => {
             expect(dateTimeFields[2]).toBeTruthy();
             expect(dateTimeFields[2].name).toBe('test: Date Long String (mm/dd/yyyy hh:mm:ss)');
-            expect(dateTimeFields[2].variable).toBe('testVariableLongFormat');
+            expect(dateTimeFields[2].variable).toBe('testVariable.longFormat');
             expect(dateTimeFields[2].fieldTypeLabel).toBe('Test Content Type');
-            expect(dateTimeFields[2].codeTemplate).toBe('$!{dotContentMap.testVariableLongFormat}');
+            expect(dateTimeFields[2].codeTemplate).toBe(
+                `$date.format("M-dd-yyyy H:m:s", $${DOT_CONTENT_MAP}.${variable})`
+            );
         });
 
         it('should return the Date Database Format field', () => {
             expect(dateTimeFields[3]).toBeTruthy();
             expect(dateTimeFields[3].name).toBe('test: Date Database Format (yyyy-mm-dd)');
-            expect(dateTimeFields[3].variable).toBe('testVariableDBFormat');
+            expect(dateTimeFields[3].variable).toBe('testVariable.DBFormat');
             expect(dateTimeFields[3].fieldTypeLabel).toBe('Test Content Type');
-            expect(dateTimeFields[3].codeTemplate).toBe('$!{dotContentMap.testVariableDBFormat}');
+            expect(dateTimeFields[3].codeTemplate).toBe(
+                `$date.format("yyyy-M-dd", $${DOT_CONTENT_MAP}.${variable})`
+            );
         });
     });
 });
