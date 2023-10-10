@@ -21,7 +21,6 @@ const INITIAL_STATE: BinaryFieldState = {
     mode: BINARY_FIELD_MODE.DROPZONE,
     status: BINARY_FIELD_STATUS.INIT,
     UiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT),
-    dialogOpen: false,
     dropZoneActive: false
 };
 
@@ -116,15 +115,6 @@ describe('DotBinaryFieldStore', () => {
 
             store.vm$.subscribe((state) => {
                 expect(state.status).toBe(BINARY_FIELD_STATUS.PREVIEW);
-                done();
-            });
-        });
-
-        it('should set DialogOpen', (done) => {
-            store.setDialogOpen(true);
-
-            store.vm$.subscribe((state) => {
-                expect(state.dialogOpen).toBe(true);
                 done();
             });
         });
