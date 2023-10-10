@@ -2,8 +2,12 @@ package com.dotcms.rendering.js;
 
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.rendering.engine.ScriptEngine;
+import com.dotcms.rendering.js.viewtools.CategoriesJSViewTool;
+import com.dotcms.rendering.js.viewtools.LanguageJSViewTool;
+import com.dotcms.rendering.js.viewtools.SecretJsViewTool;
 import com.dotcms.rendering.js.viewtools.UserJsViewTool;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
@@ -26,10 +30,14 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class JsEngine implements ScriptEngine {
 
-    private final Map<String, Class> jsViewToolMap = new ConcurrentHashMap<>();
+    private final Map<String, Class> jsRequestViewToolMap = new ConcurrentHashMap<>();
+    private final Map<String, JsViewTool> jsAplicationViewToolMap = new ConcurrentHashMap<>();
 
     {
         this.addJsViewTool(UserJsViewTool.class);
+        this.addJsViewTool(LanguageJSViewTool.class);
+        this.addJsViewTool(SecretJsViewTool.class);
+        this.addJsViewTool(CategoriesJSViewTool.class);
     }
 
     private static final String ENGINE_JS = "js";
@@ -39,11 +47,30 @@ public class JsEngine implements ScriptEngine {
      * Add a JsViewTool to the engine
      * @param jsViewTool
      */
-    public void addJsViewTool (final Class jsViewTool) {
+    public <T extends JsViewTool> void addJsViewTool (final Class<T> jsViewTool) {
 
         if(JsViewTool.class.isAssignableFrom(jsViewTool)) {
-            this.jsViewToolMap.put(jsViewTool.getName(), jsViewTool);
+            final JsViewTool jsViewToolInstance = ReflectionUtils.newInstance(jsViewTool);
+            if (jsViewToolInstance.getScope() == JsViewTool.SCOPE.APPLICATION) {
+                this.initApplicationView(jsViewToolInstance);
+                this.jsAplicationViewToolMap.put(jsViewToolInstance.getName(), jsViewToolInstance);
+            } else {
+                this.jsRequestViewToolMap.put(jsViewToolInstance.getName(), jsViewTool);
+            }
         }
+    }
+
+    private void initApplicationView(final JsViewTool jsViewToolInstance) {
+
+        this.jsAplicationViewToolMap.entrySet().forEach(entry -> {
+
+            final JsViewTool instance = entry.getValue();
+
+            if (instance instanceof JsApplicationContextAware) {
+
+                JsApplicationContextAware.class.cast(instance).setContext(Config.CONTEXT);
+            }
+        });
     }
 
     /**
@@ -52,7 +79,7 @@ public class JsEngine implements ScriptEngine {
      */
     public void removeJsViewTool(final Class jsViewTool) {
 
-        this.jsViewToolMap.remove(jsViewTool.getName());
+        this.jsRequestViewToolMap.remove(jsViewTool.getName());
     }
 
     @Override
@@ -122,7 +149,7 @@ public class JsEngine implements ScriptEngine {
                           final Value bindings,
                           final Map<String, Object> contextParams) {
 
-        this.jsViewToolMap.entrySet().forEach(entry -> {
+        this.jsRequestViewToolMap.entrySet().forEach(entry -> {
 
                 try {
                     final Object instance = entry.getValue().newInstance();
@@ -136,8 +163,14 @@ public class JsEngine implements ScriptEngine {
 
                     Logger.error(this, e.getMessage(), e);
                 }
-            });
-        }
+        });
+
+        this.jsAplicationViewToolMap.entrySet().forEach(entry -> {
+
+            final JsViewTool instance = entry.getValue();
+            bindings.putMember(instance.getName(), instance);
+        });
+    }
 
     private void initJsViewTool(final HttpServletRequest request,
                                 final HttpServletResponse response,
@@ -151,6 +184,11 @@ public class JsEngine implements ScriptEngine {
         if (instance instanceof JsHttpServletRequestAware) {
 
             JsHttpServletRequestAware.class.cast(instance).setRequest(request);
+        }
+
+        if (instance instanceof JsApplicationContextAware) {
+
+            JsApplicationContextAware.class.cast(instance).setContext(Config.CONTEXT);
         }
 
         if (instance instanceof JsViewContextAware) {

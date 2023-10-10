@@ -2,7 +2,6 @@ package com.dotcms.rendering.js;
 
 import com.dotmarketing.business.Role;
 import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.proxy.ProxyHashMap;
@@ -19,6 +18,14 @@ public class JsRole implements Serializable, Comparable<JsRole> {
 
 	public JsRole(final Role role) {
 		this.role = role;
+	}
+
+	/**
+	 * Returns the actual role, but can not be retrieved on the JS context.
+	 * @return
+	 */
+	public Role getRole() {
+		return role;
 	}
 
 	@HostAccess.Export

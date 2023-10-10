@@ -23,6 +23,14 @@ public class JsUser implements Serializable {
         this.user = user;
     }
 
+    /**
+     * Returns the actual user, but can not be retrieved on the JS context.
+     * @return User
+     */
+    public User getUser () {
+        return user;
+    }
+
     @HostAccess.Export
     public String toString() {
         return this.getFullName() + " [ID: " + user.getUserId() + "][email:" + user.getEmailAddress() + "]";

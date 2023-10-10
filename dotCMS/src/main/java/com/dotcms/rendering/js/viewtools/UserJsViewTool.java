@@ -16,6 +16,10 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Wraps the CMSUsersWebAPI (cmsuser) into the JS context.
+ * @author jsanca
+ */
 public class UserJsViewTool implements JsViewTool, JsViewContextAware {
 
 	private CMSUsersWebAPI cmsUsersWebAPI = new CMSUsersWebAPI();
