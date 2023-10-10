@@ -1,4 +1,44 @@
-<ngx-monaco-editor
-    class="binary-field__code-editor"
-    [options]="editorOptions"
-    data-testId="code-editor"></ngx-monaco-editor>
+<form class="editor-mode__form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="editor-mode__input-container">
+        <label class="editor-mode__label" for="file-name">
+            <span class="editor-mode__label-text">File Name</span>
+        </label>
+        <input
+            id="file-name"
+            type="text"
+            pInputText
+            formControlName="name"
+            autocomplete="off"
+            pInputText
+            placeholder="Ex. template.html" />
+
+        <div class="editor-mode__helper">
+            <i class="pi pi-info-circle"></i>
+            <small>Mime Type: {{ mimeType }}</small>
+        </div>
+    </div>
+
+    <ngx-monaco-editor
+        class="binary-field__code-editor"
+        #editorRef
+        [ngClass]="{ 'binary-field__code-editor--disabled': form.disabled }"
+        [options]="editorOptions"
+        formControlName="content"
+        data-testId="code-editor"></ngx-monaco-editor>
+
+    <div class="editor-mode__actions">
+        <p-button
+            [label]="'dot.common.cancel' | dm"
+            styleClass="p-button-outlined"
+            type="button"
+            aria-label="Cancel button"
+            data-testId="cancel-button"></p-button>
+
+        <p-button
+            [label]="'dot.common.save' | dm"
+            type="submit"
+            type="submit"
+            aria-label="Import button"
+            data-testId="import-button"></p-button>
+    </div>
+</form>

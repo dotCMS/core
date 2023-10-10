@@ -79,6 +79,7 @@
         [header]="dialogHeaderMap[vm.mode] | dm"
         [draggable]="false"
         [resizable]="false"
+        [closeOnEscape]="false"
         (onHide)="afterDialogClose()">
         <div [ngSwitch]="vm.mode">
             <div *ngSwitchCase="BINARY_FIELD_MODE.URL" data-testId="url">

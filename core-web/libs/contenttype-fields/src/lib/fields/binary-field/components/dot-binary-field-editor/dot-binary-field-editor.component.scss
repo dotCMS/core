@@ -1,8 +1,55 @@
 @use "variables" as *;
 
 .binary-field__code-editor {
-    border: 1px solid $input-border-color;
+    border: 1px solid $color-palette-gray-400; // Input
     display: block;
-    height: 25rem;
-    width: 30rem;
+    height: 50vh;
+    width: 90vw;
+    min-width: 40rem;
+    border-radius: $border-radius-md;
+    overflow: auto;
+}
+
+.binary-field__code-editor--disabled {
+    background-color: $color-palette-gray-200;
+    opacity: 0.5;
+
+    &::ng-deep {
+        .monaco-mouse-cursor-text,
+        .overflow-guard {
+            cursor: not-allowed;
+        }
+    }
+}
+
+.editor-mode__form {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-3;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.editor-mode__input-container {
+    width: 100%;
+    display: flex;
+    gap: $spacing-1;
+    flex-direction: column;
+}
+
+.editor-mode__actions {
+    width: 100%;
+    display: flex;
+    gap: $spacing-1;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.editor-mode__helper {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: $spacing-1;
+    color: $color-palette-gray-700;
+    font-weight: $font-size-sm;
 }

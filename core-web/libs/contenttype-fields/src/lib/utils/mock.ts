@@ -19,7 +19,8 @@ const MESSAGES_MOCK = {
     'dot.binary.field.drag.and.drop.error.server.error.message':
         '<strong>Something went wrong</strong>, please try again or <br/> contact our support team.',
     'dot.common.cancel': 'Cancel',
-    'dot.common.import': 'Import'
+    'dot.common.import': 'Import',
+    'dot.common.save': 'Save'
 };
 
 export const CONTENTTYPE_FIELDS_MESSAGE_MOCK = new MockDotMessageService(MESSAGES_MOCK);
