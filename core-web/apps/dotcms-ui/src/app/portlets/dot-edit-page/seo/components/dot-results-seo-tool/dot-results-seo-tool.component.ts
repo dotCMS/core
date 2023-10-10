@@ -69,7 +69,7 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     ngOnInit() {
         const title =
             this.seoOGTags['og:title']?.slice(0, SEO_LIMITS.MAX_OG_TITLE_LENGTH) ||
-            this.seoOGTags['title']?.slice(0, SEO_LIMITS.MAX_TITLE_LENGTH);
+            this.seoOGTags.title?.slice(0, SEO_LIMITS.MAX_TITLE_LENGTH);
 
         const description =
             this.seoOGTags['og:description']?.slice(0, SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) ||
