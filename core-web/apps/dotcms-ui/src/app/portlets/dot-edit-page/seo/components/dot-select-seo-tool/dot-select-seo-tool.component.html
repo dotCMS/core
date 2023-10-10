@@ -8,7 +8,7 @@
             {{ socialMediaTiles[socialMedia]?.label }}
         </h5>
         <span class="dot-select-seo-tool__details" data-testId="select-seo-tool-details">{{
-            'seo.rules.media.preview.tile' | dm
+            socialMediaTiles[socialMedia]?.description | dm
         }}</span>
     </div>
 </ng-container>

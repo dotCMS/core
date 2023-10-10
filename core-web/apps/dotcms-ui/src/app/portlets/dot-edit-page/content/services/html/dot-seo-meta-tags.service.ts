@@ -231,6 +231,8 @@ export class DotSeoMetaTagsService {
     private getOgDescriptionItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
         const result: SeoRulesResult[] = [];
         const ogDescription = metaTagsObject['og:description'];
+        const description = metaTagsObject['description'];
+        const descriptionElements = metaTagsObject['descriptionElements'];
         const descriptionOgElements = metaTagsObject['descriptionOgElements'];
 
         if (descriptionOgElements?.length > 1) {
@@ -241,7 +243,22 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (!ogDescription || descriptionOgElements.length === 0) {
+        if (
+            this.areAllFalsyOrEmpty([
+                ogDescription,
+                descriptionOgElements,
+                description,
+                descriptionElements
+            ])
+        ) {
+            result.push(
+                this.getErrorItem(
+                    this.dotMessageService.get('seo.rules.og-description.description.not.found')
+                )
+            );
+        }
+
+        if (description && this.areAllFalsyOrEmpty([ogDescription, descriptionOgElements])) {
             result.push(
                 this.getErrorItem(this.dotMessageService.get('seo.rules.og-description.not.found'))
             );
@@ -391,7 +408,7 @@ export class DotSeoMetaTagsService {
 
         if (titleOgElements?.length >= 1 && this.areAllFalsyOrEmpty([titleOg])) {
             result.push(
-                this.getErrorItem(this.dotMessageService.get(' seo.rules.og-title.found.empty'))
+                this.getErrorItem(this.dotMessageService.get('seo.rules.og-title.found.empty'))
             );
         }
 
@@ -440,6 +457,14 @@ export class DotSeoMetaTagsService {
                     result.push(
                         this.getErrorItem(
                             this.dotMessageService.get('seo.rules.og-image.not.found')
+                        )
+                    );
+                }
+
+                if (imageOgElements?.length >= 1 && this.areAllFalsyOrEmpty([imageOg])) {
+                    result.push(
+                        this.getErrorItem(
+                            this.dotMessageService.get('seo.rules.og-image.more.one.found.empty')
                         )
                     );
                 }
@@ -516,7 +541,9 @@ export class DotSeoMetaTagsService {
 
         if (titleCardElements.length >= 1 && this.areAllFalsyOrEmpty([titleCard])) {
             result.push(
-                this.getErrorItem(this.dotMessageService.get('seo.rules.twitter-card-title.empty'))
+                this.getErrorItem(
+                    this.dotMessageService.get('seo.rules.twitter-card-title.found.empty')
+                )
             );
         }
 
