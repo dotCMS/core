@@ -181,7 +181,7 @@ describe('DotFieldsService', () => {
             expect(fileFields[0].variable).toBe('testVariable.file');
             expect(fileFields[0].fieldTypeLabel).toBe('Test Content Type');
             expect(fileFields[0].codeTemplate).toBe(
-                `#if ($!{${DOT_CONTENT_MAP}.${variable}.rawUri})\n    <a href="$!{${DOT_CONTENT_MAP}.${variable}.rawUri}">$!{${DOT_CONTENT_MAP}.${variable}.title}</a>\n#elseif($!{${DOT_CONTENT_MAP}.${variable}.identifier})\n    <a href="/dA/\${${DOT_CONTENT_MAP}.${variable}.identifier}">$!{${DOT_CONTENT_MAP}.${variable}.title}</a>\n#end`
+                `#if ($!{${DOT_CONTENT_MAP}.${variable}.rawUri})\n    <a href="$!{${DOT_CONTENT_MAP}.${variable}.rawUri}" target="_blank" >$!{${DOT_CONTENT_MAP}.${variable}.title}</a>\n#elseif($!{${DOT_CONTENT_MAP}.${variable}.identifier})\n    <a href="/dA/\${${DOT_CONTENT_MAP}.${variable}.identifier}" target="_blank" >$!{${DOT_CONTENT_MAP}.${variable}.title}</a>\n#end`
             );
         });
 
@@ -241,7 +241,7 @@ describe('DotFieldsService', () => {
             expect(binaryFields[0].variable).toBe('testVariable.file');
             expect(binaryFields[0].fieldTypeLabel).toBe('Test Content Type');
             expect(binaryFields[0].codeTemplate).toBe(
-                `#if ($!{${DOT_CONTENT_MAP}.${variable}.rawUri})\n    <a href="$!{${DOT_CONTENT_MAP}.${variable}.rawUri}?force_download=1&filename=$!{${DOT_CONTENT_MAP}.${variable}.title}">$!{${DOT_CONTENT_MAP}.${variable}.title}</a>\n#end`
+                `#if ($!{${DOT_CONTENT_MAP}.${variable}.rawUri})\n    <a href="$!{${DOT_CONTENT_MAP}.${variable}.rawUri}?force_download=1&filename=$!{${DOT_CONTENT_MAP}.${variable}.title}" target="_blank" >$!{${DOT_CONTENT_MAP}.${variable}.title}</a>\n#end`
             );
         });
 
@@ -251,7 +251,7 @@ describe('DotFieldsService', () => {
             expect(binaryFields[1].variable).toBe('testVariable.fileResized');
             expect(binaryFields[1].fieldTypeLabel).toBe('Test Content Type');
             expect(binaryFields[1].codeTemplate).toBe(
-                `#if ($UtilMethods.isSet(\${${variable}BinaryFileURI}))\n    <img src="/contentAsset/resize-image/\${ContentIdentifier}/${variable}?w=150&h=100&language_id=\${language}" />\n#end`
+                `#if ($!{${DOT_CONTENT_MAP}.${variable}.rawUri})\n    <img src="/contentAsset/resize-image/\${ContentIdentifier}/${variable}?w=150&h=100&language_id=\${language}" />\n#end`
             );
         });
 
@@ -261,7 +261,7 @@ describe('DotFieldsService', () => {
             expect(binaryFields[2].variable).toBe('testVariable.fileThumbnail');
             expect(binaryFields[2].fieldTypeLabel).toBe('Test Content Type');
             expect(binaryFields[2].codeTemplate).toBe(
-                `#if ($UtilMethods.isSet(\${${variable}BinaryFileURI}))\n    <img src="/contentAsset/image-thumbnail/\${ContentIdentifier}/${variable}?w=150&h=150&language_id=\${language}" />\n#end`
+                `#if ($!{${DOT_CONTENT_MAP}.${variable}.rawUri})\n    <img src="/contentAsset/image-thumbnail/\${ContentIdentifier}/${variable}?w=150&h=150&language_id=\${language}" />\n#end`
             );
         });
     });
