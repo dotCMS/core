@@ -233,6 +233,7 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
      */
     changeDeviceHandler(device: DotDevice): void {
         this.dotPageStateService.setDevice(device);
+        this.dotPageStateService.setSeoMedia(null);
     }
 
     /**
