@@ -6,18 +6,18 @@ import { ActivatedRoute } from '@angular/router';
 
 import { switchMap } from 'rxjs/operators';
 
-import { DotFormComponent } from '../../components/dot-form/dot-form.component';
+import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 @Component({
-    selector: 'dot-edit-content-form',
+    selector: 'dot-edit-content-form-layout',
     standalone: true,
-    imports: [CommonModule, DotFormComponent],
-    templateUrl: './form.component.html',
-    styleUrls: ['./form.component.scss'],
+    imports: [CommonModule, DotEditContentFormComponent],
+    templateUrl: './edit-content.layout.component.html',
+    styleUrls: ['./edit-content.layout.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [DotEditContentService]
 })
-export class FormComponent {
+export class EditContentLayoutComponent {
     private activatedRoute = inject(ActivatedRoute);
 
     public contentType = this.activatedRoute.snapshot.params['contentType'];

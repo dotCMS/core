@@ -11,22 +11,35 @@ import { By } from '@angular/platform-browser';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotFieldComponent } from './dot-field.component';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { DotField } from '../../interfaces/dot-form.interface';
-import { DotFormComponent } from '../dot-form/dot-form.component';
+import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
 describe('DotFieldComponent', () => {
-    let component: DotFieldComponent;
-    let fixture: ComponentFixture<DotFieldComponent>;
+    let component: DotEditContentFieldComponent;
+    let fixture: ComponentFixture<DotEditContentFieldComponent>;
 
-    const field: DotField = {
-        id: 'Test id',
-        variable: 'testVariable',
-        hint: 'Test hind',
-        label: 'Test Label',
+    const field: DotCMSContentTypeField = {
+        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+        contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
+        dataType: 'TEXT',
+        fieldType: 'Text',
+        fieldTypeLabel: 'Text',
+        fieldVariables: [],
+        fixed: false,
+        iDate: 1696896882000,
+        id: 'c3b928bc2b59fc22c67022de4dd4b5c4',
+        indexed: false,
+        listed: false,
+        hint: 'A helper text',
+        modDate: 1696896882000,
+        name: 'testVariable',
+        readOnly: false,
         required: false,
-        type: 'Text'
+        searchable: false,
+        sortOrder: 2,
+        unique: false,
+        variable: 'testVariable'
     };
 
     const FORM_GROUP_MOCK = new FormGroup({
@@ -38,11 +51,10 @@ describe('DotFieldComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             imports: [
-                DotFieldComponent,
+                DotEditContentFieldComponent,
                 CommonModule,
                 ReactiveFormsModule,
-                InputTextModule,
-                DotFormComponent
+                InputTextModule
             ],
             providers: [
                 {
@@ -54,7 +66,7 @@ describe('DotFieldComponent', () => {
     });
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(DotFieldComponent);
+        fixture = TestBed.createComponent(DotEditContentFieldComponent);
         component = fixture.componentInstance;
         component.field = field;
         fixture.detectChanges();
@@ -67,7 +79,7 @@ describe('DotFieldComponent', () => {
     it('should render the label', () => {
         fixture.detectChanges();
         const label = fixture.debugElement.query(By.css('label')).nativeElement;
-        expect(label.textContent).toContain(field.label);
+        expect(label.textContent).toContain(field.fieldTypeLabel);
     });
 
     it('should render the hint', () => {

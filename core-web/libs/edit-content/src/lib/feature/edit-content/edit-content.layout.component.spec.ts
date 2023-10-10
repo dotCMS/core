@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { FormComponent } from './form.component';
+import { EditContentLayoutComponent } from './edit-content.layout.component';
 
 describe('FormComponent', () => {
-    let component: FormComponent;
-    let fixture: ComponentFixture<FormComponent>;
+    let component: EditContentLayoutComponent;
+    let fixture: ComponentFixture<EditContentLayoutComponent>;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [FormComponent, RouterTestingModule]
+            imports: [EditContentLayoutComponent, RouterTestingModule]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(FormComponent);
+        fixture = TestBed.createComponent(EditContentLayoutComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });

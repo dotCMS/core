@@ -3,12 +3,10 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck } from 'rxjs/operators';
+import { pluck } from 'rxjs/operators';
 
 import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
-
-import { DotForm } from '../interfaces/dot-form.interface';
+import { DotCMSContentType, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotEditContentService {
@@ -20,33 +18,8 @@ export class DotEditContentService {
         return this.http.get(`/api/v1/content/${id}`).pipe(pluck('entity'));
     }
 
-    getContentTypeFormData(idOrVar: string): Observable<DotForm[]> {
-        return this.dotContentTypeService.getContentType(idOrVar).pipe(
-            map((content: DotCMSContentType) => {
-                const mappedData = content.layout.map((row) => {
-                    const columns = row.columns?.map((column) => {
-                        const fields = column.fields.map((field) => {
-                            return {
-                                id: field.id,
-                                type: field.fieldType,
-                                hint: field.hint,
-                                label: field.name,
-                                required: field.required,
-                                regexCheck: field.regexCheck,
-                                // url: field.url,
-                                variable: field.variable
-                            };
-                        });
-
-                        return { fields };
-                    });
-
-                    return { row: { columns } };
-                });
-
-                return mappedData as DotForm[];
-            })
-        );
+    getContentTypeFormData(idOrVar: string): Observable<DotCMSContentTypeLayoutRow[]> {
+        return this.dotContentTypeService.getContentType(idOrVar).pipe(pluck('layout'));
     }
 
     saveContentlet<T>(data: { [key: string]: string }): Observable<T> {

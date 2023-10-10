@@ -12,18 +12,26 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotField, DotForm } from '../../interfaces/dot-form.interface';
-import { DotFieldComponent } from '../dot-field/dot-field.component';
+import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 @Component({
-    selector: 'dot-edit-form',
+    selector: 'dot-edit-content-form',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, DotFieldComponent, ButtonModule],
-    templateUrl: './dot-form.component.html',
-    styleUrls: ['./dot-form.component.scss'],
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        DotEditContentFieldComponent,
+        ButtonModule,
+        DotMessagePipe
+    ],
+    templateUrl: './dot-edit-content-form.component.html',
+    styleUrls: ['./dot-edit-content-form.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotFormComponent implements OnInit {
-    @Input() formData: DotForm[] = [];
+export class DotEditContentFormComponent implements OnInit {
+    @Input() formData: DotCMSContentTypeLayoutRow[] = [];
     @Output() formSubmit = new EventEmitter();
 
     private fb = inject(FormBuilder);
@@ -35,10 +43,14 @@ export class DotFormComponent implements OnInit {
         }
     }
 
+    /**
+     * Initializes the form group with form controls for each field in the `formData` array.
+     * @returns void
+     */
     initilizeForm() {
         this.form = this.fb.group({});
-        this.formData.forEach(({ row }) => {
-            row.columns.forEach((column) => {
+        this.formData.forEach(({ columns }) => {
+            columns?.forEach((column) => {
                 column.fields.forEach((field) => {
                     const fieldControl = this.initializeFormControl(field);
                     this.form.addControl(field.variable, fieldControl);
@@ -47,7 +59,12 @@ export class DotFormComponent implements OnInit {
         });
     }
 
-    initializeFormControl(field: DotField) {
+    /**
+     * Initializes a form control for a given DotCMSContentTypeField.
+     * @param field - The DotCMSContentTypeField to initialize the form control for.
+     * @returns The initialized form control.
+     */
+    initializeFormControl(field: DotCMSContentTypeField) {
         const validators = [];
         if (field.required) validators.push(Validators.required);
         if (field.regexCheck) {
@@ -62,6 +79,10 @@ export class DotFormComponent implements OnInit {
         return this.fb.control(null, { validators });
     }
 
+    /**
+     * Saves the content of the form by emitting the form value through the `formSubmit` event.
+     * @returns void
+     */
     saveContenlet() {
         this.formSubmit.emit(this.form.value);
     }

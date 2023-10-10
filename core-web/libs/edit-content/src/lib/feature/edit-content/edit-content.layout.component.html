@@ -1,5 +1,5 @@
 <div class="dot-edit-content-form" *ngIf="formData$ | async as form; else noContent">
-    <dot-edit-form [formData]="form" (formSubmit)="saveContent($event)" />
+    <dot-edit-content-form [formData]="form" (formSubmit)="saveContent($event)" />
 
     <p *ngIf="isContentSaved">Content saved!</p>
 </div>

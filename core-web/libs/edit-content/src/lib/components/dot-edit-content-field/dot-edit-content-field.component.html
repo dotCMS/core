@@ -1,6 +1,8 @@
-<ng-container [ngSwitch]="field.type">
+<ng-container [ngSwitch]="field.fieldType">
     <div class="field" *ngSwitchCase="'Text'">
-        <label *ngIf="field.label" [for]="field.variable">{{ field.label }}</label>
+        <label *ngIf="field.fieldTypeLabel" [for]="field.variable">{{
+            field.fieldTypeLabel
+        }}</label>
         <input [id]="field.variable" [formControlName]="field.variable" type="text" pInputText />
         <small *ngIf="field.hint">{{ field.hint }}</small>
     </div>
