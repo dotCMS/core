@@ -7,7 +7,10 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotResultsSeoToolComponent } from './dot-results-seo-tool.component';
 import { seoOGTagsMock, seoOGTagsResultMock, seoOGTagsResultOgMockTwitter } from './mocks';
 
-import { SEO_MEDIA_TYPES } from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
+import {
+    SEO_MEDIA_TYPES,
+    SEO_LIMITS
+} from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
 import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-meta-tags.service';
 
 describe('DotResultsSeoToolComponent', () => {
@@ -124,6 +127,18 @@ describe('DotResultsSeoToolComponent', () => {
                 seoMedia: SEO_MEDIA_TYPES.GOOGLE
             }
         });
+    });
+
+    it('should display title', () => {
+        const titleElement = spectator.query(byTestId('results-seo-tool-search-title'));
+        expect(titleElement.textContent).toContain(seoOGTagsMock.title);
+        expect(titleElement.textContent.length).toBeLessThan(SEO_LIMITS.MAX_TITLE_LENGTH);
+    });
+
+    it('should display description', () => {
+        const titleElement = spectator.query(byTestId('results-seo-tool-search-description'));
+        expect(titleElement.textContent).toContain(seoOGTagsMock.description);
+        expect(titleElement.textContent.length).toBeLessThan(SEO_LIMITS.MAX_DESCRIPTION_LENGTH);
     });
 
     it('should display host Name', () => {
