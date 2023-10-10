@@ -23,7 +23,7 @@ export class AiContentService {
     getIAContent(prompt: string): Observable<string> {
         this.lastUsedPrompt = prompt;
 
-        const url = 'http://localhost:8081/api/ai/text/generate';
+        const url = '/api/ai/text/generate';
         const body = JSON.stringify({
             prompt
         });

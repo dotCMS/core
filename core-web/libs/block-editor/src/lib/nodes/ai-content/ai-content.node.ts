@@ -22,7 +22,7 @@ export const AIContentNode = Node.create({
     parseHTML() {
         return [
             {
-                tag: 'div'
+                tag: 'div[ai-content]'
             }
         ];
     },
@@ -56,7 +56,7 @@ export const AIContentNode = Node.create({
     },
 
     renderHTML() {
-        return ['div'];
+        return ['div[ai-content]'];
     },
 
     addNodeView() {

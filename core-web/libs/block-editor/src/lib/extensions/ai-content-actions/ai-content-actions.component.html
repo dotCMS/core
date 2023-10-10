@@ -1,16 +1,6 @@
-<p-listbox
-    class="my-custom-listbox"
-    [options]="actionOptions"
-    [style]="{
-        width: '200px',
-        padding: '8px',
-        marginLeft: '60px',
-        marginTop: '-15px',
-        backgroundColor: '#fff'
-    }"
-    (onClick)="handleClick($event)">
+<p-listbox [options]="actionOptions" (onClick)="$event.value.callback()">
     <ng-template let-actionOption pTemplate="item">
-        <div [style.color]="'#14151A'">
+        <div class="action-content">
             <i [class]="actionOption.icon"></i>
             {{ actionOption.label }}
         </div>
