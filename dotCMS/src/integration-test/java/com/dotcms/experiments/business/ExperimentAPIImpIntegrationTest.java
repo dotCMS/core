@@ -5,6 +5,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotSame;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -206,10 +207,10 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     public void createRunningIdWithStartScheduled()
             throws DotDataException, DotSecurityException {
         final Experiment experiment = new ExperimentDataGen()
-                .status(Status.SCHEDULED)
+                .status(Status.DRAFT)
                 .scheduling(Scheduling.builder()
                         .startDate(Instant.now())
-                        .endDate(Instant.now().plus(2, ChronoUnit.DAYS))
+                        .endDate(Instant.now().plus(10, ChronoUnit.DAYS))
                         .build())
                 .nextPersisted();
 
@@ -221,8 +222,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         assertFalse(experimentFromDataBase_1.runningIds().iterator().hasNext());
 
+        final Experiment scheduledExperiment = APILocator.getExperimentsAPI()
+                .start(experiment.id().get(), APILocator.systemUser());
+
         final Experiment experimentStarted = APILocator.getExperimentsAPI()
-                .startScheduled(experiment.id().get(), APILocator.systemUser());
+                .startScheduled(scheduledExperiment.id().get(), APILocator.systemUser());
 
         try {
             assertNotNull(experimentStarted.runningIds());
@@ -307,43 +311,50 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     public void restartExperimentUsingTheStartScheduled()
             throws DotDataException, DotSecurityException {
         final Experiment experiment = new ExperimentDataGen()
-                .status(Status.SCHEDULED)
+                .status(Status.DRAFT)
                 .scheduling(Scheduling.builder()
                         .startDate(Instant.now())
-                        .endDate(Instant.now().plus(2, ChronoUnit.DAYS))
+                        .endDate(Instant.now().plus(10, ChronoUnit.DAYS))
                         .build())
                 .nextPersisted();
 
-        final Experiment experimentStarted = APILocator.getExperimentsAPI()
-                .startScheduled(experiment.id().get(), APILocator.systemUser());
+        final Experiment scheduledExperiment = APILocator.getExperimentsAPI()
+                .start(experiment.id().get(), APILocator.systemUser());
 
-        final Experiment experimentToRestart = Experiment.builder().from(experimentStarted)
-                .status(Status.SCHEDULED)
-                .scheduling(Scheduling.builder()
-                        .startDate(Instant.now())
-                        .endDate(Instant.now().plus(2, ChronoUnit.DAYS))
-                        .build())
-                .build();
+        final Experiment startedExperiment = APILocator.getExperimentsAPI()
+                .startScheduled(scheduledExperiment.id().get(), APILocator.systemUser());
+
+        final Experiment endedExperiment = APILocator.getExperimentsAPI()
+                .end(startedExperiment.id().get(), APILocator.systemUser());
+
+        final Experiment experimentToRestart = APILocator.getExperimentsAPI()
+                .save(
+                        Experiment.builder().from(endedExperiment)
+                        .status(Status.DRAFT)
+                        .scheduling(Scheduling.builder()
+                                .startDate(Instant.now())
+                                .endDate(Instant.now().plus(10, ChronoUnit.DAYS))
+                                .build())
+                        .build(), APILocator.systemUser());
+
+        final Experiment rescheduledExperiment = APILocator.getExperimentsAPI()
+                .start(experimentToRestart.id().get(), APILocator.systemUser());
+
+        final Experiment restartedExperiment = APILocator.getExperimentsAPI()
+                .startScheduled(rescheduledExperiment.id().get(), APILocator.systemUser());
 
         try {
-            FactoryLocator.getExperimentsFactory().save(experimentToRestart);
 
-            APILocator.getExperimentsAPI()
-                    .startScheduled(experimentToRestart.id().get(), APILocator.systemUser());
+            assertEquals(2, restartedExperiment.runningIds().size());
 
-            final Experiment experimentAfterReStart = APILocator.getExperimentsAPI()
-                    .find(experimentToRestart.id().get(), APILocator.systemUser())
-                    .orElseThrow(() -> new AssertionError("Experiment not found"));
-
-            assertEquals(2, experimentAfterReStart.runningIds().size());
-
-            assertTrue(experimentAfterReStart.runningIds().getAll().stream()
+            assertTrue(restartedExperiment.runningIds().getAll().stream()
                     .anyMatch(runningId -> runningId.endDate() != null));
 
-            assertTrue(experimentAfterReStart.runningIds().getAll().stream()
+            assertTrue(restartedExperiment.runningIds().getAll().stream()
                     .anyMatch(runningId -> runningId.endDate() == null));
 
-            assertTrue(experimentAfterReStart.runningIds().get(0).id() != experimentAfterReStart.runningIds().get(1).id());
+            assertNotSame(restartedExperiment.runningIds().get(0).id(),
+                    restartedExperiment.runningIds().get(1).id());
         } finally {
             APILocator.getExperimentsAPI().end(experimentToRestart.id().get(), APILocator.systemUser());
         }
