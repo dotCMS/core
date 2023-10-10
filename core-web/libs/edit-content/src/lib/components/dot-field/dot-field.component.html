@@ -1,9 +1,8 @@
 <ng-container [ngSwitch]="field.type">
-    <div class="flex flex-column gap-2" *ngSwitchCase="'Text'">
+    <div class="field" *ngSwitchCase="'Text'">
         <label *ngIf="field.label" [for]="field.variable">{{ field.label }}</label>
         <input [id]="field.variable" [formControlName]="field.variable" type="text" pInputText />
         <small *ngIf="field.hint">{{ field.hint }}</small>
     </div>
-    <ng-container *ngSwitchCase="'Host-Folder'"> Place a Host-Folder here hehehe </ng-container>
-    <div *ngSwitchDefault>Other field</div>
+    <ng-container *ngSwitchCase="'Host-Folder'">Host-Folder</ng-container>
 </ng-container>

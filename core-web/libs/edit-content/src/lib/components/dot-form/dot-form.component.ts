@@ -50,7 +50,14 @@ export class DotFormComponent implements OnInit {
     initializeFormControl(field: DotField) {
         const validators = [];
         if (field.required) validators.push(Validators.required);
-        if (field.regexCheck) validators.push(Validators.pattern(field.regexCheck));
+        if (field.regexCheck) {
+            try {
+                const regex = new RegExp(field.regexCheck);
+                validators.push(Validators.pattern(regex));
+            } catch (e) {
+                console.error('Invalid regex', e);
+            }
+        }
 
         return this.fb.control(null, { validators });
     }

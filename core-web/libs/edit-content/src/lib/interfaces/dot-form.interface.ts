@@ -15,8 +15,8 @@ interface Column {
 export interface DotField {
     id: string;
     type: string;
-    label: string;
-    required: boolean;
+    label?: string;
+    required?: boolean;
     regexCheck?: string;
     hint?: string;
     url?: string;

@@ -8,7 +8,7 @@ import { map, pluck } from 'rxjs/operators';
 import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
-import { DotForm } from './interfaces/dot-form.interface';
+import { DotForm } from '../interfaces/dot-form.interface';
 
 @Injectable()
 export class DotEditContentService {
@@ -16,11 +16,11 @@ export class DotEditContentService {
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly http = inject(HttpClient);
 
-    getContentType(id: string): Observable<DotCMSContentType> {
+    getContentById(id: string): Observable<DotCMSContentType> {
         return this.http.get(`/api/v1/content/${id}`).pipe(pluck('entity'));
     }
 
-    getContent(idOrVar: string): Observable<DotForm[]> {
+    getContentTypeFormData(idOrVar: string): Observable<DotForm[]> {
         return this.dotContentTypeService.getContentType(idOrVar).pipe(
             map((content: DotCMSContentType) => {
                 const mappedData = content.layout.map((row) => {
