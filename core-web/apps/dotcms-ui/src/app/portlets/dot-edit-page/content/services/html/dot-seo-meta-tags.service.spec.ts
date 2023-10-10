@@ -269,7 +269,7 @@ describe('DotSetMetaTagsService', () => {
         });
     });
 
-    it('should get description found', (done) => {
+    it('should og:description meta tag, and Meta Description not found!', (done) => {
         const testDoc: Document = document.implementation.createDocument(
             'http://www.w3.org/1999/xhtml',
             'html',
