@@ -45,7 +45,7 @@ export class AiContentService {
     }
 
     getAIImage(prompt: string) {
-        const url = 'http://localhost:8081/api/ai/image/generate';
+        const url = 'api/ai/image/generate';
         const body = JSON.stringify({
             prompt
         });
@@ -91,16 +91,12 @@ export class AiContentService {
         ];
 
         return this.http
-            .post(
-                'http://localhost:8081/api/v1/workflow/actions/default/fire/PUBLISH',
-                JSON.stringify({ contentlets }),
-                {
-                    headers: {
-                        Origin: window.location.hostname,
-                        'Content-Type': 'application/json;charset=UTF-8'
-                    }
+            .post('api/v1/workflow/actions/default/fire/PUBLISH', JSON.stringify({ contentlets }), {
+                headers: {
+                    Origin: window.location.hostname,
+                    'Content-Type': 'application/json;charset=UTF-8'
                 }
-            )
+            })
             .pipe(
                 pluck('entity', 'results'),
                 catchError((error) => throwError(error))
