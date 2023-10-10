@@ -1,0 +1,153 @@
+name: dotCLI Release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version'
+        required: true
+      skipTests:
+        description: 'Skip tests'
+        default: true
+        required: false
+      packageType:
+        description: 'Package type'
+        default: 'uber-jar'
+        required: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  JAVA_VERSION: 11
+  JAVA_DISTRO: temurin
+  NEXT_VERSION: '1.0.0-SNAPSHOT'
+
+jobs:
+  precheck:
+    name: Pre-check
+    runs-on: ubuntu-latest
+    outputs:
+      RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
+      NEXT_VERSION: ${{ steps.version.outputs.NEXT_VERSION }}
+      HEAD: ${{ steps.version.outputs.HEAD }}
+    steps:
+      - name: Log GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRO }}
+
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Restore Maven Repository
+        id: cache-maven
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
+
+      - name: Setup git config
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com" 
+
+      - name: Set release version
+        id: version
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli
+        run: |
+          RELEASE_VERSION=${{ github.event.inputs.version }}
+          NEXT_VERSION=${{ env.NEXT_VERSION }}          
+          HEAD=${{ github.ref_name }}
+          
+          ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$RELEASE_VERSION
+          
+          git commit --allow-empty -a -m "🏁 Releasing version $RELEASE_VERSION"
+          git push origin "$HEAD"
+          
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "NEXT_VERSION=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "HEAD=$HEAD" >> "$GITHUB_OUTPUT"
+
+  release:
+    needs: [ precheck ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.precheck.outputs.HEAD }}
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRO }}
+
+      - name: Cache Maven
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Prepare dotCMS license
+        env:
+          DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+        run: |
+          DOTCMS_LICENSE_PATH=${GITHUB_WORKSPACE}/tools/dotcms-cli/license
+          mkdir -p ${DOTCMS_LICENSE_PATH}
+          echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
+          echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
+
+      - name: Build distribution
+        working-directory: ${{ github.workspace }}
+        run: |
+          ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }} -am -pl :dotcms-cli
+
+      - name: Package distribution
+        working-directory: ${{ github.workspace }}
+        run: |
+          ./mvnw package -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=true -pl :dotcms-cli
+          
+      - name: Releaser
+        env:
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.VERSION }}
+          JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+          JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+          JRELEASER_SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
+          JRELEASER_SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        working-directory: ${{ github.workspace }}
+        run: |
+          tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE         
+
+      - name: Setup git config
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com" 
+
+      - name: Set next version
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli
+        run: |
+          RELEASE_VERSION=${{ needs.precheck.outputs.RELEASE_VERSION }}
+          NEXT_VERSION=${{ needs.precheck.outputs.NEXT_VERSION }}
+          HEAD=${{ needs.precheck.outputs.HEAD }}
+          
+          ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$NEXT_VERSION
+
+          git commit --allow-empty -a -m "⬆️  Next version $NEXT_VERSION"
+          git push origin "$HEAD"

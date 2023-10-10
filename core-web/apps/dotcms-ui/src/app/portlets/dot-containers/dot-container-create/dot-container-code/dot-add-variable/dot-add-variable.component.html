@@ -2,7 +2,7 @@
     <ng-template let-variable pTemplate="listItem">
         <div class="dot-add-variable-list__item">
             <div>
-                <h3>{{ variable?.name }}</h3>
+                <h3 [attr.data-testId]="'h3' + variable.variable">{{ variable?.name }}</h3>
                 <p>
                     <small>
                         {{ variable?.fieldTypeLabel }}
@@ -11,12 +11,11 @@
             </div>
 
             <button
-                class="p-button-outlined p-button-secondary p-button-sm"
+                class="p-button-outlined p-button-primary p-button-sm"
                 [attr.data-testId]="variable.variable"
                 [label]="'Add' | dm"
                 (click)="onSave(variable.variable)"
-                pButton
-            ></button>
+                pButton></button>
         </div>
     </ng-template>
 </p-dataView>

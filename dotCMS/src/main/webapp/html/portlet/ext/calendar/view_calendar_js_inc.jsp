@@ -565,11 +565,13 @@
 
 	//Event actions functions
 	function editEvent(inode, referer) {
+
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "edit-contentlet",
             data: {
-                inode: inode
+                inode,
+								contentType: "<%= eventStructure.getVelocityVarName()%>" // We are just editing the same contentType
             }
         });
         document.dispatchEvent(customEvent);
@@ -729,14 +731,16 @@
 		refreshCalendarView();
 	}
 
-    function createContentlet(url) {
+    function createContentlet(url, contentType) {
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "create-contentlet",
             data: {
-                url: url
+                url,
+								contentType
             }
         });
+
         document.dispatchEvent(customEvent);
     }
 
@@ -750,7 +754,8 @@
 					<portlet:param name="referer" value="<%= referer %>" />
 					<portlet:param name="inode" value="" />
 				</portlet:actionURL>&date1=' + startDate + '&date2=' + endDate;
-		createContentlet(addURL);
+
+		createContentlet(addURL, "<%= eventStructure.getVelocityVarName()%>");
 	}
 
 	function transformTimeZone(date,offset)

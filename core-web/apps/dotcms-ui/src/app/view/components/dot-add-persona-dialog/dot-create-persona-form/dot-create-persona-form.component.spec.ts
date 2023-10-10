@@ -9,13 +9,15 @@ import { FileUploadModule } from 'primeng/fileupload';
 
 import { DotAutocompleteTagsComponent } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.component';
 import { DotAutocompleteTagsModule } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.module';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
+import {
+    DotAutofocusDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 import { MockDotMessageService, mockSites, SiteServiceMock } from '@dotcms/utils-testing';
 
 import { DotCreatePersonaFormComponent } from './dot-create-persona-form.component';
@@ -67,8 +69,8 @@ describe('DotCreatePersonaFormComponent', () => {
                 BrowserAnimationsModule,
                 FileUploadModule,
                 SiteSelectorFieldModule,
-                DotFieldValidationMessageModule,
-                DotAutofocusModule,
+                DotFieldValidationMessageComponent,
+                DotAutofocusDirective,
                 DotAutocompleteTagsModule,
                 HttpClientTestingModule,
                 DotMessagePipe

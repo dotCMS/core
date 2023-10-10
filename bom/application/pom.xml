@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
-    <artifactId>application-bom</artifactId>
+    <artifactId>dotcms-application-bom</artifactId>
 
     <properties>
         <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
@@ -23,7 +23,7 @@
         <glowroot.version>0.13.1</glowroot.version>
         <jackson.version>2.13.4</jackson.version>
         <jersey.version>2.22.1</jersey.version>
-        <dotcms.tika-api.version>1.0.0-SNAPSHOT</dotcms.tika-api.version>
+        <dotcms.tika-api.version>2023.09.8</dotcms.tika-api.version>
     </properties>
     <dependencyManagement>
 
@@ -61,7 +61,7 @@
 
             <dependency>
                 <groupId>com.dotcms</groupId>
-                <artifactId>logging-bom</artifactId>
+                <artifactId>dotcms-logging-bom</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -908,7 +908,7 @@
             <dependency>
                 <groupId>com.thoughtworks.xstream</groupId>
                 <artifactId>xstream</artifactId>
-                <version>1.4.8</version>
+                <version>1.4.17</version>
                 <exclusions>
                     <exclusion>
                         <groupId>xpp3</groupId>
@@ -1401,7 +1401,7 @@
                  Is only needed during compilation and no runtime component required -->
                 <groupId>org.immutables</groupId>
                 <artifactId>value</artifactId>
-                <version>2.9.0</version>
+                <version>${immutables.version}</version>
             </dependency>
 
             <!--

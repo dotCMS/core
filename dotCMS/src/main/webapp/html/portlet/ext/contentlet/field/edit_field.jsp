@@ -199,7 +199,6 @@
                 }
             }
             %>
-            <script src="/html/dotcms-block-editor.js"></script>
             <script src="/html/showdown.min.js"></script>
             <dotcms-block-editor
                 id="block-editor-<%=field.getVelocityVarName()%>"
@@ -652,6 +651,69 @@
 
         %>
 
+
+
+        <%
+            String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
+            if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
+        %>
+            
+            <%
+                String accept="";
+                String maxFileLength="0";
+                String helperText="";
+
+                List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
+                for(FieldVariable fv : acceptTypes){
+                    if("accept".equalsIgnoreCase(fv.getKey())){
+                        accept = fv.getValue();
+                    }
+                    if("maxFileLength".equalsIgnoreCase(fv.getKey())){
+                        maxFileLength=fv.getValue();
+                    }
+
+                    if("helperText".equalsIgnoreCase(fv.getKey())){
+                        helperText=fv.getValue();
+                    }
+                }
+
+            
+                %>
+
+            <div id="container-binary-field-<%=field.getVelocityVarName()%>"></div>
+            <input name="<%=field.getFieldContentlet()%>" id="binary-field-input-<%=field.getFieldContentlet()%>ValueField" type="hidden" />
+
+            <script>
+                // Create a new scope so that variables defined here can have the same name without being overwritten.
+                (function autoexecute() {
+                    const binaryFieldContainer = document.getElementById("container-binary-field-<%=field.getVelocityVarName()%>");
+                    const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
+                    const acceptArr = "<%= accept%>".split(',');
+                    const acceptTypes = acceptArr.map((type) => type.trim());
+                    const maxFileSize = Number("<%= maxFileLength%>");
+
+                    // Creating the binary field dynamically
+                    // Help us to set inputs before the ngInit is executed.
+                    const binaryField = document.createElement('dotcms-binary-field');
+                    binaryField.id = "binary-field-<%=field.getVelocityVarName()%>";
+                    binaryField.setAttribute("fieldName", "<%=field.getVelocityVarName()%>")
+
+                    // Set the initial value.
+                    binaryField.maxFileSize = isNaN(maxFileSize) ? 0 : maxFileSize;
+                    binaryField.accept = acceptTypes;
+                    binaryField.helperText ="<%= helperText%>";
+                    
+                    binaryField.addEventListener('tempFile', (event) => {
+                        const tempFile = event.detail;
+                        field.value = tempFile?.id || '';
+                    });
+
+                    binaryFieldContainer.appendChild(binaryField);
+                })();
+
+            </script>
+        <%}else{%>
+
         <!--  display -->
         <% if(UtilMethods.isSet(value)){
             String mimeType="application/octet-stream";
@@ -829,7 +891,7 @@
 
     </script>
 
-
+    <%} %>
     <%
 
         if(UtilMethods.isSet(value) && UtilMethods.isSet(resourceLink)){

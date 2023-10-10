@@ -4,15 +4,25 @@
     [apiLink]="apiLink"
     (selected)="changeDeviceHandler($event)"
     (changeSeoMedia)="changeSeoMedia($event)"
+    (hideOverlayPanel)="tabButtons.resetDropdownById(dotPageMode.PREVIEW)"
     appendTo="body"
     tooltipPosition="bottom"
     tooltipStyleClass="dot-device-selector__dialog"
     data-testId="dot-device-selector"></dot-device-selector-seo>
+<p-menu
+    #menu
+    *ngIf="this.featureFlagEditURLContentMapIsOn"
+    [model]="menuItems"
+    [popup]="true"
+    (onHide)="tabButtons.resetDropdownById(dotPageMode.EDIT)"
+    appendTo="body">
+</p-menu>
 <dot-tab-buttons
-    [mode]="mode"
+    #tabButtons
+    [activeId]="mode"
     [options]="options"
-    (openMenu)="deviceSelector.openMenu($event)"
-    (clickOption)="stateSelectorHandler($event.target.value)"
+    (openMenu)="handleMenuOpen($event)"
+    (clickOption)="stateSelectorHandler($event)"
     data-testId="dot-tabs-buttons"></dot-tab-buttons>
 <ng-container *ngIf="!variant">
     <span

@@ -23,6 +23,14 @@
                         "input": "node_modules/regenerator-runtime/runtime.js"
                     }
                 ],
+                "styles": [
+                    "node_modules/primeicons/primeicons.css",
+                    "node_modules/primeng/resources/primeng.min.css",
+                    "libs/dotcms-scss/angular/_forms.scss",
+                    "libs/dotcms-scss/angular/_mixins.scss",
+                    "libs/dotcms-scss/angular/dotcms-theme/theme.scss",
+                    "libs/dotcms-scss/angular/_prime-icons.scss"
+                ],
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },

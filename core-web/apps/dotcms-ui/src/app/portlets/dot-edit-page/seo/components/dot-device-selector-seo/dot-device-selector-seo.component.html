@@ -1,5 +1,6 @@
 <p-overlayPanel
     #deviceSelector
+    (onHide)="onHideDeviceSelector()"
     data-testId="p-overlaypanel-selector"
     styleClass="dot-device-selector__overlayPanel">
     <div class="dot-device-selector__column" data-testId="dot-devices-selector">
@@ -9,7 +10,7 @@
                     {{ 'editpage.device.selector.title' | dm }}
                 </h3>
                 <a
-                    *ngIf="isCMSAdmin$"
+                    *ngIf="isCMSAdmin$ | async"
                     [routerLink]="linkToAddDevice"
                     [queryParams]="linkToEditDeviceQueryParams"
                     data-testId="dot-device-link-add">
@@ -65,7 +66,7 @@
                         *ngFor="let tile of socialMediaTiles">
                         <button
                             class="device-list__button"
-                            (click)="changeSeoMediaEvent(tile.label); deviceSelector.hide()"
+                            (click)="changeSeoMediaEvent(tile.value); deviceSelector.hide()"
                             data-testId="device-list-button">
                             <i [class]="tile.icon"></i>
                             <span class="device-list-item__name">{{ tile.label }}</span>

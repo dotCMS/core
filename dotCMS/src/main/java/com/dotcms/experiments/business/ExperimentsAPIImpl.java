@@ -30,7 +30,6 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSClientFactory;
-import com.dotcms.cube.CubeJSClientFactoryImpl;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
@@ -57,7 +56,6 @@ import com.dotcms.experiments.model.TrafficProportion;
 
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.system.event.local.model.EventSubscriber;
-import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LicenseValiditySupplier;
@@ -65,6 +63,7 @@ import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -85,7 +84,6 @@ import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.Condition;
@@ -603,7 +601,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
-    public Experiment forceStart(String experimentId, User user)
+    public Experiment forceStart(String experimentId, User user, Scheduling scheduling)
             throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
                 invalidLicenseMessageSupplier);
@@ -634,29 +632,55 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Optional<Experiment> runningExperimentOnPage = getRunningExperimentsOnPage(
                 user, persistedExperiment);
 
-        Experiment toReturn;
+        final Experiment experimentToSave = persistedExperiment.withStatus(RUNNING);
 
-        if(emptyScheduling(persistedExperiment)) {
-            final Scheduling scheduling = startNowScheduling();
-            final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(RUNNING);
-
-            if(runningExperimentOnPage.isPresent()) {
-                endRunningExperimentIfNeeded(user, runningExperimentOnPage.get(), experimentToSave);
-            }
-            cancelScheduledExperimentsUponConflicts(experimentToSave, user);
-            toReturn = innerStart(experimentToSave, user, false);
-        } else {
-            Scheduling scheduling = persistedExperiment.scheduling().orElseThrow();
-            final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
-
-            if(runningExperimentOnPage.isPresent()) {
-                endRunningExperimentIfNeeded(user, runningExperimentOnPage.get(), experimentToSave);
-            }
-            cancelScheduledExperimentsUponConflicts(experimentToSave, user);
-            toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED), user);
+        if(runningExperimentOnPage.isPresent()) {
+            endRunningExperimentIfNeeded(user, runningExperimentOnPage.get(), experimentToSave);
         }
+        cancelScheduledExperimentsUponConflicts(experimentToSave, user);
 
-        return toReturn;
+        return innerStart(experimentToSave.withScheduling(scheduling), user, false);
+    }
+
+    @Override
+    public Experiment forceScheduled(final String experimentId, final User user, final Scheduling scheduling)
+            throws DotDataException, DotSecurityException {
+        DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
+                invalidLicenseMessageSupplier);
+        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+
+        final Experiment persistedExperiment =  find(experimentId, user).orElseThrow(
+                ()-> new IllegalArgumentException("Experiment with provided id not found")
+        );
+
+        validatePageEditPermissions(user, persistedExperiment,
+                "You don't have permission to start the Experiment. "
+                        + "Experiment Id: " + persistedExperiment.id());
+
+        DotPreconditions.isTrue(persistedExperiment.status()!=Status.RUNNING ||
+                        persistedExperiment.status() != Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
+                DotStateException.class);
+
+        DotPreconditions.isTrue(persistedExperiment.status()== DRAFT
+                ,()-> "Only DRAFT experiments can be started",
+                DotStateException.class);
+
+        DotPreconditions.checkState(hasAtLeastOneVariant(persistedExperiment), "The Experiment needs at "
+                + "least one Page Variant in order to be started.");
+
+        DotPreconditions.checkState(persistedExperiment.goals().isPresent(), "The Experiment needs to "
+                + "have the Goal set.");
+
+        final Optional<Experiment> runningExperimentOnPage = getRunningExperimentsOnPage(
+                user, persistedExperiment);
+
+        final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
+
+        if(runningExperimentOnPage.isPresent()) {
+            endRunningExperimentIfNeeded(user, runningExperimentOnPage.get(), experimentToSave);
+        }
+        cancelScheduledExperimentsUponConflicts(experimentToSave, user);
+        return save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED), user);
     }
 
     private void endRunningExperimentIfNeeded(User user, Experiment runningExperimentOnPage,
@@ -912,7 +936,23 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Experiment updatedExperiment = persistedExperiment
                 .withTrafficProportion(weightedTrafficProportion);
 
+        if (!DEFAULT_VARIANT.name().equals(experimentVariant.id())) {
+            copyMultiTrees(persistedExperiment, experimentVariant);
+        }
+
         return save(updatedExperiment, user);
+    }
+
+    private void copyMultiTrees(final Experiment persistedExperiment,
+            final ExperimentVariant experimentVariant)
+                throws DotDataException {
+
+        final HTMLPageAsset experimentPage = getHtmlPageAsset(persistedExperiment);
+        final List<MultiTree> multiTreesByVariant = multiTreeAPI.getMultiTreesByVariant(
+                experimentPage.getIdentifier(), DEFAULT_VARIANT.name());
+
+        multiTreeAPI.copyMultiTree(experimentPage.getIdentifier(), multiTreesByVariant,
+                experimentVariant.id());
     }
 
     private ExperimentVariant createExperimentVariant(final Experiment experiment,
@@ -1205,32 +1245,42 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final List<Event> currentEvents = new ArrayList<>();
         final List<BrowserSession> sessions = new ArrayList<>();
 
-        for (final ResultSetItem resultSetItem : cubeJSResultSet) {
-            final String currentLookBackWindow = resultSetItem.get("Events.lookBackWindow")
-                    .map(Object::toString)
-                    .orElse(StringPool.BLANK);
+        try {
+            for (final ResultSetItem resultSetItem : cubeJSResultSet) {
+                final String currentLookBackWindow = resultSetItem.get("Events.lookBackWindow")
+                        .map(Object::toString)
+                        .orElse(StringPool.BLANK);
 
-            if (!currentLookBackWindow.equals(previousLookBackWindow)) {
-                if (!currentEvents.isEmpty()) {
-                    sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
-                    currentEvents.clear();
+                if (!currentLookBackWindow.equals(previousLookBackWindow)) {
+                    if (!currentEvents.isEmpty()) {
+                        sessions.add(new BrowserSession(previousLookBackWindow,
+                                new ArrayList<>(currentEvents)));
+                        currentEvents.clear();
+                    }
                 }
-            }
 
-            currentEvents.add(new Event(resultSetItem.getAll(),
+                currentEvents.add(new Event(resultSetItem.getAll(),
                         EventType.get(resultSetItem.get("Events.eventType")
                                 .map(Object::toString)
-                                .orElseThrow(() -> new IllegalStateException("Type into Event is expected")))
-            ));
+                                .orElseThrow(() -> new IllegalStateException(
+                                        "Type into Event is expected")))
+                ));
 
-            previousLookBackWindow = currentLookBackWindow;
+                previousLookBackWindow = currentLookBackWindow;
+            }
+
+            if (!currentEvents.isEmpty()) {
+                sessions.add(
+                        new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
+            }
+
+            return sessions;
+        } catch (final Exception e) {
+            final String message = String.format("Error getting result for Experiment %s: %s", experiment.name(),
+                    e.getMessage());
+            Logger.error(this, message, e);
+            throw new DotDataException(message, e);
         }
-
-        if (!currentEvents.isEmpty()) {
-            sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
-        }
-
-        return sessions;
     }
 
     @Override
@@ -1379,7 +1429,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
                 ()-> "Scheduling not valid.", DotStateException.class);
 
-        return save(experimentFromFactory.withStatus(DRAFT), user);
+        final Experiment experimentCanceled = experimentFromFactory
+                .withStatus(DRAFT)
+                .withScheduling(Scheduling.builder().build());
+
+        return save(experimentCanceled, user);
     }
 
     private static boolean canBeCanceled(final Experiment experimentFromFactory) {
@@ -1433,7 +1487,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         // Setting "now" with an additional minute to avoid failing validation
         final Instant now = Instant.now().plus(1, ChronoUnit.MINUTES);
         return Scheduling.builder().startDate(now)
-                .endDate(now.plus(EXPERIMENTS_MAX_DURATION.get(), ChronoUnit.DAYS))
+                .endDate(now.plus(EXPERIMENTS_DEFAULT_DURATION.get(), ChronoUnit.DAYS))
                 .build();
     }
 
@@ -1491,12 +1545,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     "Invalid Scheduling. Start date is in the past");
 
             toReturn = scheduling.withEndDate(scheduling.startDate().get()
-                    .plus(EXPERIMENTS_MAX_DURATION.get(), ChronoUnit.DAYS));
+                    .plus(EXPERIMENTS_DEFAULT_DURATION.get(), ChronoUnit.DAYS));
         } else if(scheduling.startDate().isEmpty() && scheduling.endDate().isPresent()) {
             DotPreconditions.checkState(scheduling.endDate().get().isAfter(NOW),
                     "Invalid Scheduling. End date is in the past");
 
-            final Instant startDate = scheduling.endDate().get().minus(EXPERIMENTS_MAX_DURATION.get(),
+            final Instant startDate = scheduling.endDate().get().minus(EXPERIMENTS_DEFAULT_DURATION.get(),
                     ChronoUnit.DAYS);
 
             toReturn = scheduling.withStartDate(startDate);

@@ -26,6 +26,12 @@ import { DotCurrentUser, DotDevice, DotDeviceListItem } from '@dotcms/dotcms-mod
 import { DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
+import {
+    SEO_MEDIA_TYPES,
+    SocialMediaOption,
+    socialMediaTiles
+} from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
+
 @Component({
     standalone: true,
     imports: [
@@ -50,6 +56,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     @Input() value: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
     @Output() changeSeoMedia = new EventEmitter<string>();
+    @Output() hideOverlayPanel = new EventEmitter<string>();
     @ViewChild('deviceSelector') overlayPanel: OverlayPanel;
     previewUrl: string;
 
@@ -60,11 +67,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
 
     options$: Observable<DotDevice[]>;
     isCMSAdmin$: Observable<boolean>;
-    socialMediaTiles = [
-        { label: 'Facebook', icon: 'pi pi-facebook' },
-        { label: 'Twitter', icon: 'pi pi-twitter' },
-        { label: 'LinkedIn', icon: 'pi pi-linkedin' }
-    ];
+    socialMediaTiles: SocialMediaOption[];
     defaultOptions: DotDeviceListItem[] = [
         {
             name: this.dotMessageService.get('editpage.device.selector.mobile.portrait'),
@@ -85,16 +88,16 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         {
             name: this.dotMessageService.get('editpage.device.selector.hd.monitor'),
             icon: 'pi pi-desktop',
-            cssHeight: '1920',
-            cssWidth: '1080',
+            cssHeight: '1080',
+            cssWidth: '1920',
             inode: '0',
             identifier: ''
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.4k.monitor'),
             icon: 'pi pi-desktop',
-            cssHeight: '3840',
-            cssWidth: '2160',
+            cssHeight: '2160',
+            cssWidth: '3840',
             inode: '0',
             identifier: ''
         },
@@ -125,6 +128,12 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     ngOnInit() {
         this.options$ = this.getOptions();
         this.isCMSAdmin$ = this.checkIfCMSAdmin();
+        this.socialMediaTiles = Object.values(socialMediaTiles).filter(
+            (item) =>
+                item.value === SEO_MEDIA_TYPES.FACEBOOK ||
+                item.value === SEO_MEDIA_TYPES.TWITTER ||
+                item.value === SEO_MEDIA_TYPES.LINKEDIN
+        );
     }
 
     /**
@@ -148,8 +157,8 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
      * Opens the device selector menu
      * @param event
      */
-    openMenu(event: Event) {
-        this.overlayPanel.toggle(event);
+    openMenu(event: Event, target?: HTMLElement) {
+        this.overlayPanel.toggle(event, target);
     }
 
     /**
@@ -161,7 +170,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         return this.dotDevicesService.get().pipe(
             take(1),
             mergeMap((devices: DotDevice[]) => {
-                this.linkToEditDeviceQueryParams.devices = devices[0].stInode;
+                this.linkToEditDeviceQueryParams.devices = devices[0]?.stInode;
 
                 return devices;
             }),
@@ -170,12 +179,23 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         );
     }
 
+    /**
+     * Check if current user is CMS Admin
+     * @returns Observable<boolean>
+     */
     checkIfCMSAdmin(): Observable<boolean> {
         return this.dotCurrentUser.getCurrentUser().pipe(
             map((user: DotCurrentUser) => {
                 return user.admin;
             })
         );
+    }
+
+    /**
+     * Hide the overlay panel
+     */
+    onHideDeviceSelector() {
+        this.hideOverlayPanel.emit();
     }
 
     @Input()
