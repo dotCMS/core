@@ -67,7 +67,7 @@ export class AIImagePromptComponent {
 
     cleanForm() {
         this.form.reset();
-        this.showFormOne = false;
+        this.showFormOne = true;
         this.showFormTwo = false;
     }
 }

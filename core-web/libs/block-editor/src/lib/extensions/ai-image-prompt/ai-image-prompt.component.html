@@ -31,7 +31,15 @@
                 </span>
 
                 <p-button
-                    tooltipStyleClass="tooltip-btn"
+                    [style]="{
+                        'background-color': 'white',
+                        color: '#426BF0',
+                        height: 'unset',
+                        width: 'unset',
+                        padding: '0',
+                        margin: '0',
+                        outline: 'none'
+                    }"
                     pTooltip="Describe the type of image you want to generate."
                     tooltipPosition="top"
                     icon="pi pi-info-circle"
