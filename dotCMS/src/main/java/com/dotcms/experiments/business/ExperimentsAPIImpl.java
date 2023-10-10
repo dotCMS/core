@@ -588,8 +588,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling)
                         .withStatus(SCHEDULED);
                 validateNoConflictsWithScheduledExperiments(experimentToSave, user);
-                toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED),
-                        user);
+                toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED).
+                                withRunningIds(getRunningIds(experimentToSave)), user);
             }
 
             return toReturn;
@@ -814,7 +814,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Experiment readyToStart = save(Experiment.builder().from(persistedExperiment)
                         .status(RUNNING).build(), user);
 
-        return innerStart(readyToStart, user, true);
+        return innerStart(readyToStart, user, false);
     }
 
     private Experiment innerStart(final Experiment persistedExperiment, final User user,
