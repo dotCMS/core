@@ -19,7 +19,7 @@ export class AIImagePromptComponent {
     });
 
     isFormSubmitting = false;
-    showFormOne = false;
+    showFormOne = true;
     showFormTwo = false;
 
     @Output() formSubmission = new EventEmitter<boolean>();

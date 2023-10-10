@@ -22,6 +22,7 @@ export class AIContentActionsComponent implements OnInit {
     @Output() deleteEmitter = new EventEmitter<boolean>();
 
     actionOptions!: ActionOption[];
+    tooltipContent = 'Describe the size, color palette, style, mood, etc.';
 
     constructor(private aiContentService: AiContentService) {}
 
@@ -64,22 +65,11 @@ export class AIContentActionsComponent implements OnInit {
         event.value.callback();
     }
 
-    getLatestContent(contentType) {
-        if (contentType === 'text') {
-            return this.aiContentService.getLastContentResponse();
-        } else {
-            return this.aiContentService.getLastImageResponse();
-        }
+    getLatestContent(): string {
+        return this.aiContentService.getLatestContent();
     }
 
     getNewContent(contentType: string): Observable<string> {
-        const contentPrompt: string = this.aiContentService.getLastUsedPrompt();
-        const imagePrompt: string = this.aiContentService.getLastImagePrompt();
-
-        if (contentType === 'text') {
-            return this.aiContentService.getIAContent(contentPrompt);
-        } else {
-            return this.aiContentService.getAIImage(imagePrompt);
-        }
+        return this.aiContentService.getNewContent(contentType);
     }
 }

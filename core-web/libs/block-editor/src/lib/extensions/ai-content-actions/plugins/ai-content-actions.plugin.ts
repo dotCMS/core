@@ -20,7 +20,6 @@ interface AIContentActionsProps {
     element: HTMLElement;
     tippyOptions?: Partial<Props>;
     component: ComponentRef<AIContentActionsComponent>;
-    contentType: string;
 }
 
 interface PluginState {
@@ -46,22 +45,12 @@ export class AIContentActionsView {
 
     public pluginKey: PluginKey;
 
-    public contentType: string;
-
     public component: ComponentRef<AIContentActionsComponent>;
 
     private $destroy = new Subject<boolean>();
 
     constructor(props: AIContentActionsViewProps) {
-        const {
-            editor,
-            element,
-            view,
-            tippyOptions = {},
-            pluginKey,
-            contentType,
-            component
-        } = props;
+        const { editor, element, view, tippyOptions = {}, pluginKey, component } = props;
 
         this.editor = editor;
         this.element = element;
@@ -71,10 +60,9 @@ export class AIContentActionsView {
 
         this.element.remove();
         this.pluginKey = pluginKey;
-        this.contentType = contentType;
         this.component = component;
 
-        this.editor.commands.handleContentType(this.contentType);
+        this.editor.commands.openAIContentActions();
 
         this.component.instance.acceptEmitter.pipe(takeUntil(this.$destroy)).subscribe(() => {
             this.acceptContent();
@@ -93,20 +81,32 @@ export class AIContentActionsView {
 
     private acceptContent() {
         this.editor.commands.closeAIContentActions();
-        const content = this.component.instance.getLatestContent(this.contentType);
+        const content = this.component.instance.getLatestContent();
         this.editor.commands.insertContent(content);
     }
 
     private generateContent() {
+        const nodeType = this.getNodeType();
+
         this.editor.commands.closeAIContentActions();
 
-        this.component.instance.getNewContent(this.contentType).subscribe((newContent) => {
+        this.component.instance.getNewContent(nodeType).subscribe((newContent) => {
             if (newContent) {
                 this.editor.commands.deleteSelection();
                 this.editor.commands.insertAINode(newContent);
                 this.editor.commands.openAIContentActions();
             }
         });
+    }
+
+    private getNodeType() {
+        const { state } = this.editor.view;
+        const { doc, selection } = state;
+        const { ranges } = selection;
+        const from = Math.min(...ranges.map((range) => range.$from.pos));
+        const node = doc?.nodeAt(from);
+
+        return node.type.name;
     }
 
     private deleteContent() {

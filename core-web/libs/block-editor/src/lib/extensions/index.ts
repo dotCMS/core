@@ -32,7 +32,6 @@ export * from './ai-content-prompt/ai-content-prompt.extension';
 export * from './ai-content-prompt/plugins/ai-content-prompt.plugin';
 export * from './ai-content-actions/ai-content-actions.component';
 export * from './ai-content-actions/ai-content-actions.extension';
-export * from './ai-content-actions/dynamic-content.extension';
 export * from './ai-content-actions/plugins/ai-content-actions.plugin';
 export * from './ai-image-prompt/ai-image-prompt.component';
 export * from './ai-image-prompt/ai-image-prompt.extension';

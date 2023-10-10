@@ -80,7 +80,7 @@ export class AIImagePromptView {
                 if (data) {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     this.editor.commands.insertImage(data as any);
-                    this.editor.commands.handleContentType('text');
+                    this.editor.commands.openAIContentActions();
                 }
             });
     }
@@ -118,7 +118,7 @@ export class AIImagePromptView {
             return;
         }
 
-        this.tippy = tippy(editorElement, {
+        this.tippy = tippy(document.body, {
             ...TIPPY_OPTIONS,
             ...this.tippyOptions,
             content: this.element,

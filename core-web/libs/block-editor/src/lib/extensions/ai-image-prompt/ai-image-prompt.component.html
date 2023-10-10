@@ -25,30 +25,21 @@
                         fill="#7042F0" />
                 </svg>
             </div>
-            <span
-                ><strong>Generate</strong> an AI image based on your input and requests.
+            <span>
+                <span
+                    ><strong>Generate</strong> an AI image based on your input and requests.
+                </span>
+
                 <p-button
-                    class="ai-info-btn"
-                    [style]="{
-                        'background-color': 'white',
-                        color: '#426BF0',
-                        height: 'unset',
-                        width: 'unset',
-                        padding: '0',
-                        margin: '0',
-                        outline: 'none'
-                    }"
+                    tooltipStyleClass="tooltip-btn"
+                    pTooltip="Describe the type of image you want to generate."
+                    tooltipPosition="top"
                     icon="pi pi-info-circle"
-                    pTooltip="Describe the size, color palette,  style, mood, etc.">
+                    tooltipZIndex="999999">
                 </p-button>
             </span>
 
-            <form
-                *ngIf="showFormOne"
-                [formGroup]="form"
-                [class.show-textarea]="showFormOne"
-                (ngSubmit)="onSubmit()"
-                autocomplete="off">
+            <form *ngIf="showFormOne" [formGroup]="form" (ngSubmit)="onSubmit()" autocomplete="off">
                 <div class="input-field-wrapper">
                     <textarea
                         class="input-field"
@@ -84,6 +75,7 @@
             <span
                 ><strong>Auto-Generate</strong> an Image based on the content created within the
                 block editor.
+
                 <p-button
                     [style]="{
                         'background-color': 'white',
@@ -92,22 +84,16 @@
                         width: 'unset',
                         padding: '0',
                         margin: '0',
-                        outline: 'none',
-                        zIndex: '9999'
+                        outline: 'none'
                     }"
-                    [tooltipOptions]="tooltipOptions"
+                    tooltipZIndex="999999"
                     icon="pi pi-info-circle"
                     pTooltip="Describe the size, color palette,  style, mood, etc."
                     tooltipPosition="top">
                 </p-button>
             </span>
 
-            <form
-                *ngIf="showFormTwo"
-                [formGroup]="form"
-                [class.show-textarea]="showFormTwo"
-                (ngSubmit)="onSubmit()"
-                autocomplete="off">
+            <form *ngIf="showFormTwo" [formGroup]="form" (ngSubmit)="onSubmit()" autocomplete="off">
                 <div class="input-field-wrapper">
                     <textarea
                         class="input-field"

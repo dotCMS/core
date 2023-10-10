@@ -12,7 +12,6 @@ export interface AIContentActionsOptions {
     pluginKey: PluginKey;
     tippyOptions?: Partial<Props>;
     element: HTMLElement | null;
-    contentType: string;
 }
 
 declare module '@tiptap/core' {
@@ -26,13 +25,12 @@ declare module '@tiptap/core' {
 
 export const AI_CONTENT_ACTIONS_PLUGIN_KEY = new PluginKey('aiContentActions-form');
 
-export const AIContentActionsExtension = (viewContainerRef: ViewContainerRef, props) => {
+export const AIContentActionsExtension = (viewContainerRef: ViewContainerRef) => {
     return Extension.create<AIContentActionsOptions>({
         name: 'aiContentActions',
 
         addOptions() {
             return {
-                contentType: props.contentType,
                 element: null,
                 tippyOptions: {},
                 pluginKey: AI_CONTENT_ACTIONS_PLUGIN_KEY
@@ -78,7 +76,6 @@ export const AIContentActionsExtension = (viewContainerRef: ViewContainerRef, pr
                     editor: this.editor,
                     element: component.location.nativeElement,
                     tippyOptions: this.options.tippyOptions,
-                    contentType: this.options.contentType,
                     component: component
                 })
             ];

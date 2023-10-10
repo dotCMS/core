@@ -52,7 +52,7 @@ import {
     DotComands,
     AIContentPromptExtension,
     AIImagePromptExtension,
-    DynamicContentExtension
+    AIContentActionsExtension
 } from '../../extensions';
 import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
 import { ContentletBlock, ImageNode, VideoNode, AIContentNode, LoaderNode } from '../../nodes';
@@ -385,8 +385,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
             AIContentPromptExtension(this.viewContainerRef),
-            DynamicContentExtension(this.viewContainerRef),
             AIImagePromptExtension(this.viewContainerRef),
+            AIContentActionsExtension(this.viewContainerRef),
             DotFloatingButton(this.injector, this.viewContainerRef),
             DotTableCellExtension(this.viewContainerRef),
             BubbleAssetFormExtension(this.viewContainerRef),

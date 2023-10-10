@@ -12,32 +12,13 @@ interface OpenAIResponse {
     prompt: string;
     response: string;
 }
-
 @Injectable()
 export class AiContentService {
     private lastUsedPrompt: string | null = null;
+    private lastImagePrompt: string | null = null;
     private lastContentResponse: string | null = null;
 
-    private lastImagePrompt: string | null = null;
-    private lastImageResponse: string | null = null;
-
     constructor(private http: HttpClient) {}
-
-    getLastUsedPrompt(): string | null {
-        return this.lastUsedPrompt;
-    }
-
-    getLastContentResponse(): string | null {
-        return this.lastContentResponse;
-    }
-
-    getLastImagePrompt(): string | null {
-        return this.lastImagePrompt;
-    }
-
-    getLastImageResponse(): string | null {
-        return this.lastImageResponse;
-    }
 
     getIAContent(prompt: string): Observable<string> {
         this.lastUsedPrompt = prompt;
@@ -78,11 +59,25 @@ export class AiContentService {
                 return throwError('Error fetching AI content');
             }),
             map(({ response }) => {
-                this.lastImageResponse = response;
+                this.lastContentResponse = response;
 
                 return response;
             })
         );
+    }
+
+    getLatestContent() {
+        return this.lastContentResponse;
+    }
+
+    getNewContent(contentType: string): Observable<string> {
+        if (contentType === 'aiContent') {
+            return this.getIAContent(this.lastUsedPrompt);
+        }
+
+        if (contentType === 'dotImage') {
+            return this.getAIImage(this.lastImagePrompt);
+        }
     }
 
     createAndPublishContentlet(fileId: string): Observable<DotCMSContentlet[]> {
