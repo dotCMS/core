@@ -1610,7 +1610,7 @@ public class WorkflowHelper {
                         workflowActionClass.setOrder(0);
                         this.workflowAPI.saveActionClass(workflowActionClass, user);
                     } catch (final Exception e) {
-                        final String errorMsg = String.format("Failed to save Workflow Action Class with ID '%s': %s", newAction.getId(), e.getMessage());
+                        final String errorMsg = String.format("Failed to save Workflow Action Class with ID '%s': %s", newAction.getId(), ExceptionUtil.getErrorMessage(e));
                         Logger.error(this.getClass(), errorMsg);
                         Logger.debug(this, errorMsg, e);
                         throw new DotWorkflowException(errorMsg, e);
@@ -1618,7 +1618,7 @@ public class WorkflowHelper {
                 });
             }
         } catch (final Exception e) {
-            final String errorMsg = String.format("Failed to save Workflow Action '%s': %s", actionId, e.getMessage());
+            final String errorMsg = String.format("Failed to save Workflow Action '%s': %s", actionId, ExceptionUtil.getErrorMessage(e));
             Logger.error(this.getClass(), errorMsg);
             Logger.debug(this, errorMsg, e);
             throw new DotWorkflowException(errorMsg, e);

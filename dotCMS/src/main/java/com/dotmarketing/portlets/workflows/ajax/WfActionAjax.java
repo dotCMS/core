@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.workflow.form.WorkflowActionForm;
 import com.dotcms.workflow.form.WorkflowReorderBean;
 import com.dotcms.workflow.helper.WorkflowHelper;
@@ -151,8 +152,9 @@ public class WfActionAjax extends WfBaseAction {
             response.getWriter().println("SUCCESS:" + newAction.getId());
         } catch (final Exception e) {
 			Logger.error(this.getClass(), String.format("An error occurred when saving Workflow " +
-					"Action '%s' [ %s ]: %s", actionName, actionId, e.getMessage()), e);
-            writeError(response, e.getMessage());
+					"Action '%s' [ %s ]: %s", actionName, actionId,
+					ExceptionUtil.getErrorMessage(e)), e);
+			writeError(response, ExceptionUtil.getErrorMessage(e));
         }
     } // save.
 
