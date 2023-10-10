@@ -15,6 +15,7 @@ import com.liferay.util.StringPool;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +76,7 @@ public class WorkflowAction implements Permissionable, Serializable{
 	private boolean moveActionlet;
 	private boolean moveActionletHasPath;
 	private Set<WorkflowState> showOn = Collections.emptySet();
-	private Map<String, Object> metadata;
+	private Map<String, Object> metadata = new HashMap<>();
 
 	public WorkflowAction() {
 	}

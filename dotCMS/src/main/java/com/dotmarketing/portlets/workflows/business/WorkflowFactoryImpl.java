@@ -64,22 +64,16 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static com.dotmarketing.portlets.workflows.business.WorkflowSQL.INSERT_ACTION;
-import static com.dotmarketing.portlets.workflows.business.WorkflowSQL.UPDATE_ACTION;
-
-
 /**
  * Implementation class for the {@link WorkFlowFactory}.
  *
  * @author root
  * @since Mar, 22, 2012
  */
-
 public class WorkflowFactoryImpl implements WorkFlowFactory {
 
     public static final int PARTITION_IN_SIZE = 100;
     private final WorkflowCache cache;
-    private final WorkflowSQL sql;
     private static final ObjectMapper JSON_MAPPER = DotObjectMapperProvider.getInstance()
             .getDefaultObjectMapper();
 
@@ -87,7 +81,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
      * Creates an instance of the {@link WorkFlowFactory}.
      */
     public WorkflowFactoryImpl() {
-        this.sql = WorkflowSQL.getInstance();
         this.cache = CacheLocator.getWorkFlowCache();
     }
 
@@ -334,11 +327,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
                 "Removing action steps dependencies, for the action: " + action.getId());
 
         final List<Map<String, Object>> stepIdList =
-                new DotConnect().setSQL(sql.SELECT_STEPS_ID_BY_ACTION)
+                new DotConnect().setSQL(WorkflowSQL.SELECT_STEPS_ID_BY_ACTION)
                         .addParam(action.getId()).loadObjectResults();
 
         if (null != stepIdList && stepIdList.size() > 0) {
-            new DotConnect().setSQL(sql.DELETE_ACTIONS_BY_STEP)
+            new DotConnect().setSQL(WorkflowSQL.DELETE_ACTIONS_BY_STEP)
                     .addParam(action.getId()).loadResult();
 
             for (Map<String, Object> stepIdRow : stepIdList) {
@@ -353,7 +346,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         Logger.debug(this,
                 "Removing the action: " + action.getId());
 
-        new DotConnect().setSQL(sql.DELETE_ACTION)
+        new DotConnect().setSQL(WorkflowSQL.DELETE_ACTION)
                 .addParam(action.getId()).loadResult();
 
         final WorkflowScheme proxyScheme = new WorkflowScheme();
@@ -373,7 +366,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         Logger.debug(this, "Deleting the action: " + action.getId() +
                 ", from the step: " + step.getId());
 
-        new DotConnect().setSQL(sql.DELETE_ACTION_STEP)
+        new DotConnect().setSQL(WorkflowSQL.DELETE_ACTION_STEP)
                 .addParam(action.getId()).addParam(step.getId()).loadResult();
 
         Logger.debug(this, "Cleaning the actions from the step CACHE: " + step.getId());
@@ -390,7 +383,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             throws DotDataException, AlreadyExistException {
 
         Logger.debug(this, "Removing the actions associated to the step: " + step.getId());
-        new DotConnect().setSQL(sql.DELETE_ACTIONS_STEP)
+        new DotConnect().setSQL(WorkflowSQL.DELETE_ACTIONS_STEP)
                 .addParam(step.getId()).loadResult();
 
         Logger.debug(this, "Removing the actions cache associated to the step: " + step.getId());
@@ -412,11 +405,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             throws DotDataException, AlreadyExistException {
         String actionId = actionClass.getActionId();
         final DotConnect db = new DotConnect();
-        db.setSQL(sql.DELETE_ACTION_CLASS_PARAM_BY_ACTION_CLASS);
+        db.setSQL(WorkflowSQL.DELETE_ACTION_CLASS_PARAM_BY_ACTION_CLASS);
         db.addParam(actionClass.getId());
         db.loadResult();
 
-        db.setSQL(sql.DELETE_ACTION_CLASS);
+        db.setSQL(WorkflowSQL.DELETE_ACTION_CLASS);
         db.addParam(actionClass.getId());
         db.loadResult();
 
@@ -436,7 +429,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     public void deleteActionClassByAction(WorkflowAction action)
             throws DotDataException, DotSecurityException, AlreadyExistException {
 
-        new DotConnect().setSQL(sql.DELETE_ACTION_CLASS_BY_ACTION).addParam(action.getId())
+        new DotConnect().setSQL(WorkflowSQL.DELETE_ACTION_CLASS_BY_ACTION).addParam(action.getId())
                 .loadResult();
 
         // update scheme mod date
@@ -473,7 +466,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             }
         }
 
-        db.setSQL(sql.DELETE_STEP);
+        db.setSQL(WorkflowSQL.DELETE_STEP);
         db.addParam(step.getId());
         db.loadResult();
         cache.remove(step);
@@ -489,7 +482,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         final DotConnect db = new DotConnect();
 
         // get step related assets
-        db.setSQL(sql.SELECT_COUNT_CONTENTLES_BY_STEP);
+        db.setSQL(WorkflowSQL.SELECT_COUNT_CONTENTLES_BY_STEP);
         db.addParam(step.getId());
         Map<String, Object> res = db.loadObjectResults().get(0);
         return ConversionUtils.toInt(res.get("count"), 0);
@@ -499,7 +492,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     public void deleteWorkflowActionClassParameters(WorkflowActionClass actionClass)
             throws DotDataException, AlreadyExistException {
         final DotConnect db = new DotConnect();
-        db.setSQL(sql.DELETE_ACTION_CLASS_PARAM_BY_ACTION_CLASS);
+        db.setSQL(WorkflowSQL.DELETE_ACTION_CLASS_PARAM_BY_ACTION_CLASS);
         db.addParam(actionClass.getId());
         db.loadResult();
 
@@ -680,7 +673,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     @Override
     public WorkflowAction findAction(String id) throws DotDataException {
         final DotConnect db = new DotConnect();
-        db.setSQL(sql.SELECT_ACTION);
+        db.setSQL(WorkflowSQL.SELECT_ACTION);
         db.addParam(id);
         try {
             return (WorkflowAction) this.convertListToObjects(db.loadObjectResults(),
@@ -695,7 +688,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             final String stepId) throws DotDataException {
 
         final DotConnect db = new DotConnect();
-        db.setSQL(sql.SELECT_ACTION_BY_STEP);
+        db.setSQL(WorkflowSQL.SELECT_ACTION_BY_STEP);
         db.addParam(actionId).addParam(stepId);
 
         try {
@@ -709,7 +702,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     @Override
     public WorkflowActionClass findActionClass(String id) throws DotDataException {
         final DotConnect db = new DotConnect();
-        db.setSQL(sql.SELECT_ACTION_CLASS);
+        db.setSQL(WorkflowSQL.SELECT_ACTION_CLASS);
         db.addParam(id);
 
         try {
@@ -729,7 +722,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         if (null == classes) {
 
             classes = this.convertListToObjects(
-                    new DotConnect().setSQL(sql.SELECT_ACTION_CLASSES_BY_ACTION)
+                    new DotConnect().setSQL(WorkflowSQL.SELECT_ACTION_CLASSES_BY_ACTION)
                             .addParam(action.getId()).loadObjectResults(),
                     WorkflowActionClass.class);
 
@@ -744,7 +737,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             throws DotDataException {
 
         final List<WorkflowActionClass> classes = this.convertListToObjects(
-                new DotConnect().setSQL(sql.SELECT_ACTION_CLASSES_BY_CLASS)
+                new DotConnect().setSQL(WorkflowSQL.SELECT_ACTION_CLASSES_BY_CLASS)
                         .addParam(actionClassName).loadObjectResults(), WorkflowActionClass.class);
 
         return classes;
@@ -754,7 +747,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     public WorkflowActionClassParameter findActionClassParameter(String id)
             throws DotDataException {
         final DotConnect db = new DotConnect();
-        db.setSQL(sql.SELECT_ACTION_CLASS_PARAM);
+        db.setSQL(WorkflowSQL.SELECT_ACTION_CLASS_PARAM);
         db.addParam(id);
         return (WorkflowActionClassParameter) this.convertListToObjects(db.loadObjectResults(),
                 WorkflowActionClassParameter.class).get(0);
@@ -768,7 +761,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         if (null == actions) {
 
             actions = this.convertListToObjects(
-                    new DotConnect().setSQL(sql.SELECT_ACTIONS_BY_STEP)
+                    new DotConnect().setSQL(WorkflowSQL.SELECT_ACTIONS_BY_STEP)
                             .addParam(step.getId()).loadObjectResults(), WorkflowAction.class);
 
             cache.addActions(step, actions);
@@ -785,7 +778,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         if (null == actions) {
 
             final DotConnect db = new DotConnect();
-            db.setSQL(sql.SELECT_ACTIONS_BY_SCHEME);
+            db.setSQL(WorkflowSQL.SELECT_ACTIONS_BY_SCHEME);
             db.addParam(scheme.getId());
             actions = this.convertListToObjects(db.loadObjectResults(), WorkflowAction.class);
 
@@ -800,7 +793,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     public Map<String, WorkflowActionClassParameter> findParamsForActionClass(
             WorkflowActionClass actionClass) throws DotDataException {
         final DotConnect db = new DotConnect();
-        db.setSQL(sql.SELECT_ACTION_CLASS_PARAMS_BY_ACTIONCLASS);
+        db.setSQL(WorkflowSQL.SELECT_ACTION_CLASS_PARAMS_BY_ACTIONCLASS);
         db.addParam(actionClass.getId());
         final List<WorkflowActionClassParameter> list = (List<WorkflowActionClassParameter>) this.convertListToObjects(
                 db.loadObjectResults(), WorkflowActionClassParameter.class);
@@ -846,7 +839,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         if (scheme == null) {
             try {
                 final DotConnect db = new DotConnect();
-                db.setSQL(sql.SELECT_SCHEME);
+                db.setSQL(WorkflowSQL.SELECT_SCHEME);
                 db.addParam(id);
                 scheme = (WorkflowScheme) this.convertListToObjects(db.loadObjectResults(),
                         WorkflowScheme.class).get(0);
@@ -877,7 +870,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         }
 
         final DotConnect db = new DotConnect();
-        db.setSQL(sql.SELECT_SCHEME_BY_STRUCT);
+        db.setSQL(WorkflowSQL.SELECT_SCHEME_BY_STRUCT);
         db.addParam(structId);
         try {
             schemes = this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class);
@@ -899,7 +892,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     @Override
     public List<WorkflowScheme> findSchemes(boolean showArchived) throws DotDataException {
         final DotConnect db = new DotConnect();
-        db.setSQL(sql.SELECT_SCHEMES);
+        db.setSQL(WorkflowSQL.SELECT_SCHEMES);
         db.addParam(false);
         db.addParam(showArchived);
         return this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class);
@@ -908,7 +901,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     @Override
     public List<WorkflowScheme> findArchivedSchemes() throws DotDataException {
         final DotConnect db = new DotConnect();
-        db.setSQL(sql.SELECT_SCHEMES);
+        db.setSQL(WorkflowSQL.SELECT_SCHEMES);
         db.addParam(true);
         db.addParam(true);
         return this.convertListToObjects(db.loadObjectResults(), WorkflowScheme.class);
@@ -919,7 +912,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         WorkflowStep step = cache.getStep(id);
         if (step == null) {
             final DotConnect db = new DotConnect();
-            db.setSQL(sql.SELECT_STEP);
+            db.setSQL(WorkflowSQL.SELECT_STEP);
             db.addParam(id);
             try {
                 step = (WorkflowStep) this.convertListToObjects(db.loadObjectResults(),
@@ -938,7 +931,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
         WorkflowStep workflowStep = null;
         final List<Map<String, Object>> workflowStepRows =
-                new DotConnect().setMaxRows(1).setSQL(sql.SELECT_STEPS_BY_ACTION)
+                new DotConnect().setMaxRows(1).setSQL(WorkflowSQL.SELECT_STEPS_BY_ACTION)
                         .addParam(actionId).loadObjectResults();
 
         try {
@@ -973,7 +966,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             WorkflowStep step = null;
             try {
                 final DotConnect db = new DotConnect();
-                db.setSQL(sql.SELECT_STEP_BY_CONTENTLET);
+                db.setSQL(WorkflowSQL.SELECT_STEP_BY_CONTENTLET);
                 db.addParam(contentlet.getIdentifier());
                 db.addParam(contentlet.getLanguageId());
 
@@ -1047,7 +1040,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     @Override
     public List<WorkflowStep> findSteps(WorkflowScheme scheme) throws DotDataException {
         final DotConnect db = new DotConnect();
-        db.setSQL(sql.SELECT_STEPS_BY_SCHEME);
+        db.setSQL(WorkflowSQL.SELECT_STEPS_BY_SCHEME);
         db.addParam(scheme.getId());
         return this.convertListToObjects(db.loadObjectResults(), WorkflowStep.class);
 
@@ -1340,7 +1333,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         if (null == results) {
 
             results = new DotConnect().setSQL(
-                            sql.SELECT_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE_MAPPING)
+                            WorkflowSQL.SELECT_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE_MAPPING)
                     .addParam(contentType.variable())
                     .loadObjectResults();
 
@@ -1356,7 +1349,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             final List<ContentType> contentTypes) throws DotDataException {
 
         final ImmutableMap.Builder<String, List<Map<String, Object>>> mappingMapBuilder = new ImmutableMap.Builder<>();
-        final String selectQueryTemplate = sql.SELECT_SYSTEM_ACTION_BY_CONTENT_TYPES;
+        final String selectQueryTemplate = WorkflowSQL.SELECT_SYSTEM_ACTION_BY_CONTENT_TYPES;
         final Set<String> notFoundContentTypes = new HashSet<>();
 
         for (final ContentType contentType : contentTypes) {
@@ -1440,7 +1433,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         if (null == results) {
 
             results = new DotConnect()
-                    .setSQL(sql.SELECT_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE_MAPPING)
+                    .setSQL(WorkflowSQL.SELECT_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE_MAPPING)
                     .addParam(workflowScheme.getId())
                     .loadObjectResults();
 
@@ -1460,7 +1453,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         if (null == results) {
 
             results = new DotConnect()
-                    .setSQL(sql.SELECT_SYSTEM_ACTION_BY_WORKFLOW_ACTION)
+                    .setSQL(WorkflowSQL.SELECT_SYSTEM_ACTION_BY_WORKFLOW_ACTION)
                     .addParam(workflowAction.getId())
                     .loadObjectResults();
 
@@ -1491,7 +1484,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         if (!UtilMethods.isSet(mappingRow)) {
 
             final List<Map<String, Object>> rows = new DotConnect()
-                    .setSQL(sql.SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEME_OR_CONTENT_TYPE_MAPPING)
+                    .setSQL(WorkflowSQL.SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEME_OR_CONTENT_TYPE_MAPPING)
                     .addParam(systemAction.name())
                     .addParam(contentType.variable())
                     .loadObjectResults();
@@ -1539,7 +1532,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             for (final List<WorkflowScheme> schemes : schemeListOfList) {
 
                 final DotConnect dotConnect = new DotConnect()
-                        .setSQL(String.format(sql.SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEMES,
+                        .setSQL(String.format(WorkflowSQL.SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEMES,
                                 this.createQueryIn(schemes)))
                         .addParam(systemAction.name());
 
@@ -1566,7 +1559,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             throws DotDataException {
 
         final List<Map<String, Object>> rows = new DotConnect().setSQL(
-                        sql.SELECT_SYSTEM_ACTION_BY_IDENTIFIER)
+                        WorkflowSQL.SELECT_SYSTEM_ACTION_BY_IDENTIFIER)
                 .addParam(identifier)
                 .loadObjectResults();
         return UtilMethods.isSet(rows) ? rows.get(0) : Collections.emptyMap();
@@ -1576,7 +1569,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     public boolean deleteSystemAction(final SystemActionWorkflowActionMapping mapping)
             throws DotDataException {
 
-        new DotConnect().setSQL(sql.DELETE_SYSTEM_ACTION_BY_IDENTIFIER)
+        new DotConnect().setSQL(WorkflowSQL.DELETE_SYSTEM_ACTION_BY_IDENTIFIER)
                 .addParam(mapping.getIdentifier())
                 .loadResult();
 
@@ -1593,11 +1586,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
                 + action.getId());
 
         final List<Map<String, Object>> mappingsToClean = new DotConnect().setSQL(
-                        sql.SELECT_SYSTEM_ACTION_BY_WORKFLOW_ACTION).
+                        WorkflowSQL.SELECT_SYSTEM_ACTION_BY_WORKFLOW_ACTION).
                 addParam(action.getId())
                 .loadObjectResults();
 
-        new DotConnect().setSQL(sql.DELETE_SYSTEM_ACTION_BY_WORKFLOW_ACTION_ID)
+        new DotConnect().setSQL(WorkflowSQL.DELETE_SYSTEM_ACTION_BY_WORKFLOW_ACTION_ID)
                 .addParam(action.getId())
                 .loadResult();
 
@@ -1640,14 +1633,14 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
         final List<Map<String, Object>> existsRow =
                 new DotConnect().setSQL(
-                                sql.SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEME_OR_CONTENT_TYPE_MAPPING)
+                                WorkflowSQL.SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEME_OR_CONTENT_TYPE_MAPPING)
                         .addParam(mapping.getSystemAction().name())
                         .addParam(ownerKey)
                         .loadObjectResults();
 
         if (!UtilMethods.isSet(existsRow)) {
 
-            new DotConnect().setSQL(sql.INSERT_SYSTEM_ACTION_WORKFLOW_ACTION_MAPPING)
+            new DotConnect().setSQL(WorkflowSQL.INSERT_SYSTEM_ACTION_WORKFLOW_ACTION_MAPPING)
                     .addParam(mapping.getIdentifier())
                     .addParam(mapping.getSystemAction().name())
                     .addParam(mapping.getWorkflowAction().getId())
@@ -1662,7 +1655,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
                     mapping.getWorkflowAction(),
                     mapping.getOwner());
 
-            new DotConnect().setSQL(sql.UPDATE_SYSTEM_ACTION_WORKFLOW_ACTION_MAPPING)
+            new DotConnect().setSQL(WorkflowSQL.UPDATE_SYSTEM_ACTION_WORKFLOW_ACTION_MAPPING)
                     .addParam(mapping.getSystemAction().name())
                     .addParam(mapping.getWorkflowAction().getId())
                     .addParam(ownerKey)
@@ -1698,13 +1691,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             isNew = (null == findAction(workflowAction.getId(), workflowStep.getId()));
         }
         if (isNew) {
-            new DotConnect().setSQL(sql.INSERT_ACTION_FOR_STEP)
+            new DotConnect().setSQL(WorkflowSQL.INSERT_ACTION_FOR_STEP)
                     .addParam(workflowAction.getId())
                     .addParam(workflowStep.getId())
                     .addParam(order)
                     .loadResult();
         } else {
-            new DotConnect().setSQL(sql.UPDATE_ACTION_FOR_STEP_ORDER)
+            new DotConnect().setSQL(WorkflowSQL.UPDATE_ACTION_FOR_STEP_ORDER)
                     .addParam(order)
                     .addParam(workflowAction.getId())
                     .addParam(workflowStep.getId())
@@ -1729,7 +1722,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             final WorkflowStep workflowStep,
             final int order) throws DotDataException, AlreadyExistException {
 
-        new DotConnect().setSQL(sql.UPDATE_ACTION_FOR_STEP_ORDER)
+        new DotConnect().setSQL(WorkflowSQL.UPDATE_ACTION_FOR_STEP_ORDER)
                 .addParam(order)
                 .addParam(workflowAction.getId())
                 .addParam(workflowStep.getId())
@@ -1772,7 +1765,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         final String nextStep = this.getNextStep(action);
         final DotConnect db = new DotConnect();
         if (isNew) {
-            db.setSQL(INSERT_ACTION);
+            db.setSQL(WorkflowSQL.INSERT_ACTION);
             db.addParam(action.getId());
             db.addParam(action.getSchemeId());
             db.addParam(action.getName());
@@ -1788,7 +1781,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             db.addParam(WorkflowState.toCommaSeparatedString(action.getShowOn()));
             db.addJSONParam(action.getMetadata());
         } else {
-            db.setSQL(UPDATE_ACTION);
+            db.setSQL(WorkflowSQL.UPDATE_ACTION);
             db.addParam(action.getSchemeId());
             db.addParam(action.getName());
             db.addParam(action.getCondition());
@@ -1830,7 +1823,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
                 new ImmutableList.Builder<>();
 
         final List<Map<String, Object>> stepIdList =
-                new DotConnect().setSQL(sql.SELECT_STEPS_ID_BY_ACTION)
+                new DotConnect().setSQL(WorkflowSQL.SELECT_STEPS_ID_BY_ACTION)
                         .addParam(action.getId()).loadObjectResults();
 
         if (null != stepIdList) {
@@ -1876,7 +1869,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
         final DotConnect db = new DotConnect();
         if (isNew) {
-            db.setSQL(sql.INSERT_ACTION_CLASS);
+            db.setSQL(WorkflowSQL.INSERT_ACTION_CLASS);
             db.addParam(actionClass.getId());
             db.addParam(actionClass.getActionId());
             db.addParam(actionClass.getName());
@@ -1886,7 +1879,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 
         } else {
-            db.setSQL(sql.UPDATE_ACTION_CLASS);
+            db.setSQL(WorkflowSQL.UPDATE_ACTION_CLASS);
             db.addParam(actionClass.getActionId());
             db.addParam(actionClass.getName());
             db.addParam(actionClass.getOrder());
@@ -1967,7 +1960,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
             if (isNew) {
 
-                db.setSQL(sql.INSERT_SCHEME);
+                db.setSQL(WorkflowSQL.INSERT_SCHEME);
                 db.addParam(scheme.getId());
                 db.addParam(scheme.getName());
                 db.addParam(scheme.getDescription());
@@ -1977,7 +1970,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
                 db.addParam(scheme.getModDate());
                 db.loadResult();
             } else {
-                db.setSQL(sql.UPDATE_SCHEME);
+                db.setSQL(WorkflowSQL.UPDATE_SCHEME);
                 db.addParam(scheme.getName());
                 db.addParam(scheme.getDescription());
                 db.addParam(scheme.isArchived());
@@ -2001,7 +1994,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             Logger.info(this,
                     "Deleting the schemes associated to the content type: " + contentTypeId);
 
-            new DotConnect().setSQL(sql.DELETE_SCHEME_FOR_STRUCT)
+            new DotConnect().setSQL(WorkflowSQL.DELETE_SCHEME_FOR_STRUCT)
                     .addParam(contentTypeId).loadResult();
 
             cache.removeStructure(contentTypeId);
@@ -2033,13 +2026,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         try {
 
             final DotConnect db = new DotConnect();
-            db.setSQL(sql.DELETE_SCHEME_FOR_STRUCT);
+            db.setSQL(WorkflowSQL.DELETE_SCHEME_FOR_STRUCT);
             db.addParam(contentTypeInode);
             db.loadResult();
 
             final ImmutableList.Builder<WorkflowStep> stepBuilder = new ImmutableList.Builder<>();
             for (final String id : schemesIds) {
-                db.setSQL(sql.INSERT_SCHEME_FOR_STRUCT);
+                db.setSQL(WorkflowSQL.INSERT_SCHEME_FOR_STRUCT);
                 db.addParam(UUIDGenerator.generateUuid());
                 db.addParam(id);
                 db.addParam(contentTypeInode);
@@ -2072,7 +2065,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
             final List<WorkflowTask> tasks = this
                     .convertListToObjects(new DotConnect()
-                            .setSQL(sql.SELECT_TASK_NULL_BY_STRUCT)
+                            .setSQL(WorkflowSQL.SELECT_TASK_NULL_BY_STRUCT)
                             .addParam(contentTypeInode).loadObjectResults(), WorkflowTask.class);
 
             //clean cache
@@ -2114,7 +2107,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             }
 
             final DotConnect db = new DotConnect();
-            db.setSQL(sql.SELECT_TASK_STEPS_TO_CLEAN_BY_STRUCT + condition);
+            db.setSQL(WorkflowSQL.SELECT_TASK_STEPS_TO_CLEAN_BY_STRUCT + condition);
             db.addParam(contentTypeInode);
             if (steps.size() > 0) {
                 for (WorkflowStep step : steps) {
@@ -2134,7 +2127,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
                 }
             });
 
-            db.setSQL(sql.UPDATE_STEPS_BY_STRUCT + condition);
+            db.setSQL(WorkflowSQL.UPDATE_STEPS_BY_STRUCT + condition);
             db.addParam((Object) null);
             db.addParam(contentTypeInode);
             if (steps.size() > 0) {
@@ -2182,7 +2175,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         final DotConnect db = new DotConnect();
         if (isNew) {
 
-            db.setSQL(sql.INSERT_STEP);
+            db.setSQL(WorkflowSQL.INSERT_STEP);
             db.addParam(step.getId());
             db.addParam(step.getName());
             db.addParam(step.getSchemeId());
@@ -2198,7 +2191,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             }
             db.loadResult();
         } else {
-            db.setSQL(sql.UPDATE_STEP);
+            db.setSQL(WorkflowSQL.UPDATE_STEP);
             db.addParam(step.getName());
             db.addParam(step.getSchemeId());
             db.addParam(step.getMyOrder());
@@ -2243,14 +2236,14 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
         final DotConnect db = new DotConnect();
         if (isNew) {
-            db.setSQL(sql.INSERT_ACTION_CLASS_PARAM);
+            db.setSQL(WorkflowSQL.INSERT_ACTION_CLASS_PARAM);
             db.addParam(param.getId());
             db.addParam(param.getActionClassId());
             db.addParam(param.getKey());
             db.addParam(param.getValue());
             db.loadResult();
         } else {
-            db.setSQL(sql.UPDATE_ACTION_CLASS_PARAM);
+            db.setSQL(WorkflowSQL.UPDATE_ACTION_CLASS_PARAM);
 
             db.addParam(param.getActionClassId());
             db.addParam(param.getKey());
@@ -2421,7 +2414,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         final DotConnect db = new DotConnect();
         try {
 
-            db.setSQL(sql.RETRIEVE_LAST_STEP_ACTIONID);
+            db.setSQL(WorkflowSQL.RETRIEVE_LAST_STEP_ACTIONID);
             db.addParam(taskId);
             db.loadResult();
         } catch (final Exception e) {
@@ -2438,7 +2431,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         final DotConnect db = new DotConnect();
         List<WorkflowTask> list = new ArrayList<>();
         try {
-            db.setSQL(sql.SELECT_EXPIRED_TASKS);
+            db.setSQL(WorkflowSQL.SELECT_EXPIRED_TASKS);
             List<Map<String, Object>> results = db.loadResults();
             for (Map<String, Object> map : results) {
                 String taskId = (String) map.get("id");
@@ -2459,7 +2452,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         WorkflowScheme scheme = null;
         try {
             final DotConnect db = new DotConnect();
-            db.setSQL(sql.SELECT_SCHEME_NAME);
+            db.setSQL(WorkflowSQL.SELECT_SCHEME_NAME);
             db.addParam((schemaName != null ? schemaName.trim() : ""));
             List<WorkflowScheme> list = this.convertListToObjects(db.loadObjectResults(),
                     WorkflowScheme.class);
@@ -2474,7 +2467,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     public void deleteWorkflowActionClassParameter(WorkflowActionClassParameter param)
             throws DotDataException, AlreadyExistException {
         DotConnect db = new DotConnect();
-        db.setSQL(sql.DELETE_ACTION_CLASS_PARAM_BY_ID);
+        db.setSQL(WorkflowSQL.DELETE_ACTION_CLASS_PARAM_BY_ID);
         db.addParam(param.getId());
         db.loadResult();
 
@@ -2609,7 +2602,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         DotConnect dc = new DotConnect();
 
         try {
-            dc.setSQL(sql.SELECT_TASKS_BY_STEP);
+            dc.setSQL(WorkflowSQL.SELECT_TASKS_BY_STEP);
             dc.addParam(stepId);
             tasks = this.convertListToObjects(dc.loadObjectResults(), WorkflowTask.class);
         } catch (DotDataException e) {
@@ -2625,7 +2618,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         List<ContentType> contentTypes;
         DotConnect dc = new DotConnect();
         try {
-            dc.setSQL(sql.SELECT_STRUCTS_FOR_SCHEME);
+            dc.setSQL(WorkflowSQL.SELECT_STRUCTS_FOR_SCHEME);
             dc.addParam(scheme.getId());
             contentTypes = this.convertListToObjects(dc.loadObjectResults(), ContentType.class);
 
@@ -2642,12 +2635,12 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         DotConnect dc = new DotConnect();
         try {
             //delete association of content types with the scheme
-            dc.setSQL(sql.DELETE_STRUCTS_FOR_SCHEME);
+            dc.setSQL(WorkflowSQL.DELETE_STRUCTS_FOR_SCHEME);
             dc.addParam(scheme.getId());
             dc.loadResult();
 
             //delete the scheme
-            dc.setSQL(sql.DELETE_SCHEME);
+            dc.setSQL(WorkflowSQL.DELETE_SCHEME);
             dc.addParam(scheme.getId());
             dc.loadResult();
 
@@ -2673,7 +2666,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
                         + scheme.getId());
 
         new DotConnect()
-                .setSQL(sql.DELETE_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE)
+                .setSQL(WorkflowSQL.DELETE_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE)
                 .addParam(scheme.getId())
                 .loadResult();
         this.cache.removeSystemActionsByScheme(scheme.getId());
@@ -2688,7 +2681,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
                         + contentTypeVariable);
 
         new DotConnect()
-                .setSQL(sql.DELETE_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE)
+                .setSQL(WorkflowSQL.DELETE_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE)
                 .addParam(contentTypeVariable)
                 .loadResult();
         this.cache.removeSystemActionsByContentType(contentTypeVariable);
@@ -2699,7 +2692,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             throws DotDataException {
         final DotConnect dc = new DotConnect();
         try {
-            dc.setSQL(sql.SELECT_NULL_TASK_CONTENTLET_FOR_WORKFLOW);
+            dc.setSQL(WorkflowSQL.SELECT_NULL_TASK_CONTENTLET_FOR_WORKFLOW);
             dc.addParam(workflowSchemeId);
             final List<Map<String, String>> result = dc.loadResults();
             return result.stream().map(row -> row.get("identifier")).collect(Collectors.toSet());
