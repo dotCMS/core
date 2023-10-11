@@ -258,13 +258,13 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (description && this.areAllFalsyOrEmpty([ogDescription, descriptionOgElements])) {
+        if (description && this.areAllFalsyOrEmpty([ogDescription])) {
             result.push(
                 this.getErrorItem(this.dotMessageService.get('seo.rules.og-description.not.found'))
             );
         }
 
-        if (ogDescription?.length === 0) {
+        if (descriptionOgElements?.length >= 1 && this.areAllFalsyOrEmpty([ogDescription])) {
             result.push(
                 this.getErrorItem(
                     this.dotMessageService.get('seo.rules.og-description.found.empty')
