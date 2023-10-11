@@ -2,7 +2,7 @@ import { Observable, forkJoin, from, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { map, switchMap } from 'rxjs/operators';
+import { catchError, map, mergeMap, switchMap } from 'rxjs/operators';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
@@ -758,23 +758,39 @@ export class DotSeoMetaTagsService {
      * @returns
      */
     getImageFileSize(imageUrl: string): Observable<DotCMSTempFile | ImageMetaData> {
-        return from(
-            fetch(imageUrl)
-                .then((response) => response.blob())
-                .then((blob) => {
-                    return {
-                        length: blob.size,
-                        url: imageUrl
-                    };
-                })
-                .catch((error) => {
-                    console.warn(
-                        'Getting the file size from an external URL failed, so we upload it to the server:',
-                        error
-                    );
+        return from(fetch(imageUrl)).pipe(
+            mergeMap((response) => {
+                return response.blob();
+            }),
+            mergeMap((response) => {
+                return of({
+                    length: response.size,
+                    url: imageUrl
+                });
+            }),
+            catchError((error) => {
+                console.warn(
+                    'Getting the file size from an external URL failed, so we upload it to the server:',
+                    error
+                );
 
-                    return this.dotUploadService.uploadFile({ file: imageUrl });
-                })
+                return from(this.dotUploadService.uploadFile({ file: imageUrl })).pipe(
+                    mergeMap((uploadedFile) => {
+                        if (uploadedFile) {
+                            return of(uploadedFile);
+                        }
+                    }),
+                    catchError((uploadError) => {
+                        console.warn('Error while uploading:', uploadError);
+                        // You can handle the error from the upload service here
+
+                        return of({
+                            length: 0,
+                            url: imageUrl
+                        });
+                    })
+                );
+            })
         );
     }
 }
