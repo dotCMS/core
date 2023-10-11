@@ -228,24 +228,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
      * @throws IllegalAccessException
      * @throws InvocationTargetException
      */
-    private WorkflowScheme convertScheme(Map<String, Object> row)
-            throws IllegalAccessException, InvocationTargetException {
-        final WorkflowScheme scheme = new WorkflowScheme();
-        row.put("entryActionId", row.get("entry_action_id"));
-        row.put("defaultScheme", row.get("default_scheme"));
-        row.put("modDate", row.get("mod_date"));
-
-        BeanUtils.copyProperties(scheme, row);
-
-        return scheme;
-    }
-
-    /**
-     * @param row
-     * @return
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     */
     private WorkflowStep convertStep(Map<String, Object> row)
             throws IllegalAccessException, InvocationTargetException {
         final WorkflowStep step = new WorkflowStep();
@@ -257,22 +239,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         BeanUtils.copyProperties(step, row);
 
         return step;
-    }
-
-    private WorkflowTask convertTask(Map<String, Object> row)
-            throws IllegalAccessException, InvocationTargetException {
-
-        final WorkflowTask task = new WorkflowTask();
-        row.put("languageId", row.get("language_id"));
-        row.put("creationDate", row.get("creation_date"));
-        row.put("modDate", row.get("mod_date"));
-        row.put("dueDate", row.get("due_date"));
-        row.put("createdBy", row.get("created_by"));
-        row.put("assignedTo", row.get("assigned_to"));
-        row.put("belongsTo", row.get("belongs_to"));
-        BeanUtils.copyProperties(task, row);
-
-        return task;
     }
 
     /**
@@ -736,11 +702,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     public List<WorkflowActionClass> findActionClassesByClassName(final String actionClassName)
             throws DotDataException {
 
-        final List<WorkflowActionClass> classes = this.convertListToObjects(
+        return this.convertListToObjects(
                 new DotConnect().setSQL(WorkflowSQL.SELECT_ACTION_CLASSES_BY_CLASS)
                         .addParam(actionClassName).loadObjectResults(), WorkflowActionClass.class);
-
-        return classes;
     }
 
 

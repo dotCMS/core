@@ -10,6 +10,10 @@ package com.dotmarketing.portlets.workflows.business;
  */
 public final class WorkflowSQL {
 
+	private WorkflowSQL() {
+		// Utility class
+	}
+
 	public static final String SELECT_SCHEMES = "select * from workflow_scheme where (archived = ? or archived = ?) order by name";
 
 	public static final String SELECT_SCHEME= "select * from workflow_scheme where id = ?";
