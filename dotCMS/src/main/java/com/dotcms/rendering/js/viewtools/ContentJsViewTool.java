@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.js.JsViewContextAware;
 import com.dotcms.rendering.js.JsViewTool;
+import com.dotcms.rendering.js.proxy.JsProxyFactory;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.rendering.velocity.viewtools.content.ContentTool;
 import com.dotcms.rendering.velocity.viewtools.content.LazyLoaderContentMap;
@@ -35,6 +36,7 @@ import java.util.Optional;
 
 /**
  * Wraps the {@link com.dotcms.rendering.velocity.viewtools.content.ContentTool} (dotcontent) into the JS context.
+ *
  * @author jsanca
  */
 public class ContentJsViewTool implements JsViewTool, JsViewContextAware {
@@ -52,6 +54,11 @@ public class ContentJsViewTool implements JsViewTool, JsViewContextAware {
         return "dotcontent";
     }
 
+    protected LazyLoaderContentMap loadInternal(final String inodeOrIdentifier) {
+
+        return this.contentTool.load(inodeOrIdentifier);
+    }
+
     @HostAccess.Export
     /**
      * Will load a lazy version of the content map based on the inode or identifier. It will always
@@ -61,9 +68,15 @@ public class ContentJsViewTool implements JsViewTool, JsViewContextAware {
      * @param inodeOrIdentifier Can be either an Inode or Identifier of content.
      * @return NULL if not found
      */
-    public LazyLoaderContentMap load(final String inodeOrIdentifier) {
+    public Object load(final String inodeOrIdentifier) {
 
-        return new LazyLoaderContentMap(()-> find(inodeOrIdentifier));
+        return JsProxyFactory.createProxy(this.loadInternal(inodeOrIdentifier));
+    }
+
+
+    protected ContentMap findInternal(final String inodeOrIdentifier) {
+
+        return this.contentTool.find(inodeOrIdentifier);
     }
 
     @HostAccess.Export
@@ -75,45 +88,12 @@ public class ContentJsViewTool implements JsViewTool, JsViewContextAware {
      * @param inodeOrIdentifier Can be either an Inode or Identifier of content.
      * @return NULL if not found
      */
-    public ContentMap find(final String inodeOrIdentifier) {
-        final long sessionLang = language.getId();
+    public Object find(final String inodeOrIdentifier) {
 
-        try {
-            Contentlet c = ContentUtils.find(inodeOrIdentifier, user, EDIT_OR_PREVIEW_MODE, sessionLang);
-            if(c== null || !InodeUtils.isSet(c.getInode())){
-                return null;
-            }
-            return new ContentMap(c, user, EDIT_OR_PREVIEW_MODE,currentHost,context);
-        }
-        catch(Throwable ex) {
-            if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
-                Logger.error(this,"error in ContentTool.find. URL: "+req.getRequestURL().toString(),ex);
-            }
-            throw new RuntimeException(ex);
-        }
+        return JsProxyFactory.createProxy(this.findInternal(inodeOrIdentifier));
     }
 
-    /**
-     * Will return a ContentMap object which can be used on dotCMS front end.
-     * This method is better then the old #pullcontent macro because it doesn't have to
-     * parse all the velocity content object that are returned.  If you are building large pulls
-     * and depending on the types of fields on the content this can get expensive especially
-     * with large data sets.<br />
-     * EXAMPLE:<br />
-     * #foreach($con in $dotcontent.pull('+structureName:newsItem',5,'modDate desc'))<br />
-     * 		$con.headline<br />
-     * #end<br />
-     * Returns empty List if no results are found
-     * @param query - Lucene Query used to search for content - Will append live, working, deleted, and language if not passed
-     * @param limit 0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited amount as all content will load into memory
-     * @param sort - Velocity variable name to sort by.  this is a string and can contain multiple values "sort1 acs, sort2 desc"
-     * @return  Returns empty List if no results are found
-     */
-    public List<ContentMap> pull(String query, String limit, String sort){
-        int l = Integer.valueOf(limit);
-        return pull(query, l, sort);
-    }
-
+    @HostAccess.Export
     /**
      * Will return a ContentMap object which can be used on dotCMS front end.
      * This method is better then the old #pullcontent macro because it doesn't have to
@@ -130,29 +110,48 @@ public class ContentJsViewTool implements JsViewTool, JsViewContextAware {
      * @param sort - Velocity variable name to sort by.  this is a string and can contain multiple values "sort1 acs, sort2 desc"
      * @return Returns empty List if no results are found
      */
-    public List<ContentMap> pull(String query,int limit, String sort){
-        return pull(query,-1,limit,sort);
+    public Object pull(final String query, final String limit, final String sort) {
+        return JsProxyFactory.createProxy(this.pullInternal(query, limit, sort));
     }
 
-    public PaginatedArrayList<ContentMap> pull(String query, int offset, int limit, String sort){
-        try {
-            PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<>();
+    protected List<ContentMap> pullInternal(final String query, final String limit, final String sort) {
+        return contentTool.pull(query, limit, sort);
+    }
 
-            PaginatedArrayList<Contentlet> cons = ContentUtils.pull(
-                    ContentUtils.addDefaultsToQuery(query, EDIT_OR_PREVIEW_MODE, req),
-                    offset, limit, sort, user, tmDate);
-            for(Contentlet cc : cons) {
-                ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
-            }
-            ret.setQuery(cons.getQuery());
-            return ret;
-        }
-        catch(Throwable ex) {
-            if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
-                Logger.error(this,"error in ContentTool.pull. URL: "+req.getRequestURL().toString(),ex);
-            }
-            throw new RuntimeException(ex);
-        }
+    @HostAccess.Export
+    /**
+     * Will return a ContentMap object which can be used on dotCMS front end.
+     * This method is better then the old #pullcontent macro because it doesn't have to
+     * parse all the velocity content object that are returned.  If you are building large pulls
+     * and depending on the types of fields on the content this can get expensive especially
+     * with large data sets.<br />
+     * EXAMPLE:<br />
+     * #foreach($con in $dotcontent.pull('+structureName:newsItem',5,'modDate desc'))<br />
+     * 		$con.headline<br />
+     * #end<br />
+     * Returns empty List if no results are found
+     * @param query - Lucene Query used to search for content - Will append live, working, deleted, and language if not passed
+     * @param limit 0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited amount as all content will load into memory
+     * @param sort - Velocity variable name to sort by.  this is a string and can contain multiple values "sort1 acs, sort2 desc"
+     * @return Returns empty List if no results are found
+     */
+    public Object pull(final String query, final int limit, final String sort) {
+        return JsProxyFactory.createProxy(this.pullInternal(query, limit, sort));
+    }
+
+    protected List<ContentMap> pullInternal(final String query, final int limit, final String sort) {
+        return contentTool.pull(query, limit, sort);
+    }
+
+    protected PaginatedArrayList<ContentMap> pullInternal(final String query, final int offset, final int limit, final String sort) {
+
+        return contentTool.pull(query, offset, limit, sort);
+    }
+
+    @HostAccess.Export
+    public Object pull(final String query, final int offset, final int limit, final String sort) {
+
+        return JsProxyFactory.createProxy(this.pullInternal(query, offset, limit, sort));
     }
 
     /**
@@ -163,20 +162,29 @@ public class ContentJsViewTool implements JsViewTool, JsViewContextAware {
      * with large data sets.<br />
      * EXAMPLE:<br />
      * #foreach($con in $dotcontent.pullPagenated('+structureName:newsItem',20,20,'modDate desc'))<br />
-     * 		$con.headline<br />
+     * $con.headline<br />
      * #end<br />
      * Returns empty List if no results are found <br />
      * there is a totalResults avialible to you on the returned list. $retList.totalResults
-     * @param query - Lucene Query used to search for content - Will append live, working, deleted, and language if not passed
-     * @param limit 0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited amount as all content will load into memory
+     *
+     * @param query  - Lucene Query used to search for content - Will append live, working, deleted, and language if not passed
+     * @param limit  0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited amount as all content will load into memory
      * @param offset offset to start the results from
-     * @param sort - Velocity variable name to sort by.  this is a string and can contain multiple values "sort1 acs, sort2 desc"
+     * @param sort   - Velocity variable name to sort by.  this is a string and can contain multiple values "sort1 acs, sort2 desc"
      * @return Returns empty List if no results are found
      */
-    public PaginatedArrayList<ContentMap> pullPagenated(String query, int limit, int offset, String sort){
-        return pull(query, offset, limit, sort);
+    protected PaginatedArrayList<ContentMap> pullPaginatedInternal(final String query, final int limit,
+                                                                   final int offset, final String sort) {
+        return contentTool.pullPagenated(query, offset, limit, sort);
     }
 
+    @HostAccess.Export
+    public Object pullPaginated(final String query, final int limit, final int offset, final String sort) {
+
+        return JsProxyFactory.createProxy(this.pullPaginatedInternal(query, offset, limit, sort));
+    }
+
+    @HostAccess.Export
     /**
      * Works just similar to the pullPagenated. Will return a ContentMap object which can be used on dotCMS front end.
      * This method is better then the old #pullcontent macro because it doesn't have to
@@ -206,38 +214,19 @@ public class ContentJsViewTool implements JsViewTool, JsViewContextAware {
      * @return Returns empty List if no results are found
      *
      */
-    public PaginatedContentList<ContentMap> pullPerPage(String query, int currentPage, int contentsPerPage, String sort){
-        PaginatedContentList<ContentMap> ret = new PaginatedContentList<>();
-        try {
-            PaginatedArrayList<Contentlet> cons = ContentUtils.pullPerPage(
-                    ContentUtils.addDefaultsToQuery(query, EDIT_OR_PREVIEW_MODE, req), currentPage, contentsPerPage, sort,
-                    user, tmDate);
-            for(Contentlet cc : cons) {
-                ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
-            }
+    public Object pullPerPage(final String query, final int currentPage,
+                              final int contentsPerPage, final String sort) {
 
-            if(cons != null && cons.size() > 0){
-                long minIndex = (currentPage - 1) * contentsPerPage;
-                long totalCount = cons.getTotalResults();
-                long maxIndex = contentsPerPage * currentPage;
-                if((minIndex + contentsPerPage) >= totalCount){
-                    maxIndex = totalCount;
-                }
-                ret.setTotalResults(cons.getTotalResults());
-                ret.setTotalPages((long)Math.ceil(((double)cons.getTotalResults())/((double)contentsPerPage)));
-                ret.setNextPage(maxIndex < totalCount);
-                ret.setPreviousPage(minIndex > 0);
-            }
-        }
-        catch(Throwable ex) {
-            if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
-                Logger.error(this,"error in ContentTool.pullPerpage. URL: "+req.getRequestURL().toString(),ex);
-            }
-            throw new RuntimeException(ex);
-        }
-        return ret;
+        return JsProxyFactory.createProxy(this.pullPerPageInternal(query, currentPage, contentsPerPage, sort));
     }
 
+    protected PaginatedContentList<ContentMap> pullPerPageInternal(final String query, final int currentPage,
+                                                                   final int contentsPerPage, final String sort) {
+
+        return this.contentTool.pullPerPage(query, currentPage, contentsPerPage, sort);
+    }
+
+    @HostAccess.Export
     /**
      * Will return a ContentSearch object which can be used on dotCMS front end.
      * The method can be used to determine the inodes or identifiers which match a given query.
@@ -248,10 +237,15 @@ public class ContentJsViewTool implements JsViewTool, JsViewContextAware {
      * @param limit 0 is the dotCMS max limit which is 10000.
      * @return
      */
-    public List<ContentletSearch> query(String query, int limit){
-        return query(query, limit, "modDate");
+    public Object query(final String query, final int limit) {
+        return JsProxyFactory.createProxy(this.queryInternal(query, limit));
     }
 
+    protected List<ContentletSearch> queryInternal(final String query, final int limit) {
+        return contentTool.query(query, limit);
+    }
+
+    @HostAccess.Export
     /**
      * Will return a ContentSearch object which can be used on dotCMS front end.
      * The method can be used to determine the inodes or identifiers which match a given query.
@@ -264,35 +258,25 @@ public class ContentJsViewTool implements JsViewTool, JsViewContextAware {
      * @param sort - Velocity variable name to sort by.  this is a string and can contain multiple values "sort1 acs, sort2 desc"
      * @return Returns empty List if no results are found
      */
-    public List<ContentletSearch> query(String query, int limit, String sort){
-        try {
-            return ContentUtils.query(ContentUtils.addDefaultsToQuery(query, EDIT_OR_PREVIEW_MODE, req), limit, user, sort);
-        }
-        catch(Throwable ex) {
-            if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
-                Logger.error(this,"error in ContentTool.query. URL: "+req.getRequestURL().toString(),ex);
-            }
-            throw new RuntimeException(ex);
-        }
+    public Object query(final String query, final int limit, final String sort) {
+        return JsProxyFactory.createProxy(this.queryInternal(query, limit, sort));
     }
 
+    protected List<ContentletSearch> queryInternal(final String query, final int limit, final String sort) {
+        return contentTool.query(query, limit, sort);
+    }
+
+    @HostAccess.Export
     /**
      * Use this method to return the number of contents which match a particular query.
      * @param query - Lucene Query used to search for content - Will append live, working, deleted, and language if not passed
      * @return
      */
-    public long count(String query) {
-        try {
-            return ContentUtils.count(query, user, tmDate);
-        }
-        catch(Throwable ex) {
-            if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
-                Logger.error(this,"error in ContentTool.count. URL: "+req.getRequestURL().toString(),ex);
-            }
-            throw new RuntimeException(ex);
-        }
+    public long count(final String query) {
+        return contentTool.count(query);
     }
 
+    @HostAccess.Export
     /**
      * Will return a ContentMap object which can be used on dotCMS front end.
      * This method is better then the old #pullRelatedContent macro because it doesn't have to
@@ -313,10 +297,18 @@ public class ContentJsViewTool implements JsViewTool, JsViewContextAware {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier, boolean pullParents, int limit) {
-        return pullRelated(relationshipName, contentletIdentifier, null, pullParents, limit, null);
+    public Object pullRelated(final String relationshipName, final String contentletIdentifier,
+                              final boolean pullParents, final int limit) {
+        return JsProxyFactory.createProxy(this.pullRelatedInternal(relationshipName, contentletIdentifier, pullParents, limit));
     }
 
+    protected List<ContentMap> pullRelatedInternal(final String relationshipName, final String contentletIdentifier,
+                                                   final boolean pullParents, final int limit) {
+
+        return this.contentTool.pullRelated(relationshipName, contentletIdentifier, pullParents, limit);
+    }
+
+    @HostAccess.Export
     /**
      * Will return a ContentMap object which can be used on dotCMS front end.
      * This method is better then the old #pullRelatedContent macro because it doesn't have to
@@ -338,10 +330,17 @@ public class ContentJsViewTool implements JsViewTool, JsViewContextAware {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier, boolean pullParents, int limit, String sort) {
-        return pullRelated(relationshipName, contentletIdentifier, null, pullParents, limit, sort);
+    public Object pullRelated(final String relationshipName, final String contentletIdentifier,
+                              final boolean pullParents, final int limit, final String sort) {
+        return JsProxyFactory.createProxy(pullRelatedInternal(relationshipName, contentletIdentifier, pullParents, limit, sort));
     }
 
+    public List<ContentMap> pullRelatedInternal(final String relationshipName, final String contentletIdentifier,
+                                                final boolean pullParents, final int limit, final String sort) {
+        return contentTool.pullRelated(relationshipName, contentletIdentifier, pullParents, limit, sort);
+    }
+
+    @HostAccess.Export
     /**
      * Will return a ContentMap object which can be used on dotCMS front end. This method is better
      * then the old #pullRelatedContent macro because it doesn't have to parse all the velocity
@@ -362,236 +361,158 @@ public class ContentJsViewTool implements JsViewTool, JsViewContextAware {
      * values "sort1 acs, sort2 desc". Can be Null
      * @return Returns empty List if no results are found
      */
-    public List<ContentMap> pullRelated(final String relationshipName, final String contentletIdentifier,
-                                        final String condition, final boolean pullParents, final int limit, final String sort) {
-        try {
-            final PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<>();
-
-            long langId = UtilMethods.isSet(condition) && condition.contains("languageId") ? -1 :
-                    language.getId();
-
-            final List<Contentlet> cons = ContentUtils
-                    .pullRelated(relationshipName, contentletIdentifier,
-                            condition == null ? condition : ContentUtils.addDefaultsToQuery(condition, EDIT_OR_PREVIEW_MODE, req),
-                            pullParents,
-                            limit, sort, user, tmDate, langId,
-                            EDIT_OR_PREVIEW_MODE ? null : true);
-
-            for (Contentlet cc : cons) {
-                ret.add(new ContentMap(cc, user, EDIT_OR_PREVIEW_MODE, currentHost, context));
-            }
-            return ret;
-        } catch (Throwable ex) {
-            if (Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
-                Logger.error(this,
-                        "error in ContentTool.pullRelated. URL: " + req.getRequestURL().toString(),
-                        ex);
-            }
-            throw new RuntimeException(ex);
-        }
+    public Object pullRelated(final String relationshipName, final String contentletIdentifier,
+                              final String condition, final boolean pullParents, final int limit, final String sort) {
+        return JsProxyFactory.createProxy(this.pullRelatedInternal(relationshipName, contentletIdentifier, condition, pullParents, limit, sort));
     }
 
+    protected List<ContentMap> pullRelatedInternal(final String relationshipName, final String contentletIdentifier,
+                                                   final String condition, final boolean pullParents, final int limit, final String sort) {
+        return contentTool.pullRelated(relationshipName, contentletIdentifier, condition, pullParents, limit, sort);
+    }
+
+    @HostAccess.Export
     /**
      * Returns a list of related content given a RelationshipField and additional filtering
      * criteria
      *
      * @param contentletIdentifier - Identifier of the contentlet
-     * @param fieldVariable - Full field variable (including the content type variable, ie.:
-     * news.youtubes where 'news' is the content type variable and 'youtubes' is the field
-     * variable)
-     * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be
-     * Null
-     * @param limit - 0 is the dotCMS max limit which is 10000. Be careful when searching for
-     * unlimited amount as all content will load into memory
-     * @param offset - Starting position of the resulting list. -1 is the default value and the
-     * first results of the pagination are returned
-     * @param sort - Velocity variable name to sort by.  This is a string and can contain multiple
-     * values "sort1 acs, sort2 desc". Can be Null
+     * @param fieldVariable        - Full field variable (including the content type variable, ie.:
+     *                             news.youtubes where 'news' is the content type variable and 'youtubes' is the field
+     *                             variable)
+     * @param condition            - Extra conditions to add to the query. like +title:Some Title.  Can be
+     *                             Null
+     * @param limit                - 0 is the dotCMS max limit which is 10000. Be careful when searching for
+     *                             unlimited amount as all content will load into memory
+     * @param offset               - Starting position of the resulting list. -1 is the default value and the
+     *                             first results of the pagination are returned
+     * @param sort                 - Velocity variable name to sort by.  This is a string and can contain multiple
+     *                             values "sort1 acs, sort2 desc". Can be Null
      * @return Returns empty List if no results are found
      */
-    public List<ContentMap> pullRelatedField(String contentletIdentifier, String fieldVariable,
-                                             String condition, int limit, int offset, String sort) {
-        try {
-            PaginatedArrayList<ContentMap> ret = new PaginatedArrayList();
+    public Object pullRelatedField(final String contentletIdentifier, final String fieldVariable,
+                                   final String condition, final int limit, final int offset, final String sort) {
 
-            if (!fieldVariable.contains(StringPool.PERIOD)) {
-                final String message = "Invalid field variable " + fieldVariable;
-                if (Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
-                    Logger.error(this, message);
-                }
-                throw new RuntimeException(new DotDataValidationException(message));
-            }
-
-            final ContentType contentType = APILocator.getContentTypeAPI(user)
-                    .find(fieldVariable.split("\\" + StringPool.PERIOD)[0]);
-            final Field field = APILocator.getContentTypeFieldAPI()
-                    .byContentTypeAndVar(contentType,
-                            fieldVariable.split("\\" + StringPool.PERIOD)[1]);
-            final Relationship relationship = APILocator.getRelationshipAPI()
-                    .getRelationshipFromField(field, user);
-
-            final boolean pullParents = APILocator.getRelationshipAPI().isParentField(relationship, field);
-            List<Contentlet> cons = ContentUtils
-                    .pullRelatedField(relationship, contentletIdentifier,
-                            ContentUtils.addDefaultsToQuery(condition, EDIT_OR_PREVIEW_MODE, req), limit, offset, sort, user, tmDate, pullParents,
-                            language.getId(), EDIT_OR_PREVIEW_MODE ? null : true);
-
-            for (Contentlet cc : cons) {
-                ret.add(new ContentMap(cc, user, EDIT_OR_PREVIEW_MODE, currentHost, context));
-            }
-            return ret;
-        } catch (Throwable ex) {
-            if (Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
-                Logger.error(this,
-                        "error in ContentTool.pullRelated. URL: " + req.getRequestURL().toString(),
-                        ex);
-            }
-            throw new RuntimeException(ex);
-        }
+        return JsProxyFactory.createProxy(this.pullRelatedFieldInternal(contentletIdentifier, fieldVariable, condition, limit, offset, sort));
     }
 
+    protected List<ContentMap> pullRelatedFieldInternal(final String contentletIdentifier, final String fieldVariable,
+                                                        final String condition, final int limit, final int offset, final String sort) {
+        return this.contentTool.pullRelatedField(contentletIdentifier, fieldVariable, condition, limit, offset, sort);
+    }
+
+    @HostAccess.Export
     /**
      * Returns a list of related content given a RelationshipField and additional filtering criteria
+     *
      * @param contentletIdentifier - Identifier of the contentlet
-     * @param fieldVariable - Full field variable (including the content type variable, ie.: news.youtubes where 'news' is the content type variable and 'youtubes' is the field variable)
-     * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be Null
-     * @param limit - 0 is the dotCMS max limit which is 10000. Be careful when searching for unlimited amount as all content will load into memory
-     * @param sort - Velocity variable name to sort by.  This is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
+     * @param fieldVariable        - Full field variable (including the content type variable, ie.: news.youtubes where 'news' is the content type variable and 'youtubes' is the field variable)
+     * @param condition            - Extra conditions to add to the query. like +title:Some Title.  Can be Null
+     * @param limit                - 0 is the dotCMS max limit which is 10000. Be careful when searching for unlimited amount as all content will load into memory
+     * @param sort                 - Velocity variable name to sort by.  This is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
      * @return Returns empty List if no results are found
      */
-    public List<ContentMap> pullRelatedField(String contentletIdentifier, String fieldVariable,
-                                             String condition, int limit, String sort) {
-        return pullRelatedField(contentletIdentifier, fieldVariable, condition, limit, -1, sort);
+    public Object pullRelatedField(final String contentletIdentifier, final String fieldVariable,
+                                   final String condition, final int limit, final String sort) {
+        return JsProxyFactory.createProxy(this.pullRelatedFieldInternal(contentletIdentifier, fieldVariable, condition, limit, sort));
     }
 
+    public List<ContentMap> pullRelatedFieldInternal(final String contentletIdentifier, final String fieldVariable,
+                                                     final String condition, final int limit, final String sort) {
+        return contentTool.pullRelatedField(contentletIdentifier, fieldVariable, condition, limit, sort);
+    }
+
+    @HostAccess.Export
     /**
      * Returns a list of related content given a RelationshipField and additional filtering criteria
+     *
      * @param contentletIdentifier - Identifier of the contentlet
-     * @param fieldVariable - Full field variable (including the content type variable, ie.: news.youtubes where 'news' is the content type variable and 'youtubes' is the field variable)
-     * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be Null
-     * @param sort - Velocity variable name to sort by.  This is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
+     * @param fieldVariable        - Full field variable (including the content type variable, ie.: news.youtubes where 'news' is the content type variable and 'youtubes' is the field variable)
+     * @param condition            - Extra conditions to add to the query. like +title:Some Title.  Can be Null
+     * @param sort                 - Velocity variable name to sort by.  This is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
      * @return Returns empty List if no results are found
      */
-    public List<ContentMap> pullRelatedField(String contentletIdentifier, String fieldVariable,
-                                             String condition, String sort) {
-        return pullRelatedField(contentletIdentifier, fieldVariable, condition, 0, sort);
+    public Object pullRelatedField(final String contentletIdentifier, final String fieldVariable,
+                                             final String condition, final String sort) {
+        return JsProxyFactory.createProxy(this.pullRelatedFieldInternal(contentletIdentifier, fieldVariable, condition, sort));
     }
 
+    public List<ContentMap> pullRelatedFieldInternal(final String contentletIdentifier, final String fieldVariable,
+                                                     final String condition, final String sort) {
+
+        return contentTool.pullRelatedField(contentletIdentifier, fieldVariable, condition, sort);
+    }
+
+    @HostAccess.Export
     /**
      * Returns a list of related content given a RelationshipField and additional filtering criteria
+     *
      * @param contentletIdentifier - Identifier of the contentlet
-     * @param fieldVariable - Full field variable (including the content type variable, ie.: news.youtubes where 'news' is the content type variable and 'youtubes' is the field variable)
-     * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be Null
+     * @param fieldVariable        - Full field variable (including the content type variable, ie.: news.youtubes where 'news' is the content type variable and 'youtubes' is the field variable)
+     * @param condition            - Extra conditions to add to the query. like +title:Some Title.  Can be Null
      * @return Returns empty List if no results are found
      */
-    public List<ContentMap> pullRelatedField(String contentletIdentifier, String fieldVariable,
-                                             String condition) {
-        return pullRelatedField(contentletIdentifier, fieldVariable, condition, null);
+    public Object pullRelatedField(final String contentletIdentifier, final String fieldVariable,
+                                             final String condition) {
+
+        return JsProxyFactory.createProxy(pullRelatedFieldInternal(contentletIdentifier, fieldVariable, condition));
     }
 
-    public List<ContentMap> pullPersonalized(String query, int limit, int offset, String secondarySort) {
-        try {
-
-            query=addPersonalizationToQuery(query);
-            String sort = secondarySort==null ? "score" : "score " + secondarySort;
-            if (offset > 0){
-                return pullPerPage(query, offset, limit, sort);
-            }else{
-                return pull(query, offset, limit, sort);
-            }
-        }
-        catch(Throwable ex) {
-            if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
-                Logger.error(this,"error in ContentTool.pullRelated. URL: "+req.getRequestURL().toString(),ex);
-            }
-            throw new RuntimeException(ex);
-        }
-
+    protected List<ContentMap> pullRelatedFieldInternal(final String contentletIdentifier, final String fieldVariable,
+                                             final String condition) {
+        return contentTool.pullRelatedField(contentletIdentifier, fieldVariable, condition);
     }
 
-    public List<ContentMap> pullPersonalized(String query, int limit) {
-        return pullPersonalized(query, limit, 0, null);
+    @HostAccess.Export
+    public Object pullPersonalized(final String query, final int limit, final int offset, final String secondarySort) {
+        return JsProxyFactory.createProxy(this.pullPersonalizedInternal(query, limit, offset, secondarySort));
     }
 
-    public List<ContentMap> pullPersonalized(String query, int limit, String secondarySort) {
-        return pullPersonalized(query, limit, 0, secondarySort);
-    }
-    public List<ContentMap> pullPersonalized(String query, String limitStr, String secondarySort) {
+    protected List<ContentMap> pullPersonalizedInternal(final String query, final int limit, final int offset, final String secondarySort) {
 
-
-        int limit = Integer.parseInt(limitStr);
-
-        return pullPersonalized(query, limit, 0, secondarySort);
-
-    }
-    public List<ContentMap> pullPersonalized(String query, String limitStr) {
-
-        int limit = Integer.parseInt(limitStr);
-
-        return pullPersonalized(query, limit, 0, null);
+        return contentTool.pullPersonalized(query, limit, offset, secondarySort);
     }
 
-    private String addPersonalizationToQuery(String query) {
-        Optional<Visitor> opt = APILocator.getVisitorAPI().getVisitor(this.req);
-        if (opt.isEmpty() || query == null) {
-            return query;
-        }
-        query = query.toLowerCase();
-
-        // if we are already personalized
-        if (query.indexOf(" tags:") > -1) {
-            return query;
-        }
-
-        final StringWriter buff = new StringWriter().append(query);
-        final Visitor visitor = opt.get();
-        final IPersona p = visitor.getPersona();
-        final String keyTag = (p == null) ? null : p.getKeyTag().toLowerCase();
-        final Map<String, Float> personas = visitor.getWeightedPersonas();
-
-
-        final List<Visitor.AccruedTag> tags = visitor.getAccruedTags();
-        if (p == null && (tags == null || tags.size() == 0)) {
-            return query;
-        }
-
-        int maxBoost = Config.getIntProperty("PULLPERSONALIZED_PERSONA_WEIGHT", 100);
-
-        // make personas more powerful than the most powerful tag
-        if (!tags.isEmpty()) {
-            maxBoost = tags.get(0).getCount() + maxBoost;
-        }
-
-
-        if (Config.getBooleanProperty("PULLPERSONALIZED_USE_MULTIPLE_PERSONAS", true)) {
-
-            if (personas != null && !personas.isEmpty()) {
-                for (Map.Entry<String, Float> map : personas.entrySet()) {
-                    int boostMe = Math.round(maxBoost * map.getValue());
-                    if (map.getKey().equals(keyTag)) {
-                        boostMe = boostMe + Config.getIntProperty("PULLPERSONALIZED_LAST_PERSONA_WEIGHT", 0);
-                    }
-
-                    buff.append(" tags:\"" + map.getKey().toLowerCase() + "\"^" + boostMe);
-                }
-            }
-
-
-        } else {
-            if (p != null) {
-                buff.append(" tags:\"" + keyTag + "\"^" + maxBoost);
-            }
-        }
-
-
-
-        for (Visitor.AccruedTag tag : tags) {
-            buff.append(" tags:\"" + tag.getTag().toLowerCase() + "\"^" + (tag.getCount() + 1) + " ");
-        }
-
-        return buff.toString();
+    @HostAccess.Export
+    public Object pullPersonalized(final String query, final int limit) {
+        return JsProxyFactory.createProxy(this.pullPersonalizedInternal(query, limit));
     }
 
+    protected List<ContentMap> pullPersonalizedInternal(final String query, final int limit) {
+        return contentTool.pullPersonalized(query, limit);
+    }
+
+    @HostAccess.Export
+    public Object pullPersonalized(final String query, final int limit, final String secondarySort) {
+        return JsProxyFactory.createProxy(pullPersonalizedInternal(query, limit, secondarySort));
+    }
+
+    protected List<ContentMap> pullPersonalizedInternal(final String query, final int limit, final String secondarySort) {
+        return contentTool.pullPersonalized(query, limit, secondarySort);
+    }
+
+    @HostAccess.Export
+    public Object pullPersonalized(final String query, final String limitStr, final String secondarySort) {
+
+        return JsProxyFactory.createProxy(this.pullPersonalizedInternal(query, limitStr, secondarySort));
+    }
+
+    protected List<ContentMap> pullPersonalizedInternal(final String query, final String limitStr, final String secondarySort) {
+
+        return contentTool.pullPersonalized(query, limitStr, secondarySort);
+    }
+
+    @HostAccess.Export
+    public Object pullPersonalized(final String query, final String limitStr) {
+
+        return JsProxyFactory.createProxy(this.pullPersonalizedInternal(query, limitStr));
+    }
+
+    protected List<ContentMap> pullPersonalizedInternal(final String query, final String limitStr) {
+        return this.contentTool.pullPersonalized(query, limitStr);
+    }
+
+    @HostAccess.Export
     /**
      * Gets the top viewed contents identifiers and numberOfViews  for a particular structure for a specified date interval
      *
@@ -600,15 +521,13 @@ public class ContentJsViewTool implements JsViewTool, JsViewContextAware {
      * @param endDate
      * @return
      */
-    public List<Map<String, String>> getMostViewedContent(String structureVariableName, String startDate, String endDate) {
-        try {
-            return APILocator.getContentletAPI().getMostViewedContent(structureVariableName, startDate, endDate, user);
-        }
-        catch(Throwable ex) {
-            if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
-                Logger.error(this,"error in ContentTool.getMostViewedContent. URL: "+req.getRequestURL().toString(),ex);
-            }
-            throw new RuntimeException(ex);
-        }
+    public Object getMostViewedContent(String structureVariableName, String startDate, String endDate) {
+        return JsProxyFactory.createProxy(getMostViewedContentInternal(structureVariableName, startDate, endDate));
+    }
+
+    protected List<Map<String, String>> getMostViewedContentInternal(final String structureVariableName,
+                                                                  final String startDate,
+                                                                  final String endDate) {
+        return this.contentTool.getMostViewedContent( structureVariableName,  startDate,  endDate);
     }
 }
