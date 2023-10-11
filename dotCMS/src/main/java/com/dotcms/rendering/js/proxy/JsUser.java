@@ -1,6 +1,5 @@
 package com.dotcms.rendering.js.proxy;
 
-import com.dotcms.rendering.js.proxy.JsProxyObject;
 import com.dotmarketing.business.Role;
 import com.liferay.portal.model.User;
 import org.graalvm.polyglot.HostAccess;

@@ -22,7 +22,7 @@ public class SecretJsViewTool  implements JsViewTool, JsViewContextAware {
 
     @Override
     public String getName() {
-        return null;
+        return "dotsecrets";
     }
 
     @HostAccess.Export

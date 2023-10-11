@@ -5,6 +5,7 @@ import com.dotcms.rendering.engine.ScriptEngine;
 import com.dotcms.rendering.js.proxy.JsRequest;
 import com.dotcms.rendering.js.proxy.JsResponse;
 import com.dotcms.rendering.js.viewtools.CategoriesJSViewTool;
+import com.dotcms.rendering.js.viewtools.ContentJsViewTool;
 import com.dotcms.rendering.js.viewtools.LanguageJSViewTool;
 import com.dotcms.rendering.js.viewtools.SecretJsViewTool;
 import com.dotcms.rendering.js.viewtools.UserJsViewTool;
@@ -36,10 +37,15 @@ public class JsEngine implements ScriptEngine {
     private final Map<String, JsViewTool> jsAplicationViewToolMap = new ConcurrentHashMap<>();
 
     {
-        this.addJsViewTool(UserJsViewTool.class);
-        this.addJsViewTool(LanguageJSViewTool.class);
-        this.addJsViewTool(SecretJsViewTool.class);
-        this.addJsViewTool(CategoriesJSViewTool.class);
+        try {
+            this.addJsViewTool(UserJsViewTool.class);
+            this.addJsViewTool(LanguageJSViewTool.class);
+            this.addJsViewTool(SecretJsViewTool.class);
+            this.addJsViewTool(CategoriesJSViewTool.class);
+            this.addJsViewTool(ContentJsViewTool.class);
+        }catch (Throwable e) {
+            Logger.error(JsEngine.class, "Could not start the js view tools", e);
+        }
     }
 
     private static final String ENGINE_JS = "js";

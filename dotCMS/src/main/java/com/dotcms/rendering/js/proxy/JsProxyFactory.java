@@ -2,6 +2,7 @@ package com.dotcms.rendering.js.proxy;
 
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.rendering.velocity.viewtools.content.LazyLoaderContentMap;
+import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMap;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -32,6 +33,7 @@ public class JsProxyFactory {
         registerMapper(new JsLanguageProxyMapperStrategyImpl());
         registerMapper(new JsBlobProxyMapperStrategyImpl());
         registerMapper(new JsCategoryProxyMapperStrategyImpl());
+        registerMapper(new JsStoryBlockMapProxyMapperStrategyImpl());
     }
     /**
      * Register a custom mapper
@@ -180,6 +182,18 @@ public class JsProxyFactory {
         @Override
         public Object apply(final Object obj) {
             return new JsCategory((Category)obj);
+        }
+    }
+
+    private static final class JsStoryBlockMapProxyMapperStrategyImpl implements JsProxyMapperStrategy {
+        @Override
+        public boolean test(final Object obj) {
+            return null != obj && obj instanceof StoryBlockMap;
+        }
+
+        @Override
+        public Object apply(final Object obj) {
+            return new JsStoryBlockMap((StoryBlockMap)obj);
         }
     }
 

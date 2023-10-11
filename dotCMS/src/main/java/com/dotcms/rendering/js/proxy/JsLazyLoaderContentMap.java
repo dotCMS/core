@@ -76,7 +76,7 @@ public class JsLazyLoaderContentMap implements Serializable, JsProxyObject<LazyL
     @HostAccess.Export
     public Object getContentType() {
 
-        return JsProxyFactory.createProxy(this.getContentTypeInternal()).from());
+        return JsProxyFactory.createProxy(this.getContentTypeInternal());
     }
 
     @HostAccess.Export
