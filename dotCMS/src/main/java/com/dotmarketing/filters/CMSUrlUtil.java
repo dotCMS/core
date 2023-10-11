@@ -22,7 +22,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import com.liferay.util.Xss;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -46,6 +45,8 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.filters.CMSFilter.CMS_INDEX_PAGE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
+import static com.liferay.util.StringPool.FORWARD_SLASH;
+import static com.liferay.util.StringPool.UNDERLINE;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -580,23 +581,23 @@ public class CMSUrlUtil {
 	}
 
 	/**
-	 * Tries to recover the identifier from the URL path. The URL could be a page, such as:
+	 * Tries to recover the Inode from the URL path. The URL could be a page, such as:
 	 * {@code /LIVE/27e8f845c3bd21ad1c601b8fe005caa6/dotParser_1695072095296.container} , or a call
 	 * to a resource, such as: {@code Content/27e8f845c3bd21ad1c601b8fe005caa6_1695072095296}
 	 *
 	 * @param urlPath The URL path from a Contentlet.
 	 *
-	 * @return The Identifier of the Contentlet.
+	 * @return The Inode of the Contentlet.
 	 */
-	public String getIdentifierFromUrlPath(final String urlPath) {
+	public String getInodeFromUrlPath(final String urlPath) {
 		final PageMode[] modes = PageMode.values();
 		for (final PageMode mode : modes) {
-			if (urlPath.startsWith(StringPool.FORWARD_SLASH + mode.name() + StringPool.FORWARD_SLASH)) {
+			if (urlPath.startsWith(FORWARD_SLASH + mode.name() + FORWARD_SLASH)) {
 				final String urlPathWithoutMode = urlPath.substring(mode.name().length() + 2);
-				return urlPathWithoutMode.substring(0, urlPathWithoutMode.indexOf(StringPool.FORWARD_SLASH));
+				return urlPathWithoutMode.substring(0, urlPathWithoutMode.indexOf(FORWARD_SLASH));
 			}
 		}
-		return urlPath.substring(urlPath.indexOf(StringPool.FORWARD_SLASH) + 1, urlPath.indexOf(StringPool.UNDERLINE));
+		return urlPath.substring(urlPath.indexOf(FORWARD_SLASH) + 1, urlPath.indexOf(UNDERLINE));
 	}
 
 }

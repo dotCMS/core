@@ -46,19 +46,19 @@ public class CMSUrlUtilTest {
     }
 
     /**
-     * Method To Test: {@link CMSUrlUtil#getIdentifierFromUrlPath(String)}
+     * Method To Test: {@link CMSUrlUtil#getInodeFromUrlPath(String)}
      * Given Scenario: Invoke with a page live url
      * ExpectedResult: the contentlet identifier will be returned
      */
     @Test
     public void test_getIdentifierFromUrlPath() {
         final String liveUrlPath = "/LIVE/27e8f845c3bd21ad1c601b8fe005caa6/dotParser_1695072095296.container";
-        final String contentIdentifier = CMSUrlUtil.getInstance().getIdentifierFromUrlPath(liveUrlPath);
+        final String contentIdentifier = CMSUrlUtil.getInstance().getInodeFromUrlPath(liveUrlPath);
         assertNotNull(contentIdentifier);
         assertEquals("27e8f845c3bd21ad1c601b8fe005caa6", contentIdentifier);
 
         final String templateUrlPath = "CONTENT/27e8f845c3bd21ad1c601b8fe005caa6_1695072095296.content";
-        final String contentIdentifier2 = CMSUrlUtil.getInstance().getIdentifierFromUrlPath(templateUrlPath);
+        final String contentIdentifier2 = CMSUrlUtil.getInstance().getInodeFromUrlPath(templateUrlPath);
         assertNotNull(contentIdentifier2);
         assertEquals("27e8f845c3bd21ad1c601b8fe005caa6", contentIdentifier2);
     }
