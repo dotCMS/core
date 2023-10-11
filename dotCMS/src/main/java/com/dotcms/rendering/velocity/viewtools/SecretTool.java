@@ -128,26 +128,8 @@ public class SecretTool implements ViewTool {
         }
 
         try {
-			boolean hasScriptingRole = false;
 			final Role scripting = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
-
-			final InternalContextAdapterImpl internalContextAdapter = new InternalContextAdapterImpl(context);
-			final String resourcePath = internalContextAdapter.getCurrentTemplateName();
-			if (UtilMethods.isSet(resourcePath)) {
-				String contentletInode = StringPool.BLANK;
-				try {
-					contentletInode = CMSUrlUtil.getInstance().getInodeFromUrlPath(resourcePath);
-					final Contentlet contentlet = APILocator.getContentletAPI().find(contentletInode, APILocator.systemUser(), true);
-					final User lastModifiedUser = APILocator.getUserAPI().loadUserById(contentlet.getModUser(), APILocator.systemUser(), true);
-					hasScriptingRole = APILocator.getRoleAPI().doesUserHaveRole(lastModifiedUser, scripting);
-				} catch (final Exception e) {
-					Logger.warnAndDebug(SecretTool.class, String.format("Failed to find last " +
-							"modification user from Retrieved ID '%s' in URL Path '%s': %s",
-							contentletInode, resourcePath,
-							ExceptionUtil.getErrorMessage(e)), e);
-				}
-			}
-
+			boolean hasScriptingRole = checkRoleFromLastModUser(scripting);
 			if (!hasScriptingRole) {
 				final User user = WebAPILocator.getUserWebAPI().getUser(this.request);
 				// try with the current user
@@ -165,5 +147,34 @@ public class SecretTool implements ViewTool {
 			throw new SecurityException(disabledScriptingErrorMsg, e);
         }
     } // canUserEvaluate.
+
+	/**
+	 * Checks whether the User who last edited the Contentlet rendering the Secrets has the
+	 * specified dotCMS Role or not.
+	 *
+	 * @param role The {@link Role} that will be checked.
+	 *
+	 * @return If the User has the specified Role, returns {@code true}.
+	 */
+	private boolean checkRoleFromLastModUser(final Role role) {
+		final InternalContextAdapterImpl internalContextAdapter = new InternalContextAdapterImpl(context);
+		final String resourcePath = internalContextAdapter.getCurrentTemplateName();
+		boolean hasRole = false;
+		if (UtilMethods.isSet(resourcePath)) {
+			String contentletInode = StringPool.BLANK;
+			try {
+				contentletInode = CMSUrlUtil.getInstance().getInodeFromUrlPath(resourcePath);
+				final Contentlet contentlet = APILocator.getContentletAPI().find(contentletInode, APILocator.systemUser(), true);
+				final User lastModifiedUser = APILocator.getUserAPI().loadUserById(contentlet.getModUser(), APILocator.systemUser(), true);
+				hasRole = APILocator.getRoleAPI().doesUserHaveRole(lastModifiedUser, role);
+			} catch (final Exception e) {
+				Logger.warnAndDebug(SecretTool.class, String.format("Failed to find last " +
+						"modification user from Retrieved ID '%s' in URL Path '%s': %s",
+						contentletInode, resourcePath,
+						ExceptionUtil.getErrorMessage(e)), e);
+			}
+		}
+		return hasRole;
+	}
 
 }
