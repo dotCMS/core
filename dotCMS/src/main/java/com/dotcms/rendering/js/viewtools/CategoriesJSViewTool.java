@@ -1,6 +1,6 @@
 package com.dotcms.rendering.js.viewtools;
 
-import com.dotcms.rendering.js.JsCategory;
+import com.dotcms.rendering.js.proxy.JsCategory;
 import com.dotcms.rendering.js.JsViewContextAware;
 import com.dotcms.rendering.js.JsViewTool;
 import com.dotcms.rendering.velocity.viewtools.CategoriesWebAPI;

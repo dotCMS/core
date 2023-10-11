@@ -1,4 +1,4 @@
-package com.dotcms.rendering.js;
+package com.dotcms.rendering.js.proxy;
 
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.rendering.velocity.viewtools.content.LazyLoaderContentMap;
@@ -13,6 +13,7 @@ import javax.servlet.http.Part;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+// todo: register a mapper for JsonObject, Content Type, ProxyHashMap and others also for the JsProxyObject (the other direction)
 /**
  * This class has all the knowledge to create a proxy object or wrapper for the javascript graal.
  * @author jsanca
@@ -59,15 +60,17 @@ public class JsProxyFactory {
 
         Object proxy = obj; // todo: we have to decided if we return by configuration the object if has not mapper for the type
         // or we throw an exception or throw an undefined javascript value
-        for (final JsProxyMapperStrategy jsProxyMapper : proxyMapperMap.values()) {
+        if (null != obj) {
 
-            if (jsProxyMapper.test(obj)) {
+            for (final JsProxyMapperStrategy jsProxyMapper : proxyMapperMap.values()) {
 
-                proxy = jsProxyMapper.apply(obj);
-                break;
+                if (jsProxyMapper.test(obj)) {
+
+                    proxy = jsProxyMapper.apply(obj);
+                    break;
+                }
             }
         }
-
         return proxy;
     }
 

@@ -1,6 +1,7 @@
 package com.dotcms.rendering.js;
 
 import com.dotcms.api.vtl.model.DotJSON;
+import com.dotcms.rendering.js.proxy.JsResponse;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;

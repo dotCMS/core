@@ -1,5 +1,6 @@
-package com.dotcms.rendering.js;
+package com.dotcms.rendering.js.proxy;
 
+import com.dotcms.rendering.js.proxy.JsProxyObject;
 import com.dotmarketing.business.Role;
 import com.liferay.portal.model.User;
 import org.graalvm.polyglot.HostAccess;
@@ -15,7 +16,7 @@ import java.util.TimeZone;
  * This class is used to expose the User object to the javascript engine.
  * @author jsanca
  */
-public class JsUser implements Serializable {
+public class JsUser implements Serializable, JsProxyObject<User> {
 
     private final User user;
 
@@ -29,6 +30,11 @@ public class JsUser implements Serializable {
      */
     public User getUser () {
         return user;
+    }
+
+    @Override
+    public User  getWrappedObject() {
+        return this.getUser();
     }
 
     @HostAccess.Export

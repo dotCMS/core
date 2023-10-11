@@ -2,6 +2,8 @@ package com.dotcms.rendering.js;
 
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.rendering.engine.ScriptEngine;
+import com.dotcms.rendering.js.proxy.JsRequest;
+import com.dotcms.rendering.js.proxy.JsResponse;
 import com.dotcms.rendering.js.viewtools.CategoriesJSViewTool;
 import com.dotcms.rendering.js.viewtools.LanguageJSViewTool;
 import com.dotcms.rendering.js.viewtools.SecretJsViewTool;
@@ -101,7 +103,7 @@ public class JsEngine implements ScriptEngine {
             contextParams.entrySet().forEach(entry -> bindings.putMember(entry.getKey(), entry.getValue()));
             this.addTools(request, response, bindings, contextParams);
 
-            final JsRequest  jsRequest  = new JsRequest(request);
+            final JsRequest jsRequest  = new JsRequest(request);
             final JsResponse jsResponse = new JsResponse(response);
             bindings.putMember("dotJSON", dotJSON);
             bindings.putMember("request",  jsRequest);

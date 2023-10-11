@@ -1,7 +1,7 @@
 package com.dotcms.rendering.js.viewtools;
 
-import com.dotcms.rendering.js.JsRole;
-import com.dotcms.rendering.js.JsUser;
+import com.dotcms.rendering.js.proxy.JsRole;
+import com.dotcms.rendering.js.proxy.JsUser;
 import com.dotcms.rendering.js.JsViewContextAware;
 import com.dotcms.rendering.js.JsViewTool;
 import com.dotcms.rendering.velocity.viewtools.CMSUsersWebAPI;

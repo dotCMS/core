@@ -1,4 +1,4 @@
-package com.dotcms.rendering.js;
+package com.dotcms.rendering.js.proxy;
 
 /**
  * An implementation of the ProxyMapper will create a proxy object for the javascript graal engine, if the test method

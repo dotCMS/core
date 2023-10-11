@@ -1,4 +1,4 @@
-package com.dotcms.rendering.js;
+package com.dotcms.rendering.js.proxy;
 
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
  * Encapsulates a Blob in a Js context, which is basically a file sent by multipart/form-data
  * @author jsanca
  */
-public class JsBlob implements Serializable {
+public class JsBlob implements Serializable, JsProxyObject<Part> {
 
     private final Part part;
 
@@ -21,14 +21,23 @@ public class JsBlob implements Serializable {
         this.part = part;
     }
 
-    @HostAccess.Export
-    public InputStream getArrayBuffer() {
+    @Override
+    public Part  getWrappedObject() {
+        return this.part;
+    }
+
+    protected InputStream getArrayBufferInternal() {
         return Try.of(() -> this.part.getInputStream()).getOrNull();
     }
 
     @HostAccess.Export
+    public /*InputStream*/Object getArrayBuffer() {
+        return JsProxyFactory.createProxy(this.getArrayBufferInternal());
+    }
+
+    @HostAccess.Export
     public String getText() {
-        return Try.of(() -> IOUtils.toString(this.getArrayBuffer(), StandardCharsets.UTF_8)).getOrNull();
+        return Try.of(() -> IOUtils.toString(this.getArrayBufferInternal(), StandardCharsets.UTF_8)).getOrNull();
     }
 
     @HostAccess.Export

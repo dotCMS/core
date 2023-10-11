@@ -1,14 +1,10 @@
 package com.dotcms.rendering.js.viewtools;
 
-import com.dotcms.rendering.js.JsLanguage;
+import com.dotcms.rendering.js.proxy.JsLanguage;
 import com.dotcms.rendering.js.JsViewContextAware;
 import com.dotcms.rendering.js.JsViewTool;
 import com.dotcms.rendering.velocity.viewtools.LanguageViewtool;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
 import com.liferay.portal.language.LanguageException;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.graalvm.polyglot.HostAccess;

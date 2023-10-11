@@ -1,4 +1,4 @@
-package com.dotcms.rendering.js;
+package com.dotcms.rendering.js.proxy;
 
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -12,7 +12,7 @@ import java.util.Locale;
  * This class is used to expose the Language object to the javascript engine.
  * @author jsanca
  */
-public class JsLanguage implements Serializable {
+public class JsLanguage implements Serializable, JsProxyObject<Language> {
 
     private final Language language;
 
@@ -22,6 +22,11 @@ public class JsLanguage implements Serializable {
      */
     public Language getLanguageObject () {
         return language;
+    }
+
+    @Override
+    public Language  getWrappedObject() {
+        return this.getLanguageObject();
     }
 
     public JsLanguage(final Language language) {
@@ -98,10 +103,14 @@ public class JsLanguage implements Serializable {
         return this.language.toString();
     }
 
-    // todo: not sure if we want to expose this on the js context, will see
-    //@HostAccess.Export
     @JsonIgnore
-    public ManifestItem.ManifestInfo getManifestInfo(){
+    protected ManifestItem.ManifestInfo getManifestInfoInternal(){
         return this.language.getManifestInfo();
+    }
+
+    @HostAccess.Export
+    @JsonIgnore
+    public Object getManifestInfo(){
+        return JsProxyFactory.createProxy(this.getManifestInfoInternal());
     }
 }

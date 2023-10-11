@@ -1,5 +1,8 @@
-package com.dotcms.rendering.js;
+package com.dotcms.rendering.js.proxy;
 
+import com.dotcms.rendering.js.JsFormData;
+import com.dotcms.rendering.js.proxy.JsBlob;
+import com.dotcms.rendering.js.proxy.JsProxyObject;
 import com.dotmarketing.util.json.JSONObject;
 import io.vavr.control.Try;
 import org.graalvm.polyglot.HostAccess;
@@ -19,7 +22,7 @@ import java.util.stream.Collectors;
  * Abstraction of the Request for the Javascript engine.
  * @author jsanca
  */
-public class JsRequest implements Serializable {
+public class JsRequest implements Serializable, JsProxyObject<HttpServletRequest> {
 
     private boolean bodyUsed = false;
     private final HttpServletRequest request;
@@ -29,6 +32,11 @@ public class JsRequest implements Serializable {
 
     public HttpServletRequest getRequest() {
         return request;
+    }
+
+    @Override
+    public HttpServletRequest  getWrappedObject() {
+        return this.getRequest();
     }
 
     @HostAccess.Export

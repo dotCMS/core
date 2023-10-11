@@ -1,4 +1,4 @@
-package com.dotcms.rendering.js;
+package com.dotcms.rendering.js.proxy;
 
 import com.dotmarketing.business.Role;
 import com.dotmarketing.util.RegEX;
@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class JsRole implements Serializable, Comparable<JsRole> {
+public class JsRole implements Serializable, Comparable<JsRole>, JsProxyObject<Role> {
 
 	private final Role role;
 
@@ -26,6 +26,11 @@ public class JsRole implements Serializable, Comparable<JsRole> {
 	 */
 	public Role getRole() {
 		return role;
+	}
+
+	@Override
+	public Role  getWrappedObject() {
+		return this.getRole();
 	}
 
 	@HostAccess.Export

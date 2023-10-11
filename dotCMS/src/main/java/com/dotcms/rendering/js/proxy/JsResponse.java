@@ -1,5 +1,6 @@
-package com.dotcms.rendering.js;
+package com.dotcms.rendering.js.proxy;
 
+import com.dotcms.rendering.js.JsHeaders;
 import io.vavr.control.Try;
 import org.graalvm.polyglot.HostAccess;
 
@@ -11,7 +12,7 @@ import java.io.Serializable;
  * Abstraction of the Response for the Javascript engine.
  * @author jsanca
  */
-public class JsResponse implements Serializable {
+public class JsResponse implements Serializable, JsProxyObject<HttpServletResponse> {
 
     private final JsHeaders headers = new JsHeaders();
     private final HttpServletResponse response;
@@ -22,6 +23,11 @@ public class JsResponse implements Serializable {
 
     public HttpServletResponse getResponse() {
         return response;
+    }
+
+    @Override
+    public HttpServletResponse  getWrappedObject() {
+        return this.getResponse();
     }
 
     @HostAccess.Export

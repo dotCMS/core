@@ -1,5 +1,7 @@
 package com.dotcms.rendering.js;
 
+import com.dotcms.rendering.js.proxy.JsRequest;
+import com.dotcms.rendering.js.proxy.JsResponse;
 import org.graalvm.polyglot.HostAccess;
 
 import java.io.Serializable;

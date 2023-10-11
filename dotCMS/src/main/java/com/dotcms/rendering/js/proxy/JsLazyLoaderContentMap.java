@@ -1,9 +1,9 @@
-package com.dotcms.rendering.js;
+package com.dotcms.rendering.js.proxy;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.rendering.js.proxy.JsProxyObject;
 import com.dotcms.rendering.velocity.viewtools.content.LazyLoaderContentMap;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import org.graalvm.polyglot.HostAccess;
 
 import java.io.IOException;
@@ -13,7 +13,7 @@ import java.io.Serializable;
  * This class is used to expose the LazyLoaderContentMap object to the javascript engine.
  * @author jsanca
  */
-public class JsLazyLoaderContentMap implements Serializable {
+public class JsLazyLoaderContentMap implements Serializable, JsProxyObject<LazyLoaderContentMap> {
 
     private final LazyLoaderContentMap lazyLoaderContentMap;
 
@@ -21,14 +21,25 @@ public class JsLazyLoaderContentMap implements Serializable {
         this.lazyLoaderContentMap = lazyLoaderContentMap;
     }
 
+    public LazyLoaderContentMap getLazyLoaderContentMap() {
+
+        return lazyLoaderContentMap;
+    }
+
+    @Override
+    public LazyLoaderContentMap  getWrappedObject() {
+        return this.getLazyLoaderContentMap();
+    }
+
+
     @HostAccess.Export
     public Object get(final String fieldVariableName) {
-        return lazyLoaderContentMap.get(fieldVariableName);
+        return JsProxyFactory.createProxy(lazyLoaderContentMap.get(fieldVariableName));
     }
 
     @HostAccess.Export
     public Object getRaw(final String fieldVariableName) {
-        return lazyLoaderContentMap.getRaw(fieldVariableName);
+        return JsProxyFactory.createProxy(lazyLoaderContentMap.getRaw(fieldVariableName));
     }
 
     @HostAccess.Export
@@ -57,10 +68,15 @@ public class JsLazyLoaderContentMap implements Serializable {
         return lazyLoaderContentMap.getUrlMap();
     }
 
-    @HostAccess.Export
-    public ContentType getContentType() {
+    protected ContentType getContentTypeInternal() {
 
         return new StructureTransformer(lazyLoaderContentMap.getStructure()).from();
+    }
+
+    @HostAccess.Export
+    public Object getContentType() {
+
+        return JsProxyFactory.createProxy(this.getContentTypeInternal()).from());
     }
 
     @HostAccess.Export
@@ -93,14 +109,9 @@ public class JsLazyLoaderContentMap implements Serializable {
     }
 
 
-    public Contentlet getContentObject() {
-
-        return lazyLoaderContentMap.getContentObject();
-    }
-
     @HostAccess.Export
     public Object getFieldVariables(String fieldVariableName) {
-        return lazyLoaderContentMap.getFieldVariables(fieldVariableName);
+        return JsProxyFactory.createProxy(lazyLoaderContentMap.getFieldVariables(fieldVariableName));
     }
 
     @HostAccess.Export
@@ -111,6 +122,6 @@ public class JsLazyLoaderContentMap implements Serializable {
      */
     public Object getFieldVariablesJson(final String fieldVariableName) {
 
-        return lazyLoaderContentMap.getFieldVariablesJson(fieldVariableName);
+        return JsProxyFactory.createProxy(lazyLoaderContentMap.getFieldVariablesJson(fieldVariableName));
     }
 }

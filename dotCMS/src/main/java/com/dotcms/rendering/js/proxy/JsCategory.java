@@ -1,4 +1,4 @@
-package com.dotcms.rendering.js;
+package com.dotcms.rendering.js.proxy;
 
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotmarketing.business.PermissionSummary;
@@ -8,6 +8,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.proxy.ProxyHashMap;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +17,7 @@ import java.util.Map;
  * This class is used to expose the Category object to the javascript engine.
  * @author jsanca
  */
-public class JsCategory {
+public class JsCategory implements Serializable, JsProxyObject<Category> {
 
     private final Category category;
 
@@ -26,6 +27,11 @@ public class JsCategory {
 
     public Category getCategoryObject () {
         return category;
+    }
+
+    @Override
+    public Category  getWrappedObject() {
+        return this.getCategoryObject();
     }
 
     @HostAccess.Export
@@ -47,7 +53,7 @@ public class JsCategory {
     }
 
     @HostAccess.Export
-    public Integer getSortOrder() {
+    public int getSortOrder() {
         return this.category.getSortOrder();
     }
 
@@ -96,19 +102,25 @@ public class JsCategory {
         return this.category.getModDate();
     }
 
+    protected List<PermissionSummary> acceptedPermissionsInternal() {
+        return this.category.acceptedPermissions();
+    }
     //The following methods are part of the permissionable interface
     //to define what kind of permissions are accepted by categories
     //and also how categories should behave in terms of cascading
     @HostAccess.Export
     // todo: proxuy the PermissionSummary
-    public List<PermissionSummary> acceptedPermissions() {
-        return this.category.acceptedPermissions();
+    public Object acceptedPermissions() {
+        return JsProxyFactory.createProxy(this.acceptedPermissionsInternal());
     }
 
+    protected Permissionable getParentPermissionableInternal() throws DotDataException {
+        return this.category.getParentPermissionable();
+    }
     @HostAccess.Export
     // todo: proxy the Permissionable
-    public Permissionable getParentPermissionable() throws DotDataException {
-        return this.category.getParentPermissionable();
+    public Object getParentPermissionable() throws DotDataException {
+        return JsProxyFactory.createProxy(this.getParentPermissionableInternal());
     }
 
     @HostAccess.Export
@@ -122,10 +134,15 @@ public class JsCategory {
         return this.category.toString();
     }
 
-    @HostAccess.Export
-    // todo: there is not proxy for the ManifestInfo yet
-    public ManifestItem.ManifestInfo getManifestInfo() {
+    protected ManifestItem.ManifestInfo getManifestInfoInternal() {
 
         return this.category.getManifestInfo();
+    }
+
+    @HostAccess.Export
+    // todo: there is not proxy for the ManifestInfo yet
+    public Object getManifestInfo() {
+
+        return JsProxyFactory.createProxy(this.getManifestInfoInternal());
     }
 }
