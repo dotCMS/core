@@ -77,6 +77,17 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     private static final ObjectMapper JSON_MAPPER = DotObjectMapperProvider.getInstance()
             .getDefaultObjectMapper();
 
+    // Column names for the workflow_action table
+    private static final String WA_SCHEME_ID_COLUMN = "scheme_id";
+    private static final String WA_CONDITION_TO_PROGRESS_COLUMN = "condition_to_progress";
+    private static final String WA_NEXT_STEP_ID_COLUMN = "next_step_id";
+    private static final String WA_NEXT_ASSIGN_COLUMN = "next_assign";
+    private static final String WA_MY_ORDER_COLUMN = "my_order";
+    private static final String WA_REQUIRES_CHECKOUT_COLUMN = "requires_checkout";
+    private static final String WA_SHOW_ON_COLUMN = "show_on";
+    private static final String WA_USE_ROLE_HIERARCHY_ASSIGN_COLUMN = "use_role_hierarchy_assign";
+    private static final String WA_METADATA_COLUMN = "metadata";
+
     /**
      * Creates an instance of the {@link WorkFlowFactory}.
      */
@@ -106,24 +117,31 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     }
 
     /**
-     * @param row
-     * @return
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
+     * Takes the Workflow Action values from the database and creates an instance of the
+     * {@link WorkflowAction} class with them.
+     *
+     * @param row The Map with the values coming from the database.
+     *
+     * @return An instance of the {@link WorkflowAction} class.
+     *
+     * @throws IllegalAccessException    An error occurred when copying the properties into the
+     *                                   {@link WorkflowAction} class.
+     * @throws InvocationTargetException An error occurred when copying the properties into the
+     *                                   {@link WorkflowAction} class.
      */
     private WorkflowAction convertAction(final Map<String, Object> row)
             throws IllegalAccessException, InvocationTargetException {
         final WorkflowAction action = new WorkflowAction();
-        row.put("schemeId", row.get("scheme_id"));
-        row.put("condition", row.get("condition_to_progress"));
-        row.put("nextStep", row.get("next_step_id"));
-        row.put("nextAssign", row.get("next_assign"));
-        row.put("order", row.get("my_order"));
-        row.put("requiresCheckout", row.get("requires_checkout"));
-        row.put("showOn", WorkflowState.toSet(row.get("show_on")));
-        row.put("roleHierarchyForAssign", row.get("use_role_hierarchy_assign"));
-        if (null != row.get("metadata")) {
-            row.put("metadata", Try.of(() -> JSON_MAPPER.readValue(((PGobject) row.get("metadata")).getValue(),
+        row.put("schemeId", row.get(WA_SCHEME_ID_COLUMN));
+        row.put("condition", row.get(WA_CONDITION_TO_PROGRESS_COLUMN));
+        row.put("nextStep", row.get(WA_NEXT_STEP_ID_COLUMN));
+        row.put("nextAssign", row.get(WA_NEXT_ASSIGN_COLUMN));
+        row.put("order", row.get(WA_MY_ORDER_COLUMN));
+        row.put("requiresCheckout", row.get(WA_REQUIRES_CHECKOUT_COLUMN));
+        row.put("showOn", WorkflowState.toSet(row.get(WA_SHOW_ON_COLUMN)));
+        row.put("roleHierarchyForAssign", row.get(WA_USE_ROLE_HIERARCHY_ASSIGN_COLUMN));
+        if (null != row.get(WA_METADATA_COLUMN)) {
+            row.put("metadata", Try.of(() -> JSON_MAPPER.readValue(((PGobject) row.get(WA_METADATA_COLUMN)).getValue(),
                     Map.class)).getOrElse(new HashMap<String, Object>()));
         }
         BeanUtils.copyProperties(action, row);
