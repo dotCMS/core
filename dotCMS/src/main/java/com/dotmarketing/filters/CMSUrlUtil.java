@@ -22,6 +22,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.liferay.util.Xss;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -590,12 +591,12 @@ public class CMSUrlUtil {
 	public String getIdentifierFromUrlPath(final String urlPath) {
 		final PageMode[] modes = PageMode.values();
 		for (final PageMode mode : modes) {
-			if (urlPath.startsWith("/" + mode.name() + "/")) {
+			if (urlPath.startsWith(StringPool.FORWARD_SLASH + mode.name() + StringPool.FORWARD_SLASH)) {
 				final String urlPathWithoutMode = urlPath.substring(mode.name().length() + 2);
-				return urlPathWithoutMode.substring(0, urlPathWithoutMode.indexOf("/"));
+				return urlPathWithoutMode.substring(0, urlPathWithoutMode.indexOf(StringPool.FORWARD_SLASH));
 			}
 		}
-		return urlPath.substring(urlPath.indexOf("/") + 1, urlPath.indexOf("_"));
+		return urlPath.substring(urlPath.indexOf(StringPool.FORWARD_SLASH) + 1, urlPath.indexOf(StringPool.UNDERLINE));
 	}
 
 }
