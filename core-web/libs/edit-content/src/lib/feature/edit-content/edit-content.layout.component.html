@@ -1,0 +1,7 @@
+<div class="dot-edit-content-form" *ngIf="formData$ | async as form; else noContent">
+    <dot-edit-content-form [formData]="form" (formSubmit)="saveContent($event)" />
+
+    <p *ngIf="isContentSaved">Content saved!</p>
+</div>
+
+<ng-template #noContent>No content to show</ng-template>

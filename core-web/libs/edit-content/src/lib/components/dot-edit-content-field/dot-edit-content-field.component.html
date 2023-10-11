@@ -1,0 +1,10 @@
+<ng-container [ngSwitch]="field.fieldType">
+    <div class="field" *ngSwitchCase="'Text'">
+        <label *ngIf="field.fieldTypeLabel" [for]="field.variable">{{
+            field.fieldTypeLabel
+        }}</label>
+        <input [id]="field.variable" [formControlName]="field.variable" type="text" pInputText />
+        <small *ngIf="field.hint">{{ field.hint }}</small>
+    </div>
+    <ng-container *ngSwitchCase="'Host-Folder'">Host-Folder</ng-container>
+</ng-container>

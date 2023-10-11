@@ -1,0 +1,15 @@
+<form class="p-fluid" *ngIf="form" [formGroup]="form">
+    <ng-container *ngFor="let form of formData">
+        <div class="row">
+            <div class="column" *ngFor="let column of form.columns">
+                <dot-edit-content-field
+                    *ngFor="let field of column.fields"
+                    [field]="field"></dot-edit-content-field>
+            </div>
+        </div>
+    </ng-container>
+</form>
+
+<p-button [label]="'Save' | dm" (click)="saveContenlet()"></p-button>
+
+<pre><code>{{form.value | json}}</code></pre>

@@ -4,14 +4,14 @@ import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotField } from '../../interfaces/dot-form.interface';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 @Component({
-    selector: 'dot-field',
+    selector: 'dot-edit-content-field',
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, InputTextModule],
-    templateUrl: './dot-field.component.html',
-    styleUrls: ['./dot-field.component.scss'],
+    templateUrl: './dot-edit-content-field.component.html',
+    styleUrls: ['./dot-edit-content-field.component.scss'],
     viewProviders: [
         {
             provide: ControlContainer,
@@ -20,6 +20,6 @@ import { DotField } from '../../interfaces/dot-form.interface';
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotFieldComponent {
-    @Input() field!: DotField;
+export class DotEditContentFieldComponent {
+    @Input() field!: DotCMSContentTypeField;
 }

@@ -1,13 +1,13 @@
+@use "variables" as *;
 .row {
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
-    grid-gap: 10px;
-    margin-top: 1em;
+    grid-gap: $spacing-2;
+    margin-top: $spacing-3;
 
     .column {
-        border: 1px solid black;
-        min-height: 50px;
+        min-height: $spacing-7;
         display: flex;
         justify-content: center;
         align-items: center;
