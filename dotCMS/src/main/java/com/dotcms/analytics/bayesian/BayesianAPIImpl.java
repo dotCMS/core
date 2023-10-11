@@ -2,6 +2,7 @@ package com.dotcms.analytics.bayesian;
 
 import com.dotcms.analytics.bayesian.beta.BetaDistributionWrapper;
 import com.dotcms.analytics.bayesian.model.*;
+import com.dotcms.metrics.timing.TimeMetric;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -34,9 +35,7 @@ public class BayesianAPIImpl implements BayesianAPI {
      */
     @Override
     public BayesianResult doBayesian(final BayesianInput input) {
-        final UUID metricId = UUID.randomUUID();
-        final long start = System.currentTimeMillis();
-        Logger.debug(this, String.format("BAYESIAN-CALCULATION [%s] START <<<<<", metricId));
+        final TimeMetric timeMetric = TimeMetric.mark(getClass().getSimpleName());
 
         // validate input
         final BayesianResult bayesianResult = noopFallback(input)
@@ -44,10 +43,7 @@ public class BayesianAPIImpl implements BayesianAPI {
                 ? getAbBayesianResult(input)
                 : getAbcBayesianResult(input));
 
-        final long end = System.currentTimeMillis();
-        Logger.debug(
-            this,
-            String.format("BAYESIAN-CALCULATION [%s] END - took [%d] secs >>>>>", metricId, (end - start) / 1000));
+        timeMetric.stop();
 
         return bayesianResult;
     }
