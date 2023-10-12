@@ -2,13 +2,11 @@
     <div [@inOut]="vm.viewContentlet" (@inOut.done)="onAnimationDone($event)" data-testId="wrapper">
         <dot-palette-content-type
             #contentTypes
-            (selected)="switchView($event)"
             [items]="vm.contentTypes"
             [loading]="vm.loading"
             [viewContentlet]="vm.viewContentlet"
-            (selected)="switchView($event)"
             (filter)="filterContentTypes($event)"
-        ></dot-palette-content-type>
+            (selected)="switchView($event)"></dot-palette-content-type>
         <dot-palette-contentlets
             #contentlets
             [items]="vm.contentlets"
@@ -16,7 +14,6 @@
             [totalRecords]="vm.totalRecords"
             (back)="switchView()"
             (filter)="filterContentlets($event)"
-            (paginate)="paginateContentlets($event)"
-        ></dot-palette-contentlets>
+            (paginate)="paginateContentlets($event)"></dot-palette-contentlets>
     </div>
 </ng-container>
