@@ -37,6 +37,10 @@ export class EditContentLayoutComponent {
           )
         : this.dotEditContentService.getContentTypeFormData(this.contentType);
 
+    /**
+     * Saves the contentlet with the given values.
+     * @param value - An object containing the key-value pairs of the contentlet to be saved.
+     */
     saveContent(value: { [key: string]: string }) {
         this.dotEditContentService
             .saveContentlet({ ...value, inode: this.identifier, contentType: this.contentType })

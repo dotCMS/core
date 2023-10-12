@@ -1,8 +1,16 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Spectator, createComponentFactory, SpyObject, mockProvider } from '@ngneat/spectator/jest';
+import {
+    Spectator,
+    createComponentFactory,
+    SpyObject,
+    mockProvider,
+    byTestId
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
@@ -158,10 +166,11 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
     layout: LAYOUT_MOCK,
     modDate: 1697051118000,
     multilingualable: false,
-    name: 'Test-K',
+    name: 'Test',
+    contentType: 'Test',
     system: false,
     systemActionMappings: {},
-    variable: 'TestK',
+    variable: 'Test',
     versionable: true,
     workflows: [
         {
@@ -199,7 +208,7 @@ describe('EditContentLayoutComponent with identifier', () => {
 
     const createComponent = createEditContentLayoutComponent({ contentType: 'test', id: '1' });
 
-    beforeEach(() => {
+    beforeEach(async () => {
         spectator = createComponent({
             detectChanges: false,
             providers: [
@@ -236,6 +245,13 @@ describe('EditContentLayoutComponent with identifier', () => {
             inode: '1',
             contentType: 'test'
         });
+    });
+
+    it('should have a [formData] reference on the <dot-edit-content-form>', async () => {
+        spectator.detectChanges();
+        const formElement = spectator.query('dot-edit-content-form');
+        expect(formElement.hasAttribute('ng-reflect-form-data')).toBe(true);
+        expect(formElement).toBeDefined();
     });
 });
 

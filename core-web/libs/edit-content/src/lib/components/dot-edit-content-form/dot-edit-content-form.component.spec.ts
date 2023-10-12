@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -188,7 +188,6 @@ describe('DotFormComponent', () => {
         });
     });
 
-    // ..
     describe('initilizeForm', () => {
         it('should initialize the form group with form controls for each field in the `formData` array', () => {
             const component = spectator.component;
@@ -206,8 +205,6 @@ describe('DotFormComponent', () => {
 
             expect(formControl).toBeDefined();
             expect(formControl.validator).toBeDefined();
-            // expect(formControl.validator?.({ value: '123' })).toBeNull();
-            // expect(formControl.validator?({ value: 'abc' })).not.toBeNull();
         });
     });
 
@@ -218,8 +215,8 @@ describe('DotFormComponent', () => {
             component.initilizeForm();
 
             jest.spyOn(component.formSubmit, 'emit');
-
-            component.saveContenlet();
+            const button = spectator.query(byTestId('button-save'));
+            spectator.click(button);
 
             expect(component.formSubmit.emit).toHaveBeenCalledWith(component.form.value);
         });
