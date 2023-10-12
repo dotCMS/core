@@ -28,15 +28,7 @@ public class CubeJSClientFactoryImpl implements CubeJSClientFactory {
     @Override
     public CubeJSClient create(final AnalyticsApp analyticsApp)
         throws DotDataException, DotSecurityException {
-
-        final AccessToken accessToken;
-        try {
-            accessToken = analyticsAPI.getAccessToken(analyticsApp);
-        } catch (AnalyticsException e) {
-            throw new DotDataException("AccessToken cannot be resolved", e);
-        }
-
-        return new CubeJSClient(analyticsApp.getAnalyticsProperties().analyticsReadUrl(), accessToken);
+        return new CubeJSClient(analyticsApp.getAnalyticsProperties().analyticsReadUrl(), analyticsApp);
     }
 
     /**

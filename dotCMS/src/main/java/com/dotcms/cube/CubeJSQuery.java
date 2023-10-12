@@ -258,12 +258,21 @@ public class CubeJSQuery {
                     getEmptyIfIsNotSet(cubeJSQuery2.orders)
             );
 
-            return new Builder()
+            final Builder builder = new Builder()
                     .dimensions(dimensionsMerged)
                     .measures(measuresMerged)
                     .filters(filtersMerged)
-                    .orders(ordersMerged)
-                    .build();
+                    .orders(ordersMerged);
+
+            if (cubeJSQuery1.limit >= 0 || cubeJSQuery2.limit >= 0) {
+                builder.limit(cubeJSQuery2.limit >= 0 ? cubeJSQuery2.limit : cubeJSQuery1.limit);
+            }
+
+            if (cubeJSQuery1.offset >= 0 || cubeJSQuery2.offset >= 0) {
+                builder.offset(cubeJSQuery2.offset >= 0 ? cubeJSQuery2.offset : cubeJSQuery1.offset);
+            }
+
+            return builder.build();
         }
 
         @NotNull

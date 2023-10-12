@@ -2,6 +2,8 @@ package com.dotcms.cube;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotcms.analytics.AnalyticsAPI;
+import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.exception.AnalyticsException;
@@ -10,10 +12,12 @@ import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.http.CircuitBreakerUrl.Response;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
-import org.jetbrains.annotations.NotNull;
 
 import javax.ws.rs.core.HttpHeaders;
 import java.io.IOException;
@@ -24,7 +28,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * CubeJS Client it allow to send a Request to a Cube JS Server.
+ * CubeJS Client it allows to send a Request to a Cube JS Server.
  * Example:
  *
  * <code>
@@ -44,12 +48,26 @@ public class CubeJSClient {
 
     private int PAGE_SIZE = 1000;
     private final String url;
-    private final AccessToken accessToken;
-
-    public CubeJSClient(final String url, final AccessToken accessToken) {
-        this.url = url;
-        this.accessToken = accessToken;
+    private final AnalyticsApp analyticsApp;
+    private final AnalyticsAPI analyticsAPI;
+    public CubeJSClient(final String url, final AnalyticsApp analyticsApp) {
+        this(url, analyticsApp, APILocator.getAnalyticsAPI());
     }
+
+    public CubeJSClient(final String url, final AnalyticsApp analyticsApp, final AnalyticsAPI analyticsAPI) {
+        this.url = url;
+        this.analyticsApp = analyticsApp;
+        this.analyticsAPI = analyticsAPI;
+    }
+
+    private AccessToken getAccessToken() {
+        try {
+            return analyticsAPI.getAccessToken(analyticsApp);
+        } catch (AnalyticsException e) {
+            throw new DotRuntimeException("AccessToken cannot be resolved", e);
+        }
+    }
+
 
     /**
      * Send a request to a CubeJS Server.
@@ -98,24 +116,9 @@ public class CubeJSClient {
      */
     public CubeJSResultSet send(final CubeJSQuery query) {
         DotPreconditions.notNull(query, "Query not must be NULL");
-        DotPreconditions.notNull(accessToken, "Access token not must be NULL");
+        DotPreconditions.notNull(analyticsApp, "Analytics App not must be NULL");
 
-        final CircuitBreakerUrl cubeJSClient;
-        final String cubeJsUrl = String.format("%s/cubejs-api/v1/load", url);
-        try {
-            cubeJSClient = CircuitBreakerUrl.builder()
-                .setMethod(Method.GET)
-                .setHeaders(cubeJsHeaders(accessToken))
-                .setUrl(cubeJsUrl)
-                .setParams(map("query", query.toString()))
-                .setTimeout(4000)
-                .setThrowWhenNot2xx(false)
-                .build();
-        } catch (AnalyticsException e) {
-            throw new RuntimeException(e);
-        }
-
-        final Response<String> response = getStringResponse(cubeJSClient, cubeJsUrl);
+        final Response<String> response = innerSend(query);
 
         try {
             final String responseAsString = response.getResponse();
@@ -129,12 +132,35 @@ public class CubeJSClient {
         }
     }
 
-    private static Response<String> getStringResponse(final CircuitBreakerUrl cubeJSClient, final String url) {
+    private Response<String> innerSend(CubeJSQuery query) {
+        final CircuitBreakerUrl cubeJSClient;
+        final String cubeJsUrl = String.format("%s/cubejs-api/v1/load", url);
+        try {
+            cubeJSClient = CircuitBreakerUrl.builder()
+                .setMethod(Method.GET)
+                .setHeaders(cubeJsHeaders(getAccessToken()))
+                .setUrl(cubeJsUrl)
+                .setParams(map("query", query.toString()))
+                .setTimeout(4000)
+                .setThrowWhenNot2xx(false)
+                .build();
+        } catch (AnalyticsException e) {
+            throw new RuntimeException(e);
+        }
+
+        try {
+            return getStringResponse(cubeJSClient);
+        } catch (CubeJSRequestException e) {
+            return innerSend(query);
+        }
+    }
+
+    private static Response<String> getStringResponse(final CircuitBreakerUrl cubeJSClient) throws CubeJSRequestException {
         final long start = System.currentTimeMillis();
         final UUID metricId = UUID.randomUUID();
         Logger.debug(CubeJSClient.class, String.format("CUBEJS-REQUEST [%s] START <<<<<", metricId));
 
-        final Response<String> response = cubeJSClient.doResponse();
+        Response<String> response = cubeJSClient.doResponse();
 
         final long end = System.currentTimeMillis();
         Logger.debug(
@@ -142,7 +168,7 @@ public class CubeJSClient {
             String.format("CUBEJS-REQUEST [%s] END - took [%d] secs >>>>>", metricId, (end - start) / 1000));
 
         if (!CircuitBreakerUrl.isWithin2xx(response.getStatusCode())) {
-            throw new RuntimeException("CubeJS Server is not available");
+            throw new CubeJSRequestException("CubeJS Server is not available");
         }
 
         return response;

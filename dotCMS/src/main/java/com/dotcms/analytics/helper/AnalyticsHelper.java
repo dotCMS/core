@@ -43,13 +43,18 @@ import java.util.function.BiPredicate;
  */
 public class AnalyticsHelper {
 
+    private static AnalyticsHelper mock;
     private static final Lazy<AnalyticsHelper> analyticsHelper = Lazy.of(AnalyticsHelper::new);
 
     public static AnalyticsHelper get(){
-        return analyticsHelper.get();
+        return mock != null ? mock : analyticsHelper.get();
     }
 
     private  AnalyticsHelper() {}
+
+    public static void setMock(final AnalyticsHelper analyticsHelper) {
+        mock = analyticsHelper;
+    }
 
     /**
      * Evaluates if a given status code instance has a http status within the SUCCESSFUL range.
