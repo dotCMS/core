@@ -12,6 +12,7 @@ import {
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
@@ -48,13 +49,20 @@ describe('DotFieldComponent', () => {
     let spectator: Spectator<DotEditContentFieldComponent>;
     const createComponent = createComponentFactory({
         component: DotEditContentFieldComponent,
-        imports: [DotEditContentFieldComponent, CommonModule, ReactiveFormsModule, InputTextModule],
-        providers: [
+        imports: [
+            DotEditContentFieldComponent,
+            CommonModule,
+            ReactiveFormsModule,
+            InputTextModule,
+            DotFieldRequiredDirective
+        ],
+        componentViewProviders: [
             {
                 provide: ControlContainer,
                 useValue: FORM_GROUP_DIRECTIVE_MOCK
             }
-        ]
+        ],
+        providers: [FormGroupDirective]
     });
 
     beforeEach(async () => {
