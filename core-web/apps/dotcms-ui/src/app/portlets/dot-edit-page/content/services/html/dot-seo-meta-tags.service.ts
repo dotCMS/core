@@ -1,4 +1,4 @@
-import { Observable, forkJoin, from, of } from 'rxjs';
+import { Observable, forkJoin, from, of, throwError } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
@@ -20,7 +20,8 @@ import {
     ImageMetaData,
     OpenGraphOptions,
     SEO_TAGS,
-    SEO_MEDIA_TYPES
+    SEO_MEDIA_TYPES,
+    IMG_NOT_FOUND_KEY
 } from '../dot-edit-content-html/models/meta-tags-model';
 
 @Injectable()
@@ -444,16 +445,22 @@ export class DotSeoMetaTagsService {
         const imageOg = metaTagsObject['og:image'];
 
         return this.getImageFileSize(imageOg).pipe(
-            switchMap((imageMetaData) => {
+            switchMap((imageMetaData: ImageMetaData) => {
                 const result: SeoRulesResult[] = [];
 
-                if (imageOg && imageMetaData.length <= SEO_LIMITS.MAX_IMAGE_BYTES) {
+                if (
+                    imageMetaData?.url !== IMG_NOT_FOUND_KEY &&
+                    imageMetaData.length <= SEO_LIMITS.MAX_IMAGE_BYTES
+                ) {
                     result.push(
                         this.getDoneItem(this.dotMessageService.get('seo.rules.og-image.found'))
                     );
                 }
 
-                if (this.areAllFalsyOrEmpty([imageOgElements, imageOg])) {
+                if (
+                    imageMetaData?.url === IMG_NOT_FOUND_KEY ||
+                    this.areAllFalsyOrEmpty([imageOgElements, imageOg])
+                ) {
                     result.push(
                         this.getErrorItem(
                             this.dotMessageService.get('seo.rules.og-image.not.found')
@@ -760,6 +767,10 @@ export class DotSeoMetaTagsService {
     getImageFileSize(imageUrl: string): Observable<DotCMSTempFile | ImageMetaData> {
         return from(fetch(imageUrl)).pipe(
             mergeMap((response) => {
+                if (response.status === 404) {
+                    throwError('Image not found');
+                }
+
                 return response.blob();
             }),
             mergeMap((response) => {
@@ -769,10 +780,12 @@ export class DotSeoMetaTagsService {
                 });
             }),
             catchError((error) => {
-                console.warn(
-                    'Getting the file size from an external URL failed, so we upload it to the server:',
-                    error
-                );
+                if (error.message === 'Failed to fetch') {
+                    return of({
+                        length: 0,
+                        url: IMG_NOT_FOUND_KEY
+                    });
+                }
 
                 return from(this.dotUploadService.uploadFile({ file: imageUrl })).pipe(
                     mergeMap((uploadedFile) => {
@@ -786,7 +799,7 @@ export class DotSeoMetaTagsService {
 
                         return of({
                             length: 0,
-                            url: imageUrl
+                            url: IMG_NOT_FOUND_KEY
                         });
                     })
                 );

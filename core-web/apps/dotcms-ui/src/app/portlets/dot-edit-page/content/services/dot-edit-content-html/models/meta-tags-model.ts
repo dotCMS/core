@@ -185,3 +185,5 @@ export interface SocialMediaOption {
     icon: string;
     description: string;
 }
+
+export const IMG_NOT_FOUND_KEY = 'not-found';
