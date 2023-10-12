@@ -12,9 +12,11 @@ import com.dotmarketing.business.APILocator;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
-import com.liferay.util.SystemEnvironmentProperties;
-import io.vavr.Lazy;
 import io.vavr.control.Try;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.io.IOUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,12 +29,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.io.IOUtils;
 
 /**
  * This class provides access to the system configuration parameters that are set through the
@@ -47,19 +45,18 @@ public class Config {
 
     //Generated File Indicator
     public static final String GENERATED_FILE = "dotGenerated_";
-    public static final String RENDITION_FILE = "dotRendition_";
     public static final AtomicBoolean useWatcherMode = new AtomicBoolean(true);
     public static final AtomicBoolean isWatching = new AtomicBoolean(false);
 
     public static final Map<String, String> testOverrideTracker = new ConcurrentHashMap<>();
 
-    private static Lazy<SystemTableConfigSource> SYSTEM_TABLE_CONFIG_SOURCE = null;
+    private static SystemTableConfigSource SYSTEM_TABLE_CONFIG_SOURCE = null;
 
     @VisibleForTesting
     public static boolean ENABLE_SYSTEM_TABLE_CONFIG_SOURCE = "true".equalsIgnoreCase(EnvironmentVariablesService.getInstance().getenv().getOrDefault("DOT_ENABLE_SYSTEM_TABLE_CONFIG_SOURCE", "false"));
 
     public static void initSystemTableConfigSource() {
-        SYSTEM_TABLE_CONFIG_SOURCE = Lazy.of(()->new SystemTableConfigSource()) ;
+        SYSTEM_TABLE_CONFIG_SOURCE = new SystemTableConfigSource();
     }
 
 
@@ -385,7 +382,7 @@ public class Config {
                 ThreadContextUtil.getOrCreateContext().setTag("ConfigSystemTable");
 
                 for (final String name : names) {
-                    final String value = Try.of(()->SYSTEM_TABLE_CONFIG_SOURCE.get().getValue(name)).getOrNull();
+                    final String value = Try.of(() -> SYSTEM_TABLE_CONFIG_SOURCE.getValue(name)).getOrNull();
                     if (null != value) {
                         return value;
                     }
