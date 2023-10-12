@@ -1,3 +1,5 @@
+import { MonacoStandaloneCodeEditor } from '@materia-ui/ngx-monaco-editor';
+
 import { trigger, transition, style, animate } from '@angular/animations';
 import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
@@ -34,7 +36,7 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
 
     menuItems: MenuItem[];
     activeTabIndex = 0;
-    monacoEditors = {};
+    monacoEditors: Record<string, MonacoStandaloneCodeEditor> = {};
     contentTypeNamesById = {};
 
     constructor(
@@ -152,11 +154,26 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
             header: this.dotMessageService.get('Add-Variables'),
             data: {
                 contentTypeVariable: contentType.structureId,
-                onSave: (variable) => {
-                    const editor = this.monacoEditors[contentType.structureId].getModel();
-                    this.monacoEditors[contentType.structureId]
-                        .getModel()
-                        .setValue(editor.getValue() + `${variable}`);
+                onSave: (codeTemplate: string) => {
+                    const editor = this.monacoEditors[contentType.structureId];
+
+                    const selections = editor.getSelections();
+
+                    const editOperation = selections.map((selection) => {
+                        return {
+                            range: {
+                                startLineNumber: selection.startLineNumber,
+                                startColumn: selection.startColumn,
+                                endLineNumber: selection.endLineNumber,
+                                endColumn: selection.endColumn
+                            },
+                            text: codeTemplate
+                        };
+                    });
+
+                    editor.getModel().pushEditOperations(selections, editOperation, () => {
+                        return null;
+                    });
                 }
             }
         });

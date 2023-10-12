@@ -731,19 +731,24 @@ describe('DotEditContentComponent', () => {
 
                 it('should render in preview mode', fakeAsync(() => {
                     detectChangesForIframeRender(fixture);
-
+                    component.isEditMode = false;
                     expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith(
                         mockRenderedPageState,
                         jasmine.any(ElementRef)
                     );
+                    fixture.detectChanges();
+                    const wrapperEdit = de.query(By.css('[data-testId="edit-content-wrapper"]'));
+
                     expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
                     expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(
                         mockRenderedPageState.page
                     );
+                    expect(wrapperEdit.nativeElement).toHaveClass('dot-edit-content__preview');
                 }));
 
                 it('should render in edit mode', fakeAsync(() => {
                     spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+                    component.isEditMode = true;
                     const state = new DotPageRenderState(
                         mockUser(),
                         new DotPageRender({
@@ -761,7 +766,9 @@ describe('DotEditContentComponent', () => {
                         content: state
                     });
                     detectChangesForIframeRender(fixture);
+                    fixture.detectChanges();
 
+                    const wrapperEdit = de.query(By.css('[data-testId="edit-content-wrapper"]'));
                     expect(dotEditContentHtmlService.initEditMode).toHaveBeenCalledWith(
                         state,
                         jasmine.any(ElementRef)
@@ -770,6 +777,7 @@ describe('DotEditContentComponent', () => {
                     expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(
                         state.page
                     );
+                    expect(wrapperEdit.nativeElement).not.toHaveClass('dot-edit-content__preview');
                 }));
 
                 it('should show/hide content palette in edit mode with correct content', fakeAsync(() => {
