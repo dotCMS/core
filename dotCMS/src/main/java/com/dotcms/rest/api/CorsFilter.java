@@ -34,8 +34,8 @@ public class CorsFilter implements ContainerResponseFilter {
         props.forEach(key -> {
             final String convertedKeyToEnvKey = Config.envKey(key);
             final String[] splitter = convertedKeyToEnvKey.split("_", 5);
-            final String mapping = splitter[4];
-            final String header = fixHeaderCase(splitter[5]);
+            final String mapping = splitter[3].toLowerCase();
+            final String header = fixHeaderCase(splitter[4]);
             List<String[]> keys = loadingMap.getOrDefault(mapping,  new ArrayList<>());
 
             keys.add(new String[] {header, Config.getStringProperty(key, "")});
