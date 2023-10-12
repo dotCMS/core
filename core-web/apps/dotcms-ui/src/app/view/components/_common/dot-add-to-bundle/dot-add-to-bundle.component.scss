@@ -1,3 +1,8 @@
 form {
     width: 300px;
 }
+:host ::ng-deep {
+    .p-fluid .p-dropdown input.p-dropdown-label {
+        width: 100%;
+    }
+}
