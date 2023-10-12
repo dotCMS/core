@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * Wraps the {@link com.dotcms.rendering.velocity.viewtools.CategoriesWebAPI} (categories) into the JS context.
  * @author jsanca
  */
-public class CategoriesJSViewTool implements JsViewTool, JsViewContextAware {
+public class CategoriesJsViewTool implements JsViewTool, JsViewContextAware {
 
     private final CategoriesWebAPI categoriesWebAPI = new CategoriesWebAPI();
 

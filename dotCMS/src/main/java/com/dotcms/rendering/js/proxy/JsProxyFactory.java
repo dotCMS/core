@@ -6,6 +6,7 @@ import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMap;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
@@ -34,6 +35,8 @@ public class JsProxyFactory {
         registerMapper(new JsBlobProxyMapperStrategyImpl());
         registerMapper(new JsCategoryProxyMapperStrategyImpl());
         registerMapper(new JsStoryBlockMapProxyMapperStrategyImpl());
+        registerMapper(new JsStoryBlockMapProxyMapperStrategyImpl());
+        registerMapper(new JsJSONObjectProxyMapperStrategyImpl());
     }
     /**
      * Register a custom mapper
@@ -194,6 +197,18 @@ public class JsProxyFactory {
         @Override
         public Object apply(final Object obj) {
             return new JsStoryBlockMap((StoryBlockMap)obj);
+        }
+    }
+
+    private static final class JsJSONObjectProxyMapperStrategyImpl implements JsProxyMapperStrategy {
+        @Override
+        public boolean test(final Object obj) {
+            return null != obj && obj instanceof JSONObject;
+        }
+
+        @Override
+        public Object apply(final Object obj) {
+            return new JsJSONObject((JSONObject)obj);
         }
     }
 

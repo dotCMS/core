@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  * Wraps the LanguageViewtool (languagewebapi) into the JS context.
  * @author jsanca
  */
-public class LanguageJSViewTool implements JsViewTool, JsViewContextAware {
+public class LanguageJsViewTool implements JsViewTool, JsViewContextAware {
 
     private  LanguageViewtool languageViewtool = new LanguageViewtool();
 
