@@ -220,14 +220,8 @@ describe('EditContentLayoutComponent', () => {
         imports: [HttpClientTestingModule],
         // mocks: [DotWorkflowActionsFireService, DotEditContentService],
         // componentMocks: [DotEditContentService]
-        providers: [
-            mockProvider(DotEditContentService),
-            mockProvider(DotContentTypeService, { getContentType: () => of(LAYOUT_MOCK) }),
-            mockProvider(DotWorkflowActionsFireService),
-            // {
-            //     provide: DotContentTypeService,
-            //     useValue: { getContentType: () => of(LAYOUT_MOCK) }
-            // },
+
+        componentProviders: [
             {
                 provide: ActivatedRoute,
                 useValue: { snapshot: { params: { contentType: 'test', id: '1' } } }
@@ -240,10 +234,20 @@ describe('EditContentLayoutComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({ detectChanges: false });
-        dotEditContentService = spectator.inject(DotEditContentService, true);
+        spectator = createComponent({
+            detectChanges: false,
+            providers: [
+                {
+                    provide: DotEditContentService,
+                    useValue: {
+                        getContentTypeFormData: jest.fn().mockReturnValue(of(LAYOUT_MOCK)),
+                        getContentById: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK))
+                    }
+                }
+            ]
+        });
 
-        dotContentTypeService = spectator.inject(DotContentTypeService);
+        dotEditContentService = spectator.inject(DotEditContentService, true);
     });
 
     it('should set contentType and identifier from activatedRoute', () => {
@@ -268,7 +272,7 @@ describe('EditContentLayoutComponent', () => {
             // dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
             spectator.detectChanges();
 
-            expect(dotEditContentService.getContentTypeFormData).toHaveBeenCalledWith('test');
+            expect(dotEditContentService.getContentById).toHaveBeenCalledWith('test');
             // expect(dotEditContentService.getContentTypeFormData).toHaveBeenCalledWith('test');
         });
 
