@@ -10,10 +10,13 @@ export default [
             '/DotAjaxDirector',
             '/contentAsset',
             '/application',
-            '/assets/seo/page-tools.json'
+            '/assets'
         ],
         target: 'http://localhost:8080',
         secure: false,
-        logLevel: 'debug'
+        logLevel: 'debug',
+        pathRewrite: {
+            '^/assets': '/dotAdmin/assets'
+        }
     }
 ];
