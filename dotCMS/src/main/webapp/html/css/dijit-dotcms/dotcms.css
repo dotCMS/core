@@ -11187,6 +11187,7 @@ body {
   width: 100% !important;
   max-width: 100% !important;
   margin: 0px;
-  border: 1px solid red;
-  min-height: fit-content;
+  max-height: none;
+  padding: 0;
+  height: calc(100vh - 3rem - 20px - 1rem - 0.5rem - 20px - 61px - 1rem);
 }

@@ -66,12 +66,6 @@
 %>
 
 <div class="fieldWrapper" >
-
-
-    fullscreen: <%=fullScreenField%>
-
-
-
     <div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
         <% if (hint != null) {%>
         <a href="#" id="tip-<%=field.getVelocityVarName()%>"><span class="hintIcon"></span></a>
@@ -99,7 +93,7 @@
 		<% } %>
     </div>
 
-    <div class="fieldValue field__<%=field.getFieldType()%>" id="<%=field.getVelocityVarName()%>_field">
+    <div class="fieldValue field__<%=field.getFieldType()%> <%= fullScreenClass%>" id="<%=field.getVelocityVarName()%>_field">
         <%
             //TEXT kind of field rendering
             if (field.getFieldType().equals(Field.FieldType.TEXT.toString())) {
@@ -183,7 +177,7 @@
                 JSONValue = new JSONObject(textValue);
             } catch(Exception e) {
                 // Need it in case the value contains Single quote/backtick.
-                textValue = "`" + StringEscapeUtils.escapeJavaScript(textValue.replaceAll("`", "&#96;").replaceAll("\\$", "&#36;")) + "`"; 
+                textValue = "`" + StringEscapeUtils.escapeJavaScript(textValue.replaceAll("`", "&#96;").replaceAll("\\$", "&#36;")) + "`";
             }
 
             List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
@@ -220,8 +214,9 @@
                 lang="<%=contentLanguage%>"
                 custom-blocks='<%=customBlocks%>'
                 contentlet-identifier='<%=contentletIdentifier%>'
+                is-fullscreen='<%=fullScreenField%>'
             >
-                
+
             </dotcms-block-editor>
             <input type="hidden" name="<%=field.getFieldContentlet()%>" id="editor-input-value-<%=field.getVelocityVarName()%>"/>
 
@@ -248,7 +243,7 @@
                     } catch (error) {
                         const text = (<%=textValue%>).replace(/&#96;/g, '`').replace(/&#36;/g, '$');
                         const converter = new showdown.Converter({tables: true});
-                        content = converter.makeHtml(text);                      
+                        content = converter.makeHtml(text);
                     }
 
                     const blockEditor = document.getElementById("block-editor-<%=field.getVelocityVarName()%>");
@@ -256,7 +251,7 @@
                     const field = document.querySelector('#editor-input-value-<%=field.getVelocityVarName()%>');
 
                     /**
-                     * Safeguard just in case the editor changes are not triggering the 
+                     * Safeguard just in case the editor changes are not triggering the
                      * "valueChange" event.
                      */
                     if (typeof <%=textValue%> === 'object') {
@@ -669,7 +664,7 @@
             String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
             if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
         %>
-            
+
             <%
                 String accept="";
                 String maxFileLength="0";
@@ -689,7 +684,7 @@
                     }
                 }
 
-            
+
                 %>
 
             <div id="container-binary-field-<%=field.getVelocityVarName()%>"></div>
@@ -714,7 +709,7 @@
                     binaryField.maxFileSize = isNaN(maxFileSize) ? 0 : maxFileSize;
                     binaryField.accept = acceptTypes;
                     binaryField.helperText ="<%= helperText%>";
-                    
+
                     binaryField.addEventListener('tempFile', (event) => {
                         const tempFile = event.detail;
                         field.value = tempFile?.id || '';
@@ -730,8 +725,8 @@
         <% if(UtilMethods.isSet(value)){
             String mimeType="application/octet-stream";
             fileName="unknown";
-            
-            
+
+
 
             try{
                 java.io.File fileValue = (java.io.File)value;
@@ -750,9 +745,9 @@
                 fileName = value.toString();
             }
             %>
-        
 
-        
+
+
 
         <%if(mimeType.startsWith("video/")){%>
             <div id="thumbnailParent<%=field.getVelocityVarName()%>">
@@ -765,9 +760,9 @@
                 </a>
             </div>
         <%}%>
-        
 
-    
+
+
 
         <%if(UtilMethods.isImage(fileName)){%>
         <%int showDim=300; %>

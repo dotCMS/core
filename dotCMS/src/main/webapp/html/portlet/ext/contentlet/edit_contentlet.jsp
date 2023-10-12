@@ -334,7 +334,7 @@
                     <div class="fieldName">
                         <%=widgetUsageField.getFieldName()%>
                     </div>
-                    <div class="fieldValue">
+                    <div class="fieldValue <%=fullScreenClass%>">
                         <%
                         String textValue = widgetUsageField.getValues();
                         textValue = textValue.replaceAll("&", "&amp;");
