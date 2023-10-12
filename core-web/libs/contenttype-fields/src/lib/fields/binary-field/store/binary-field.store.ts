@@ -16,7 +16,6 @@ export interface BinaryFieldState {
     mode: BINARY_FIELD_MODE;
     status: BINARY_FIELD_STATUS;
     UiMessage: UiMessageI;
-    dialogOpen: boolean;
     dropZoneActive: boolean;
 }
 
@@ -35,10 +34,15 @@ export enum BINARY_FIELD_STATUS {
 
 @Injectable()
 export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
-    private _maxFileSize: number;
+    private _maxFileSizeInMB: number;
 
     // Selectors
-    readonly vm$ = this.select((state) => state);
+    readonly vm$ = this.select((state) => {
+        return {
+            ...state,
+            isLoading: state.status === BINARY_FIELD_STATUS.UPLOADING
+        };
+    });
 
     // File state
     readonly file$ = this.select((state) => state.file);
@@ -57,11 +61,6 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     readonly setFile = this.updater<File>((state, file) => ({
         ...state,
         file
-    }));
-
-    readonly setDialogOpen = this.updater<boolean>((state, dialogOpen) => ({
-        ...state,
-        dialogOpen
     }));
 
     readonly setDropZoneActive = this.updater<boolean>((state, dropZoneActive) => ({
@@ -111,18 +110,6 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         status: BINARY_FIELD_STATUS.ERROR
     }));
 
-    readonly openDialog = this.updater<BINARY_FIELD_MODE>((state, mode) => ({
-        ...state,
-        dialogOpen: true,
-        mode
-    }));
-
-    readonly closeDialog = this.updater((state) => ({
-        ...state,
-        dialogOpen: false,
-        mode: BINARY_FIELD_MODE.DROPZONE
-    }));
-
     readonly removeFile = this.updater((state) => ({
         ...state,
         file: null,
@@ -143,30 +130,27 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         return fileDetails$.pipe();
     });
 
-    readonly handleExternalSourceFile = this.effect<string>((url$) => {
-        /* To be implemented */
-        return url$.pipe();
-    });
-
-    setMaxFileSize(maxFileSize: number) {
-        this._maxFileSize = maxFileSize;
+    /**
+     * Set the max file size in Bytes
+     *
+     * @param {number} bytes
+     * @memberof DotBinaryFieldStore
+     */
+    setMaxFileSize(bytes: number) {
+        this._maxFileSizeInMB = bytes / (1024 * 1024);
     }
 
     private uploadTempFile(file: File): Observable<DotCMSTempFile> {
         return from(
             this.dotUploadService.uploadFile({
                 file,
-                maxSize: `${this._maxFileSize}`,
+                maxSize: this._maxFileSizeInMB ? `${this._maxFileSizeInMB}MB` : '',
                 signal: null
             })
         ).pipe(
             tapResponse(
-                (tempFile) => {
-                    this.setTempFile(tempFile);
-                },
-                () => {
-                    this.setError(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR));
-                }
+                (tempFile) => this.setTempFile(tempFile),
+                () => this.setError(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR))
             )
         );
     }

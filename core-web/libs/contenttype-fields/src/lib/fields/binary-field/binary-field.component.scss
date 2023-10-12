@@ -1,13 +1,5 @@
 @use "variables" as *;
 
-@import "libs/block-editor/src/fonts"; // Import PrimeNG Icon
-
-:host ::ng-deep {
-    @import "libs/dotcms-scss/angular/dotcms-theme/components/buttons/button";
-    @import "libs/dotcms-scss/angular/dotcms-theme/components/dialog";
-    @import "node_modules/primeicons/primeicons";
-}
-
 .binary-field__container {
     display: flex;
     justify-content: center;
@@ -117,4 +109,12 @@
     border: 1px solid $input-border-color;
     display: block;
     height: 25rem;
+}
+
+p-dialog ::ng-deep {
+    .p-dialog-mask.p-component-overlay {
+        background-color: transparent;
+        -webkit-backdrop-filter: blur($blur-md);
+        backdrop-filter: blur($blur-md);
+    }
 }

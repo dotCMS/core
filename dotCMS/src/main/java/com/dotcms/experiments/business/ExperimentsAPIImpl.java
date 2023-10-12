@@ -30,7 +30,6 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSClientFactory;
-import com.dotcms.cube.CubeJSClientFactoryImpl;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
@@ -55,9 +54,9 @@ import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
 
+import com.dotcms.metrics.timing.TimeMetric;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.system.event.local.model.EventSubscriber;
-import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LicenseValiditySupplier;
@@ -86,7 +85,6 @@ import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.Condition;
@@ -591,8 +589,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling)
                         .withStatus(SCHEDULED);
                 validateNoConflictsWithScheduledExperiments(experimentToSave, user);
-                toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED),
-                        user);
+                toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED).
+                                withRunningIds(getRunningIds(experimentToSave)), user);
             }
 
             return toReturn;
@@ -604,7 +602,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
-    public Experiment forceStart(String experimentId, User user)
+    public Experiment forceStart(String experimentId, User user, Scheduling scheduling)
             throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
                 invalidLicenseMessageSupplier);
@@ -635,29 +633,55 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Optional<Experiment> runningExperimentOnPage = getRunningExperimentsOnPage(
                 user, persistedExperiment);
 
-        Experiment toReturn;
+        final Experiment experimentToSave = persistedExperiment.withStatus(RUNNING);
 
-        if(emptyScheduling(persistedExperiment)) {
-            final Scheduling scheduling = startNowScheduling();
-            final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(RUNNING);
-
-            if(runningExperimentOnPage.isPresent()) {
-                endRunningExperimentIfNeeded(user, runningExperimentOnPage.get(), experimentToSave);
-            }
-            cancelScheduledExperimentsUponConflicts(experimentToSave, user);
-            toReturn = innerStart(experimentToSave, user, false);
-        } else {
-            Scheduling scheduling = persistedExperiment.scheduling().orElseThrow();
-            final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
-
-            if(runningExperimentOnPage.isPresent()) {
-                endRunningExperimentIfNeeded(user, runningExperimentOnPage.get(), experimentToSave);
-            }
-            cancelScheduledExperimentsUponConflicts(experimentToSave, user);
-            toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED), user);
+        if(runningExperimentOnPage.isPresent()) {
+            endRunningExperimentIfNeeded(user, runningExperimentOnPage.get(), experimentToSave);
         }
+        cancelScheduledExperimentsUponConflicts(experimentToSave, user);
 
-        return toReturn;
+        return innerStart(experimentToSave.withScheduling(scheduling), user, false);
+    }
+
+    @Override
+    public Experiment forceScheduled(final String experimentId, final User user, final Scheduling scheduling)
+            throws DotDataException, DotSecurityException {
+        DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
+                invalidLicenseMessageSupplier);
+        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+
+        final Experiment persistedExperiment =  find(experimentId, user).orElseThrow(
+                ()-> new IllegalArgumentException("Experiment with provided id not found")
+        );
+
+        validatePageEditPermissions(user, persistedExperiment,
+                "You don't have permission to start the Experiment. "
+                        + "Experiment Id: " + persistedExperiment.id());
+
+        DotPreconditions.isTrue(persistedExperiment.status()!=Status.RUNNING ||
+                        persistedExperiment.status() != Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
+                DotStateException.class);
+
+        DotPreconditions.isTrue(persistedExperiment.status()== DRAFT
+                ,()-> "Only DRAFT experiments can be started",
+                DotStateException.class);
+
+        DotPreconditions.checkState(hasAtLeastOneVariant(persistedExperiment), "The Experiment needs at "
+                + "least one Page Variant in order to be started.");
+
+        DotPreconditions.checkState(persistedExperiment.goals().isPresent(), "The Experiment needs to "
+                + "have the Goal set.");
+
+        final Optional<Experiment> runningExperimentOnPage = getRunningExperimentsOnPage(
+                user, persistedExperiment);
+
+        final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
+
+        if(runningExperimentOnPage.isPresent()) {
+            endRunningExperimentIfNeeded(user, runningExperimentOnPage.get(), experimentToSave);
+        }
+        cancelScheduledExperimentsUponConflicts(experimentToSave, user);
+        return save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED), user);
     }
 
     private void endRunningExperimentIfNeeded(User user, Experiment runningExperimentOnPage,
@@ -791,7 +815,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Experiment readyToStart = save(Experiment.builder().from(persistedExperiment)
                         .status(RUNNING).build(), user);
 
-        return innerStart(readyToStart, user, true);
+        return innerStart(readyToStart, user, false);
     }
 
     private Experiment innerStart(final Experiment persistedExperiment, final User user,
@@ -1213,6 +1237,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @Override
     public List<BrowserSession> getEvents(final Experiment experiment,
                                           final User user) throws DotDataException, DotSecurityException {
+        final TimeMetric timeMetric = TimeMetric.mark(getClass().getSimpleName() + ".getEvents()");
+
         final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
         final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
                 .create(experiment);
@@ -1257,6 +1283,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     e.getMessage());
             Logger.error(this, message, e);
             throw new DotDataException(message, e);
+        } finally {
+            timeMetric.stop();
         }
     }
 

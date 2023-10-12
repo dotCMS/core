@@ -17,8 +17,12 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperiment, GroupedExperimentByStatus } from '@dotcms/dotcms-models';
-import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
-import { DotRelativeDatePipe } from '@pipes/dot-relative-date/dot-relative-date.pipe';
+import {
+    DotEmptyContainerComponent,
+    DotMessagePipe,
+    DotRelativeDatePipe,
+    PrincipalConfiguration
+} from '@dotcms/ui';
 
 @Component({
     standalone: true,

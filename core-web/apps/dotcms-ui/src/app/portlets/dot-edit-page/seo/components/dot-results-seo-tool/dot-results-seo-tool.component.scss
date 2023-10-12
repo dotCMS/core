@@ -11,7 +11,7 @@
     width: 47.6rem;
     border-radius: $border-radius-xl;
     box-shadow: $md-shadow-6;
-    margin: $spacing-6 0;
+    margin: $spacing-4 $spacing-6;
 }
 
 .results-seo-tool__main-card-content {
@@ -87,10 +87,11 @@
     display: flex;
     gap: $spacing-3;
     color: $black;
+    align-items: flex-start;
 }
 
 .results-seo-tool__result-card-list li:not(:last-child) {
-    margin-bottom: $spacing-3;
+    margin-bottom: $spacing-4;
 }
 
 .results-seo-tool__result-icon {
@@ -155,9 +156,26 @@
 
     .results-seo-tool__result-card-list .pi-external-link {
         color: $color-palette-gray-700;
+        font-size: $font-size-xs;
     }
 
     .results-seo-tool__main-card .p-card .p-card-body {
         padding: $spacing-3;
+    }
+
+    .results-seo-tool__read-more-label {
+        span {
+            display: flex;
+            align-items: center;
+            padding-left: $spacing-0;
+        }
+    }
+
+    .results-seo-tool__result-card--read-more {
+        .p-card-header {
+            background-color: $color-palette-primary-100;
+            border-top-right-radius: $border-radius-xl;
+            border-top-left-radius: $border-radius-xl;
+        }
     }
 }

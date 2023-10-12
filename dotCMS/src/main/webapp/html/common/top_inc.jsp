@@ -40,6 +40,14 @@ THIS FILE AND ITS INCLUDES
 
     <link rel="stylesheet" type="text/css" href="<%=dojoPath%>/dijit/themes/dijit.css">
     <link rel="stylesheet" type="text/css" href="/html/css/dijit-dotcms/dotcms.css?b=<%= ReleaseInfo.getVersion() %>">
+	<link rel="stylesheet" href="/html/css/dotcms-block-editor.css" />
+
+	<%
+		String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
+		if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
+	%>
+		<link rel="stylesheet" href="/html/css/binary-field.css" />
+	<% } %>
 
 
 	<!--[if IE]>

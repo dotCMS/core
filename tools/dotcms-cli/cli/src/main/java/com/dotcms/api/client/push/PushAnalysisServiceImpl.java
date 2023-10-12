@@ -1,5 +1,6 @@
 package com.dotcms.api.client.push;
 
+import com.dotcms.cli.common.HiddenFileFilter;
 import com.dotcms.model.push.PushAction;
 import com.dotcms.model.push.PushAnalysisResult;
 import io.quarkus.arc.DefaultBean;
@@ -167,7 +168,7 @@ public class PushAnalysisServiceImpl implements PushAnalysisService {
      */
     private List<File> readLocalContents(File localFile) {
 
-        if (localFile.isFile()) {
+        if (localFile.isFile() && !localFile.isHidden()) {
             return List.of(localFile);
         } else if (localFile.isDirectory()) {
             var foundFiles = localFile.listFiles(new HiddenFileFilter());
@@ -204,18 +205,6 @@ public class PushAnalysisServiceImpl implements PushAnalysisService {
         return localFiles.stream()
                 .map(file -> map(file, clazz))
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * FileFilter implementation to allow hidden files and folders and filter out system specific
-     * elements.
-     */
-    static class HiddenFileFilter implements FileFilter {
-
-        @Override
-        public boolean accept(File file) {
-            return !file.getName().equalsIgnoreCase(".DS_Store");
-        }
     }
 
 }

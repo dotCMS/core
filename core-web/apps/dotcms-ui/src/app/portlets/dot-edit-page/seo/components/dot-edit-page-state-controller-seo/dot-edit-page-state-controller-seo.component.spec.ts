@@ -192,7 +192,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         spyOn(component.modeChange, 'emit');
         spyOn(dotPageStateService, 'setLock');
         spyOn(personalizeService, 'personalized').and.returnValue(of(null));
-        featFlagMock = spyOn(propertiesService, 'getKey').and.returnValue(of('false'));
+        featFlagMock = spyOn(propertiesService, 'getFeatureFlag').and.returnValue(of(false));
 
         deDotTabButtons = de.query(By.css('[data-testId="dot-tabs-buttons"]'));
         dotTabButtons = deDotTabButtons.componentInstance;
@@ -523,6 +523,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
         it('should call selected event', async () => {
             spyOn(dotPageStateService, 'setDevice');
+            spyOn(dotPageStateService, 'setSeoMedia');
             const dotSelector = de.query(By.css('[data-testId="dot-device-selector"]'));
             const event = {
                 identifier: 'string',
@@ -535,11 +536,12 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             dotSelector.triggerEventHandler('selected', event);
 
             expect(dotPageStateService.setDevice).toHaveBeenCalledWith(event);
+            expect(dotPageStateService.setSeoMedia).toHaveBeenCalledWith(null);
         });
     });
     describe('page does not have URLContentMap and feature flag is on', () => {
         beforeEach(() => {
-            featFlagMock.and.returnValue(of('true'));
+            featFlagMock.and.returnValue(of(true));
 
             const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
                 { ...mockUser(), userId: '486' },

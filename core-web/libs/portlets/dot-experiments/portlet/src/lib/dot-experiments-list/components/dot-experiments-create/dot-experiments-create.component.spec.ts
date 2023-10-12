@@ -7,9 +7,9 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { Sidebar, SidebarModule } from 'primeng/sidebar';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotFieldValidationMessageComponent } from '@dotcms/ui';
 import { DotExperimentsListStoreMock, MockDotMessageService } from '@dotcms/utils-testing';
 import {
     DotSidebarDirective,
@@ -52,7 +52,7 @@ describe('DotExperimentsCreateComponent', () => {
             ButtonModule,
             InputTextModule,
             InputTextareaModule,
-            DotFieldValidationMessageModule
+            DotFieldValidationMessageComponent
         ],
         component: DotExperimentsCreateComponent,
         providers: [

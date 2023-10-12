@@ -6,12 +6,16 @@ import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { PaginatorModule } from 'primeng/paginator';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import {
     GoalsConditionsOperatorsListByType,
     GoalsConditionsParametersListByType
 } from '@dotcms/dotcms-models';
-import { DotAutofocusDirective, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotAutofocusDirective,
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 
@@ -28,7 +32,7 @@ import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-opti
         DotAutofocusDirective,
         DotDropdownDirective,
         DotFieldRequiredDirective,
-        DotFieldValidationMessageModule,
+        DotFieldValidationMessageComponent,
         DotPipesModule,
         DropdownModule,
         DotMessagePipe,

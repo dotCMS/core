@@ -9,13 +9,12 @@ import { Table } from 'primeng/table';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus, GroupedExperimentByStatus } from '@dotcms/dotcms-models';
-import { DotEmptyContainerComponent } from '@dotcms/ui';
+import { DotEmptyContainerComponent, DotFormatDateService } from '@dotcms/ui';
 import {
     DotFormatDateServiceMock,
     getExperimentMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotFormatDateService } from '@services/dot-format-date-service';
 
 import { DotExperimentsListTableComponent } from './dot-experiments-list-table.component';
 

@@ -4,6 +4,8 @@ import com.dotcms.analytics.AnalyticsAPI;
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.model.AccessToken;
+import com.dotcms.analytics.model.AccessTokenFetchMode;
+import com.dotcms.exception.AnalyticsException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -24,8 +26,16 @@ public class CubeJSClientFactoryImpl implements CubeJSClientFactory {
      * {@inheritDoc}
      */
     @Override
-    public CubeJSClient create(final AnalyticsApp analyticsApp) throws DotDataException, DotSecurityException {
-        final AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
+    public CubeJSClient create(final AnalyticsApp analyticsApp)
+        throws DotDataException, DotSecurityException {
+
+        final AccessToken accessToken;
+        try {
+            accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        } catch (AnalyticsException e) {
+            throw new DotDataException("AccessToken cannot be resolved", e);
+        }
+
         return new CubeJSClient(analyticsApp.getAnalyticsProperties().analyticsReadUrl(), accessToken);
     }
 

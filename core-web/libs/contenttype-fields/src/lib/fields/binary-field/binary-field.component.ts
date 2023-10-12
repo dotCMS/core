@@ -15,6 +15,7 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { skip } from 'rxjs/operators';
 
@@ -29,6 +30,7 @@ import {
 } from '@dotcms/ui';
 
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
+import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
 import {
     BINARY_FIELD_MODE,
     BINARY_FIELD_STATUS,
@@ -43,7 +45,6 @@ const initialState: BinaryFieldState = {
     tempFile: null,
     mode: BINARY_FIELD_MODE.DROPZONE,
     status: BINARY_FIELD_STATUS.INIT,
-    dialogOpen: false,
     dropZoneActive: false,
     UiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT)
 };
@@ -60,7 +61,9 @@ const initialState: BinaryFieldState = {
         DotMessagePipe,
         DotBinaryFieldUiMessageComponent,
         DotSpinnerModule,
-        HttpClientModule
+        HttpClientModule,
+        InputTextModule,
+        DotBinaryFieldUrlModeComponent
     ],
     providers: [DotBinaryFieldStore],
     templateUrl: './binary-field.component.html',
@@ -69,11 +72,7 @@ const initialState: BinaryFieldState = {
 })
 export class DotBinaryFieldComponent implements OnInit {
     //Inputs
-    acceptedTypes: string[] = [];
-    @Input() set accept(accept: string) {
-        this.acceptedTypes = accept.split(',').map((type) => type.trim());
-    }
-
+    @Input() accept: string[] = [];
     @Input() maxFileSize: number;
     @Input() helperText: string;
 
@@ -90,6 +89,8 @@ export class DotBinaryFieldComponent implements OnInit {
     readonly BINARY_FIELD_STATUS = BINARY_FIELD_STATUS;
     readonly BINARY_FIELD_MODE = BINARY_FIELD_MODE;
     readonly vm$ = this.dotBinaryFieldStore.vm$;
+
+    dialogOpen = false;
 
     constructor(
         private readonly dotBinaryFieldStore: DotBinaryFieldStore,
@@ -145,20 +146,26 @@ export class DotBinaryFieldComponent implements OnInit {
      * @memberof DotBinaryFieldComponent
      */
     openDialog(mode: BINARY_FIELD_MODE) {
-        this.dotBinaryFieldStore.openDialog(mode);
+        this.dialogOpen = true;
+        this.dotBinaryFieldStore.setMode(mode);
     }
 
     /**
-     * Listen to dialog visibility change
-     * and set mode to dropzone when dialog is closed
+     * Close Dialog
      *
-     * @param {boolean} visibily
      * @memberof DotBinaryFieldComponent
      */
-    visibleChange(visibily: boolean) {
-        if (!visibily) {
-            this.dotBinaryFieldStore.closeDialog();
-        }
+    closeDialog() {
+        this.dialogOpen = false;
+    }
+
+    /**
+     * Listen to dialog close event
+     *
+     * @memberof DotBinaryFieldComponent
+     */
+    afterDialogClose() {
+        this.dotBinaryFieldStore.setMode(null);
     }
 
     /**
@@ -195,8 +202,9 @@ export class DotBinaryFieldComponent implements OnInit {
         // TODO: Implement - Write Code
     }
 
-    handleExternalSourceFile(_event) {
-        // TODO: Implement - FROM URL
+    setTempFile(tempFile: DotCMSTempFile) {
+        this.dotBinaryFieldStore.setTempFile(tempFile);
+        this.dialogOpen = false;
     }
 
     /**
@@ -210,7 +218,7 @@ export class DotBinaryFieldComponent implements OnInit {
         fileTypeMismatch,
         maxFileSizeExceeded
     }: DropZoneFileValidity): UiMessageI {
-        const acceptedTypes = this.acceptedTypes.join(', ');
+        const acceptedTypes = this.accept.join(', ');
         const maxSize = `${this.maxFileSize} bytes`;
         let uiMessage: UiMessageI;
 

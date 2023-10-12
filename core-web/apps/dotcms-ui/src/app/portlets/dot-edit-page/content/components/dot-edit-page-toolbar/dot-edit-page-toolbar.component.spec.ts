@@ -22,7 +22,6 @@ import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.modul
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
@@ -56,7 +55,7 @@ import {
     ESContent,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFormatDateService, DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,

@@ -25,14 +25,18 @@ export enum SEO_LIMITS {
     MIN_TITLE_LENGTH = 30,
     MAX_TITLE_LENGTH = 60,
     MIN_OG_TITLE_LENGTH = 30,
-    MAX_OG_TITLE_LENGTH = 160,
+    MAX_OG_TITLE_LENGTH = 60,
     MIN_OG_DESCRIPTION_LENGTH = 55,
     MAX_OG_DESCRIPTION_LENGTH = 150,
+    MIN_DESCRIPTION_LENGTH = 55,
+    MAX_DESCRIPTION_LENGTH = 160,
     MAX_FAVICONS = 1,
     MAX_TITLES = 1,
     MAX_IMAGE_BYTES = 8000000,
     MAX_TWITTER_IMAGE_BYTES = 5000000,
-    MAX_TWITTER_DESCRIPTION_LENGTH = 200
+    MAX_TWITTER_DESCRIPTION_LENGTH = 200,
+    MIN_TWITTER_TITLE_LENGTH = 30,
+    MAX_TWITTER_TITLE_LENGTH = 70
 }
 
 export enum SEO_RULES_COLORS {
@@ -54,11 +58,11 @@ export interface SeoKeyResult {
 
 export interface SeoMetaTagsResult {
     key: string;
+    title: string;
     keyIcon: string;
     keyColor: string;
     items: SeoRulesResult[];
     sort: number;
-    info?: string;
 }
 
 export interface SeoMetaTags {
@@ -70,6 +74,7 @@ export interface SeoMetaTags {
     imageOgElements?: NodeListOf<Element>;
     descriptionOgElements?: NodeListOf<Element>;
     description?: string;
+    descriptionElements?: NodeListOf<Element>;
     'og:description'?: string;
     'og:image'?: string;
     'og:title'?: string;
@@ -92,7 +97,7 @@ export const SeoMediaKeys = {
         SEO_OPTIONS.TWITTER_DESCRIPTION,
         SEO_OPTIONS.TWITTER_IMAGE
     ],
-    linkedin: [SEO_OPTIONS.DESCRIPTION, SEO_OPTIONS.OG_IMAGE, SEO_OPTIONS.OG_TITLE],
+    linkedin: [SEO_OPTIONS.OG_DESCRIPTION, SEO_OPTIONS.OG_IMAGE, SEO_OPTIONS.OG_TITLE],
     all: [
         SEO_OPTIONS.DESCRIPTION,
         SEO_OPTIONS.OG_IMAGE,
@@ -115,7 +120,6 @@ export interface ImageMetaData {
 export interface OpenGraphOptions {
     getItems: (object: SeoMetaTags) => Observable<SeoRulesResult[]>;
     sort: number;
-    info: string;
 }
 
 export interface MetaTagsPreview {
@@ -147,3 +151,37 @@ export const SEO_TAGS = [
     SEO_OPTIONS.TWITTER_DESCRIPTION,
     SEO_OPTIONS.TWITTER_IMAGE
 ];
+
+export const socialMediaTiles: Record<SEO_MEDIA_TYPES, SocialMediaOption> = {
+    [SEO_MEDIA_TYPES.FACEBOOK]: {
+        label: 'Facebook',
+        value: SEO_MEDIA_TYPES.FACEBOOK,
+        icon: 'pi pi-facebook',
+        description: 'seo.rules.media.preview.tile'
+    },
+    [SEO_MEDIA_TYPES.TWITTER]: {
+        label: 'X (Formerly Twitter)',
+        value: SEO_MEDIA_TYPES.TWITTER,
+        icon: 'pi pi-twitter',
+        description: 'seo.rules.media.preview.tile'
+    },
+    [SEO_MEDIA_TYPES.LINKEDIN]: {
+        label: 'Linkedin',
+        value: SEO_MEDIA_TYPES.LINKEDIN,
+        icon: 'pi pi-linkedin',
+        description: 'seo.rules.media.preview.tile'
+    },
+    [SEO_MEDIA_TYPES.GOOGLE]: {
+        label: 'Google',
+        value: SEO_MEDIA_TYPES.GOOGLE,
+        icon: 'pi pi-google',
+        description: 'seo.rules.media.search.engine'
+    }
+};
+
+export interface SocialMediaOption {
+    label: string;
+    value: SEO_MEDIA_TYPES;
+    icon: string;
+    description: string;
+}

@@ -21,7 +21,6 @@ const INITIAL_STATE: BinaryFieldState = {
     mode: BINARY_FIELD_MODE.DROPZONE,
     status: BINARY_FIELD_STATUS.INIT,
     UiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT),
-    dialogOpen: false,
     dropZoneActive: false
 };
 
@@ -40,6 +39,7 @@ describe('DotBinaryFieldStore', () => {
     let spectator: SpectatorService<DotBinaryFieldStore>;
     let store: DotBinaryFieldStore;
 
+    let dotUploadService: DotUploadService;
     let initialState;
 
     const createStoreService = createServiceFactory({
@@ -63,6 +63,7 @@ describe('DotBinaryFieldStore', () => {
     beforeEach(() => {
         spectator = createStoreService();
         store = spectator.inject(DotBinaryFieldStore);
+        dotUploadService = spectator.inject(DotUploadService);
 
         store.setState(INITIAL_STATE);
         store.state$.subscribe((state) => {
@@ -118,15 +119,6 @@ describe('DotBinaryFieldStore', () => {
             });
         });
 
-        it('should set DialogOpen', (done) => {
-            store.setDialogOpen(true);
-
-            store.vm$.subscribe((state) => {
-                expect(state.dialogOpen).toBe(true);
-                done();
-            });
-        });
-
         it('should set DropZoneActive', (done) => {
             store.setDropZoneActive(true);
 
@@ -152,6 +144,25 @@ describe('DotBinaryFieldStore', () => {
                 });
 
                 expect(spyUploading).toHaveBeenCalled();
+            });
+
+            it('should called tempFile API with 1MB', (done) => {
+                const file = new File([''], 'filename');
+                const spyOnUploadService = jest.spyOn(dotUploadService, 'uploadFile');
+
+                // 1MB
+                store.setMaxFileSize(1048576);
+                store.handleUploadFile(file);
+
+                // Skip initial state
+                store.tempFile$.pipe(skip(1)).subscribe(() => {
+                    expect(spyOnUploadService).toHaveBeenCalledWith({
+                        file,
+                        maxSize: '1MB',
+                        signal: null
+                    });
+                    done();
+                });
             });
         });
     });

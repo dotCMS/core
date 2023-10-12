@@ -174,7 +174,7 @@ describe('DotEditPageStateControllerComponent', () => {
         spyOn(component.modeChange, 'emit');
         spyOn(dotPageStateService, 'setLock');
         spyOn(personalizeService, 'personalized').and.returnValue(of(null));
-        featFlagMock = spyOn(propertiesService, 'getKey').and.returnValue(of('false'));
+        featFlagMock = spyOn(propertiesService, 'getFeatureFlag').and.returnValue(of(false));
     });
 
     describe('elements', () => {
@@ -389,7 +389,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             const selectButton = de.query(By.css('p-selectButton'));
             selectButton.triggerEventHandler('onChange', {
-                optionId: DotPageMode.EDIT
+                value: DotPageMode.EDIT
             });
 
             await fixtureHost.whenStable();
@@ -420,7 +420,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             const selectButton = de.query(By.css('p-selectButton'));
             selectButton.triggerEventHandler('onChange', {
-                optionId: DotPageMode.EDIT
+                value: DotPageMode.EDIT
             });
 
             await fixtureHost.whenStable();
@@ -443,7 +443,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             const selectButton = de.query(By.css('p-selectButton'));
             selectButton.triggerEventHandler('onChange', {
-                optionId: DotPageMode.EDIT
+                value: DotPageMode.EDIT
             });
 
             fixtureHost.whenStable();
@@ -482,7 +482,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             const selectButton = de.query(By.css('p-selectButton'));
             selectButton.triggerEventHandler('onChange', {
-                optionId: DotPageMode.EDIT
+                value: DotPageMode.EDIT
             });
 
             await fixtureHost.whenStable();
@@ -518,7 +518,7 @@ describe('DotEditPageStateControllerComponent', () => {
             fixtureHost.detectChanges();
             const selectButton = de.query(By.css('p-selectButton'));
             selectButton.triggerEventHandler('onChange', {
-                optionId: DotPageMode.EDIT
+                value: DotPageMode.EDIT
             });
             await fixtureHost.whenStable();
             expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
@@ -533,7 +533,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
     describe('feature flag edit URLContentMap is on', () => {
         beforeEach(() => {
-            featFlagMock.and.returnValue(of('true'));
+            featFlagMock.and.returnValue(of(true));
 
             const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
                 { ...mockUser(), userId: '457' },

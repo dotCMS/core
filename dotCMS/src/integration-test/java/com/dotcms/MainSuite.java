@@ -53,8 +53,8 @@ import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
 import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
-import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.integritycheckers.FolderIntegrityCheckerTest;
+import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.integritycheckers.IntegrityUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mail.MailAPIImplTest;
@@ -152,6 +152,7 @@ import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbor
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
+import com.dotmarketing.quartz.job.DropOldContentVersionsJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.quartz.job.PopulateContentletAsJSONJobTest;
 import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJobTest;
@@ -206,11 +207,10 @@ import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
 import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest;
 import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByColTest;
-import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
 import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentletIntegrationTest;
+import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
 import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSizeTest;
 import com.dotmarketing.util.HashBuilderTest;
-import com.dotmarketing.util.ITConfigTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.TestConfig;
@@ -224,9 +224,6 @@ import org.junit.runners.Suite.SuiteClasses;
 
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
-
-
-
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
@@ -655,6 +652,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230701AddHashIndicesToWorkflowTablesTest.class,
         Task230713IncreaseDisabledWysiwygColumnSizeTest.class,
         BundleFactoryImplTest.class,
+        DropOldContentVersionsJobTest.class,
         ITConfigTest.class
 
 })
