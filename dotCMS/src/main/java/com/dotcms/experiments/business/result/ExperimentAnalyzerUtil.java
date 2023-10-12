@@ -20,6 +20,7 @@ import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Goal.GoalType;
 import com.dotcms.experiments.model.Goals;
+import com.dotcms.metrics.timing.TimeMetric;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -78,6 +79,8 @@ public enum ExperimentAnalyzerUtil {
                                                  final List<BrowserSession> browserSessions)
             throws DotDataException, DotSecurityException {
 
+        final TimeMetric timeMetric = TimeMetric.mark(getClass().getSimpleName() + ".getExperimentResult()");
+
         final Goals goals = experiment.goals()
                 .orElseThrow(() -> new IllegalArgumentException("The Experiment must have a Goal"));
 
@@ -105,6 +108,8 @@ public enum ExperimentAnalyzerUtil {
 
             analyzeBrowserSessions(browserSessions, primaryGoal, builder, experiment);
         }
+
+        timeMetric.stop();
 
         return builder.build();
     }
