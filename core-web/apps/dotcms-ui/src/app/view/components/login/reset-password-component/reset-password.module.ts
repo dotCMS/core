@@ -6,8 +6,11 @@ import { RouterModule, Routes } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotAutofocusDirective, DotFieldRequiredDirective } from '@dotcms/ui';
+import {
+    DotAutofocusDirective,
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent
+} from '@dotcms/ui';
 
 import { ResetPasswordComponent } from './reset-password.component';
 
@@ -25,7 +28,7 @@ const routes: Routes = [
         InputTextModule,
         ButtonModule,
         ReactiveFormsModule,
-        DotFieldValidationMessageModule,
+        DotFieldValidationMessageComponent,
         DotAutofocusDirective,
         RouterModule.forChild(routes),
         DotFieldRequiredDirective

@@ -4,7 +4,9 @@ package com.dotcms.test.util;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.publishing.remote.bundler.AssignableFromMap;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.test.util.assertion.*;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -56,6 +58,8 @@ public class FileTestUtil {
         assertions.put(Language.class, new LanguageAssertionChecker());
         assertions.put(Rule.class, new RuleAssertionChecker());
         assertions.put(Link.class, new LinkAssertionChecker());
+        assertions.put(Experiment.class, new ExperimentChecker());
+        assertions.put(Variant.class, new VariantChecker());
     }
 
     private FileTestUtil(){}

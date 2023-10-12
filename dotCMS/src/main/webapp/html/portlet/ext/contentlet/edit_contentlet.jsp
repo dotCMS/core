@@ -77,6 +77,8 @@
 <!DOCTYPE html>
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
+<!-- dotCMS Block Editor -->
+<script src="/html/dotcms-block-editor.js"></script>
 
 <style>
 .dijitTree {
@@ -89,10 +91,12 @@
 
 </style>
 
-<!--
-	Uncomment this when we are ready to use the new content fields
-	<script src="/html/contenttype-fields.js"></script>
--->
+<%
+	String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
+	if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
+%>
+	<script src="/html/binary-field.js"></script>
+<% } %>
 
 <script type="text/javascript">
 
@@ -691,7 +695,7 @@
             }
         });
 
-<% 
+<%
     final String titleFieldValue = (contentlet != null ? contentlet.getTitle() : "").replace("'", "\'");
 %>
         var customEvent = document.createEvent("CustomEvent");
