@@ -134,3 +134,5 @@ This maintenance release includes the following code fixes:
 110.    https://github.com/dotCMS/core/issues/26159 : Remove Persona Icon from Tag Field #26159
 
 **Release-23.01.8**
+
+111. https://github.com/dotCMS/core/issues/26391 : custom REST CORS header configuration is not applied to responses #26391
