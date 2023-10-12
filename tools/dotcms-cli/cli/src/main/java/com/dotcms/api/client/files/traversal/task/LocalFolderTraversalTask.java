@@ -1,25 +1,29 @@
 package com.dotcms.api.client.files.traversal.task;
 
-import com.dotcms.api.client.files.traversal.data.Retriever;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.HiddenFileFilter;
 import com.dotcms.common.AssetsUtils;
+import com.dotcms.common.AssetsUtils.LocalPathStructure;
+import com.dotcms.model.asset.AbstractAssetSyncMeta.PushType;
+import com.dotcms.model.asset.AssetSyncMeta;
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.AssetView;
+import com.dotcms.model.asset.FolderSyncMeta;
+import com.dotcms.model.asset.FolderSyncMeta.Builder;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.security.Utils;
 import com.google.common.base.Strings;
+import java.util.Arrays;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jboss.logging.Logger;
 
 import javax.ws.rs.NotFoundException;
 import java.io.File;
-import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.RecursiveTask;
+import org.jboss.logging.Logger;
 
 import static com.dotcms.common.AssetsUtils.parseLocalPath;
 import static com.dotcms.common.AssetsUtils.statusToBoolean;
@@ -35,50 +39,17 @@ import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
  */
 public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>, TreeNode>> {
 
-    private final Retriever retriever;
-    private final Logger logger;
+    private final TraverseParams params;
 
-    private final boolean siteExists;
-    private final String sourcePath;
-    private final File workspace;
-    private final boolean ignoreEmptyFolders;
-    private final boolean removeAssets;
-    private final boolean removeFolders;
-    private final boolean failFast;
+    private final Logger logger;
 
     /**
      * Constructs a new LocalFolderTraversalTask instance.
-     *
-     * @param logger             the logger
-     * @param retriever          the retriever used for REST calls and other operations.
-     * @param siteExists         whether the site exists on the remote server
-     * @param sourcePath         the source path to traverse
-     * @param workspace          the project workspace
-     * @param removeAssets       whether to remove assets
-     * @param removeFolders      whether to remove folders
-     * @param ignoreEmptyFolders whether to ignore empty folders
-     * @param failFast           true to fail fast, false to continue on error
+     * @param params the traverse parameters
      */
-    public LocalFolderTraversalTask(
-            final Logger logger,
-            final Retriever retriever,
-            final boolean siteExists,
-            final String sourcePath,
-            final File workspace,
-            final boolean removeAssets,
-            final boolean removeFolders,
-            final boolean ignoreEmptyFolders,
-            final boolean failFast) {
-
-        this.logger = logger;
-        this.retriever = retriever;
-        this.siteExists = siteExists;
-        this.sourcePath = sourcePath;
-        this.workspace = workspace;
-        this.removeAssets = removeAssets;
-        this.removeFolders = removeFolders;
-        this.ignoreEmptyFolders = ignoreEmptyFolders;
-        this.failFast = failFast;
+    public LocalFolderTraversalTask(final TraverseParams params) {
+        this.params = params;
+        this.logger = params.getLogger();
     }
 
     /**
@@ -93,21 +64,21 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
 
         var errors = new ArrayList<Exception>();
 
-        File folderOrFile = new File(sourcePath);
+        File folderOrFile = new File(params.getSourcePath());
 
         TreeNode currentNode = null;
         try {
-            final var localPathStructure = parseLocalPath(this.workspace, folderOrFile);
-            currentNode = gatherSyncInformation(this.workspace, folderOrFile, localPathStructure);
+            final var localPathStructure = parseLocalPath(params.getWorkspace(), folderOrFile);
+            currentNode = gatherSyncInformation(params.getWorkspace(), folderOrFile, localPathStructure);
         } catch (Exception e) {
-            if (failFast) {
+            if (params.isFailFast()) {
                 throw e;
             } else {
                 errors.add(e);
             }
         }
 
-        if (folderOrFile.isDirectory()) {
+        if ( null != currentNode && folderOrFile.isDirectory() ) {
 
             File[] files = folderOrFile.listFiles(new HiddenFileFilter());
 
@@ -118,17 +89,11 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
                 for (File file : files) {
 
                     if (file.isDirectory()) {
-
                         LocalFolderTraversalTask subTask = new LocalFolderTraversalTask(
-                                this.logger,
-                                this.retriever,
-                                this.siteExists,
-                                file.getAbsolutePath(),
-                                this.workspace,
-                                this.removeAssets,
-                                this.removeFolders,
-                                this.ignoreEmptyFolders,
-                                this.failFast
+                                TraverseParams.builder()
+                                        .from(params)
+                                        .withSourcePath(file.getAbsolutePath())
+                                        .build()
                         );
                         forks.add(subTask);
                         subTask.fork();
@@ -162,38 +127,39 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
 
         if (folderOrFile.isDirectory()) {
 
-            var parentFolderViewBuilder = folderViewFromFile(localPathStructure);
-            var parentFolderAssetVersionsViewBuilder = AssetVersionsView.builder();
+            var folder = folderViewFromFile(localPathStructure);
+
+            var assetVersions = AssetVersionsView.builder();
 
             File[] files = folderOrFile.listFiles(new HiddenFileFilter());
 
             try {
                 // First, retrieving the folder from the remote server
-                FolderView remoteFolder = retrieveFolder(localPathStructure);
+                final FolderView remoteFolder = retrieveFolder(localPathStructure);
 
                 // ---
                 // Checking if we need to push this folder
-                checkFolderToPush(parentFolderViewBuilder, remoteFolder, files);
+                checkFolderToPush(folder, remoteFolder, files);
 
                 // ---
                 // Checking if we need to remove folders
-                checkFoldersToRemove(live, lang, parentFolderViewBuilder, files, remoteFolder);
+                checkFoldersToRemove(live, lang, folder, files, remoteFolder);
 
                 // ---
                 // Checking if we need to remove files
-                checkAssetsToRemove(live, lang, parentFolderAssetVersionsViewBuilder, files, remoteFolder);
+                checkAssetsToRemove(live, lang, assetVersions, files, remoteFolder);
 
                 // ---
                 // Checking if we need to push files
-                checkAssetsToPush(workspaceFile, live, lang, parentFolderAssetVersionsViewBuilder, files, remoteFolder);
+                checkAssetsToPush(workspaceFile, live, lang, assetVersions, files, remoteFolder);
             } catch (Exception e) {
                 var message = String.format("Error processing folder [%s]", folderOrFile.getAbsolutePath());
                 logger.error(message, e);
                 throw new TraversalTaskException(message, e);
             }
 
-            parentFolderViewBuilder.assets(parentFolderAssetVersionsViewBuilder.build());
-            var parentFolderView = parentFolderViewBuilder.build();
+            folder.assets(assetVersions.build());
+            var parentFolderView = folder.build();
 
             var treeNode = new TreeNode(parentFolderView);
             if (parentFolderView.subFolders() != null) {
@@ -206,10 +172,9 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
 
         } else {
 
-            final var parentLocalPathStructure = parseLocalPath(workspaceFile,
-                    folderOrFile.getParentFile());
-            var parentFolderViewBuilder = folderViewFromFile(parentLocalPathStructure);
-            var parentFolderAssetVersionsViewBuilder = AssetVersionsView.builder();
+            final var parentLocalPathStructure = parseLocalPath(workspaceFile, folderOrFile.getParentFile());
+            var folder = folderViewFromFile(parentLocalPathStructure);
+            var assetVersions = AssetVersionsView.builder();
 
             try {
                 // First, retrieving the asset from the remote server
@@ -219,16 +184,24 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
                 var pushInfo = shouldPushFile(live, lang, folderOrFile, remoteAsset);
                 if (pushInfo.push()) {
 
-                    logger.debug(String.format("Marking file [%s] - live [%b] - lang [%s] for push " +
-                                    "- New [%b] - Modified [%b].",
-                            localPathStructure.filePath(), live, lang, pushInfo.isNew(), pushInfo.isModified()));
+                    logger.debug(
+                            String.format("Marking file [%s] - live [%b] - lang [%s] for push " +
+                                            "- New [%b] - Modified [%b].",
+                                    localPathStructure.filePath(), live, lang, pushInfo.isNew(),
+                                    pushInfo.isModified()));
 
+                    final AssetSyncMeta syncMeta = AssetSyncMeta.builder().
+                            markedForPush(true).
+                            pushTypeNew(pushInfo.isNew()).
+                            pushTypeModified(pushInfo.isModified()).
+                            pushType(pushInfo.pushType()).
+                            build();
                     var asset = assetViewFromFile(localPathStructure);
                     asset.markForPush(true).
+                            syncMeta(syncMeta).
                             pushTypeNew(pushInfo.isNew()).
                             pushTypeModified(pushInfo.isModified());
-
-                    parentFolderAssetVersionsViewBuilder.addVersions(
+                    assetVersions.addVersions(
                             asset.build()
                     );
                 } else {
@@ -241,8 +214,8 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
                 throw new TraversalTaskException(message, e);
             }
 
-            parentFolderViewBuilder.assets(parentFolderAssetVersionsViewBuilder.build());
-            return new TreeNode(parentFolderViewBuilder.build());
+            folder.assets(assetVersions.build());
+            return new TreeNode(folder.build());
         }
 
     }
@@ -253,12 +226,12 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
      * @param workspaceFile                        the workspace file
      * @param live                                 the live status
      * @param lang                                 the language
-     * @param parentFolderAssetVersionsViewBuilder the parent folder asset versions view builder
+     * @param assetVersionsBuilder the parent folder asset versions view builder
      * @param folderChildren                       the files to check
      * @param remoteFolder                         the remote folder
      */
     private void checkAssetsToPush(File workspaceFile, boolean live, String lang,
-                                   AssetVersionsView.Builder parentFolderAssetVersionsViewBuilder,
+                                   AssetVersionsView.Builder assetVersionsBuilder,
                                    File[] folderChildren, FolderView remoteFolder) {
 
         if (folderChildren != null) {
@@ -280,8 +253,17 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
                         logger.debug(String.format("Marking file [%s] - live [%b] - lang [%s] for push " +
                                         "- New [%b] - Modified [%b].",
                                 file.toPath(), live, lang, pushInfo.isNew(), pushInfo.isModified()));
-                        parentFolderAssetVersionsViewBuilder.addVersions(
+
+                        final AssetSyncMeta syncMeta = AssetSyncMeta.builder()
+                                .markedForPush(true)
+                                .pushTypeNew(pushInfo.isNew())
+                                .pushTypeModified(pushInfo.isModified())
+                                .pushType(pushInfo.pushType())
+                                .build();
+
+                        assetVersionsBuilder.addVersions(
                                 assetViewFromFile(workspaceFile, file).
+                                        syncMeta(syncMeta).
                                         markForPush(true).
                                         pushTypeNew(pushInfo.isNew()).
                                         pushTypeModified(pushInfo.isModified()).
@@ -291,7 +273,6 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
                         logger.debug(String.format("File [%s] - live [%b] - lang [%s] - already exist in the server.",
                                 file.toPath(), live, lang));
                     }
-
                 }
             }
         }
@@ -300,24 +281,28 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
     /**
      * Checks if folders need to be pushed to the remote server.
      *
-     * @param parentFolderViewBuilder the parent folder view builder
+     * @param folder the parent folder view builder
      * @param remoteFolder            the remote folder
      * @param folderFiles             the internal files of the folder
      */
-    private void checkFolderToPush(FolderView.Builder parentFolderViewBuilder, FolderView remoteFolder,
-                                   File[] folderFiles) {
+    private void checkFolderToPush(FolderView.Builder folder,
+            FolderView remoteFolder,
+            File[] folderFiles) {
 
         if (remoteFolder == null) {
-
-            if (this.ignoreEmptyFolders) {
+            boolean markForPush = false;
+            if (params.isIgnoreEmptyFolders()) {
                 if (folderFiles != null && folderFiles.length > 0) {
                     // Does  not exist on remote server, so we need to push it
-                    parentFolderViewBuilder.markForPush(true);
+                    folder.markForPush(true);
+                    markForPush = true;
                 }
             } else {
                 // Does  not exist on remote server, so we need to push it
-                parentFolderViewBuilder.markForPush(true);
+                folder.markForPush(true);
+                markForPush = true;
             }
+            folder.syncMeta(FolderSyncMeta.builder().markedForPush(markForPush).build());
         }
     }
 
@@ -326,38 +311,41 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
      *
      * @param live                                 the live status
      * @param lang                                 the language
-     * @param parentFolderAssetVersionsViewBuilder the parent folder asset versions view builder
+     * @param assetVersions the parent folder asset versions view builder
      * @param folderChildren                       the files to check
      * @param remoteFolder                         the remote folder
      */
     private void checkAssetsToRemove(boolean live, String lang,
-                                     AssetVersionsView.Builder parentFolderAssetVersionsViewBuilder,
-                                     File[] folderChildren, FolderView remoteFolder) {
+            AssetVersionsView.Builder assetVersions,
+            File[] folderChildren, FolderView remoteFolder) {
 
         // The option to remove assets is disabled
-        if (!this.removeAssets) {
+        if (!params.isRemoveAssets()) {
             return;
         }
 
-        if (remoteFolder != null) {
-            if (remoteFolder.assets() != null) {
-                for (var version : remoteFolder.assets().versions()) {
+        if (null != remoteFolder && remoteFolder.assets() != null) {
+            for (var version : remoteFolder.assets().versions()) {
 
-                    // Checking if we need to remove the version on the remote server
-                    var remove = shouldRemoveAsset(live, lang, version, folderChildren);
-                    if (remove) {
+                // Checking if we need to remove the version on the remote server
+                var remove = shouldRemoveAsset(live, lang, version, folderChildren);
+                if (remove) {
 
-                        // File exist on remote server, but not locally, so we need to remove it
-                        logger.debug(String.format("Marking file [%s] - live [%b] - lang [%s] for delete.",
-                                version.name(), live, lang));
+                    // File exist on remote server, but not locally, so we need to remove it
+                    logger.debug(
+                            String.format("Marking file [%s] - live [%b] - lang [%s] for delete.",
+                                    version.name(), live, lang));
 
-                        var copy = version.withMarkForDelete(true);
-                        copy = copy.withLive(live);
-                        copy = copy.withWorking(!live);
-                        parentFolderAssetVersionsViewBuilder.addVersions(
-                                copy
-                        );
-                    }
+                    final AssetSyncMeta syncMeta = AssetSyncMeta.builder().
+                            markedForDelete(true).
+                             build();
+
+                    var copy = version.withSyncMeta(syncMeta)
+                            .withMarkForDelete(true);
+                    copy = copy.withLive(live);
+                    copy = copy.withWorking(!live);
+                    assetVersions.addVersions(copy);
+
                 }
             }
         }
@@ -368,77 +356,59 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
      *
      * @param live                    the live status
      * @param lang                    the language
-     * @param parentFolderViewBuilder the parent folder view builder
+     * @param folder the parent folder view builder
      * @param folderChildren          the files to check
      * @param remoteFolder            the remote folder
      */
-    private void checkFoldersToRemove(boolean live, String lang, FolderView.Builder parentFolderViewBuilder,
-                                      File[] folderChildren, FolderView remoteFolder) {
+    private void checkFoldersToRemove(boolean live, String lang,
+            FolderView.Builder folder,
+            File[] folderChildren, FolderView remoteFolder) {
 
         // The option to remove folders is disabled
-        if (!this.removeFolders && !this.removeAssets) {
+        if (!params.isRemoveFolders() && !params.isRemoveAssets()) {
             return;
         }
 
-        if (remoteFolder != null) {
-            if (remoteFolder.subFolders() != null) {
-                for (var subFolder : remoteFolder.subFolders()) {
+        if (null != remoteFolder && null != remoteFolder.subFolders()) {
 
-                    var remove = true;
+            for (var subFolder : remoteFolder.subFolders()) {
 
-                    if (folderChildren != null) {
-                        for (File file : folderChildren) {
+                final boolean remove = !findLocalMatch(folderChildren, subFolder);
 
-                            if (file.isDirectory()) {
-                                if (subFolder.name().equalsIgnoreCase(file.getName())) {
-                                    remove = false;// Exist, so we don't need to remove it
-                                    break;
-                                }
-                            }
+                if (remove) {
+
+                    // Folder exist on remote server, but not locally, so we need to remove it and also the assets
+                    // inside it, this is important because depending on the status (live/working), a delete of a
+                    // folder can be an unpublish of the assets inside it or a delete of the folder itself, we need
+                    // to have all the assets inside the folder to be able to handle all the cases.
+                    // TODO: This is not going to work because even if you have all the assets inside the folder locally.
+                    //  If we delete the remote folder and it has pages in it, the pages will be lost. We need some sort of merge folder mechanism.
+                    var remoteSubFolder = retrieveFolder(subFolder.host(), subFolder.path());
+                    if (remoteSubFolder != null) {
+
+                        boolean ignore = false;
+
+                        if (params.isIgnoreEmptyFolders()) {
+                            //This is basically a check for delete
+                            ignore = ignoreFolder(live, lang, remoteSubFolder);
                         }
-                    }
 
-                    if (remove) {
+                        if (!ignore) { //This "ignore" flag is basically saying the folder needs to be removed or not
 
-                        // Folder exist on remote server, but not locally, so we need to remove it and also the assets
-                        // inside it, this is important because depending on the status (live/working), a delete of a
-                        // folder can be an unpublish of the assets inside it or a delete of the folder itself, we need
-                        // to have all the assets inside the folder to be able to handle all the cases.
-                        var remoteSubFolder = retrieveFolder(subFolder.host(), subFolder.path());
-                        if (remoteSubFolder != null) {
+                            //Ok we have determined the remote folder has assets that match the status and language
+                            //therefore we can not ignore it
 
-                            boolean ignore = false;
+                            var assetVersions = AssetVersionsView.builder();
+                            checkAssetsToRemove(live, lang, assetVersions, null, remoteSubFolder);
+                            subFolder = subFolder.withAssets(assetVersions.build());
 
-                            if (this.ignoreEmptyFolders) {
-
-                                ignore = true;
-
-                                if (remoteSubFolder.assets() != null) {
-                                    for (var version : remoteSubFolder.assets().versions()) {
-
-                                        // Make sure we are handling the proper status and language
-                                        boolean match = matchByStatusAndLang(live, lang, version);
-                                        if (match) {
-                                            ignore = false;
-                                            break;
-                                        }
-                                    }
-                                }
+                            // Folder exist on remote server, but not locally, so we need to remove it
+                            logger.debug(String.format("Marking folder [%s] for delete.", subFolder.path()));
+                            if (params.isRemoveFolders()) {
+                                subFolder = subFolder.withSyncMeta(FolderSyncMeta.builder().markedForDelete(true).build());
+                                subFolder = subFolder.withMarkForDelete(true);
                             }
-
-                            if (!ignore) {
-
-                                var parentFolderAssetVersionsViewBuilder = AssetVersionsView.builder();
-                                checkAssetsToRemove(live, lang, parentFolderAssetVersionsViewBuilder, null, remoteSubFolder);
-                                subFolder = subFolder.withAssets(parentFolderAssetVersionsViewBuilder.build());
-
-                                // Folder exist on remote server, but not locally, so we need to remove it
-                                logger.debug(String.format("Marking folder [%s] for delete.", subFolder.path()));
-                                if (this.removeFolders) {
-                                    subFolder = subFolder.withMarkForDelete(true);
-                                }
-                                parentFolderViewBuilder.addSubFolders(subFolder);
-                            }
+                            folder.addSubFolders(subFolder);
                         }
                     }
                 }
@@ -447,22 +417,63 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
     }
 
     /**
+     * explore assets in the remote folder and  figure out if they match status and language
+     * if so we can not ignore the remote folder cuz it has assets matching the status and language were in
+     * @param live
+     * @param lang
+     * @param remoteSubFolder
+     * @return
+     */
+    private boolean ignoreFolder(boolean live, String lang, FolderView remoteSubFolder) {
+        boolean ignore = true;
+        if (remoteSubFolder.assets() != null) {
+            for (var version : remoteSubFolder.assets().versions()) {
+                // Make sure we are handling the proper status and language
+                boolean match = matchByStatusAndLang(live, lang, version);
+                if (match) {
+                    ignore = false;
+                    break;
+                }
+            }
+        }
+        return ignore;
+    }
+
+    /**
+     * Take the remote folder representation and find its equivalent locally
+     * @param folderChildren
+     * @param remote
+     * @return
+     */
+    private boolean findLocalMatch(File[] folderChildren, FolderView remote) {
+
+        if (null == folderChildren) {
+            return false;
+        }
+
+        return Arrays.stream(folderChildren).filter(File::isDirectory)
+                .filter(customer -> remote.name().equalsIgnoreCase(customer.getName())).count()
+                == 1;
+    }
+
+    /**
      * Retrieves an asset information from the remote server.
      *
      * @param localPathStructure the local path structure
      * @return The AssetVersionsView representing the retrieved asset data, or null if it doesn't exist
      */
-    private AssetVersionsView retrieveAsset(AssetsUtils.LocalPathStructure localPathStructure) {
+    private AssetVersionsView retrieveAsset(LocalPathStructure localPathStructure) {
 
-        if (!this.siteExists) {
+        if (!params.isSiteExists()) {
             // Site doesn't exist on remote server
+            // No need to pass a siteExists flag we could NullRetriever when the site doesn't exist
             return null;
         }
 
         AssetVersionsView remoteAsset = null;
 
         try {
-            remoteAsset = this.retriever.retrieveAssetInformation(
+            remoteAsset = params.getRetriever().retrieveAssetInformation(
                     localPathStructure.site(),
                     localPathStructure.folderPath(),
                     localPathStructure.fileName()
@@ -495,7 +506,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
      */
     private FolderView retrieveFolder(final String site, final String folderPath) {
 
-        if (!this.siteExists) {
+        if (!params.isSiteExists()) {
             // Site doesn't exist on remote server
             return null;
         }
@@ -503,7 +514,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
         FolderView remoteFolder = null;
 
         try {
-            remoteFolder = this.retriever.retrieveFolderInformation(site, folderPath);
+            remoteFolder = params.getRetriever().retrieveFolderInformation(site, folderPath);
         } catch (NotFoundException e) {
             // Folder doesn't exist on remote server
             logger.debug(String.format("Local folder [%s] doesn't exist on remote server.", folderPath));
@@ -637,8 +648,11 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
     private FolderView.Builder folderViewFromFile(AssetsUtils.LocalPathStructure localPathStructure) {
 
         return FolderView.builder()
-                .localStatus(localPathStructure.status())
-                .localLanguage(localPathStructure.language())
+
+                //Keep an eye on these two
+                //.localStatus(localPathStructure.status())
+                //.localLanguage(localPathStructure.language())
+
                 .host(localPathStructure.site())
                 .path(localPathStructure.folderPath())
                 .name(localPathStructure.folderName());
@@ -727,6 +741,15 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
         public boolean isModified() {
             return isModified;
         }
+
+        PushType pushType() {
+            PushType pushType = isNew() ? PushType.NEW : PushType.UNKNOWN;
+            if(pushType == PushType.UNKNOWN){
+                pushType = isModified() ? PushType.NEW : PushType.UNKNOWN;
+            }
+            return pushType;
+        }
+
     }
 
 }

@@ -6,6 +6,7 @@ import com.dotcms.model.asset.FolderView;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A node in a hierarchical tree representation of a file system directory. Each node represents a
@@ -62,6 +63,16 @@ public class TreeNode {
      */
     public List<TreeNode> children() {
         return this.children;
+    }
+
+    /**
+     * Returns a list of child nodes of this TreeNode, filtered.
+     * @return the list of child nodes
+     */
+    public Stream<TreeNode> flattened() {
+        return Stream.concat(
+                Stream.of(this),
+                children.stream().flatMap(TreeNode::flattened));
     }
 
     /**

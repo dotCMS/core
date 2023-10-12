@@ -1,5 +1,6 @@
 package com.dotcms.api.client.files.traversal;
 
+import com.dotcms.api.client.files.traversal.task.TraverseParams;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
@@ -23,7 +24,7 @@ public interface LocalTraversalService {
      *
      * @param output             the output option mixin
      * @param workspace          the project workspace
-     * @param source             local the source file or directory
+     * @param source             local the source file or directory a Root path (e.g. /home/user/workspace/files/working/en-us/demo.dotcms.com)
      * @param removeAssets       true to allow remove assets, false otherwise
      * @param removeFolders      true to allow remove folders, false otherwise
      * @param ignoreEmptyFolders true to ignore empty folders, false otherwise
@@ -31,9 +32,7 @@ public interface LocalTraversalService {
      * @return a Triple containing a list of exceptions, the folder's local path structure and its corresponding
      * root node of the hierarchical tree
      */
-    Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode> traverseLocalFolder(
-            OutputOptionMixin output, final File workspace, final String source,
-            boolean removeAssets, boolean removeFolders, boolean ignoreEmptyFolders, final boolean failFast);
+    Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode> traverseLocalFolder(final TraverseParams params);
 
     /**
      * Builds the file system tree from the specified root node. The tree is built using a ForkJoinPool, which allows

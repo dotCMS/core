@@ -1,15 +1,24 @@
 package com.dotcms.api.client.files;
 
+import static java.util.stream.Collectors.groupingBy;
+
 import com.dotcms.api.client.files.traversal.LocalTraversalService;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
+import com.dotcms.api.client.files.traversal.task.TraverseParams;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
+import com.dotcms.common.AssetsUtils.LocalPathStructure;
+import com.dotcms.model.asset.FolderSyncMeta;
+import com.dotcms.model.asset.FolderView;
 import io.quarkus.arc.DefaultBean;
-import org.apache.commons.lang3.tuple.Triple;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.jboss.logging.Logger;
 
 import javax.enterprise.context.Dependent;
@@ -35,9 +44,9 @@ public class PushServiceImpl implements PushService {
     RemoteTraversalService remoteTraversalService;
 
     /**
-     * Traverses the local folders and retrieves the hierarchical tree representation of their contents with the push
-     * related information for each file and folder.
-     * Each folder is represented as a pair of its local path structure and the corresponding tree node.
+     * Traverses the local folders and retrieves the hierarchical tree representation of their
+     * contents with the push related information for each file and folder. Each folder is
+     * represented as a pair of its local path structure and the corresponding tree node.
      *
      * @param output             the output option mixin
      * @param workspace          the project workspace
@@ -46,33 +55,107 @@ public class PushServiceImpl implements PushService {
      * @param removeFolders      true to allow remove folders, false otherwise
      * @param ignoreEmptyFolders true to ignore empty folders, false otherwise
      * @param failFast           true to fail fast, false to continue on error
-     * @return a list of Triple, where each Triple contains a list of exceptions, the folder's local path structure
-     * and its corresponding root node of the hierarchical tree
-     * @throws IllegalArgumentException if the source path or workspace path does not exist, or if the source path is
-     *                                  outside the workspace
+     * @return a list of Triple, where each Triple contains a list of exceptions, the folder's local
+     * path structure and its corresponding root node of the hierarchical tree
+     * @throws IllegalArgumentException if the source path or workspace path does not exist, or if
+     *                                  the source path is outside the workspace
      */
     @ActivateRequestContext
     @Override
-    public List<Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode>> traverseLocalFolders(
+    public List<TraverseContext> traverseLocalFolders(
             OutputOptionMixin output, final File workspace, final File source, final boolean removeAssets,
             final boolean removeFolders, final boolean ignoreEmptyFolders, final boolean failFast) {
 
-        var traversalResult = new ArrayList<Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode>>();
+        var traversalResult = new ArrayList<TraverseContext>();
 
         // Parsing the source in order to get the root or roots for the traversal
+        //By root we mean the folder that holds the asset info starting from the site
+        //For example:
+        // /home/user/workspace/files/live/es/demo.dotcms.com
+        // /home/user/workspace/files/working/es/demo.dotcms.com
+        // /home/user/workspace/files/live/en-us/demo.dotcms.com
+        // /home/user/workspace/files/working/en-us/demo.dotcms.com
+
         var roots = AssetsUtils.parseRootPaths(workspace, source);
         for (var root : roots) {
 
-            // Traversing the local folder
-            var result = localTraversalService.traverseLocalFolder(output, workspace, root,
-                    removeAssets, removeFolders, ignoreEmptyFolders, failFast);
+            final TraverseParams params = TraverseParams.builder()
+                    .withOutput(output)
+                    .withWorkspace(workspace)
+                    .withSourcePath(root)
+                    .withRemoveAssets(removeAssets)
+                    .withRemoveFolders(removeFolders)
+                    .withIgnoreEmptyFolders(ignoreEmptyFolders)
+                    .withFailFast(failFast)
+                    .build();
 
-            traversalResult.add(
-                    result
-            );
+            // Traversing the local folder
+            var result = localTraversalService.traverseLocalFolder(params);
+
+            traversalResult.add(new TraverseContext(result.getLeft(), result.getMiddle(), result.getRight()));
         }
 
+        // Once we have all roots data here we need to eliminate ambiguity
+        final Map<String, Map<String, FolderView>> indexedByStatusAndLanguage = indexByStatusAndLanguage(traversalResult);
+        indexedByStatusAndLanguage.forEach((lang, folders) -> {
+            logger.info("Lang: " + lang);
+            folders.forEach((path, folder) -> {
+                // here I need to get a hold of the other folders under  different languages and statuses but with the same path
+                // and check if they all are marked for delete as well
+                // if they all are marked for delete then it is safe to keep it otherwise the delete op isn't valid
+                final List<FolderView> folderViews = findAllFoldersWithTheSamePath(indexedByStatusAndLanguage, path);
+                final boolean allMarked = isAllMarkedForDelete(folderViews);
+                if (!allMarked) {
+                    logger.info(String.format("Not all folders with path [%s] are marked for delete. Skipping delete operation", path));
+                    folderViews.forEach(folderView -> {
+                        final Optional<FolderSyncMeta> syncMeta = folderView.syncMeta();
+                        syncMeta.ifPresent(meta -> {
+                            //folderView.withSyncMeta(FolderSyncMeta.builder().from(meta).markedForDelete(false).build());
+                            //??? how to update the folderView with the new syncMeta
+                        });
+                    });
+                }
+            });
+        });
         return traversalResult;
+    }
+
+    /**
+     * Traverses the remote folders and retrieves the hierarchical tree representation of their
+     * @param traverseResult the result of the local traversal process
+     * @return an indexed representation of the local folders by status and language
+     */
+    private Map<String,Map<String, FolderView>> indexByStatusAndLanguage(List<TraverseContext> traverseResult) {
+        final Map<String, List<TraverseContext>> groupBySite = traverseResult.stream()
+                .collect(groupingBy(ctx -> ctx.localPaths.site()));
+
+        Map<String,Map<String, FolderView>> indexedFolders = new HashMap<>();
+        groupBySite.forEach((site, list) -> list.forEach(ctx -> {
+            final String key = site + ":" + ctx.localPaths.status() + ":" + ctx.localPaths.language();
+            ctx.treeNode.flattened().forEach(node -> indexedFolders.computeIfAbsent(key, k -> new HashMap<>()).put(node.folder().path(), node.folder()));
+        }));
+        return indexedFolders;
+    }
+
+    /**
+     * Finds all the folders with the same path
+     * @param indexByStatusAndLanguage
+     * @param path
+     * @return
+     */
+    List<FolderView> findAllFoldersWithTheSamePath(Map<String, Map<String, FolderView>> indexByStatusAndLanguage, String path){
+        return indexByStatusAndLanguage.values().stream()
+                .filter(map -> map.containsKey(path)).map(map -> map.get(path))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Checks if all the folders in the list are marked for delete
+     * @param folderViews
+     * @return
+     */
+    boolean isAllMarkedForDelete(List<FolderView> folderViews) {
+        return folderViews.stream().allMatch(folderView -> folderView.syncMeta().isPresent() && folderView.syncMeta().get().markedForDelete());
     }
 
     /**
@@ -92,7 +175,7 @@ public class PushServiceImpl implements PushService {
     @ActivateRequestContext
     @Override
     public void processTreeNodes(OutputOptionMixin output, final String workspace,
-                                 final AssetsUtils.LocalPathStructure localPathStructure, final TreeNode treeNode,
+                                 final LocalPathStructure localPathStructure, final TreeNode treeNode,
                                  final TreeNodePushInfo treeNodePushInfo, final boolean failFast,
                                  final int maxRetryAttempts) {
 
@@ -168,6 +251,41 @@ public class PushServiceImpl implements PushService {
             }
         } while (failed && retryAttempts++ < maxRetryAttempts);
 
+    }
+
+    public static class TraverseContext {
+
+        final List<Exception> exceptions;
+        final LocalPathStructure localPaths;
+        final TreeNode treeNode;
+
+        public TraverseContext(List<Exception> exceptions, LocalPathStructure localPaths,
+                TreeNode treeNode) {
+            this.exceptions = exceptions;
+            this.localPaths = localPaths;
+            this.treeNode = treeNode;
+        }
+
+        public List<Exception> getExceptions() {
+            return exceptions;
+        }
+
+        public LocalPathStructure getLocalPaths() {
+            return localPaths;
+        }
+
+        public TreeNode getTreeNode() {
+            return treeNode;
+        }
+
+        @Override
+        public String toString() {
+            return "TraverseContext{" +
+                    "exceptions=" + exceptions +
+                    ", localPaths=" + localPaths +
+                    ", treeNode=" + treeNode +
+                    '}';
+        }
     }
 
 }

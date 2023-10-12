@@ -1,27 +1,27 @@
 package com.dotcms.api.client.files.traversal;
 
+import static com.dotcms.common.AssetsUtils.parseLocalPath;
+
 import com.dotcms.api.client.files.traversal.data.Downloader;
 import com.dotcms.api.client.files.traversal.data.Retriever;
 import com.dotcms.api.client.files.traversal.task.LocalFolderTraversalTask;
 import com.dotcms.api.client.files.traversal.task.PullTreeNodeTask;
+import com.dotcms.api.client.files.traversal.task.TraverseParams;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
 import io.quarkus.arc.DefaultBean;
-import org.apache.commons.lang3.tuple.Triple;
-import org.jboss.logging.Logger;
-
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
-
-import static com.dotcms.common.AssetsUtils.parseLocalPath;
+import javax.enterprise.context.Dependent;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
+import org.apache.commons.lang3.tuple.Triple;
+import org.jboss.logging.Logger;
 
 /**
  * Service for traversing a file system directory and building a hierarchical tree representation of
@@ -58,10 +58,9 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
      */
     @ActivateRequestContext
     @Override
-    public Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode> traverseLocalFolder(
-            OutputOptionMixin output, final File workspace, final String source,
-            final boolean removeAssets, final boolean removeFolders,
-            final boolean ignoreEmptyFolders, final boolean failFast) {
+    public Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode> traverseLocalFolder(final TraverseParams params) {
+        final String source = params.getSourcePath();
+        final File workspace = params.getWorkspace();
 
         logger.debug(String.format("Traversing file system folder: %s - in workspace: %s",
                 source, workspace.getAbsolutePath()));
@@ -94,19 +93,14 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
 
         var forkJoinPool = ForkJoinPool.commonPool();
 
-        var task = new LocalFolderTraversalTask(
-                logger,
-                retriever,
-                siteExists,
-                source,
-                workspace,
-                removeAssets,
-                removeFolders,
-                ignoreEmptyFolders,
-                failFast
+        var task = new LocalFolderTraversalTask(TraverseParams.builder()
+                .from(params)
+                .withLogger(logger)
+                .withRetriever(retriever)
+                .withSiteExists(siteExists)
+                .build()
         );
         var result = forkJoinPool.invoke(task);
-
         return Triple.of(result.getLeft(), localPathStructure, result.getRight());
     }
 

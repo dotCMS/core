@@ -1,0 +1,33 @@
+package com.dotcms.model.asset;
+
+import com.dotcms.model.annotation.ValueType;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.immutables.value.Value;
+
+@ValueType
+@Value.Immutable
+@JsonDeserialize(as = AssetSyncMeta.class)
+public interface AbstractAssetSyncMeta {
+
+    @Value.Default
+    default boolean markedForPush(){return false;}
+
+    @Value.Default
+    default boolean markedForDelete(){return false;}
+
+    //TODO: This should be an enum
+
+    @Value.Default
+    default boolean pushTypeNew(){return false;}
+
+    @Value.Default
+    default boolean pushTypeModified(){return false;}
+
+    @Value.Default
+    default PushType pushType() {return PushType.MODIFIED;}
+
+    enum PushType {
+        NEW, MODIFIED, UNKNOWN
+    }
+
+}

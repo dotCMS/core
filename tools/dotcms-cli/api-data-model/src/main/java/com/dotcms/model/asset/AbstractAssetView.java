@@ -9,6 +9,7 @@ import org.immutables.value.Value;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import org.immutables.value.Value.Auxiliary;
 
 @ValueType
 @Value.Immutable
@@ -44,5 +45,8 @@ public interface AbstractAssetView {
     Optional<Boolean> pushTypeModified();
 
     Optional<Boolean> markForDelete();
+
+    @Auxiliary
+    Optional<AssetSyncMeta> syncMeta();
 
 }

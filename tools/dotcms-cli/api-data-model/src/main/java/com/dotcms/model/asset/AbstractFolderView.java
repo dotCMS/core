@@ -4,83 +4,86 @@ import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import org.immutables.value.Value;
-
-import javax.annotation.Nullable;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nullable;
+import org.immutables.value.Value;
+import org.immutables.value.Value.Auxiliary;
 
 @ValueType
 @Value.Immutable
 @JsonDeserialize(as = FolderView.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public interface AbstractFolderView {
+public abstract class AbstractFolderView {
 
     @Nullable
-    String host();
+    abstract String host();
 
-    String path();
+    abstract String path();
 
-    String name();
-
-    @Nullable
-    String title();
+    abstract String name();
 
     @Nullable
-    Instant modDate();
+    abstract String title();
 
     @Nullable
-    String identifier();
+    abstract Instant modDate();
 
     @Nullable
-    String inode();
+    abstract String identifier();
 
     @Nullable
-    Boolean showOnMenu();
+    abstract String inode();
 
     @Nullable
-    Integer sortOrder();
+    abstract Boolean showOnMenu();
 
     @Nullable
-    String filesMasks();
+    abstract Integer sortOrder();
 
     @Nullable
-    String defaultFileType();
+    abstract String filesMasks();
+
+    @Nullable
+    abstract String defaultFileType();
 
     @Value.Default
-    default int level() {
+    int level() {
         return 0;
     }
 
     @Value.Default
-    default boolean explicitGlobInclude() {
+    boolean explicitGlobInclude() {
         return false;
     }
 
     @Value.Default
-    default boolean explicitGlobExclude() {
+    boolean explicitGlobExclude() {
         return false;
     }
 
     @Value.Default
-    default boolean implicitGlobInclude() {
+    boolean implicitGlobInclude() {
         return true;
     }
 
     @Nullable
     @JsonUnwrapped
-    AssetVersionsView assets();
+    abstract AssetVersionsView assets();
 
     @Nullable
-    List<FolderView> subFolders();
+    abstract List<FolderView> subFolders();
 
-    Optional<Boolean> markForPush();
+    abstract Optional<Boolean> markForPush();
 
-    Optional<Boolean> markForDelete();
+    abstract Optional<Boolean> markForDelete();
 
-    Optional<String> localStatus();
+    //TODO: Apparently these two arent used anywhere
+    //abstract Optional<String> localStatus();
+    //abstract Optional<String> localLanguage();
 
-    Optional<String> localLanguage();
+    @Auxiliary
+    abstract Optional<FolderSyncMeta> syncMeta();
 
 }
