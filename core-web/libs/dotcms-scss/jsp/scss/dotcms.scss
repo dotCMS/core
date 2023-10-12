@@ -78,3 +78,11 @@ body {
     text-rendering: optimizeLegibility;
     -moz-osx-font-smoothing: grayscale;
 }
+
+.edit-content-full-screen {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0px;
+    border: 1px solid red;
+    min-height: fit-content;
+}
