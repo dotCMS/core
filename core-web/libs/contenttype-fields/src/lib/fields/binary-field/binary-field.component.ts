@@ -200,13 +200,13 @@ export class DotBinaryFieldComponent implements OnInit {
         this.dotBinaryFieldStore.removeFile();
     }
 
-    handleCreateFile(_event) {
-        // TODO: Implement - Write Code
-    }
-
     setTempFile(tempFile: DotCMSTempFile) {
         this.dotBinaryFieldStore.setTempFile(tempFile);
         this.dialogOpen = false;
+    }
+
+    isEditorMode(mode: BINARY_FIELD_MODE): boolean {
+        return mode === BINARY_FIELD_MODE.EDITOR;
     }
 
     /**

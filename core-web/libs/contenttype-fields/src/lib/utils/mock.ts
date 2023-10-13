@@ -20,7 +20,8 @@ const MESSAGES_MOCK = {
         '<strong>Something went wrong</strong>, please try again or <br/> contact our support team.',
     'dot.common.cancel': 'Cancel',
     'dot.common.import': 'Import',
-    'dot.common.save': 'Save'
+    'dot.common.save': 'Save',
+    'error.form.validator.required': 'This field is required'
 };
 
 export const CONTENTTYPE_FIELDS_MESSAGE_MOCK = new MockDotMessageService(MESSAGES_MOCK);

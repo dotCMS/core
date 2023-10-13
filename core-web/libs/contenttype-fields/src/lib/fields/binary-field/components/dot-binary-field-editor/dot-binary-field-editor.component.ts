@@ -17,7 +17,13 @@ import {
     ViewChild,
     inject
 } from '@angular/core';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+    FormControl,
+    FormGroup,
+    FormsModule,
+    ReactiveFormsModule,
+    Validators
+} from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -26,7 +32,7 @@ import { debounceTime, switchMap, tap } from 'rxjs/operators';
 
 import { DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
 const EDITOR_CONFIG: MonacoEditorConstructionOptions = {
     theme: 'vs',
@@ -51,14 +57,16 @@ const EDITOR_CONFIG: MonacoEditorConstructionOptions = {
         ReactiveFormsModule,
         InputTextModule,
         ButtonModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotFieldValidationMessageComponent
     ],
     templateUrl: './dot-binary-field-editor.component.html',
     styleUrls: ['./dot-binary-field-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
-    @Output() readonly tempFile = new EventEmitter<DotCMSTempFile>();
+    @Output() readonly tempFileUploaded = new EventEmitter<DotCMSTempFile>();
+    @Output() readonly cancel = new EventEmitter<void>();
 
     @ViewChild('editorRef', { static: true }) editorRef!: MonacoEditorComponent;
 
@@ -67,7 +75,7 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
 
     private editor: monaco.editor.IStandaloneCodeEditor;
     readonly form = new FormGroup({
-        name: new FormControl(''),
+        name: new FormControl('', [Validators.required]),
         content: new FormControl('')
     });
 
@@ -93,6 +101,14 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
     }
 
     onSubmit(): void {
+        if (this.form.invalid) {
+            this.form.get('name').markAsDirty();
+            this.form.get('name').updateValueAndValidity();
+            this.cd.detectChanges();
+
+            return;
+        }
+
         const file = new File([this.content.value], this.name.value, {
             type: this.mimeType
         });
@@ -109,7 +125,7 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
 
         loading$.subscribe((tempFile) => {
             this.enableEditor();
-            this.tempFile.emit(tempFile);
+            this.tempFileUploaded.emit(tempFile);
         });
     }
 
@@ -123,6 +139,7 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
     }
 
     private getLanguage(fileExtension: string) {
+        // Global Object Defined by Monaco Editor
         return monaco.languages
             .getLanguages()
             .find((language) => language.extensions?.includes(`.${fileExtension}`));

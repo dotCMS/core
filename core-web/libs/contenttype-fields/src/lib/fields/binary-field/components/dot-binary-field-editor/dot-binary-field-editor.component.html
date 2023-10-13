@@ -11,24 +11,30 @@
             autocomplete="off"
             pInputText
             placeholder="Ex. template.html" />
+        <div class="error-message">
+            <dot-field-validation-message
+                [field]="form.get('name')"
+                data-testId="error-message"></dot-field-validation-message>
+        </div>
+    </div>
+    <div class="binary-field__editor-container">
+        <ngx-monaco-editor
+            class="binary-field__code-editor"
+            #editorRef
+            [ngClass]="{ 'binary-field__code-editor--disabled': form.disabled }"
+            [options]="editorOptions"
+            formControlName="content"
+            data-testId="code-editor"></ngx-monaco-editor>
 
         <div class="editor-mode__helper">
             <i class="pi pi-info-circle"></i>
             <small>Mime Type: {{ mimeType }}</small>
         </div>
     </div>
-
-    <ngx-monaco-editor
-        class="binary-field__code-editor"
-        #editorRef
-        [ngClass]="{ 'binary-field__code-editor--disabled': form.disabled }"
-        [options]="editorOptions"
-        formControlName="content"
-        data-testId="code-editor"></ngx-monaco-editor>
-
     <div class="editor-mode__actions">
         <p-button
             [label]="'dot.common.cancel' | dm"
+            (click)="cancel.emit()"
             styleClass="p-button-outlined"
             type="button"
             aria-label="Cancel button"
@@ -36,7 +42,6 @@
 
         <p-button
             [label]="'dot.common.save' | dm"
-            type="submit"
             type="submit"
             aria-label="Import button"
             data-testId="import-button"></p-button>
