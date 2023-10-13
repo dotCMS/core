@@ -15,9 +15,6 @@ import java.util.Set;
  */
 public class SystemTableConfigSource {
 
-    // private static final ThreadLocal<HashMap<String, String>> configuration =
-    //        new ThreadLocal<>();
-
     // there are some keys that can not be configured on the system table, all which includes concurrent are not
     private static final Set<String> SKIP_KEYS_LOWER_SET = Set.of("concurrent", "scheduler");
     private final Lazy<SystemTable> systemTable = Lazy.of(()->APILocator.getSystemAPI().getSystemTable());
@@ -41,12 +38,10 @@ public class SystemTableConfigSource {
     public String getValue(final String propertyName) {
 
         Optional<String> valueOpt = Optional.empty();
-        if (null != propertyName) {
-            if(this.isAllowed(propertyName)) {
-                valueOpt = this.systemTable.get().get(propertyName);
-            }
+        if (null != propertyName && this.isAllowed(propertyName)) {
+            valueOpt = this.systemTable.get().get(propertyName);
         }
-        return valueOpt.isPresent() ? valueOpt.get() : null;
+        return valueOpt.orElse(null);
     }
 
     private boolean isAllowed(final String propertyName) {
@@ -65,7 +60,7 @@ public class SystemTableConfigSource {
     }
 
     public void clear() {
-        this.systemTable.get().all().keySet().stream()
+        this.systemTable.get().all().keySet()
                 .forEach(key -> this.systemTable.get().delete(key));
     }
 
@@ -73,4 +68,5 @@ public class SystemTableConfigSource {
     public String getName() {
         return SystemTableConfigSource.class.getSimpleName();
     }
+
 }

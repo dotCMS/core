@@ -1,15 +1,12 @@
 package com.dotcms.business;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotDuplicateDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
-import io.vavr.control.Try;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,22 +30,24 @@ public class SystemTableFactoryImpl extends SystemTableFactory {
     protected Optional<String> find(final String key) throws DotDataException {
 
         Object value = null;
-        if(UtilMethods.isSet(key)) {
+        if (UtilMethods.isSet(key)) {
 
             value = this.systemCache.getOrUpdate(key, ()-> {
 
-                List<Map<String, Object>> result = null;
+                List<Map<String, Object>> result;
                 try {
                     result = new DotConnect()
                             .setSQL(" SELECT * FROM system_table WHERE key = ? ")
                             .addParam(key)
                             .loadObjectResults();
-                } catch (DotDataException e) {
-                    throw new RuntimeException(e);
+                } catch (final DotDataException e) {
+                    throw new DotRuntimeException(String.format("Failed to retrieve key '%s': %s"
+                            , key, ExceptionUtil.getErrorMessage(e)), e);
                 }
 
                 final Object v = null == result || result.isEmpty()? null : result.get(0).get("value");
                 return Objects.nonNull(v)?v.toString():VALUE_404;
+
             });
         }
 

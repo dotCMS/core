@@ -1,15 +1,11 @@
 package com.dotmarketing.util;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.HibernateUtil;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.util.Optional;
 
 /**
  * Test for the ConfigTest.
@@ -19,12 +15,12 @@ public class ITConfigTest extends IntegrationTestBase {
     @BeforeClass
     public static void beforeInit() throws Exception {
         IntegrationTestBase.beforeInit();
-        Config.ENABLE_SYSTEM_TABLE_CONFIG_SOURCE = true;
+        Config.enableSystemTableConfigSource = true;
     }
 
     @AfterClass
     public static void afterInit() throws Exception {
-        Config.ENABLE_SYSTEM_TABLE_CONFIG_SOURCE = false;
+        Config.enableSystemTableConfigSource = false;
     }
 
     /**

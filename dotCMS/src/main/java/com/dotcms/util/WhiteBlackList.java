@@ -1,7 +1,5 @@
 package com.dotcms.util;
 
-import com.dotmarketing.util.UtilMethods;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -60,8 +58,8 @@ public class WhiteBlackList {
     }
 
     public static final class Builder {
-        private Set<String> includePatterns = new LinkedHashSet<>();
-        private Set<String> excludePatterns = new LinkedHashSet<>();
+        private final Set<String> includePatterns = new LinkedHashSet<>();
+        private final Set<String> excludePatterns = new LinkedHashSet<>();
 
         public Builder addWhitePatterns(final String... includePatterns) {
             this.includePatterns.addAll(Arrays.asList(includePatterns));

@@ -50,13 +50,13 @@ public class Config {
 
     public static final Map<String, String> testOverrideTracker = new ConcurrentHashMap<>();
 
-    private static SystemTableConfigSource SYSTEM_TABLE_CONFIG_SOURCE = null;
+    private static SystemTableConfigSource systemTableConfigSource = null;
 
     @VisibleForTesting
-    public static boolean ENABLE_SYSTEM_TABLE_CONFIG_SOURCE = "true".equalsIgnoreCase(EnvironmentVariablesService.getInstance().getenv().getOrDefault("DOT_ENABLE_SYSTEM_TABLE_CONFIG_SOURCE", "false"));
+    public static boolean enableSystemTableConfigSource = "true".equalsIgnoreCase(EnvironmentVariablesService.getInstance().getenv().getOrDefault("DOT_ENABLE_SYSTEM_TABLE_CONFIG_SOURCE", "false"));
 
     public static void initSystemTableConfigSource() {
-        SYSTEM_TABLE_CONFIG_SOURCE = new SystemTableConfigSource();
+        systemTableConfigSource = new SystemTableConfigSource();
     }
 
 
@@ -369,7 +369,7 @@ public class Config {
 
     private static String getSystemTableValue(final String ...names) {
 
-        if (null != names && null != SYSTEM_TABLE_CONFIG_SOURCE && ENABLE_SYSTEM_TABLE_CONFIG_SOURCE) {
+        if (null != names && null != systemTableConfigSource && enableSystemTableConfigSource) {
 
             final String tag = ThreadContextUtil.getOrCreateContext().getTag();
             if (UtilMethods.isSet(tag) && "ConfigSystemTable".equals(tag)) {
@@ -382,7 +382,7 @@ public class Config {
                 ThreadContextUtil.getOrCreateContext().setTag("ConfigSystemTable");
 
                 for (final String name : names) {
-                    final String value = Try.of(() -> SYSTEM_TABLE_CONFIG_SOURCE.getValue(name)).getOrNull();
+                    final String value = Try.of(() -> systemTableConfigSource.getValue(name)).getOrNull();
                     if (null != value) {
                         return value;
                     }
