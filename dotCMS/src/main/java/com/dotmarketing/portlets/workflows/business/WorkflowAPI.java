@@ -994,6 +994,17 @@ public interface WorkflowAPI {
 	 */
 	List<SystemActionWorkflowActionMapping> findSystemActionsByScheme(final WorkflowScheme workflowScheme, final User user)  throws DotSecurityException, DotDataException;
 
+
+	/**
+	 * Retrieve a system action wf mapping by system action and workflow scheme
+	 * @param systemAction
+	 * @param workflowScheme
+	 * @param user
+	 * @return Opt of SystemActionWorkflowActionMapping
+	 */
+	Optional<SystemActionWorkflowActionMapping> findSystemActionByScheme(SystemAction systemAction, WorkflowScheme workflowScheme, User user)   throws DotSecurityException, DotDataException;
+
+
 	/**
 	 * Tries to find a {@link WorkflowAction} based on a {@link Contentlet} and {@link SystemAction}, first will find a workflow action
 	 * associated to the {@link Contentlet} {@link ContentType}, if there is not any match, will tries to find by {@link WorkflowScheme}
@@ -1127,6 +1138,7 @@ public interface WorkflowAPI {
 			final BiConsumer<String,Exception> failConsumer,
 			final ConcurrentMap<String,Object> context,
 			final int sleep);
+
 
 	/**
 	 * Render mode for the available actions

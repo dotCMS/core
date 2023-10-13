@@ -1,5 +1,6 @@
 package com.dotcms.rendering.js.viewtools;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.js.JsHttpServletRequestAware;
 import com.dotcms.rendering.js.JsHttpServletResponseAware;
 import com.dotcms.rendering.js.JsViewContextAware;
@@ -8,10 +9,11 @@ import com.dotcms.rendering.js.proxy.JsContentMap;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.MapToContentletPopulator;
-import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -20,12 +22,13 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.graalvm.polyglot.HostAccess;
 
@@ -33,6 +36,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -77,33 +81,131 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
     public JsContentMap fireNew(final Map contentletMap,
                                 final Map workflowOptions) {
 
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("contentType")) {
+
+            throw new IllegalArgumentException("contentType attribute is required on the contentMap");
+        }
+
+        final WorkflowAPI.SystemAction systemAction = WorkflowAPI.SystemAction.NEW;
+        final User user = WebAPILocator.getUserWebAPI().getUser(this.request);
+
+        try {
+
+
+            final String contentTypeVarName = contentletMap.get("contentType").toString();
+            final ContentType contentType = APILocator.getContentTypeAPI(user).find(contentTypeVarName);
+            final WorkflowAction workflowAction = this.findWorkflowActionMapped(systemAction, contentType, user);
+
+            if (null == workflowAction) {
+
+                throw new IllegalArgumentException("Could not find a NEW system action for the Contentlet with type: "
+                        + contentTypeVarName);
+            }
+
+            return this.fireInternal(contentletMap, workflowAction, workflowOptions, new Contentlet());
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @HostAccess.Export
+    public JsContentMap fireEdit(final Map contentletMap,
+                                final Map workflowOptions) {
+
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("identifier")) {
+
+            throw new IllegalArgumentException("Contentlet map is required or identifier");
+        }
+
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("contentType")) {
+
+            throw new IllegalArgumentException("contentType attribute is required on the contentMap");
+        }
+
+        final WorkflowAPI.SystemAction systemAction = WorkflowAPI.SystemAction.EDIT;
+        final User user = WebAPILocator.getUserWebAPI().getUser(this.request);
+
+        try {
+
+            final String contentTypeVarName = contentletMap.get("contentType").toString();
+            final ContentType contentType = APILocator.getContentTypeAPI(user).find(contentTypeVarName);
+            final WorkflowAction workflowAction = this.findWorkflowActionMapped(systemAction, contentType, user);
+
+            if (null == workflowAction) {
+
+                throw new IllegalArgumentException("Could not find a EDIT system action for the Contentlet with type: "
+                        + contentTypeVarName);
+            }
+
+            final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString());
+
+            return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet);
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private WorkflowAction findWorkflowActionMapped (final WorkflowAPI.SystemAction systemAction,
+                                                     final ContentType contentType,
+                                                     final User user) throws DotDataException, DotSecurityException {
+
+        WorkflowAction workflowAction = null;
+        Optional<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappingOpt =
+                this.workflowAPI.findSystemActionByContentType(systemAction, contentType, user);
+        if (systemActionWorkflowActionMappingOpt.isPresent()) {
+            workflowAction = systemActionWorkflowActionMappingOpt.get().getWorkflowAction();
+        } else {
+            final List<WorkflowScheme> workflowSchemes = workflowAPI.findSchemesForContentType(contentType);
+            if (null != workflowSchemes) {
+                for (final WorkflowScheme workflowScheme : workflowSchemes) {
+                    systemActionWorkflowActionMappingOpt =
+                            this.workflowAPI.findSystemActionByScheme(systemAction, workflowScheme, user);
+                    if (systemActionWorkflowActionMappingOpt.isPresent()) {
+                        workflowAction = systemActionWorkflowActionMappingOpt.get().getWorkflowAction();
+                        break;
+                    }
+                }
+            }
+        }
+
+        return workflowAction;
+    }
+
+    private Contentlet findById(final String identifier) {
+
+        Logger.debug(this, ()-> "Fire Action, looking for content by identifier: " + identifier);
+
+        final Contentlet currentContentlet =
+                Try.of(()->APILocator.getContentletAPI().findContentletByIdentifierAnyLanguageAnyVariant(identifier)).getOrNull();
+
+        DotPreconditions.notNull(currentContentlet, ()-> "contentlet-was-not-found", DoesNotExistException.class);
+
+        return currentContentlet;
+    }
+
+    protected JsContentMap fireInternal(final Map contentletMap,
+                                        final WorkflowAction workflowAction,
+                                        final Map workflowOptions,
+                                        final Contentlet contentletIn) {
+
         try {
 
             final User user = WebAPILocator.getUserWebAPI().getUser(this.request);
             final PageMode pageMode = PageMode.get(this.request);
-            final WorkflowAPI.SystemAction systemAction = WorkflowAPI.SystemAction.NEW;
-            final Contentlet contentlet = this.contentHelper.populateContentletFromMap(new Contentlet(), contentletMap);
-            final Optional<WorkflowAction> optWorkflowAction =
-                    this.workflowAPI.findActionMappedBySystemActionContentlet(contentlet, systemAction, user);
-            if (optWorkflowAction.isPresent()) {
+            final Contentlet contentlet = this.contentHelper.populateContentletFromMap(contentletIn, contentletMap);
+            if (null != workflowAction) {
 
-                final WorkflowAction workflowAction = optWorkflowAction.get();
                 final String actionId = workflowAction.getId();
 
-                Logger.info(this, "Using the default action: " + workflowAction +
-                        ", for the system action: " + systemAction);
+                Logger.info(this, "Using the default action: " + workflowAction);
 
+                final boolean respectAnonPermissions = pageMode.respectAnonPerms;
                 final ContentletDependencies.Builder formBuilder = new ContentletDependencies.Builder();
                 formBuilder.workflowActionId(actionId).modUser(user);
-                final MutableBoolean respectAnonPermissions = new MutableBoolean(false);
-
+                formBuilder.respectAnonymousPermissions(respectAnonPermissions);
                 if(workflowOptions != null) {
-
-                    Optional.ofNullable(workflowOptions.get("respectAnonPerms")).ifPresent(respectAnonPerms -> {
-                                respectAnonPermissions.setValue(ConversionUtils.toBoolean(workflowOptions.get("respectAnonPerms").toString(), false));
-                                formBuilder.respectAnonymousPermissions(respectAnonPermissions.booleanValue());
-                            }
-                            );
 
                     processWorkflowOptions(workflowOptions, formBuilder);
 
@@ -116,7 +218,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
                 }
 
                 final Optional<List<Category>>categories = MapToContentletPopulator.
-                        INSTANCE.fetchCategories(contentlet, user, respectAnonPermissions.booleanValue());
+                        INSTANCE.fetchCategories(contentlet, user, respectAnonPermissions);
 
                 //Empty collection implies removal, so only when a value is present we must pass the collection
                 categories.ifPresent(formBuilder::categories);

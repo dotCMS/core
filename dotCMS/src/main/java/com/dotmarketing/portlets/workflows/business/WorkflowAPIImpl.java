@@ -4190,6 +4190,25 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@CloseDBIfOpened
+	public Optional<SystemActionWorkflowActionMapping> findSystemActionByScheme(final SystemAction systemAction,
+																				final WorkflowScheme workflowScheme,
+																				final User user) throws DotSecurityException, DotDataException {
+
+		final List<Map<String, Object>> mappings = this.workFlowFactory.findSystemActionsByScheme (workflowScheme);
+		for (final Map<String, Object> rowMap : mappings) {
+
+			final SystemActionWorkflowActionMapping mapping =
+					this.toSystemActionWorkflowActionMapping(rowMap, workflowScheme, user);
+			if (mapping.getSystemAction().equals(systemAction)) {
+				return Optional.ofNullable(mapping);
+			}
+		}
+
+		return Optional.empty();
+	}
+
+	@Override
+	@CloseDBIfOpened
 	public Optional<SystemActionWorkflowActionMapping> findSystemActionByContentType(final WorkflowAPI.SystemAction systemAction,
 																			  final ContentType contentType, final User user)
 			throws DotDataException, DotSecurityException {
