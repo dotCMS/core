@@ -189,7 +189,7 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
     nEntries: 0
 };
 
-const createEditContentLayoutComponent = (params: { contentType: string; id: string }) => {
+const createEditContentLayoutComponent = (params: { contentType?: string; id?: string }) => {
     return createComponentFactory({
         component: EditContentLayoutComponent,
         imports: [HttpClientTestingModule],
@@ -206,7 +206,7 @@ describe('EditContentLayoutComponent with identifier', () => {
     let spectator: Spectator<EditContentLayoutComponent>;
     let dotEditContentService: SpyObject<DotEditContentService>;
 
-    const createComponent = createEditContentLayoutComponent({ contentType: 'test', id: '1' });
+    const createComponent = createEditContentLayoutComponent({ contentType: undefined, id: '1' });
 
     beforeEach(async () => {
         spectator = createComponent({
@@ -226,8 +226,8 @@ describe('EditContentLayoutComponent with identifier', () => {
         dotEditContentService = spectator.inject(DotEditContentService, true);
     });
 
-    it('should set contentType and identifier from activatedRoute', () => {
-        expect(spectator.component.contentType).toEqual('test');
+    it('should set identifier from activatedRoute and contentType undefined', () => {
+        expect(spectator.component.contentType).toEqual(undefined);
         expect(spectator.component.identifier).toEqual('1');
     });
 
@@ -237,13 +237,13 @@ describe('EditContentLayoutComponent with identifier', () => {
         expect(dotEditContentService.getContentById).toHaveBeenCalledWith('1');
     });
 
-    it('should call dotEditContentService.saveContentlet with the correct parameters', () => {
-        spectator.component.saveContent({ key: 'value' });
+    it('should call dotEditContentService.saveContentlet with the correct parameters - Using contentType from getContentById', () => {
         spectator.detectChanges();
+        spectator.component.saveContent({ key: 'value' });
         expect(dotEditContentService.saveContentlet).toHaveBeenCalledWith({
             key: 'value',
             inode: '1',
-            contentType: 'test'
+            contentType: 'Test'
         });
     });
 
@@ -259,7 +259,10 @@ describe('EditContentLayoutComponent without identifier', () => {
     let spectator: Spectator<EditContentLayoutComponent>;
     let dotEditContentService: SpyObject<DotEditContentService>;
 
-    const createComponent = createEditContentLayoutComponent({ contentType: 'test', id: null });
+    const createComponent = createEditContentLayoutComponent({
+        contentType: 'test',
+        id: undefined
+    });
 
     beforeEach(() => {
         spectator = createComponent({
@@ -276,6 +279,11 @@ describe('EditContentLayoutComponent without identifier', () => {
         });
 
         dotEditContentService = spectator.inject(DotEditContentService, true);
+    });
+
+    it('should set contentType from activatedRoute - Identifier undefined.', () => {
+        expect(spectator.component.contentType).toEqual('test');
+        expect(spectator.component.identifier).toEqual(undefined);
     });
 
     it('should call getContentById and getContentTypeFormData with contentType if identifier is NOT present', () => {

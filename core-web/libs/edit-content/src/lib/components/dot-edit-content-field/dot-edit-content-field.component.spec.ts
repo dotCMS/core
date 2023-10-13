@@ -76,12 +76,18 @@ describe('DotFieldComponent', () => {
     it('should render the label', () => {
         spectator.detectChanges();
         const label = spectator.query(byTestId(`label-${FIELD_MOCK.variable}`));
-        expect(label?.textContent).toContain(FIELD_MOCK.fieldTypeLabel);
+        expect(label?.textContent).toContain(FIELD_MOCK.name);
     });
 
     it('should render the hint', () => {
         spectator.detectChanges();
         const hint = spectator.query(byTestId(`hint-${FIELD_MOCK.variable}`));
         expect(hint?.textContent).toContain(FIELD_MOCK.hint);
+    });
+
+    it('should render the input', () => {
+        spectator.detectChanges();
+        const input = spectator.query(byTestId(`input-${FIELD_MOCK.variable}`));
+        expect(input).toBeDefined();
     });
 });

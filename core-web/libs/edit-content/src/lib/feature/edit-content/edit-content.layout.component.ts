@@ -27,9 +27,11 @@ export class EditContentLayoutComponent {
     isContentSaved = false;
     formData$ = this.identifier
         ? this.dotEditContentService.getContentById(this.identifier).pipe(
-              switchMap((res) => {
-                  if (res.contentType) {
-                      return this.dotEditContentService.getContentTypeFormData(res.contentType);
+              switchMap(({ contentType }) => {
+                  if (contentType) {
+                      this.contentType = contentType;
+
+                      return this.dotEditContentService.getContentTypeFormData(contentType);
                   } else {
                       return EMPTY;
                   }

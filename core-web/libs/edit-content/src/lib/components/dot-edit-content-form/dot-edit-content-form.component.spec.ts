@@ -192,7 +192,7 @@ describe('DotFormComponent', () => {
         it('should initialize the form group with form controls for each field in the `formData` array', () => {
             const component = spectator.component;
             component.formData = LAYOUT_MOCK;
-            component.initilizeForm();
+            spectator.detectChanges();
 
             expect(component.form.controls['name1']).toBeDefined();
             expect(component.form.controls['text2']).toBeDefined();

@@ -3,7 +3,7 @@
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
-    grid-gap: $spacing-2;
+    gap: $spacing-2;
     margin-top: $spacing-3;
 
     .column {
