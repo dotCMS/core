@@ -80,6 +80,10 @@
         color: $black;
         height: $field-height-md;
 
+        .dijitComboBoxHighlightMatch {
+            font-weight: $font-weight-bold;
+        }
+
         &:has(small) {
             display: flex;
             align-items: start;

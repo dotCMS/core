@@ -5047,6 +5047,9 @@
   color: #14151a;
   height: 2.5rem;
 }
+.dijitComboBoxMenuPopup .dijitMenuItem .dijitComboBoxHighlightMatch {
+  font-weight: 700;
+}
 .dijitComboBoxMenuPopup .dijitMenuItem:has(small) {
   display: flex;
   align-items: start;
