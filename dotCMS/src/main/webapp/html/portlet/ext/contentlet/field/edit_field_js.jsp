@@ -239,12 +239,14 @@ var cmsfile=null;
 			updateDisabledWysiwyg(id,"WYSIWYG");
 			}
 		else if(toggleValue=="CODE"){
-			toCodeArea(id);
+			toCodeArea(id, isFullscreen);
 			updateDisabledWysiwyg(id,"CODE");
+			dojo.query(".wysiwyg-container").style({display:'none'});
 			}
 		else if(toggleValue=="PLAIN"){
 			toPlainView(id);
 			updateDisabledWysiwyg(id,"PLAIN");
+			dojo.query(".wysiwyg-container").style({display:'block'});
 			}
 	}
 
@@ -321,12 +323,13 @@ var cmsfile=null;
 		document.getElementById(id).value = document.getElementById(id).value.trim();
 	}
 
-	function toCodeArea(id) {
+	function toCodeArea(id, isFullscreen = "false") {
 		if(enabledWYSIWYG[id]){
 			disableWYSIWYG(id);
+			dojo.query('#'+id).style({display:''});
 		}
 		if(!enabledCodeAreas[id]) {
-			aceAreaById(id);
+			aceAreaById(id, isFullscreen);
 		}
 	}
 
@@ -460,7 +463,7 @@ var cmsfile=null;
 			  // Init instance callback to fix the pointer-events issue.
 			  tinyConf = {
 			    ...tinyConf,
-                height: "100%",
+                height: isFullscreen === "true" ? "100%" : 332,
 			    init_instance_callback: (editor) => {
 			      let dropZone = document.getElementById(
 			        `dot-asset-drop-zone-${textAreaId}`
@@ -513,7 +516,7 @@ var cmsfile=null;
 			} catch (e) {
 			  showDotCMSErrorMessage("Enable to initialize WYSIWYG " + e.message);
 			}
-
+		dojo.query(".wysiwyg-container").style({display:'block'});
 			enabledWYSIWYG[textAreaId] = true;
 		}
 	}
@@ -706,22 +709,27 @@ var cmsfile=null;
 		});
 	}
 
-	function aceAreaById(textarea){
+	function aceAreaById(textarea, isFullscreen = "false"){
 		document.getElementById(textarea).style.display = "none";
 		var id = document.getElementById(textarea).value.trim();
 		aceEditors[textarea] = document.getElementById(textarea+'aceEditor');
 		var aceClass = aceEditors[textarea].className;
 		aceEditors[textarea].className = aceClass.replace('classAce', 'aceText');
 		aceEditors[textarea].style.display = 'block';
+		aceEditors[textarea].style.height = '100%';
 		aceEditors[textarea] = ace.edit(textarea+'aceEditor');
 	    aceEditors[textarea].setTheme("ace/theme/textmate");
 	    aceEditors[textarea].getSession().setMode("ace/mode/velocity");
 	    aceEditors[textarea].getSession().setUseWrapMode(true);
 	    aceEditors[textarea].setValue(id);
+
+		if(isFullscreen === "false") {
 	    aceEditors[textarea].setOptions({
 		    minLines: 25,
 		    maxLines:40
 	    });
+		}
+
 
     	aceEditors[textarea].clearSelection();
 		enabledCodeAreas[textarea]=true;
