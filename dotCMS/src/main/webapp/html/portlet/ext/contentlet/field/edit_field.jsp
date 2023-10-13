@@ -61,6 +61,7 @@
 
     boolean fullScreenField = Try.of(()->(boolean)request.getAttribute("DOT_FULL_SCREEN_FIELD")).getOrElse(false);
     String fullScreenClass=fullScreenField ? "edit-content-full-screen": "";
+    String fullScreenHeight=fullScreenField ? "height: 100%;": "";
 
 
 %>
@@ -329,12 +330,12 @@
         <script type="text/javascript">
             dojo.addOnLoad(function () {
                 <%if(toggleOn){ %>
-                aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');
+                aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>', '<%=fullScreenField%>');
                 <%} %>
             });
         </script>
-        <div id="aceTextArea_<%=field.getVelocityVarName()%>" class="classAce" style="width:100%"></div>
-        <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> style="width:100%" dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;min-height:100px;max-height: 600px\""%>
+        <div id="aceTextArea_<%=field.getVelocityVarName()%>" class="classAce" style="width:100%; <%=fullScreenHeight%>"></div>
+        <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> style="width:100%; <%=fullScreenHeight%>" dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;min-height:100px;max-height: 600px\""%>
                                                                                                    name="<%=field.getFieldContentlet()%>"
                                                                                                    id="<%=field.getVelocityVarName()%>" class="editTextAreaField" onchange="emmitFieldDataChange(true)"><%= UtilMethods.htmlifyString(textValue) %></textarea>
         <%
@@ -343,9 +344,9 @@
         <div class="editor-toolbar">
             <div class="toggleEditorField checkbox">
                 <%if(toggleOn){ %>
-                <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="true" checked="true"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');" />
+                <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="true" checked="true"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>', '<%=fullScreenField%>');" />
                 <%}else{ %>
-                <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="false"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');" />
+                <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="false"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>' , '<%=fullScreenField%>');" />
                 <%} %>
                 <label for="toggleEditor_<%=field.getVelocityVarName()%>"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
             </div>
@@ -415,7 +416,7 @@
         %>
 
 
-        <div class="wysiwyg-wrapper">
+        <div class="wysiwyg-wrapper <%= fullScreenClass%>">
             <div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce aceTall" style="display: none"></div>
 
             <%
@@ -433,18 +434,22 @@
                         }
                     }
             %>
-                <div class="wysiwyg-container" data-select-folder="<%=String.join(", ", defaultPathFolderPathIds)%>" >
+                <div class="wysiwyg-container" data-select-folder="<%=String.join(", ", defaultPathFolderPathIds)%>" style="<%= fullScreenHeight%>" >
             <% if (dragAndDrop) {  %>
                   <dot-asset-drop-zone id="dot-asset-drop-zone-<%=field.getVelocityVarName()%>" class="wysiwyg__dot-asset-drop-zone"></dot-asset-drop-zone>
             <% }  %>
                   <textarea <%= isReadOnly?"readonly=\"readonly\"":"" %>
                       class="editWYSIWYGField aceText aceTall"
                       name="<%=field.getFieldContentlet()%>"
-                      id="<%=field.getVelocityVarName()%>"><%=UtilMethods.htmlifyString(textValue)%>
+                      id="<%=field.getVelocityVarName()%>"
+                      style="<%= fullScreenHeight%>">
+
+                      <%=UtilMethods.htmlifyString(textValue)%>
+
                   </textarea>
                 </div>
             <div class="wysiwyg-tools">
-              <select  autocomplete="false" dojoType="dijit.form.Select" id="<%=field.getVelocityVarName()%>_toggler" onChange="enableDisableWysiwygCodeOrPlain('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)">
+              <select  autocomplete="false" dojoType="dijit.form.Select" id="<%=field.getVelocityVarName()%>_toggler" onChange="enableDisableWysiwygCodeOrPlain('<%=field.getVelocityVarName()%>', '<%=fullScreenField%>');emmitFieldDataChange(true)">
                   <option value="WYSIWYG">WYSIWYG</option>
                   <option value="CODE" <%= !wysiwygPlain&&wysiwygDisabled?"selected='true'":"" %>>CODE</option>
                   <option value="PLAIN" <%= wysiwygPlain?"selected='true'":"" %>>PLAIN</option>
@@ -480,7 +485,7 @@
         <script type="text/javascript">
             dojo.addOnLoad(function () {
                 <% if (!wysiwygDisabled) { %>
-                    enableWYSIWYG('<%=field.getVelocityVarName()%>', false);
+                    enableWYSIWYG('<%=field.getVelocityVarName()%>', false, '<%=fullScreenField%>');
                 <% } else if (wysiwygPlain) { %>
                     toPlainView('<%=field.getVelocityVarName()%>');
                 <% } else {%>

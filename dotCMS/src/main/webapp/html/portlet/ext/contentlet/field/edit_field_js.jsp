@@ -59,7 +59,7 @@
 			cmsFileBrowser(callback, value, meta);
 		}
 	});
-	
+
 </script>
 
 <script type="text/javascript">
@@ -232,10 +232,10 @@ var cmsfile=null;
 	var aceEditors = new Array();
 
 
-	function enableDisableWysiwygCodeOrPlain(id) {
+	function enableDisableWysiwygCodeOrPlain(id, isFullscreen = "false") {
 		var toggleValue=dijit.byId(id+'_toggler').attr('value');
 		if (toggleValue=="WYSIWYG"){
-			toWYSIWYG(id);
+			toWYSIWYG(id, isFullscreen);
 			updateDisabledWysiwyg(id,"WYSIWYG");
 			}
 		else if(toggleValue=="CODE"){
@@ -330,13 +330,13 @@ var cmsfile=null;
 		}
 	}
 
-	function toWYSIWYG(id) {
+	function toWYSIWYG(id, isFullscreen = "false") {
 		if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.switch.wysiwyg")) %>'))
         {
 			if(enabledCodeAreas[id]){
 				aceRemover(id);
 			}
-			enableWYSIWYG(id, false);
+			enableWYSIWYG(id, false, isFullscreen);
 		}
 	}
 
@@ -412,7 +412,7 @@ var cmsfile=null;
         }
   }
 
-	function enableWYSIWYG(textAreaId, confirmChange) {
+	function enableWYSIWYG(textAreaId, confirmChange, isFullscreen = "false") {
 		if (!isWYSIWYGEnabled(textAreaId)) {
 			//Confirming the change
 			if (confirmChange == true &&
@@ -460,11 +460,16 @@ var cmsfile=null;
 			  // Init instance callback to fix the pointer-events issue.
 			  tinyConf = {
 			    ...tinyConf,
-                height: 332,
+                height: "100%",
 			    init_instance_callback: (editor) => {
 			      let dropZone = document.getElementById(
 			        `dot-asset-drop-zone-${textAreaId}`
 			      );
+
+									if(isFullscreen === "true"){
+
+										editor.editorContainer.style.height = "100%";
+									}
 
                   if (dropZone) {
                     editor.on("dragover", function (e) {
@@ -492,7 +497,7 @@ var cmsfile=null;
                         return false;
                     });
                   }
-			      
+
                 }
 			  };
 			  var wellTinyMCE = new tinymce.Editor(
@@ -931,7 +936,7 @@ var cmsfile=null;
 
 	var textEditor = new Array();
 	var aceTextId = new Array();
-	function aceText(textarea,keyValue,isWidget) {
+	function aceText(textarea,keyValue,isWidget, isFullscreen = "false") {
 		var elementWysiwyg = document.getElementById("disabledWysiwyg");
 		var wysiwygValue = elementWysiwyg.value;
 		var result = "";
@@ -939,15 +944,20 @@ var cmsfile=null;
 		var wysiwygValueArray = wysiwygValue.split(",");
 		if(document.getElementById('aceTextArea_'+textarea).style.position != 'relative'){
 			document.getElementById('aceTextArea_'+textarea).style.position='relative';
+			document.getElementById('aceTextArea_'+textarea).style.height='100%'; // This gets overrided when setting the min and max lines
 			textEditor[textarea] = ace.edit('aceTextArea_'+textarea);
 			//textEditor[textarea].setTheme("ace/theme/textmate");
 			textEditor[textarea].getSession().setMode("ace/mode/"+keyValue);
 			textEditor[textarea].getSession().setUseWrapMode(true);
 
-			textEditor[textarea].setOptions({
-		            minLines: 15,
-		            maxLines:35
-		        });
+			console.log("isFullscreen: " + isFullscreen);
+
+				if(isFullscreen !== "true"){
+					textEditor[textarea].setOptions({
+										minLines: 15,
+										maxLines:35
+								});
+				}
 
 			 aceTextId[textarea] = textarea;
 		}
