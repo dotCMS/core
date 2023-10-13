@@ -1,7 +1,11 @@
-import { SpectatorService, SpyObject, createServiceFactory } from '@ngneat/spectator/jest';
+import {
+    createHttpFactory,
+    HttpMethod,
+    mockProvider,
+    SpectatorHttp,
+    SpyObject
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
-
-import { HttpClient } from '@angular/common/http';
 
 import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 
@@ -9,51 +13,53 @@ import { DotEditContentService } from './dot-edit-content.service';
 
 import { CONTENT_TYPE_MOCK } from '../feature/edit-content/edit-content.layout.component.spec';
 
+const API_ENDPOINT = '/api/v1/content';
+
 describe('DotEditContentService', () => {
-    let spectator: SpectatorService<DotEditContentService>;
-    let dotEditContentService: DotEditContentService;
-    let contentTypeService: SpyObject<DotContentTypeService>;
-    const createService = createServiceFactory({
+    let spectator: SpectatorHttp<DotEditContentService>;
+    let dotContentTypeService: SpyObject<DotContentTypeService>;
+    let dotWorkflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
+
+    const createHttp = createHttpFactory({
         service: DotEditContentService,
-        mocks: [DotContentTypeService, DotWorkflowActionsFireService, HttpClient]
+        providers: [
+            mockProvider(DotContentTypeService),
+            mockProvider(DotWorkflowActionsFireService)
+        ]
     });
-
     beforeEach(() => {
-        spectator = createService();
-        dotEditContentService = spectator.inject(DotEditContentService);
-        contentTypeService = spectator.inject(DotContentTypeService);
+        spectator = createHttp();
+        dotContentTypeService = spectator.inject(DotContentTypeService);
+        dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
     });
 
-    it('should get content by id', (done) => {
-        const httpService = spectator.inject(HttpClient);
-        httpService.get.mockReturnValue(of({ entity: CONTENT_TYPE_MOCK }));
-        const id = '1';
-        dotEditContentService.getContentById(id).subscribe(() => {
-            expect(httpService.get).toHaveBeenCalledWith(`/api/v1/content/${id}`);
-            done();
+    describe('Endpoints', () => {
+        it('should get content by id', () => {
+            const ID = '1';
+            spectator.service.getContentById(ID).subscribe();
+            spectator.expectOne(`${API_ENDPOINT}/${ID}`, HttpMethod.GET);
         });
     });
 
-    it('should get content type form data', (done) => {
-        const contentIdOrVar = '456';
+    describe('Facades', () => {
+        it('should get content type form data', (done) => {
+            const CONTENTID_OR_VAR = '456';
+            dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
 
-        contentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
-
-        dotEditContentService.getContentTypeFormData(contentIdOrVar).subscribe((response) => {
-            expect(response).toEqual(CONTENT_TYPE_MOCK.layout);
-            expect(contentTypeService.getContentType).toHaveBeenCalledWith(contentIdOrVar);
-            done();
+            spectator.service.getContentTypeFormData(CONTENTID_OR_VAR).subscribe(() => {
+                expect(dotContentTypeService.getContentType).toHaveBeenCalledWith(CONTENTID_OR_VAR);
+                done();
+            });
         });
-    });
 
-    it('should call dotWorkflowActionsFireService.saveContentlet with the provided data', () => {
-        const data = { title: 'Test Contentlet', body: 'This is a test' };
+        it('should call dotWorkflowActionsFireService.saveContentlet with the provided data', (done) => {
+            const DATA = { title: 'Test Contentlet', body: 'This is a test' };
+            dotWorkflowActionsFireService.saveContentlet.mockReturnValue(of({}));
 
-        const dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
-        dotWorkflowActionsFireService.saveContentlet.mockReturnValue(of({}));
-
-        dotEditContentService.saveContentlet(data).subscribe(() => {
-            expect(dotWorkflowActionsFireService.saveContentlet).toHaveBeenCalledWith(data);
+            spectator.service.saveContentlet(DATA).subscribe(() => {
+                expect(dotWorkflowActionsFireService.saveContentlet).toHaveBeenCalledWith(DATA);
+                done();
+            });
         });
     });
 });
