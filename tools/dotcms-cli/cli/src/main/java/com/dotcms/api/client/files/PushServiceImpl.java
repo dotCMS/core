@@ -6,18 +6,16 @@ import com.dotcms.api.client.files.traversal.LocalTraversalService;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.client.files.traversal.task.TraverseParams;
+import com.dotcms.api.client.push.exception.PushException;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
 import com.dotcms.common.AssetsUtils.LocalPathStructure;
-import com.dotcms.model.asset.FolderSyncMeta;
-import com.dotcms.model.asset.FolderView;
 import io.quarkus.arc.DefaultBean;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import org.jboss.logging.Logger;
 
@@ -91,29 +89,20 @@ public class PushServiceImpl implements PushService {
 
             // Traversing the local folder
             var result = localTraversalService.traverseLocalFolder(params);
-
             traversalResult.add(new TraverseContext(result.getLeft(), result.getMiddle(), result.getRight()));
         }
 
         // Once we have all roots data here we need to eliminate ambiguity
-        final Map<String, Map<String, FolderView>> indexedByStatusAndLanguage = indexByStatusAndLanguage(traversalResult);
-        indexedByStatusAndLanguage.forEach((lang, folders) -> {
+        final Map<String, Map<String, TreeNode>> indexedByStatusLangAndSite = indexByStatusLangAndSite(traversalResult);
+        indexedByStatusLangAndSite.forEach((lang, folders) -> {
             logger.info("Lang: " + lang);
             folders.forEach((path, folder) -> {
                 // here I need to get a hold of the other folders under  different languages and statuses but with the same path
-                // and check if they all are marked for delete as well
+                // and check if they're all marked for delete as well
                 // if they all are marked for delete then it is safe to keep it otherwise the delete op isn't valid
-                final List<FolderView> folderViews = findAllFoldersWithTheSamePath(indexedByStatusAndLanguage, path);
-                final boolean allMarked = isAllMarkedForDelete(folderViews);
-                if (!allMarked) {
-                    logger.info(String.format("Not all folders with path [%s] are marked for delete. Skipping delete operation", path));
-                    folderViews.forEach(folderView -> {
-                        final Optional<FolderSyncMeta> syncMeta = folderView.syncMeta();
-                        syncMeta.ifPresent(meta -> {
-                            //folderView.withSyncMeta(FolderSyncMeta.builder().from(meta).markedForDelete(false).build());
-                            //??? how to update the folderView with the new syncMeta
-                        });
-                    });
+                final List<TreeNode> nodes = findAllNodesWithTheSamePath(indexedByStatusLangAndSite, path);
+                if (!isAllFoldersMarkedForDelete(nodes)) {
+                    nodes.forEach(node -> node.markForDelete(false));
                 }
             });
         });
@@ -123,27 +112,28 @@ public class PushServiceImpl implements PushService {
     /**
      * Traverses the remote folders and retrieves the hierarchical tree representation of their
      * @param traverseResult the result of the local traversal process
-     * @return an indexed representation of the local folders by status and language
+     * @return an indexed representation of the local folders  first indexed by  status language and site
+     * The most outer map is organized by composite key like status:lang:site the inner map is the folder path
      */
-    private Map<String,Map<String, FolderView>> indexByStatusAndLanguage(List<TraverseContext> traverseResult) {
+    private Map<String,Map<String, TreeNode>> indexByStatusLangAndSite(List<TraverseContext> traverseResult) {
         final Map<String, List<TraverseContext>> groupBySite = traverseResult.stream()
                 .collect(groupingBy(ctx -> ctx.localPaths.site()));
 
-        Map<String,Map<String, FolderView>> indexedFolders = new HashMap<>();
+        Map<String,Map<String, TreeNode>> indexedFolders = new HashMap<>();
         groupBySite.forEach((site, list) -> list.forEach(ctx -> {
-            final String key = site + ":" + ctx.localPaths.status() + ":" + ctx.localPaths.language();
-            ctx.treeNode.flattened().forEach(node -> indexedFolders.computeIfAbsent(key, k -> new HashMap<>()).put(node.folder().path(), node.folder()));
+            final String key = ctx.localPaths.status() + ":" + ctx.localPaths.language() + ":" + site;
+            ctx.treeNode.flattened().forEach(node -> indexedFolders.computeIfAbsent(key, k -> new HashMap<>()).put(node.folder().path(), node));
         }));
         return indexedFolders;
     }
 
     /**
      * Finds all the folders with the same path
-     * @param indexByStatusAndLanguage
-     * @param path
-     * @return
+     * @param indexByStatusAndLanguage indexed Nodes by path and grouped by site
+     * @param path the path I am looking for
+     * @return All nodes matching the path
      */
-    List<FolderView> findAllFoldersWithTheSamePath(Map<String, Map<String, FolderView>> indexByStatusAndLanguage, String path){
+    List<TreeNode> findAllNodesWithTheSamePath(Map<String, Map<String, TreeNode>> indexByStatusAndLanguage, String path){
         return indexByStatusAndLanguage.values().stream()
                 .filter(map -> map.containsKey(path)).map(map -> map.get(path))
                 .collect(Collectors.toList());
@@ -151,11 +141,11 @@ public class PushServiceImpl implements PushService {
 
     /**
      * Checks if all the folders in the list are marked for delete
-     * @param folderViews
+     * @param nodes
      * @return
      */
-    boolean isAllMarkedForDelete(List<FolderView> folderViews) {
-        return folderViews.stream().allMatch(folderView -> folderView.syncMeta().isPresent() && folderView.syncMeta().get().markedForDelete());
+    boolean isAllFoldersMarkedForDelete(List<TreeNode> nodes) {
+        return nodes.stream().map(TreeNode::folder).allMatch(folderView -> folderView.syncMeta().isPresent() && folderView.syncMeta().get().markedForDelete());
     }
 
     /**
@@ -238,7 +228,8 @@ public class PushServiceImpl implements PushService {
 
                 var errorMessage = String.format("Error occurred while pushing contents: [%s].", e.getMessage());
                 logger.error(errorMessage, e);
-                throw new RuntimeException(errorMessage, e);
+                Thread.currentThread().interrupt();
+                throw new PushException(errorMessage, e);
             } catch (Exception e) {// Fail fast
 
                 failed = true;

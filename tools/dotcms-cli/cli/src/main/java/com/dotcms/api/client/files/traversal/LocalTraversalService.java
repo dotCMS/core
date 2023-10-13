@@ -32,7 +32,7 @@ public interface LocalTraversalService {
      * @return a Triple containing a list of exceptions, the folder's local path structure and its corresponding
      * root node of the hierarchical tree
      */
-    Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode> traverseLocalFolder(final TraverseParams params);
+    Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode> traverseLocalFolder(TraverseParams params);
 
     /**
      * Builds the file system tree from the specified root node. The tree is built using a ForkJoinPool, which allows
