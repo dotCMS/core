@@ -15,75 +15,75 @@ import org.immutables.value.Value.Auxiliary;
 @Value.Immutable
 @JsonDeserialize(as = FolderView.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public abstract class AbstractFolderView {
+public interface AbstractFolderView {
 
     @Nullable
-    abstract String host();
+    String host();
 
-    abstract String path();
+    String path();
 
-    abstract String name();
-
-    @Nullable
-    abstract String title();
+    String name();
 
     @Nullable
-    abstract Instant modDate();
+    String title();
 
     @Nullable
-    abstract String identifier();
+    Instant modDate();
 
     @Nullable
-    abstract String inode();
+    String identifier();
 
     @Nullable
-    abstract Boolean showOnMenu();
+    String inode();
 
     @Nullable
-    abstract Integer sortOrder();
+    Boolean showOnMenu();
 
     @Nullable
-    abstract String filesMasks();
+    Integer sortOrder();
 
     @Nullable
-    abstract String defaultFileType();
+    String filesMasks();
+
+    @Nullable
+    String defaultFileType();
 
     @Value.Default
-    int level() {
+    default int level() {
         return 0;
     }
 
     @Value.Default
-    boolean explicitGlobInclude() {
+    default boolean explicitGlobInclude() {
         return false;
     }
 
     @Value.Default
-    boolean explicitGlobExclude() {
+    default boolean explicitGlobExclude() {
         return false;
     }
 
     @Value.Default
-    boolean implicitGlobInclude() {
+    default boolean implicitGlobInclude() {
         return true;
     }
 
     @Nullable
     @JsonUnwrapped
-    abstract AssetVersionsView assets();
+    AssetVersionsView assets();
 
     @Nullable
-    abstract List<FolderView> subFolders();
+    List<FolderView> subFolders();
 
-    abstract Optional<Boolean> markForPush();
+    Optional<Boolean> markForPush();
 
-    abstract Optional<Boolean> markForDelete();
+    Optional<Boolean> markForDelete();
 
     //TODO: Apparently these two arent used anywhere
     //abstract Optional<String> localStatus();
     //abstract Optional<String> localLanguage();
 
     @Auxiliary
-    abstract Optional<FolderSyncMeta> syncMeta();
+    Optional<FolderSyncMeta> syncMeta();
 
 }
