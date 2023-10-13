@@ -1,4 +1,4 @@
-import { Observable, forkJoin, from, of, throwError } from 'rxjs';
+import { Observable, forkJoin, from, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
@@ -767,8 +767,11 @@ export class DotSeoMetaTagsService {
     getImageFileSize(imageUrl: string): Observable<DotCMSTempFile | ImageMetaData> {
         return from(fetch(imageUrl)).pipe(
             mergeMap((response) => {
-                if (response.status === 404) {
-                    throwError('Image not found');
+                if (response.status == 404) {
+                    return of({
+                        size: 0,
+                        url: IMG_NOT_FOUND_KEY
+                    });
                 }
 
                 return response.blob();
@@ -779,14 +782,7 @@ export class DotSeoMetaTagsService {
                     url: imageUrl
                 });
             }),
-            catchError((error) => {
-                if (error.message === 'Failed to fetch') {
-                    return of({
-                        length: 0,
-                        url: IMG_NOT_FOUND_KEY
-                    });
-                }
-
+            catchError(() => {
                 return from(this.dotUploadService.uploadFile({ file: imageUrl })).pipe(
                     mergeMap((uploadedFile) => {
                         if (uploadedFile) {
@@ -795,7 +791,6 @@ export class DotSeoMetaTagsService {
                     }),
                     catchError((uploadError) => {
                         console.warn('Error while uploading:', uploadError);
-                        // You can handle the error from the upload service here
 
                         return of({
                             length: 0,

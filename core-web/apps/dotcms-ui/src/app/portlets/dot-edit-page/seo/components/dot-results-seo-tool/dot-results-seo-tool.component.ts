@@ -65,6 +65,7 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     allPreview: MetaTagsPreview[];
     mainPreview: MetaTagsPreview;
     seoMediaTypes = SEO_MEDIA_TYPES;
+    defaultPreview = false;
 
     ngOnInit() {
         const title =
@@ -116,5 +117,9 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
                 return this.dotSeoMetaTagsService.getFilteredMetaTagsByMedia(tags, this.seoMedia);
             })
         );
+    }
+
+    onImageError() {
+        this.defaultPreview = true;
     }
 }
