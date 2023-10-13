@@ -37,6 +37,7 @@ public abstract class UnitTestBase extends BaseMessageResources {
 		protected CompanyAPI getCompanyAPIImpl() {
 			return companyAPI;
 		}
+
 	}
 
 	@BeforeClass
@@ -52,5 +53,4 @@ public abstract class UnitTestBase extends BaseMessageResources {
 		when(company.getTimeZone()).thenReturn(TimeZone.getDefault());
 		when(companyAPI.getDefaultCompany()).thenReturn(company);
 	}
-
 }
