@@ -50,7 +50,9 @@ public class IntegrationTestInitService {
             if (initCompleted.compareAndSet(false, true)) {
 
                 System.setProperty(TestUtil.DOTCMS_INTEGRATION_TEST, TestUtil.DOTCMS_INTEGRATION_TEST);
-                
+
+
+
                 Awaitility.setDefaultPollInterval(10, TimeUnit.MILLISECONDS);
                 Awaitility.setDefaultPollDelay(Duration.ZERO);
                 Awaitility.setDefaultTimeout(Duration.ONE_MINUTE);
