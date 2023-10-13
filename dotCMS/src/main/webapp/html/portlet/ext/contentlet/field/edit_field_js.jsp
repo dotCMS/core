@@ -958,8 +958,6 @@ var cmsfile=null;
 			textEditor[textarea].getSession().setMode("ace/mode/"+keyValue);
 			textEditor[textarea].getSession().setUseWrapMode(true);
 
-			console.log("isFullscreen: " + isFullscreen);
-
 				if(isFullscreen !== "true"){
 					textEditor[textarea].setOptions({
 										minLines: 15,
