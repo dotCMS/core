@@ -61,8 +61,13 @@
         background: $color-palette-primary-500;
     }
 
+    .p-tabview .p-tabview-nav li:not(.p-highlight):not(.p-disabled):hover .p-tabview-nav-link {
+        border-bottom: none;
+    }
+
     .p-tabview .p-tabview-nav li .p-tabview-nav-link {
         height: 100%;
+        white-space: nowrap;
     }
 
     .p-tabview-title {
