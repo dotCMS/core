@@ -102,7 +102,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
                         + contentTypeVarName);
             }
 
-            return this.fireInternal(contentletMap, workflowAction, workflowOptions, new Contentlet());
+            return this.fireInternal(contentletMap, workflowAction, workflowOptions, new Contentlet(), null);
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, e.getMessage(), e);
             throw new RuntimeException(e);
@@ -140,7 +140,85 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
             final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString());
 
-            return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet);
+            return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, null);
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @HostAccess.Export
+    public JsContentMap fireArchive(final Map contentletMap,
+                                   final Map workflowOptions) {
+
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("identifier")) {
+
+            throw new IllegalArgumentException("Contentlet map is required or identifier");
+        }
+
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("contentType")) {
+
+            throw new IllegalArgumentException("contentType attribute is required on the contentMap");
+        }
+
+        final WorkflowAPI.SystemAction systemAction = WorkflowAPI.SystemAction.ARCHIVE;
+        final User user = WebAPILocator.getUserWebAPI().getUser(this.request);
+
+        try {
+
+            final String contentTypeVarName = contentletMap.get("contentType").toString();
+            final ContentType contentType = APILocator.getContentTypeAPI(user).find(contentTypeVarName);
+            final WorkflowAction workflowAction = this.findWorkflowActionMapped(systemAction, contentType, user);
+
+            if (null == workflowAction) {
+
+                throw new IllegalArgumentException("Could not find a ARCHIVE system action for the Contentlet with type: "
+                        + contentTypeVarName);
+            }
+
+            final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString());
+            final String inode = (String)contentletMap.getOrDefault("inode", existingContentlet.getInode());
+
+            return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, inode);
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @HostAccess.Export
+    public JsContentMap fireDelete(final Map contentletMap,
+                                 final Map workflowOptions) {
+
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("identifier")) {
+
+            throw new IllegalArgumentException("Contentlet map is required or identifier");
+        }
+
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("contentType")) {
+
+            throw new IllegalArgumentException("contentType attribute is required on the contentMap");
+        }
+
+        final WorkflowAPI.SystemAction systemAction = WorkflowAPI.SystemAction.DELETE;
+        final User user = WebAPILocator.getUserWebAPI().getUser(this.request);
+
+        try {
+
+            final String contentTypeVarName = contentletMap.get("contentType").toString();
+            final ContentType contentType = APILocator.getContentTypeAPI(user).find(contentTypeVarName);
+            final WorkflowAction workflowAction = this.findWorkflowActionMapped(systemAction, contentType, user);
+
+            if (null == workflowAction) {
+
+                throw new IllegalArgumentException("Could not find a DELETE system action for the Contentlet with type: "
+                        + contentTypeVarName);
+            }
+            // todo; this do not work when the contentlet is archive (which is probably the case)
+            final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString());
+            final String inode = (String)contentletMap.getOrDefault("inode", existingContentlet.getInode());
+
+            return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, inode);
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, e.getMessage(), e);
             throw new RuntimeException(e);
@@ -188,13 +266,15 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
     protected JsContentMap fireInternal(final Map contentletMap,
                                         final WorkflowAction workflowAction,
                                         final Map workflowOptions,
-                                        final Contentlet contentletIn) {
+                                        final Contentlet contentletIn,
+                                        final String inodeToOverride) {
 
         try {
 
             final User user = WebAPILocator.getUserWebAPI().getUser(this.request);
             final PageMode pageMode = PageMode.get(this.request);
             final Contentlet contentlet = this.contentHelper.populateContentletFromMap(contentletIn, contentletMap);
+            Optional.ofNullable(inodeToOverride).ifPresent(contentlet::setInode);
             if (null != workflowAction) {
 
                 final String actionId = workflowAction.getId();
