@@ -2,6 +2,7 @@ package com.dotcms.rendering.js;
 
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.rendering.engine.ScriptEngine;
+import com.dotcms.rendering.js.proxy.JsProxyFactory;
 import com.dotcms.rendering.js.proxy.JsRequest;
 import com.dotcms.rendering.js.proxy.JsResponse;
 import com.dotcms.rendering.js.viewtools.CategoriesJsViewTool;
@@ -113,7 +114,7 @@ public class JsEngine implements ScriptEngine {
             contextParams.entrySet().forEach(entry -> bindings.putMember(entry.getKey(), entry.getValue()));
             this.addTools(request, response, bindings, contextParams);
 
-            final JsRequest jsRequest  = new JsRequest(request);
+            final JsRequest jsRequest  = new JsRequest(request, contextParams);
             final JsResponse jsResponse = new JsResponse(response);
             bindings.putMember("dotJSON", dotJSON);
             bindings.putMember("request",  jsRequest);
@@ -150,7 +151,7 @@ public class JsEngine implements ScriptEngine {
                                final Object[] objects) {
 
         final Object [] defaultArgsArray = new Object[]{
-                new JsContext.Builder().request(request).response(response).logger(JS_DOT_LOGGER).build() };
+                JsProxyFactory.createProxy(new JsContext.Builder().request(request).response(response).logger(JS_DOT_LOGGER).build()) };
 
         return null != objects && objects.length > 0?
                 CollectionsUtils.concat(defaultArgsArray, objects): defaultArgsArray;

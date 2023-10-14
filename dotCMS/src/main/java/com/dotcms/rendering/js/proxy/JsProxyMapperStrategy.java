@@ -22,4 +22,8 @@ public interface JsProxyMapperStrategy {
      * @return
      */
     Object apply(Object obj);
+
+    default int getPriority() {
+        return Integer.MAX_VALUE;
+    }
 }

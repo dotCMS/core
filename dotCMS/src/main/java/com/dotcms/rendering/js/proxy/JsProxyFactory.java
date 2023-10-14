@@ -8,12 +8,15 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import org.graalvm.polyglot.proxy.ProxyHashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 // todo: register a mapper for JsonObject, Content Type, ProxyHashMap and others also for the JsProxyObject (the other direction)
 /**
@@ -37,6 +40,7 @@ public class JsProxyFactory {
         registerMapper(new JsStoryBlockMapProxyMapperStrategyImpl());
         registerMapper(new JsStoryBlockMapProxyMapperStrategyImpl());
         registerMapper(new JsJSONObjectProxyMapperStrategyImpl());
+        registerMapper(new JsMapProxyMapperStrategyImpl());
     }
     /**
      * Register a custom mapper
@@ -67,7 +71,8 @@ public class JsProxyFactory {
         // or we throw an exception or throw an undefined javascript value
         if (null != obj) {
 
-            for (final JsProxyMapperStrategy jsProxyMapper : proxyMapperMap.values()) {
+            for (final JsProxyMapperStrategy jsProxyMapper : proxyMapperMap.values()
+                    .stream().sorted(Comparator.comparingLong(JsProxyMapperStrategy::getPriority)).collect(Collectors.toList())) {
 
                 if (jsProxyMapper.test(obj)) {
 
@@ -124,7 +129,7 @@ public class JsProxyFactory {
 
         @Override
         public Object apply(final Object obj) {
-            return new JsRequest((HttpServletRequest)obj);
+            return new JsRequest((HttpServletRequest)obj, null);
         }
     }
 
@@ -209,6 +214,23 @@ public class JsProxyFactory {
         @Override
         public Object apply(final Object obj) {
             return new JsJSONObject((JSONObject)obj);
+        }
+
+        @Override
+        public int getPriority() {
+            return 10;
+        }
+    }
+
+    private static final class JsMapProxyMapperStrategyImpl implements JsProxyMapperStrategy {
+        @Override
+        public boolean test(final Object obj) {
+            return null != obj && obj instanceof Map;
+        }
+
+        @Override
+        public Object apply(final Object obj) {
+            return ProxyHashMap.from((Map)obj);
         }
     }
 

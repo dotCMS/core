@@ -26,8 +26,11 @@ public class JsRequest implements Serializable, JsProxyObject<HttpServletRequest
 
     private boolean bodyUsed = false;
     private final HttpServletRequest request;
-    public JsRequest(final HttpServletRequest request) {
+    private final Map<String, Object> contextParams;
+    public JsRequest(final HttpServletRequest request, final Map<String, Object> contextParams) {
+
         this.request = request;
+        this.contextParams = contextParams;
     }
 
     public HttpServletRequest getRequest() {
@@ -132,10 +135,24 @@ public class JsRequest implements Serializable, JsProxyObject<HttpServletRequest
     }
 
     @HostAccess.Export
+    public ProxyHashMap json() {
+        return this.getJson();
+    }
+    @HostAccess.Export
     public ProxyHashMap getJson() {
+
+        if (null != this.contextParams && this.contextParams.containsKey("bodyMap")) {
+            return  (ProxyHashMap) this.contextParams.get("bodyMap");
+        }
 
         final Map json = new JSONObject(this.getText());
         return ProxyHashMap.from(json);
+    }
+
+    @HostAccess.Export
+    public String text() {
+
+        return this.getText();
     }
 
     @HostAccess.Export

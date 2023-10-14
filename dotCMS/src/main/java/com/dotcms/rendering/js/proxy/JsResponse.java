@@ -1,6 +1,7 @@
 package com.dotcms.rendering.js.proxy;
 
 import com.dotcms.rendering.js.JsHeaders;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import io.vavr.control.Try;
 import org.graalvm.polyglot.HostAccess;
 
@@ -56,6 +57,19 @@ public class JsResponse implements Serializable, JsProxyObject<HttpServletRespon
     @HostAccess.Export
     public JsResponse redirect(final String location) {
         Try.run(()->this.response.sendRedirect(location)).getOrElseThrow((e)->new RuntimeException(e));
+        return this;
+    }
+
+    @HostAccess.Export
+    public JsResponse json(final Object json) {
+
+        Try.run(()->{
+
+            this.response.setContentType("application/json");
+            DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValue(this.response.getWriter(), json);
+            this.response.getWriter().flush();
+        }).getOrElseThrow((e)->new RuntimeException(e));
+
         return this;
     }
 

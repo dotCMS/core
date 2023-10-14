@@ -2,37 +2,44 @@ package com.dotcms.rendering.js;
 
 import com.dotcms.rendering.js.proxy.JsRequest;
 import com.dotcms.rendering.js.proxy.JsResponse;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import org.graalvm.polyglot.HostAccess;
+import org.graalvm.polyglot.Value;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Encapsulates the context of the Javascript execution.
  */
-public class JsContext implements Serializable {
+public class JsContext extends HashMap implements Serializable {
 
     private final JsRequest request;
     private final JsResponse response;
-
     private final JsDotLogger logger;
 
     public JsContext(final Builder builder) {
         this.request = builder.request;
         this.response = builder.response;
         this.logger = builder.logger;
+        builder.members.forEach(tuple -> this.put(tuple._1, tuple._2));
+        this.put("request", this.request);
+        this.put("response", this.response);
+        this.put("dotlogger", this.logger);
     }
 
-    @HostAccess.Export
     public JsRequest getRequest() {
         return request;
     }
 
-    @HostAccess.Export
     public JsResponse getResponse() {
         return response;
     }
 
-    @HostAccess.Export
     public JsDotLogger getLogger() {
         return logger;
     }
@@ -41,6 +48,8 @@ public class JsContext implements Serializable {
         private JsRequest request; // not present on create
         private JsResponse response;
         private  JsDotLogger logger;
+
+        private List<Tuple2<String, Object>> members = new ArrayList<>();
         public Builder request(final JsRequest request) {
             this.request = request;
             return this;
@@ -53,6 +62,12 @@ public class JsContext implements Serializable {
 
         public Builder logger(final JsDotLogger logger) {
             this.logger = logger;
+            return this;
+        }
+
+        public Builder put (final String memberName, final Object memberValue) {
+
+            this.members.add(Tuple.of(memberName, memberValue));
             return this;
         }
 
