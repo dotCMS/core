@@ -2,6 +2,7 @@ package com.dotcms.api.client.files.traversal;
 
 import static com.dotcms.common.AssetsUtils.parseLocalPath;
 
+import com.dotcms.api.client.files.PushServiceImpl.TraverseResult;
 import com.dotcms.api.client.files.traversal.data.Downloader;
 import com.dotcms.api.client.files.traversal.data.Retriever;
 import com.dotcms.api.client.files.traversal.task.LocalFolderTraversalTask;
@@ -9,7 +10,6 @@ import com.dotcms.api.client.files.traversal.task.PullTreeNodeTask;
 import com.dotcms.api.client.files.traversal.task.TraverseParams;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
-import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
 import io.quarkus.arc.DefaultBean;
 import java.io.File;
@@ -20,7 +20,6 @@ import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
-import org.apache.commons.lang3.tuple.Triple;
 import org.jboss.logging.Logger;
 
 /**
@@ -43,52 +42,46 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
 
     /**
      * Traverses the file system directory at the specified path and builds a hierarchical tree
-     * representation of its contents. The folders and contents are compared to the remote server in order to determine
-     * if there are any differences between the local and remote file system.
+     * representation of its contents. The folders and contents are compared to the remote server in
+     * order to determine if there are any differences between the local and remote file system.
      *
-     * @param output             the output option mixin
-     * @param workspace          the project workspace
-     * @param source             local the source file or directory
-     * @param removeAssets       true to allow remove assets, false otherwise
-     * @param removeFolders      true to allow remove folders, false otherwise
-     * @param ignoreEmptyFolders true to ignore empty folders, false otherwise
-     * @param failFast           true to fail fast, false to continue on error
-     * @return a Triple containing a list of exceptions, the folder's local path structure and its corresponding
-     * root node of the hierarchical tree
+     * @param params Traverse params
+     * @return a TraverseResult
+     * corresponding root node of the hierarchical tree
      */
     @ActivateRequestContext
     @Override
-    public Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode> traverseLocalFolder(final TraverseParams params) {
+    public TraverseResult traverseLocalFolder(final TraverseParams params) {
         final String source = params.getSourcePath();
         final File workspace = params.getWorkspace();
 
         logger.debug(String.format("Traversing file system folder: %s - in workspace: %s",
                 source, workspace.getAbsolutePath()));
 
-        final var localPathStructure = parseLocalPath(workspace, new File(source));
+        final var localPath = parseLocalPath(workspace, new File(source));
 
         // Initial check to see if the site exist
         var siteExists = true;
         try {
-            retriever.retrieveFolderInformation(localPathStructure.site(), null);
+            retriever.retrieveFolderInformation(localPath.site(), null);
         } catch (NotFoundException e) {
 
             siteExists = false;
 
             // Site doesn't exist on remote server
-            logger.debug(String.format("Local site [%s] doesn't exist on remote server.", localPathStructure.site()));
+            logger.debug(String.format("Local site [%s] doesn't exist on remote server.", localPath.site()));
         }
 
         // Checking if the language exist
         try {
-            localPathStructure.setLanguageExists(true);
-            retriever.retrieveLanguage(localPathStructure.language());
+            localPath.setLanguageExists(true);
+            retriever.retrieveLanguage(localPath.language());
         } catch (NotFoundException e) {
 
-            localPathStructure.setLanguageExists(false);
+            localPath.setLanguageExists(false);
 
             // Language doesn't exist on remote server
-            logger.debug(String.format("Language [%s] doesn't exist on remote server.", localPathStructure.language()));
+            logger.debug(String.format("Language [%s] doesn't exist on remote server.", localPath.language()));
         }
 
         var forkJoinPool = ForkJoinPool.commonPool();
@@ -101,7 +94,7 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
                 .build()
         );
         var result = forkJoinPool.invoke(task);
-        return Triple.of(result.getLeft(), localPathStructure, result.getRight());
+        return TraverseResult.of(result.getLeft(), localPath, result.getRight());
     }
 
     /**

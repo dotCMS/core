@@ -5,7 +5,7 @@ import static com.dotcms.cli.command.files.TreePrinter.COLOR_MODIFIED;
 import static com.dotcms.cli.command.files.TreePrinter.COLOR_NEW;
 
 import com.dotcms.api.client.files.PushService;
-import com.dotcms.api.client.files.PushServiceImpl.TraverseContext;
+import com.dotcms.api.client.files.PushServiceImpl.TraverseResult;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.command.DotCommand;
@@ -21,7 +21,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
-import org.apache.commons.lang3.tuple.Triple;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -64,7 +63,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
         // Getting the workspace
         var workspace = getWorkspaceDirectory(pushMixin.path());
 
-        CompletableFuture<List<TraverseContext>>
+        CompletableFuture<List<TraverseResult>>
                 folderTraversalFuture = CompletableFuture.supplyAsync(
                 () ->
                     // Service to handle the traversal of the folder
@@ -109,12 +108,12 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
         if (!result.isEmpty()) {
             for (var treeNodeData : result) {
 
-                var localPathStructure = treeNodeData.getLocalPaths();
+                var localPaths = treeNodeData.getLocalPaths();
                 var treeNode = treeNodeData.getTreeNode();
 
                 var outputBuilder = new StringBuilder();
 
-                header(count++, localPathStructure, outputBuilder);
+                header(count++, localPaths, outputBuilder);
 
                 var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
 
@@ -123,7 +122,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                     changesSummary(treeNodePushInfo, outputBuilder);
 
                     if (pushMixin.dryRun) {
-                        dryRunSummary(localPathStructure, treeNode, outputBuilder);
+                        dryRunSummary(localPaths, treeNode, outputBuilder);
                     }
 
                     output.info(outputBuilder.toString());
@@ -133,7 +132,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                     if (!pushMixin.dryRun) {
 
                          pushService.processTreeNodes(output, workspace.getAbsolutePath(),
-                                localPathStructure, treeNode, treeNodePushInfo, pushMixin.failFast,
+                                localPaths, treeNode, treeNodePushInfo, pushMixin.failFast,
                                 pushMixin.retryAttempts);
 
                     }
@@ -156,28 +155,28 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
         return CommandLine.ExitCode.OK;
     }
 
-    private void header(int count, LocalPathStructure localPathStructure,
+    private void header(int count, LocalPathStructure localPaths,
             StringBuilder outputBuilder) {
         outputBuilder.append(count == 0 ? "\r\n" : "\n\n").
                 append(" ──────\n").
                 append(String.format(
                         " @|bold Folder [%s]|@ --- Site: [%s] - Status [%s] - Language [%s] %n",
-                        localPathStructure.filePath(),
-                        localPathStructure.site(),
-                        localPathStructure.status(),
-                        localPathStructure.language()));
+                        localPaths.filePath(),
+                        localPaths.site(),
+                        localPaths.status(),
+                        localPaths.language()));
     }
 
-    private void dryRunSummary(LocalPathStructure localPathStructure, TreeNode treeNode,
+    private void dryRunSummary(LocalPathStructure localPaths, TreeNode treeNode,
             StringBuilder outputBuilder) {
         TreePrinter.getInstance().formatByStatus(
                 outputBuilder,
-                AssetsUtils.statusToBoolean(localPathStructure.status()),
-                List.of(localPathStructure.language()),
+                AssetsUtils.statusToBoolean(localPaths.status()),
+                List.of(localPaths.language()),
                 treeNode,
                 false,
                 true,
-                localPathStructure.languageExists());
+                localPaths.languageExists());
     }
 
     private void changesSummary(TreeNodePushInfo pushInfo, StringBuilder outputBuilder) {

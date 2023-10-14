@@ -60,11 +60,11 @@ public class PushServiceImpl implements PushService {
      */
     @ActivateRequestContext
     @Override
-    public List<TraverseContext> traverseLocalFolders(
+    public List<TraverseResult> traverseLocalFolders(
             OutputOptionMixin output, final File workspace, final File source, final boolean removeAssets,
             final boolean removeFolders, final boolean ignoreEmptyFolders, final boolean failFast) {
 
-        var traversalResult = new ArrayList<TraverseContext>();
+        var traversalResult = new ArrayList<TraverseResult>();
 
         // Parsing the source in order to get the root or roots for the traversal
         //By root we mean the folder that holds the asset info starting from the site
@@ -89,24 +89,36 @@ public class PushServiceImpl implements PushService {
 
             // Traversing the local folder
             var result = localTraversalService.traverseLocalFolder(params);
-            traversalResult.add(new TraverseContext(result.getLeft(), result.getMiddle(), result.getRight()));
+            traversalResult.add(result);
         }
 
+        normalize(traversalResult);
+        return traversalResult;
+    }
+
+    /**
+     * Any ambiguity should be held here
+     * @param traversalResult
+     */
+    private void normalize(ArrayList<TraverseResult> traversalResult) {
         // Once we have all roots data here we need to eliminate ambiguity
-        final Map<String, Map<String, TreeNode>> indexedByStatusLangAndSite = indexByStatusLangAndSite(traversalResult);
+        final Map<String, Map<String, TreeNode>> indexedByStatusLangAndSite = indexByStatusLangAndSite(
+                traversalResult);
         indexedByStatusLangAndSite.forEach((lang, folders) -> {
             logger.info("Lang: " + lang);
-            folders.forEach((path, folder) -> {
-                // here I need to get a hold of the other folders under  different languages and statuses but with the same path
-                // and check if they're all marked for delete as well
-                // if they all are marked for delete then it is safe to keep it otherwise the delete op isn't valid
-                final List<TreeNode> nodes = findAllNodesWithTheSamePath(indexedByStatusLangAndSite, path);
-                if (!isAllFoldersMarkedForDelete(nodes)) {
-                    nodes.forEach(node -> node.markForDelete(false));
-                }
-            });
+            folders.forEach((path, folder) -> normalizeCandidatesForDelete(indexedByStatusLangAndSite, path));
         });
-        return traversalResult;
+    }
+
+    private void normalizeCandidatesForDelete(Map<String, Map<String, TreeNode>> indexedByStatusLangAndSite,
+            String path) {
+        // here I need to get a hold of the other folders under  different languages and statuses but with the same path
+        // and check if they're all marked for delete as well
+        // if they all are marked for delete then it is safe to keep it otherwise the delete op isn't valid
+        final List<TreeNode> nodes = findAllNodesWithTheSamePath(indexedByStatusLangAndSite, path);
+        if (!isAllFoldersMarkedForDelete(nodes)) {
+            nodes.forEach(node -> node.markForDelete(false));
+        }
     }
 
     /**
@@ -115,8 +127,8 @@ public class PushServiceImpl implements PushService {
      * @return an indexed representation of the local folders  first indexed by  status language and site
      * The most outer map is organized by composite key like status:lang:site the inner map is the folder path
      */
-    private Map<String,Map<String, TreeNode>> indexByStatusLangAndSite(List<TraverseContext> traverseResult) {
-        final Map<String, List<TraverseContext>> groupBySite = traverseResult.stream()
+    private Map<String,Map<String, TreeNode>> indexByStatusLangAndSite(List<TraverseResult> traverseResult) {
+        final Map<String, List<TraverseResult>> groupBySite = traverseResult.stream()
                 .collect(groupingBy(ctx -> ctx.localPaths.site()));
 
         Map<String,Map<String, TreeNode>> indexedFolders = new HashMap<>();
@@ -244,13 +256,13 @@ public class PushServiceImpl implements PushService {
 
     }
 
-    public static class TraverseContext {
+    public static class TraverseResult {
 
         final List<Exception> exceptions;
         final LocalPathStructure localPaths;
         final TreeNode treeNode;
 
-        public TraverseContext(List<Exception> exceptions, LocalPathStructure localPaths,
+        private TraverseResult(List<Exception> exceptions, LocalPathStructure localPaths,
                 TreeNode treeNode) {
             this.exceptions = exceptions;
             this.localPaths = localPaths;
@@ -277,6 +289,11 @@ public class PushServiceImpl implements PushService {
                     ", treeNode=" + treeNode +
                     '}';
         }
+
+        public static TraverseResult of(List<Exception> exceptions, LocalPathStructure localPaths, TreeNode treeNode){
+            return new TraverseResult(exceptions,localPaths, treeNode);
+        }
+
     }
 
 }
