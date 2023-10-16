@@ -66,3 +66,24 @@ packagers:
   jbang:
     active: ALWAYS
     continueOnError: false
+
+    # Git repository to push the catalog to.
+    # Defaults are shown.
+    #
+    repository:
+      # Enables or disables the repository.
+      # Supported values are [`NEVER`, `ALWAYS`, `RELEASE`, `SNAPSHOT`].
+      # Defaults to `RELEASE`.
+      #
+      active: ALWAYS
+
+
+      # The name of the repository.
+      # Defaults to `jbang-catalog`.
+      #
+      name: test-jbang-catalog
+
+    # The jbang executable alias.
+    # If left undefined, will use `#{distribution.executable.name}`
+    #
+    alias: cli
