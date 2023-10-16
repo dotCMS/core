@@ -279,8 +279,14 @@ class PushServiceIT extends FilesTestHelper {
             // --
             // Modifying the pulled data
             // Removing a folder
-            var folderToRemove = workspace.files().toAbsolutePath() + "/live/en-us/" + testSiteName + "/folder3";
-            FileUtils.deleteDirectory(new File(folderToRemove));
+            var liveFolderToRemove = workspace.files().toAbsolutePath() + "/live/en-us/" + testSiteName + "/folder3";
+            FileUtils.deleteDirectory(new File(liveFolderToRemove));
+
+            //The folder also needs to be removed from the working branch of the folders tree. So it get removed
+            //If we leave folders hanging under a different language or status the system isn't going to know what folder must be kept and what folders needs to be removed
+            //If we want a folder to be removed from the remote instance it needs to be removed from all our folder branches for good
+            var workingFolderToRemove = workspace.files().toAbsolutePath() + "/working/en-us/" + testSiteName + "/folder3";
+            FileUtils.deleteDirectory(new File(workingFolderToRemove));
 
             // Removing an asset
             var assetToRemove = workspace.files().toAbsolutePath() + "/live/en-us/" + testSiteName +

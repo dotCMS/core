@@ -110,11 +110,35 @@ public class PushServiceImpl implements PushService {
         });
     }
 
+    /**
+     If we have a structure like this, and we plan to remove one folder :
+
+     ├── files
+     │       ├── live
+     │       │       └── en-us
+     │       │           └── site-1697486558495
+     │       │               ├── folder1
+     │       │               │       ├── subFolder1-1
+     │       ├── working
+     │       │       └── en-us
+     │       │           └── site-1697486558495
+     │       │               ├── folder1
+     │       │               │       ├── subFolder1-1
+
+     the folder must be gone in both branches
+     The Folder must be removed from working branch but aldo from live one, so it becomes clear that we intend to remove the folder
+     If we leave folders hanging all around we're not being explicitly clear about our intention to remove the folder
+     This method resolves these discrepancies.
+     It is only when the folder exists remotely and all occurrences of that folder has been removed locally that we consider the folder properly marked for delte
+     * @param indexedByStatusLangAndSite The mapped TreeNodes
+     * @param path the folder path
+     */
     private void normalizeCandidatesForDelete(Map<String, Map<String, TreeNode>> indexedByStatusLangAndSite,
             String path) {
-        // here I need to get a hold of the other folders under  different languages and statuses but with the same path
+        // here I need to get a hold of the other folders under different languages and or status but with the same path
         // and check if they're all marked for delete as well
-        // if they all are marked for delete then it is safe to keep it otherwise the delete op isn't valid
+        // if they all are marked for delete then it is safe to keep it marked for delete
+        // otherwise the delete op isn't valid
         final List<TreeNode> nodes = findAllNodesWithTheSamePath(indexedByStatusLangAndSite, path);
         if (!isAllFoldersMarkedForDelete(nodes)) {
             nodes.forEach(node -> node.markForDelete(false));
@@ -122,7 +146,7 @@ public class PushServiceImpl implements PushService {
     }
 
     /**
-     * Traverses the remote folders and retrieves the hierarchical tree representation of their
+     * Build a map first separated by site then by status and language
      * @param traverseResult the result of the local traversal process
      * @return an indexed representation of the local folders  first indexed by  status language and site
      * The most outer map is organized by composite key like status:lang:site the inner map is the folder path
