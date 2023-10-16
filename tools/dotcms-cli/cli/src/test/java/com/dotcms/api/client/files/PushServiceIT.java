@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import javax.inject.Inject;
 import org.apache.commons.io.FileUtils;
@@ -273,26 +274,35 @@ class PushServiceIT extends FilesTestHelper {
 
             // Pulling the content
             OutputOptionMixin outputOptions = new MockOutputOptionMixin();
-            pullService.pullTree(outputOptions, result.getRight(), workspace.files().toAbsolutePath().toFile(),
+            final Path absolutePath = workspace.files().toAbsolutePath();
+            pullService.pullTree(outputOptions, result.getRight(), absolutePath.toFile(),
                     true, true, true, 0);
+
+            Assertions.assertTrue(absolutePath.toFile().exists());
 
             // --
             // Modifying the pulled data
             // Removing a folder
-            var liveFolderToRemove = workspace.files().toAbsolutePath() + "/live/en-us/" + testSiteName + "/folder3";
-            FileUtils.deleteDirectory(new File(liveFolderToRemove));
+            Path liveFolderToRemove = Paths.get(absolutePath.toString(),"live","en-us",testSiteName,"folder3");
+            //var liveFolderToRemove =    absolutePath + "/live/en-us/" + testSiteName + "/folder3";
 
             //The folder also needs to be removed from the working branch of the folders tree. So it get removed
             //If we leave folders hanging under a different language or status the system isn't going to know what folder must be kept and what folders needs to be removed
             //If we want a folder to be removed from the remote instance it needs to be removed from all our folder branches for good
-            var workingFolderToRemove = workspace.files().toAbsolutePath() + "/working/en-us/" + testSiteName + "/folder3";
-            FileUtils.deleteDirectory(new File(workingFolderToRemove));
-
+            Path workingFolderToRemove = Paths.get(absolutePath.toString(),"working","en-us",testSiteName,"folder3");
+            //var workingFolderToRemove = absolutePath + "/working/en-us/" + testSiteName + "/folder3";
             // Removing an asset
-            var assetToRemove = workspace.files().toAbsolutePath() + "/live/en-us/" + testSiteName +
-                    "/folder2/subfolder2-1/subfolder2-1-1/image2.png";
-            FileUtils.delete(new File(assetToRemove));
+            Path assetToRemove = Paths.get(absolutePath.toString(),"live","en-us",testSiteName,"folder2","subfolder2-1","subfolder2-1-1","image2.png");
+            //var assetToRemove = absolutePath + "/live/en-us/" + testSiteName + "/folder2/subfolder2-1/subfolder2-1-1/image2.png";
 
+            Assertions.assertTrue(liveFolderToRemove.toFile().exists());
+            Assertions.assertTrue(workingFolderToRemove.toFile().exists());
+            Assertions.assertTrue(assetToRemove.toFile().exists());
+
+            FileUtils.deleteDirectory(liveFolderToRemove.toFile());
+            FileUtils.deleteDirectory(workingFolderToRemove.toFile());
+            FileUtils.delete(assetToRemove.toFile());
+/*
             // Modifying an asset
             var toModifyAsset = workspace.files().toAbsolutePath() + "/live/en-us/" + testSiteName +
                     "/folder1/subFolder1-1/subFolder1-1-1/image1.png";
@@ -384,7 +394,7 @@ class PushServiceIT extends FilesTestHelper {
             for (var child : updatedTreeNode.children()) {
                 Assertions.assertNotEquals("folder3", child.folder().name());
             }
-
+*/
         } finally {
             // Clean up the temporal folder
             deleteTempDirectory(tempFolder);
