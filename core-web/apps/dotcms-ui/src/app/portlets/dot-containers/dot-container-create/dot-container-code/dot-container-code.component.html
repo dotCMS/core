@@ -20,7 +20,15 @@
                 <ng-template #contentTypesLoader>
                     <p-skeleton borderRadius="0px" width="4rem" height="3.9rem"></p-skeleton>
                 </ng-template>
-                <p-menu #actionsMenu [popup]="true" [model]="menuItems" appendTo="body"></p-menu>
+                <p-menu
+                    #actionsMenu
+                    [popup]="true"
+                    [model]="menuItems"
+                    [style]="{
+                        'max-height': '300px',
+                        overflow: 'auto'
+                    }"
+                    appendTo="body"></p-menu>
             </ng-template>
             <ng-template pTemplate="content">
                 <div

@@ -10,6 +10,7 @@ import com.dotcms.exception.AnalyticsException;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.http.CircuitBreakerUrl.Response;
+import com.dotcms.metrics.timing.TimeMetric;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
@@ -25,7 +26,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * CubeJS Client it allows to send a Request to a Cube JS Server.
@@ -149,23 +149,20 @@ public class CubeJSClient {
         }
 
         try {
+            Logger.debug(this, String.format("Getting results from CubeJs [%s] with query [%s]", cubeJsUrl, query));
+
             return getStringResponse(cubeJSClient);
         } catch (CubeJSRequestException e) {
             return innerSend(query);
         }
     }
 
-    private static Response<String> getStringResponse(final CircuitBreakerUrl cubeJSClient) throws CubeJSRequestException {
-        final long start = System.currentTimeMillis();
-        final UUID metricId = UUID.randomUUID();
-        Logger.debug(CubeJSClient.class, String.format("CUBEJS-REQUEST [%s] START <<<<<", metricId));
+    private Response<String> getStringResponse(final CircuitBreakerUrl cubeJSClient) throws CubeJSRequestException {
+        final TimeMetric timeMetric = TimeMetric.mark(getClass().getSimpleName());
 
-        Response<String> response = cubeJSClient.doResponse();
+        final Response<String> response = cubeJSClient.doResponse();
 
-        final long end = System.currentTimeMillis();
-        Logger.debug(
-            CubeJSClient.class,
-            String.format("CUBEJS-REQUEST [%s] END - took [%d] secs >>>>>", metricId, (end - start) / 1000));
+        timeMetric.stop();
 
         if (!CircuitBreakerUrl.isWithin2xx(response.getStatusCode())) {
             throw new CubeJSRequestException("CubeJS Server is not available");

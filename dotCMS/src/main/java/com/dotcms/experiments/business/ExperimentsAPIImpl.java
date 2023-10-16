@@ -54,6 +54,7 @@ import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
 
+import com.dotcms.metrics.timing.TimeMetric;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
@@ -1236,6 +1237,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @Override
     public List<BrowserSession> getEvents(final Experiment experiment,
                                           final User user) throws DotDataException, DotSecurityException {
+        final TimeMetric timeMetric = TimeMetric.mark(getClass().getSimpleName() + ".getEvents()");
+
         final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
         final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
                 .create(experiment);
@@ -1280,6 +1283,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     e.getMessage());
             Logger.error(this, message, e);
             throw new DotDataException(message, e);
+        } finally {
+            timeMetric.stop();
         }
     }
 
