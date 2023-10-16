@@ -767,7 +767,7 @@ export class DotSeoMetaTagsService {
     getImageFileSize(imageUrl: string): Observable<DotCMSTempFile | ImageMetaData> {
         return from(fetch(imageUrl)).pipe(
             mergeMap((response) => {
-                if (response.status == 404) {
+                if (response.status === 404) {
                     return of({
                         size: 0,
                         url: IMG_NOT_FOUND_KEY
