@@ -1,5 +1,5 @@
 <ng-container [ngSwitch]="field.fieldType">
-    <div class="field" *ngSwitchCase="'Text'">
+    <div class="field">
         <label
             [attr.data-testId]="'label-' + field.variable"
             [for]="field.variable"
@@ -8,11 +8,25 @@
             >{{ field.name }}</label
         >
         <input
+            *ngSwitchCase="'Text'"
             [id]="field.variable"
             [formControlName]="field.variable"
             [attr.data-testId]="'input-' + field.variable"
-            type="text"
+            [type]="INPUT_TEXT_OPTIONS[field.dataType].type"
+            [attr.inputmode]="INPUT_TEXT_OPTIONS[field.dataType].inputMode"
+            [attr.step]="INPUT_TEXT_OPTIONS[field.dataType].step"
             pInputText />
+
+        <textarea
+            *ngSwitchCase="'Textarea'"
+            [id]="field.variable"
+            [formControlName]="field.variable"
+            [attr.data-testId]="'text-area-' + field.variable"
+            [style]="{
+                'min-height': '18.75rem',
+                resize: 'vertical'
+            }"
+            pInputTextarea></textarea>
         <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{
             field.hint
         }}</small>

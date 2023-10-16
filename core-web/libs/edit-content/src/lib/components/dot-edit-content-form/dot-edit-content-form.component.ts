@@ -76,7 +76,14 @@ export class DotEditContentFormComponent implements OnInit {
             }
         }
 
-        return this.fb.control(null, { validators });
+        return this.fb.control(
+            {
+                // TODO: We need the value here where the undefined is written
+                value: undefined || field.defaultValue || '',
+                disabled: field.readOnly
+            },
+            { validators }
+        );
     }
 
     /**
