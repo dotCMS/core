@@ -8,12 +8,14 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
+// Input type that you can select when creating the field
 export enum INPUT_TYPE {
     TEXT = 'TEXT',
     INTEGER = 'INTEGER',
     FLOAT = 'FLOAT'
 }
 
+// This is to hold the options for the input type
 export interface InputTextOptions {
     type: string;
     inputMode: string;
@@ -43,6 +45,7 @@ export interface InputTextOptions {
 export class DotEditContentFieldComponent {
     @Input() field!: DotCMSContentTypeField;
 
+    // This is to hold the options for the input type
     readonly INPUT_TEXT_OPTIONS: Record<INPUT_TYPE, InputTextOptions> = {
         TEXT: {
             type: 'text',
