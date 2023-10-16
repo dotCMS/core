@@ -4,14 +4,12 @@
 package com.dotmarketing.business;
 
 import com.dotcms.util.CollectionsUtils;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.Logger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+
+import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
 import com.dotcms.api.system.event.Payload;
@@ -178,6 +176,21 @@ public class LayoutAPIImpl implements LayoutAPI {
           }
 		if(loadLayoutsForUser(user).stream(). anyMatch(layout -> layout.getPortletIds().contains(portletId))){
 			return true;
+		}
+		if(portletId.equals("edit-page") ){
+			final RoleAPI roleAPI = APILocator.getRoleAPI();
+			final List<Role> foundRoles = roleAPI.loadRolesForUser( user.getUserId(), false );
+			final PermissionAPI permAPI = APILocator.getPermissionAPI();
+
+			for (final Role role: foundRoles){
+				final List<Permission> perms = permAPI.getPermissionsByRole(role, true, true);
+				for(final Permission perm : perms){
+					if((perm.getType().equals(IHTMLPage.class.getCanonicalName()) || perm.getType().equals(Contentlet.class.getCanonicalName()))
+							&& (perm.getPermission() == PermissionAPI.PERMISSION_EDIT || perm.getPermission() == 3)){
+						return true;
+					}
+				}
+			}
 		}
 		return APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole());
 	}
