@@ -36,7 +36,6 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    gap: $spacing-1;
     justify-content: center;
     align-items: flex-start;
 }
@@ -78,4 +77,6 @@
 
 .error-message {
     min-height: $spacing-4; // Fix height to avoid jumping
+    justify-content: flex-start;
+    display: flex;
 }

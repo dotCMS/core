@@ -689,7 +689,7 @@
                     const binaryFieldContainer = document.getElementById("container-binary-field-<%=field.getVelocityVarName()%>");
                     const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
                     const acceptArr = "<%= accept%>".split(',');
-                    const acceptTypes = acceptArr.map((type) => type.trim());
+                    const acceptTypes = acceptArr.map((type) => type.trim()).filter((type) => type !== "");
                     const maxFileSize = Number("<%= maxFileLength%>");
 
                     // Creating the binary field dynamically

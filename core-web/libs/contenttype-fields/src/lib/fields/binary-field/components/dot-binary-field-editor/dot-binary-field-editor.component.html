@@ -13,6 +13,7 @@
             placeholder="Ex. template.html" />
         <div class="error-message">
             <dot-field-validation-message
+                [patternErrorMessage]="'dot.binary.field.error.type.file.not.extension'"
                 [field]="form.get('name')"
                 data-testId="error-message"></dot-field-validation-message>
         </div>

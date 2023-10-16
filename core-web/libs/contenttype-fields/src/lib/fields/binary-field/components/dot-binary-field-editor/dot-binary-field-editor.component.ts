@@ -45,7 +45,8 @@ const EDITOR_CONFIG: MonacoEditorConstructionOptions = {
     mouseWheelZoom: false,
     lineNumbers: 'on',
     roundedSelection: false,
-    automaticLayout: true
+    automaticLayout: true,
+    language: 'text'
 };
 
 @Component({
@@ -81,7 +82,7 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
     private invalidFileMessage = '';
     private editor: monaco.editor.IStandaloneCodeEditor;
     readonly form = new FormGroup({
-        name: new FormControl('', [Validators.required]),
+        name: new FormControl('', [Validators.required, Validators.pattern(/^.+\..+$/)]),
         content: new FormControl('')
     });
 
@@ -183,6 +184,10 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
     }
 
     private isValidType(): boolean {
+        if (this.accept?.length === 0) {
+            return true;
+        }
+
         return this.accept?.includes(this.extension) || this.accept?.includes(this.mimeType);
     }
 }
