@@ -14,6 +14,8 @@ const MESSAGES_MOCK = {
         '<strong>Couldn&apos;t load the file.</strong> Please try again or<br/>',
     'dot.binary.field.drag.and.drop.error.file.not.supported.message':
         'This type of <strong>file is not supported</strong>, Please select a <br /> {0} file.',
+    'dot.binary.field.error.type.file.not.supported.message':
+        'This type of file is not supported. Please use a {0} file.',
     'dot.binary.field.drag.and.drop.error.file.maxsize.exceeded.message':
         'The file weight <strong>exceeds the limits of {0}</strong>, please  <br /> reduce size before uploading.',
     'dot.binary.field.drag.and.drop.error.server.error.message':

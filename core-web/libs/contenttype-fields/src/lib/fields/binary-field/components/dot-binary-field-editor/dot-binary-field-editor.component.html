@@ -26,7 +26,7 @@
             formControlName="content"
             data-testId="code-editor"></ngx-monaco-editor>
 
-        <div class="editor-mode__helper">
+        <div class="editor-mode__helper" [ngClass]="{ 'editor-mode__helper--visible': mimeType }">
             <i class="pi pi-info-circle"></i>
             <small>Mime Type: {{ mimeType }}</small>
         </div>

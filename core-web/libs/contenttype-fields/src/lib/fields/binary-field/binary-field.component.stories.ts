@@ -75,7 +75,7 @@ export default {
         })
     ],
     args: {
-        accept: ['image/*'],
+        accept: ['image/*', '.ts'],
         maxFileSize: 1000000,
         helperText: 'This field accepts only images with a maximum size of 1MB.'
     },

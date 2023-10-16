@@ -85,7 +85,10 @@ describe('DotBinaryFieldEditorComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
-            detectChanges: false
+            detectChanges: false,
+            props: {
+                accept: ['image/*', '.ts']
+            }
         });
 
         component = spectator.component;
@@ -181,6 +184,23 @@ describe('DotBinaryFieldEditorComponent', () => {
             expect(spyDirty).toHaveBeenCalled();
             expect(spyDdateValueAndValidity).toHaveBeenCalled();
         });
+
+        it('should set form as invalid when accept is not valid', fakeAsync(() => {
+            const spy = jest.spyOn(component.name, 'setErrors');
+
+            component.form.setValue({
+                name: 'test.ts',
+                content: 'test'
+            });
+
+            tick(1000);
+
+            expect(spy).toHaveBeenCalledWith({
+                invalidExtension:
+                    'This type of file is not supported. Please use a image/*, .ts file.'
+            });
+            expect(component.form.valid).toBe(false);
+        }));
 
         afterEach(() => {
             jest.restoreAllMocks();

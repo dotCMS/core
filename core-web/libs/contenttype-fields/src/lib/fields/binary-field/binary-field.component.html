@@ -93,6 +93,7 @@
             </ng-container>
             <ng-container *ngSwitchCase="BINARY_FIELD_MODE.EDITOR" data-testId="editor">
                 <dot-dot-binary-field-editor
+                    [accept]="accept"
                     (tempFileUploaded)="setTempFile($event)"
                     (cancel)="closeDialog()"
                     data-testId="editor-mode"></dot-dot-binary-field-editor>

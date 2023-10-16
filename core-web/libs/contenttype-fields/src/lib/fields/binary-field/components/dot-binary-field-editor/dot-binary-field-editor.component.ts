@@ -12,6 +12,7 @@ import {
     ChangeDetectorRef,
     Component,
     EventEmitter,
+    Input,
     OnInit,
     Output,
     ViewChild,
@@ -30,7 +31,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime } from 'rxjs/operators';
 
-import { DotUploadService } from '@dotcms/data-access';
+import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
@@ -65,6 +66,8 @@ const EDITOR_CONFIG: MonacoEditorConstructionOptions = {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
+    @Input() accept: string[];
+
     @Output() readonly tempFileUploaded = new EventEmitter<DotCMSTempFile>();
     @Output() readonly cancel = new EventEmitter<void>();
 
@@ -72,7 +75,10 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
 
     private readonly cd: ChangeDetectorRef = inject(ChangeDetectorRef);
     private readonly dotUploadService: DotUploadService = inject(DotUploadService);
+    private readonly dotMessageService: DotMessageService = inject(DotMessageService);
 
+    private extension = '';
+    private invalidFileMessage = '';
     private editor: monaco.editor.IStandaloneCodeEditor;
     readonly form = new FormGroup({
         name: new FormControl('', [Validators.required]),
@@ -80,7 +86,7 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
     });
 
     editorOptions = EDITOR_CONFIG;
-    mimeType = 'plain/text';
+    mimeType = '';
 
     get name(): FormControl {
         return this.form.get('name') as FormControl;
@@ -91,9 +97,13 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
     }
 
     ngOnInit(): void {
-        this.name.valueChanges.pipe(debounceTime(500)).subscribe((name) => {
-            this.setEditorLanguage(name);
-        });
+        this.name.valueChanges
+            .pipe(debounceTime(350))
+            .subscribe((name) => this.setEditorLanguage(name));
+        this.invalidFileMessage = this.dotMessageService.get(
+            'dot.binary.field.error.type.file.not.supported.message',
+            this.accept.join(', ')
+        );
     }
 
     ngAfterViewInit(): void {
@@ -132,8 +142,13 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
 
     private setEditorLanguage(fileName: string = '') {
         const fileExtension = fileName?.split('.').pop();
-        const { id, mimetypes } = this.getLanguage(fileExtension) || {};
-        this.mimeType = mimetypes?.[0] || 'plain/text';
+        const { id, mimetypes, extensions } = this.getLanguage(fileExtension) || {};
+        this.mimeType = mimetypes?.[0];
+        this.extension = extensions?.[0];
+
+        if (!this.isValidType()) {
+            this.name.setErrors({ invalidExtension: this.invalidFileMessage });
+        }
 
         this.updateEditorLanguage(id);
         this.cd.detectChanges();
@@ -165,5 +180,9 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
         this.editor.updateOptions({
             readOnly: false
         });
+    }
+
+    private isValidType(): boolean {
+        return this.accept?.includes(this.extension) || this.accept?.includes(this.mimeType);
     }
 }

@@ -69,6 +69,11 @@
     gap: $spacing-1;
     color: $color-palette-gray-700;
     font-weight: $font-size-sm;
+    visibility: hidden;
+}
+
+.editor-mode__helper--visible {
+    visibility: visible;
 }
 
 .error-message {
