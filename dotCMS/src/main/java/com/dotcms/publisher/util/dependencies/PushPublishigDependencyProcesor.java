@@ -864,7 +864,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                 .findContentletByIdentifierAnyLanguage(experiment.pageId(), variant.name());
 
         if (UtilMethods.isSet(variantContentlet)) {
-            this.addTemplateAsDependency(parentPage);
+            this.addTemplateAsDependency(APILocator.getHTMLPageAssetAPI().fromContentlet(variantContentlet));
         }
     }
 
