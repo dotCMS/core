@@ -1,24 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import {
-    Spectator,
-    createComponentFactory,
-    SpyObject,
-    mockProvider,
-    byTestId
-} from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory, SpyObject } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { fakeAsync, tick } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { EditContentLayoutComponent } from './edit-content.layout.component';
 
-import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
 import { LAYOUT_MOCK } from '../../components/dot-edit-content-form/dot-edit-content-form.component.spec';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 
