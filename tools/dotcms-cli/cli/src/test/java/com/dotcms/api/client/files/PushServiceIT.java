@@ -111,8 +111,8 @@ class PushServiceIT extends FilesTestHelper {
 
             Assertions.assertNotNull(traversalResult);
             Assertions.assertEquals(2, traversalResult.size());// Live and working folders
-            Assertions.assertEquals(0, traversalResult.get(0).getExceptions().size());// No errors should be found
-            Assertions.assertEquals(0, traversalResult.get(1).getExceptions().size());// No errors should be found
+            Assertions.assertTrue( traversalResult.get(0).getExceptions().isEmpty());// No errors should be found
+            Assertions.assertTrue( traversalResult.get(1).getExceptions().isEmpty());// No errors should be found
 
             var treeNode = traversalResult.get(0).getTreeNode();
             var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
@@ -189,8 +189,8 @@ class PushServiceIT extends FilesTestHelper {
 
             Assertions.assertNotNull(traversalResult);
             Assertions.assertEquals(2, traversalResult.size());// Live and working folders
-            Assertions.assertEquals(0, traversalResult.get(0).getExceptions().size());// No errors should be found
-            Assertions.assertEquals(0, traversalResult.get(1).getExceptions().size());// No errors should be found
+            Assertions.assertTrue(traversalResult.get(0).getExceptions().isEmpty());// No errors should be found
+            Assertions.assertTrue(traversalResult.get(1).getExceptions().isEmpty());// No errors should be found
 
             var treeNode = traversalResult.get(0).getTreeNode();
             var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
@@ -322,8 +322,8 @@ class PushServiceIT extends FilesTestHelper {
 
             Assertions.assertNotNull(traversalResult);
             Assertions.assertEquals(2, traversalResult.size());// Live and working folders
-            Assertions.assertEquals(0, traversalResult.get(0).getExceptions().size());// No errors should be found
-            Assertions.assertEquals(0, traversalResult.get(1).getExceptions().size());// No errors should be found
+            Assertions.assertTrue(traversalResult.get(0).getExceptions().isEmpty());// No errors should be found
+            Assertions.assertTrue(traversalResult.get(1).getExceptions().isEmpty());// No errors should be found
 
             var treeNode = traversalResult.get(0).getTreeNode();
             var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
