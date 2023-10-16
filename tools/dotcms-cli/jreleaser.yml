@@ -6,6 +6,7 @@ project:
   versionPattern: 'CUSTOM'
   java:
     multiProject: true
+    mainClass: com.dotcms.cli.command.EntryCommand
   copyright: |
     <p>© 2021 dotCMS Inc. All rights reserved.</p>
     <p>dotCMS is a registered trademark of dotCMS Inc.</p>
@@ -60,3 +61,8 @@ upload:
           active: RELEASE
           fileTypes:
             - JAR
+
+packagers:
+  jbang:
+    active: ALWAYS
+    continueOnError: false
