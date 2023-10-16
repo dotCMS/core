@@ -3,7 +3,7 @@ import {
     MonacoEditorConstructionOptions,
     MonacoEditorModule
 } from '@materia-ui/ngx-monaco-editor';
-import { from, of } from 'rxjs';
+import { from } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import {
@@ -28,7 +28,7 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { debounceTime, switchMap, tap } from 'rxjs/operators';
+import { debounceTime } from 'rxjs/operators';
 
 import { DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
@@ -102,9 +102,9 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
 
     onSubmit(): void {
         if (this.form.invalid) {
-            this.form.get('name').markAsDirty();
-            this.form.get('name').updateValueAndValidity();
-            this.cd.detectChanges();
+            if (!this.name.dirty) {
+                this.markControlInvalid(this.name);
+            }
 
             return;
         }
@@ -115,15 +115,16 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
         this.uploadFile(file);
     }
 
+    private markControlInvalid(control: FormControl): void {
+        control.markAsDirty();
+        control.updateValueAndValidity();
+        this.cd.detectChanges();
+    }
+
     private uploadFile(file: File) {
         const obs$ = from(this.dotUploadService.uploadFile({ file }));
-
-        const loading$ = of(null).pipe(
-            tap(() => this.disableEditor()),
-            switchMap(() => obs$)
-        );
-
-        loading$.subscribe((tempFile) => {
+        this.disableEditor();
+        obs$.subscribe((tempFile) => {
             this.enableEditor();
             this.tempFileUploaded.emit(tempFile);
         });

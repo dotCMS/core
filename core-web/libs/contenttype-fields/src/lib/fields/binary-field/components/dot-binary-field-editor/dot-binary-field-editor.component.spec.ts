@@ -1,22 +1,189 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MonacoEditorComponent, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { MockComponent } from 'ng-mocks';
+
+import { fakeAsync, tick } from '@angular/core/testing';
+
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+
+import { DotMessageService, DotUploadService } from '@dotcms/data-access';
+import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotBinaryFieldEditorComponent } from './dot-binary-field-editor.component';
 
+import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../../../utils/mock';
+import { TEMP_FILE_MOCK } from '../../store/binary-field.store.spec';
+
+const EDITOR_MOCK = {
+    updateOptions: (_options) => {
+        /* noops */
+    },
+    addCommand: () => {
+        /* noops */
+    },
+    createContextKey: () => {
+        /* noops */
+    },
+    addAction: () => {
+        /* noops */
+    },
+    getOption: () => {
+        /* noops */
+    }
+} as unknown;
+
+globalThis.monaco = {
+    languages: {
+        getLanguages: () => {
+            return [
+                {
+                    id: 'javascript',
+                    extensions: ['.js'],
+                    mimetypes: ['text/javascript']
+                }
+            ];
+        }
+    }
+} as typeof monaco;
+
 describe('DotBinaryFieldEditorComponent', () => {
     let component: DotBinaryFieldEditorComponent;
-    let fixture: ComponentFixture<DotBinaryFieldEditorComponent>;
+    let spectator: Spectator<DotBinaryFieldEditorComponent>;
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [DotBinaryFieldEditorComponent]
-        }).compileComponents();
+    let dotUploadService: DotUploadService;
 
-        fixture = TestBed.createComponent(DotBinaryFieldEditorComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+    const createComponent = createComponentFactory({
+        component: DotBinaryFieldEditorComponent,
+        declarations: [MockComponent(MonacoEditorComponent)],
+        imports: [
+            MonacoEditorModule,
+            InputTextModule,
+            ButtonModule,
+            DotMessagePipe,
+            DotFieldValidationMessageComponent
+        ],
+        providers: [
+            {
+                provide: DotUploadService,
+                useValue: {
+                    uploadFile: ({ file }) => {
+                        return new Promise((resolve) => {
+                            if (file) {
+                                resolve(TEMP_FILE_MOCK);
+                            }
+                        });
+                    }
+                }
+            },
+            {
+                provide: DotMessageService,
+                useValue: CONTENTTYPE_FIELDS_MESSAGE_MOCK
+            }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent({
+            detectChanges: false
+        });
+
+        component = spectator.component;
+        component.editorRef.editor = EDITOR_MOCK as monaco.editor.IStandaloneCodeEditor;
+        dotUploadService = spectator.inject(DotUploadService, true);
+
+        spectator.detectChanges();
     });
 
     it('should create', () => {
         expect(component).toBeTruthy();
+    });
+
+    describe('Editor', () => {
+        it('should set editor language', fakeAsync(() => {
+            component.form.setValue({
+                name: 'script.js',
+                content: 'test'
+            });
+
+            tick(1000);
+
+            expect(component.editorOptions).toEqual({
+                ...component.editorOptions,
+                language: 'javascript'
+            });
+            expect(component.mimeType).toBe('text/javascript');
+        }));
+
+        it('should emit cancel event when cancel button is clicked', () => {
+            const spy = jest.spyOn(component.cancel, 'emit');
+            const cancelBtn = spectator.query(byTestId('cancel-button'));
+
+            spectator.click(cancelBtn);
+
+            expect(spy).toHaveBeenCalled();
+        });
+
+        it('should emit tempFileUploaded event when import button is clicked if form is valid', () => {
+            const spy = jest.spyOn(component.tempFileUploaded, 'emit');
+            const spyFormDisabled = jest.spyOn(component.form, 'disable');
+            const spyFormEnabled = jest.spyOn(component.form, 'enable');
+            const spyFileUpload = jest
+                .spyOn(dotUploadService, 'uploadFile')
+                .mockReturnValue(Promise.resolve(TEMP_FILE_MOCK));
+            const importBtn = spectator.query('[data-testId="import-button"] button');
+
+            component.form.setValue({
+                name: 'test',
+                content: 'test'
+            });
+
+            spectator.click(importBtn);
+
+            expect(spy).toHaveBeenCalledWith(TEMP_FILE_MOCK);
+            expect(spyFileUpload).toHaveBeenCalled();
+            expect(spyFormDisabled).toHaveBeenCalled();
+            expect(spyFormEnabled).toHaveBeenCalled();
+        });
+
+        it('should not emit tempFileUploaded event when import button is clicked if form is invalid', () => {
+            const spy = jest.spyOn(component.tempFileUploaded, 'emit');
+            const spyFormDisabled = jest.spyOn(component.form, 'disable');
+            const spyFormEnabled = jest.spyOn(component.form, 'enable');
+            const spyFileUpload = jest
+                .spyOn(dotUploadService, 'uploadFile')
+                .mockReturnValue(Promise.resolve(TEMP_FILE_MOCK));
+            const importBtn = spectator.query('[data-testId="import-button"] button');
+
+            component.form.setValue({
+                name: '',
+                content: ''
+            });
+
+            spectator.click(importBtn);
+
+            expect(spyFileUpload).not.toHaveBeenCalled();
+            expect(spyFormDisabled).not.toHaveBeenCalled();
+            expect(spyFormEnabled).not.toHaveBeenCalled();
+            expect(spy).not.toHaveBeenCalled();
+        });
+
+        it('should mark name control as dirty when import button is clicked and name control is invalid', () => {
+            const spyDirty = jest.spyOn(component.form.get('name'), 'markAsDirty');
+            const spyDdateValueAndValidity = jest.spyOn(
+                component.form.get('name'),
+                'updateValueAndValidity'
+            );
+            const importBtn = spectator.query('[data-testId="import-button"] button');
+
+            spectator.click(importBtn);
+
+            expect(spyDirty).toHaveBeenCalled();
+            expect(spyDdateValueAndValidity).toHaveBeenCalled();
+        });
+
+        afterEach(() => {
+            jest.restoreAllMocks();
+        });
     });
 });
