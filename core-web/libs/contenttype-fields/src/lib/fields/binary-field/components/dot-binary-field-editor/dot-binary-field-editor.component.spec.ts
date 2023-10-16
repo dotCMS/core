@@ -137,7 +137,7 @@ describe('DotBinaryFieldEditorComponent', () => {
             const importBtn = spectator.query('[data-testId="import-button"] button');
 
             component.form.setValue({
-                name: 'test',
+                name: 'file-name.ts',
                 content: 'test'
             });
 
