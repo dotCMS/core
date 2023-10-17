@@ -59,9 +59,10 @@ $device-selector-name-margin: 0.375rem;
     padding: $spacing-1 0;
     margin: 0;
     color: $color-palette-gray-600;
+    overflow: auto;
 
-    &:first-child {
-        border-right: 1px solid $color-palette-gray-300;
+    &:nth-child(2) {
+        border-left: 1px solid $color-palette-gray-300;
     }
 }
 
