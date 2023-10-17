@@ -13,29 +13,6 @@ import {
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
 
-export const FIELD_MOCK: DotCMSContentTypeField = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-    contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-    dataType: 'TEXT',
-    fieldType: 'Text',
-    fieldTypeLabel: 'Text',
-    fieldVariables: [],
-    fixed: false,
-    iDate: 1696896882000,
-    id: 'c3b928bc2b59fc22c67022de4dd4b5c4',
-    indexed: false,
-    listed: false,
-    hint: 'A helper text',
-    modDate: 1696896882000,
-    name: 'testVariable',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 2,
-    unique: false,
-    variable: 'testVariable'
-};
-
 export const FIELDS_MOCK = [
     {
         clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
@@ -84,6 +61,8 @@ export const FIELDS_MOCK = [
         variable: 'someTextArea'
     }
 ];
+
+export const FIELD_MOCK: DotCMSContentTypeField = FIELDS_MOCK[0];
 
 // This creates a mock FormGroup from an array of fielda
 export const createFormControlObjectMock = (fields = FIELDS_MOCK) => {
@@ -308,19 +287,19 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
             fieldTypeLabel: 'Text',
             fieldVariables: [],
             fixed: false,
-            hint: 'A hint Text',
-            iDate: 1697051093000,
-            id: '1d1505a4569681b923769acb785fd093',
+            hint: 'A hint Text 2',
+            iDate: 1697051093002,
+            id: '1d1505a4569681b923769acb785fd094',
             indexed: false,
             listed: false,
             modDate: 1697051093000,
-            name: 'name1',
+            name: 'name13',
             readOnly: false,
             required: true,
             searchable: false,
             sortOrder: 2,
             unique: false,
-            variable: 'name1'
+            variable: 'name13'
         },
         {
             clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
@@ -330,18 +309,18 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
             fieldTypeLabel: 'Text',
             fieldVariables: [],
             fixed: false,
-            iDate: 1697051107000,
-            id: 'fc776c45044f2d043f5e98eaae36c9ff',
+            iDate: 1697051107001,
+            id: 'fc776c45044f2d043f5e98eaae36c9f2',
             indexed: false,
             listed: false,
             modDate: 1697051107000,
-            name: 'text2',
+            name: 'text23',
             readOnly: false,
             required: true,
             searchable: false,
             sortOrder: 3,
             unique: false,
-            variable: 'text2'
+            variable: 'text23'
         },
         {
             clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
