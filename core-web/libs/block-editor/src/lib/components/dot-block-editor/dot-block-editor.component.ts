@@ -81,6 +81,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             value
         );
     }
+    @Input() isFullscreen = false;
 
     @Input() set allowedBlocks(blocks: string) {
         const allowedBlocks = blocks ? blocks.replace(/ /g, '').split(',').filter(Boolean) : [];

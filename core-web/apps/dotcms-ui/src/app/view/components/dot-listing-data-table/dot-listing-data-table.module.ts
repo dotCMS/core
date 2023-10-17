@@ -10,7 +10,12 @@ import { TableModule } from 'primeng/table';
 
 import { DotCrudService } from '@dotcms/data-access';
 import { DotcmsConfigService, LoggerService } from '@dotcms/dotcms-js';
-import { DotIconModule, DotMessagePipe, DotRelativeDatePipe, DotStringFormatPipe } from "@dotcms/ui";
+import {
+    DotIconModule,
+    DotMessagePipe,
+    DotRelativeDatePipe,
+    DotStringFormatPipe
+} from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { ActionHeaderModule } from './action-header/action-header.module';
