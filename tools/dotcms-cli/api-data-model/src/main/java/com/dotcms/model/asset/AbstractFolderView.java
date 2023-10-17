@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
-import org.immutables.value.Value.Auxiliary;
 
 @ValueType
 @Value.Immutable
@@ -78,12 +77,5 @@ public interface AbstractFolderView {
     Optional<Boolean> markForPush();
 
     Optional<Boolean> markForDelete();
-
-    //TODO: Apparently these two arent used anywhere
-    //abstract Optional<String> localStatus();
-    //abstract Optional<String> localLanguage();
-
-    @Auxiliary
-    Optional<FolderSyncMeta> syncMeta();
 
 }

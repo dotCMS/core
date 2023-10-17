@@ -46,7 +46,4 @@ public interface AbstractAssetView {
 
     Optional<Boolean> markForDelete();
 
-    @Auxiliary
-    Optional<AssetSyncMeta> syncMeta();
-
 }

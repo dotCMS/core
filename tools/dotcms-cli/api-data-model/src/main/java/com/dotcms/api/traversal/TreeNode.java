@@ -1,12 +1,9 @@
 package com.dotcms.api.traversal;
 
 import com.dotcms.model.asset.AssetView;
-import com.dotcms.model.asset.FolderSyncMeta;
 import com.dotcms.model.asset.FolderView;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -54,16 +51,7 @@ public class TreeNode {
      * @param mark the delete mark
      */
     public void markForDelete(boolean mark) {
-        final FolderSyncMeta meta;
-        final Optional<FolderSyncMeta> syncMeta = this.folder.syncMeta();
-        meta = syncMeta.map(
-                   folderSyncMeta -> FolderSyncMeta.builder().from(folderSyncMeta)
-                        .markedForDelete(mark).build()
-                ).orElseGet(
-                   () -> FolderSyncMeta.builder().markedForDelete(mark).build()
-                );
         this.folder = FolderView.builder().from(this.folder)
-                .syncMeta(meta)
                 .markForDelete(mark)
                 //Here only for compatibility with the actual code will be removed later
                 .build();
