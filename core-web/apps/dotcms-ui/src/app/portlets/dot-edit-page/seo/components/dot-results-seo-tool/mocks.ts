@@ -294,8 +294,8 @@ const seoOGTagsResultOgMock = [
     {
         key: 'twitter:image',
         title: 'image',
-        keyIcon: 'pi-exclamation-triangle',
-        keyColor: 'results-seo-tool__result-icon--alert-red',
+        keyIcon: 'pi-check-circle',
+        keyColor: 'results-seo-tool__result-icon--alert-green',
         items: [
             {
                 message:
