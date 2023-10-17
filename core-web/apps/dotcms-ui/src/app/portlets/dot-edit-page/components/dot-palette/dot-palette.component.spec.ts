@@ -234,4 +234,15 @@ describe('DotPaletteComponent', () => {
 
         expect(store.setAllowedContent).toHaveBeenCalledWith(allowedContent);
     });
+
+    it('should change view and load data when the lang change.', async () => {
+        comp.languageId = '2';
+
+        fixture.detectChanges();
+        await fixture.whenStable();
+
+        expect(store.setLanguageId).toHaveBeenCalledWith('2');
+        expect(store.switchView).toHaveBeenCalled();
+        expect(store.getContenttypesData).toHaveBeenCalled();
+    });
 });
