@@ -19,7 +19,7 @@ export enum INPUT_TYPE {
 export interface InputTextOptions {
     type: string;
     inputMode: string;
-    step?: string | number;
+    step?: number;
 }
 
 @Component({
@@ -60,7 +60,7 @@ export class DotEditContentFieldComponent {
         FLOAT: {
             type: 'number',
             inputMode: 'decimal',
-            step: 'any'
+            step: 0.1
         }
     };
 }
