@@ -15,7 +15,8 @@ describe('DotSelectSeoToolComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
-                    'seo.rules.media.preview.tile': 'Social Media Preview Tile'
+                    'seo.rules.media.preview.tile': 'Social Media Preview Tile',
+                    'seo.rules.media.search.engine': 'Search Engine Results Page'
                 })
             }
         ],
@@ -41,6 +42,20 @@ describe('DotSelectSeoToolComponent', () => {
         expect(spectator.query(byTestId('select-seo-tool-title'))).toHaveText('Facebook');
         expect(spectator.query(byTestId('select-seo-tool-details'))).toHaveText(
             'Social Media Preview Tile'
+        );
+    });
+
+    it('should display social media preview tile when socialMedia input is provided', () => {
+        spectator.setInput({
+            socialMedia: SEO_MEDIA_TYPES.GOOGLE
+        });
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('select-seo-tool-item'))).toExist();
+        expect(spectator.query(byTestId('select-seo-tool-icon'))).toHaveClass('pi-google');
+        expect(spectator.query(byTestId('select-seo-tool-title'))).toHaveText('Google');
+        expect(spectator.query(byTestId('select-seo-tool-details'))).toHaveText(
+            'Search Engine Results Page'
         );
     });
 

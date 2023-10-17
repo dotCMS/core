@@ -5043,13 +5043,18 @@
   margin-top: 0.5rem;
 }
 .dijitComboBoxMenuPopup .dijitMenuItem {
+  padding: 0 0.75rem;
+  color: #14151a;
+  height: 2.5rem;
+}
+.dijitComboBoxMenuPopup .dijitMenuItem .dijitComboBoxHighlightMatch {
+  font-weight: 700;
+}
+.dijitComboBoxMenuPopup .dijitMenuItem:has(small) {
   display: flex;
   align-items: start;
   flex-direction: column;
   justify-content: center;
-  padding: 0 0.75rem;
-  color: #14151a;
-  height: 2.5rem;
 }
 .dijitComboBoxMenuPopup .dijitComboBoxMenu {
   min-width: 200px;
@@ -11181,4 +11186,13 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.edit-content-full-screen {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0px;
+  max-height: none;
+  padding: 0;
+  height: calc(100vh - 3rem - 20px - 1rem - 0.5rem - 20px - 61px - 1rem);
 }

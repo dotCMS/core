@@ -107,7 +107,9 @@ describe('DotSetMetaTagsService', () => {
                         'seo.rules.og-description.found':
                             'og:description meta tag with valid content found!',
                         'seo.rules.description.more.one.found':
-                            'More than 1 Meta Description found!'
+                            'More than 1 Meta Description found!',
+                        'seo.rules.og-description.description.not.found':
+                            'og:description meta tag, and Meta Description not found!'
                     })
                 },
                 DotUploadService
@@ -263,6 +265,21 @@ describe('DotSetMetaTagsService', () => {
     it('should get description found', (done) => {
         service.getMetaTagsResults(testDoc).subscribe((value) => {
             expect(value[0].items[0].message).toEqual('Meta Description found!');
+            done();
+        });
+    });
+
+    it('should og:description meta tag, and Meta Description not found!', (done) => {
+        const testDoc: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        service.getMetaTagsResults(testDoc).subscribe((value) => {
+            expect(value[5].items[0].message).toEqual(
+                '<code>og:description</code> meta tag, and Meta Description not found!'
+            );
             done();
         });
     });
