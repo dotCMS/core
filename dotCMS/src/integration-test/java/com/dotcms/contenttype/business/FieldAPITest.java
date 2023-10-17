@@ -1,5 +1,68 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
+import com.dotcms.contenttype.business.FieldAPITest.UniqueConstraintTestCase.DuplicateType;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableCategoryField;
+import com.dotcms.contenttype.model.field.ImmutableColumnField;
+import com.dotcms.contenttype.model.field.ImmutableDateField;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableKeyValueField;
+import com.dotcms.contenttype.model.field.ImmutableRowField;
+import com.dotcms.contenttype.model.field.ImmutableStoryBlockField;
+import com.dotcms.contenttype.model.field.ImmutableTabDividerField;
+import com.dotcms.contenttype.model.field.ImmutableTagField;
+import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotValidationException;
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.Tuple2;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.BASE_TYPE;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CONTENT_TYPE;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.IDENTIFIER;
@@ -25,61 +88,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import com.dotcms.IntegrationTestBase;
-import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.content.elasticsearch.business.IndiciesInfo;
-import com.dotcms.contenttype.business.FieldAPITest.UniqueConstraintTestCase.DuplicateType;
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.DateField;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.ImmutableBinaryField;
-import com.dotcms.contenttype.model.field.ImmutableCategoryField;
-import com.dotcms.contenttype.model.field.ImmutableDateField;
-import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
-import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
-import com.dotcms.contenttype.model.field.ImmutableKeyValueField;
-import com.dotcms.contenttype.model.field.ImmutableTagField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.TagField;
-import com.dotcms.contenttype.model.field.TextField;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.SimpleContentType;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotValidationException;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotDataValidationException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
-import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import io.vavr.Tuple2;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 @RunWith(DataProviderRunner.class)
 public class FieldAPITest extends IntegrationTestBase {
 
@@ -100,6 +108,11 @@ public class FieldAPITest extends IntegrationTestBase {
 
         contentTypeAPI  = APILocator.getContentTypeAPI(user);
         relationshipAPI = APILocator.getRelationshipAPI();
+        Config.setProperty(FieldAPI.FULLSCREEN_FIELD_FEATURE_FLAG, true);
+
+
+
+
     }
 
     public static class TestCase {
@@ -1631,5 +1644,135 @@ public class FieldAPITest extends IntegrationTestBase {
         return null;
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link FieldAPI#isFullScreenField(Field)}</li>
+     *     <li><b>Given Scenario: </b>Create four fields: Tab, Row, Column, and Text Area, and
+     *     ask the API if the Text Area field can be displayed in full screen.</li>
+     *     <li><b>Expected Result: </b>The API returns {@code true} for the Text Area field.</li>
+     * </ul>
+     *
+     * @throws DotSecurityException Failed to save the test Content Type.
+     * @throws DotDataException     Failed to save the test Content Type.
+     */
+    @Test
+    public void test_textarea_fullscreen_field()
+            throws DotSecurityException, DotDataException {
+        ContentType type = createAndSaveSimpleContentType("fieldTest" + UUIDGenerator.shorty());
+        contentTypeAPI.save(type);
+        List<Field> fields = new ArrayList<>(type.fields());
+        final Field tab = ImmutableTabDividerField.builder().variable("tabField1").name("tabField1").contentTypeId(type.id()).build();
+        final Field row = ImmutableRowField.builder().variable("rowField1").name("rowField1").contentTypeId(type.id()).build();
+        final Field column = ImmutableColumnField.builder().variable("columnField1").name("columnField1").contentTypeId(type.id()).build();
+        final Field textArea = ImmutableTextAreaField.builder().variable("testfield").name("testfield").contentTypeId(type.id()).build();
+
+        fields.add(tab);
+        fields.add(row);
+        fields.add(column);
+        fields.add(textArea);
+        type = contentTypeAPI.save(type, fields);
+        Field rowField = type.fieldMap().get("testfield");
+
+        assertTrue(fieldAPI.isFullScreenField(rowField));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link FieldAPI#isFullScreenField(Field)}</li>
+     *     <li><b>Given Scenario: </b>Create four fields: Tab, Row, Column, and Story Block, and
+     *     ask the API if the Story Block field can be displayed in full screen.</li>
+     *     <li><b>Expected Result: </b>The API returns {@code true} for the Story Block field.</li>
+     * </ul>
+     *
+     * @throws DotSecurityException Failed to save the test Content Type.
+     * @throws DotDataException     Failed to save the test Content Type.
+     */
+    @Test
+    public void test_block_fullscreen_field()
+            throws DotSecurityException, DotDataException {
+        ContentType type = createAndSaveSimpleContentType("fieldTest" + UUIDGenerator.shorty());
+        contentTypeAPI.save(type);
+        List<Field> fields = new ArrayList<>(type.fields());
+        final Field tab = ImmutableTabDividerField.builder().variable("tabField1").name("tabField1").contentTypeId(type.id()).build();
+        final Field row = ImmutableRowField.builder().variable("rowField1").name("rowField1").contentTypeId(type.id()).build();
+        final Field column = ImmutableColumnField.builder().variable("columnField1").name("columnField1").contentTypeId(type.id()).build();
+        final Field storyblock = ImmutableStoryBlockField.builder().variable("testfield").name("testfield").contentTypeId(type.id()).build();
+
+        fields.add(tab);
+        fields.add(row);
+        fields.add(column);
+        fields.add(storyblock);
+        type = contentTypeAPI.save(type, fields);
+        Field rowField = type.fieldMap().get("testfield");
+
+        assertTrue(fieldAPI.isFullScreenField(rowField));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link FieldAPI#isFullScreenField(Field)}</li>
+     *     <li><b>Given Scenario: </b>Create five fields: Tab, Row, Column 1, Column 2, and Story
+     *     Block, and ask the API if the Story Block field CANNOT be displayed in full screen in
+     *     this layout as it's not the only field on its tab.</li>
+     *     <li><b>Expected Result: </b>The API returns {@code false} for the Story Block field.</li>
+     * </ul>
+     *
+     * @throws DotSecurityException Failed to save the test Content Type.
+     * @throws DotDataException     Failed to save the test Content Type.
+     */
+    @Test
+    public void test_multicolumn_row_is_not_full_screen_field()
+            throws DotSecurityException, DotDataException {
+        ContentType type = createAndSaveSimpleContentType("fieldTest" + UUIDGenerator.shorty());
+        contentTypeAPI.save(type);
+        List<Field> fields = new ArrayList<>(type.fields());
+        final Field tab = ImmutableTabDividerField.builder().variable("tabField1").name("tabField1").contentTypeId(type.id()).build();
+        final Field row = ImmutableRowField.builder().variable("rowField1").name("rowField1").contentTypeId(type.id()).build();
+
+        final Field column = ImmutableColumnField.builder().variable("columnField1").name("columnField1").contentTypeId(type.id()).build();
+        final Field column2 = ImmutableColumnField.builder().variable("columnField2").name("columnField2").contentTypeId(type.id()).build();
+
+        final Field storyblock = ImmutableStoryBlockField.builder().variable("testfield").name("testfield").contentTypeId(type.id()).build();
+
+        fields.add(tab);
+        fields.add(row);
+        fields.add(column);
+        fields.add(column2);
+        fields.add(storyblock);
+        type = contentTypeAPI.save(type, fields);
+        Field rowField = type.fieldMap().get("testfield");
+
+        assertFalse(fieldAPI.isFullScreenField(rowField));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link FieldAPI#isFullScreenField(Field)}</li>
+     *     <li><b>Given Scenario: </b>Create three fields: Row, Column, and Story Block, and ask
+     *     the API if the Story Block field can be displayed in full screen.</li>
+     *     <li><b>Expected Result: </b>The API returns {@code true} for the Story Block field.</li>
+     * </ul>
+     *
+     * @throws DotSecurityException Failed to save the test Content Type.
+     * @throws DotDataException     Failed to save the test Content Type.
+     */
+    @Test
+    public void first_field_is_full_screen_field_if_no_tab()
+            throws DotSecurityException, DotDataException {
+        ContentType type = createAndSaveSimpleContentType("fieldTest" + UUIDGenerator.shorty());
+        contentTypeAPI.save(type);
+        List<Field> fields = new ArrayList<>(type.fields());
+        final Field row = ImmutableRowField.builder().variable("rowField1").name("rowField1").contentTypeId(type.id()).build();
+        final Field column = ImmutableColumnField.builder().variable("columnField1").name("columnField1").contentTypeId(type.id()).build();
+        final Field storyblock = ImmutableStoryBlockField.builder().variable("testfield").name("testfield").contentTypeId(type.id()).build();
+
+        fields.add(row);
+        fields.add(column);
+        fields.add(storyblock);
+        type = contentTypeAPI.save(type, fields);
+        Field rowField = type.fieldMap().get("testfield");
+
+        assertTrue(fieldAPI.isFullScreenField(rowField));
+    }
 
 }

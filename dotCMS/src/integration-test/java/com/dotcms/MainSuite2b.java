@@ -147,7 +147,6 @@ import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentlet
 import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
 import com.dotmarketing.startup.runonce.Task230707CreateSystemTableTest;
 import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSizeTest;
-import com.dotmarketing.util.ITConfigTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.UtilMethodsITest;
@@ -161,6 +160,8 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        Task220825CreateVariantFieldTest.class,
+        Task221007AddVariantIntoPrimaryKeyTest.class,
         Task05380ChangeContainerPathToAbsoluteTest.class,
         DotTemplateToolTest.class,
         Task05370AddAppsPortletToLayoutTest.class,
@@ -316,9 +317,7 @@ import org.junit.runners.Suite.SuiteClasses;
         RootIndexRegexUrlPatterStrategyIntegrationTest.class,
         SiteViewPaginatorIntegrationTest.class,
         Task230523CreateVariantFieldInContentletIntegrationTest.class,
-        DropOldContentVersionsJobTest.class,
-        Task230523CreateVariantFieldInContentletIntegrationTest.class,
-        ITConfigTest.class
+        DropOldContentVersionsJobTest.class
 })
 
 public class MainSuite2b {
