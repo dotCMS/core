@@ -453,7 +453,7 @@ export class DotSeoMetaTagsService {
                 const result: SeoRulesResult[] = [];
 
                 if (
-                    imageMetaData?.url !== IMG_NOT_FOUND_KEY &&
+                    imageMetaData?.url !== IMG_NOT_FOUND_KEY ||
                     imageMetaData.length <= SEO_LIMITS.MAX_IMAGE_BYTES
                 ) {
                     result.push(
@@ -462,7 +462,7 @@ export class DotSeoMetaTagsService {
                 }
 
                 if (
-                    imageMetaData?.url === IMG_NOT_FOUND_KEY &&
+                    imageMetaData?.url === IMG_NOT_FOUND_KEY ||
                     this.areAllFalsyOrEmpty([imageOgElements, imageOg])
                 ) {
                     result.push(
