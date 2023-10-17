@@ -21,6 +21,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
@@ -139,7 +140,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
                         + contentTypeVarName);
             }
 
-            final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString());
+            final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString(), user);
 
             return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, null);
         } catch (DotDataException | DotSecurityException e) {
@@ -177,9 +178,9 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
                         + contentTypeVarName);
             }
 
-            final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString());
+            final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString(), user);
 
-            return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, null);
+            return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, existingContentlet.getInode());
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, e.getMessage(), e);
             throw new RuntimeException(e);
@@ -215,9 +216,9 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
                         + contentTypeVarName);
             }
 
-            final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString());
+            final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString(), user);
 
-            return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, null);
+            return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, existingContentlet.getInode());
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, e.getMessage(), e);
             throw new RuntimeException(e);
@@ -253,7 +254,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
                         + contentTypeVarName);
             }
 
-            final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString());
+            final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString(), user);
             final String inode = (String)contentletMap.getOrDefault("inode", existingContentlet.getInode());
 
             return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, inode);
@@ -292,7 +293,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
                         + contentTypeVarName);
             }
 
-            final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString());
+            final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString(), user);
             final String inode = (String)contentletMap.getOrDefault("inode", existingContentlet.getInode());
 
             return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, inode);
@@ -411,16 +412,21 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
         return workflowAction;
     }
 
-    private Contentlet findById(final String identifier) {
+    private Contentlet findById(final String identifier, final User user) {
 
         Logger.debug(this, ()-> "Fire Action, looking for content by identifier: " + identifier);
 
-        final Contentlet currentContentlet =
-                Try.of(()->APILocator.getContentletAPI().findContentletByIdentifierAnyLanguageAnyVariant(identifier)).getOrNull();
+        final PageMode mode = PageMode.get(this.request);
+        final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+        final long languageId = null != language?language.getId(): APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
-        DotPreconditions.notNull(currentContentlet, ()-> "contentlet-was-not-found", DoesNotExistException.class);
+        final Optional<Contentlet> currentContentlet =
+                Try.of(()->APILocator.getContentletAPI().findContentletByIdentifierOrFallback
+                        (identifier, mode.showLive, languageId, user, mode.respectAnonPerms)).getOrElse(Optional.empty());
 
-        return currentContentlet;
+        DotPreconditions.isTrue(currentContentlet.isPresent(), ()-> "contentlet-was-not-found", DoesNotExistException.class);
+
+        return currentContentlet.get();
     }
 
     protected JsContentMap fireInternal(final Map contentletMap,

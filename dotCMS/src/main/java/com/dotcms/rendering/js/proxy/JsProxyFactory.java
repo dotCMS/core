@@ -8,12 +8,16 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import org.graalvm.polyglot.proxy.ProxyArray;
 import org.graalvm.polyglot.proxy.ProxyHashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -41,6 +45,7 @@ public class JsProxyFactory {
         registerMapper(new JsStoryBlockMapProxyMapperStrategyImpl());
         registerMapper(new JsJSONObjectProxyMapperStrategyImpl());
         registerMapper(new JsMapProxyMapperStrategyImpl());
+        registerMapper(new JsCollectionProxyMapperStrategyImpl());
     }
     /**
      * Register a custom mapper
@@ -231,6 +236,25 @@ public class JsProxyFactory {
         @Override
         public Object apply(final Object obj) {
             return ProxyHashMap.from((Map)obj);
+        }
+    }
+
+    private static final class JsCollectionProxyMapperStrategyImpl implements JsProxyMapperStrategy {
+        @Override
+        public boolean test(final Object obj) {
+            return null != obj && obj instanceof Collection;
+        }
+
+        @Override
+        public Object apply(final Object obj) {
+
+            final List proxyList = new ArrayList();
+            final Collection collection = (Collection)obj;
+            for (final Object o : collection) {
+                proxyList.add(createProxy(o));
+            }
+
+            return ProxyArray.fromList(proxyList);
         }
     }
 
