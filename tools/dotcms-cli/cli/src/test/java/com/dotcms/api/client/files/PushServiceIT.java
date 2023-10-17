@@ -284,7 +284,10 @@ class PushServiceIT extends FilesTestHelper {
             Files.find(absolutePath,
                             Integer.MAX_VALUE,
                             (filePath, fileAttr) -> fileAttr.isRegularFile())
-                    .forEach(System.out::println);
+                    .forEach(path -> {
+                        System.out.println(path);
+                        System.out.println(path.toFile().exists());
+                    });
 
             // --
             // Modifying the pulled data
@@ -301,8 +304,11 @@ class PushServiceIT extends FilesTestHelper {
             Path assetToRemove = Paths.get(absolutePath.toString(),"live","en-us",testSiteName,"folder2","subfolder2-1","subfolder2-1-1","image2.png");
             //var assetToRemove = absolutePath + "/live/en-us/" + testSiteName + "/folder2/subfolder2-1/subfolder2-1-1/image2.png";
 
+            Path assetToTest = Paths.get(absolutePath.toString(),"working","en-us",testSiteName,"folder2","subfolder1-1","subfolder1-1-1","image1.png");
+
             Assertions.assertTrue(liveFolderToRemove.toFile().exists());
             Assertions.assertTrue(workingFolderToRemove.toFile().exists());
+            Assertions.assertTrue(assetToTest.toFile().exists(),()->"does not exist :: "+assetToTest);
             Assertions.assertTrue(assetToRemove.toFile().exists(),()->"does not exist :: "+assetToRemove);
 
             FileUtils.deleteDirectory(liveFolderToRemove.toFile());
