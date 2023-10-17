@@ -169,28 +169,39 @@ public class LayoutAPIImpl implements LayoutAPI {
 		return layouts;
 	}
 
+	/* this method is used to check if the user has access to edit the page portlet
+	* all the users should have access to Edit Page, regardless of the assigned portlets.
+	*/
+	private boolean editPagePortletAccess(final User user) throws DotDataException {
+		final RoleAPI roleAPI = APILocator.getRoleAPI();
+		//verify the roles of the user
+		final List<Role> foundRoles = roleAPI.loadRolesForUser( user.getUserId(), false );
+		final PermissionAPI permAPI = APILocator.getPermissionAPI();
+
+		for (final Role role: foundRoles){
+			//get the permissions for the role
+			final List<Permission> perms = permAPI.getPermissionsByRole(role, true, true);
+			//determine if the user can edit the page
+			for(final Permission perm : perms){
+				if((perm.getType().equals(IHTMLPage.class.getCanonicalName()) || perm.getType().equals(Contentlet.class.getCanonicalName()))
+						&& (perm.getPermission() == PermissionAPI.PERMISSION_EDIT || perm.getPermission() == 3)){
+					return true;
+				}
+			}
+		}
+		return APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole());
+	}
+
 	@Override
 	public boolean doesUserHaveAccessToPortlet(final String portletId, final User user) throws DotDataException {
-          if(portletId==null || user==null || !user.isBackendUser()) {
-              return false;
-          }
+		if(portletId==null || user==null || !user.isBackendUser()) {
+		  return false;
+		}
 		if(loadLayoutsForUser(user).stream(). anyMatch(layout -> layout.getPortletIds().contains(portletId))){
 			return true;
 		}
 		if(portletId.equals("edit-page") ){
-			final RoleAPI roleAPI = APILocator.getRoleAPI();
-			final List<Role> foundRoles = roleAPI.loadRolesForUser( user.getUserId(), false );
-			final PermissionAPI permAPI = APILocator.getPermissionAPI();
-
-			for (final Role role: foundRoles){
-				final List<Permission> perms = permAPI.getPermissionsByRole(role, true, true);
-				for(final Permission perm : perms){
-					if((perm.getType().equals(IHTMLPage.class.getCanonicalName()) || perm.getType().equals(Contentlet.class.getCanonicalName()))
-							&& (perm.getPermission() == PermissionAPI.PERMISSION_EDIT || perm.getPermission() == 3)){
-						return true;
-					}
-				}
-			}
+			return editPagePortletAccess(user);
 		}
 		return APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole());
 	}
