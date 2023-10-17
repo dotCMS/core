@@ -280,6 +280,12 @@ class PushServiceIT extends FilesTestHelper {
 
             Assertions.assertTrue(absolutePath.toFile().exists());
 
+            System.out.println(":::::: files ::::::::");
+            Files.find(absolutePath,
+                            Integer.MAX_VALUE,
+                            (filePath, fileAttr) -> fileAttr.isRegularFile())
+                    .forEach(System.out::println);
+
             // --
             // Modifying the pulled data
             // Removing a folder
@@ -297,7 +303,7 @@ class PushServiceIT extends FilesTestHelper {
 
             Assertions.assertTrue(liveFolderToRemove.toFile().exists());
             Assertions.assertTrue(workingFolderToRemove.toFile().exists());
-            Assertions.assertTrue(assetToRemove.toFile().exists());
+            Assertions.assertTrue(assetToRemove.toFile().exists(),()->"does not exist :: "+assetToRemove);
 
             FileUtils.deleteDirectory(liveFolderToRemove.toFile());
             FileUtils.deleteDirectory(workingFolderToRemove.toFile());
