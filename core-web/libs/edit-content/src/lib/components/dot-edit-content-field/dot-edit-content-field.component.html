@@ -7,26 +7,12 @@
             dotFieldRequired
             >{{ field.name }}</label
         >
-        <input
+        <dot-edit-content-text-field
             *ngSwitchCase="'Text'"
-            [id]="field.variable"
-            [formControlName]="field.variable"
-            [attr.data-testId]="'input-' + field.variable"
-            [type]="INPUT_TEXT_OPTIONS[field.dataType].type"
-            [attr.inputmode]="INPUT_TEXT_OPTIONS[field.dataType].inputMode"
-            [attr.step]="INPUT_TEXT_OPTIONS[field.dataType].step"
-            pInputText />
-
-        <textarea
+            [field]="field"></dot-edit-content-text-field>
+        <dot-edit-content-text-area
             *ngSwitchCase="'Textarea'"
-            [id]="field.variable"
-            [formControlName]="field.variable"
-            [attr.data-testId]="'text-area-' + field.variable"
-            [style]="{
-                'min-height': '18.75rem',
-                resize: 'vertical'
-            }"
-            pInputTextarea></textarea>
+            [field]="field"></dot-edit-content-text-area>
         <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{
             field.hint
         }}</small>
