@@ -864,7 +864,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                 .findContentletByIdentifierAnyLanguage(experiment.pageId(), variant.name());
 
         if (UtilMethods.isSet(variantContentlet)) {
-            this.addTemplateAsDependency(parentPage);
+            this.addTemplateAsDependency(APILocator.getHTMLPageAssetAPI().fromContentlet(variantContentlet));
         }
     }
 
@@ -877,9 +877,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                 .getMultiTreesByVariant(experiment.pageId(), variant.name());
 
         for (MultiTree multiTree : multiTrees) {
-            Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(
-                    multiTree.getContentlet(), false, languageId, variant.name(), user,
-                    false);
+            Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(
+                    multiTree.getContentlet(), false);
 
             if(!UtilMethods.isSet(contentlet)) {
                 contentlet = APILocator.getContentletAPI().findContentletByIdentifier(

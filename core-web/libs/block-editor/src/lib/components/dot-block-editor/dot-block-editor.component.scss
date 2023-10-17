@@ -9,11 +9,18 @@
     .editor-wrapper {
         display: block;
         border-radius: $border-radius-sm;
-        height: 500px;
         overflow: hidden;
         position: relative;
         resize: vertical;
         outline: $color-palette-gray-500 solid 1px;
+    }
+
+    .editor-wrapper--default {
+        height: 500px;
+    }
+
+    .editor-wrapper--fullscreen {
+        height: 100%;
     }
 
     // If a child is focused, set this style to the parent

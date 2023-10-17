@@ -1,0 +1,20 @@
+@use "variables" as *;
+
+:host {
+    display: grid;
+    grid-template-columns: 1fr 16rem;
+    gap: $spacing-4;
+    padding: $spacing-4;
+}
+
+.row {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: $spacing-2;
+
+    .column {
+        display: grid;
+        min-height: $spacing-7;
+    }
+}

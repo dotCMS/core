@@ -67,11 +67,19 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     seoMediaTypes = SEO_MEDIA_TYPES;
 
     ngOnInit() {
+        const title =
+            this.seoOGTags['og:title']?.slice(0, SEO_LIMITS.MAX_OG_TITLE_LENGTH) ||
+            this.seoOGTags.title?.slice(0, SEO_LIMITS.MAX_TITLE_LENGTH);
+
+        const description =
+            this.seoOGTags['og:description']?.slice(0, SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) ||
+            this.seoOGTags.description?.slice(0, SEO_LIMITS.MAX_DESCRIPTION_LENGTH);
+
         this.allPreview = [
             {
                 hostName: this.hostName,
-                title: this.seoOGTags['og:title']?.slice(0, SEO_LIMITS.MAX_OG_TITLE_LENGTH),
-                description: this.seoOGTags.description,
+                title,
+                description,
                 type: 'Desktop',
                 isMobile: false,
                 image: this.seoOGTags['og:image'],
@@ -90,8 +98,8 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
             },
             {
                 hostName: this.hostName,
-                title: this.seoOGTags['og:title'],
-                description: this.seoOGTags.description,
+                title,
+                description,
                 type: 'Mobile',
                 isMobile: true
             }
