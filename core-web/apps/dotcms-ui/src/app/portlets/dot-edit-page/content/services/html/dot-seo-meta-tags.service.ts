@@ -72,7 +72,7 @@ export class DotSeoMetaTagsService {
 
         metaTagsObject['faviconElements'] = favicon;
         metaTagsObject['titleElements'] = title;
-        metaTagsObject['favicon'] = (favicon[0] as HTMLLinkElement)?.href;
+        metaTagsObject['favicon'] = (favicon[0] as HTMLLinkElement)?.href || null;
         metaTagsObject['title'] = title[0]?.innerText;
         metaTagsObject['titleOgElements'] = titleOgElements;
         metaTagsObject['imageOgElements'] = imagesOgElements;
@@ -191,7 +191,10 @@ export class DotSeoMetaTagsService {
         const favicon = metaTagsObject['favicon'];
         const faviconElements = metaTagsObject['faviconElements'];
 
-        if (faviconElements.length === 0) {
+        if (
+            faviconElements.length <= SEO_LIMITS.MAX_FAVICONS &&
+            this.areAllFalsyOrEmpty([favicon])
+        ) {
             items.push(
                 this.getErrorItem(this.dotMessageService.get('seo.rules.favicon.not.found'))
             );
@@ -459,7 +462,7 @@ export class DotSeoMetaTagsService {
                 }
 
                 if (
-                    imageMetaData?.url === IMG_NOT_FOUND_KEY ||
+                    imageMetaData?.url === IMG_NOT_FOUND_KEY &&
                     this.areAllFalsyOrEmpty([imageOgElements, imageOg])
                 ) {
                     result.push(
@@ -530,11 +533,21 @@ export class DotSeoMetaTagsService {
         const result: SeoRulesResult[] = [];
         const titleCardElements = metaTagsObject['twitterTitleElements'];
         const titleCard = metaTagsObject['twitter:title'];
+        const title = metaTagsObject['title'];
+        const titleElements = metaTagsObject['titleElements'];
 
-        if (this.areAllFalsyOrEmpty([titleCard, titleCardElements])) {
+        if (title && this.areAllFalsyOrEmpty([titleCard, titleCardElements])) {
             result.push(
                 this.getErrorItem(
                     this.dotMessageService.get('seo.rules.twitter-card-title.not.found')
+                )
+            );
+        }
+
+        if (this.areAllFalsyOrEmpty([title, titleCard, titleElements, titleCardElements])) {
+            result.push(
+                this.getErrorItem(
+                    this.dotMessageService.get('seo.rules.twitter-card-title.title.not.found')
                 )
             );
         }
@@ -629,7 +642,19 @@ export class DotSeoMetaTagsService {
 
         if (
             twitterDescription &&
-            twitterDescription.length < SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH
+            twitterDescription.length < SEO_LIMITS.MIN_TWITTER_DESCRIPTION_LENGTH
+        ) {
+            result.push(
+                this.getWarningItem(
+                    this.dotMessageService.get('seo.rules.twitter-card-description.less')
+                )
+            );
+        }
+
+        if (
+            twitterDescription &&
+            twitterDescription.length < SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH &&
+            twitterDescription.length > SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH
         ) {
             result.push(
                 this.getDoneItem(
@@ -646,10 +671,12 @@ export class DotSeoMetaTagsService {
         const twitterImage = metaTagsObject['twitter:image'];
 
         return this.getImageFileSize(twitterImage).pipe(
-            switchMap((imageMetaData) => {
+            switchMap((imageMetaData: ImageMetaData) => {
                 const result: SeoRulesResult[] = [];
-
-                if (twitterImage && imageMetaData.length <= SEO_LIMITS.MAX_IMAGE_BYTES) {
+                if (
+                    imageMetaData?.url !== IMG_NOT_FOUND_KEY &&
+                    imageMetaData.length <= SEO_LIMITS.MAX_IMAGE_BYTES
+                ) {
                     result.push(
                         this.getDoneItem(
                             this.dotMessageService.get('seo.rules.twitter-image.found')
@@ -657,10 +684,23 @@ export class DotSeoMetaTagsService {
                     );
                 }
 
-                if (this.areAllFalsyOrEmpty([twitterImage, twitterImageElements])) {
+                if (
+                    imageMetaData?.url === IMG_NOT_FOUND_KEY &&
+                    this.areAllFalsyOrEmpty([twitterImage, twitterImageElements])
+                ) {
                     result.push(
                         this.getErrorItem(
                             this.dotMessageService.get('seo.rules.twitter-image.not.found')
+                        )
+                    );
+                }
+
+                if (twitterImageElements?.length >= 1 && this.areAllFalsyOrEmpty([twitterImage])) {
+                    result.push(
+                        this.getErrorItem(
+                            this.dotMessageService.get(
+                                'seo.rules.twitter-image.more.one.found.empty'
+                            )
                         )
                     );
                 }
