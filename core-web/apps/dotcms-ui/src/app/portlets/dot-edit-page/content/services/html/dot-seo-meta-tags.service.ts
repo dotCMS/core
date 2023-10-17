@@ -27,6 +27,7 @@ import {
 @Injectable()
 export class DotSeoMetaTagsService {
     readMoreValues: Record<SEO_MEDIA_TYPES, string[]>;
+    seoMedia: string;
 
     constructor(
         private dotMessageService: DotMessageService,
@@ -760,11 +761,19 @@ export class DotSeoMetaTagsService {
     }
 
     /**
-     * This uploads the image temporaly to get the file size, only if it is external
+     * This uploads the image temporaly to get the file size, only if it is external.
+     * Checks if the imageUrl has been sent or seoMedia is not null.
      * @param imageUrl string
      * @returns
      */
     getImageFileSize(imageUrl: string): Observable<DotCMSTempFile | ImageMetaData> {
+        if (!imageUrl) {
+            return of({
+                length: 0,
+                url: IMG_NOT_FOUND_KEY
+            });
+        }
+
         return from(fetch(imageUrl)).pipe(
             mergeMap((response) => {
                 if (response.status === 404) {

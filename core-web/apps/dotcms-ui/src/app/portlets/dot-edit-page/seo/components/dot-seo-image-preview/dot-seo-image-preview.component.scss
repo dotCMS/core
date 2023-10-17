@@ -18,17 +18,12 @@ $image-height: 23.875rem;
     flex-direction: column;
     color: $black;
     background-color: $color-palette-gray-100;
-
-    .pi {
-        font-size: $font-size-xxl;
-        color: $color-alert-red;
-    }
 }
 
 :host ::ng-deep {
     .dot-seo-image-preview__default {
         .pi {
-            font-size: 2.5rem;
+            font-size: $font-size-xxxl;
             color: $color-alert-red;
         }
     }

@@ -13,10 +13,18 @@
                             [class.results-seo-tool__version--small]="preview.isMobile"
                             data-testId="seo-preview-mobile">
                             <div class="results-seo-tool__card-title">
-                                <img
+                                <div
                                     class="results-seo-tool__card-favicon"
-                                    [src]="seoOGTags.favicon"
-                                    alt="favicon" />
+                                    *ngIf="noFavicon; else favicon">
+                                    <i class="pi pi-globe"></i>
+                                </div>
+                                <ng-template #favicon>
+                                    <img
+                                        class="results-seo-tool__card-favicon"
+                                        [src]="seoOGTags.favicon"
+                                        (error)="onFaviconError()"
+                                        alt="favicon" />
+                                </ng-template>
                                 <span data-testId="page-hostName">{{ preview.hostName }}</span>
                             </div>
                             <a
@@ -33,7 +41,7 @@
                     </div>
                 </div>
                 <div *ngSwitchCase="seoMediaTypes.TWITTER">
-                    <dot-seo-image-preview image="mainPreview.image"></dot-seo-image-preview>
+                    <dot-seo-image-preview [image]="mainPreview.image"></dot-seo-image-preview>
                     <div class="results-seo-tool__preview">
                         <span data-testId="page-hostName">{{ mainPreview.hostName }}</span>
                         <h5>{{ mainPreview.twitterTitle }}</h5>
@@ -41,7 +49,7 @@
                     </div>
                 </div>
                 <div *ngSwitchDefault>
-                    <dot-seo-image-preview image="mainPreview.image"></dot-seo-image-preview>
+                    <dot-seo-image-preview [image]="mainPreview.image"></dot-seo-image-preview>
                     <div class="results-seo-tool__preview">
                         <span data-testId="page-hostName">{{ mainPreview.hostName }}</span>
                         <h5>{{ mainPreview.title }}</h5>
