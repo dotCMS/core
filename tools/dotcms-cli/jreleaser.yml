@@ -66,7 +66,7 @@ packagers:
   jbang:
     active: ALWAYS
     continueOnError: false
-    alias: cli
+    alias: dotcli
     repository:
       active: ALWAYS
       owner: dotCMS
