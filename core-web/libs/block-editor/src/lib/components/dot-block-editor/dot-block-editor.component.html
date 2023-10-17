@@ -1,19 +1,23 @@
 <ng-container *ngIf="editor">
-    <div class="editor-wrapper" [style]="customStyles">
+    <div
+        class="editor-wrapper"
+        [ngClass]="{
+            'editor-wrapper--fullscreen': isFullscreen === 'true',
+            'editor-wrapper--default': isFullscreen !== 'true'
+        }"
+        [style]="customStyles">
         <tiptap-editor
             [ngModel]="content"
             [editor]="editor"
             [ngClass]="{ 'overflow-hidden': freezeScroll }"
             (ngModelChange)="onChange($event)"
-            (keyup)="subject.next()"
-        ></tiptap-editor>
+            (keyup)="subject.next()"></tiptap-editor>
     </div>
 
     <dot-editor-count-bar
         *ngIf="showCharData"
         [characterCount]="characterCount"
         [charLimit]="charLimit"
-        [readingTime]="readingTime"
-    >
+        [readingTime]="readingTime">
     </dot-editor-count-bar>
 </ng-container>

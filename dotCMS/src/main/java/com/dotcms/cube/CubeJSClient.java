@@ -8,11 +8,12 @@ import com.dotcms.exception.AnalyticsException;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.http.CircuitBreakerUrl.Response;
+import com.dotcms.metrics.timing.TimeMetric;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
-import com.liferay.util.StringPool;
 
 import javax.ws.rs.core.HttpHeaders;
 import java.io.IOException;
@@ -99,26 +100,25 @@ public class CubeJSClient {
         DotPreconditions.notNull(accessToken, "Access token not must be NULL");
 
         final CircuitBreakerUrl cubeJSClient;
+        final String cubeJsUrl = String.format("%s/cubejs-api/v1/load", url);
+        final String queryAsString = query.toString();
         try {
             cubeJSClient = CircuitBreakerUrl.builder()
                 .setMethod(Method.GET)
                 .setHeaders(cubeJsHeaders(accessToken))
-                .setUrl(String.format("%s/cubejs-api/v1/load", url))
-                .setParams(map("query", query.toString()))
+                .setUrl(cubeJsUrl)
+                .setParams(map("query", queryAsString))
                 .setTimeout(4000)
+                .setThrowWhenNot2xx(false)
                 .build();
         } catch (AnalyticsException e) {
             throw new RuntimeException(e);
         }
 
-        final Response<String> response = cubeJSClient.doResponse();
-        if (response.getStatusCode() == -1) {
-            throw new RuntimeException("CubeJS Server is not available");
-        }
+        final Response<String> response = getStringResponse(cubeJSClient, cubeJsUrl, queryAsString);
 
         try {
-            final String responseAsString = UtilMethods.isSet(response) ? response.getResponse() :
-                    StringPool.BLANK;
+            final String responseAsString = response.getResponse();
             final Map<String, Object> responseAsMap = UtilMethods.isSet(responseAsString) && !responseAsString.equals("[]") ?
                    JsonUtil.getJsonFromString(responseAsString) : new HashMap<>();
             final List<Map<String, Object>> data = (List<Map<String, Object>>) responseAsMap.get("data");
@@ -127,6 +127,23 @@ public class CubeJSClient {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private Response<String> getStringResponse(final CircuitBreakerUrl cubeJSClient,
+                                               final String cubeJsUrl,
+                                               final String queryAsString) {
+        final TimeMetric timeMetric = TimeMetric.mark(getClass().getSimpleName());
+
+        Logger.debug(this, String.format("Getting results from CubeJs [%s] with query [%s]", cubeJsUrl, queryAsString));
+        final Response<String> response = cubeJSClient.doResponse();
+
+        timeMetric.stop();
+
+        if (!CircuitBreakerUrl.isWithin2xx(response.getStatusCode())) {
+            throw new RuntimeException("CubeJS Server is not available");
+        }
+
+        return response;
     }
 
     /**

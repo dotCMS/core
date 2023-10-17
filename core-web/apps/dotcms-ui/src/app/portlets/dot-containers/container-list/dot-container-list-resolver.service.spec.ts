@@ -14,8 +14,8 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { DotFormatDateService } from '@dotcms/ui';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { DotFormatDateService } from '@services/dot-format-date-service';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 
 import { DotContainerListResolver } from './dot-container-list-resolver.service';

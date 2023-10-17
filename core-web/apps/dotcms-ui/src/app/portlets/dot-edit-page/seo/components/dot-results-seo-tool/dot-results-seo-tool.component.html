@@ -1,3 +1,4 @@
+<dot-select-seo-tool [socialMedia]="seoMedia"></dot-select-seo-tool>
 <div class="results-seo-tool__main-card">
     <p-card>
         <div class="results-seo-tool__main-card-content">
@@ -18,10 +19,14 @@
                                     alt="favicon" />
                                 <span data-testId="page-hostName">{{ preview.hostName }}</span>
                             </div>
-                            <a class="results-seo-tool__search-title">
+                            <a
+                                class="results-seo-tool__search-title"
+                                data-testId="results-seo-tool-search-title">
                                 {{ preview.title }}
                             </a>
-                            <p class="results-seo-tool__search-description">
+                            <p
+                                class="results-seo-tool__search-description"
+                                data-testId="results-seo-tool-search-description">
                                 {{ preview.description }}
                             </p>
                         </div>
@@ -68,17 +73,19 @@
     </ul>
 </p-card>
 
-<p-card class="results-seo-tool__result-card">
+<p-card class="results-seo-tool__result-card results-seo-tool__result-card--read-more">
     <ng-template pTemplate="header">
         <div class="results-seo-tool__result-card-title">
             <span>{{ 'seo.rules.read-more.title' | dm }}</span>
         </div>
     </ng-template>
     <ul class="results-seo-tool__result-card-list">
-        <li *ngFor="let item of readMore">
+        <li *ngFor="let item of readMoreValues[seoMedia]">
             <i class="results-seo-tool__result-icon pi pi-info-circle"></i>
-            <a [href]="item.url" target="_blank">{{ item.label }}</a>
-            <i class="pi pi-external-link"></i>
+            <span
+                class="results-seo-tool__read-more-label"
+                [innerHTML]="item | safeHtml"
+                data-testId="readmore"></span>
         </li>
     </ul>
 </p-card>

@@ -2,10 +2,11 @@ package com.dotmarketing.quartz.job;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.analytics.AccessTokens;
 import com.dotcms.analytics.AnalyticsAPI;
+import com.dotcms.analytics.AnalyticsAPIImpl;
 import com.dotcms.analytics.AnalyticsTestUtils;
 import com.dotcms.analytics.app.AnalyticsApp;
-import com.dotcms.analytics.cache.AnalyticsCache;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.analytics.model.AccessTokenFetchMode;
@@ -14,7 +15,6 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.init.DotInitScheduler;
@@ -37,6 +37,7 @@ import static com.dotmarketing.quartz.job.AccessTokenRenewJob.ANALYTICS_ACCESS_T
 import static com.dotmarketing.quartz.job.AccessTokenRenewJob.ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER_GROUP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -49,7 +50,6 @@ import static org.junit.Assert.assertTrue;
 public class AccessTokenRenewJobTest extends IntegrationTestBase {
 
     private static AnalyticsAPI analyticsAPI;
-    private static AnalyticsCache analyticsCache;
     private AccessTokenRenewJob accessTokenRenewJob;
     private Host host;
     private AnalyticsApp analyticsApp;
@@ -60,7 +60,6 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
         LicenseTestUtil.getLicense();
 
         analyticsAPI = APILocator.getAnalyticsAPI();
-        analyticsCache = CacheLocator.getAnalyticsCache();
         Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", true);
         Config.setProperty(ANALYTICS_ACCESS_TOKEN_RENEW_JOB_CRON_KEY, "0 0 0 * * ?");
 
@@ -99,7 +98,7 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
         accessTokenRenewJob.execute(getJobContext());
         Thread.sleep(2000);
 
-        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        AccessToken accessToken = analyticsAPI.getCachedAccessToken(analyticsApp);
         assertNotNull(accessToken);
     }
 
@@ -118,12 +117,12 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
                 analyticsApp,
                 AccessTokenFetchMode.FORCE_RENEW)
             .withIssueDate(issueDate);
-        analyticsCache.putAccessToken(accessToken);
+        AccessTokens.get().putAccessToken(accessToken);
 
         accessTokenRenewJob.execute(getJobContext());
         Thread.sleep(2000);
 
-        accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        accessToken = analyticsAPI.getCachedAccessToken(analyticsApp);
         assertNotNull(accessToken);
         assertTrue(accessToken.issueDate().isAfter(issueDate));
     }
@@ -143,12 +142,12 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
                 analyticsApp,
                 AccessTokenFetchMode.FORCE_RENEW)
             .withIssueDate(issueDate);
-        analyticsCache.putAccessToken(accessToken);
+        AccessTokens.get().putAccessToken(accessToken);
 
         accessTokenRenewJob.execute(getJobContext());
         Thread.sleep(2000);
 
-        accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        accessToken = analyticsAPI.getCachedAccessToken(analyticsApp);
         assertNotNull(accessToken);
         assertTrue(accessToken.issueDate().isAfter(issueDate));
     }
@@ -160,16 +159,22 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
      */
     @Test
     public void test_accessTokenRenew_whenNoop() throws Exception {
+        Config.setProperty(AnalyticsAPI.ANALYTICS_USE_DUMMY_TOKEN_KEY, "false");
+        analyticsAPI = new AnalyticsAPIImpl();
+
         final String reason = "some-reason";
         final String clientId = analyticsApp.getAnalyticsProperties().clientId();
-        analyticsCache.putAccessToken(AnalyticsHelper.get().createNoopToken(analyticsApp, reason).withClientId(clientId));
+        AccessTokens.get().putAccessToken(AnalyticsHelper.get().createNoopToken(analyticsApp, reason).withClientId(clientId));
 
         accessTokenRenewJob.execute(getJobContext());
         Thread.sleep(2000);
 
-        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        AccessToken accessToken = analyticsAPI.getCachedAccessToken(analyticsApp);
         assertSame(TokenStatus.NOOP, accessToken.status().tokenStatus());
         assertEquals(reason, accessToken.status().reason());
+
+        Config.setProperty(AnalyticsAPI.ANALYTICS_USE_DUMMY_TOKEN_KEY, "true");
+        analyticsAPI = APILocator.getAnalyticsAPI();
     }
 
     /**
@@ -179,16 +184,22 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
      */
     @Test
     public void test_accessTokenRenew_whenBlocked() throws Exception {
+        Config.setProperty(AnalyticsAPI.ANALYTICS_USE_DUMMY_TOKEN_KEY, "false");
+        analyticsAPI = new AnalyticsAPIImpl();
+
         final String reason = "some-reason";
         final String clientId = analyticsApp.getAnalyticsProperties().clientId();
-        analyticsCache.putAccessToken(AnalyticsHelper.get().createBlockedToken(analyticsApp, reason).withClientId(clientId));
+        AccessTokens.get().putAccessToken(AnalyticsHelper.get().createBlockedToken(analyticsApp, reason).withClientId(clientId));
 
         accessTokenRenewJob.execute(getJobContext());
         Thread.sleep(2000);
 
-        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        AccessToken accessToken = analyticsAPI.getCachedAccessToken(analyticsApp);
         assertSame(TokenStatus.BLOCKED, accessToken.status().tokenStatus());
         assertEquals(reason, accessToken.status().reason());
+
+        Config.setProperty(AnalyticsAPI.ANALYTICS_USE_DUMMY_TOKEN_KEY, "true");
+        analyticsAPI = APILocator.getAnalyticsAPI();
     }
 
     /**
@@ -204,7 +215,7 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
         accessTokenRenewJob.execute(getJobContext());
         Thread.sleep(2000);
 
-        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        AccessToken accessToken = analyticsAPI.getCachedAccessToken(analyticsApp);
         assertSame(TokenStatus.OK, accessToken.status().tokenStatus());
     }
 
@@ -215,13 +226,19 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
      */
     @Test
     public void test_accessTokenRenew_fail_wrongClientId() throws Exception {
-        analyticsApp = AnalyticsTestUtils.prepareAnalyticsApp(host, "some-client-id");
+        Config.setProperty(AnalyticsAPI.ANALYTICS_USE_DUMMY_TOKEN_KEY, "false");
+        analyticsAPI = new AnalyticsAPIImpl();
+
+        analyticsApp = AnalyticsTestUtils.prepareAnalyticsApp(host, "some-client-id-xxx");
 
         accessTokenRenewJob.execute(getJobContext());
         Thread.sleep(2000);
 
-        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
-        assertSame(TokenStatus.NOOP, accessToken.status().tokenStatus());
+        AccessToken accessToken = analyticsAPI.getCachedAccessToken(analyticsApp);
+        assertNull(accessToken);
+
+        Config.setProperty(AnalyticsAPI.ANALYTICS_USE_DUMMY_TOKEN_KEY, "true");
+        analyticsAPI = APILocator.getAnalyticsAPI();
     }
 
     private static void unscheduleJob() throws SchedulerException {

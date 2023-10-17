@@ -107,7 +107,8 @@ describe('DotPagesFavoritePanelComponent', () => {
                     actionMenuDomId: '',
                     items: [],
                     addToBundleCTId: 'test1'
-                }
+                },
+                isContentEditor2Enabled: false
             });
         }
 

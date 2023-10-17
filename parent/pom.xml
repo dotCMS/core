@@ -99,6 +99,8 @@
         <argLine/>
         <skipTests>false</skipTests>
         <skip.surefire.tests>${skipTests}</skip.surefire.tests>
+
+        <immutables.version>2.9.0</immutables.version>
     </properties>
 
     <build>
@@ -653,6 +655,11 @@
                     <artifactId>jandex-maven-plugin</artifactId>
                     <version>1.2.3</version>
                 </plugin>
+                <plugin>
+                    <groupId>${quarkus.platform.group-id}</groupId>
+                    <artifactId>quarkus-maven-plugin</artifactId>
+                    <version>${quarkus.platform.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -1096,6 +1103,5 @@
             <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
         </snapshotRepository>
     </distributionManagement>
-
 
 </project>
