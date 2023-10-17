@@ -39,7 +39,12 @@ import {
     DotCMSContentTypeLayoutRow,
     DotFieldVariable
 } from '@dotcms/dotcms-models';
-import { DotFieldValidationMessageComponent, DotFormatDateService, DotIconModule, DotMessagePipe } from "@dotcms/ui";
+import {
+    DotFieldValidationMessageComponent,
+    DotFormatDateService,
+    DotIconModule,
+    DotMessagePipe
+} from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     cleanUpDialog,
