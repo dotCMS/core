@@ -279,42 +279,22 @@ class PushServiceIT extends FilesTestHelper {
                     true, true, true, 0);
 
             Assertions.assertTrue(absolutePath.toFile().exists());
-
-            System.out.println(":::::: files ::::::::");
-            Files.find(absolutePath,
-                            Integer.MAX_VALUE,
-                            (filePath, fileAttr) -> fileAttr.isRegularFile())
-                    .forEach(path -> {
-                        System.out.println(path);
-                        System.out.println(path.toFile().exists());
-                    });
-
             // --
             // Modifying the pulled data
-            // Removing a folder
+            // Removing the folder under live
             Path liveFolderToRemove = Paths.get(absolutePath.toString(),"live","en-us",testSiteName,"folder3");
-            //var liveFolderToRemove =    absolutePath + "/live/en-us/" + testSiteName + "/folder3";
 
             //The folder also needs to be removed from the working branch of the folders tree. So it get removed
             //If we leave folders hanging under a different language or status the system isn't going to know what folder must be kept and what folders needs to be removed
             //If we want a folder to be removed from the remote instance it needs to be removed from all our folder branches for good
             Path workingFolderToRemove = Paths.get(absolutePath.toString(),"working","en-us",testSiteName,"folder3");
-            //var workingFolderToRemove = absolutePath + "/working/en-us/" + testSiteName + "/folder3";
             // Removing an asset
-            Path assetToRemove = Paths.get(absolutePath.toString(),"live","en-us",testSiteName,"folder2","subfolder2-1","subfolder2-1-1","image2.png");
-            //var assetToRemove = absolutePath + "/live/en-us/" + testSiteName + "/folder2/subfolder2-1/subfolder2-1-1/image2.png";
-
-            Path assetToTest = Paths.get(absolutePath.toString(),"working","en-us",testSiteName,"folder2","subfolder1-1","subfolder1-1-1","image1.png");
-
-            Assertions.assertTrue(liveFolderToRemove.toFile().exists());
-            Assertions.assertTrue(workingFolderToRemove.toFile().exists());
-            Assertions.assertTrue(assetToTest.toFile().exists(),()->"does not exist :: "+assetToTest);
-            Assertions.assertTrue(assetToRemove.toFile().exists(),()->"does not exist :: "+assetToRemove);
+            Path assetToRemove = Paths.get(absolutePath.toString(),"live","en-us",testSiteName,"folder2","subFolder2-1","subFolder2-1-1","image2.png");
 
             FileUtils.deleteDirectory(liveFolderToRemove.toFile());
             FileUtils.deleteDirectory(workingFolderToRemove.toFile());
             FileUtils.delete(assetToRemove.toFile());
-/*
+
             // Modifying an asset
             var toModifyAsset = workspace.files().toAbsolutePath() + "/live/en-us/" + testSiteName +
                     "/folder1/subFolder1-1/subFolder1-1-1/image1.png";
@@ -406,7 +386,7 @@ class PushServiceIT extends FilesTestHelper {
             for (var child : updatedTreeNode.children()) {
                 Assertions.assertNotEquals("folder3", child.folder().name());
             }
-*/
+
         } finally {
             // Clean up the temporal folder
             deleteTempDirectory(tempFolder);
