@@ -762,7 +762,7 @@ export class DotSeoMetaTagsService {
 
     /**
      * This uploads the image temporaly to get the file size, only if it is external.
-     * Checks if the imageUrl has been sent or seoMedia is not null.
+     * Checks if the imageUrl has been sent.
      * @param imageUrl string
      * @returns
      */
