@@ -107,7 +107,7 @@ public class SecretTool implements ViewTool {
 		return config.isPresent()? config.get().getCharArrayOrNull(key, defaultValue) : defaultValue;
 	}
 
-    private static final boolean ENABLE_SCRIPTING = Config.getBooleanProperty("secrets.scripting.enabled", false);
+    private static final boolean ENABLE_SCRIPTING = Config.getBooleanProperty("secrets.scripting.enabled", true);
 
 	/**
 	 * Checks for the existence of the mandatory Scripting Role based on the following criteria:
