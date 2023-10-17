@@ -18,6 +18,7 @@
 <%@page import="com.dotmarketing.portlets.structure.business.FieldAPI"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="com.dotmarketing.portlets.structure.model.FieldVariable"%>
+
 <%@ include file="/html/portlet/ext/contentlet/init.jsp"%>
 
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
@@ -38,6 +39,7 @@
 <%@ page import="com.dotmarketing.beans.Host" %>
 <%@ page import="com.dotcms.contenttype.model.field.JSONField" %>
 <%@ page import="org.apache.commons.lang.StringEscapeUtils" %>
+<%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
 
 <%
     long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -663,6 +665,14 @@
                 String maxFileLength="0";
                 String helperText="";
 
+                Contentlet contentletObj = APILocator.getContentletAPI().find(inode, user, false);
+                
+                // Create an ObjectMapper instance
+                ObjectMapper mapper = new ObjectMapper();
+
+                // Convert the contentlet object to JSON string
+                String json = mapper.writeValueAsString(contentlet);
+
                 List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
                 for(FieldVariable fv : acceptTypes){
                     if("accept".equalsIgnoreCase(fv.getKey())){
@@ -676,7 +686,6 @@
                         helperText=fv.getValue();
                     }
                 }
-
             
                 %>
 
