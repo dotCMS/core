@@ -6,6 +6,7 @@ import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMap;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import org.graalvm.polyglot.proxy.ProxyArray;
@@ -46,6 +47,7 @@ public class JsProxyFactory {
         registerMapper(new JsJSONObjectProxyMapperStrategyImpl());
         registerMapper(new JsMapProxyMapperStrategyImpl());
         registerMapper(new JsCollectionProxyMapperStrategyImpl());
+        registerMapper(new JsTagInodeProxyMapperStrategyImpl());
     }
     /**
      * Register a custom mapper
@@ -255,6 +257,19 @@ public class JsProxyFactory {
             }
 
             return ProxyArray.fromList(proxyList);
+        }
+    }
+
+    private static final class JsTagInodeProxyMapperStrategyImpl implements JsProxyMapperStrategy {
+        @Override
+        public boolean test(final Object obj) {
+            return null != obj && obj instanceof TagInode;
+        }
+
+        @Override
+        public Object apply(final Object obj) {
+
+            return new JsTagInode((TagInode)obj);
         }
     }
 

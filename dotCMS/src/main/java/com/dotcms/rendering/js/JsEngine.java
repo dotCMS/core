@@ -10,6 +10,7 @@ import com.dotcms.rendering.js.viewtools.ContentJsViewTool;
 import com.dotcms.rendering.js.viewtools.LanguageJsViewTool;
 import com.dotcms.rendering.js.viewtools.SecretJsViewTool;
 import com.dotcms.rendering.js.viewtools.SiteJsViewTool;
+import com.dotcms.rendering.js.viewtools.TagJsViewTool;
 import com.dotcms.rendering.js.viewtools.UserJsViewTool;
 import com.dotcms.rendering.js.viewtools.WorkflowJsViewTool;
 import com.dotcms.util.CollectionsUtils;
@@ -48,6 +49,7 @@ public class JsEngine implements ScriptEngine {
             this.addJsViewTool(ContentJsViewTool.class);
             this.addJsViewTool(WorkflowJsViewTool.class);
             this.addJsViewTool(SiteJsViewTool.class);
+            this.addJsViewTool(TagJsViewTool.class);
         }catch (Throwable e) {
             Logger.error(JsEngine.class, "Could not start the js view tools", e);
         }
