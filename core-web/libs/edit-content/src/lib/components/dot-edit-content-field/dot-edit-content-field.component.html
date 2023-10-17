@@ -9,10 +9,12 @@
         >
         <dot-edit-content-text-field
             *ngSwitchCase="'Text'"
-            [field]="field"></dot-edit-content-text-field>
+            [field]="field"
+            [attr.data-testId]="'field-' + field.variable"></dot-edit-content-text-field>
         <dot-edit-content-text-area
             *ngSwitchCase="'Textarea'"
-            [field]="field"></dot-edit-content-text-area>
+            [field]="field"
+            [attr.data-testId]="'field-' + field.variable"></dot-edit-content-text-area>
         <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{
             field.hint
         }}</small>
