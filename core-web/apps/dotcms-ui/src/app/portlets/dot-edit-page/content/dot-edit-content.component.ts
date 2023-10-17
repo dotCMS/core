@@ -532,7 +532,7 @@ browse from the page internal links
                 this.isEditMode = true;
             });
         } else {
-            this.dotEditContentHtmlService.renderPage(pageState, this.iframe).then(() => {
+            this.dotEditContentHtmlService.renderPage(pageState, this.iframe)?.then(() => {
                 this.seoOGTags = this.dotEditContentHtmlService.getMetaTags();
                 this.seoOGTagsResults = this.dotEditContentHtmlService.getMetaTagsResults();
             });
