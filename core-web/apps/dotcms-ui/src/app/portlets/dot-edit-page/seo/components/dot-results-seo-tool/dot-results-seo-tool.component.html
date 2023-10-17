@@ -33,11 +33,7 @@
                     </div>
                 </div>
                 <div *ngSwitchCase="seoMediaTypes.TWITTER">
-                    <img
-                        class="results-seo-tool__preview-image"
-                        [src]="mainPreview.image"
-                        (error)="onImageError()"
-                        alt="preview image" />
+                    <dot-seo-image-preview image="mainPreview.image"></dot-seo-image-preview>
                     <div class="results-seo-tool__preview">
                         <span data-testId="page-hostName">{{ mainPreview.hostName }}</span>
                         <h5>{{ mainPreview.twitterTitle }}</h5>
@@ -45,17 +41,7 @@
                     </div>
                 </div>
                 <div *ngSwitchDefault>
-                    <div class="default-image" *ngIf="defaultPreview">
-                        <i class="pi pi-exclamation-triangle"></i>
-                        <h5>Social Media Preview Image Not Defined!</h5>
-                    </div>
-                    <img
-                        class="results-seo-tool__preview-image"
-                        *ngIf="!defaultPreview"
-                        [src]="mainPreview.image"
-                        (error)="onImageError($event)"
-                        alt="preview image" />
-
+                    <dot-seo-image-preview image="mainPreview.image"></dot-seo-image-preview>
                     <div class="results-seo-tool__preview">
                         <span data-testId="page-hostName">{{ mainPreview.hostName }}</span>
                         <h5>{{ mainPreview.title }}</h5>

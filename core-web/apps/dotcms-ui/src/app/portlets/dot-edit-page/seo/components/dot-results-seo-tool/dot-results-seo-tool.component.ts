@@ -29,6 +29,7 @@ import {
 } from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
 import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-meta-tags.service';
 import { DotSelectSeoToolComponent } from '../dot-select-seo-tool/dot-select-seo-tool.component';
+import { DotSeoImagePreviewComponent } from '../dot-seo-image-preview/dot-seo-image-preview.component';
 
 @Component({
     selector: 'dot-results-seo-tool',
@@ -46,7 +47,8 @@ import { DotSelectSeoToolComponent } from '../dot-select-seo-tool/dot-select-seo
         AsyncPipe,
         DotMessagePipe,
         DotPipesModule,
-        DotSelectSeoToolComponent
+        DotSelectSeoToolComponent,
+        DotSeoImagePreviewComponent
     ],
     providers: [DotSeoMetaTagsService],
     templateUrl: './dot-results-seo-tool.component.html',
@@ -117,9 +119,5 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
                 return this.dotSeoMetaTagsService.getFilteredMetaTagsByMedia(tags, this.seoMedia);
             })
         );
-    }
-
-    onImageError() {
-        this.defaultPreview = true;
     }
 }
