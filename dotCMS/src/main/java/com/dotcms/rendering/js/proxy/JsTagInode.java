@@ -8,7 +8,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * Encapsulates a TagInode in a Js context, which is basically a file sent by multipart/form-data
+ * Encapsulates a {@link TagInode} in a Js context, which is basically a file sent by multipart/form-data
  * @author jsanca
  */
 public class JsTagInode implements Serializable, JsProxyObject<TagInode> {

@@ -6,6 +6,8 @@ import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMap;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.templates.design.bean.Body;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
@@ -48,6 +50,8 @@ public class JsProxyFactory {
         registerMapper(new JsMapProxyMapperStrategyImpl());
         registerMapper(new JsCollectionProxyMapperStrategyImpl());
         registerMapper(new JsTagInodeProxyMapperStrategyImpl());
+        registerMapper(new JsTemplateLayoutProxyMapperStrategyImpl());
+        registerMapper(new JsBodyLayoutProxyMapperStrategyImpl());
     }
     /**
      * Register a custom mapper
@@ -272,5 +276,33 @@ public class JsProxyFactory {
             return new JsTagInode((TagInode)obj);
         }
     }
+
+    private static final class JsTemplateLayoutProxyMapperStrategyImpl implements JsProxyMapperStrategy {
+        @Override
+        public boolean test(final Object obj) {
+            return null != obj && obj instanceof TemplateLayout;
+        }
+
+        @Override
+        public Object apply(final Object obj) {
+
+            return new JsTemplateLayout((TemplateLayout)obj);
+        }
+    }
+
+    private static final class JsBodyLayoutProxyMapperStrategyImpl implements JsProxyMapperStrategy {
+        @Override
+        public boolean test(final Object obj) {
+            return null != obj && obj instanceof Body;
+        }
+
+        @Override
+        public Object apply(final Object obj) {
+
+            return new JsBody((Body)obj);
+        }
+    }
+
+
 
 }
