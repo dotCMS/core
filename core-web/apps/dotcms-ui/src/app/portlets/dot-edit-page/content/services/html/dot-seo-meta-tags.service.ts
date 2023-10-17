@@ -462,7 +462,7 @@ export class DotSeoMetaTagsService {
                 }
 
                 if (
-                    imageMetaData?.url === IMG_NOT_FOUND_KEY ||
+                    imageMetaData?.url === IMG_NOT_FOUND_KEY &&
                     this.areAllFalsyOrEmpty([imageOgElements, imageOg])
                 ) {
                     result.push(
