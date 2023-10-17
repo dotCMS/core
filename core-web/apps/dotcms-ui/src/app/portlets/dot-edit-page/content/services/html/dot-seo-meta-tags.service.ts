@@ -783,7 +783,7 @@ export class DotSeoMetaTagsService {
                     });
                 }
 
-                return response.blob();
+                return response.clone().blob();
             }),
             mergeMap((response) => {
                 return of({
