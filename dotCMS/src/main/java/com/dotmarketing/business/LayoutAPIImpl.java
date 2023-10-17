@@ -200,7 +200,7 @@ public class LayoutAPIImpl implements LayoutAPI {
 		if(loadLayoutsForUser(user).stream(). anyMatch(layout -> layout.getPortletIds().contains(portletId))){
 			return true;
 		}
-		if(portletId.equals("edit-page") ){
+		if("edit-page".equals(portletId)){
 			return editPagePortletAccess(user);
 		}
 		return APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole());
