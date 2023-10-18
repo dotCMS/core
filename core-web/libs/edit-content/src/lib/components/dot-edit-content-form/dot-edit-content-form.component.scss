@@ -10,6 +10,7 @@
 
     form {
         overflow: auto;
+        padding-right: $spacing-4;
     }
 }
 
@@ -20,7 +21,8 @@
     gap: $spacing-2;
 
     .column {
-        display: grid;
-        min-height: $spacing-7;
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-3;
     }
 }
