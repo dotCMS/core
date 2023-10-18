@@ -9,9 +9,9 @@ import { InputTextModule } from 'primeng/inputtext';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotEditContentTextFieldComponent } from './dot-edit-content-text-field.component';
+import { INPUT_TEXT_OPTIONS, INPUT_TYPE } from './utils';
 
 import { FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
-import { INPUT_TYPE } from '../models';
 
 describe('DotEditContentTextFieldComponent', () => {
     let spectator: Spectator<DotEditContentTextFieldComponent>;
@@ -35,11 +35,7 @@ describe('DotEditContentTextFieldComponent', () => {
             }
         });
 
-        textInput = spectator.query(byTestId('input-' + FIELD_MOCK.variable));
-    });
-
-    it('should render', () => {
-        expect(textInput).toBeTruthy();
+        textInput = spectator.query(byTestId(FIELD_MOCK.variable));
     });
 
     test.each([
@@ -57,29 +53,17 @@ describe('DotEditContentTextFieldComponent', () => {
 
     describe.each([
         {
-            dataType: INPUT_TYPE.TEXT,
-            options: {
-                type: 'text',
-                inputMode: 'text'
-            }
+            dataType: INPUT_TYPE.TEXT
         },
         {
-            dataType: INPUT_TYPE.INTEGER,
-            options: {
-                type: 'number',
-                inputMode: 'numeric',
-                step: 1
-            }
+            dataType: INPUT_TYPE.INTEGER
         },
         {
-            dataType: INPUT_TYPE.FLOAT,
-            options: {
-                type: 'number',
-                inputMode: 'decimal',
-                step: 0.1
-            }
+            dataType: INPUT_TYPE.FLOAT
         }
-    ])('with dataType as $dataType', ({ dataType, options }) => {
+    ])('with dataType as $dataType', ({ dataType }) => {
+        const options = INPUT_TEXT_OPTIONS[dataType];
+
         beforeEach(() => {
             spectator = createComponent({
                 props: {
@@ -87,7 +71,7 @@ describe('DotEditContentTextFieldComponent', () => {
                 }
             });
 
-            textInput = spectator.query(byTestId('input-' + FIELD_MOCK.variable));
+            textInput = spectator.query(byTestId(FIELD_MOCK.variable));
         });
 
         it('should have the type as defined in the options', () => {

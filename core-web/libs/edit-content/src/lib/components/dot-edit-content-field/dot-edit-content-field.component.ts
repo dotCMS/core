@@ -5,8 +5,7 @@ import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
-import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-text-area/dot-edit-content-text-area.component';
-import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-text-field/dot-edit-content-text-field.component';
+import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields.module';
 
 @Component({
     selector: 'dot-edit-content-field',
@@ -14,8 +13,7 @@ import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-
     imports: [
         CommonModule,
         ReactiveFormsModule,
-        DotEditContentTextFieldComponent,
-        DotEditContentTextAreaComponent,
+        DotEditContentFieldsModule,
         DotFieldRequiredDirective
     ],
     templateUrl: './dot-edit-content-field.component.html',

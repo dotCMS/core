@@ -8,8 +8,7 @@ import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
-import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-text-area/dot-edit-content-text-area.component';
-import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-text-field/dot-edit-content-text-field.component';
+import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields.module';
 import { FIELDS_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
 
 describe.each([...FIELDS_MOCK])('DotFieldComponent', (fieldMock) => {
@@ -20,8 +19,7 @@ describe.each([...FIELDS_MOCK])('DotFieldComponent', (fieldMock) => {
             DotEditContentFieldComponent,
             CommonModule,
             ReactiveFormsModule,
-            DotEditContentTextAreaComponent,
-            DotEditContentTextFieldComponent,
+            DotEditContentFieldsModule,
             DotFieldRequiredDirective
         ],
         componentViewProviders: [

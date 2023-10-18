@@ -1,7 +1,7 @@
 <input
     [id]="field.variable"
     [formControlName]="field.variable"
-    [attr.data-testId]="'input-' + field.variable"
+    [attr.data-testId]="field.variable"
     [type]="inputTextOptions[field.dataType].type"
     [attr.inputmode]="inputTextOptions[field.dataType].inputMode"
     [attr.step]="inputTextOptions[field.dataType].step"

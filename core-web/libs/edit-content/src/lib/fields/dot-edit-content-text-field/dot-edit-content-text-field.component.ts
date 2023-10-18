@@ -5,7 +5,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { INPUT_TYPE, InputTextOptions } from '../models';
+import { INPUT_TEXT_OPTIONS } from './utils';
 
 @Component({
     selector: 'dot-edit-content-text-field',
@@ -24,22 +24,5 @@ import { INPUT_TYPE, InputTextOptions } from '../models';
 export class DotEditContentTextFieldComponent {
     @Input() field!: DotCMSContentTypeField;
 
-    // This is to hold the options for the input type
-    readonly inputTextOptions: Record<INPUT_TYPE, InputTextOptions> = {
-        TEXT: {
-            type: 'text',
-            inputMode: 'text'
-        },
-
-        INTEGER: {
-            type: 'number',
-            inputMode: 'numeric',
-            step: 1
-        },
-        FLOAT: {
-            type: 'number',
-            inputMode: 'decimal',
-            step: 0.1
-        }
-    };
+    readonly inputTextOptions = INPUT_TEXT_OPTIONS;
 }

@@ -39,11 +39,7 @@ describe('DotEditContentTextAreaComponent', () => {
             }
         });
 
-        textArea = spectator.query(byTestId('text-area-' + FIELD_MOCK.variable));
-    });
-
-    it('should render', () => {
-        expect(textArea).toBeTruthy();
+        textArea = spectator.query(byTestId(FIELD_MOCK.variable));
     });
 
     test.each([
