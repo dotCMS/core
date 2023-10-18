@@ -701,7 +701,7 @@
                     const binaryFieldContainer = document.getElementById("container-binary-field-<%=field.getVelocityVarName()%>");
                     const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
                     const acceptArr = "<%= accept%>".split(',');
-                    const acceptTypes = acceptArr.map((type) => type.trim());
+                    const acceptTypes = acceptArr.map((type) => type.trim()).filter((type) => type !== "");
                     const maxFileSize = Number("<%= maxFileLength%>");
 
                     // Creating the binary field dynamically
@@ -906,7 +906,12 @@
     <%} %>
     <%
 
-        if(UtilMethods.isSet(value) && UtilMethods.isSet(resourceLink)){
+        String bnFlag = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
+        Boolean newBinaryOn = bnFlag != null && bnFlag.equalsIgnoreCase("true");
+        Boolean isBinaryField = field.getFieldType().equals(Field.FieldType.BINARY.toString());
+        Boolean shouldShowEditFileOnBn = isBinaryField && !newBinaryOn; // If the new binary field is on, we don't show the edit field
+
+        if(UtilMethods.isSet(value) && UtilMethods.isSet(resourceLink) && shouldShowEditFileOnBn){
 
           boolean canUserWriteToContentlet = APILocator.getPermissionAPI().doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE, user);
 

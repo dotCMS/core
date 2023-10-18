@@ -50,21 +50,18 @@ export default {
                     provide: DotUploadService,
                     useValue: {
                         uploadFile: () => {
-                            return new Promise((resolve, reject) => {
+                            return new Promise((resolve, _reject) => {
                                 setTimeout(() => {
-                                    reject({
-                                        message: 'error URL'
+                                    resolve({
+                                        fileName: 'Image.jpg',
+                                        folder: 'folder',
+                                        id: 'tempFileId',
+                                        image: true,
+                                        length: 10000,
+                                        mimeType: 'mimeType',
+                                        referenceUrl: 'referenceUrl',
+                                        thumbnailUrl: 'thumbnailUrl'
                                     });
-                                    // resolve({
-                                    //     fileName: 'Image.jpg',
-                                    //     folder: 'folder',
-                                    //     id: 'tempFileId',
-                                    //     image: true,
-                                    //     length: 10000,
-                                    //     mimeType: 'mimeType',
-                                    //     referenceUrl: 'referenceUrl',
-                                    //     thumbnailUrl: 'thumbnailUrl'
-                                    // });
                                 }, 4000);
                             });
                         }
@@ -78,7 +75,7 @@ export default {
         })
     ],
     args: {
-        accept: ['image/*'],
+        accept: ['image/*', '.ts'],
         maxFileSize: 1000000,
         helperText: 'This field accepts only images with a maximum size of 1MB.'
     },
