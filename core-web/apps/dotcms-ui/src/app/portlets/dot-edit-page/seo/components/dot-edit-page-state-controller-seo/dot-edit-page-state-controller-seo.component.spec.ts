@@ -617,5 +617,36 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
             expect(dotTabButtons.resetDropdownById).toHaveBeenCalledWith(DotPageMode.PREVIEW);
         });
+
+        it('should have menuItems if the page goes from not having urlContentMap to having it', async () => {
+            let pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
+                { ...mockUser(), userId: '457' },
+                {
+                    ...mockDotRenderedPage()
+                }
+            );
+            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.detectChanges();
+
+            await fixtureHost.whenStable();
+            expect(component.menuItems.length).toBe(0);
+
+            pageRenderStateMocked = new DotPageRenderState(
+                { ...mockUser(), userId: '457' },
+                {
+                    ...mockDotRenderedPage(),
+                    urlContentMap: {
+                        title: 'Title',
+                        inode: '123',
+                        contentType: 'test'
+                    }
+                }
+            );
+            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.detectChanges();
+
+            await fixtureHost.whenStable();
+            expect(component.menuItems.length).toBe(2);
+        });
     });
 });
