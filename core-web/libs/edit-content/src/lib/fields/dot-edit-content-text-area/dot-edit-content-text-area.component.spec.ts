@@ -55,7 +55,7 @@ describe('DotEditContentTextAreaComponent', () => {
         expect(textArea.getAttribute(attribute)).toBe(variable);
     });
 
-    it('should have min height as 18.75rem and resize as vertical', () => {
-        expect(textArea.getAttribute('style')).toBe('min-height: 18.75rem; resize: vertical;');
+    it('should have min height as 9.375rem and resize as vertical', () => {
+        expect(textArea.getAttribute('style')).toBe('min-height: 9.375rem; resize: vertical;');
     });
 });
