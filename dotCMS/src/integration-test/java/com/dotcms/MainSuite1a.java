@@ -39,8 +39,6 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
         StartEndScheduledExperimentsJobTest.class,
         RulesAPIImplIntegrationTest.class,
-        Task220825CreateVariantFieldTest.class,
-        Task221007AddVariantIntoPrimaryKeyTest.class,
         ESContentletAPIImplTest.class,
         ExperimentAPIImpIntegrationTest.class,
         ExperimentWebAPIImplIntegrationTest.class,

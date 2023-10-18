@@ -78,3 +78,15 @@ body {
     text-rendering: optimizeLegibility;
     -moz-osx-font-smoothing: grayscale;
 }
+
+.edit-content-full-screen {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0px;
+    max-height: none;
+    padding: 0;
+    height: calc(
+        100vh - 3rem - 20px - 1rem - 0.5rem - 20px - 61px - 1rem
+    ); // This calculation represents all the elements that surrounds the element we want to make fullscreen,
+    // this way we make it occupy all the available space
+}
