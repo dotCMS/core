@@ -14,13 +14,14 @@ const messageServiceMock = new MockDotMessageService({
     'contentType.errors.input.maxlength': 'Value must be no more than {0} characters',
     'error.form.validator.maxlength': 'Max length error',
     'error.form.validator.required': 'Required error',
+    'error.form.validator.pattern': 'Pattern error',
     'contentType.form.variable.placeholder': 'Will be auto-generated if left empty'
 });
 
 @Component({ selector: 'dot-custom-host', template: '' })
 class CustomHostComponent {
     defaultMessage = 'Required';
-    control = new UntypedFormControl('', Validators.required);
+    control = new UntypedFormControl('', [Validators.required, Validators.pattern(/^.+\..+$/)]);
 }
 
 describe('FieldValidationComponent', () => {
@@ -37,7 +38,7 @@ describe('FieldValidationComponent', () => {
         ]
     });
 
-    describe('Using default message', () => {
+    describe('Using validators messages', () => {
         beforeEach(() => {
             spectator = createHost(
                 `
@@ -52,7 +53,7 @@ describe('FieldValidationComponent', () => {
 
         it('should hide the message when field it is valid', () => {
             expect(spectator.hostComponent.control.valid).toBe(false);
-            spectator.hostComponent.control.setValue('valid-content');
+            spectator.hostComponent.control.setValue('match-pattern.js');
 
             expect(spectator.hostComponent.control.valid).toBe(true);
             expect(spectator.queryHost(byTestId('error-msg'))).not.toExist();
@@ -72,9 +73,25 @@ describe('FieldValidationComponent', () => {
 
             expect(spectator.queryHost(byTestId('error-msg'))).toExist();
         });
+
+        it('should show the message when field has not valid pattern', () => {
+            expect(spectator.hostComponent.control.valid).toBe(false);
+            expect(spectator.hostComponent.control.dirty).toBe(false);
+
+            spectator.hostComponent.control.setValue('not match pattern');
+            spectator.hostComponent.control.markAsDirty();
+
+            spectator.detectComponentChanges();
+
+            expect(spectator.hostComponent.control.valid).toBe(false);
+            expect(spectator.hostComponent.control.dirty).toBe(true);
+
+            expect(spectator.queryHost(byTestId('error-msg'))).toExist();
+            expect(spectator.queryHost(byTestId('error-msg'))).toContainText('Pattern error');
+        });
     });
 
-    describe('Using validators messages', () => {
+    describe('Using default message', () => {
         beforeEach(() => {
             spectator = createHost(
                 `
