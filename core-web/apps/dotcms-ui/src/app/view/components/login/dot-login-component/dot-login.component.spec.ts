@@ -116,7 +116,7 @@ describe('DotLoginComponent', () => {
     describe('Functionality', () => {
         beforeEach(() => {
             fixture.detectChanges();
-            signInButton = de.query(By.css('button[pButton]'));
+            signInButton = de.query(By.css('[data-testId="submitButton"]'));
         });
 
         it('should load form labels correctly', () => {
@@ -135,7 +135,7 @@ describe('DotLoginComponent', () => {
             expect(header.nativeElement.innerHTML).toContain('Welcome!');
             expect(emailLabel.nativeElement.innerHTML).toEqual('Email Address');
             expect(passwordLabel.nativeElement.innerHTML).toEqual('Password');
-            expect(recoverPasswordLink.nativeElement.innerHTML).toEqual('Recover Password');
+            expect(recoverPasswordLink.nativeElement.innerHTML.trim()).toEqual('Recover Password');
             expect(rememberMe.nativeElement.innerHTML).toEqual('Remember Me');
             expect(submitButton.nativeElement.innerHTML).toContain('Sign In');
             expect(serverInformation.nativeElement.innerHTML).toEqual('Server: 860173b0');
