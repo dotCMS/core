@@ -2,7 +2,7 @@ import { Observable, forkJoin, from, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { catchError, map, mergeMap, switchMap } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
@@ -815,7 +815,7 @@ export class DotSeoMetaTagsService {
         }
 
         return from(fetch(imageUrl)).pipe(
-            mergeMap((response) => {
+            switchMap((response) => {
                 if (response.status === 404) {
                     return of({
                         size: 0,
@@ -825,19 +825,14 @@ export class DotSeoMetaTagsService {
 
                 return response.clone().blob();
             }),
-            mergeMap((response) => {
-                return of({
-                    length: response.size,
+            map(({ size }) => {
+                return {
+                    length: size,
                     url: imageUrl
-                });
+                };
             }),
             catchError(() => {
                 return from(this.dotUploadService.uploadFile({ file: imageUrl })).pipe(
-                    mergeMap((uploadedFile) => {
-                        if (uploadedFile) {
-                            return of(uploadedFile);
-                        }
-                    }),
                     catchError((uploadError) => {
                         console.warn('Error while uploading:', uploadError);
 

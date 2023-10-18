@@ -354,7 +354,8 @@ describe('DotResultsSeoToolComponent', () => {
     });
 
     it('should display the default icon when noFavicon is true', () => {
-        spectator.component.noFavicon = true;
+        const imageElement = spectator.query(byTestId('favicon-image'));
+        spectator.dispatchFakeEvent(imageElement, 'error');
         spectator.detectComponentChanges();
 
         const defaultIcon = spectator.query(byTestId('favicon-default'));
@@ -363,7 +364,6 @@ describe('DotResultsSeoToolComponent', () => {
     });
 
     it('should display the favicon image when noFavicon is false', () => {
-        spectator.component.noFavicon = false;
         spectator.component.seoOGTags.favicon = 'favicon-image-url.png';
 
         spectator.detectComponentChanges();
