@@ -1,16 +1,11 @@
 package com.dotcms.rendering.js.proxy;
 
-import com.dotcms.publishing.manifest.ManifestItem;
-import com.dotmarketing.business.PermissionSummary;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.categories.model.Category;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.proxy.ProxyHashMap;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -102,27 +97,6 @@ public class JsCategory implements Serializable, JsProxyObject<Category> {
         return this.category.getModDate();
     }
 
-    protected List<PermissionSummary> acceptedPermissionsInternal() {
-        return this.category.acceptedPermissions();
-    }
-    //The following methods are part of the permissionable interface
-    //to define what kind of permissions are accepted by categories
-    //and also how categories should behave in terms of cascading
-    @HostAccess.Export
-    // todo: proxuy the PermissionSummary
-    public Object acceptedPermissions() {
-        return JsProxyFactory.createProxy(this.acceptedPermissionsInternal());
-    }
-
-    protected Permissionable getParentPermissionableInternal() throws DotDataException {
-        return this.category.getParentPermissionable();
-    }
-    @HostAccess.Export
-    // todo: proxy the Permissionable
-    public Object getParentPermissionable() throws DotDataException {
-        return JsProxyFactory.createProxy(this.getParentPermissionableInternal());
-    }
-
     @HostAccess.Export
     public boolean isParentPermissionable() {
         return this.category.isParentPermissionable();
@@ -134,15 +108,4 @@ public class JsCategory implements Serializable, JsProxyObject<Category> {
         return this.category.toString();
     }
 
-    protected ManifestItem.ManifestInfo getManifestInfoInternal() {
-
-        return this.category.getManifestInfo();
-    }
-
-    @HostAccess.Export
-    // todo: there is not proxy for the ManifestInfo yet
-    public Object getManifestInfo() {
-
-        return JsProxyFactory.createProxy(this.getManifestInfoInternal());
-    }
 }

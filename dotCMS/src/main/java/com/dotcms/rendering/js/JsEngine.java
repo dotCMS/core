@@ -5,7 +5,9 @@ import com.dotcms.rendering.engine.ScriptEngine;
 import com.dotcms.rendering.js.proxy.JsProxyFactory;
 import com.dotcms.rendering.js.proxy.JsRequest;
 import com.dotcms.rendering.js.proxy.JsResponse;
+import com.dotcms.rendering.js.viewtools.CacheJsViewTool;
 import com.dotcms.rendering.js.viewtools.CategoriesJsViewTool;
+import com.dotcms.rendering.js.viewtools.ContainerJsViewTool;
 import com.dotcms.rendering.js.viewtools.ContentJsViewTool;
 import com.dotcms.rendering.js.viewtools.LanguageJsViewTool;
 import com.dotcms.rendering.js.viewtools.SecretJsViewTool;
@@ -52,6 +54,8 @@ public class JsEngine implements ScriptEngine {
             this.addJsViewTool(SiteJsViewTool.class);
             this.addJsViewTool(TagJsViewTool.class);
             this.addJsViewTool(TemplateJsViewTool.class);
+            this.addJsViewTool(ContainerJsViewTool.class);
+            this.addJsViewTool(CacheJsViewTool.class);
         }catch (Throwable e) {
             Logger.error(JsEngine.class, "Could not start the js view tools", e);
         }

@@ -4,11 +4,16 @@ import com.dotcms.rendering.js.JsViewContextAware;
 import com.dotcms.rendering.js.JsViewTool;
 import com.dotcms.rendering.js.proxy.JsProxyFactory;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
+import io.vavr.control.Try;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.graalvm.polyglot.HostAccess;
+
+import java.util.Map;
 
 /**
  * Wraps the {@link com.dotcms.rendering.velocity.viewtools.DotTemplateTool} (tags) into the JS context.
@@ -46,5 +51,22 @@ public class TemplateJsViewTool implements JsViewTool, JsViewContextAware {
 
     protected TemplateLayout themeLayoutInternal (final String themeInode, final Boolean isPreview) throws DotDataException, DotSecurityException {
        return this.dotTemplateTool.themeLayout(themeInode, isPreview);
+    }
+
+    @HostAccess.Export
+    /**
+     * Method that will create a map of required data for the Layout template, basically paths
+     * where the different elements of the theme can be found.
+     *
+     * @param themeFolderInode
+     * @param hostId
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public  Object theme (final String themeFolderInode, final String siteid)
+            throws DotDataException, DotSecurityException {
+
+        return JsProxyFactory.createProxy(DotTemplateTool.theme(themeFolderInode, siteid));
     }
 }

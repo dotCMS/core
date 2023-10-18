@@ -3,14 +3,18 @@ package com.dotcms.rendering.js.proxy;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.rendering.velocity.viewtools.content.LazyLoaderContentMap;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMap;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.design.bean.Body;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import org.graalvm.polyglot.Value;
 import org.graalvm.polyglot.proxy.ProxyArray;
 import org.graalvm.polyglot.proxy.ProxyHashMap;
 
@@ -45,13 +49,15 @@ public class JsProxyFactory {
         registerMapper(new JsBlobProxyMapperStrategyImpl());
         registerMapper(new JsCategoryProxyMapperStrategyImpl());
         registerMapper(new JsStoryBlockMapProxyMapperStrategyImpl());
-        registerMapper(new JsStoryBlockMapProxyMapperStrategyImpl());
         registerMapper(new JsJSONObjectProxyMapperStrategyImpl());
         registerMapper(new JsMapProxyMapperStrategyImpl());
         registerMapper(new JsCollectionProxyMapperStrategyImpl());
         registerMapper(new JsTagInodeProxyMapperStrategyImpl());
         registerMapper(new JsTemplateLayoutProxyMapperStrategyImpl());
         registerMapper(new JsBodyLayoutProxyMapperStrategyImpl());
+        registerMapper(new JsSiteProxyMapperStrategyImpl());
+        registerMapper(new JsContainerUUIDProxyMapperStrategyImpl());
+        registerMapper(new JsTreeableProxyMapperStrategyImpl());
     }
     /**
      * Register a custom mapper
@@ -93,6 +99,37 @@ public class JsProxyFactory {
             }
         }
         return proxy;
+    }
+
+    /**
+     * Tries to unwrap the object passed as parameter
+     * Otherwise returns the object as it is.
+     * @param value Object
+     * @return Object
+     */
+    public static Object unwrap(final Object value) {
+
+        if (value instanceof JsProxyObject) {
+
+            return JsProxyObject.class.cast(value).getWrappedObject();
+        }
+
+        if (value instanceof Value) {
+
+            final Value eval =  (Value)value;
+
+            if (eval.isHostObject()) {
+                return eval.asHostObject();
+            }
+
+            if (eval.isString()) {
+                return eval.as(String.class);
+            }
+
+            return eval.as(Object.class);
+        }
+
+        return value;
     }
 
     // Mappers
@@ -302,6 +339,46 @@ public class JsProxyFactory {
             return new JsBody((Body)obj);
         }
     }
+
+    private static final class JsSiteProxyMapperStrategyImpl implements JsProxyMapperStrategy {
+        @Override
+        public boolean test(final Object obj) {
+            return null != obj && obj instanceof Host;
+        }
+
+        @Override
+        public Object apply(final Object obj) {
+
+            return new JsSite((Host)obj);
+        }
+    }
+
+    private static final class JsContainerUUIDProxyMapperStrategyImpl implements JsProxyMapperStrategy {
+        @Override
+        public boolean test(final Object obj) {
+            return null != obj && obj instanceof ContainerUUID;
+        }
+
+        @Override
+        public Object apply(final Object obj) {
+
+            return new JsContainerUUID((ContainerUUID)obj);
+        }
+    }
+
+    private static final class JsTreeableProxyMapperStrategyImpl implements JsProxyMapperStrategy {
+        @Override
+        public boolean test(final Object obj) {
+            return null != obj && obj instanceof Treeable;
+        }
+
+        @Override
+        public Object apply(final Object obj) {
+
+            return new JsTreeable((Treeable)obj);
+        }
+    }
+
 
 
 

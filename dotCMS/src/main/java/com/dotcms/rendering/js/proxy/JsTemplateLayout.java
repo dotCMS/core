@@ -1,6 +1,5 @@
 package com.dotcms.rendering.js.proxy;
 
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.graalvm.polyglot.HostAccess;
@@ -62,7 +61,7 @@ public class JsTemplateLayout implements Serializable, JsProxyObject<TemplateLay
     }
 
     @HostAccess.Export
-    public Object getSidebar () {  // todo: proxy this
+    public Object getSidebar () {
         return  JsProxyFactory.createProxy(this.layout.getSidebar());
     }
 
@@ -80,8 +79,8 @@ public class JsTemplateLayout implements Serializable, JsProxyObject<TemplateLay
      * @param uuid Container uuid into the TemplateLayout
      * @return
      */
-    public boolean existsContainer(final Container container, final String uuid) { // todo: proxy the container
-        return this.layout.existsContainer(container, uuid);
+    public boolean existsContainer(final JsContainer container, final String uuid) {
+        return this.layout.existsContainer(container.getWrappedObject(), uuid);
     }
 
     @HostAccess.Export
@@ -93,7 +92,7 @@ public class JsTemplateLayout implements Serializable, JsProxyObject<TemplateLay
 
     @HostAccess.Export
     @JsonIgnore
-    public Object getContainersUUID() { // todo: proxy ContainerUUID
+    public Object getContainersUUID() {
 
         return JsProxyFactory.createProxy(this.layout.getContainersUUID());
     }
