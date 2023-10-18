@@ -653,8 +653,8 @@ export class DotSeoMetaTagsService {
 
         if (
             twitterDescription &&
-            twitterDescription.length < SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH &&
-            twitterDescription.length > SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH
+            twitterDescription?.length > SEO_LIMITS.MIN_TWITTER_DESCRIPTION_LENGTH &&
+            twitterDescription?.length < SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH
         ) {
             result.push(
                 this.getDoneItem(

@@ -29,18 +29,19 @@ describe('DotSeoImagePreviewComponent', () => {
     });
 
     it('should display an error message when noImageAvailable is true', () => {
-        (spectator.component.noImageAvailable = true), spectator.detectComponentChanges();
+        spectator.component.noImageAvailable = true;
+        spectator.detectComponentChanges();
 
         const errorMessage = spectator.query(byTestId('seo-image-default'));
         expect(errorMessage).toBeTruthy();
     });
 
     it('should display an image when noImageAvailable is false', () => {
-        (spectator.component.noImageAvailable = false),
-            spectator.setInput({
-                image: 'sample-image-url.jpg'
-            });
-        spectator.detectChanges();
+        spectator.component.noImageAvailable = false;
+        spectator.setInput({
+            image: 'sample-image-url.jpg'
+        });
+        spectator.detectComponentChanges();
 
         const imageElement = spectator.query(byTestId('seo-image-preview'));
         expect(imageElement).toBeTruthy();
@@ -48,11 +49,11 @@ describe('DotSeoImagePreviewComponent', () => {
     });
 
     it('should call onImageError() when the image fails to load', () => {
-        const onImageErrorSpy = spyOn(spectator.component, 'onImageError');
         const imageElement = spectator.query(byTestId('seo-image-preview'));
 
         spectator.dispatchFakeEvent(imageElement, 'error');
+        spectator.detectComponentChanges();
 
-        expect(onImageErrorSpy).toHaveBeenCalled();
+        expect(spectator.component.noImageAvailable).toBe(true);
     });
 });
