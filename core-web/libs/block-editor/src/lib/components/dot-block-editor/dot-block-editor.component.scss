@@ -306,6 +306,13 @@
                 }
             }
         }
+
+        .ai-content-container {
+            &.ProseMirror-selectednode {
+                background-color: $color-palette-primary-op-20;
+                border: 1px solid $color-palette-primary-300;
+            }
+        }
     }
 
     tiptap-editor {
