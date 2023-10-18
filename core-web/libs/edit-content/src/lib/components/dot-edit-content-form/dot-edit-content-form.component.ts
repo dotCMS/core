@@ -12,9 +12,10 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { EditContentFormData } from '../../interfaces/dot-edit-content-form.interface';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 @Component({
     selector: 'dot-edit-content-form',
@@ -31,7 +32,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentFormComponent implements OnInit {
-    @Input() formData: DotCMSContentTypeLayoutRow[] = [];
+    @Input() formData!: EditContentFormData;
     @Output() formSubmit = new EventEmitter();
 
     private fb = inject(FormBuilder);
@@ -49,7 +50,7 @@ export class DotEditContentFormComponent implements OnInit {
      */
     initilizeForm() {
         this.form = this.fb.group({});
-        this.formData.forEach(({ columns }) => {
+        this.formData.layout.forEach(({ columns }) => {
             columns?.forEach((column) => {
                 column.fields.forEach((field) => {
                     const fieldControl = this.initializeFormControl(field);
@@ -76,7 +77,9 @@ export class DotEditContentFormComponent implements OnInit {
             }
         }
 
-        return this.fb.control(null, { validators });
+        return this.fb.control(this.formData.values?.[field.variable] ?? field.defaultValue, {
+            validators
+        });
     }
 
     /**

@@ -1,0 +1,16 @@
+<div class="field">
+    <label
+        [for]="field.variable"
+        [id]="'aria-' + field.variable"
+        [checkIsRequiredControl]="field.variable"
+        dotFieldRequired
+        >{{ field.name }}</label
+    >
+    <p-dropdown
+        [formControlName]="field.variable"
+        [options]="options"
+        [attr.aria-labelledby]="'aria-' + field.variable"
+        optionLabel="label"
+        optionValue="value"></p-dropdown>
+    <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>
+</div>

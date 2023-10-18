@@ -12,6 +12,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
+import { EditContentFormData } from '../../interfaces/dot-edit-content-form.interface';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 import { FIELD_MOCK } from '../dot-edit-content-field/dot-edit-content-field.component.spec';
 
@@ -159,6 +160,15 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
     }
 ];
 
+export const VALUES_MOCK = {
+    name1: 'Name1',
+    text2: 'Text2'
+};
+
+export const CONTENT_FORM_DATA_MOCK: EditContentFormData = {
+    layout: LAYOUT_MOCK
+};
+
 describe('DotFormComponent', () => {
     let spectator: Spectator<DotEditContentFormComponent>;
     const createComponent = createComponentFactory({
@@ -183,7 +193,7 @@ describe('DotFormComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                formData: LAYOUT_MOCK
+                formData: CONTENT_FORM_DATA_MOCK
             }
         });
     });
@@ -191,7 +201,7 @@ describe('DotFormComponent', () => {
     describe('initilizeForm', () => {
         it('should initialize the form group with form controls for each field in the `formData` array', () => {
             const component = spectator.component;
-            component.formData = LAYOUT_MOCK;
+            component.formData = CONTENT_FORM_DATA_MOCK;
             spectator.detectChanges();
 
             expect(component.form.controls['name1']).toBeDefined();
@@ -211,7 +221,7 @@ describe('DotFormComponent', () => {
     describe('saveContent', () => {
         it('should emit the form value through the `formSubmit` event', () => {
             const component = spectator.component;
-            component.formData = LAYOUT_MOCK;
+            component.formData = CONTENT_FORM_DATA_MOCK;
             component.initilizeForm();
 
             jest.spyOn(component.formSubmit, 'emit');

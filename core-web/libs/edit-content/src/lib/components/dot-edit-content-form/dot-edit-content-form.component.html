@@ -1,5 +1,5 @@
 <form class="p-fluid" *ngIf="form" [formGroup]="form">
-    <ng-container *ngFor="let row of formData">
+    <ng-container *ngFor="let row of formData.layout">
         <div class="row">
             <div class="column" *ngFor="let column of row.columns">
                 <dot-edit-content-field

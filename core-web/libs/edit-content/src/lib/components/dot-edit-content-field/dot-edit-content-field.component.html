@@ -17,4 +17,10 @@
             field.hint
         }}</small>
     </div>
+
+    <dot-edit-content-select-field *ngSwitchCase="'Select'" [field]="field" />
+
+    <dot-edit-content-radio-field
+        *ngSwitchCase="'Radio'"
+        [field]="field"></dot-edit-content-radio-field>
 </ng-container>
