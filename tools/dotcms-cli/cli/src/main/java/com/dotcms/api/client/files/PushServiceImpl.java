@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.groupingBy;
 import com.dotcms.api.client.files.traversal.LocalTraversalService;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.api.client.files.traversal.AbstractTraverseResult;
+import com.dotcms.api.client.files.traversal.TraverseResult;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.client.files.traversal.TraverseParams;
 import com.dotcms.api.client.push.exception.PushException;
@@ -61,11 +62,11 @@ public class PushServiceImpl implements PushService {
      */
     @ActivateRequestContext
     @Override
-    public List<AbstractTraverseResult> traverseLocalFolders(
+    public List<TraverseResult> traverseLocalFolders(
             OutputOptionMixin output, final File workspace, final File source, final boolean removeAssets,
             final boolean removeFolders, final boolean ignoreEmptyFolders, final boolean failFast) {
 
-        var traversalResult = new ArrayList<AbstractTraverseResult>();
+        var traversalResult = new ArrayList<TraverseResult>();
 
         // Parsing the source in order to get the root or roots for the traversal
         //By root we mean the folder that holds the asset info starting from the site
@@ -101,7 +102,7 @@ public class PushServiceImpl implements PushService {
      * Any ambiguity should be held here
      * @param traversalResult
      */
-    private void normalize(ArrayList<AbstractTraverseResult> traversalResult) {
+    private void normalize(ArrayList<TraverseResult> traversalResult) {
         // Once we have all roots data here we need to eliminate ambiguity
         final Map<String, Map<String, TreeNode>> indexedByStatusLangAndSite = indexByStatusLangAndSite(
                 traversalResult);
@@ -152,8 +153,8 @@ public class PushServiceImpl implements PushService {
      * @return an indexed representation of the local folders  first indexed by  status language and site
      * The most outer map is organized by composite key like status:lang:site the inner map is the folder path
      */
-    private Map<String,Map<String, TreeNode>> indexByStatusLangAndSite(List<AbstractTraverseResult> traverseResult) {
-        final Map<String, List<AbstractTraverseResult>> groupBySite = traverseResult.stream()
+    private Map<String,Map<String, TreeNode>> indexByStatusLangAndSite(List<TraverseResult> traverseResult) {
+        final Map<String, List<TraverseResult>> groupBySite = traverseResult.stream()
                 .collect(groupingBy(ctx -> ctx.localPaths().site()));
 
         Map<String,Map<String, TreeNode>> indexedFolders = new HashMap<>();

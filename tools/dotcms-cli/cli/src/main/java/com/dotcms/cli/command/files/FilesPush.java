@@ -6,6 +6,7 @@ import static com.dotcms.cli.command.files.TreePrinter.COLOR_NEW;
 
 import com.dotcms.api.client.files.PushService;
 import com.dotcms.api.client.files.traversal.AbstractTraverseResult;
+import com.dotcms.api.client.files.traversal.TraverseResult;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.command.DotCommand;
@@ -63,7 +64,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
         // Getting the workspace
         var workspace = getWorkspaceDirectory(pushMixin.path());
 
-        CompletableFuture<List<AbstractTraverseResult>>
+        CompletableFuture<List<TraverseResult>>
                 folderTraversalFuture = CompletableFuture.supplyAsync(
                 () ->
                     // Service to handle the traversal of the folder
