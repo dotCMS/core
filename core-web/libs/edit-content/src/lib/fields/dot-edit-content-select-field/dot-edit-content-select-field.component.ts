@@ -25,10 +25,22 @@ import { mapOptions } from '../../utils/functions.util';
 })
 export class DotEditContentSelectFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
+    private readonly controlContainer = inject(ControlContainer);
 
     options = [];
 
     ngOnInit() {
         this.options = mapOptions(this.field.values || '', this.field.dataType);
+        if (!this.formControl.value) {
+            this.formControl.setValue(this.options[0]?.value);
+        }
+    }
+
+    /**
+     * Returns the form control for the select field.
+     * @returns {AbstractControl} The form control for the select field.
+     */
+    get formControl() {
+        return this.controlContainer.control.get(this.field.variable);
     }
 }

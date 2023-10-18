@@ -25,10 +25,22 @@ import { mapOptions } from '../../utils/functions.util';
 })
 export class DotEditContentRadioFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
+    private readonly controlContainer = inject(ControlContainer);
 
     options = [];
 
     ngOnInit() {
         this.options = mapOptions(this.field.values || '', this.field.dataType);
+        if (!this.formControl.value) {
+            this.formControl.setValue(this.options[0]?.value);
+        }
+    }
+
+    /**
+     * Returns the form control for the radio field.
+     * @returns {AbstractControl} The form control for the radio field.
+     */
+    get formControl() {
+        return this.controlContainer.control.get(this.field.variable);
     }
 }
