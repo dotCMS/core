@@ -96,7 +96,11 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
                     this.seoOGTags['twitter:description']?.slice(
                         0,
                         SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH
-                    ) ?? this.seoOGTags['og:description'],
+                    ) ??
+                    this.seoOGTags['og:description']?.slice(
+                        0,
+                        SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH
+                    ),
                 twitterImage: this.seoOGTags['twitter:image']
             },
             {
