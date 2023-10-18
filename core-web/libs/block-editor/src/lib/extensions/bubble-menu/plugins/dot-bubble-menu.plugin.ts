@@ -395,6 +395,14 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 this.editor.commands.unsetAllMarks();
                 this.editor.commands.clearNodes();
                 break;
+
+            case 'superscript':
+                this.editor.commands.toggleSuperscript();
+                break;
+
+            case 'subscript':
+                this.editor.commands.toggleSubscript();
+                break;
         }
     }
 

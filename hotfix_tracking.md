@@ -137,3 +137,4 @@ This maintenance release includes the following code fixes:
 
 111. https://github.com/dotCMS/core/issues/26391 : custom REST CORS header configuration is not applied to responses #26391
 112. https://github.com/dotCMS/core/issues/25193 : Unable to specify resample_opts - value not carried all the way down the method call #25193
+113. https://github.com/dotCMS/core/issues/25489 : Block Editor: Add Superscript and Subscript Mark #25489

@@ -14,6 +14,8 @@ import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { AnyExtension, Content, Editor, JSONContent } from '@tiptap/core';
 import { Level } from '@tiptap/extension-heading';
+import { Subscript } from '@tiptap/extension-subscript';
+import { Superscript } from '@tiptap/extension-superscript';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 
@@ -239,6 +241,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 allowedContentTypes: this.allowedContentTypes,
                 allowedBlocks: this._allowedBlocks
             }),
+            Subscript,
+            Superscript,
             Placeholder.configure({ placeholder: this.placeholder }),
             ActionsMenu(this.viewContainerRef),
             DragHandler(this.viewContainerRef),
