@@ -553,7 +553,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         });
 
         it('should not have menuItems if page does not have URLContentMap', async () => {
-            expect(component.menuItems).toBe(undefined);
+            expect(component.menuItems.length).toBe(0);
         });
     });
 
