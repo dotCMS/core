@@ -29,7 +29,6 @@ import org.apache.felix.framework.OSGIUtil;
 import org.apache.lucene.search.BooleanQuery;
 import org.quartz.SchedulerException;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.rest.api.v1.maintenance.ClusterManagementTopic;
 import com.maxmind.geoip2.exception.GeoIp2Exception;
@@ -91,8 +90,6 @@ public class InitServlet extends HttpServlet {
         }
 
         Logger.info(this, "dotCMS shutting down Elastic Search");
-        Logger.info(this, "dotCMS shutting down Hazelcast");
-        HazelcastUtil.getInstance().shutdown();
 
         Logger.info(this, "dotCMS shutting down");
     }
@@ -148,7 +145,7 @@ public class InitServlet extends HttpServlet {
 
         try {
             DotInitScheduler.start();
-        } catch (SchedulerException e2) {
+        } catch (Exception e2) {
             Logger.fatal(InitServlet.class, e2.getMessage(), e2);
             throw new ServletException(e2.getMessage(), e2);
         }

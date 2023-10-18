@@ -1,6 +1,8 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
+import com.dotcms.cli.command.DotCommand;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.SiteView;
@@ -22,15 +24,22 @@ import picocli.CommandLine;
             "" // empty line left here on purpose to make room at the end
         }
 )
-public class SiteCreate extends AbstractSiteCommand implements Callable<Integer> {
+public class SiteCreate extends AbstractSiteCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "create";
 
     @CommandLine.Parameters(index = "0", arity = "1", description = " Site name. ")
     String siteName;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() throws Exception {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         if ( null != siteName && !siteName.isEmpty()) {
 
             final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
@@ -43,5 +52,15 @@ public class SiteCreate extends AbstractSiteCommand implements Callable<Integer>
         }
 
         return CommandLine.ExitCode.USAGE;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
     }
 }

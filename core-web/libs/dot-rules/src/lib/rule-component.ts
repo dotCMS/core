@@ -7,7 +7,12 @@ import {
     Output,
     ChangeDetectionStrategy
 } from '@angular/core';
-import { UntypedFormControl, Validators, UntypedFormGroup, UntypedFormBuilder } from '@angular/forms';
+import {
+    UntypedFormControl,
+    Validators,
+    UntypedFormGroup,
+    UntypedFormBuilder
+} from '@angular/forms';
 import { Observable } from 'rxjs';
 
 import {
@@ -52,47 +57,41 @@ const I8N_BASE = 'api.sites.ruleengine';
         <cw-add-to-bundle-dialog-container
             [assetId]="rule.key"
             [hidden]="!showAddToBundleDialog"
-            (close)="showAddToBundleDialog = false"
-        ></cw-add-to-bundle-dialog-container>
+            (close)="showAddToBundleDialog = false"></cw-add-to-bundle-dialog-container>
         <div
             class="cw-rule"
             [class.cw-hidden]="hidden"
             [class.cw-disabled]="!rule.enabled"
             [class.cw-saving]="saving"
             [class.cw-saved]="saved"
-            [class.cw-out-of-sync]="!saved && !saving"
-        >
+            [class.cw-out-of-sync]="!saved && !saving">
             <div
-                flex
-                layout="row"
                 class="cw-header"
                 *ngIf="!hidden"
                 (click)="setRuleExpandedState(!rule._expanded)"
-            >
-                <div flex="70" layout="row" layout-align="start center" class="cw-header-info">
+                flex
+                layout="row">
+                <div class="cw-header-info" flex="70" layout="row" layout-align="start center">
                     <i
                         class="cw-header-info-arrow pi"
                         [class.pi-angle-right]="!rule._expanded"
                         [class.pi-angle-down]="rule._expanded"
-                        aria-hidden="true"
-                    ></i>
+                        aria-hidden="true"></i>
                     <div flex="70" layout="column">
                         <input
-                            pInputText
                             class="cw-rule-name-input"
+                            (click)="$event.stopPropagation()"
+                            pInputText
                             placeholder="{{ rsrc('inputs.name.placeholder') | async }}"
                             formControlName="name"
-                            (click)="$event.stopPropagation()"
-                            dotAutofocus
-                        />
+                            dotAutofocus />
                         <div
-                            flex="50"
+                            class="name cw-warn basic label"
                             [hidden]="
                                 !formModel.controls['name'].touched ||
                                 formModel.controls['name'].valid
                             "
-                            class="name cw-warn basic label"
-                        >
+                            flex="50">
                             Name is required
                         </div>
                     </div>
@@ -100,12 +99,10 @@ const I8N_BASE = 'api.sites.ruleengine';
                         rsrc('inputs.fireOn.label') | async
                     }}</span>
                     <cw-input-dropdown
-                        flex="none"
-                        *ngIf="!hideFireOn"
                         class="cw-fire-on-dropdown"
+                        *ngIf="!hideFireOn"
                         [value]="fireOn.value"
                         [options]="fireOn.options"
-                        placeholder="{{ fireOn.placeholder | async }}"
                         (onDropDownChange)="
                             updateFireOn.emit({
                                 type: 'RULE_UPDATE_FIRE_ON',
@@ -113,44 +110,43 @@ const I8N_BASE = 'api.sites.ruleengine';
                             })
                         "
                         (click)="$event.stopPropagation()"
-                    >
+                        flex="none"
+                        placeholder="{{ fireOn.placeholder | async }}">
                     </cw-input-dropdown>
                 </div>
-                <div flex="30" layout="row" layout-align="end center" class="cw-header-actions">
+                <div class="cw-header-actions" flex="30" layout="row" layout-align="end center">
                     <span class="cw-rule-status-text" title="{{ statusText() }}">{{
                         statusText(30)
                     }}</span>
                     <p-inputSwitch
                         [(ngModel)]="rule.enabled"
-                        (onChange)="setRuleEnabledState($event)"
                         [ngModelOptions]="{ standalone: true }"
-                    ></p-inputSwitch>
+                        [pTooltip]="rule.enabled ? tooltipRuleOnText : tooltipRuleOffText"
+                        (onChange)="setRuleEnabledState($event)"
+                        tooltipPosition="bottom"></p-inputSwitch>
                     <div class="cw-btn-group">
                         <button
-                            pButton
                             class="p-button-secondary"
-                            icon="pi pi-ellipsis-v"
                             (click)="ruleOptions.toggle($event); $event.stopPropagation()"
-                        ></button>
-                        <button
-                            style="margin-left:0.5rem"
                             pButton
+                            icon="pi pi-ellipsis-v"></button>
+                        <button
                             class="p-button-secondary"
-                            icon="pi pi-plus"
-                            arial-label="Add Group"
+                            [disabled]="!rule.isPersisted()"
                             (click)="
                                 onCreateConditionGroupClicked();
                                 setRuleExpandedState(true);
                                 $event.stopPropagation()
                             "
-                            [disabled]="!rule.isPersisted()"
-                        ></button>
+                            style="margin-left:0.5rem"
+                            pButton
+                            icon="pi pi-plus"
+                            arial-label="Add Group"></button>
                         <p-menu
                             #ruleOptions
-                            appendTo="body"
-                            popup="true"
                             [model]="ruleActionOptions"
-                        ></p-menu>
+                            appendTo="body"
+                            popup="true"></p-menu>
                     </div>
                 </div>
             </div>
@@ -166,21 +162,19 @@ const I8N_BASE = 'api.sites.ruleengine';
                     (updateConditionGroupOperator)="onUpdateConditionGroupOperator($event, group)"
                     (updateConditionType)="onUpdateConditionType($event, group)"
                     (updateConditionParameter)="onUpdateConditionParameter($event, group)"
-                    (updateConditionOperator)="onUpdateConditionOperator($event, group)"
-                ></condition-group>
+                    (updateConditionOperator)="
+                        onUpdateConditionOperator($event, group)
+                    "></condition-group>
                 <div class="cw-action-group">
                     <div class="cw-action-separator">
                         {{ rsrc('inputs.action.firesActions') | async }}
                     </div>
-                    <div flex layout="column" class="cw-rule-actions">
+                    <div class="cw-rule-actions" flex layout="column">
                         <div
-                            layout="row"
                             class="cw-action-row"
                             *ngFor="let ruleAction of ruleActions; let i = index"
-                        >
+                            layout="row">
                             <rule-action
-                                flex
-                                layout="row"
                                 [action]="ruleAction"
                                 [index]="i"
                                 [actionTypePlaceholder]="actionTypePlaceholder"
@@ -188,21 +182,20 @@ const I8N_BASE = 'api.sites.ruleengine';
                                 (updateRuleActionType)="onUpdateRuleActionType($event)"
                                 (updateRuleActionParameter)="onUpdateRuleActionParameter($event)"
                                 (deleteRuleAction)="onDeleteRuleAction($event)"
-                            ></rule-action>
+                                flex
+                                layout="row"></rule-action>
                             <div class="cw-btn-group cw-add-btn">
                                 <div
                                     class="ui basic icon buttons"
-                                    *ngIf="i === ruleActions.length - 1"
-                                >
+                                    *ngIf="i === ruleActions.length - 1">
                                     <button
+                                        class="p-button-rounded p-button-success p-button-text"
+                                        [disabled]="!ruleAction.isPersisted()"
+                                        (click)="onCreateRuleAction()"
                                         pButton
                                         type="button"
                                         icon="pi pi-plus"
-                                        class="p-button-rounded p-button-success p-button-text"
-                                        arial-label="Add Action"
-                                        (click)="onCreateRuleAction()"
-                                        [disabled]="!ruleAction.isPersisted()"
-                                    ></button>
+                                        arial-label="Add Action"></button>
                                 </div>
                             </div>
                         </div>
@@ -257,6 +250,8 @@ class RuleComponent {
     actionTypePlaceholder = '';
     conditionTypePlaceholder = '';
     ruleActionOptions: MenuItem[];
+    tooltipRuleOnText: string;
+    tooltipRuleOffText: string;
 
     private _updateEnabledStateDelay: EventEmitter<{
         type: string;
@@ -331,6 +326,21 @@ class RuleComponent {
                                 }
                             }
                         ];
+                    });
+            });
+
+        this.resources
+            .get('api.sites.ruleengine.rules.inputs.onOff.tip')
+            .subscribe((tooltipLabel) => {
+                this.resources
+                    .get('api.sites.ruleengine.rules.inputs.onOff.on.label')
+                    .subscribe((ruleOnLabel) => {
+                        this.resources
+                            .get('api.sites.ruleengine.rules.inputs.onOff.off.label')
+                            .subscribe((ruleOffLabel) => {
+                                this.tooltipRuleOnText = `${tooltipLabel} (${ruleOnLabel})`;
+                                this.tooltipRuleOffText = `${tooltipLabel} (${ruleOffLabel})`;
+                            });
                     });
             });
     }

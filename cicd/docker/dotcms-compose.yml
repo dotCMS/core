@@ -38,6 +38,7 @@ services:
       WAIT_FOR_DEPS:
       JVM_ENDPOINT_TEST_PASS:
       DOT_ANALYTICS_IDP_URL: http://localhost:61111/realms/dotcms/protocol/openid-connect/token
+      DOT_SECRETS_SCRIPTING_ENABLED: "true"
     depends_on:
       - database
       - elasticsearch

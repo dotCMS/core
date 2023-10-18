@@ -4,13 +4,14 @@
     [saveButtonLoading]="vm.loading"
     (cancel)="onCancel()"
     (save)="onSave()"
-    data-testId="dialogForm"
->
+    data-testId="dialogForm">
     <form class="p-fluid" *ngIf="form" [formGroup]="form" data-testId="form">
         <div class="fields-col">
             <dot-pages-favorite-page-empty-skeleton
-                *ngIf="vm.showFavoriteEmptySkeleton; else FavoritePageThumbnail"
-            ></dot-pages-favorite-page-empty-skeleton>
+                *ngIf="
+                    vm.showFavoriteEmptySkeleton;
+                    else FavoritePageThumbnail
+                "></dot-pages-favorite-page-empty-skeleton>
 
             <ng-template #FavoritePageThumbnail>
                 <div class="dot-favorite-dialog__thumbnailField" data-testId="thumbnailField">
@@ -19,28 +20,24 @@
                             *ngIf="vm.renderThumbnail"
                             [value]="vm.pageRenderedHtml"
                             [width]="vm.imgWidth"
-                            [height]="vm.imgHeight"
-                        ></dot-html-to-image>
+                            [height]="vm.imgHeight"></dot-html-to-image>
                     </ng-template>
 
                     <ng-template #existingFavoritePage>
                         <div
                             class="dot-favorite-dialog__image-container"
-                            data-testId="favoriteCardImageContainer"
-                        >
+                            data-testId="favoriteCardImageContainer">
                             <img
                                 [alt]="vm.formState.title"
-                                [src]="vm.formState.thumbnail + '?' + timeStamp"
-                            />
+                                [src]="vm.formState.thumbnail + '?' + timeStamp" />
                         </div>
                         <button
-                            class="p-button-secondary dot-favorite-dialog__image-reload"
+                            class="p-button-outlined favorite-dialog__image-reload"
                             *ngIf="vm.pageRenderedHtml !== ''"
                             [label]="'favoritePage.dialog.reload.image.button' | dm"
                             (click)="renderThumbnail()"
                             data-testid="dotFavoriteDialogReloadThumbnailButton"
-                            pButton
-                        ></button>
+                            pButton></button>
                     </ng-template>
                 </div>
             </ng-template>
@@ -53,11 +50,9 @@
                     pInputText
                     formControlName="title"
                     autofocus
-                    data-testId="favoritePageTitleField"
-                />
+                    data-testId="favoritePageTitleField" />
                 <dot-field-validation-message
-                    [field]="form.get('title')"
-                ></dot-field-validation-message>
+                    [field]="form.get('title')"></dot-field-validation-message>
             </div>
             <div class="field" data-testId="urlField">
                 <label dotFieldRequired for="url">{{ 'url' | dm }}</label>
@@ -65,11 +60,9 @@
                     id="url"
                     pInputText
                     formControlName="url"
-                    data-testId="favoritePageUrlField"
-                />
+                    data-testId="favoritePageUrlField" />
                 <dot-field-validation-message
-                    [field]="form.get('url')"
-                ></dot-field-validation-message>
+                    [field]="form.get('url')"></dot-field-validation-message>
             </div>
             <div class="field" data-testId="orderField">
                 <label dotFieldRequired for="order">{{ 'order' | dm }}</label>
@@ -77,11 +70,9 @@
                     id="order"
                     pInputText
                     formControlName="order"
-                    data-testId="favoritePageOrderField"
-                />
+                    data-testId="favoritePageOrderField" />
                 <dot-field-validation-message
-                    [field]="form.get('order')"
-                ></dot-field-validation-message>
+                    [field]="form.get('order')"></dot-field-validation-message>
             </div>
         </div>
     </form>
@@ -94,6 +85,5 @@
         icon="pi pi-trash"
         footerActions
         data-testid="dotFavoriteDialogDeleteButton"
-        pButton
-    ></button>
+        pButton></button>
 </dot-form-dialog>

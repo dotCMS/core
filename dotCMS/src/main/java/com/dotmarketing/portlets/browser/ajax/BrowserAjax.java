@@ -66,7 +66,6 @@ import com.liferay.portal.struts.ActionException;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -114,8 +113,8 @@ public class BrowserAjax {
 
     private static final String SELECTED_BROWSER_PATH_OBJECT = "SELECTED_BROWSER_PATH_OBJECT";
 
-    String lastSortBy = "name";
-    boolean lastSortDirectionDesc = false;
+    String lastSortBy = "modDate";
+    boolean lastSortDirectionDesc = true;
 	private final String imageMimetype = "image";
 
 	final static private Comparator<Map> nameComparator = new Comparator<Map>() {
@@ -279,8 +278,8 @@ public class BrowserAjax {
 													   final boolean showArchived, final long languageId) throws
 			DotSecurityException, DotDataException {
 		DwrUtil.getSession().setAttribute(ACTIVE_FOLDER_ID, parentId);
-		this.lastSortBy = sortBy;
 		if (UtilMethods.isSet(sortBy)) {
+			this.lastSortBy = sortBy;
 			if (sortBy.equals(lastSortBy)) {
 				this.lastSortDirectionDesc = !this.lastSortDirectionDesc;
 			}
@@ -718,20 +717,37 @@ public class BrowserAjax {
 		return result;
 	}
 
-	public Map<String, Object> getFileInfo(String fileId, long languageId) throws DotDataException, DotSecurityException, PortalException, SystemException {
-        WebContext ctx = WebContextFactory.get();
-        HttpServletRequest req = ctx.getHttpServletRequest();
-        ServletContext servletContext = ctx.getServletContext();
-        User user = userAPI.getLoggedInUser(req);
-        boolean respectFrontendRoles = userAPI.isLoggedToFrontend(req);
-
-        Identifier ident = APILocator.getIdentifierAPI().find(fileId);
+	/**
+	 * Returns information related to a specific File in the dotCMS repository for a given
+	 * language. If an invalid Language ID is passed down, the default Language ID will be used
+	 * instead. The requested File must belong to one of three types:
+	 * <ol>
+	 *     <li>File Asset.</li>
+	 *     <li>HTML Page.</li>
+	 *     <li>dotAsset.</li>
+	 * </ol>
+	 *
+	 * @param fileId     The Identifier of the File.
+	 * @param languageId The language associated to the File.
+	 *
+	 * @return A Map containing brief information related to the File.
+	 *
+	 * @throws DotDataException     An error occurred when interacting with the database.
+	 * @throws DotSecurityException The currently logged-in user does not have the required
+	 *                              permissions to perform this action.
+	 * @throws PortalException      An error occurred when retrieving the currently logged-in user.
+	 * @throws SystemException      An error occurred when retrieving the currently logged-in user.
+	 */
+	public Map<String, Object> getFileInfo(final String fileId, long languageId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+		final User user = DwrUtil.getLoggedInUser();
+		final boolean respectFrontendRoles = user.isFrontendUser();
+        final Identifier ident = this.identifierAPI.find(fileId);
 
 		if(languageId==0) {
 			languageId = languageAPI.getDefaultLanguage().getId();
 		}
 
-		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("contentlet")) {
+		if (ident != null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals(Identifier.ASSET_TYPE_CONTENTLET)) {
 		    Optional<ContentletVersionInfo> vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
 
 			if(vinfo.isEmpty() && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
@@ -745,31 +761,34 @@ public class BrowserAjax {
 			}
 
 		    boolean live = respectFrontendRoles || vinfo.get().getLiveInode()!=null;
-			Contentlet cont = contentletAPI.findContentletByIdentifier(ident.getId(),live, languageId , user, respectFrontendRoles);
-			if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-    			FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(cont);
-    			java.io.File file = fileAsset.getFileAsset();
-    			String mimeType = servletContext.getMimeType(file.getName().toLowerCase());
-    			Map<String, Object> fileMap = fileAsset.getMap();
-    			fileMap.put("mimeType", mimeType);
+			final Contentlet cont = this.contentletAPI.findContentletByIdentifier(ident.getId(),live, languageId , user, respectFrontendRoles);
+			if (cont.getContentType().baseType().getType() == BaseContentType.FILEASSET.getType()) {
+    			final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(cont);
+    			final java.io.File file = fileAsset.getFileAsset();
+    			String mimeType = StringPool.BLANK;
+				if (null != file) {
+					mimeType = DwrUtil.getServletContext().getMimeType(file.getName().toLowerCase());
+				} else {
+					Logger.warn(this, String.format("Binary File associated to FileAsset with " +
+							"Inode '%s' was not found", fileAsset.getInode()));
+				}
+				final Map<String, Object> fileMap = fileAsset.getMap();
+				fileMap.put("mimeType", mimeType);
     			fileMap.put("path", fileAsset.getPath());
-    			fileMap.put("type", "contentlet");
+    			fileMap.put("type", Identifier.ASSET_TYPE_CONTENTLET);
 				fileMap.put("title", cont.getTitle());
     			return fileMap;
-			}
-			else if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
-			    HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(cont);
-			    Map<String, Object> pageMap = page.getMap();
+			} else if (cont.getContentType().baseType().getType() == BaseContentType.HTMLPAGE.getType()) {
+			    final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(cont);
+			    final Map<String, Object> pageMap = page.getMap();
 			    pageMap.put("mimeType", "application/dotpage");
 	            pageMap.put("pageURI", ident.getURI());
 	            return pageMap;
-			} else if(cont.getStructure().getStructureType()== BaseContentType.DOTASSET.getType()) {
-
+			} else if (cont.getContentType().baseType().getType() == BaseContentType.DOTASSET.getType()) {
 				final java.io.File file = Try.of(()->cont.getBinary(DotAssetContentType.ASSET_FIELD_VAR)).getOrNull();
 				if (null != file) {
 					final String fileName = file.getName();
-					final String mimeType = servletContext.getMimeType(fileName.toLowerCase());
-
+					final String mimeType = DwrUtil.getServletContext().getMimeType(fileName.toLowerCase());
 					final Map<String, Object> fileMap = cont.getMap();
 					fileMap.put("mimeType", mimeType);
 					fileMap.put("path",          "/dA/" + cont.getIdentifier() + StringPool.SLASH);
@@ -778,10 +797,12 @@ public class BrowserAjax {
 					fileMap.put("fileName", fileName);
 					fileMap.put("title", cont.getTitle());
 					return fileMap;
+				} else {
+					Logger.warn(this, String.format("Binary File associated to dotAsset with Inode" +
+							" '%s' was not found", cont.getInode()));
 				}
 			}
 		}
-
 		return null;
 	}
 

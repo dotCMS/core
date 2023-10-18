@@ -10,13 +10,13 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { Menu, MenuModule } from 'primeng/menu';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
@@ -42,7 +42,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotPage } from '@dotcms/dotcms-models';
-import { UiDotIconButtonModule } from '@dotcms/ui';
+import { DotFormatDateService } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
@@ -89,7 +89,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                 BrowserAnimationsModule,
                 MenuModule,
                 HttpClientTestingModule,
-                UiDotIconButtonModule
+                ButtonModule
             ],
             declarations: [DotEditPageWorkflowsActionsComponent, TestHostComponent],
             providers: [
@@ -146,7 +146,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
         workflowActionDebugEl = de.query(By.css('dot-edit-page-workflows-actions'));
         workflowActionComponent = workflowActionDebugEl.componentInstance;
         dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
-        button = workflowActionDebugEl.query(By.css('dot-icon-button'));
+        button = workflowActionDebugEl.query(By.css('p-button'));
 
         dotWorkflowActionsFireService = workflowActionDebugEl.injector.get(
             DotWorkflowActionsFireService
@@ -155,7 +155,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
         spyOn(dotWorkflowActionsFireService, 'fireTo').and.returnValue(of(dotcmsContentletMock));
     });
 
-    describe('dot-icon-button', () => {
+    describe('p-button', () => {
         describe('enabled', () => {
             beforeEach(() => {
                 spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(
@@ -177,8 +177,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
 
             it('should have right attr in button', () => {
                 const attr = button.attributes;
-                expect(attr.icon).toEqual('more_vert');
-                expect(attr.float).toBeDefined();
+                expect(attr.icon).toEqual('pi pi-ellipsis-v');
             });
 
             it('should get workflow actions when page changes"', () => {
@@ -195,7 +194,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                 let thirdButton;
 
                 beforeEach(() => {
-                    const mainButton: DebugElement = de.query(By.css('dot-icon-button'));
+                    const mainButton: DebugElement = de.query(By.css('p-button'));
                     mainButton.triggerEventHandler('click', {
                         currentTarget: mainButton.nativeElement
                     });
@@ -327,7 +326,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
             });
 
             it('should be disabled', () => {
-                expect(button.attributes.disabled).toBe('true');
+                expect(button.componentInstance.disabled).toBe(true);
             });
         });
     });

@@ -15,7 +15,7 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -39,8 +39,7 @@ import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
         [valuePropertyName]="valuePropertyName"
         [overlayWidth]="overlayWidth"
         [width]="width"
-        [disabled]="disabled"
-    >
+        [disabled]="disabled">
     </dot-searchable-dropdown>`
 })
 class HostTestComponent {
@@ -109,7 +108,6 @@ describe('SearchableDropdownComponent', () => {
                 ...SEARCHABLE_NGFACES_MODULES,
                 BrowserAnimationsModule,
                 DotIconModule,
-                UiDotIconButtonModule,
                 DotPipesModule,
                 DotMessagePipe
             ],
@@ -233,9 +231,9 @@ describe('SearchableDropdownComponent', () => {
 
         hostFixture.detectChanges();
         const actionBtn = de.query(
-            By.css('.searchable-dropdown__search-action dot-icon-button')
+            By.css('.searchable-dropdown__search-action p-button')
         ).componentInstance;
-        expect(actionBtn.icon).toBe('add');
+        expect(actionBtn.icon).toBe('pi pi-plus');
     });
 
     it('should display defaultFilterTemplate', () => {
@@ -246,7 +244,7 @@ describe('SearchableDropdownComponent', () => {
     });
 
     it('should not display Action button', () => {
-        const actionBtn = de.query(By.css('.searchable-dropdown__search-action dot-icon-button'));
+        const actionBtn = de.query(By.css('.searchable-dropdown__search-action p-button'));
         expect(actionBtn).toBeNull();
     });
 
@@ -402,21 +400,18 @@ describe('SearchableDropdownComponent', () => {
         [rows]="rows"
         [totalRecords]="totalRecords"
         [valuePropertyName]="valuePropertyName"
-        [width]="width"
-    >
+        [width]="width">
         <ng-template let-data="item" pTemplate="listItem">
             <div
                 class="searchable-dropdown__data-list-item templateTestItem"
-                (click)="handleClick(item)"
-            >
+                (click)="handleClick(item)">
                 {{ data.label }}
             </div>
         </ng-template>
         <ng-template let-persona="item" pTemplate="select">
             <div
                 class="dot-persona-selector__testContainer"
-                (click)="searchableDropdown.toggleOverlayPanel($event)"
-            >
+                (click)="searchableDropdown.toggleOverlayPanel($event)">
                 Test
             </div>
         </ng-template>
@@ -481,7 +476,6 @@ describe('SearchableDropdownComponent', () => {
                 ...SEARCHABLE_NGFACES_MODULES,
                 BrowserAnimationsModule,
                 DotIconModule,
-                UiDotIconButtonModule,
                 DotPipesModule,
                 DotMessagePipe
             ],

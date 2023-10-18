@@ -1,21 +1,14 @@
 package com.dotmarketing.portlets.workflows.business;
 
-import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -54,6 +47,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageDeletedEvent;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
@@ -78,8 +72,14 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Month;
@@ -95,10 +95,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
+import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test the workflowAPI
@@ -694,7 +699,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
     public void onLanguageDeletedEvent_Test() throws DotDataException, DotSecurityException {
 
         Language frenchLanguage = null;
-        Contentlet contentlet = null;
+        Contentlet contentlet;
 
         try {
             frenchLanguage = new LanguageDataGen()
@@ -704,18 +709,17 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     .languageName("French").nextPersisted();
 
             final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
-            final String unicodeText = "Numéro de téléphone";
 
             final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
             contentlet = contentletDataGen.setProperty("title", "TestContent")
-                    .setProperty("body", unicodeText ).languageId(frenchLanguage.getId()).nextPersisted();
+                    .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT_UNICODE_CHARS).languageId(frenchLanguage.getId()).nextPersisted();
             final WorkflowStep workflowStep           = workflowAPI.findStep(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID);
             //UnassignedWorkflowContentletCheckinListener.assigned is called by default creating a task. So we better reset here before we get an duplicate entry violation.
             workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, user);
             final WorkflowTask workflowTask = workflowAPI.createWorkflowTask(contentlet, user, workflowStep, "test", "test");
             workflowAPI.saveWorkflowTask(workflowTask);
 
-            Optional<WorkflowStep> currentStepOpt = workflowAPI.findCurrentStep(contentlet);
+            final Optional<WorkflowStep> currentStepOpt = workflowAPI.findCurrentStep(contentlet);
             assertTrue(currentStepOpt.isPresent());
             assertEquals(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID, currentStepOpt.get().getId());
             APILocator.getLocalSystemEventsAPI().notify(new LanguageDeletedEvent(frenchLanguage));
@@ -4103,4 +4107,94 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
     }
 
+
+    /**
+     * This test is meant to update relationship between two contentlets     *
+     * It creates 2 content types Movie and Region and creates a one-to-many relationship between Movie and Region, then create 2 child contentlets
+     * of Region (Africa and Asia) and then finally create 1 child contentlet of Movie and update the relationship.
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void createContentletsWithRelationshipOneToManyCardinality_updateRelationship_shouldCreateRelationshipSuccessfully() throws DotSecurityException, DotDataException{
+
+        ContentType movieContentType  = null;
+        ContentType regionContentType = null;
+        try{
+
+            //Create content types
+            movieContentType  = insertContentType("Movie", BaseContentType.CONTENT);
+            regionContentType = insertContentType("Region", BaseContentType.CONTENT);
+            APILocator.getWorkflowAPI().saveSchemeIdsForContentType(movieContentType,  Set.of(new String[]{SystemWorkflowConstants.SYSTEM_WORKFLOW_ID}));
+            APILocator.getWorkflowAPI().saveSchemeIdsForContentType(regionContentType, Set.of(new String[]{SystemWorkflowConstants.SYSTEM_WORKFLOW_ID}));
+
+            //Create Relationship Field
+            final Field relField = createRelationshipField("regions", movieContentType.id(),
+                    regionContentType.variable(), String.valueOf(
+                            WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()));
+
+            Contentlet africa = createContent("africa", regionContentType);
+            Contentlet asia   = createContent("asia", regionContentType);
+
+            //Publish
+            final WorkflowAction publishAction = APILocator.getWorkflowAPI().findAction(
+                    SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID, APILocator.systemUser());
+
+            africa.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            africa = fireWorkflowAction(africa, null,
+                    publishAction,
+                    StringPool.BLANK, StringPool.BLANK, user);
+
+            asia.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            asia = fireWorkflowAction(asia, null,
+                    publishAction,
+                    StringPool.BLANK, StringPool.BLANK, user);
+
+            assertTrue(africa.isLive());
+            assertTrue(asia.isLive());
+
+            Contentlet movie   = createContent("movie", movieContentType);
+            movie.setProperty("Regions", Arrays.asList(africa, asia));
+
+            final List<Contentlet> records = new ArrayList<>(Arrays.asList(asia, africa));
+            final List<Relationship> relationships = APILocator.getRelationshipAPI().byContentType(movieContentType);
+            final Relationship relationship = APILocator.getRelationshipAPI().byInode(relationships.stream().findFirst().get().getInode());
+
+            final List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<>();
+            final ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords =
+                    new ContentletRelationships(null).new ContentletRelationshipRecords(relationship, true);
+
+            contentletRelationshipRecords.setRecords(records);
+            relationshipsRecords.add(contentletRelationshipRecords);
+
+            final ContentletRelationships contentletRelationships = new ContentletRelationships(movie, relationshipsRecords);
+            movie.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            movie = fireWorkflowAction(movie, contentletRelationships,
+                    publishAction,
+                    StringPool.BLANK, StringPool.BLANK, user);
+
+            final List<Contentlet> movieContentRelated = APILocator.getContentletAPI().getRelatedContent(movie, relationship, user, false);
+
+            Assert.assertNotNull(movieContentRelated);
+            Assert.assertTrue(movieContentRelated.size() == 2);
+        } finally {
+            if(movieContentType != null){
+                contentTypeAPI.delete(movieContentType);
+            }
+            if(regionContentType != null){
+                contentTypeAPI.delete(regionContentType);
+            }
+        }
+    }
+
+    private Field createRelationshipField(final String relationshipName, final String parentTypeId,
+                                          final String childTypeVar, final String cardinality)
+            throws DotSecurityException, DotDataException {
+
+        final Field field = FieldBuilder.builder(RelationshipField.class).name(relationshipName)
+                .contentTypeId(parentTypeId).values(cardinality).relationType(childTypeVar).build();
+
+        return fieldAPI.save(field, user);
+    }
 }

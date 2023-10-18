@@ -20,6 +20,7 @@ import com.dotmarketing.beans.PermissionReference;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -45,6 +46,8 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.hash.BloomFilter;
+import com.google.common.hash.Funnels;
 import com.liferay.portal.ejb.ImageLocalManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -61,8 +64,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -183,6 +192,7 @@ public class ExportStarterUtil {
                     new DotConcurrentFactory.SubmitterConfigBuilder().poolSize(POOL_SIZE.get()).maxPoolSize(MAX_POOL_SIZE.get()).queueCapacity(QUEUE_CAPACITY.get()).build());
             final CompletionService<List<FileEntry>> completionService = new ExecutorCompletionService<>(dotSubmitter);
             final List<Future<List<FileEntry>>> futures = new ArrayList<>();
+            Logger.debug(this, String.format("Generating Starter Data JSON files for %d database tables", dotcmsTables.size()));
             for (final List<Class<?>> dotCMSTables : dotcmsTablesSubset) {
                 final Future<List<FileEntry>> future = completionService.submit(() -> this.getStarterDataAsJSON(dotCMSTables));
                 futures.add(future);
@@ -244,18 +254,21 @@ public class ExportStarterUtil {
             } catch (final IOException e) {
                 Logger.error(this, String.format("An error occurred when streaming file '%s' into starter file: " +
                                                          "%s", entry.fileName(), e.getMessage()), e);
+                throw new DotRuntimeException(e);
             }
 
         });
     }
 
     /**
-     * Splits the Set of database tables into lists of a specific size. For instance, if there are 33 tables in the
-     * system and a split value of 10 is specified, the resulting sub-sets will be 4 lists, such as: 3 lists of 10
-     * items, and 1 list of 3 items.
+     * Splits the Set of database tables into lists of a specific size. For instance, if there are
+     * 35 tables in the system and a split value of 10 is specified, the max partition size will be
+     * 4. That is, there will be 8 lists of 4 items, and 1 list of 3 items to accommodate all 35
+     * tables.
      *
      * @param dbTables The Set of Hibernate or class-mapped database tables in dotCMS.
-     * @param size The max size of every sub-set of the table list.
+     * @param size     The max size of every sub-set of the table list.
+     *
      * @return The list of sub-sets of database tables.
      */
     private List<List<Class<?>>> splitTableList(final Set<Class<?>> dbTables, final int size) {
@@ -276,7 +289,7 @@ public class ExportStarterUtil {
      *     <li>The JSON data is NEVER written to the File System.</li>
      * </ul>
      *
-     * @param dbTablesAsClasses The list of classes that represent a dotCMS database table.
+     * @param dbTablesAsClasses The list of classes that represent dotCMS database tables.
      *
      * @return The list of {@link FileEntry} objects containing the records of the specified dotCMS database tables.
      */
@@ -288,6 +301,7 @@ public class ExportStarterUtil {
         List<?> resultList;
         final ObjectMapper defaultObjectMapper = ContentletJsonHelper.INSTANCE.get().objectMapper();
         try {
+            Logger.debug(this, String.format("Retrieving data from tables: %s", dbTablesAsClasses));
             for (final Class<?> clazz : dbTablesAsClasses) {
                 int i;
                 int step = EXPORTED_RECORDS_PAGE_SIZE;
@@ -368,14 +382,15 @@ public class ExportStarterUtil {
                     if (!UtilMethods.isSet(resultList)) {
                         break;
                     }
-                    final String zippedFileName =
+                    final String jsonFileName =
                             clazz.getName() + StringPool.UNDERLINE + DEFAULT_JSON_FILE_DATA_FORMAT.format(i) + JSON_FILE_EXT;
                     final String contentAsJson = defaultObjectMapper.writeValueAsString(resultList);
-                    final FileEntry jsonFileEntry = new FileEntry(zippedFileName, contentAsJson);
+                    Logger.debug(this, String.format("-> File: %s", jsonFileName));
+                    final FileEntry jsonFileEntry = new FileEntry(jsonFileName, contentAsJson);
                     starterFiles.add(jsonFileEntry);
                     total += resultList.size();
                 }
-                Logger.debug(this, total + " records were generated for " + clazz.getName());
+                Logger.debug(this, String.format("-> %d records were generated for class table '%s'", total, clazz.getName()));
             }
             Logger.debug(this, "Exportable JSON files have been generated successfully!");
         } catch (final Exception e) {
@@ -430,6 +445,7 @@ public class ExportStarterUtil {
             contentAsJson = RulesImportExportUtil.getInstance().exportToJson();
             starterFiles.add(new FileEntry("RuleImportExportObject" + JSON_FILE_EXT, contentAsJson));
 
+            Logger.debug(this, String.format("Additional exportable entries added = %d", starterFiles.size()));
             Logger.debug(this, "Additional exportable JSON files have been generated successfully!");
         } catch (final Exception e) {
             Logger.error(this, e.getMessage(), e);
@@ -438,18 +454,7 @@ public class ExportStarterUtil {
         return starterFiles;
     }
 
-    /**
-     * Traverses the complete list of assets in the current dotCMS instance in order to retrieve their respective file
-     * reference. This will allow dotCMS to add their contents to the final Starter ZIP file without copying them to
-     * any backup or temporary location.
-     *
-     * @param zip The {@link ZipOutputStream} which will receive all the streamed data.
-     */
-    private void getAssets(final ZipOutputStream zip) {
-        this.getAssets(zip, new AssetFileNameFilter());
-    }
-
-
+    final String[] assetDirs =new String[]{"0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"};
     /**
      * Traverses the complete list of assets in the current dotCMS instance in order to retrieve their respective file
      * reference. This will allow dotCMS to add their contents to the final Starter ZIP file without copying them to
@@ -459,29 +464,56 @@ public class ExportStarterUtil {
      * @param fileFilter The {@link FileFilter} being used to get the appropriate asset data.
      */
     private void getAssets(final ZipOutputStream zip, final FileFilter fileFilter) {
-        final String assetsRootPath = ConfigUtils.getAbsoluteAssetsRootPath();
-        final File source = new File(assetsRootPath);
-        Logger.info(this, "Adding all Assets into compressed file...");
-        FileUtil.listFilesRecursively(source, fileFilter).stream().filter(File::isFile).forEach(file -> {
 
-            final String filePath = file.getPath().replace(assetsRootPath, ZIP_FILE_ASSETS_FOLDER.get());
-            final FileEntry entry = new FileEntry(filePath, file);
-            this.addFileToZip(entry, zip);
-
-        });
+        Logger.info(this, "Adding all Assets into compressed file:");
+        // add all our b-tree directories
+        for (int i = 0; i < assetDirs.length; i++) {
+            for (int j = 0; j < assetDirs.length; j++) {
+                final File source = Paths.get(ConfigUtils.getAssetPath() , assetDirs[i] , assetDirs[j]).toFile();
+                addFolderToZip(zip, fileFilter, source);
+            }
+        }
+        // finally add the messages folder
+        final File source = Paths.get(ConfigUtils.getAssetPath() , "messages").toFile();
+        addFolderToZip(zip, fileFilter, source);
     }
 
+    private void addFolderToZip(final ZipOutputStream zip, final FileFilter fileFilter, final File source){
+        if(!source.exists() || ! source.isDirectory() || Files.isSymbolicLink(source.toPath())){
+            Logger.warn(this, String.format("-> Not a directory: %s", source));
+            return;
+        }
+        FileUtil.listFilesRecursively(source, fileFilter).stream().filter(File::isFile).forEach(file -> {
+            final String filePath = file.getPath().replace(ConfigUtils.getAssetPath(), ZIP_FILE_ASSETS_FOLDER.get());
+            Logger.debug(this, String.format("-> File path: %s", filePath));
+            final FileEntry entry = new FileEntry(filePath, file);
+            this.addFileToZip(entry, zip);
+        });
+
+
+    }
+
+
+
+
     /**
-     * Generates all the contents that go into the compressed dotCMS Starter file. It's very important to point out
-     * that <b>no temporary files are created, and no data is written to the file system at any point.</b>
-     * <p>The resulting compressed file is directly streamed to the {@link OutputStream} for users to be able to
-     * download it even before it is 100% ready.</p>
+     * Generates all the contents that go into the compressed dotCMS Starter file. It's very
+     * important to point out that <b>no temporary files are created, and no data is written to the
+     * file system at any point.</b>
+     * <p>The resulting compressed file is directly streamed to the {@link OutputStream} for users
+     * to be able to download it even before it is 100% ready. Users have the option to choose
+     * whether they want all versions of the assets to be part of the starter ot not. This is useful
+     * in cases where the starter's size must be kept as low as possible, or if older asset versions
+     * are not needed at all.</p>
      *
-     * @param output        The {@link OutputStream} instance.
-     * @param includeAssets If the Starter file must contain all dotCMS assets as well, set this to {@code true}.
+     * @param output           The {@link OutputStream} instance.
+     * @param includeAssets    If the Starter file must contain all dotCMS assets as well, set this
+     *                         to {@code true}.
+     * @param includeOldAssets If absolutely all versions of the assets must be included in the
+     *                         compressed file, set this to {@code true}.
      */
-    public void streamCompressedStarter(final OutputStream output, final boolean includeAssets) {
-        this.streamCompressedData(output, true, includeAssets, false);
+    public void streamCompressedStarter(final OutputStream output, final boolean includeAssets, final boolean includeOldAssets) {
+        this.streamCompressedData(output, true, includeAssets, false, includeOldAssets);
     }
 
     /**
@@ -490,39 +522,53 @@ public class ExportStarterUtil {
      * <p>The resulting compressed file is directly streamed to the {@link OutputStream} for users to be able to
      * download it even before it is 100% ready.</p>
      *
-     * @param output The {@link OutputStream} instance.
+     * @param output           The {@link OutputStream} instance.
+     * @param includeOldAssets If absolutely all versions of the assets must be included in the compressed file, set
+     *                         this to {@code true}.
      */
-    public void streamCompressedAssets(final OutputStream output) {
-        this.streamCompressedData(output, false, false, true);
+    public void streamCompressedAssets(final OutputStream output, boolean includeOldAssets) {
+        this.streamCompressedData(output, false, false, true, includeOldAssets);
     }
 
     /**
      * Generates a compressed file with specific dotCMS data.</p>
      *
      * @param output                      The {@link OutputStream} instance.
-     * @param includeStarterData          If the dotCMS data must be added to the compressed file, set this to {@code
-     *                                    true}.
+     * @param includeStarterData          If the dotCMS data must be added to the compressed file, set this to
+     *                                    {@code true}.
      * @param includeStarterDataAndAssets If the Starter file must contain all dotCMS assets as well, set this to
      *                                    {@code true}.
      * @param includeAssetsOnly           If only the assets must be included in the compressed file, set this to
      *                                    {@code true}.
+     * @param includeOldAssets            If absolutely all versions of the assets must be included in the compressed
+     *                                    file, set this to {@code true}.
      */
     private void streamCompressedData(final OutputStream output, boolean includeStarterData,
-                                     final boolean includeStarterDataAndAssets, boolean includeAssetsOnly) {
+                                     final boolean includeStarterDataAndAssets, boolean includeAssetsOnly, boolean includeOldAssets) {
+
+
+
+
         try (final ZipOutputStream zip = new ZipOutputStream(new BufferedOutputStream(output))) {
             if (includeStarterData) {
+                Logger.debug(this, "Including Starter Data");
                 this.getStarterDataAsJSON(zip);
             }
+            final AssetFileNameFilter fileFilter = includeOldAssets ? new AssetFileNameFilter() : new AssetFileNameFilter(getLiveWorkingBloomFilter());
             if (includeStarterDataAndAssets) {
-                this.getAssets(zip);
+                Logger.debug(this, "Including Starter Data and Assets");
+                this.getAssets(zip, fileFilter);
             }
             if (includeAssetsOnly) {
-                final AssetFileNameFilter fileFilter = new AssetFileNameFilter();
-                fileFilter.addExcludedFolder("messages");
+                Logger.debug(this, "Including Assets only");
                 this.getAssets(zip, fileFilter);
             }
         } catch (final Exception e) {
-            Logger.error(this, String.format("An error occurred when generating compressed data file with [ includeStarterData = %s, includeStarterDataAndAssets = %s, includeAssetsOnly = %s ] : %s", includeStarterData, includeStarterDataAndAssets, includeAssetsOnly, e.getMessage()), e);
+            Logger.error(this, String.format("An error occurred when generating compressed data file with [ " +
+                    "includeStarterData = %s, includeStarterDataAndAssets = %s, includeAssetsOnly = %s, " +
+                    "includeOldAssets = %s ] : %s", includeStarterData, includeStarterDataAndAssets,
+                    includeAssetsOnly, includeOldAssets, e.getMessage()), e);
+            throw new DotRuntimeException(e);
         }
     }
 
@@ -633,6 +679,61 @@ public class ExportStarterUtil {
             return "JSONFileEntry{" + "fileName='" + fileName + '\'' + '}';
         }
 
+    }
+
+    private static final String SELECT_ALL_LIVE_WORKING_CONTENTLETS=
+            "select " +
+            "  live_inode as inode " +
+            "from " +
+            "  contentlet_version_info " +
+            "where " +
+            "  live_inode is not null " +
+            "UNION " +
+            "select " +
+            "  working_inode as inode " +
+            "from " +
+            "  contentlet_version_info " +
+            "where " +
+            "  working_inode <> live_inode " +
+            "and " +
+            "  working_inode is not null " +
+            "and " +
+            "  deleted = false";
+
+    private static final String SELECT_ALL_LIVE_WORKING_CONTENTLETS_COUNT=
+            "select " +
+            "count(*) as my_count " +
+            "from (" + SELECT_ALL_LIVE_WORKING_CONTENTLETS + ") testing ";
+
+    @CloseDBIfOpened
+    BloomFilter<String> getLiveWorkingBloomFilter()  {
+        long contentCount = new DotConnect()
+                .setSQL(SELECT_ALL_LIVE_WORKING_CONTENTLETS_COUNT)
+                .getInt("my_count");
+
+        Logger.info(this.getClass(), "Creating BloomFilter with " + contentCount + " expected size");
+
+        final BloomFilter<String> bloomFilter = BloomFilter.create(
+                Funnels.stringFunnel(Charset.defaultCharset()),
+                contentCount,
+                0.01);
+
+        try (final Connection conn = DbConnectionFactory.getDataSource().getConnection();
+            final PreparedStatement statement = conn.prepareStatement(SELECT_ALL_LIVE_WORKING_CONTENTLETS)){
+            statement.setFetchSize(5000);
+            try (final ResultSet rs = statement.executeQuery()) {
+                int i = 0;
+                while (rs.next()) {
+                    bloomFilter.put(rs.getString("inode"));
+                    i++;
+                }
+                Logger.info(this.getClass(), "Added " + i + " contentlets to the BloomFilter");
+            }
+        } catch (final SQLException e) {
+            throw new DotRuntimeException(e);
+        }
+
+        return bloomFilter;
     }
 
 }

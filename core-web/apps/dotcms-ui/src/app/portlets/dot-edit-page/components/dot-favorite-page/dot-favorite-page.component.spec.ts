@@ -10,13 +10,16 @@ import { MultiSelectModule } from 'primeng/multiselect';
 
 import { of } from 'rxjs/internal/observable/of';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotPagesFavoritePageEmptySkeletonComponent } from '@dotcms/app/portlets/dot-pages/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 import {
     LoginServiceMock,
     MockDotMessageService,
@@ -134,7 +137,7 @@ describe('DotFavoritePageComponent', () => {
                 FormsModule,
                 MultiSelectModule,
                 ReactiveFormsModule,
-                DotFieldValidationMessageModule,
+                DotFieldValidationMessageComponent,
                 DotFieldRequiredDirective,
                 DotPagesFavoritePageEmptySkeletonComponent,
                 HttpClientTestingModule
@@ -441,7 +444,7 @@ describe('DotFavoritePageComponent', () => {
             );
 
             expect(image.nativeElement['src'].includes('123')).toBe(true);
-            expect(reloadBtn.nativeElement.outerText).toBe('RELOAD');
+            expect(reloadBtn.nativeElement.outerText).toBe('Reload');
         });
 
         it('should button Remove Favorite be enabled', () => {

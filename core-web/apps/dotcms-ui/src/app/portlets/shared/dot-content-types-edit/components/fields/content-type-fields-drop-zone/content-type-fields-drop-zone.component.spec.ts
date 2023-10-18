@@ -21,16 +21,15 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TableModule } from 'primeng/table';
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, DotEventsSocket, LoginService } from '@dotcms/dotcms-js';
@@ -40,7 +39,12 @@ import {
     DotCMSContentTypeLayoutRow,
     DotFieldVariable
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
+import {
+    DotFieldValidationMessageComponent,
+    DotFormatDateService,
+    DotIconModule,
+    DotMessagePipe
+} from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     cleanUpDialog,
@@ -207,11 +211,11 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 DotContentTypeFieldsVariablesModule,
                 DotDialogModule,
                 DotActionButtonModule,
-                UiDotIconButtonModule,
+                ButtonModule,
                 DotIconModule,
                 DragulaModule,
                 TableModule,
-                DotFieldValidationMessageModule,
+                DotFieldValidationMessageComponent,
                 ReactiveFormsModule,
                 HttpClientTestingModule,
                 DotMessagePipe,
@@ -483,7 +487,6 @@ describe('Load fields and drag and drop', () => {
                     }
                 ]),
                 DragulaModule,
-                DotFieldValidationMessageModule,
                 DotContentTypeFieldsVariablesModule,
                 FormsModule,
                 CheckboxModule,
@@ -491,7 +494,7 @@ describe('Load fields and drag and drop', () => {
                 BrowserAnimationsModule,
                 DotActionButtonModule,
                 DotIconModule,
-                UiDotIconButtonModule,
+                ButtonModule,
                 TableModule,
                 ContentTypeFieldsAddRowModule,
                 DotDialogModule,

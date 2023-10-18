@@ -3,6 +3,7 @@ package com.dotcms.experiments.business.result;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.experiments.model.Experiment;
+import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -13,7 +14,7 @@ import java.util.stream.Collectors;
  * when the {@link Experiment} is using a BOUNCE_RATE {@link com.dotcms.experiments.model.Goals}.
  *
  */
-public class BounceRateExperimentAnalyzer implements MetricExperimentAnalyzer  {
+public class BounceRateExperimentAnalyzer implements MetricExperimentAnalyzer {
 
     /**
      * Iterate through the {@link BrowserSession} and check if the last {@link EventType#PAGE_VIEW}
@@ -26,22 +27,23 @@ public class BounceRateExperimentAnalyzer implements MetricExperimentAnalyzer  {
      * @return
      */
     @Override
-    public Collection<Event> getOccurrences(final Metric metric, final BrowserSession browserSession) {
-
+    public Collection<Event> getOccurrences(Metric metric,
+            BrowserSession browserSession) {
         final Collection<Event> results = new ArrayList<>();
-
         final List<Event> events = browserSession.getEvents().stream()
                 .filter(event -> event.getType() == EventType.PAGE_VIEW)
                 .collect(Collectors.toList());
 
-        final Event lastEvent = events.get(events.size() - 1);
+        if (events.size() != 1) {
+            return ImmutableList.of();
+        }
 
-        if (metric.validateConditions(lastEvent)) {
-            results.add(lastEvent);
+        final Event uniqueEvent = events.get(0);
+
+        if (metric.validateConditions(uniqueEvent)) {
+            results.add(uniqueEvent);
         }
 
         return results;
     }
-
-
 }

@@ -7,14 +7,12 @@
         [site]="site"
         (edit)="edit.emit($event)"
         (export)="export.emit($event)"
-        (delete)="delete.emit($event)"
-    ></dot-apps-configuration-item>
+        (delete)="delete.emit($event)"></dot-apps-configuration-item>
 </div>
 
 <button
-    pButton
-    class="dot-apps-configuration-list__show-more p-button-secondary"
+    class="dot-apps-configuration-list__show-more p-button-outlined"
     *ngIf="!hideLoadDataButton"
     [label]="'apps.configurations.show.more' | dm"
     (click)="loadNext()"
-></button>
+    pButton></button>

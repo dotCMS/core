@@ -2,7 +2,7 @@
 
 .p-component {
     font-family: $font-default;
-    font-size: $font-size-default;
+    font-size: $font-size-md;
     font-weight: normal;
     line-height: normal;
 }
@@ -14,20 +14,17 @@
 
 .p-disabled,
 .p-component:disabled {
-    opacity: 0.38;
+    opacity: 1;
 }
 
 .p-text-secondary {
     color: $black;
 }
 
-.pi {
-    font-size: $font-size-md;
-}
-
 .p-link {
     border-radius: $border-radius-xs;
 }
+
 .p-link:focus {
     outline: 0 none;
     outline-offset: 0;
@@ -37,6 +34,7 @@
 .p-fluid .p-inputgroup .p-button {
     width: auto;
 }
+
 .p-fluid .p-inputgroup .p-button.p-button-icon-only {
     width: $spacing-6;
 }
@@ -56,4 +54,25 @@
     color: red;
     margin-left: 2px;
     vertical-align: middle;
+}
+
+// Global class for handle size of icons
+.pi {
+    aspect-ratio: 1/1;
+    line-height: 1;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    font-size: $icon-md;
+    width: $icon-md-box;
+}
+
+[class$="-sm"] .pi {
+    width: $icon-sm-box;
+    font-size: $icon-sm;
+}
+
+[class$="-lg"] .pi {
+    width: $icon-lg-box;
+    font-size: $icon-lg;
 }

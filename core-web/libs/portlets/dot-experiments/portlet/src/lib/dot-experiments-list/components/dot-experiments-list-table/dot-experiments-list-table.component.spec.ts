@@ -9,16 +9,14 @@ import { Table } from 'primeng/table';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus, GroupedExperimentByStatus } from '@dotcms/dotcms-models';
+import { DotEmptyContainerComponent, DotFormatDateService } from '@dotcms/ui';
 import {
     DotFormatDateServiceMock,
     getExperimentMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotFormatDateService } from '@services/dot-format-date-service';
 
 import { DotExperimentsListTableComponent } from './dot-experiments-list-table.component';
-
-import { DotExperimentsEmptyExperimentsComponent } from '../dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
 
 const MOCK_MENU_ITEMS: MenuItem[] = [
     // Delete Action
@@ -76,7 +74,6 @@ const messageServiceMock = new MockDotMessageService({
 
 describe('DotExperimentsListTableComponent', () => {
     let spectator: Spectator<DotExperimentsListTableComponent>;
-    let dotExperimentsEmpty: DotExperimentsEmptyExperimentsComponent | null;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsListTableComponent,
@@ -101,9 +98,8 @@ describe('DotExperimentsListTableComponent', () => {
     describe('Input experiments', () => {
         it('should show empty component with no experiments found', () => {
             spectator.setInput('experimentGroupedByStatus', []);
-            dotExperimentsEmpty = spectator.query(DotExperimentsEmptyExperimentsComponent);
 
-            expect(dotExperimentsEmpty).toExist();
+            expect(spectator.query(DotEmptyContainerComponent)).toExist();
         });
 
         it('should show 2 instances of NgPrime Table component', () => {
@@ -141,6 +137,20 @@ describe('DotExperimentsListTableComponent', () => {
                 '1 hour ago'
             );
             expect(spectator.query(byTestId('experiment-row__modDate'))).toHaveText('1 hour ago');
+        });
+
+        it('should emit action when a row is clicked', () => {
+            jest.spyOn(spectator.component.goToContainer, 'emit');
+            const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
+                { status: DotExperimentStatus.DRAFT, experiments: [DRAFT_EXPERIMENT_MOCK] }
+            ];
+
+            spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
+
+            spectator.click(byTestId('experiment-row'));
+            expect(spectator.component.goToContainer.emit).toHaveBeenCalledWith(
+                DRAFT_EXPERIMENT_MOCK
+            );
         });
 
         describe('Actions icons', () => {

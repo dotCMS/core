@@ -8,10 +8,8 @@
 */
 
 #label {
-    color: $black;
     display: block;
-    font-size: $font-size-sm;
-    margin-bottom: calc($spacing-1 / 2);
+    margin-bottom: $spacing-1;
 }
 
 #checkbox-radio {
@@ -49,7 +47,7 @@
     }
 
     & > label {
-        line-height: $field-height;
+        line-height: $field-height-md;
         align-self: baseline;
     }
 
@@ -183,7 +181,7 @@ dt {
 
 dd {
     margin: 0 0 $field-padding * 2 30%;
-    min-height: $field-height;
+    min-height: $field-height-md;
     padding-left: $field-padding;
 
     .inputCaption,
@@ -197,7 +195,7 @@ dd {
     dl {
         display: flex;
         margin-bottom: $spacing-1;
-        min-height: $field-height;
+        min-height: $field-height-md;
     }
 
     dd,
@@ -220,7 +218,7 @@ dd {
         // 9px to align correctly vertically
         padding: 9px $spacing-1 * 2 0;
         text-align: right;
-        width: 150px;
+        width: 200px;
 
         &.checkbox,
         &.radio {

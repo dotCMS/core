@@ -15,6 +15,7 @@ export interface DotPage {
     folder?: string;
     friendlyName: string;
     host: string;
+    hostName?: string;
     htmlpage?: boolean;
     httpsRequired?: boolean;
     identifier: string;

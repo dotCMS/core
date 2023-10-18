@@ -1,0 +1,120 @@
+@use "variables" as *;
+@import "common";
+
+.p-autocomplete {
+    @extend #form-field-extend;
+    height: auto;
+    padding-right: 0;
+
+    .p-autocomplete-loader {
+        right: $spacing-2;
+        color: $color-palette-primary;
+    }
+
+    .p-autocomplete-input {
+        all: unset;
+        border: none;
+        font-family: $font-default;
+        font-size: $font-size-md;
+        color: $black;
+        padding: 0;
+        margin: 0;
+        height: calc(
+            $field-height-md - (2 * $field-border-size)
+        ); // This input height is to match the 40px height, 40px - 3px of horizontal borders, because this input does not have borders
+    }
+
+    &.p-autocomplete-dd {
+        .p-autocomplete-loader {
+            right: $spacing-7;
+        }
+    }
+
+    .p-autocomplete-dropdown.p-button.p-element {
+        &:hover,
+        &:focus,
+        &:active {
+            outline: none;
+            background-color: $color-palette-gray-200;
+        }
+    }
+
+    &.p-autocomplete-multiple {
+        .p-autocomplete-multiple-container {
+            display: flex;
+            align-items: center;
+            max-height: 13rem; // 208px
+            overflow: auto; // Make it scrollable
+            gap: $spacing-0;
+            padding: 7px 0 6px; // Specific padding for the tokens in multiple lines
+
+            &:hover,
+            &:active,
+            &.p-focus {
+                border: none;
+            }
+
+            .p-autocomplete-token {
+                @extend #field-chip;
+            }
+
+            .p-autocomplete-input-token {
+                input {
+                    font-family: $font-default;
+                    font-size: $font-size-md;
+                    color: $black;
+                    padding: 0;
+                    margin: 0;
+                    height: 1.5rem;
+                }
+            }
+        }
+    }
+
+    &.p-error > .p-inputtext,
+    &.p-invalid > .p-inputtext {
+        border-color: $error;
+    }
+}
+
+p-autocomplete.ng-dirty.ng-invalid > .p-autocomplete > .p-inputtext {
+    border-color: $error;
+}
+
+.p-autocomplete-panel {
+    @extend #field-panel;
+
+    .p-autocomplete-items {
+        @extend #field-panel-items;
+
+        .p-autocomplete-item {
+            @extend #field-panel-item;
+
+            &:hover {
+                @extend #field-panel-item-hover;
+            }
+
+            &.p-highlight {
+                @extend #field-panel-item-highlight;
+            }
+        }
+    }
+}
+
+.p-autocomplete-dropdown.p-element.p-button {
+    @extend #field-trigger;
+    height: inherit;
+
+    .p-button-icon {
+        @extend #field-trigger-icon;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    &:hover,
+    &:active,
+    &.p-focus {
+        outline: none;
+    }
+}

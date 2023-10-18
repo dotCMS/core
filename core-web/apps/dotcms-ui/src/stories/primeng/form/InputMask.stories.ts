@@ -12,7 +12,7 @@ export default {
         docs: {
             description: {
                 component:
-                    'InputMask component is used to enter input in a certain format such as numeric, date, currency, email and phone.: https://primefaces.org/primeng/showcase/#/inputmask'
+                    'InputMask component is used to enter input in a certain format such as numeric, date, currency, email and phone.: https://primeng.org/inputmask'
             }
         }
     },

@@ -3,8 +3,7 @@
         <p-breadcrumb
             [model]="vm.categoryBreadCrumbs"
             [home]="breadCrumbHome"
-            (onItemClick)="updateBreadCrumb($event)"
-        >
+            (onItemClick)="updateBreadCrumb($event)">
         </p-breadcrumb>
     </div>
     <div class="category_listing">
@@ -25,27 +24,24 @@
             (onFilter)="handleFilter()"
             selectionMode="checkbox"
             loadingIcon="pi pi-spin pi-spinner"
-            dataKey="categoryId"
-        >
+            dataKey="categoryId">
             <ng-template pTemplate="caption">
                 <div class="flex justify-content-between p-3">
                     <div>
                         <button
-                            class="p-button-secondary p-button"
+                            class="p-button-outlined p-button"
                             [disabled]="vm.selectedCategories.length === 0"
                             [label]="'Actions' | dm"
                             (click)="actionsMenu.toggle($event)"
                             type="button"
                             pButton
                             icon="pi pi-ellipsis-v"
-                            attr.data-testId="actions"
-                        ></button>
+                            attr.data-testId="actions"></button>
                         <p-menu
                             #actionsMenu
                             [popup]="true"
                             [model]="vm.categoriesBulkActions"
-                            appendTo="body"
-                        ></p-menu>
+                            appendTo="body"></p-menu>
                     </div>
                     <div class="w-2">
                         <div class="p-inputgroup">
@@ -58,8 +54,7 @@
                                 [placeholder]="'message.category.search' | dm"
                                 (input)="dataTable.filterGlobal($event.target.value, 'contains')"
                                 type="text"
-                                pInputText
-                            />
+                                pInputText />
                         </div>
                     </div>
                     <div>
@@ -69,23 +64,20 @@
                             pButton
                             pRipple
                             type="button"
-                            icon="pi pi-upload"
-                        ></button>
+                            icon="pi pi-upload"></button>
                         <button
                             class="p-button-outlined mx-4"
                             [label]="'message.category.export' | dm"
                             pButton
                             pRipple
                             type="button"
-                            icon="pi pi-download"
-                        ></button>
+                            icon="pi pi-download"></button>
                         <button
                             class="p-button-raised p-button-rounded text-white"
                             pButton
                             pRipple
                             type="button"
-                            icon="pi pi-plus"
-                        ></button>
+                            icon="pi pi-plus"></button>
                     </div>
                 </div>
             </ng-template>
@@ -99,8 +91,7 @@
                         class="tableHeader"
                         *ngFor="let col of columns"
                         [ngStyle]="{ width: col.width }"
-                        [pSortableColumn]="col.fieldName"
-                    >
+                        [pSortableColumn]="col.fieldName">
                         {{ col.header }}
                         <p-sortIcon *ngIf="col.sortable" [field]="col.fieldName"></p-sortIcon>
                     </th>
@@ -111,8 +102,7 @@
                     [pReorderableRow]="index"
                     [pSelectableRow]="category"
                     (click)="addBreadCrumb(category)"
-                    data-testId="testTableRow"
-                >
+                    data-testId="testTableRow">
                     <td>
                         <span class="pi pi-bars" pReorderableRowHandle></span>
                     </td>
@@ -124,15 +114,13 @@
                             <p-inplace
                                 #editText
                                 (click)="$event.stopPropagation()"
-                                styleClass="category_listing__sortOrder"
-                            >
+                                styleClass="category_listing__sortOrder">
                                 <ng-template pTemplate="content">
                                     <span class="p-input-icon-right">
                                         <i class="pi pi-times" (click)="editText.deactivate()"></i>
                                         <p-inputNumber
                                             [ngModel]="category.sortOrder"
-                                            inputStyleClass="category_listing__sortOrder__field"
-                                        ></p-inputNumber>
+                                            inputStyleClass="category_listing__sortOrder__field"></p-inputNumber>
                                     </span>
                                 </ng-template>
                                 <ng-template pTemplate="display">
@@ -148,8 +136,7 @@
                                     [attr.data-testId]="category.categoryId"
                                     [actions]="vm.categoriesActions"
                                     [item]="category"
-                                    (click)="$event.stopPropagation()"
-                                >
+                                    (click)="$event.stopPropagation()">
                                 </dot-action-menu-button>
                             </ng-container>
                         </ng-template>
@@ -165,8 +152,7 @@
                         <div
                             class="category_listing-datatable__empty"
                             *ngIf="isContentFiltered; else emptyState"
-                            data-testId="category_listing-datatable__empty"
-                        >
+                            data-testId="category_listing-datatable__empty">
                             {{ 'No-Results-Found' | dm }}
                         </div>
                         <ng-template #emptyState>
@@ -176,8 +162,7 @@
                                 [title]="'message.category.empty.title' | dm"
                                 [content]="'message.category.empty.content' | dm"
                                 [buttonLabel]="'message.category.empty.button.label' | dm"
-                                icon="web"
-                            >
+                                icon="web">
                             </dot-empty-state>
                         </ng-template>
                     </td>

@@ -1,18 +1,21 @@
 package com.dotcms.cli.command.language;
 
-import static com.dotcms.cli.common.Utils.nextFileName;
-
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.ShortOutputOptionMixin;
+import com.dotcms.cli.common.WorkspaceMixin;
+import com.dotcms.common.WorkspaceManager;
+import com.dotcms.model.config.Workspace;
 import com.dotcms.model.language.Language;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import picocli.CommandLine;
 import picocli.CommandLine.Parameters;
@@ -35,7 +38,7 @@ import picocli.CommandLine.Parameters;
  * Command to pull a language given its id or iso code (e.g.: en-us)
  * @author nollymar
  */
-public class LanguagePull extends AbstractLanguageCommand implements Callable<Integer> {
+public class LanguagePull extends AbstractLanguageCommand implements Callable<Integer>, DotCommand {
     static final String NAME = "pull";
 
     @CommandLine.Mixin(name = "format")
@@ -44,23 +47,25 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
     @CommandLine.Mixin(name = "shorten")
     ShortOutputOptionMixin shortOutputOption;
 
+    @CommandLine.Mixin(name = "workspace")
+    WorkspaceMixin workspaceMixin;
+
+    @Inject
+    WorkspaceManager workspaceManager;
+
     @Parameters(index = "0", arity = "1", paramLabel = "idOrIso", description = "Language Id or ISO Code.")
     String languageIdOrIso;
 
-    @CommandLine.Option(names = {"-to", "--saveTo"}, paramLabel = "saveTo", description = "Save the returned language to a file.")
-    File saveAs;
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
 
     @Override
     public Integer call() throws Exception {
-        try {
-            final Optional<Language> result = super.findExistingLanguage(languageIdOrIso);
 
-            if (result.isEmpty()){
-                output.error(String.format(
-                        "A language with id or ISO code [%s] could not be found.", languageIdOrIso));
-                return CommandLine.ExitCode.SOFTWARE;
-            }
-            final Language language = result.get();
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
+            final Language language = findExistingLanguage(languageIdOrIso);
             final ObjectMapper objectMapper = formatOption.objectMapper();
 
             if(shortOutputOption.isShortOutput()) {
@@ -68,27 +73,27 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
                 output.info(asString);
             } else {
                 final String asString = objectMapper.writeValueAsString(language);
-                output.info(asString);
-
-                //Saves the pulled language to a file. If the path is given, it will use it, otherwise it will use the language's name
-                final Path path;
-                if (null != saveAs) {
-                    path = saveAs.toPath();
-                } else {
-                    //But this behavior can be modified if we explicitly add a file name
-                    final String fileName = String.format("%s.%s", language.isoCode(), formatOption.getInputOutputFormat().getExtension());
-                    final Path next = Path.of(fileName);
-                    path = nextFileName(next);
+                if(output.isVerbose()) {
+                    output.info(asString);
                 }
+                final Workspace workspace = workspaceManager.getOrCreate(workspaceMixin.workspace());
+                final String fileName = String.format("%s.%s", language.isoCode(), formatOption.getInputOutputFormat().getExtension());
+                final Path path = Path.of(workspace.languages().toString(),fileName);
+
                 Files.writeString(path, asString);
                 output.info(String.format("Output has been written to file [%s].",path));
             }
-        } catch (IOException | NotFoundException e) {
-            output.error(String.format(
-                    "Error occurred while pulling Language: [%s] with message: [%s].",
-                    languageIdOrIso, e.getMessage()));
-            return CommandLine.ExitCode.SOFTWARE;
-        }
+
         return CommandLine.ExitCode.OK;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
     }
 }

@@ -21,7 +21,6 @@ import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
 import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
 import { DotWorkflowsSelectorFieldModule } from '@components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
@@ -38,7 +37,7 @@ import {
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeLayoutRow, DotCMSSystemActionType } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotFieldValidationMessageComponent, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import {
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
@@ -165,8 +164,7 @@ describe('ContentTypesFormComponent', () => {
                 ButtonModule,
                 DotDirectivesModule,
                 DotFieldHelperModule,
-                DotFieldValidationMessageModule,
-                UiDotIconButtonModule,
+                DotFieldValidationMessageComponent,
                 DotIconModule,
                 DotPageSelectorModule,
                 DotWorkflowsActionsSelectorFieldModule,

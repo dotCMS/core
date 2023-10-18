@@ -2,10 +2,6 @@ import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/j
 
 import { FormArray, FormControl, FormGroup, FormGroupDirective, Validators } from '@angular/forms';
 
-import { DropdownModule } from 'primeng/dropdown';
-
-import { DotFieldValidationMessageComponent } from '@components/_common/dot-field-validation-message/dot-field-validation-message';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     DefaultGoalConfiguration,
@@ -14,6 +10,7 @@ import {
     GOAL_TYPES,
     Goals
 } from '@dotcms/dotcms-models';
+import { DotFieldValidationMessageComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsGoalConfigurationReachPageComponent } from './dot-experiments-goal-configuration-reach-page.component';
@@ -30,13 +27,7 @@ const formMock = new FormGroup({
             validators: [Validators.required]
         }),
         type: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-        conditions: new FormArray([
-            new FormGroup({
-                parameter: new FormControl('', { validators: [Validators.required] }),
-                operator: new FormControl('', { validators: [Validators.required] }),
-                value: new FormControl('', { validators: [Validators.required] })
-            })
-        ])
+        conditions: new FormArray([])
     })
 });
 const formGroupDirectiveMock = new FormGroupDirective([], []);
@@ -46,7 +37,6 @@ describe('DotExperimentsExperimentGoalReachPageConfigComponent', () => {
     let spectator: Spectator<DotExperimentsGoalConfigurationReachPageComponent>;
 
     const createComponent = createComponentFactory({
-        imports: [DropdownModule, DotFieldValidationMessageModule],
         component: DotExperimentsGoalConfigurationReachPageComponent,
 
         providers: [
@@ -62,7 +52,9 @@ describe('DotExperimentsExperimentGoalReachPageConfigComponent', () => {
     });
 
     beforeEach(async () => {
-        spectator = createComponent();
+        spectator = createComponent({
+            detectChanges: false
+        });
     });
 
     it('should be a VALID form if the inputs all filled', () => {
@@ -70,10 +62,17 @@ describe('DotExperimentsExperimentGoalReachPageConfigComponent', () => {
             primary: {
                 ...DefaultGoalConfiguration.primary,
                 name: 'default',
-                type: GOAL_TYPES.BOUNCE_RATE
+                type: GOAL_TYPES.BOUNCE_RATE,
+                conditions: [
+                    {
+                        parameter: GOAL_PARAMETERS.URL,
+                        operator: GOAL_OPERATORS.EQUALS,
+                        value: 'valid value'
+                    }
+                ]
             }
         };
-
+        spectator.detectChanges();
         spectator.component.form.setValue(formValues);
         spectator.component.form.updateValueAndValidity();
 
@@ -95,6 +94,8 @@ describe('DotExperimentsExperimentGoalReachPageConfigComponent', () => {
             }
         };
 
+        spectator.detectChanges();
+
         spectator.component.form.setValue(formValues);
         spectator.component.form.updateValueAndValidity();
 
@@ -103,6 +104,8 @@ describe('DotExperimentsExperimentGoalReachPageConfigComponent', () => {
     });
 
     it('should show render OPERATOR Input, PARAMETER input and VALUE form inputs', () => {
+        spectator.detectChanges();
+
         expect(spectator.query(byTestId('parameter-input'))).toExist();
         expect(spectator.query(byTestId('operator-input'))).toExist();
         expect(spectator.query(byTestId('value-input'))).toExist();

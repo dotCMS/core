@@ -16,7 +16,6 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
@@ -28,6 +27,7 @@ import {
     DotCurrentUserService,
     DotEventsService,
     DotGenerateSecurePasswordService,
+    DotLicenseService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
@@ -42,6 +42,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { DotFormatDateService } from '@dotcms/ui';
 import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotContentletsComponent } from './dot-contentlets.component';
@@ -70,6 +71,7 @@ describe('DotContentletsComponent', () => {
                 DotContentletEditorService,
                 DotIframeService,
                 DotCustomEventHandlerService,
+                DotLicenseService,
                 {
                     provide: ActivatedRoute,
                     useValue: {

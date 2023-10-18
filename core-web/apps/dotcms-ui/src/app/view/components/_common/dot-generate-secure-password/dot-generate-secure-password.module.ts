@@ -4,9 +4,8 @@ import { NgModule } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
 import { DotGenerateSecurePasswordService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotClipboardUtil, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotGenerateSecurePasswordComponent } from './dot-generate-secure-password.component';

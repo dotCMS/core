@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck, take } from 'rxjs/operators';
@@ -21,7 +21,8 @@ export const TEMPLATE_API_URL = '/api/v1/templates/';
 export class DotTemplatesService {
     constructor(
         private coreWebService: CoreWebService,
-        private httpErrorManagerService: DotHttpErrorManagerService
+        private httpErrorManagerService: DotHttpErrorManagerService,
+        private http: HttpClient
     ) {}
 
     /**
@@ -91,11 +92,11 @@ export class DotTemplatesService {
      * @memberof DotTemplatesService
      */
     saveAndPublish(values: DotTemplate): Observable<DotTemplate> {
-        return this.request<DotTemplate>({
-            method: 'PUT',
-            url: `${TEMPLATE_API_URL}_savepublish`,
-            body: values
-        });
+        return this.http
+            .put<DotTemplate>(`${TEMPLATE_API_URL}_savepublish`, {
+                ...values
+            })
+            .pipe(pluck('entity'));
     }
 
     /**

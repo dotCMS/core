@@ -6,24 +6,28 @@ import {
     EventEmitter,
     Input,
     OnChanges,
+    OnInit,
     Output,
     SimpleChanges,
     ViewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { SelectItem } from 'primeng/api';
+import { MenuItem, SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputSwitchModule } from 'primeng/inputswitch';
+import { Menu, MenuModule } from 'primeng/menu';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { switchMap, take } from 'rxjs/operators';
 
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {
     DotAlertConfirmService,
     DotMessageService,
-    DotPersonalizeService
+    DotPersonalizeService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import {
     DotDevice,
@@ -31,9 +35,10 @@ import {
     DotPageMode,
     DotPageRenderOptions,
     DotPageRenderState,
-    DotVariantData
+    DotVariantData,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotTabButtonsComponent, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
 
@@ -43,7 +48,8 @@ import { DotDeviceSelectorSeoComponent } from '../dot-device-selector-seo/dot-de
 
 enum DotConfirmationType {
     LOCK,
-    PERSONALIZATION
+    PERSONALIZATION,
+    RUNNING_EXPERIMENT
 }
 
 @Component({
@@ -61,38 +67,83 @@ enum DotConfirmationType {
         TooltipModule,
         ButtonModule,
         DotDeviceSelectorSeoComponent,
-        DotEditPageLockInfoSeoComponent
+        DotEditPageLockInfoSeoComponent,
+        DotTabButtonsComponent,
+        MenuModule
     ]
 })
-export class DotEditPageStateControllerSeoComponent implements OnChanges {
+export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges {
     @ViewChild('pageLockInfo', { static: true }) pageLockInfo: DotEditPageLockInfoSeoComponent;
+    @ViewChild('deviceSelector') deviceSelector: DotDeviceSelectorSeoComponent;
+    @ViewChild('menu') menu: Menu;
 
     @Input() pageState: DotPageRenderState;
     @Output() modeChange = new EventEmitter<DotPageMode>();
     @Input() variant: DotVariantData | null = null;
+    @Input() apiLink: string;
 
     lock: boolean;
     lockWarn = false;
+    featureFlagEditURLContentMapIsOn = false;
     mode: DotPageMode;
     options: SelectItem[] = [];
+    menuItems: MenuItem[];
+
+    readonly dotPageMode = DotPageMode;
+
+    private readonly menuOpenActions: Record<
+        DotPageMode,
+        (event: PointerEvent, target?: HTMLElement) => void
+    > = {
+        [DotPageMode.EDIT]: (event: PointerEvent) => {
+            this.menu.toggle(event);
+        },
+        [DotPageMode.PREVIEW]: (event: PointerEvent, target?: HTMLElement) => {
+            this.deviceSelector.openMenu(event, target);
+        },
+        [DotPageMode.LIVE]: (_: PointerEvent) => {
+            // No logic
+        }
+    };
+
+    private readonly featureFlagEditURLContentMap = FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP;
 
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService,
         private dotPageStateService: DotPageStateService,
-        private dotPersonalizeService: DotPersonalizeService
+        private dotPersonalizeService: DotPersonalizeService,
+        private dotContentletEditor: DotContentletEditorService,
+        private dotPropertiesService: DotPropertiesService
     ) {}
 
     ngOnChanges(changes: SimpleChanges) {
-        const pageState = changes.pageState.currentValue;
-        this.options = this.getStateModeOptions(pageState);
-        /*
-When the page is lock but the page is being load from an user that can lock the page
-we want to show the lock off so the new user can steal the lock
-*/
-        this.lock = this.isLocked(pageState);
-        this.lockWarn = this.shouldWarnLock(pageState);
-        this.mode = pageState.state.mode;
+        const pageState = changes.pageState?.currentValue;
+        if (pageState) {
+            this.options = this.getStateModeOptions(pageState);
+            /*
+            When the page is lock but the page is being load from an user that can lock the page
+            we want to show the lock off so the new user can steal the lock
+            */
+            this.lock = this.isLocked(pageState);
+            this.lockWarn = this.shouldWarnLock(pageState);
+            this.mode = pageState.state.mode;
+        }
+    }
+
+    ngOnInit(): void {
+        this.dotPropertiesService
+            .getFeatureFlag(this.featureFlagEditURLContentMap)
+
+            .subscribe((result) => {
+                this.featureFlagEditURLContentMapIsOn = result;
+
+                if (this.featureFlagEditURLContentMapIsOn && this.pageState.params.urlContentMap) {
+                    this.menuItems = this.getMenuItems();
+                }
+
+                this.options = this.getStateModeOptions(this.pageState);
+            });
     }
 
     /**
@@ -127,7 +178,9 @@ we want to show the lock off so the new user can steal the lock
      * @param {DotPageMode} mode
      * @memberof DotEditPageStateControllerComponent
      */
-    stateSelectorHandler(mode: DotPageMode): void {
+    stateSelectorHandler({ optionId }: { optionId: string }): void {
+        const mode = optionId as DotPageMode;
+
         this.modeChange.emit(mode);
 
         if (this.shouldShowConfirmation(mode)) {
@@ -180,6 +233,63 @@ we want to show the lock off so the new user can steal the lock
      */
     changeDeviceHandler(device: DotDevice): void {
         this.dotPageStateService.setDevice(device);
+        this.dotPageStateService.setSeoMedia(null);
+    }
+
+    /**
+     * Change SEO Media
+     * @param seoMedia
+     */
+    changeSeoMedia(seoMedia: string): void {
+        this.dotPageStateService.setSeoMedia(seoMedia);
+    }
+
+    /**
+     * Handle the click event on the dropdowns
+     *
+     * @param {{ event: PointerEvent; menuId: string }} { event, menuId }
+     * @memberof DotEditPageStateControllerSeoComponent
+     */
+    handleMenuOpen({
+        event,
+        menuId,
+        target
+    }: {
+        event: PointerEvent;
+        menuId: string;
+        target?: HTMLElement;
+    }): void {
+        this.menuOpenActions[menuId as DotPageMode]?.(event, target);
+    }
+
+    /**
+     * Get the menu items for the dropdown
+     *
+     * @private
+     * @return {*}  {MenuItem[]}
+     * @memberof DotEditPageStateControllerComponent
+     */
+    private getMenuItems(): MenuItem[] {
+        return [
+            {
+                label: this.dotMessageService.get('modes.Page'),
+                command: () => {
+                    this.stateSelectorHandler({ optionId: DotPageMode.EDIT });
+                }
+            },
+            {
+                label: `${
+                    this.pageState.params.urlContentMap.contentType
+                } ${this.dotMessageService.get('Content')}`,
+                command: () => {
+                    this.dotContentletEditor.edit({
+                        data: {
+                            inode: this.pageState.params.urlContentMap.inode
+                        }
+                    });
+                }
+            }
+        ];
     }
 
     private canTakeLock(pageState: DotPageRenderState): boolean {
@@ -193,27 +303,51 @@ we want to show the lock off so the new user can steal the lock
             live: !pageState.page.liveInode
         };
 
+        const enumMode = DotPageMode[mode.toLocaleUpperCase()] as DotPageMode;
+
         return {
             label: this.dotMessageService.get(`editpage.toolbar.${mode}.page`),
-            value: DotPageMode[mode.toLocaleUpperCase()],
+            value: {
+                id: enumMode,
+                showDropdownButton: this.shouldShowDropdownButton(enumMode, pageState)
+            },
             disabled: disabled[mode]
         };
     }
 
+    /**
+     * Check if the dropdown button should be shown
+     *
+     * @private
+     * @param {string} mode
+     * @param {DotPageRenderState} pageState
+     * @return {*}  {boolean}
+     * @memberof DotEditPageStateControllerSeoComponent
+     */
+    private shouldShowDropdownButton(mode: DotPageMode, pageState: DotPageRenderState): boolean {
+        return {
+            [DotPageMode.EDIT]:
+                this.featureFlagEditURLContentMapIsOn && Boolean(pageState.params.urlContentMap),
+            [DotPageMode.PREVIEW]: true, // No logic involved, always show,
+            [DotPageMode.LIVE]: false // Don't show for live
+        }[mode]; // We get the value from the object using the mode as key
+    }
+
     private getStateModeOptions(pageState: DotPageRenderState): SelectItem[] {
-        const items = this.variant ? this.getModesBasedOnVariant() : ['edit', 'preview'];
+        const items = this.variant ? this.getModesBasedOnVariant(pageState) : ['edit', 'preview'];
 
         return items.map((mode: string) => this.getModeOption(mode, pageState));
     }
 
-    private getModesBasedOnVariant(): string[] {
-        return [...(this.canEditVariant() ? ['edit'] : []), 'preview'];
+    private getModesBasedOnVariant(pageState: DotPageRenderState): string[] {
+        return [...(this.canEditVariant(pageState) ? ['edit'] : []), 'preview'];
     }
 
-    private canEditVariant(): boolean {
+    private canEditVariant(pageState: DotPageRenderState): boolean {
         return (
             !this.variant.variant.isOriginal &&
-            this.variant.experimentStatus === DotExperimentStatus.DRAFT
+            this.variant.experimentStatus === DotExperimentStatus.DRAFT &&
+            !pageState.state.lockedByAnotherUser
         );
     }
 
@@ -242,13 +376,20 @@ we want to show the lock off so the new user can steal the lock
         return this.pageState.page.canLock && this.pageState.state.lockedByAnotherUser;
     }
 
+    private shouldAskOnRunningExperiment(): boolean {
+        return !!this.pageState.state.runningExperiment;
+    }
+
     private shouldAskPersonalization(): boolean {
         return this.pageState.viewAs.persona && !this.isPersonalized();
     }
 
     private shouldShowConfirmation(mode: DotPageMode): boolean {
         return (
-            mode === DotPageMode.EDIT && (this.shouldAskToLock() || this.shouldAskPersonalization())
+            mode === DotPageMode.EDIT &&
+            (this.shouldAskToLock() ||
+                this.shouldAskPersonalization() ||
+                this.shouldAskOnRunningExperiment())
         );
     }
 
@@ -259,18 +400,22 @@ we want to show the lock off so the new user can steal the lock
     private showConfirmation(): Observable<DotConfirmationType> {
         return from(
             new Promise<DotConfirmationType>((resolve, reject) => {
-                if (this.shouldAskToLock()) {
-                    this.showLockConfirmDialog()
-                        .then(() => {
-                            resolve(DotConfirmationType.LOCK);
-                        })
-                        .catch(() => reject());
-                }
-
                 if (this.shouldAskPersonalization()) {
                     this.showPersonalizationConfirmDialog()
                         .then(() => {
                             resolve(DotConfirmationType.PERSONALIZATION);
+                        })
+                        .catch(() => reject());
+                } else if (this.shouldAskOnRunningExperiment()) {
+                    this.showRunningExperimentConfirmDialog()
+                        .then(() => {
+                            resolve(DotConfirmationType.RUNNING_EXPERIMENT);
+                        })
+                        .catch(() => reject());
+                } else if (this.shouldAskToLock()) {
+                    this.showLockConfirmDialog()
+                        .then(() => {
+                            resolve(DotConfirmationType.LOCK);
                         })
                         .catch(() => reject());
                 }
@@ -304,6 +449,17 @@ we want to show the lock off so the new user can steal the lock
         });
     }
 
+    private showRunningExperimentConfirmDialog(): Promise<string> {
+        return new Promise((resolve, reject) => {
+            this.dotAlertConfirmService.confirm({
+                accept: resolve,
+                reject: reject,
+                header: this.dotMessageService.get('experiment.running'),
+                message: this.getRunningExperimentConfirmMessage()
+            });
+        });
+    }
+
     private getPersonalizationConfirmMessage(): string {
         let message = this.dotMessageService.get(
             'editpage.personalization.confirm.message',
@@ -311,13 +467,38 @@ we want to show the lock off so the new user can steal the lock
         );
 
         if (this.shouldAskToLock()) {
-            message += this.dotMessageService.get(
-                'editpage.personalization.confirm.with.lock',
-                this.pageState.page.lockedByName
-            );
+            message += this.getBlockedPageNote();
+        }
+
+        if (this.shouldAskOnRunningExperiment()) {
+            message += this.getRunningExperimentNote();
         }
 
         return message;
+    }
+
+    private getRunningExperimentConfirmMessage(): string {
+        let message = this.dotMessageService.get('experiment.running.edit.confirmation');
+
+        if (this.shouldAskToLock()) {
+            message += this.getBlockedPageNote();
+        }
+
+        return message;
+    }
+
+    private getBlockedPageNote(): string {
+        return this.dotMessageService.get(
+            'editpage.personalization.confirm.with.lock',
+            this.pageState.page.lockedByName
+        );
+    }
+
+    private getRunningExperimentNote(): string {
+        return this.dotMessageService.get(
+            'experiment.running.edit.lock.confirmation.note',
+            this.pageState.page.lockedByName
+        );
     }
 
     private updatePageState(options: DotPageRenderOptions, lock: boolean = null) {

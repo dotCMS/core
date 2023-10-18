@@ -10,18 +10,19 @@ import {
     olIcon,
     pIcon,
     quoteIcon,
-    ulIcon
+    ulIcon,
+    listStarsIcon
 } from '../components/suggestions/suggestion-icons';
 import { DotMenuItem } from '../components/suggestions/suggestions.component';
 
 const domSanitizer = new ɵDomSanitizerImpl(document);
 
-const headings: DotMenuItem[] = [...Array(3).keys()].map((level) => {
+const headings: DotMenuItem[] = [...Array(6).keys()].map((level) => {
     const size = level + 1;
 
     return {
         label: `Heading ${size}`,
-        icon: sanitizeUrl(headerIcons[level]),
+        icon: sanitizeUrl(headerIcons[level] || ''),
         id: `heading${size}`,
         attributes: { level: size }
     };
@@ -74,6 +75,11 @@ const list: DotMenuItem[] = [
 ];
 
 const block: DotMenuItem[] = [
+    {
+        label: 'AI Content',
+        icon: sanitizeUrl(listStarsIcon),
+        id: 'aiContentPrompt'
+    },
     {
         label: 'Blockquote',
         icon: sanitizeUrl(quoteIcon),

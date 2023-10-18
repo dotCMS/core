@@ -1,8 +1,10 @@
 package com.dotcms.model.site;
 
 import com.dotcms.model.annotation.ValueType;
+import com.dotcms.model.views.CommonViews;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.Date;
 import javax.annotation.Nullable;
@@ -13,6 +15,14 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = SiteView.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface AbstractSiteView  {
+
+    String TYPE = "Site";
+
+    @JsonView(CommonViews.InternalView.class)
+    @Value.Derived
+    default String dotCMSObjectType() {
+        return TYPE;
+    }
 
     @Nullable
     String inode();
@@ -74,6 +84,7 @@ public interface AbstractSiteView  {
     @JsonProperty("embeddedDashboard")
     String embeddedDashboard();
 
+    @Nullable
     @JsonProperty("languageId")
     Long languageId();
 
@@ -97,9 +108,11 @@ public interface AbstractSiteView  {
     @JsonProperty("locked")
     Boolean isLocked();
 
+    @Nullable
     @JsonProperty("modDate")
     Date modDate();
 
+    @Nullable
     @JsonProperty("modUser")
     String modUser();
 

@@ -1,17 +1,13 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.common.HelpOptionMixin;
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.SiteView;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import java.util.Optional;
 import java.util.concurrent.Callable;
+import javax.enterprise.context.control.ActivateRequestContext;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteArchive.NAME,
@@ -24,35 +20,41 @@ import java.util.concurrent.Callable;
                 "" // empty line left here on purpose to make room at the end
         }
 )
-public class SiteArchive extends AbstractSiteCommand implements Callable<Integer> {
+public class SiteArchive extends AbstractSiteCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "archive";
 
     @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "idOrName", description = "Site name Or Id.")
     String siteNameOrId;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
 
         return archive();
     }
 
     private int archive() {
-
-        final Optional<SiteView> site = super.findSite(siteNameOrId);
-
-        if (site.isEmpty()) {
-            output.error(String.format(
-                    "Error occurred while pulling Site Info: [%s].", siteNameOrId));
-            return CommandLine.ExitCode.SOFTWARE;
-        }
-
+        final SiteView site = findSite(siteNameOrId);
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
-
-        final SiteView siteView = site.get();
-        final ResponseEntityView<SiteView> archive = siteAPI.archive(siteView.identifier());
+        final ResponseEntityView<SiteView> archive = siteAPI.archive(site.identifier());
         output.info(String.format("Site [%s] archived successfully.",archive.entity().hostName()));
         return CommandLine.ExitCode.OK;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
     }
 
 }

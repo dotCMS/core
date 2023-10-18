@@ -4,8 +4,8 @@
         <dot-site-selector-field
             id="content-type-form-host"
             [system]="true"
-            formControlName="hostFolder"
-        ></dot-site-selector-field>
+            width="100%"
+            formControlName="hostFolder"></dot-site-selector-field>
     </div>
 
     <div class="field">
@@ -17,12 +17,10 @@
             type="text"
             formControlName="name"
             name="name"
-            pInputText
-        />
+            pInputText />
         <dot-field-validation-message
             [message]="'modes.persona.name.error.required' | dm"
-            [field]="form.get('name')"
-        >
+            [field]="form.get('name')">
         </dot-field-validation-message>
     </div>
 
@@ -42,18 +40,16 @@
             url="/api/v1/temp"
             accept="image/*,.webp"
             auto="true"
-            mode="basic"
-        >
+            mode="basic">
         </p-fileUpload>
         <div class="form__file-detail" *ngIf="tempUploadedFile">
             <img [src]="tempUploadedFile.thumbnailUrl" />
             <span>{{ tempUploadedFile.fileName }}</span>
             <button
-                class="p-button-secondary p-button-sm"
+                class="p-button-outlined p-button-sm"
                 [label]="'dot.common.remove' | dm"
                 (click)="removeImage()"
-                pButton
-            ></button>
+                pButton></button>
         </div>
     </div>
     <div class="field">
@@ -61,7 +57,6 @@
         <dot-autocomplete-tags
             id="persona-other-tags"
             [placeholder]="'modes.persona.select.tags.placeholder' | dm"
-            formControlName="tags"
-        ></dot-autocomplete-tags>
+            formControlName="tags"></dot-autocomplete-tags>
     </div>
 </form>

@@ -36,6 +36,7 @@ import {
 export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderState> {
     public rows$ = this.select((state) => state.rows);
     public layoutProperties$ = this.select((state) => state.layoutProperties);
+    public themeId$ = this.select((state) => state.themeId);
 
     public vm$ = this.select((state) => ({
         ...state,
@@ -44,26 +45,6 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             willBoxFit: willBoxFitInRow(row.subGridOpts?.children)
         }))
     }));
-
-    constructor() {
-        super({
-            rows: [],
-            layoutProperties: undefined,
-            resizingRowID: '',
-            containerMap: {}
-        });
-    }
-
-    // Init store
-
-    readonly init = this.updater(
-        (state, { rows, layoutProperties, containerMap }: DotTemplateBuilderState) => ({
-            ...state,
-            rows,
-            layoutProperties,
-            containerMap
-        })
-    );
 
     // Rows Updaters
 
@@ -324,7 +305,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * @memberof DotTemplateBuilderStore
      */
     readonly updateLayoutProperties = this.updater(
-        (state, layoutProperties: DotTemplateLayoutProperties) => {
+        (state, layoutProperties: Partial<DotTemplateLayoutProperties>) => {
             return {
                 ...state,
                 layoutProperties: {
@@ -333,7 +314,9 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                     // This is meant to just change the location of the sidebar
                     sidebar: {
                         ...state.layoutProperties.sidebar,
-                        location: layoutProperties.sidebar.location
+                        location:
+                            layoutProperties.sidebar?.location ??
+                            state.layoutProperties.sidebar.location
                     }
                 }
             };
@@ -486,6 +469,16 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             return { ...state, rows: updatedItems };
         }
     );
+
+    /**
+     * @description This method updates the themeId
+     *
+     * @memberof DotTemplateBuilderStore
+     */
+    readonly updateThemeId = this.updater((state, themeId: string) => ({
+        ...state,
+        themeId
+    }));
 
     // Utils methods
 

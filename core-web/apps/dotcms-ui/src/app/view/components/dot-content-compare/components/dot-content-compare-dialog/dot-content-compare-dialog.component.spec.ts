@@ -58,7 +58,7 @@ describe('DotContentCompareDialogComponent', () => {
     });
 
     it('should hide dialog on close', () => {
-        const closeBtn = fixture.debugElement.query(By.css('.dialog__header dot-icon-button'));
+        const closeBtn = fixture.debugElement.query(By.css('.dialog__header p-button'));
         closeBtn.triggerEventHandler('click', {
             preventDefault: () => {
                 //

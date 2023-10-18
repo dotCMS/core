@@ -13,6 +13,7 @@ import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.LogTime;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -206,6 +207,7 @@ public class ContentletAjax {
 			result.put("langName", languageName);
 			result.put("langId", language.getId()+"");
 			result.put("siblings", getContentSiblingsData(inode));
+			result.put("hasImageFields",String.valueOf(hasImageFields(inode)));
 
 		} catch (DotDataException e) {
 			Logger.error(this, "Error trying to obtain the contentlets from the relationship.", e);
@@ -243,6 +245,24 @@ public class ContentletAjax {
                 result.put(field.variable(), fieldValue);
             }
         }
+	}
+
+	private boolean hasImageFields(String inode) throws DotDataException, DotSecurityException {
+
+		final HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+		final User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
+		final Contentlet firstContentlet = conAPI.find(inode, currentUser, true);
+		final Structure targetStructure = firstContentlet.getStructure();
+		final List<Field> targetFields = FieldsCache.getFieldsByStructureInode(targetStructure.getInode());
+
+		//use a for each to iterate targetFields and validate if fieldType contains image
+		for(final Field field : targetFields){
+			if(field.getFieldType().equals(FieldType.IMAGE.toString()) ){
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private List<Map<String, String>> getContentSiblingsData(String inode) {//GIT-1057
@@ -458,10 +478,18 @@ public class ContentletAjax {
 	    return searchContentlets(structureInode,fields,categories,showDeleted,filterSystemHost,filterUnpublish,filterLocked,page,0,orderBy,modDateFrom,modDateTo);
 	}
 
-	@SuppressWarnings("rawtypes")
+	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted,
+			boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom,
+			String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+		return searchContentlets(structureInode, fields, categories, showDeleted, filterSystemHost,
+				filterUnpublish, filterLocked, page, perPage, orderBy, modDateFrom, modDateTo,
+				VariantAPI.DEFAULT_VARIANT.name());
+	}
+
+		@SuppressWarnings("rawtypes")
 	public List searchContentlets(String structureInode, List<String> fields, List<String> categories, boolean showDeleted,
 	        boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom,
-	        String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+	        String modDateTo, final String variantName) throws DotStateException, DotDataException, DotSecurityException {
 
 		HttpSession sess = WebContextFactory.get().getSession();
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -475,16 +503,25 @@ public class ContentletAjax {
 		}
 
 		return searchContentletsByUser(ImmutableList.of(BaseContentType.ANY), structureInode, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked,
-		        page, orderBy, perPage,currentUser, sess, modDateFrom, modDateTo);
+		        page, orderBy, perPage,currentUser, sess, modDateFrom, modDateTo, variantName);
+	}
+
+	public List searchContentlets(String[] structureInodes, List<String> fields, List<String> categories, boolean showDeleted,
+			boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom,
+			String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+		String structureInodesJoined = String.join(CONTENT_TYPES_INODE_SEPARATOR, structureInodes);
+
+		return searchContentlets(structureInodesJoined, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked,
+				page, perPage, orderBy, modDateFrom, modDateTo, VariantAPI.DEFAULT_VARIANT.name());
 	}
 
 	public List searchContentlets(String[] structureInodes, List<String> fields, List<String> categories, boolean showDeleted,
 								  boolean filterSystemHost,  boolean filterUnpublish, boolean filterLocked, int page, int perPage,String orderBy, String modDateFrom,
-								  String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+								  String modDateTo, final String variantName) throws DotStateException, DotDataException, DotSecurityException {
 		String structureInodesJoined = String.join(CONTENT_TYPES_INODE_SEPARATOR, structureInodes);
 
 		return searchContentlets(structureInodesJoined, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked,
-				page, perPage, orderBy, modDateFrom, modDateTo);
+				page, perPage, orderBy, modDateFrom, modDateTo, variantName);
 	}
 
 	/**
@@ -518,6 +555,17 @@ public class ContentletAjax {
 
 		return new ArrayList<>(collectionIndexMap.values());
 	 }
+
+	public List searchContentletsByUser(List<BaseContentType> types, String structureInode,
+			List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost,
+			boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage,
+			final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo)
+			throws DotStateException, DotDataException, DotSecurityException {
+		return searchContentletsByUser(types, structureInode, fields, categories, showDeleted, filterSystemHost,
+				filterUnpublish, filterLocked, page, orderBy, perPage, currentUser, sess, modDateFrom, modDateTo,
+				VariantAPI.DEFAULT_VARIANT.name());
+	}
+
 	/**
 	 * This method is used by the back-end to pull the content from the Lucene
 	 * index and also checks the user permissions to see the content.
@@ -559,7 +607,12 @@ public class ContentletAjax {
 	 */
 	@SuppressWarnings("rawtypes")
 	@LogTime
-	public List searchContentletsByUser(List<BaseContentType> types, String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+	public List searchContentletsByUser(List<BaseContentType> types, String structureInode,
+			List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost,
+			boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage,
+			final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo, final String variantName)
+				throws DotStateException, DotDataException, DotSecurityException {
+
         if (perPage < 1) {
           perPage = Config.getIntProperty("PER_PAGE", 40);
         }
@@ -976,7 +1029,14 @@ public class ContentletAjax {
 		lastSearchMap.put("orderBy", orderBy);
 
 		luceneQuery.append(" +working:true");
-		luceneQuery.append(" +variant:default");
+
+		if (!VariantAPI.DEFAULT_VARIANT.name().equals(variantName)) {
+			luceneQuery.append(" +(" + ESMappingConstants.VARIANT + ":" + variantName + " OR " +
+					ESMappingConstants.VARIANT + ":default)");
+		} else {
+			luceneQuery.append(" +" + ESMappingConstants.VARIANT + ":default");
+		}
+
         final String luceneQueryToShow= luceneQuery.toString().replaceAll("\\s+", " ");
 
 		//Executing the query
@@ -1138,6 +1198,9 @@ public class ContentletAjax {
 	private void addContentMapsToResults(String structureInode, int perPage, User currentUser,
 			Map<String, Field> fieldsMapping, PaginatedArrayList<ContentletSearch> hits,
 			List<Object> results, List<String> expiredInodes, final boolean exporting) {
+
+		final Map<String, Map<String, String>> searchResults = new LinkedHashMap<>();
+
 		for (int i = 0; ((i < perPage) && (i < hits.size())); ++i) {
 
 			Map<String, String> searchResult = null;
@@ -1155,6 +1218,20 @@ public class ContentletAjax {
 				}
 
 				searchResult = new HashMap<>();
+
+				final Map<String, String> searchResultFromMap = searchResults.get(con.getIdentifier());
+
+				if (UtilMethods.isSet(searchResultFromMap)) {
+					final String variantFromMap = searchResultFromMap.get("variant");
+
+					if (VariantAPI.DEFAULT_VARIANT.name().equals(variantFromMap)) {
+						searchResults.put(con.getIdentifier(), searchResult);
+					} else {
+						continue;
+					}
+
+				}
+
 				ContentType type = con.getContentType();
 				searchResult.put("typeVariable", type.variable());
 				searchResult.put("baseType",type.baseType().name());
@@ -1214,6 +1291,8 @@ public class ContentletAjax {
 				searchResult.put("inode", con.getInode());
 				searchResult.put("Identifier",con.getIdentifier());
 				searchResult.put("identifier", con.getIdentifier());
+				searchResult.put("variant", con.getVariantId());
+
 				final Contentlet contentlet = con;
 				searchResult.put("__title__", conAPI.getName(contentlet, currentUser, false));
 
@@ -1373,9 +1452,11 @@ public class ContentletAjax {
 			}
 
 			if (UtilMethods.isSet(searchResult)) {
-				results.add(searchResult);
+				searchResults.put(searchResult.get("identifier"), searchResult);
 			}
 		}
+
+		results.addAll(searchResults.values());
 	}
 
 	List<String> getRelatedIdentifiers(User currentUser, int offset,

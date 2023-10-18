@@ -2,8 +2,7 @@
     <p-contextMenu
         #cm
         [model]="vm.pages.menuActions"
-        (onHide)="closedActionsContextMenu()"
-    ></p-contextMenu>
+        (onHide)="closedActionsContextMenu()"></p-contextMenu>
     <p-table
         #table
         [contextMenu]="cm"
@@ -19,9 +18,9 @@
         [showFirstLastIcon]="false"
         (onLazyLoad)="loadPagesLazy($event)"
         (onRowSelect)="onRowSelect($event)"
+        (onPage)="pageChange.emit()"
         selectionMode="single"
-        sortField="modDate"
-    >
+        sortField="modDate">
         <ng-template pTemplate="caption">
             <div class="flex justify-content-between dot-pages-listing-header">
                 <div class="dot-pages-listing-header__inputs">
@@ -35,36 +34,31 @@
                             data-testid="dot-pages-listing-header__keyword-input"
                             type="text"
                             pInputText
-                            dotAutofocus
-                        />
+                            dotAutofocus />
                         <i
                             class="pi pi-times"
                             *ngIf="input.value.length"
                             (click)="filterData('')"
                             data-testid="dot-pages-listing-header__keyword-input-clear"
-                            role="button"
-                        ></i>
+                            role="button"></i>
                     </div>
                     <p-dropdown
                         class="dot-pages-listing-header__language-input"
                         [(ngModel)]="vm.languageIdValue"
                         [options]="vm.languageOptions"
-                        (onChange)="setPagesLanguage($event.value)"
-                    ></p-dropdown>
+                        (onChange)="setPagesLanguage($event.value)"></p-dropdown>
                     <p-checkbox
                         [(ngModel)]="vm.showArchivedValue"
                         [binary]="true"
                         [label]="'Show-Archived' | dm"
-                        (onChange)="setPagesArchived($event.checked)"
-                    ></p-checkbox>
+                        (onChange)="setPagesArchived($event.checked)"></p-checkbox>
                 </div>
                 <button
                     class="p-button-primary"
                     [label]="'create.page' | dm"
                     (click)="store.getPageTypes()"
                     data-testid="createPageButton"
-                    pButton
-                ></button>
+                    pButton></button>
             </div>
         </ng-template>
         <ng-template pTemplate="header">
@@ -102,8 +96,7 @@
                     })
                 "
                 style="height: 47px"
-                pContextMenuRow
-            >
+                pContextMenuRow>
                 <td>{{ rowData['title'] }}</td>
                 <td [pTooltip]="rowData['urlMap'] || rowData['url']" tooltipPosition="bottom">
                     {{ rowData['urlMap'] || rowData['url'] }}
@@ -116,14 +109,12 @@
                         <dot-state-icon
                             [labels]="dotStateLabels"
                             [state]="rowData"
-                            size="14px"
-                        ></dot-state-icon>
+                            size="14px"></dot-state-icon>
                         <dot-badge bordered="{true}">{{
                             vm.languageLabels[rowData['languageId']]
                         }}</dot-badge>
                         <dot-contentlet-lock-icon
-                            locked="{{ rowData['locked'] }}"
-                        ></dot-contentlet-lock-icon>
+                            locked="{{ rowData['locked'] }}"></dot-contentlet-lock-icon>
                     </div>
                 </td>
                 <td>
@@ -131,7 +122,7 @@
                 </td>
                 <td>{{ rowData['modDate'] | dotRelativeDate }}</td>
                 <td>
-                    <dot-icon-button
+                    <p-button
                         id="pageActionButton-{{ rowIndex }}"
                         (click)="
                             showActionsMenu.emit({
@@ -140,9 +131,8 @@
                                 item: rowData
                             })
                         "
-                        icon="more_vert"
-                        size="32"
-                    ></dot-icon-button>
+                        icon="pi pi-ellipsis-v"
+                        styleClass="p-button-rounded p-button-sm p-button-text"></p-button>
                 </td>
             </tr>
         </ng-template>

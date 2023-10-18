@@ -18,7 +18,6 @@ import { DotWorkflowTaskDetailModule } from '@components/dot-workflow-task-detai
 import { DotWorkflowTaskDetailService } from '@components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
@@ -31,6 +30,7 @@ import {
     DotCurrentUserService,
     DotEventsService,
     DotGenerateSecurePasswordService,
+    DotLicenseService,
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
@@ -46,6 +46,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { DotFormatDateService } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     LoginServiceMock,
@@ -54,6 +55,7 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotWorkflowTaskComponent } from './dot-workflow-task.component';
+
 @Injectable()
 class MockDotWorkflowTaskDetailService {
     view = jasmine.createSpy('view');
@@ -107,6 +109,7 @@ describe('DotWorkflowTaskComponent', () => {
                     useClass: LoginServiceMock
                 },
                 DotCustomEventHandlerService,
+                DotLicenseService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 DotIframeService,
                 DotContentletEditorService,

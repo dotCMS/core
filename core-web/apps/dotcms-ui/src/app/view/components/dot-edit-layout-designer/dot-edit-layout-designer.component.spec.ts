@@ -16,7 +16,6 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
@@ -26,7 +25,7 @@ import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotEventsService, DotMessageService, DotThemesService } from '@dotcms/data-access';
 import { DotTemplateDesigner, DotTheme } from '@dotcms/dotcms-models';
-import { DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 import {
     cleanUpDialog,
     DotThemesServiceMock,
@@ -105,12 +104,11 @@ describe('DotEditLayoutDesignerComponent', () => {
                 DotEditPageInfoModule,
                 DotSecondaryToolbarModule,
                 DotGlobalMessageModule,
-                DotFieldValidationMessageModule,
+                DotFieldValidationMessageComponent,
                 FormsModule,
                 ReactiveFormsModule,
                 RouterTestingModule,
                 TooltipModule,
-                UiDotIconButtonModule,
                 ButtonModule
             ],
             providers: [

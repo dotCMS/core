@@ -1,6 +1,8 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
+import com.dotcms.cli.command.DotCommand;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.Site;
 import java.util.concurrent.Callable;
@@ -19,11 +21,18 @@ import picocli.CommandLine;
            "" // empty line left here on purpose to make room at the end
         }
 )
-public class SiteCurrent extends AbstractSiteCommand implements Callable<Integer> {
+public class SiteCurrent extends AbstractSiteCommand implements Callable<Integer>, DotCommand {
     static final String NAME = "current";
+
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
 
     @Override
     public Integer call() {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         return current();
     }
 
@@ -39,4 +48,13 @@ public class SiteCurrent extends AbstractSiteCommand implements Callable<Integer
         return CommandLine.ExitCode.OK;
     }
 
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
 }

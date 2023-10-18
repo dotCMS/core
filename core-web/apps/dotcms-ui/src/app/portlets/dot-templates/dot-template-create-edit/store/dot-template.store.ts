@@ -1,4 +1,4 @@
-import { ComponentStore } from '@ngrx/component-store';
+import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import * as _ from 'lodash';
 import { Observable, of, zip } from 'rxjs';
 
@@ -142,21 +142,25 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
             switchMap((template: DotTemplateItem) => {
                 this.dotGlobalMessageService.loading(this.dotMessageService.get('publishing'));
 
-                return this.dotTemplateService.saveAndPublish(this.cleanTemplateItem(template));
-            }),
-            tap((template: DotTemplate) => {
-                this.dotGlobalMessageService.success(
-                    this.dotMessageService.get('message.template.published')
-                );
-                this.updateTemplateState(template);
-            }),
-            catchError((err: HttpErrorResponse) => {
-                this.dotGlobalMessageService.error(err.statusText);
-                this.dotHttpErrorManagerService.handle(err).subscribe(() => {
-                    this.dotEditLayoutService.changeDesactivateState(true);
-                });
-
-                return of(null);
+                return this.dotTemplateService
+                    .saveAndPublish(this.cleanTemplateItem(template))
+                    .pipe(
+                        tapResponse(
+                            (template: DotTemplate) => {
+                                this.dotGlobalMessageService.success(
+                                    this.dotMessageService.get('message.template.published')
+                                );
+                                this.dotRouterService.allowRouteDeactivation();
+                                this.updateTemplateState(template);
+                            },
+                            (err: HttpErrorResponse) => {
+                                this.dotGlobalMessageService.error(err.statusText);
+                                this.dotHttpErrorManagerService.handle(err).subscribe(() => {
+                                    this.dotRouterService.allowRouteDeactivation();
+                                });
+                            }
+                        )
+                    );
             })
         );
     });
@@ -335,7 +339,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
     private onSaveTemplateError(err: HttpErrorResponse) {
         this.dotGlobalMessageService.error(err.statusText);
         this.dotHttpErrorManagerService.handle(err).subscribe(() => {
-            this.dotEditLayoutService.changeDesactivateState(true);
+            this.dotRouterService.forbidRouteDeactivation();
         });
 
         return of(null);
@@ -393,9 +397,13 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
      * @memberof DotTemplateStore
      */
     private canRouteBeDesativated(): void {
-        this.didTemplateChanged$.subscribe((didTemplateChanged: boolean) =>
-            this.dotEditLayoutService.changeDesactivateState(!didTemplateChanged)
-        );
+        this.didTemplateChanged$.subscribe((didTemplateChanged: boolean) => {
+            if (didTemplateChanged) {
+                this.dotRouterService.forbidRouteDeactivation();
+            } else {
+                this.dotRouterService.allowRouteDeactivation();
+            }
+        });
     }
 
     /**

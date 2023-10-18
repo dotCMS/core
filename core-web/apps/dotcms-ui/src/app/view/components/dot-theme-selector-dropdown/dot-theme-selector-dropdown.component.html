@@ -3,8 +3,7 @@
         class="theme-selector__data-list-item"
         [class.selected]="value && value.identifier === item.identifier"
         [class.highlight]="item.name === selectedOptionValue"
-        (click)="onChange(item)"
-    >
+        (click)="onChange(item)">
         <img
             class="dot-theme-item__image"
             *ngIf="item?.themeThumbnail; else imageFallback"
@@ -12,8 +11,7 @@
                 item.identifier === 'SYSTEM_THEME'
                     ? item.themeThumbnail
                     : '/dA/' + item.themeThumbnail + '/titleImage/500w/50q/thumbnail.png'
-            "
-        />
+            " />
 
         <ng-template #imageFallback>
             <div class="dot-theme-item__image--fallback">
@@ -36,8 +34,7 @@
             [system]="true"
             (switch)="siteChange($event)"
             width="12.8rem"
-            data-testId="siteSelector"
-        ></dot-site-selector>
+            data-testId="siteSelector"></dot-site-selector>
         <div class="searchable-dropdown__search-section">
             <dot-icon class="searchable-dropdown__search-icon" name="search"></dot-icon>
             <input
@@ -47,8 +44,7 @@
                 (click)="$event.stopPropagation()"
                 data-testId="searchInput"
                 pInputText
-                type="text"
-            />
+                type="text" />
         </div>
     </div>
 </ng-template>
@@ -69,5 +65,5 @@
     labelPropertyName="name"
     overlayWidth="490px"
     valuePropertyName="name"
->
+    width="100%">
 </dot-searchable-dropdown>

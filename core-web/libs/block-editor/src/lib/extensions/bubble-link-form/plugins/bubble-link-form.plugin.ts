@@ -28,6 +28,7 @@ export interface BubbleLinkFormProps {
     element: HTMLElement;
     tippyOptions?: Partial<Props>;
     component?: ComponentRef<BubbleLinkFormComponent>;
+    languageId: number;
 }
 
 export type BubbleLinkFormViewProps = BubbleLinkFormProps & {
@@ -49,6 +50,8 @@ export class BubbleLinkFormView {
 
     public component?: ComponentRef<BubbleLinkFormComponent>;
 
+    public languageId: number;
+
     private scrollElementMap = {
         'editor-suggestion-list': true,
         'editor-input-link': true,
@@ -63,11 +66,14 @@ export class BubbleLinkFormView {
         view,
         tippyOptions = {},
         pluginKey,
-        component
+        component,
+        languageId
     }: BubbleLinkFormViewProps) {
         this.editor = editor;
         this.element = element;
         this.view = view;
+
+        this.languageId = languageId;
 
         this.tippyOptions = tippyOptions;
 
@@ -179,12 +185,16 @@ export class BubbleLinkFormView {
     }
 
     setLinkValues({ link, blank = false }) {
-        if (link.length > 0) {
-            const href = this.formatLink(link);
-            this.isImageNode()
-                ? this.editor.commands.setImageLink({ href })
-                : this.editor.commands.setLink({ href, target: blank ? '_blank' : '_top' });
+        if (!link.length) {
+            return;
         }
+
+        const href = this.formatLink(link);
+        const linkValue = { href, target: blank ? '_blank' : '_top' };
+
+        this.isImageNode()
+            ? this.editor.commands.setImageLink(linkValue)
+            : this.editor.commands.setLink(linkValue);
     }
 
     removeLink() {
@@ -208,6 +218,7 @@ export class BubbleLinkFormView {
     setInputValues() {
         const values = this.getLinkProps();
         this.component.instance.initialValues = values;
+        this.component.instance.languageId = this.languageId;
         this.component.instance.setFormValue(values.link ? values : { link: this.getLinkSelect() });
     }
 
@@ -232,10 +243,10 @@ export class BubbleLinkFormView {
     }
 
     getLinkProps(): NodeProps {
-        const { href: link = '', target } = this.editor.isActive('link')
+        const { href: link = '', target = '_top' } = this.editor.isActive('link')
             ? this.editor.getAttributes('link')
             : this.editor.getAttributes(ImageNode.name);
-        const blank = target ? target === '_blank' : true;
+        const blank = target === '_blank';
 
         return { link, blank };
     }

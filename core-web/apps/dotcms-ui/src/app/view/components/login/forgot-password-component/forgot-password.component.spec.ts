@@ -10,13 +10,13 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { MockDotLoginPageStateService } from '@components/login/dot-login-page-resolver.service.spec';
 import { ForgotPasswordComponent } from '@components/login/forgot-password-component/forgot-password.component';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
+import { DotFieldValidationMessageComponent } from '@dotcms/ui';
 import {
     LoginServiceMock,
     MockDotMessageService,
@@ -43,7 +43,7 @@ describe('ForgotPasswordComponent', () => {
                 ReactiveFormsModule,
                 ButtonModule,
                 InputTextModule,
-                DotFieldValidationMessageModule,
+                DotFieldValidationMessageComponent,
                 RouterTestingModule
             ],
             providers: [
@@ -155,7 +155,7 @@ describe('ForgotPasswordComponent', () => {
     });
 
     it('should call goToLogin when cancel button is clicked', () => {
-        const cancelButton = de.query(By.css('.p-button-secondary'));
+        const cancelButton = de.query(By.css('[data-testid="cancelButton"]'));
         cancelButton.triggerEventHandler('click', {});
 
         expect(dotRouterService.goToLogin).toHaveBeenCalledWith(undefined);

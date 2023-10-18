@@ -20,6 +20,7 @@ import com.dotcms.storage.FileStorageAPITest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
+import com.dotmarketing.quartz.QuartzUtilsTest;
 import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJobTest;
 import com.dotmarketing.startup.runonce.Task220825CreateVariantFieldTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
@@ -94,7 +95,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Chainable4040StorageCacheTest.class,
         FileStorageAPITest.class,
         com.dotcms.analytics.metrics.QueryParameterValuesGetterTest.class,
-        com.dotcms.analytics.metrics.QueryParameterValuesTransformerTest.class
+        com.dotcms.analytics.metrics.QueryParameterValuesTransformerTest.class,
+        QuartzUtilsTest.class
 })
 
 public class MainSuite1b {

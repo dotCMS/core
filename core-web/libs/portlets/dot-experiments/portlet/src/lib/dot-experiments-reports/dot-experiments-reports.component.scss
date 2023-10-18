@@ -1,6 +1,6 @@
 @use "variables" as *;
 
-$max-container-width: 1100px;
+@import "../styles/experiment";
 
 :host {
     width: 100%;
@@ -11,7 +11,7 @@ $max-container-width: 1100px;
 }
 
 .dot-experiment-report-content {
-    padding: $spacing-3 $spacing-5 $spacing-5;
+    padding: $spacing-3 calc($spacing-5 + $nav-size) $spacing-5 $spacing-5;
     row-gap: $spacing-3;
     width: 100%;
     overflow-y: scroll;
@@ -34,24 +34,6 @@ $max-container-width: 1100px;
     }
 }
 
-.pi-arrow-circle-down {
-    color: $color-alert-red;
-}
-
-.pi-arrow-circle-up {
-    color: $color-alert-green;
-}
-
-.trophy {
-    fill: $color-accessible-text-green;
-    height: 20px;
-    min-width: 20px;
-}
-
-.prospect-winner {
-    font-weight: $font-weight-bold;
-}
-
 @media only screen and (max-width: $screen-lg-max) {
     .content {
         width: calc(100% - 2rem);
@@ -61,5 +43,11 @@ $max-container-width: 1100px;
 @media only screen and (min-width: $screen-xl-min) {
     .dot-experiment-report-content .container .content {
         width: $max-container-width;
+    }
+}
+
+::ng-deep {
+    .p-tabview .p-tabview-nav {
+        border: none;
     }
 }

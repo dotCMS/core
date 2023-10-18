@@ -1,5 +1,6 @@
 package com.dotcms.cli.command.site;
 
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import picocli.CommandLine;
@@ -30,7 +31,7 @@ import java.util.concurrent.Callable;
                 SiteCurrent.class,
         }
 )
-public class SiteCommand implements Callable<Integer> {
+public class SiteCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "site";
     static final String ALIAS = "host";
@@ -49,7 +50,7 @@ public class SiteCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-
+        output.throwIfUnmatchedArguments(spec.commandLine());
         //Upon not proving a sub command exec the default
         output.info("Listing sites (default action, see --help).");
         CommandLine.ParseResult result = spec.commandLine().getParseResult();
@@ -60,4 +61,13 @@ public class SiteCommand implements Callable<Integer> {
 
     }
 
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
 }

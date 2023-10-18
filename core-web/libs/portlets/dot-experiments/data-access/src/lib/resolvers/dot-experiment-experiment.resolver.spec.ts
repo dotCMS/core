@@ -31,15 +31,16 @@ describe('DotExperimentExperimentResolver', () => {
         activatedRouteSnapshotMock = spectator.inject(ActivatedRouteSnapshot);
     });
 
-    it("shouldn't get a experiment by experimentId", () => {
+    it("shouldn't get a experiment by experimentId", (done) => {
         activatedRouteSnapshotMock.queryParams = {};
 
         spectator.service.resolve(activatedRouteSnapshotMock).subscribe((result) => {
             expect(result).toBe(null);
+            done();
         });
     });
 
-    it('should get a experiment by experimentId', () => {
+    it('should get a experiment by experimentId', (done) => {
         const experimentId = '123';
         activatedRouteSnapshotMock.queryParams = { experimentId };
 
@@ -48,6 +49,7 @@ describe('DotExperimentExperimentResolver', () => {
         spectator.service.resolve(activatedRouteSnapshotMock).subscribe((result) => {
             expect(result).toBe(EXPERIMENT_MOCK);
             expect(dotExperimentsService.getById).toHaveBeenCalledWith(experimentId);
+            done();
         });
     });
 });

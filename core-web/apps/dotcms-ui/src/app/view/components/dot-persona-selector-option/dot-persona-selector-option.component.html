@@ -3,14 +3,12 @@
     [text]="persona.name"
     [image]="persona.photo"
     pBadge
-    dotAvatar
-></p-avatar>
+    dotAvatar></p-avatar>
 <p-avatar
     *ngIf="!persona.personalized"
     [text]="persona.name"
     [image]="persona.photo"
-    dotAvatar
-></p-avatar>
+    dotAvatar></p-avatar>
 
 <!-- Inline CSS code added to allow ellipsis on 2nd line, if this is moved to the SCCS file the pre-compiler cries -->
 <span
@@ -24,11 +22,10 @@
 </span>
 
 <button
-    class="p-button-secondary p-button-sm"
+    class="p-button-outlined p-button-sm"
     *ngIf="canDespersonalize && persona.personalized"
     (click)="deletePersonalized($event)"
     icon="pi pi-times"
     iconPos="right"
     label="{{ 'modes.persona.personalized' | dm }}"
-    pButton
-></button>
+    pButton></button>

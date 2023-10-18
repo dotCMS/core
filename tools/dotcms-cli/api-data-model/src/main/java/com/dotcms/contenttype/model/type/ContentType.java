@@ -3,18 +3,25 @@ package com.dotcms.contenttype.model.type;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldLayoutRow;
-import com.dotcms.contenttype.model.field.Workflow;
 import com.dotcms.contenttype.model.type.ContentType.ClassNameAliasResolver;
-import com.fasterxml.jackson.annotation.*;
+import com.dotcms.contenttype.model.workflow.Workflow;
+import com.dotcms.model.views.CommonViews;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import com.fasterxml.jackson.databind.jsontype.impl.ClassNameIdResolver;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -35,7 +42,6 @@ import org.immutables.value.Value.Default;
         @Type(value = DotAssetContentType.class)
 })
 @JsonIgnoreProperties(value = {
-    "systemActionMappings",
     "nEntries",
     "sortOrder",
     "versionable",
@@ -46,6 +52,15 @@ public abstract class ContentType {
 
     public static final String SYSTEM_HOST = "SYSTEM_HOST";
     public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
+
+    static final String TYPE = "ContentType";
+
+    @JsonView(CommonViews.InternalView.class)
+    @JsonProperty("dotCMSObjectType")
+    @Value.Derived
+    public String dotCMSObjectType() {
+        return TYPE;
+    }
 
     @Nullable
     public abstract String id();
@@ -62,6 +77,13 @@ public abstract class ContentType {
     @Nullable
     public abstract String variable();
 
+    /**
+     * The modDate attribute is marked as auxiliary to exclude it from the equals, hashCode, and
+     * toString methods. This ensures that two instances of ContentType can be considered equal even
+     * if their modDate values differ. This decision was made because under certain circumstances,
+     * the modDate value is set using the current date.
+     */
+    @Value.Auxiliary
     @Nullable
     public abstract Date modDate();
 
@@ -71,9 +93,18 @@ public abstract class ContentType {
     @Nullable
     public abstract String expireDateVar();
 
-    @Nullable
-    public abstract Boolean fixed();
+    @Value.Default
+    public Boolean fixed() {
+        return false;
+    }
 
+    /**
+     * The iDate attribute is marked as auxiliary to exclude it from the equals, hashCode, and
+     * toString methods. This ensures that two instances of ContentType can be considered equal even
+     * if their iDate values differ. This decision was made because under certain circumstances, the
+     * iDate value is set using the current date.
+     */
+    @Value.Auxiliary
     @Nullable
     public abstract Date iDate();
 
@@ -101,14 +132,18 @@ public abstract class ContentType {
     @Nullable
     public abstract String description();
 
-    @Nullable
-    public abstract Boolean defaultType();
+    @Value.Default
+    public Boolean defaultType() {
+        return false;
+    }
 
     @Value.Default
     public BaseContentType baseType() { return BaseContentType.CONTENT; };
 
-    @Nullable
-    public abstract Boolean system();
+    @Value.Default
+    public Boolean system() {
+        return false;
+    }
 
     @Nullable
     public abstract String owner();
@@ -124,8 +159,18 @@ public abstract class ContentType {
     @Nullable
     public abstract String urlMapPattern();
 
+    @Value.Default
+    public List<Workflow> workflows() {
+        return Collections.emptyList();
+    }
+
+    //System action mappings are rendered quite differently depending on what endpoint gets called
+    //if it's coming from an endpoint that returns a list of CT we get a simplified version
+    //if it's coming from an endpoint that returns only one CT then we get a full representation
+    //Again a different form of this attribute is used when sending the request to create or update the CT
+    //Therefore it's best if we keep a Generic high level representation of the field through JsonNode
     @Nullable
-    public abstract List<Workflow> workflows();
+    public abstract JsonNode systemActionMappings();
 
     /**
      * Class id resolver allows us using smaller ClassNames that eventually get mapped to the fully qualified class name

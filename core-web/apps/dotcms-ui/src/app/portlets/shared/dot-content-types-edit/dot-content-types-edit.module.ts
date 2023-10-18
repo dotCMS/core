@@ -15,10 +15,9 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TabViewModule } from 'primeng/tabview';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotInlineEditModule } from '@components/_common/dot-inline-edit/dot-inline-edit.module';
 import { DotMenuModule } from '@components/_common/dot-menu/dot-menu.module';
 import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
@@ -30,22 +29,22 @@ import { IFrameModule } from '@components/_common/iframe';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
-import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotRelationshipTreeModule } from '@components/dot-relationship-tree/dot-relationship-tree.module';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.module';
 import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import { DotContentTypesInfoService, DotWorkflowService } from '@dotcms/data-access';
 import {
+    DotAutofocusDirective,
+    DotCopyButtonComponent,
     DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
     DotIconModule,
-    DotMessagePipe,
-    UiDotIconButtonModule
+    DotMessagePipe
 } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import {
@@ -121,7 +120,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DialogModule,
         DotAddToBundleModule,
         DotApiLinkModule,
-        DotAutofocusModule,
+        DotAutofocusDirective,
         DotBaseTypeSelectorModule,
         DotContentTypeFieldsVariablesModule,
         DotContentTypesEditRoutingModule,
@@ -131,9 +130,8 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotPipesModule,
         DotSecondaryToolbarModule,
         DotFieldHelperModule,
-        DotFieldValidationMessageModule,
-        UiDotIconButtonModule,
-        UiDotIconButtonTooltipModule,
+        DotFieldValidationMessageComponent,
+        TooltipModule,
         DotIconModule,
         DotMaxlengthModule,
         DotMenuModule,
@@ -161,7 +159,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotMdIconSelectorModule,
         DotAddToMenuModule,
         DotFieldRequiredDirective,
-        DotCopyButtonModule,
+        DotCopyButtonComponent,
 
         OverlayPanelModule,
         DotMessagePipe

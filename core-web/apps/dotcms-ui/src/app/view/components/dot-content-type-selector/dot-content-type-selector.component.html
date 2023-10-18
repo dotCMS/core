@@ -1,10 +1,10 @@
 <p-dropdown
     [options]="options$ | async"
-    [style]="{ width: '155px' }"
+    [style]="{ width: '215px' }"
     [filter]="true"
     [showClear]="true"
     [resetFilterOnHide]="true"
     (onChange)="change($event)"
-    filterBy="label"
->
+    appendTo="body"
+    filterBy="label">
 </p-dropdown>

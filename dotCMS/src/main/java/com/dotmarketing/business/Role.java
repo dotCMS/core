@@ -34,6 +34,8 @@ public class Role implements Serializable,Comparable<Role> {
   public static final String CMS_OWNER_ROLE = "CMS Owner";
   public static final String CMS_ADMINISTRATOR_ROLE = "CMS Administrator";
 
+  public static final String SCRIPTING_DEVELOPER = "Scripting Developer";
+
   
   
 	public static final String DOTCMS_BACK_END_USER  = "DOTCMS_BACK_END_USER";

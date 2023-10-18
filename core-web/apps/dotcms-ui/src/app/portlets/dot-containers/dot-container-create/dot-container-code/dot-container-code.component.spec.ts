@@ -230,9 +230,14 @@ describe('DotContentEditorComponent', () => {
             const icon = de.query(By.css('[data-testId="code"]'));
             const title = de.query(By.css('[data-testId="empty-content-title"]'));
             const subtitle = de.query(By.css('[data-testId="empty-content-subtitle"]'));
+            const link = de.query(By.css('[data-testId="empty-content-link"]'));
             expect(icon).toBeDefined();
             expect(title.nativeElement.textContent).toContain('Content Type Empty');
-            expect(subtitle.nativeElement.textContent).toContain('Need help? Go to documentation');
+            expect(subtitle.nativeElement.textContent.trim()).toContain('Need help?');
+            expect(link.nativeElement.getAttribute('href')).toBeTruthy();
+            expect(link.nativeElement.getAttribute('href')).toBe(
+                'https://www.dotcms.com/docs/latest/containers'
+            );
             expect(hostComponent.form.valid).toEqual(false);
         });
 
@@ -358,6 +363,11 @@ describe('DotContentEditorComponent', () => {
             hostFixture.detectChanges();
             const loader = de.query(By.css('p-skeleton'));
             expect(loader).toBeDefined();
+        });
+
+        it('should have a menu with max height in 300px and overflow auto', () => {
+            expect(menu.style['max-height']).toBe('300px');
+            expect(menu.style.overflow).toBe('auto');
         });
     });
 });

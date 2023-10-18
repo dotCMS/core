@@ -5,32 +5,25 @@
         (selected)="changeDeviceHandler($event)"
         appendTo="body"
         tooltipPosition="bottom"
-        tooltipStyleClass="dot-device-selector__dialog"
-    ></dot-device-selector>
+        tooltipStyleClass="dot-device-selector__dialog"></dot-device-selector>
 
     <dot-language-selector
         [pTooltip]="pageState.viewAs.language.language"
-        [readonly]="!!variant"
         [value]="pageState.viewAs.language"
         (selected)="changeLanguageHandler($event)"
         appendTo="body"
         tooltipPosition="bottom"
-        tooltipStyleClass="dot-language-selector__dialog"
-    ></dot-language-selector>
+        tooltipStyleClass="dot-language-selector__dialog"></dot-language-selector>
 
     <dot-persona-selector
         [disabled]="(dotPageStateService.haveContent$ | async) === false"
         [pageState]="pageState"
-        [readonly]="!!variant"
         (delete)="deletePersonalization($event)"
-        (selected)="changePersonaHandler($event)"
-    ></dot-persona-selector>
+        (selected)="changePersonaHandler($event)"></dot-persona-selector>
 </ng-container>
 
 <ng-template #language>
     <dot-language-selector
-        [readonly]="!!variant"
         [value]="pageState.viewAs.language"
-        (selected)="changeLanguageHandler($event)"
-    ></dot-language-selector>
+        (selected)="changeLanguageHandler($event)"></dot-language-selector>
 </ng-template>

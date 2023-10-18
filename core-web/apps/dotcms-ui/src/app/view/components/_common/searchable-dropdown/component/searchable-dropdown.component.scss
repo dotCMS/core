@@ -1,73 +1,50 @@
 @use "variables" as *;
 
 @import "dotcms-theme/utils/theme-variables";
+@import "dotcms-theme/components/form/common";
 @import "mixins";
 
 :host {
     position: relative;
 
-    &.d-secondary {
-        .p-button {
-            border: none;
-
-            &:hover,
-            &:active,
-            &:focus {
-                border: none;
-                box-shadow: none;
-                background: $bg-hover;
-            }
-
-            &::ng-deep {
-                .p-button-label {
-                    margin-right: 0;
-                }
-            }
-        }
-    }
-
-    .p-button {
-        border: 1px solid $input-border-color;
-        padding-left: $spacing-2;
-        padding-right: $spacing-2;
-        border-radius: $field-border-radius;
-        background: none;
+    ::ng-deep .p-element.p-button:enabled {
+        gap: $spacing-1;
         text-align: left;
+        padding: 0;
+        padding-left: $spacing-1;
+        border: $field-border-size solid $color-palette-gray-400;
 
-        .p-fluid & {
-            /*
-            We have to use important because in the component we have a 300px default value for
-            the element as inline styles, but when the parent have .fluid we need to enforce 100%
-            */
-            width: 100% !important;
+        .p-button-label {
+            @include truncate-text;
+            text-transform: none;
+            color: $black;
         }
 
-        &:hover,
-        &:focus,
-        &:active {
-            border-color: $input-border-color-hover;
-            background: none;
-        }
+        .p-button-icon {
+            @extend #field-trigger;
+            @extend #field-trigger-icon;
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
-        &:focus,
-        &:active {
-            box-shadow: $input-inset-shadow;
-        }
-
-        &::ng-deep {
-            .p-button-label {
-                margin-right: 2rem;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
+            &:before {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: $field-height-md;
+                aspect-ratio: 1/1;
             }
+        }
 
-            .p-button-label,
-            .p-button-icon {
-                font-weight: normal;
-                color: $black;
-                text-transform: none;
-            }
+        &:hover {
+            @extend #form-field-hover;
+            background-color: transparent;
+        }
+
+        &:active,
+        &:focus {
+            @extend #form-field-focus;
+            background-color: transparent;
         }
     }
 }

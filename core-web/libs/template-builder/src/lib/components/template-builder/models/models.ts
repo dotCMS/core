@@ -69,18 +69,7 @@ export interface DotTemplateBuilderState {
     containerMap: DotContainerMap;
     layoutProperties: DotTemplateLayoutProperties;
     resizingRowID: string;
-}
-
-/**
- * @description This is the model for the DotAddStyleClassesDialogStore
- *
- * @export
- * @interface DotAddStyleClassesDialogState
- */
-export interface DotAddStyleClassesDialogState {
-    styleClasses: StyleClassModel[];
-    selectedClasses: StyleClassModel[];
-    filteredClasses: StyleClassModel[];
+    themeId: string;
 }
 
 export type WidgetType = 'col' | 'row';
@@ -110,11 +99,13 @@ export interface DotTemplateLayoutProperties {
 }
 
 /**
- * @description This it the model for Autocomplete StyleClasses
+ * @description This it the model for the Scroll Direction of the GridStack
  *
  * @export
- * @interface StyleClassModel
+ * @enum {number}
  */
-export interface StyleClassModel {
-    cssClass: string;
+export enum SCROLL_DIRECTION {
+    UP = 'UP',
+    DOWN = 'DOWN',
+    NONE = 'NONE'
 }

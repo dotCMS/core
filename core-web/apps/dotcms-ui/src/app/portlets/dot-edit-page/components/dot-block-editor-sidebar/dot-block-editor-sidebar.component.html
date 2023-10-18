@@ -7,8 +7,7 @@
     [closeOnEscape]="false"
     (onHide)="sidebar.destroyModal(); closeSidebar()"
     position="right"
-    data-testid="sidebar"
->
+    data-testid="sidebar">
     <div class="container" *ngIf="blockEditorInput">
         <dot-block-editor
             #blockEditor
@@ -18,18 +17,16 @@
             [allowedContentTypes]="blockEditorInput.fieldVariables.allowedContentTypes"
             [value]="blockEditorInput.content"
             [customStyles]="blockEditorInput.fieldVariables.styles"
-            [contentletIdentifier]="blockEditorInput.contentletIdentifier"
-        >
+            [contentletIdentifier]="blockEditorInput.contentletIdentifier">
         </dot-block-editor>
         <footer>
             <button
-                class="p-button-secondary"
+                class="p-button-outlined"
                 [label]="'Cancel' | dm"
                 (click)="closeSidebar()"
                 pButton
                 type="button"
-                data-testid="cancelBtn"
-            ></button>
+                data-testid="cancelBtn"></button>
             <button
                 [disabled]="saving"
                 [loading]="saving"
@@ -37,8 +34,7 @@
                 (click)="saveEditorChanges()"
                 pButton
                 type="button"
-                data-testid="updateBtn"
-            ></button>
+                data-testid="updateBtn"></button>
         </footer>
     </div>
 </p-sidebar>

@@ -127,9 +127,9 @@ function distResults {
   fi
 
   local target_folder=$(resolveResultsPath ${results_path})
-  echo "Adding test results path ${results_path} to: ${target_folder}"
-
-  executeCmd "mv ${OUTPUT_FOLDER} ${target_folder}"
+  executeCmd "mkdir -p ${target_folder}"
+  echo "Adding test results path ${OUTPUT_FOLDER} to: ${target_folder}"
+  executeCmd "cp -R ${OUTPUT_FOLDER}/* ${target_folder}"
 }
 
 # Resolves possible conflicts by checking out ours
@@ -206,7 +206,7 @@ function persistBranchResults {
 
   # Resolve test results fully
   local test_results_repo_url=$(resolveRepoUrl ${INPUT_TESTS_RESULTS_REPO} ${INPUT_CICD_GITHUB_TOKEN} ${GITHUB_USER})
-  local test_results_path=$(resolveTestResultsBase ${BUILD_ID})
+  local test_results_path=$(resolveTestResultsBase ${build_id})
 
   # Query for remote branch
   gitRemoteLs ${test_results_repo_url} ${build_id}

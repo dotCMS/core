@@ -36,7 +36,6 @@ import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -55,14 +54,13 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotAutofocusDirective, DotFormatDateService, DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
@@ -296,7 +294,7 @@ describe('DotContainerPropertiesComponent', () => {
                 DotAddToBundleModule,
                 HttpClientTestingModule,
                 DynamicDialogModule,
-                DotAutofocusModule,
+                DotAutofocusDirective,
                 BrowserAnimationsModule
             ],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
@@ -321,19 +319,12 @@ describe('DotContainerPropertiesComponent', () => {
         });
 
         it('should focus on title field', async () => {
-            const inplace = de.query(By.css('[data-testId="inplace"]'));
-            inplace.componentInstance.activate();
             fixture.detectChanges();
             const title = de.query(By.css('[data-testId="title"]'));
-
-            expect(inplace.componentInstance.active).toBe(true);
             expect(title.attributes.dotAutofocus).toBeDefined();
         });
 
         it('should setup title', () => {
-            const inplace = de.query(By.css('[data-testId="inplace"]'));
-            inplace.componentInstance.activate();
-            fixture.detectChanges();
             const field = de.query(By.css('[data-testId="title"]'));
             expect(field.attributes.pInputText).toBeDefined();
         });

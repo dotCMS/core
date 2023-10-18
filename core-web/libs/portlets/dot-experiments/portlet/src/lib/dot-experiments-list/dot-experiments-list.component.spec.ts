@@ -18,17 +18,16 @@ import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/d
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotEmptyContainerComponent, DotFormatDateService } from '@dotcms/ui';
 import {
     ActivatedRouteListStoreMock,
     DotExperimentsStoreMock,
     getExperimentAllMocks,
     getExperimentMock
 } from '@dotcms/utils-testing';
-import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsCreateComponent } from './components/dot-experiments-create/dot-experiments-create.component';
-import { DotExperimentsEmptyExperimentsComponent } from './components/dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
 import { DotExperimentsListSkeletonComponent } from './components/dot-experiments-list-skeleton/dot-experiments-list-skeleton.component';
 import { DotExperimentsStatusFilterComponent } from './components/dot-experiments-status-filter/dot-experiments-status-filter.component';
 import { DotExperimentsListComponent } from './dot-experiments-list.component';
@@ -56,10 +55,6 @@ const VM_LIST_EXPERIMENTS_MOCKS$: VmListExperiments = {
 
 describe('ExperimentsListComponent', () => {
     let spectator: Spectator<DotExperimentsListComponent>;
-    let dotExperimentsStatusFilterComponent: DotExperimentsStatusFilterComponent;
-    let dotExperimentsEmptyExperimentsComponent: DotExperimentsEmptyExperimentsComponent;
-    let dotExperimentsListSkeletonComponent: DotExperimentsListSkeletonComponent;
-
     let router: SpyObject<Router>;
 
     const createComponent = createComponentFactory({
@@ -96,18 +91,14 @@ describe('ExperimentsListComponent', () => {
         spectator.component.vm$ = of({ ...VM_LIST_EXPERIMENTS_MOCKS$ });
         spectator.detectComponentChanges();
 
-        dotExperimentsListSkeletonComponent = spectator.query(DotExperimentsListSkeletonComponent);
-        expect(dotExperimentsListSkeletonComponent).toExist();
+        expect(spectator.query(DotExperimentsListSkeletonComponent)).toExist();
     });
 
     it('should show the empty component when is not loading and no experiments', () => {
         spectator.component.vm$ = of({ ...VM_LIST_EXPERIMENTS_MOCKS$, isLoading: false });
         spectator.detectComponentChanges();
 
-        dotExperimentsEmptyExperimentsComponent = spectator.query(
-            DotExperimentsEmptyExperimentsComponent
-        );
-        expect(dotExperimentsEmptyExperimentsComponent).toExist();
+        expect(spectator.query(DotEmptyContainerComponent)).toExist();
     });
 
     it('should show the filters component and add experiment button exist when has experiments', () => {
@@ -118,8 +109,7 @@ describe('ExperimentsListComponent', () => {
         });
         spectator.detectComponentChanges();
 
-        dotExperimentsStatusFilterComponent = spectator.query(DotExperimentsStatusFilterComponent);
-        expect(dotExperimentsStatusFilterComponent).toExist();
+        expect(spectator.query(DotExperimentsStatusFilterComponent)).toExist();
 
         const addExperimentButton = spectator.query(byTestId('add-experiment-button'));
         expect(addExperimentButton).toExist();

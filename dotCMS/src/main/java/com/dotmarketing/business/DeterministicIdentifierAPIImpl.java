@@ -288,7 +288,8 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         if(UtilMethods.isNotSet(name)){
             name = field.variable();
         }
-        return name;
+        //amplify the dispersion of the seed by adding the field type
+        return  String.format("%s:%s", name, field.typeName());
     }
 
     /**

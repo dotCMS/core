@@ -1,6 +1,5 @@
 package com.dotmarketing.business;
 
-import com.dotcms.analytics.cache.AnalyticsCache;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenCache;
 import com.dotcms.business.SystemCache;
 import com.dotcms.cache.KeyValueCache;
@@ -362,14 +361,6 @@ public class CacheLocator extends Locator<CacheIndex>{
 	}
 
 	/**
-	 * This will get you an instance of the {@link AnalyticsCache} singleton cache.
-	 * @return
-	 */
-	public static AnalyticsCache getAnalyticsCache() {
-		return (AnalyticsCache) getInstance(CacheIndex.AnalyticsCache);
-	}
-
-	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
 	 * @return
@@ -479,8 +470,6 @@ enum CacheIndex
 	GraphQLCache("GraphQLCache"),
 	VariantCache("VariantCache"),
 	ExperimentsCache("ExperimentsCache"),
-	AnalyticsCache("AnalyticsCache"),
-
 	Chainable4040StorageCache("Chainable4040StorageCache");
 
 	Cachable create() {
@@ -535,7 +524,6 @@ enum CacheIndex
 			case GraphQLCache: return new GraphQLCache();
 			case VariantCache: return new VariantCacheImpl();
 			case ExperimentsCache: return new ExperimentsCacheImpl();
-			case AnalyticsCache: return new AnalyticsCache();
 			case Chainable4040StorageCache: return new Chainable404StorageCache();
 
 		}

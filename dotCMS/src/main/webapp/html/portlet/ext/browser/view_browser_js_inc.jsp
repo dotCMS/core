@@ -745,32 +745,16 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         contentDraggables = new Array();
     }
 
-    function sortContentByNameAndDate(unsortedArray){
-        // First, separate folders and files into separate arrays
-        const folders = unsortedArray.filter(item => item.type === 'folder');
-        const files = unsortedArray.filter(item => item.type !== 'folder');
-
-        // Sort folders by name
-        folders.sort((a, b) => (a.name > b.name) ? 1 : -1);
-
-        // Sort files by date
-        files.sort((a, b) => (a.modDate > b.modDate) ? 1 : -1);
-        // Merge the sorted arrays back into one array
-        return [...folders, ...files];
-    }
-
     //AJAX callback to load the left hand side of the browser
     function selectFolderContentCallBack (content) {
-
-        const filteredContent = sortContentByNameAndDate(content)
 
         var subFoldersCount = 0;
 
         //Loading the contents table at the rigth hand side
         var table = $('assetListBody');
-        for (var i = 0; i < filteredContent.length; i++) {
+        for (var i = 0; i < content.length; i++) {
 
-            var asset = filteredContent[i];
+            var asset = content[i];
             inodes[asset.inode] = asset;
 
             contentInodes[contentInodes.length] = asset;
@@ -917,7 +901,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                     '   <td style="padding:0px" class="descriptionTD" id="' + asset.inode + '-DescriptionTD">' +
                     '<table style="width:100%;">' +
                     '<tr style="height:15px">' +
-                    '<td style="padding:0px; border:0px; width:60px;">'+ languageHTML +
+                    '<td style="padding:0px; border:0px; width:80px;">'+ languageHTML +
                     '</td>' +
                     '<td style="text-align:left; border:0px">'+title+'</td>' +
                     ' </tr>' +
@@ -1251,7 +1235,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     var inFrame=<%=(UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (Boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))?true:false%>;
     //Host Actions
     function editHost(inode, referer) {
-        editContentletEvent(inode);
+        editContentletEvent(inode, "HOST");
     }
 
     function setAsDefaultHost(objId,referer) {
@@ -1675,7 +1659,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         var pageAssetDialog = new dijit.Dialog({
             id   : "addPageAssetDialog",
             title: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "addpage.dialog")) %>",
-            style: "width: 311px; height:160px; overflow: auto"
+            style: "height:160px; overflow: auto"
         });
         var dialogHtml = getHTMLPageAssetDialogHtml();
 
@@ -1704,12 +1688,13 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             "</div>";
     }
 
-    function createContentlet(url) {
+    function createContentlet(url, contentType) {
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "create-contentlet",
             data: {
-                url: url
+                url,
+                contentType
             }
         });
         document.dispatchEvent(customEvent);
@@ -1722,12 +1707,13 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
     function getSelectedpageAsset(folderInode) {
         var selected = dijit.byId('defaultPageType');
+
         if(!selected){
             showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Please-select-a-valid-htmlpage-asset-type")) %>');
         }
 
         var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
-        createContentlet(loc);
+        createContentlet(loc, selected.item.velocityVarName);
     }
 
 
@@ -1741,8 +1727,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
         if(!isMultiple){
             var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
-
-            createContentlet(loc);
+            createContentlet(loc, selected.item.velocityVarName);
         } else {
             addMultipleFile(folderInode, selected, escape(refererVar));
         }
@@ -1786,13 +1771,13 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 
     function editFileAsset (contInode, structureInode){
-        editContentletEvent(contInode);
+        editContentletEvent(contInode, inodes[contInode].contentType);
         hidePopUp('context_menu_popup_'+contInode);
 
     }
 
     function editHTMLPageAsset (contInode, structureInode) {
-        editContentletEvent(contInode);
+        editContentletEvent(contInode, inodes[contInode].contentType);
         hidePopUp('context_menu_popup_'+contInode);
     }
 
@@ -1800,12 +1785,13 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
     }
 
-    function editContentletEvent(contInode) {
+    function editContentletEvent(contInode, contentType) {
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "edit-contentlet",
             data: {
-                inode: contInode
+                inode: contInode,
+                contentType
             }
         });
         document.dispatchEvent(customEvent);

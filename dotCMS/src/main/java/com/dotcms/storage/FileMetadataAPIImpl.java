@@ -19,11 +19,13 @@ import com.dotmarketing.portlets.contentlet.business.MetadataCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -54,17 +56,35 @@ import java.util.stream.Stream;
  */
 public class FileMetadataAPIImpl implements FileMetadataAPI {
 
+    //This property is a comma-separated list that contains all the metadata keys that will be stored as basic in addition to the ones defined in {@link BasicMetadataFields}
+    public static final String BASIC_METADATA_EXTENDED_KEYS = "BASIC_METADATA_EXTENDED_KEYS";
     private final FileStorageAPI fileStorageAPI;
     private final MetadataCache metadataCache;
+
+    private Lazy<Set<String>> basicMetadataKeySet;
 
     public FileMetadataAPIImpl() {
         this(APILocator.getFileStorageAPI(), CacheLocator.getMetadataCache());
     }
 
-    @VisibleForTesting
-    FileMetadataAPIImpl(final FileStorageAPI fileStorageAPI, final MetadataCache metadataCache) {
+    private FileMetadataAPIImpl(final FileStorageAPI fileStorageAPI, final MetadataCache metadataCache) {
+        this(fileStorageAPI, metadataCache, () -> {
+            //we are including additional keys to the basic metadata if `BASIC_METADATA_EXTENDED_KEYS` exists
+            String extendedKeys = Config.getStringProperty(BASIC_METADATA_EXTENDED_KEYS, null);
+            Set<String> basicMetadataKeys = new HashSet<>(BasicMetadataFields.keyMap().keySet());
+            if (UtilMethods.isSet(extendedKeys)){
+                basicMetadataKeys.addAll(Arrays.stream(extendedKeys.split(",")).map(String::trim).collect(Collectors.toSet()));
+            }
+            return basicMetadataKeys;
+        }
+        );
+    }
+
+    private FileMetadataAPIImpl(final FileStorageAPI fileStorageAPI, final MetadataCache metadataCache,
+            Supplier<? extends Set<String>> basicMetadataKeySetSupplier) {
         this.fileStorageAPI = fileStorageAPI;
         this.metadataCache = metadataCache;
+        this.basicMetadataKeySet = Lazy.of(basicMetadataKeySetSupplier);
     }
 
     /**
@@ -441,8 +461,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @return
      */
     private Map<String, Serializable> filterNonBasicMetadataFields(final Map<String, Serializable> originalMap) {
-        final Set<String> basicMetadataFieldsSet = BasicMetadataFields.keyMap().keySet();
-        return originalMap.entrySet().stream().filter(entry -> basicMetadataFieldsSet
+        return originalMap.entrySet().stream().filter(entry -> basicMetadataKeySet.get()
                 .contains(entry.getKey()) || entry.getKey().startsWith(Metadata.CUSTOM_PROP_PREFIX) ).collect(
                 Collectors.toMap(Entry::getKey, Entry::getValue));
     }
@@ -706,7 +725,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     * Build a tmp resource path so that temp files will get created under a more suitable location
     */
     private String tempResourcePath(final String tempResourceId){
-        return File.separator + FileAssetAPI.TMP_UPLOAD + File.separator + tempResourceId + File.separator +  tempResourceId + META_TMP;
+        return ConfigUtils.getAssetTempPath() + File.separator + tempResourceId + File.separator +  tempResourceId + META_TMP;
     }
 
     /**

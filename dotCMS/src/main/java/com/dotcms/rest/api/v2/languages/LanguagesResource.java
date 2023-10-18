@@ -222,8 +222,6 @@ public class LanguagesResource {
             @Context final HttpServletResponse response,
             @PathParam("languageTag") final String languageTag) {
 
-        this.webResource.init(null, request, response,
-                true, PortletID.LANGUAGES.toString());
 
         final Locale locale = validateLanguageTag(languageTag);
         final LanguageForm languageForm = new LanguageForm.Builder()
@@ -235,8 +233,8 @@ public class LanguagesResource {
         if(null == language){
            return Response.status(Status.NOT_FOUND).build();
         }
-        return Response.ok(new ResponseEntityView(language)).build(); // 200
 
+        return Response.ok(new ResponseEntityView(new LanguageView(language))).build();
     }
 
     private Locale validateLanguageTag(final String languageTag)throws DoesNotExistException {

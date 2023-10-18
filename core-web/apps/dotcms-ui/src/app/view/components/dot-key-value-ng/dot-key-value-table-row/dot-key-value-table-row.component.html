@@ -1,14 +1,19 @@
 <tr class="dot-key-value-table-row">
-    <td>
+    <td data-testId="dot-key-value-key">
         {{ variableCopy.key }}
     </td>
+
     <ng-template [ngIf]="isHiddenField" [ngIfElse]="editableValue">
-        <td>
-            {{ variableCopy.value }}
+        <td data-testId="dot-key-value-label">
+            {{ passwordPlaceholder }}
         </td>
     </ng-template>
     <ng-template #editableValue>
-        <td #valueCell [pEditableColumn]="variableCopy.value" pEditableColumnField="value">
+        <td
+            #valueCell
+            [pEditableColumn]="variableCopy.value"
+            data-testId="dot-key-value-editable-column"
+            pEditableColumnField="value">
             <p-cellEditor>
                 <ng-template pTemplate="input">
                     <input
@@ -20,18 +25,22 @@
                         (keyup)="editFieldInit()"
                         (keydown.escape)="onCancel($event)"
                         (keydown.enter)="onPressEnter()"
+                        data-testId="dot-key-value-input"
                         pInputText
-                        autocomplete="false"
-                    />
+                        autocomplete="false" />
                 </ng-template>
                 <ng-template pTemplate="output">
                     <span
                         class="dot-key-value-table-row__value-label"
                         *ngIf="variableCopy.value && !variableCopy.hidden"
-                    >
+                        data-testId="dot-editable-key-value">
                         {{ variableCopy.value }}
                     </span>
-                    <span *ngIf="variableCopy.hidden"> ******** </span>
+                    <span
+                        *ngIf="variableCopy.hidden"
+                        data-testId="dot-key-editable-password-placeholder">
+                        {{ passwordPlaceholder }}
+                    </span>
                     <span class="empty-placeholder" *ngIf="!variableCopy.value">
                         {{ 'keyValue.value_input.placeholder' | dm }}
                     </span>
@@ -44,35 +53,37 @@
             [(ngModel)]="variableCopy.hidden"
             [disabled]="isHiddenField"
             (onChange)="showEditMenu = true"
-        ></p-inputSwitch>
+            data-testId="dot-key-value-hidden-switch"></p-inputSwitch>
     </td>
     <td class="dot-key-value-table-row__variables-actions">
         <ng-template [ngIf]="showEditMenu" [ngIfElse]="formButtons">
             <button
-                class="dot-key-value-table-row__variables-actions-edit-cancel p-button-secondary p-button-sm"
+                class="dot-key-value-table-row__variables-actions-edit-cancel p-button-outlined"
                 [label]="'Cancel' | dm"
                 (click)="onCancel($event)"
-                pButton
-            ></button>
+                data-testId="dot-key-value-cancel-button"
+                pButton></button>
             <button
-                class="dot-key-value-table-row__variables-actions-edit-save p-button-sm"
+                class="dot-key-value-table-row__variables-actions-edit-save"
                 #saveButton
                 [label]="'Save' | dm"
                 [disabled]="saveDisabled"
                 (click)="saveVariable()"
-                pButton
-            ></button>
+                data-testId="dot-key-value-save-button"
+                pButton></button>
         </ng-template>
         <ng-template #formButtons>
-            <dot-icon-button
+            <p-button
                 (click)="delete.emit(variableCopy)"
-                icon="delete_outline"
-            ></dot-icon-button>
-            <dot-icon-button
-                [attr.disabled]="isHiddenField || null"
+                data-testId="dot-key-value-delete-button"
+                icon="pi pi-trash"
+                styleClass="p-button-text p-button-danger p-button-rounded"></p-button>
+            <p-button
+                [disabled]="isHiddenField || null"
                 (click)="focusKeyInput($event)"
-                icon="edit"
-            ></dot-icon-button>
+                data-testId="dot-key-value-edit-button"
+                icon="pi pi-pencil"
+                styleClass="p-button-text p-button-rounded"></p-button>
         </ng-template>
     </td>
 </tr>

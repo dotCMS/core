@@ -1,7 +1,6 @@
 package com.dotcms.analytics;
 
 import com.dotcms.analytics.app.AnalyticsApp;
-import com.dotcms.analytics.cache.AnalyticsCache;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.analytics.model.AccessTokenFetchMode;
@@ -14,7 +13,6 @@ import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.validation.Preconditions;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -28,11 +26,12 @@ import javax.ws.rs.core.MediaType;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Analytics API class which provides convenience methods to fetch analytics access tokens and analytics keys based on
  * a {@link AnalyticsApp} configuration.
- * The access tokens are kept in the Caffeine cache layer. They are issued and fetched from an IDP server configure
+ * The access tokens are kept in memory. They are issued and fetched from an IDP server configure
  * through {@link Config} properties. Access tokens are needed to interact with the analytics infrastructure
  * The actual analytics keys (one for each host) are stores at Analytics App level along with its configuration.
  * They are issued from a config server which its url is in the app configuration.
@@ -42,23 +41,27 @@ import java.util.Objects;
 public class AnalyticsAPIImpl implements AnalyticsAPI {
 
     private final String analyticsIdpUrl;
-    private final AnalyticsCache analyticsCache;
+    private final boolean useDummyToken;
 
-    public AnalyticsAPIImpl(final String analyticsIdpUrl, final AnalyticsCache analyticsCache) {
+    public AnalyticsAPIImpl(final String analyticsIdpUrl) {
         this.analyticsIdpUrl = analyticsIdpUrl;
-        this.analyticsCache = analyticsCache;
+        useDummyToken = Config.getBooleanProperty(ANALYTICS_USE_DUMMY_TOKEN_KEY, false);
     }
 
     public AnalyticsAPIImpl() {
-        this(Config.getStringProperty(ANALYTICS_IDP_URL_KEY, null), CacheLocator.getAnalyticsCache());
+        this(Config.getStringProperty(ANALYTICS_IDP_URL_KEY, null));
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public AccessToken getAccessToken(final AnalyticsApp analyticsApp) {
-        return analyticsCache
+    public AccessToken getCachedAccessToken(final AnalyticsApp analyticsApp) {
+        if (useDummyToken) {
+            return DUMMY_TOKEN;
+        }
+
+        return AccessTokens.get()
             .getAccessToken(
                 analyticsApp.getAnalyticsProperties().clientId(),
                 AnalyticsHelper.get().resolveAudience(analyticsApp))
@@ -82,7 +85,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
         }
 
         // check for token at cache and not expired
-        final AccessToken accessToken = getAccessToken(analyticsApp);
+        final AccessToken accessToken = getCachedAccessToken(analyticsApp);
 
         if (Objects.isNull(accessToken)) {
             if (fetchMode == AccessTokenFetchMode.BACKEND_FALLBACK) {
@@ -99,6 +102,14 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
         }
 
         return accessToken;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public AccessToken getAccessToken(final AnalyticsApp analyticsApp) throws AnalyticsException {
+        return resolveAccessToken(analyticsApp, false);
     }
 
     /**
@@ -124,12 +135,12 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
             return AnalyticsHelper.get()
                 .extractToken(response)
                 .map(accessToken -> {
-                    Logger.debug(this, "Saving ACCESS_TOKEN to cache");
+                    Logger.debug(this, "Saving ACCESS_TOKEN to memory");
                     final AccessToken enriched = accessToken
                         .withClientId(analyticsApp.getAnalyticsProperties().clientId())
                         .withIssueDate(Instant.now())
                         .withStatus(AccessTokenStatus.builder().tokenStatus(TokenStatus.OK).build());
-                    analyticsCache.putAccessToken(enriched);
+                    AccessTokens.get().putAccessToken(enriched);
                     return enriched;
                 })
                 .orElseThrow(() -> new AnalyticsException("ACCESS_TOKEN is missing from response"));
@@ -150,14 +161,14 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      */
     @Override
     public void resetAccessToken(final AnalyticsApp analyticsApp) {
-        if (Objects.isNull(analyticsApp)) {
-            Logger.warn(this, "Analytics app is missing");
-            return;
-        }
-
-        analyticsCache.removeAccessToken(
-            analyticsApp.getAnalyticsProperties().clientId(),
-            AnalyticsHelper.get().resolveAudience(analyticsApp));
+        Optional
+            .ofNullable(analyticsApp)
+            .ifPresentOrElse(
+                app -> AccessTokens.get()
+                    .removeAccessToken(
+                        app.getAnalyticsProperties().clientId(),
+                        AnalyticsHelper.get().resolveAudience(app)),
+                () -> Logger.warn(this, "Analytics app is missing"));
     }
 
     /**
@@ -186,7 +197,8 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
 
         // fetches access token and if not found than throw exception
         try {
-            final CircuitBreakerUrl.Response<AnalyticsKey> response = requestAnalyticsKey(analyticsApp, force);
+            final AccessToken accessToken = resolveAccessToken(analyticsApp, force);
+            final CircuitBreakerUrl.Response<AnalyticsKey> response = requestAnalyticsKey(analyticsApp, accessToken);
             Logger.info(
                 this,
                 String.format(
@@ -208,6 +220,35 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
         } catch (ProcessingException | JsonProcessingException e) {
             throw new AnalyticsException("Could not request ANALYTICS_KEY", e);
         }
+    }
+
+    /**
+     * Resolves token for analytics key taking into consideration if the app is being saved
+     * (thai is fetchMode == {@link AccessTokenFetchMode#FORCE_RENEW}).
+     * If so, it will try to refresh the access token.
+     *
+     * @param analyticsApp analytics app
+     * @param force force flag
+     * @return ready to use {@link AccessToken} instance
+     * @throws AnalyticsException if is null and force is disabled
+     */
+    private AccessToken resolveAccessToken(final AnalyticsApp analyticsApp,
+                                           final boolean force) throws AnalyticsException {
+        final AccessToken accessToken = getAccessToken(analyticsApp, AccessTokenFetchMode.BACKEND_FALLBACK);
+
+        if (Objects.isNull(accessToken) && !force) {
+            throw new AnalyticsException(String.format(
+                "ACCESS_TOKEN could not be fetched for clientId %s from %s",
+                analyticsApp.getAnalyticsProperties().clientId(),
+                analyticsIdpUrl));
+        }
+
+        final TokenStatus tokenStatus = AnalyticsHelper.get().resolveTokenStatus(accessToken);
+        if (force || tokenStatus.matchesAny(TokenStatus.EXPIRED, TokenStatus.NONE)) {
+            return getAccessToken(analyticsApp, AccessTokenFetchMode.FORCE_RENEW);
+        }
+
+        return accessToken;
     }
 
     /**
@@ -275,6 +316,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
             .setTryAgainAttempts(ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS)
             .setHeaders(accessTokenHeaders())
             .setRawData(prepareRequestData(analyticsApp))
+            .setThrowWhenNot2xx(false)
             .build()
             .doResponse(AccessToken.class);
         logTokenResponse(response, analyticsApp);
@@ -287,19 +329,6 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
             analyticsApp.getAnalyticsProperties().clientId(),
             analyticsApp.getAnalyticsProperties().clientSecret(),
             "grant_type=client_credentials");
-    }
-
-    /**
-     * Prepares access token request headers in a {@link Map} with values found in a {@link AccessToken} instance.
-     *
-     * @param accessToken access token
-     * @return map representation of http headers
-     */
-    private Map<String, String> analyticsKeyHeaders(final AccessToken accessToken) throws AnalyticsException {
-        return ImmutableMap.<String, String>builder()
-            .put(HttpHeaders.AUTHORIZATION, AnalyticsHelper.get().formatBearer(accessToken))
-            .put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
-            .build();
     }
 
     /**
@@ -325,20 +354,20 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      * Request an access token by sending an HTTP post with app's data to defined IDP.
      *
      * @param analyticsApp provided analytics app
-     * @param force force flag
+     * @param accessToken access token
      * @return a http response representation
      * @throws AnalyticsException if access token cannot be fetched
      */
     private CircuitBreakerUrl.Response<AnalyticsKey> requestAnalyticsKey(final AnalyticsApp analyticsApp,
-                                                                         final boolean force)
+                                                                         final AccessToken accessToken)
             throws AnalyticsException {
-        final AccessToken accessToken = resolveToken(analyticsApp, force);
         final CircuitBreakerUrl.Response<AnalyticsKey> response = CircuitBreakerUrl.builder()
             .setMethod(CircuitBreakerUrl.Method.GET)
             .setUrl(analyticsApp.getAnalyticsProperties().analyticsConfigUrl())
             .setTimeout(ANALYTICS_KEY_RENEW_TIMEOUT)
             .setTryAgainAttempts(ANALYTICS_KEY_RENEW_ATTEMPTS)
             .setHeaders(analyticsKeyHeaders(accessToken))
+            .setThrowWhenNot2xx(false)
             .build()
             .doResponse(AnalyticsKey.class);
         logKeyResponse(response, analyticsApp);
@@ -347,32 +376,16 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     }
 
     /**
-     * Resolves token for analytics key taking into consideration if the app is being saved
-     * (thai is fetchMode == {@link AccessTokenFetchMode#FORCE_RENEW}).
-     * If so, it will try to refresh the access token.
+     * Prepares access token request headers in a {@link Map} with values found in a {@link AccessToken} instance.
      *
-     * @param analyticsApp analytics app
-     * @param force force flag
-     * @return ready to use {@link AccessToken} instance
-     * @throws AnalyticsException if is null and force is disabled
+     * @param accessToken access token
+     * @return map representation of http headers
      */
-    private AccessToken resolveToken(final AnalyticsApp analyticsApp, final boolean force) throws AnalyticsException {
-        final AccessToken accessToken = getAccessToken(analyticsApp, AccessTokenFetchMode.BACKEND_FALLBACK);
-        final String clientId = analyticsApp.getAnalyticsProperties().clientId();
-
-        if (Objects.isNull(accessToken) && !force) {
-            throw new AnalyticsException(String.format(
-                "ACCESS_TOKEN could not be fetched for clientId %s from %s",
-                clientId,
-                analyticsIdpUrl));
-        }
-
-        final TokenStatus tokenStatus = AnalyticsHelper.get().resolveTokenStatus(accessToken);
-        if (force || tokenStatus.matchesAny(TokenStatus.EXPIRED, TokenStatus.NONE)) {
-            return getAccessToken(analyticsApp, AccessTokenFetchMode.FORCE_RENEW);
-        }
-
-        return accessToken;
+    private Map<String, String> analyticsKeyHeaders(final AccessToken accessToken) throws AnalyticsException {
+        return ImmutableMap.<String, String>builder()
+            .put(HttpHeaders.AUTHORIZATION, AnalyticsHelper.get().formatBearer(accessToken))
+            .put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
+            .build();
     }
 
 }

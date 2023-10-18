@@ -4,9 +4,8 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
-
-import { UiDotIconButtonModule } from '@dotcms/ui';
 
 import { DotActionButtonComponent } from './dot-action-button.component';
 
@@ -21,7 +20,7 @@ describe('ActionButtonComponent', () => {
             imports: [
                 BrowserAnimationsModule,
                 MenuModule,
-                UiDotIconButtonModule,
+                ButtonModule,
                 RouterTestingModule.withRoutes([
                     {
                         component: DotActionButtonComponent,
@@ -49,7 +48,7 @@ describe('ActionButtonComponent', () => {
 
     it('should have only button in default state', () => {
         fixture.detectChanges();
-        expect(fixture.debugElement.query(By.css('button'))).toBeDefined('button should exist');
+        expect(fixture.debugElement.query(By.css('p-button'))).toBeTruthy();
         expect(fixture.debugElement.query(By.css('.action-button__label')) === null).toBe(
             true,
             'label hidden by default'
@@ -96,7 +95,7 @@ describe('ActionButtonComponent', () => {
             res = event;
         });
 
-        const button = fixture.debugElement.query(By.css('button'));
+        const button = fixture.debugElement.query(By.css('p-button'));
         button.nativeNode.click();
         expect(res).toBeDefined();
     });
@@ -117,7 +116,7 @@ describe('ActionButtonComponent', () => {
 
         spyOn(comp.menu, 'toggle');
 
-        const button = fixture.debugElement.query(By.css('button'));
+        const button = fixture.debugElement.query(By.css('p-button'));
         button.nativeNode.click();
         expect(comp.menu.toggle).toHaveBeenCalledTimes(1);
     });
@@ -126,11 +125,9 @@ describe('ActionButtonComponent', () => {
         comp.disabled = true;
         comp.label = 'Label';
         fixture.detectChanges();
-        const button = fixture.debugElement.query(By.css('dot-icon-button'));
+        const button = fixture.debugElement.query(By.css('p-button'));
         const label = fixture.debugElement.query(By.css('.action-button__label'));
-        expect(button.nativeElement.getAttribute('ng-reflect-disabled')).toBeDefined(
-            'Button disabled attr'
-        );
+        expect(button.componentInstance.disabled).toBeTrue();
         expect(label.nativeElement.classList).toContain(
             'action-button__label--disabled',
             'Label disabled class'

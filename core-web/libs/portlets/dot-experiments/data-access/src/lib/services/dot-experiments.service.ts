@@ -12,6 +12,7 @@ import {
     DotExperimentStatus,
     Goals,
     GoalsLevels,
+    HealthStatusTypes,
     RangeOfDateAndTime,
     TrafficProportion
 } from '@dotcms/dotcms-models';
@@ -26,6 +27,18 @@ interface DotCMSResponseExperiment<T> extends DotCMSResponse<T> {
 export class DotExperimentsService {
     constructor(private readonly http: HttpClient) {}
 
+    /**
+     * returns the connection status with the infrastructure of experiments
+     * @returns Observable<HealthStatusTypes>
+     * @memberof DotExperimentsService
+     */
+    healthCheck(): Observable<HealthStatusTypes> {
+        return this.http
+            .get<DotCMSResponseExperiment<{ healthy: HealthStatusTypes }>>(
+                '/api/v1/experiments/health'
+            )
+            .pipe(pluck('entity', 'health'));
+    }
     /**
      * Add a new experiment
      * @param  experiment

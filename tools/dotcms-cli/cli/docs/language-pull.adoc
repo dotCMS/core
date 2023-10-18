@@ -1,0 +1,72 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Language Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= language-pull(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+language-pull - *dotCMS Language Pull*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*language pull* [*-h*] [*-fmt*=_<inputOutputFormat>_] [*--workspace*=_<file>_] _idOrIso_
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+ This command pulls a language given its id or iso code (e.g.: en-us).
+ A language descriptor file will be created in the current directory.
+ If the language already exists, it will be overwritten.
+ The file name will be the language's iso code (e.g.: en-us.json).
+ if a lang is pulled with the same name as an existing one,
+ the existing one will be overwritten.
+
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*-fmt, --format*=_<inputOutputFormat>_::
+  Enum values: JSON, YAML, YML
+
+*-h*, *--help*::
+  Display this help message.
+
+*--workspace*=_<file>_::
+  The workspace directory.
++
+Current directory is used if not specified
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+== Arguments
+
+_idOrIso_::
+  Language Id or ISO Code.
+
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

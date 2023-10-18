@@ -1,88 +1,86 @@
 package com.dotmarketing.portlets.cmsmaintenance.util;
 
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.util.FileUtil;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.RegExMatch;
+import com.google.common.hash.BloomFilter;
+import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.util.HashSet;
+import java.nio.file.Files;
+import java.util.List;
 import java.util.Set;
 
 /**
- * This {@link FileFilter} implementation provides the actual asset files in the current dotCMS repository. By default,
- * all files and folders that are unnecessary, temporary or application-specific will be excluded.
+ * This {@link FileFilter} implementation provides the actual asset files in the current dotCMS
+ * repository. By default, all files and folders that are temporary, symlinks, or
+ * application-specific, will be excluded from the filtered list. For more details, please see
+ * {@link #EXCLUDE_FOLDERS_LIST} and {@link #EXCLUDE_FILE_LIST}.
+ * <p>If additional files or folders need to be excluded in the future, the following configuration
+ * properties can be set, which take a comma-separated list of values:</p>
+ * <ul>
+ *     <li>{@code ASSET_DOWNLOAD_EXCLUDE_FOLDERS}</li>
+ *     <li>{@code ASSET_DOWNLOAD_EXCLUDE_FILES}</li>
+ * </ul>
  *
  * @author Will Ezell
  * @since Dec 4th, 2012
  */
 public class AssetFileNameFilter implements FileFilter {
 
-    private static final Set<String> EXCLUDE_FOLDERS_LIST = Set
-            .of("license.zip", "license", "bundles", "tmp_upload",
-                    "timemachine", "integrity", "server", "dotGenerated");
-
-	private Set<String> excludedFolders;
-
-	/**
-	 * Allows you to add the name of a folder that must be excluded from the result of traversing the dotCMS
-	 * {@code /assets/}. This folder name will be added to the existing default list of excluded system folders.
-	 *
-	 * @param folderName The name of the folder that will be excluded.
-	 */
-	public void addExcludedFolder(final String folderName) {
-		this.getExcludedFolders().add(folderName);
+	public AssetFileNameFilter(final BloomFilter<String> inodeFilter) {
+		this.bloomFilter = inodeFilter;
 	}
 
-	/**
-	 * Returns the complete list of folders that will be excluded from the result of traversing the dotCMS
-	 * {@code /assets/} folder.
-	 *
-	 * @return The complete list of excluded folders.
-	 */
-	public Set<String> getExcludedFolders() {
-		if (UtilMethods.isNotSet(this.excludedFolders)) {
-			this.excludedFolders = new HashSet<>();
-			this.excludedFolders.addAll(EXCLUDE_FOLDERS_LIST);
-		}
-		return this.excludedFolders;
+	public AssetFileNameFilter(){
+		this(null);
 	}
+
+	private final BloomFilter<String> bloomFilter;
+
+    private static final String[] EXCLUDE_FOLDERS_LIST = { "license", "bundles", "tmp_upload",
+                    "timemachine", "integrity", "server", "dotGenerated", "monitor" };
+
+	private static final String[] EXCLUDE_FILE_LIST = {"license.zip", ".DS_Store", "license_pack.zip"};
+
+	private final Lazy<String[]> excludeFolders = Lazy.of(()-> Config.getStringArrayProperty("ASSET_DOWNLOAD_EXCLUDE_FOLDERS", EXCLUDE_FOLDERS_LIST));
+
+	private final Lazy<String[]> excludeFiles = Lazy.of(()-> Config.getStringArrayProperty("ASSET_DOWNLOAD_EXCLUDE_FILES", EXCLUDE_FILE_LIST));
+
+	private final String root = ConfigUtils.getAbsoluteAssetsRootPath().endsWith(StringPool.FORWARD_SLASH) ?
+			ConfigUtils.getAbsoluteAssetsRootPath().substring(0,
+					ConfigUtils.getAbsoluteAssetsRootPath().lastIndexOf(StringPool.FORWARD_SLASH)) :
+			ConfigUtils.getAbsoluteAssetsRootPath();
 
 	@Override
 	public boolean accept(final File dir) {
-		if(dir ==null){
+		if (dir == null || Files.isSymbolicLink(dir.toPath())) {
 			return false;
 		}
-
-		if(dir.getAbsolutePath().contains("dotGenerated") ){
+		final String pathName = dir.getAbsolutePath().replace(root, StringPool.BLANK);
+		if (dir.isDirectory() && Set.of(this.excludeFolders.get()).stream().anyMatch(pathName::contains)) {
 			return false;
 		}
-
-		final String name = dir.getName();
-		final String osName = System.getProperty("os.name");
-
-		String[] path;
-
-		if (osName.startsWith("Windows")) {
-			path = dir.getAbsolutePath().split("\\\\");
+		if (dir.isFile() && Set.of(this.excludeFiles.get()).stream().anyMatch(pathName::contains)) {
+			return false;
 		}
-		else {
-			path = dir.getAbsolutePath().split(File.separator);
+		// if no bloomFilter, everything else is a go
+		if (bloomFilter == null) {
+			return true;
 		}
-
-		String[] test = new String[0];
-
-		String assetPath;
-
-        try {
-        	assetPath = Config.getStringProperty("ASSET_REAL_PATH", FileUtil.getRealPath(Config.getStringProperty("ASSET_PATH")));
-        	test = new File(assetPath).getAbsolutePath().split(File.separator);
-        } catch (final Exception e) {
-        	Logger.debug(this.getClass(), e.getMessage());
-        }
-
-        return test.length + 1 != path.length || (name.charAt(0) != '.' && !this.getExcludedFolders().contains(name));
+		//Always allow messages (language property files)
+		if (pathName.startsWith("/messages")) {
+			return true;
+		}
+		// if bloomFilter, make sure the inode is in the path
+		final List<RegExMatch> matches = RegEX.find(pathName, "[\\w]{8}(-[\\w]{4}){3}-[\\w]{12}");
+		if (matches.isEmpty()) {
+			return true;
+		}
+		return (bloomFilter.mightContain(matches.get(0).getMatch()));
 	}
 
 }

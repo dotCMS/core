@@ -2,8 +2,7 @@
     *ngIf="themeDialogVisibility"
     [value]="currentTheme"
     (selected)="changeThemeHandler($event)"
-    (shutdown)="closeThemeDialog()"
->
+    (shutdown)="closeThemeDialog()">
 </dot-theme-selector>
 <dot-secondary-toolbar>
     <div class="main-toolbar-left">
@@ -11,8 +10,7 @@
             class="flex align-items-center gap-2"
             [apiLink]="apiLink"
             [title]="title"
-            [url]="url"
-        ></dot-edit-page-info>
+            [url]="url"></dot-edit-page-info>
     </div>
 
     <div class="main-toolbar-right flex align-items-center gap-3">
@@ -26,8 +24,7 @@
             disabled="false"
             pButton
             tooltipPosition="left"
-            type="button"
-        >
+            type="button">
             <span class="p-button-icon material-icons">brush</span>
         </button>
         <ng-template #noPermission>
@@ -36,24 +33,22 @@
                 [label]="currentTheme?.name || 'Themes'"
                 (click)="themeDialogVisibility = !themeDialogVisibility"
                 pButton
-                type="button"
-            >
+                type="button">
                 <span class="p-button-icon material-icons">brush</span>
             </button>
         </ng-template>
         <dot-layout-properties [group]="form.get('layout')"></dot-layout-properties>
-        <dot-icon-button [size]="40" (click)="addGridBox()" float icon="add"></dot-icon-button>
+        <p-button (click)="addGridBox()" icon="pi pi-plus" styleClass="p-button-rounded"></p-button>
         <span class="toolbar__sep" *ngIf="!apiLink || saveAsTemplate"></span>
         <button
-            class="p-button-secondary"
+            class="p-button-outlined"
             *ngIf="!apiLink"
             [disabled]="disablePublish"
             [label]="'Publish' | dm"
             (click)="onSaveAndPublish()"
             data-testid="publishBtn"
             pButton
-            type="button"
-        ></button>
+            type="button"></button>
         <input
             class="dot-edit-layout__toolbar-template-name"
             #templateName
@@ -61,8 +56,7 @@
             formControlName="title"
             pInputText
             placeholder="{{ 'editpage.layout.toolbar.template.name' | dm }} *"
-            type="text"
-        />
+            type="text" />
     </div>
 </dot-secondary-toolbar>
 <form [formGroup]="form" (ngSubmit)="onSave()" novalidate>

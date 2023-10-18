@@ -2,27 +2,24 @@
     <div class="dot-pages__inner-container" *ngIf="!vm.isPortletLoading; else loading">
         <dot-pages-favorite-panel
             (goToUrl)="goToUrl($event)"
-            (showActionsMenu)="showActionsMenu($event)"
-        ></dot-pages-favorite-panel>
+            (showActionsMenu)="showActionsMenu($event)"></dot-pages-favorite-panel>
 
         <p-menu
             #menu
             [popup]="true"
             [model]="vm.pages.menuActions"
-            (onHide)="closedActionsMenu($event)"
-        ></p-menu>
+            (onHide)="closedActionsMenu($event)"></p-menu>
 
         <dot-pages-listing-panel
             (goToUrl)="goToUrl($event)"
             (showActionsMenu)="showActionsMenu($event)"
-            (tableScroll)="closeMenu()"
-        ></dot-pages-listing-panel>
+            (pageChange)="scrollToTop()"
+            data-testId="pages-listing-panel"></dot-pages-listing-panel>
 
         <dot-add-to-bundle
             *ngIf="vm.pages.addToBundleCTId"
             [assetIdentifier]="vm.pages.addToBundleCTId"
-            (cancel)="vm.pages.addToBundleCTId = null"
-        ></dot-add-to-bundle>
+            (cancel)="vm.pages.addToBundleCTId = null"></dot-add-to-bundle>
     </div>
 
     <ng-template #loading>

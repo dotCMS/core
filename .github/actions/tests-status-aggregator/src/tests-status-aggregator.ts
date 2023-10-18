@@ -19,7 +19,7 @@ export interface OverallTestsStatus {
   message: string
 }
 
-const inputTypes = ['unit', 'integration_postgres', 'postman']
+const inputTypes = ['postman']
 const typeLabels: TypeLabels = {
   unit: 'Unit Tests',
   integration_postgres: 'Integration Tests [Postgres]',

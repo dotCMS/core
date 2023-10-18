@@ -1,18 +1,21 @@
 package com.dotcms.cli.command.site;
 
-import static com.dotcms.cli.common.Utils.nextFileName;
-
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.ShortOutputOptionMixin;
+import com.dotcms.cli.common.WorkspaceMixin;
+import com.dotcms.common.WorkspaceManager;
+import com.dotcms.model.config.Workspace;
 import com.dotcms.model.site.SiteView;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -27,16 +30,21 @@ import picocli.CommandLine;
            "  By default files are saved to the current directory. in json format.",
            "  The format can be changed using the @|yellow --format|@ option.",
            "  format can be either @|yellow JSON|@ or @|yellow YAML|@.",
-           "  File location can be changed using the @|yellow --saveTo|@ option.",
            "" // empty line left here on purpose to make room at the end
         }
 )
-public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
+public class SitePull extends AbstractSiteCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "pull";
 
     @CommandLine.Mixin(name = "format")
     FormatOptionMixin formatOption;
+
+    @CommandLine.Mixin(name = "workspace")
+    WorkspaceMixin workspaceMixin;
+
+    @Inject
+    WorkspaceManager workspaceManager;
 
     @CommandLine.Mixin(name = "shorten")
     ShortOutputOptionMixin shortOutputOption;
@@ -44,52 +52,49 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
     @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "idOrName", description = "Site name or Id.")
     String siteNameOrId;
 
-    @CommandLine.Option(names = {"-to", "--saveTo"}, order = 5, description = "Save to.")
-    File saveAs;
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
 
     @Override
-    public Integer call() {
+    public Integer call() throws IOException {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         return pull();
     }
 
-    private int pull() {
+    private int pull() throws IOException {
 
-        final Optional<SiteView> site = super.findSite(siteNameOrId);
-
-        if (site.isEmpty()) {
-            output.error(String.format(
-                    "Failed pulling Site: [%s].", siteNameOrId));
-            return CommandLine.ExitCode.SOFTWARE;
-        }
-
-        final SiteView siteView = site.get();
-        try {
-            if (shortOutputOption.isShortOutput()) {
-                final String shortFormat = shortFormat(siteView);
-                output.info(shortFormat);
-                if (null != saveAs) {
-                    Files.writeString(saveAs.toPath(), shortFormat);
-                }
-            } else {
-                ObjectMapper objectMapper = formatOption.objectMapper();
-                final String asString = objectMapper.writeValueAsString(siteView);
+        final SiteView siteView = findSite(siteNameOrId);
+        if (shortOutputOption.isShortOutput()) {
+            final String shortFormat = shortFormat(siteView);
+            output.info(shortFormat);
+        } else {
+            ObjectMapper objectMapper = formatOption.objectMapper();
+            final String asString = objectMapper.writeValueAsString(siteView);
+            if(output.isVerbose()) {
                 output.info(asString);
-                Path path;
-                if (null != saveAs) {
-                    path = saveAs.toPath();
-                } else {
-                    final String fileName = String.format( "%s.%s", siteView.hostName(), formatOption.getInputOutputFormat().getExtension());
-                    final Path next = Path.of(fileName);
-                    path = nextFileName(next);
-                }
-                Files.writeString(path, asString);
-                output.info(String.format("Output has been written to file [%s].",path));
             }
-        } catch (IOException e) {
-            output.error("Error occurred transforming the response: ", e.getMessage());
+
+            final Workspace workspace = workspaceManager.getOrCreate(workspaceMixin.workspace());
+            final String fileName = String.format("%s.%s", siteView.hostName(),
+                    formatOption.getInputOutputFormat().getExtension());
+            final Path path = Path.of(workspace.sites().toString(), fileName);
+            Files.writeString(path, asString);
+            output.info(String.format("Output has been written to file [%s].", path));
         }
 
         return CommandLine.ExitCode.OK;
     }
 
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
 }

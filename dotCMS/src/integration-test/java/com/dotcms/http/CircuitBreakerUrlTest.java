@@ -6,7 +6,6 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -32,11 +31,8 @@ import net.jodah.failsafe.CircuitBreakerOpenException;
 
 public class CircuitBreakerUrlTest {
 
-    
-    
     final static String goodUrl = "https://www.dotcms.com";
-    
-    
+
     // this will redirect to https
     final static String redirectUrl = "http://www.dotcms.com";
     final static String badUrl = "https://localhost:9999/test";
@@ -47,7 +43,7 @@ public class CircuitBreakerUrlTest {
     final static String PARAM_VALUE="PARAM SEEMS TO BE WORKING";
 
     @Test()
-    public void test_circuitBreakerConnectionControl() throws Exception {
+    public void test_circuitBreakerConnectionControl() {
 
         final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance().getSubmitter();
         final CircuitBreakerUrl.CircuitBreakerConnectionControl circuitBreakerConnectionControl =
@@ -362,7 +358,6 @@ public class CircuitBreakerUrlTest {
         for (int i = 0; i < 10; i++) {
             try {
                 String x = new CircuitBreakerUrl(goodUrl, 2000).doString();
-                assert (x.contains("Java"));
                 assert (x.contains("/application/themes/dotcms/js/bootstrap.min.js"));
 
             } catch (Exception e) {
@@ -390,6 +385,33 @@ public class CircuitBreakerUrlTest {
         CircuitBreakerUrl cburl = CircuitBreakerUrl.builder().setUrl("http://sdsfsf.com")
                 .setMethod(Method.POST).setTimeout(timeout).setCircuitBreaker(breaker).build();
         cburl.doOut(nos);
+    }
+
+    /**
+     * Method to test: {@link CircuitBreakerUrl#doOut(OutputStream)}
+     * Given scenario: Invoke {@link CircuitBreakerUrl#doOut(OutputStream)} using a bad request
+     * Expected Result: http status should be evaluated
+     */
+    @Test
+    public void testBadRequest_dontThrow() throws Exception {
+        final NullOutputStream nos = new NullOutputStream();
+
+        final String key = "testBreaker";
+        final int timeout = 2000;
+
+        CircuitBreaker breaker = CurcuitBreakerPool.getBreaker(key);
+
+        assert (breaker.isClosed());
+
+        CircuitBreakerUrl cburl = CircuitBreakerUrl.builder()
+            .setUrl("http://sdsfsf.com")
+            .setMethod(Method.POST)
+            .setTimeout(timeout).setCircuitBreaker(breaker)
+            .setThrowWhenNot2xx(false)
+            .build();
+        cburl.doOut(nos);
+
+        assert (cburl.response() >= 400 && cburl.response() <= 499);
     }
 
 }

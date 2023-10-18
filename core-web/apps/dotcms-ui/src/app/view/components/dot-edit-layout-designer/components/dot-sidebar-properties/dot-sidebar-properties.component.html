@@ -6,8 +6,7 @@
                 [label]="'editpage.layout.sidebar.width.small' | dm"
                 (click)="changeSidebarSize()"
                 name="sidebarWidth"
-                value="small"
-            ></p-radioButton>
+                value="small"></p-radioButton>
         </div>
         <div class="field-checkbox">
             <p-radioButton
@@ -15,8 +14,7 @@
                 [label]="'editpage.layout.sidebar.width.medium' | dm"
                 (click)="changeSidebarSize()"
                 name="sidebarWidth"
-                value="medium"
-            ></p-radioButton>
+                value="medium"></p-radioButton>
         </div>
         <div class="field-checkbox">
             <p-radioButton
@@ -24,17 +22,15 @@
                 [label]="'editpage.layout.sidebar.width.large' | dm"
                 (click)="changeSidebarSize()"
                 name="sidebarWidth"
-                value="large"
-            ></p-radioButton>
+                value="large"></p-radioButton>
         </div>
     </div>
 </p-overlayPanel>
 
 <button
-    class="p-button-sm p-button-secondary"
+    class="p-button-sm p-button-outlined"
     (click)="overlay.toggle($event)"
     pButton
     type="button"
     label="{{ 'open' | dm }}"
-    icon="pi pi-ellipsis-v"
-></button>
+    icon="pi pi-ellipsis-v"></button>

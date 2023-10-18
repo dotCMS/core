@@ -23,7 +23,7 @@ import picocli.CommandLine.ExitCode;
                 "" // empty line left here on purpose to make room at the end
         }
 )
-public class LoginCommand implements Callable<Integer> {
+public class LoginCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "login";
 
@@ -42,16 +42,28 @@ public class LoginCommand implements Callable<Integer> {
     @Inject
     AuthenticationContext authenticationContext;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         output.info(String.format("Logging in as [@|bold,cyan %s|@]. ",user));
-        try {
-            authenticationContext.login(user, password);
-            output.info(String.format("@|bold,green Successfully logged-in as |@[@|bold,blue %s|@]", user));
-            return ExitCode.OK;
-        }catch (Exception wae){
-            output.error("Unable to login. ", wae);
-        }
-        return ExitCode.SOFTWARE;
+        authenticationContext.login(user, password);
+        output.info(String.format("@|bold,green Successfully logged-in as |@[@|bold,blue %s|@]", user));
+        return ExitCode.OK;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
     }
 }

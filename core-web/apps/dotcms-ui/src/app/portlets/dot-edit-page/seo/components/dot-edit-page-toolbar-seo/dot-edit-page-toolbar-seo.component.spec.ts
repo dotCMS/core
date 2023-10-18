@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-import { CommonModule, Location } from '@angular/common';
+import { CommonModule, DatePipe, Location } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -20,9 +20,9 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
@@ -32,7 +32,8 @@ import {
     DotEventsService,
     DotLicenseService,
     DotMessageService,
-    DotPropertiesService
+    DotPropertiesService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -52,9 +53,10 @@ import {
     DotPageMode,
     DotPageRender,
     DotPageRenderState,
-    ESContent
+    ESContent,
+    RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFormatDateService, DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
@@ -84,21 +86,12 @@ import { DotEditPageInfoSeoComponent } from '../dot-edit-page-info-seo/dot-edit-
     template: `
         <dot-edit-page-toolbar-seo
             [pageState]="pageState"
-            [runningExperiment]="runningExperiment"
-        ></dot-edit-page-toolbar-seo>
+            [runningExperiment]="runningExperiment"></dot-edit-page-toolbar-seo>
     `
 })
 class TestHostComponent {
     @Input() pageState: DotPageRenderState = mockDotRenderedPageState;
     @Input() runningExperiment: DotExperiment = null;
-}
-
-@Component({
-    selector: 'dot-icon-button',
-    template: ''
-})
-class MockDotIconButtonComponent {
-    @Input() icon: string;
 }
 
 @Component({
@@ -123,7 +116,7 @@ class MockDotPageStateService {
 
 @Injectable()
 export class MockDotPropertiesService {
-    getKey(): Observable<true> {
+    getFeatureFlag(): Observable<true> {
         return of(true);
     }
 }
@@ -151,11 +144,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                TestHostComponent,
-                MockDotIconButtonComponent,
-                MockGlobalMessageComponent
-            ],
+            declarations: [TestHostComponent, MockGlobalMessageComponent],
             imports: [
                 DotEditPageToolbarSeoComponent,
                 HttpClientTestingModule,
@@ -183,6 +172,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 ])
             ],
             providers: [
+                DotSessionStorageService,
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
                 {
                     provide: DotMessageService,
@@ -191,7 +181,8 @@ describe('DotEditPageToolbarSeoComponent', () => {
                         'dot.common.cancel': 'Cancel',
                         'favoritePage.dialog.header': 'Add Favorite Page',
                         'dot.edit.page.toolbar.preliminary.results': 'Preliminary Results',
-                        running: 'Running'
+                        running: 'Running',
+                        'dot.common.until': 'until'
                     })
                 },
                 {
@@ -210,6 +201,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 DotEventsService,
                 DotcmsEventsService,
                 DotEventsSocket,
+                DotContentletEditorService,
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -245,7 +237,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
         dotMessageDisplayService = de.injector.get(DotMessageDisplayService);
         dotDialogService = de.injector.get(DialogService);
         dotPropertiesService = TestBed.inject(DotPropertiesService);
-        spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
+        spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(true));
     });
 
     describe('elements', () => {
@@ -291,9 +283,6 @@ describe('DotEditPageToolbarSeoComponent', () => {
             const dotEditPageInfo = de.query(By.css('dot-edit-page-info-seo')).componentInstance;
             expect(dotEditPageInfo.title).toBe('A title');
             expect(dotEditPageInfo.url).toBe('/an/url/test');
-            expect(dotEditPageInfo.innerApiLink).toBe(
-                'api/v1/page/render/an/url/test?language_id=1'
-            );
         });
     });
 
@@ -395,7 +384,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
             fixtureHost.detectChanges();
 
             const favoritePageIcon = de.query(By.css('[data-testId="addFavoritePageButton"]'));
-            expect(favoritePageIcon.componentInstance.icon).toBe('grade');
+            expect(favoritePageIcon.componentInstance.icon).toBe('pi pi-star-fill');
         });
 
         it('should show empty star icon on favorite page if NO contentlet exist', () => {
@@ -404,14 +393,21 @@ describe('DotEditPageToolbarSeoComponent', () => {
             fixtureHost.detectChanges();
 
             const favoritePageIcon = de.query(By.css('[data-testId="addFavoritePageButton"]'));
-            expect(favoritePageIcon.componentInstance.icon).toBe('star_outline');
+            expect(favoritePageIcon.componentInstance.icon).toBe('pi pi-star');
         });
     });
 
     describe('Go to Experiment results', () => {
         it('should show an experiment is running an go to results', (done) => {
             const location = de.injector.get(Location);
-            componentHost.runningExperiment = { pageId: 'pageId', id: 'id' } as DotExperiment;
+            componentHost.runningExperiment = {
+                pageId: 'pageId',
+                id: 'id',
+                scheduling: { endDate: 2 }
+            } as DotExperiment;
+
+            const expectedStatus =
+                'Running until ' + new DatePipe('en-US').transform(2, RUNNING_UNTIL_DATE_FORMAT);
 
             fixtureHost.detectChanges();
 
@@ -419,7 +415,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
 
             experimentTag.nativeElement.click();
 
-            expect(experimentTag.componentInstance.value).toEqual('Running');
+            expect(experimentTag.componentInstance.value).toEqual(expectedStatus);
             fixtureHost.whenStable().then(() => {
                 expect(location.path()).toEqual('/edit-page/experiments/pageId/id/reports');
                 done();

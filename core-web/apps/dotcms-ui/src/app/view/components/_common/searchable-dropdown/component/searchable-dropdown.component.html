@@ -18,12 +18,12 @@
         autofocus
         pInputText
         type="text"
-        data-testid="searchInput"
-    />
+        data-testid="searchInput" />
 </ng-template>
 
 <ng-template #defaultSelectTemplate let-item="item">
     <button
+        class="p-button-outlined"
         #button
         *ngIf="label"
         [label]="label"
@@ -33,8 +33,7 @@
         pButton
         icon="pi pi-chevron-down"
         iconPos="right"
-        type="button"
-    ></button>
+        type="button"></button>
 </ng-template>
 
 <p-overlayPanel
@@ -44,23 +43,17 @@
     [style]="{ 'min-height': overlayPanelMinHeight + 'px', width: overlayWidth }"
     (onHide)="hideOverlayHandler()"
     (onShow)="showOverlayHandler()"
-    appendTo="body"
->
+    appendTo="body">
     <header class="searchable-dropdown__search">
         <div class="searchable-dropdown__search-section">
             <ng-container
-                [ngTemplateOutlet]="externalFilterTemplate || defaultFilterTemplate"
-            ></ng-container>
+                [ngTemplateOutlet]="externalFilterTemplate || defaultFilterTemplate"></ng-container>
         </div>
         <div class="searchable-dropdown__search-action" *ngIf="action">
-            <dot-icon-button
+            <p-button
                 (click)="action()"
-                secondary
-                size="36"
-                square
-                icon="add"
-                big
-            ></dot-icon-button>
+                icon="pi pi-plus"
+                styleClass="p-button-text p-button-rounded"></p-button>
         </div>
     </header>
 
@@ -74,18 +67,18 @@
         [totalRecords]="totalRecords"
         [value]="options"
         (click)="$event.stopPropagation()"
-        (onLazyLoad)="paginate($event)"
-    >
+        (onLazyLoad)="paginate($event)">
         <ng-template let-item pTemplate="listItem">
             <ng-container
                 [ngTemplateOutlet]="externalItemListTemplate || defaultItemListTemplate"
-                [ngTemplateOutletContext]="{ item: item, selectedOptionValue: selectedOptionValue }"
-            ></ng-container>
+                [ngTemplateOutletContext]="{
+                    item: item,
+                    selectedOptionValue: selectedOptionValue
+                }"></ng-container>
         </ng-template>
     </p-dataView>
 </p-overlayPanel>
 
 <ng-container
     [ngTemplateOutlet]="externalSelectTemplate || defaultSelectTemplate"
-    [ngTemplateOutletContext]="{ item: value }"
-></ng-container>
+    [ngTemplateOutletContext]="{ item: value }"></ng-container>

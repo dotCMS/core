@@ -47,9 +47,11 @@ public interface SiteAPI {
             @QueryParam("archive") Boolean showArchived,
             @QueryParam("live") Boolean showLive,
             @QueryParam("system") Boolean showSystem,
-            @QueryParam("page") Integer page, @QueryParam("perPage") Integer perPage);
+            @QueryParam("page") Integer page,
+            @QueryParam("per_page") Integer perPage
+    );
 
-    @POST
+    @GET
     @Path("/{siteId}")
     @Operation(
             summary = " Returns the Site that matches the specified search criteria"

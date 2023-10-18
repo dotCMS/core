@@ -1,4 +1,4 @@
-import { Observable, throwError } from 'rxjs';
+import { Observable, Subject, throwError } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse, HttpHandler, HttpResponse } from '@angular/common/http';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
@@ -17,16 +17,15 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import {
-    DotSessionStorageService,
     DotAlertConfirmService,
     DotEventsService,
-    DotPageRenderService
+    DotPageRenderService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -35,9 +34,12 @@ import {
     HttpCode,
     LoggerService,
     LoginService,
+    mockSites,
+    SiteService,
     StringUtils
 } from '@dotcms/dotcms-js';
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotFormatDateService } from '@dotcms/ui';
 import {
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
@@ -165,6 +167,8 @@ describe('DotPagesComponent', () => {
     const dotContentletEditorServiceMock: DotContentletEditorServiceMock =
         new DotContentletEditorServiceMock();
 
+    const switchSiteSubject = new Subject();
+
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [
@@ -188,6 +192,10 @@ describe('DotPagesComponent', () => {
                 IframeOverlayService,
                 LoggerService,
                 StringUtils,
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
                 {
                     provide: DotHttpErrorManagerService,
                     useClass: MockDotHttpErrorManagerService
@@ -214,6 +222,18 @@ describe('DotPagesComponent', () => {
                             return of({ url: undefined });
                         }
                     }
+                },
+                {
+                    provide: SiteService,
+                    useValue: {
+                        get currentSite() {
+                            return undefined;
+                        },
+
+                        get switchSite$() {
+                            return switchSiteSubject.asObservable();
+                        }
+                    }
                 }
             ]
         }).compileComponents();
@@ -234,6 +254,7 @@ describe('DotPagesComponent', () => {
 
         fixture.detectChanges();
         spyOn(component.menu, 'hide');
+        spyOn(component, 'scrollToTop');
         spyOn(dotMessageDisplayService, 'push');
         spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(true));
         spyOn(dotHttpErrorManagerService, 'handle');
@@ -353,6 +374,13 @@ describe('DotPagesComponent', () => {
         });
     });
 
+    it('should call scrollToTop method from DotPagesListingPanel', () => {
+        const elem = de.query(By.css('[data-testId="pages-listing-panel"]'));
+        elem.triggerEventHandler('pageChange');
+
+        expect(component.scrollToTop).toHaveBeenCalled();
+    });
+
     it('should call closedActionsMenu method from p-menu', () => {
         const elem = de.query(By.css('p-menu'));
 
@@ -402,5 +430,12 @@ describe('DotPagesComponent', () => {
         fixture.detectChanges();
 
         expect(store.getPages).toHaveBeenCalled();
+    });
+
+    it('should reload portlet only when the site change', () => {
+        switchSiteSubject.next(mockSites[0]); // setting the site
+        switchSiteSubject.next(mockSites[1]); // switching the site
+        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+        expect(component.scrollToTop).toHaveBeenCalled();
     });
 });

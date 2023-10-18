@@ -54,6 +54,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
@@ -281,8 +282,10 @@ public class PageResource {
 
         PageMode.setPageMode(request, mode);
 
-        if (deviceInode != null) {
+        if (StringUtils.isSet(deviceInode)) {
             request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
+        } else {
+            request.getSession().removeAttribute(WebKeys.CURRENT_DEVICE);
         }
 
         final HttpSession session = request.getSession(false);

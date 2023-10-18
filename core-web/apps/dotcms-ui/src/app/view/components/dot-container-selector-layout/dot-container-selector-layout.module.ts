@@ -6,7 +6,6 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
 import { PaginatorService } from '@dotcms/data-access';
-import { UiDotIconButtonModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotContainerSelectorLayoutComponent } from './dot-container-selector-layout.component';
@@ -22,7 +21,6 @@ import { SearchableDropDownModule } from '../_common/searchable-dropdown/searcha
         ButtonModule,
         SearchableDropDownModule,
         DotPipesModule,
-        UiDotIconButtonModule,
         DotContainerSelectorModule
     ],
     providers: [PaginatorService]

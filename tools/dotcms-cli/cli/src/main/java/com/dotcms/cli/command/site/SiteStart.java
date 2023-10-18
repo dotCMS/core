@@ -1,6 +1,8 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
+import com.dotcms.cli.command.DotCommand;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.SiteView;
 import java.util.Optional;
@@ -18,34 +20,41 @@ import picocli.CommandLine;
                 " See @|bold,cyan site:stop|@ command. ",
              }
 )
-public class SiteStart extends AbstractSiteCommand implements Callable<Integer> {
+public class SiteStart extends AbstractSiteCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "start";
 
     @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "idOrName", description = "Site name Or Id.")
     String siteNameOrId;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Override
     public Integer call() {
+
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
+
         return executeArchive();
     }
 
     private int executeArchive() {
 
-        final Optional<SiteView> site = super.findSite(siteNameOrId);
-
-        if (site.isEmpty()) {
-            output.error(String.format(
-                    "Error occurred while pulling Site Info: [%s].", siteNameOrId));
-            return CommandLine.ExitCode.SOFTWARE;
-        }
-
+        final SiteView site = findSite(siteNameOrId);
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
-
-        final SiteView siteView = site.get();
-        final ResponseEntityView<SiteView> publish = siteAPI.publish(siteView.identifier());
+        final ResponseEntityView<SiteView> publish = siteAPI.publish(site.identifier());
         output.info(String.format("Site [%s] published successfully.",publish.entity().hostName()));
         return CommandLine.ExitCode.OK;
     }
 
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
 }

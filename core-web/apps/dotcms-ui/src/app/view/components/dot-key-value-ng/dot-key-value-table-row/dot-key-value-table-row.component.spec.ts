@@ -1,24 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import {
-    AfterContentInit,
-    Component,
-    ContentChildren,
-    DebugElement,
-    Directive,
-    Input,
-    QueryList,
-    TemplateRef
-} from '@angular/core';
-import { ComponentFixture } from '@angular/core/testing';
+import { CommonModule, NgIf } from '@angular/common';
+import { Component, DebugElement, Input } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
-import { PrimeTemplate } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { InputSwitchModule } from 'primeng/inputswitch';
+import { InputTextModule } from 'primeng/inputtext';
+import { TableModule } from 'primeng/table';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { UiDotIconButtonModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
@@ -26,240 +20,282 @@ import { DotKeyValueTableRowComponent } from './dot-key-value-table-row.componen
 
 import { mockKeyValue } from '../dot-key-value-ng.component.spec';
 
+const PASSWORD_PLACEHOLDER = '*****';
+const VARIABLE_INDEX = 1;
+const MESSAGE_MOCK_SERVICE = new MockDotMessageService({
+    'keyValue.key_input.placeholder': 'Enter Key',
+    'keyValue.value_input.placeholder': 'Enter Value',
+    Save: 'Save',
+    Cancel: 'Cancel',
+    'keyValue.error.duplicated.variable': 'test {0}'
+});
+
+const triggerEditButtonClick = (de: DebugElement) => {
+    const button = de.query(By.css('[data-testId="dot-key-value-edit-button"]'));
+    button.triggerEventHandler('click', {
+        stopPropagation: () => {
+            //
+        }
+    });
+};
+
+const triggerEditableColumnClick = (de: DebugElement) => {
+    const editableColumn = de.query(By.css('[data-testId="dot-key-value-editable-column"]'));
+    editableColumn.nativeElement.click();
+};
+
 @Component({
     selector: 'dot-test-host-component',
     template: `
-        <dot-key-value-table-row
-            [showHiddenField]="showHiddenField"
-            [isHiddenField]="isHiddenField"
-            [variable]="variable"
-            [variableIndex]="variableIndex"
-            [variablesList]="variablesList"
-        >
-        </dot-key-value-table-row>
+        <p-table #table [value]="variablesList">
+            <ng-template pTemplate="body" let-variable let-rowIndex="rowIndex">
+                <dot-key-value-table-row
+                    [showHiddenField]="showHiddenField"
+                    [isHiddenField]="isHiddenField"
+                    [variable]="variable"
+                    [variableIndex]="variableIndex"
+                    [variablesList]="variablesList">
+                </dot-key-value-table-row>
+            </ng-template>
+        </p-table>
     `
 })
 class TestHostComponent {
     @Input() showHiddenField: boolean;
     @Input() isHiddenField: boolean;
     @Input() variable: DotKeyValue;
-    @Input() variableIndex: number;
+    @Input() variableIndex = VARIABLE_INDEX; // default value
     @Input() variablesList: DotKeyValue[];
 }
 
-@Directive({
-    // eslint-disable-next-line
-    selector: '[pEditableColumn]'
-})
-class MockEditableColumnDirective {
-    @Input()
-    public pEditableColumn: any;
-    @Input()
-    public pEditableColumnField: any;
-}
-
-@Component({
-    // eslint-disable-next-line
-    selector: 'p-cellEditor',
-    template: `
-        <ng-container>
-            <ng-container *ngTemplateOutlet="inputTemplate"></ng-container>
-        </ng-container>
-    `
-})
-class MockCellEditorComponent implements AfterContentInit {
-    @ContentChildren(PrimeTemplate) templates: QueryList<PrimeTemplate>;
-    inputTemplate: TemplateRef<any>;
-    outputTemplate: TemplateRef<any>;
-
-    constructor(public tableRow: DotKeyValueTableRowComponent) {}
-
-    ngAfterContentInit() {
-        this.templates.forEach((item) => {
-            switch (item.getType()) {
-                case 'input':
-                    this.inputTemplate = item.template;
-                    break;
-
-                case 'output':
-                    this.outputTemplate = item.template;
-                    break;
-            }
-        });
-    }
-}
-
-xdescribe('DotKeyValueTableRowComponent', () => {
-    let comp: DotKeyValueTableRowComponent;
+describe('DotKeyValueTableRowComponent', () => {
     let hostComponent: TestHostComponent;
-    let hostComponentfixture: ComponentFixture<TestHostComponent>;
+    let hostComponentFixture: ComponentFixture<TestHostComponent>;
+    let component: DotKeyValueTableRowComponent;
     let de: DebugElement;
 
     beforeEach(() => {
-        const messageServiceMock = new MockDotMessageService({
-            'keyValue.key_input.placeholder': 'Enter Key',
-            'keyValue.value_input.placeholder': 'Enter Value',
-            Save: 'Save',
-            Cancel: 'Cancel',
-            'keyValue.error.duplicated.variable': 'test {0}'
-        });
-
-        DOTTestBed.configureTestingModule({
-            declarations: [
-                DotKeyValueTableRowComponent,
-                MockCellEditorComponent,
-                MockEditableColumnDirective,
-                TestHostComponent
+        TestBed.configureTestingModule({
+            declarations: [DotKeyValueTableRowComponent, TestHostComponent],
+            imports: [
+                NgIf,
+                CommonModule,
+                FormsModule,
+                ButtonModule,
+                InputSwitchModule,
+                ButtonModule,
+                TableModule,
+                InputSwitchModule,
+                InputTextModule,
+                TableModule,
+                DotPipesModule,
+                DotMessagePipe,
+                NoopAnimationsModule
             ],
-            imports: [UiDotIconButtonModule, InputSwitchModule],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            providers: [{ provide: DotMessageService, useValue: MESSAGE_MOCK_SERVICE }]
         });
 
-        hostComponentfixture = DOTTestBed.createComponent(TestHostComponent);
-        hostComponent = hostComponentfixture.componentInstance;
-        comp = hostComponentfixture.debugElement.query(
-            By.css('dot-key-value-table-row')
-        ).componentInstance;
-        de = hostComponentfixture.debugElement.query(By.css('dot-key-value-table-row'));
-
-        hostComponent.variableIndex = 0;
-        hostComponent.variablesList = mockKeyValue;
+        hostComponentFixture = TestBed.createComponent(TestHostComponent);
+        hostComponent = hostComponentFixture.componentInstance;
+        hostComponentFixture.detectChanges();
     });
 
-    describe('Without Hidden Fields', () => {
-        it('should load the component', () => {
-            hostComponent.variableIndex = 1;
+    describe('Editable variables', () => {
+        beforeEach(async () => {
+            hostComponent.isHiddenField = false;
             hostComponent.variable = mockKeyValue[0];
-            hostComponentfixture.detectChanges();
-            const inputs = de.queryAll(By.css('input'));
+            hostComponent.variablesList = [mockKeyValue[0]];
+            hostComponentFixture.detectChanges();
+            await hostComponentFixture.whenStable();
+            de = hostComponentFixture.debugElement.query(By.css('dot-key-value-table-row'));
+            component = de.componentInstance;
+        });
+
+        it('should load the component', () => {
             const btns = de.queryAll(By.css('button'));
-            expect(inputs[0].nativeElement.placeholder).toContain('Enter Value');
-            expect(btns[0].nativeElement.innerText).toContain('delete_outline');
-            expect(btns[1].nativeElement.innerText).toContain('edit');
-            expect(comp.saveDisabled).toBe(false);
+            const cellEditor = de.query(By.css('p-cellEditor'));
+            const label = de.query(By.css('[data-testId="dot-editable-key-value"]'));
+
+            expect(btns.length).toBe(2);
+            expect(label.nativeElement).toBeDefined();
+            expect(cellEditor.nativeElement).toBeDefined();
+            expect(component.saveDisabled).toBe(false);
         });
 
         it('should focus on "Value" input when "Edit" button clicked', () => {
-            hostComponent.variableIndex = 1;
-            hostComponent.variable = { key: 'TestKey', value: 'TestValue' };
-            hostComponentfixture.detectChanges();
-            spyOn(comp.valueCell.nativeElement, 'click');
-            const button = de.queryAll(
-                By.css('.dot-key-value-table-row__variables-actions dot-icon-button')
-            )[1];
-            button.triggerEventHandler('click', {
-                stopPropagation: () => {
-                    //
-                }
+            const valueCellSpy = spyOn(component.valueCell.nativeElement, 'click');
+            triggerEditButtonClick(de);
+
+            hostComponentFixture.detectChanges();
+            expect(valueCellSpy).toHaveBeenCalled();
+        });
+
+        it('should show edit menu when focus/key.up on a field', async () => {
+            // Initial state
+            expect(component.showEditMenu).toBe(false);
+            expect(component.saveDisabled).toBe(false);
+
+            // Click on edit button
+            triggerEditButtonClick(de);
+
+            // After click on edit button
+            hostComponentFixture.detectChanges();
+            await hostComponentFixture.whenStable();
+
+            // Focus on field
+            const field = de.query(By.css('[data-testId="dot-key-value-input"]'));
+            field.triggerEventHandler('keyup', { target: { value: 'a' } });
+
+            hostComponentFixture.detectChanges();
+
+            // After focus on field
+            expect(component.showEditMenu).toBe(true);
+            expect(component.saveDisabled).toBe(false);
+        });
+
+        describe('showHiddenField is true', () => {
+            beforeEach(async () => {
+                hostComponent.showHiddenField = true;
+                hostComponentFixture.detectChanges();
+                await hostComponentFixture.whenStable();
             });
-            hostComponentfixture.detectChanges();
-            expect(comp.valueCell.nativeElement.click).toHaveBeenCalled();
-        });
 
-        it('should show edit menu when focus/key.up on a field', () => {
-            hostComponent.variable = mockKeyValue[0];
-            hostComponentfixture.detectChanges();
-            expect(comp.showEditMenu).toBe(false);
-            expect(comp.saveDisabled).toBe(false);
-            de.query(By.css('.field-value-input')).triggerEventHandler('keyup', {
-                target: { value: 'a' }
+            it('should switch to hidden mode when clicked on the hidden switch button', async () => {
+                expect(component.variableCopy.hidden).toBeFalsy();
+
+                // Get the input switch element
+                const inputSwitch = de.query(By.css('[data-testId="dot-key-value-hidden-switch"]'));
+                const innerInputElement = inputSwitch.query(By.css('.p-inputswitch')).nativeElement;
+                innerInputElement.click();
+
+                hostComponentFixture.detectChanges();
+                await hostComponentFixture.whenStable();
+
+                // Click on edit button
+                triggerEditableColumnClick(de);
+
+                // After click on edit button
+                hostComponentFixture.detectChanges();
+                await hostComponentFixture.whenStable();
+
+                const inputElement = de.query(
+                    By.css('[data-testId="dot-key-value-input"]')
+                ).nativeElement;
+                expect(inputElement.type).toBe('password');
+                expect(component.showEditMenu).toBe(true);
             });
-            hostComponentfixture.detectChanges();
-            expect(comp.showEditMenu).toBe(true);
-            expect(comp.saveDisabled).toBe(false);
         });
 
-        it('should emit cancel event when press "Escape"', () => {
-            hostComponent.variable = mockKeyValue[0];
-            hostComponentfixture.detectChanges();
-            spyOn(comp.cancel, 'emit');
-            hostComponentfixture.detectChanges();
-            de.query(By.css('.field-value-input')).nativeElement.dispatchEvent(
-                new KeyboardEvent('keydown', { key: 'Escape' })
-            );
-            expect(comp.cancel.emit).toHaveBeenCalledWith(comp.variableIndex);
-            expect(comp.showEditMenu).toBe(false);
-        });
-
-        it('should emit save event when button clicked', async () => {
-            hostComponent.variable = { key: 'Key1', value: 'Value1' };
-            hostComponentfixture.detectChanges();
-            spyOn(comp.save, 'emit');
-            de.query(By.css('.field-value-input')).triggerEventHandler('focus', {});
-            hostComponentfixture.detectChanges();
-
-            await hostComponentfixture.whenStable();
-            de.query(
-                By.css('.dot-key-value-table-row__variables-actions-edit-save')
-            ).triggerEventHandler('click', {});
-            hostComponent.variablesList = [];
-            hostComponentfixture.detectChanges();
-            expect(comp.save.emit).toHaveBeenCalledWith(comp.variable);
-            expect(comp.showEditMenu).toBe(false);
-        });
-
-        it('should emit cancel event when button clicked', () => {
-            hostComponent.variable = { key: 'Key1', value: 'Value1' };
-            hostComponentfixture.detectChanges();
-            spyOn(comp.save, 'emit');
-            de.query(By.css('.field-value-input')).triggerEventHandler('focus', {});
-            spyOn(comp.cancel, 'emit');
-            hostComponentfixture.detectChanges();
-            de.query(
-                By.css('.dot-key-value-table-row__variables-actions-edit-cancel')
-            ).triggerEventHandler('click', {
-                stopPropagation: () => {
-                    //
-                }
+        describe('Edit Input field is visible', () => {
+            beforeEach(async () => {
+                triggerEditButtonClick(de);
+                hostComponentFixture.detectChanges();
+                await hostComponentFixture.whenStable();
             });
-            expect(comp.cancel.emit).toHaveBeenCalledWith(comp.variableIndex);
-            expect(comp.showEditMenu).toBe(false);
+
+            it('should emit cancel event when press "Escape"', () => {
+                const cancelSpy = spyOn(component.cancel, 'emit');
+                const inputElement = de.query(
+                    By.css('[data-testId="dot-key-value-input"]')
+                ).nativeElement;
+                inputElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+                hostComponentFixture.detectChanges();
+
+                expect(cancelSpy).toHaveBeenCalledWith(component.variableIndex);
+                expect(component.showEditMenu).toBe(false);
+            });
+
+            it('should emit save event when button clicked', () => {
+                const saveSpy = spyOn(component.save, 'emit');
+
+                // focus on field to show edit menu
+                const inputElement = de.query(By.css('[data-testId="dot-key-value-input"]'));
+                inputElement.triggerEventHandler('focus', {});
+
+                hostComponentFixture.detectChanges();
+
+                // click on save button
+                const saveButton = de.query(By.css('[data-testId="dot-key-value-save-button"]'));
+                saveButton.triggerEventHandler('click', {});
+
+                hostComponentFixture.detectChanges();
+
+                expect(saveSpy).toHaveBeenCalledWith(mockKeyValue[0]);
+                expect(component.showEditMenu).toBe(false);
+            });
+
+            it('should emit cancel event when button clicked', () => {
+                const cancelSpy = spyOn(component.cancel, 'emit');
+
+                // focus on field to show edit menu
+                const inputElement = de.query(By.css('[data-testId="dot-key-value-input"]'));
+                inputElement.triggerEventHandler('focus', {});
+
+                hostComponentFixture.detectChanges();
+
+                // click on save button
+                const cancelButton = de.query(
+                    By.css('[data-testId="dot-key-value-cancel-button"]')
+                );
+                cancelButton.triggerEventHandler('click', {
+                    stopPropagation: () => {
+                        //
+                    }
+                });
+
+                hostComponentFixture.detectChanges();
+
+                expect(cancelSpy).toHaveBeenCalledWith(VARIABLE_INDEX);
+                expect(component.showEditMenu).toBe(false);
+            });
+
+            it('should emit delete event when button clicked', () => {
+                const deleteSpy = spyOn(component.delete, 'emit');
+
+                // click on delete button
+                const deleteButton = de.query(
+                    By.css('[data-testId="dot-key-value-delete-button"]')
+                );
+                deleteButton.triggerEventHandler('click', {});
+
+                hostComponentFixture.detectChanges();
+
+                expect(deleteSpy).toHaveBeenCalledWith(component.variable);
+            });
         });
 
-        it('should emit delete event when button clicked', () => {
-            hostComponent.variable = { key: 'TestKey', value: 'TestValue' };
-            spyOn(comp.delete, 'emit');
-            hostComponentfixture.detectChanges();
-            de.queryAll(
-                By.css('.dot-key-value-table-row__variables-actions dot-icon-button')
-            )[0].triggerEventHandler('click', {});
-            expect(comp.delete.emit).toHaveBeenCalledWith(comp.variable);
-        });
-    });
+        describe('With Hidden Fields', () => {
+            beforeEach(async () => {
+                hostComponent.isHiddenField = true;
+                hostComponent.showHiddenField = true;
+                hostComponent.variable = mockKeyValue[1]; // Hidden Key Value
+                hostComponent.variablesList = [mockKeyValue[1]]; // Hidden Key Value
+                hostComponentFixture.detectChanges();
+                await hostComponentFixture.whenStable();
+                de = hostComponentFixture.debugElement.query(By.css('dot-key-value-table-row'));
+                component = de.componentInstance;
+            });
 
-    describe('With Hidden Fields', () => {
-        beforeEach(() => {
-            hostComponent.showHiddenField = true;
-            hostComponent.variableIndex = 1;
-            hostComponent.variable = mockKeyValue[1];
-        });
+            it('should show the password placeholder instead of the key value', () => {
+                const valueLabel = de.query(By.css('[data-testId="dot-key-value-label"]'));
+                const valueLabelHTML = valueLabel.nativeElement.innerHTML.trim();
+                expect(valueLabelHTML).toBe(PASSWORD_PLACEHOLDER);
+            });
 
-        it('should load the component with edit icon and switch button disabled', () => {
-            hostComponent.isHiddenField = true;
-            hostComponentfixture.detectChanges();
-            const switchButton = de.query(By.css('p-inputSwitch'));
-            const valueLabel = de.queryAll(By.css('.dot-key-value-table-row td'))[1];
-            const editIconButton = de.queryAll(
-                By.css('.dot-key-value-table-row__variables-actions dot-icon-button')
-            )[1];
-            expect(switchButton.componentInstance.disabled).toBe(true);
-            expect(editIconButton.attributes.disabled).toBe('true');
-            expect(valueLabel.nativeElement.innerText).toContain('*');
-        });
+            it('should load the component with edit icon and switch button disabled', () => {
+                const switchButton = de.query(
+                    By.css("[data-testId='dot-key-value-hidden-switch']")
+                );
+                const editIconButton = de.query(
+                    By.css("[data-testId='dot-key-value-edit-button']")
+                );
+                const valueLabel = de.query(By.css("[data-testId='dot-key-value-label']"));
+                const valueLabelHTML = valueLabel.nativeElement.innerHTML.trim();
 
-        it('should switch to hidden mode when clicked on the hidden switch button', async () => {
-            hostComponent.isHiddenField = false;
-            hostComponent.variable = { key: 'TestKey', hidden: true, value: 'TestValue' };
-            hostComponentfixture.detectChanges();
-            const valueInput = de.query(By.css('.field-value-input'));
-            const switchButton = de.query(By.css('p-inputSwitch')).nativeElement;
-            switchButton.dispatchEvent(new Event('onChange'));
-
-            hostComponentfixture.detectChanges();
-            await hostComponentfixture.whenStable();
-
-            expect(comp.showEditMenu).toBe(true);
-            expect(valueInput.nativeElement.type).toBe('password');
+                expect(switchButton.componentInstance.disabled).toBe(true);
+                expect(editIconButton.componentInstance.disabled).toBe(true);
+                expect(valueLabelHTML).toBe(PASSWORD_PLACEHOLDER);
+            });
         });
     });
 });

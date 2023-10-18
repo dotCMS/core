@@ -74,7 +74,8 @@ const defaultVmMock: ConfigurationViewModel = {
     experimentStatus: null,
     isDescriptionSaving: false,
     menuItems: null,
-    addToBundleContentId: null
+    addToBundleContentId: null,
+    disabledTooltipLabel: null
 };
 
 @Component({
@@ -159,7 +160,19 @@ describe('DotExperimentsConfigurationComponent', () => {
         expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
     });
 
-    it('should show Stop Experiment  after confirmation', () => {
+    it('shouldn disable edit the name if there is an error label', () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            isExperimentADraft: true,
+            disabledTooltipLabel: 'error'
+        });
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
+        expect(spectator.query(DotExperimentsInlineEditTextComponent).disabled).toEqual(true);
+    });
+
+    it('should show End Experiment after confirmation', () => {
         jest.spyOn(dotExperimentsConfigurationStore, 'stopExperiment');
         dotExperimentsService.stop.mockReturnValue(of());
 
@@ -187,13 +200,13 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectComponentChanges();
 
         //Add to bundle
-        spectator.query(Menu).model[4].command();
+        spectator.query(Menu).model[5].command();
 
         spectator.detectComponentChanges();
 
         const addToBundle = spectator.query(DotAddToBundleComponent);
 
-        expect(addToBundle.assetIdentifier).toEqual(EXPERIMENT_MOCK.identifier);
+        expect(addToBundle.assetIdentifier).toEqual(EXPERIMENT_MOCK.id);
 
         addToBundle.cancel.emit(true);
 
@@ -213,7 +226,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectComponentChanges();
 
         expect(spectator.query(Menu)).toExist();
-        spectator.query(Menu).model[2].command();
+        spectator.query(Menu).model[3].command();
 
         spectator.query(ConfirmDialog).accept();
 

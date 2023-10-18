@@ -46,6 +46,8 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.util.Collections;
+import java.util.stream.Stream;
 import org.apache.commons.lang.StringUtils;
 
 import java.sql.SQLException;
@@ -80,8 +82,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL =
             "delete from multi_tree where child = ? or parent1 = ? or parent2 = ?";
     private static final String DELETE_SQL = "delete from multi_tree where parent1=? and parent2=? and child=? and  relation_type = ? and personalization = ? and variant_id = ?";
-    private static final String DELETE_SQL_PERSONALIZATION_PER_PAGE = "delete from multi_tree where parent1=? and personalization = ?";
-    private static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ?";
+    private static final String DELETE_SQL_PERSONALIZATION_PER_PAGE = "delete from multi_tree where parent1=? and personalization = ? AND variant_id = ?";
+    private static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ? AND variant_id = ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION = "delete from multi_tree where parent1=? AND relation_type != ? and personalization = ? and variant_id = ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_NOT_SQL =
             "delete from multi_tree where variant_id = ? and relation_type != ? and personalization = ? and multi_tree.parent1 = ?  and " +
@@ -101,7 +103,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order, personalization, variant_id) values (?,?,?,?,?,?,?)  ";
 
     private static final String SELECT_BY_PAGE = "select * from multi_tree where parent1 = ? order by tree_order";
-    private static final String SELECT_BY_PAGE_AND_PERSONALIZATION = "select * from multi_tree where parent1 = ? and personalization = ? and variant_id = 'DEFAULT' order by tree_order";
+    private static final String SELECT_BY_PAGE_AND_PERSONALIZATION = "select * from multi_tree where parent1 = ? and personalization = ? and variant_id = ? order by tree_order";
     private static final String SELECT_UNIQUE_PERSONALIZATION = "select distinct(personalization) from multi_tree";
 
     private static final String SELECT_BY_ONE_PARENT = "select * from multi_tree where (parent1 = ? or parent2 = ?) and variant_id = ? order by tree_order"; // search by page id or container id
@@ -317,25 +319,46 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @CloseDBIfOpened
     @Override
     public Set<String> getPersonalizationsForPage(final String pageID) throws DotDataException {
-        IHTMLPage pageId=APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageID));
+        IHTMLPage pageId = APILocator.getHTMLPageAssetAPI()
+                .fromContentlet(APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageID));
         return getPersonalizationsForPage(pageId);
     }
     
     @CloseDBIfOpened
     @Override
     public Set<String> getPersonalizationsForPage(final IHTMLPage page) throws DotDataException {
-        final Set<String> personas=new HashSet<>();
+        return getPersonalizationsForPage(page, VariantAPI.DEFAULT_VARIANT.name());
+    }
 
-        final Table<String, String, Set<PersonalizedContentlet>> pageContents = Try.of(()-> getPageMultiTrees(page, false)).getOrElseThrow(e->new DotRuntimeException(e));
+    @CloseDBIfOpened
+    @Override
+    public Set<String> getPersonalizationsForPage(final IHTMLPage page, final String variantName) throws DotDataException{
+        final Set<String> personalizationsForPagVariant = getPersonalizationsForPageInner(page, variantName);
+        final Set<String> personalizationsForPagDefault = Collections.emptySet();
+
+        return Stream.concat(personalizationsForPagVariant.stream(),
+                        personalizationsForPagDefault.stream())
+                .collect(Collectors.toSet());
+    }
+
+    @CloseDBIfOpened
+    public Set<String> getPersonalizationsForPageInner(final IHTMLPage page, final String variantName) throws DotDataException{
+        final Set<String> personas = new HashSet<>();
+
+        final Table<String, String, Set<PersonalizedContentlet>> pageContents = Try.of(
+                        ()-> getPageMultiTrees(page, variantName, false))
+                .getOrElseThrow(e->new DotRuntimeException(e));
 
         for (final String containerId : pageContents.rowKeySet()) {
             for (final String uniqueId : pageContents.row(containerId).keySet()) {
-                pageContents.get(containerId, uniqueId).forEach(p->personas.add(p.getPersonalization()));
+                pageContents.get(containerId, uniqueId)
+                        .forEach(p->personas.add(p.getPersonalization()));
             }
         }
+
         return personas;
     }
-    
+
     @CloseDBIfOpened
     @Override
     public Set<String> getPersonalizations () throws DotDataException {
@@ -383,18 +406,26 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @Override
     public List<MultiTree> copyPersonalizationForPage (final String pageId,
                                                        final String basePersonalization,
-                                                       final String newPersonalization)  throws DotDataException {
+                                                       final String newPersonalization,
+                                                       final String targetVariantName )  throws DotDataException {
 
         List<MultiTree> multiTrees = null;
         final ImmutableList.Builder<MultiTree> personalizedContainerListBuilder =
                 new ImmutableList.Builder<>();
 
-        final List<MultiTree> basedMultiTreeList = this.getMultiTreesByPersonalizedPage(pageId, basePersonalization);
+        List<MultiTree> basedMultiTreeList = this.getMultiTreesByPersonalizedPage(pageId,
+                basePersonalization, targetVariantName);
+
+        if (!UtilMethods.isSet(basedMultiTreeList)) {
+            basedMultiTreeList = this.getMultiTreesByPersonalizedPage(pageId,
+                    basePersonalization, VariantAPI.DEFAULT_VARIANT.name());
+        }
 
         if (null != basedMultiTreeList) {
 
-            basedMultiTreeList.forEach(multiTree ->
-                    personalizedContainerListBuilder.add(MultiTree.personalized(multiTree, newPersonalization)));
+            basedMultiTreeList.forEach(multiTree -> personalizedContainerListBuilder.add(
+                        MultiTree.buildMultitree(multiTree, targetVariantName, newPersonalization))
+            );
 
             multiTrees = personalizedContainerListBuilder.build();
             this.saveMultiTrees(multiTrees);
@@ -405,14 +436,18 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     @WrapInTransaction
     @Override
-    public void deletePersonalizationForPage(final String pageId, final String personalization) throws DotDataException {
+    public void deletePersonalizationForPage(final String pageId, final String personalization,
+            final String variantName) throws DotDataException {
 
         Logger.debug(this, "Removing personalization for: " + pageId +
                                 ", personalization: " + personalization);
-        final List<MultiTree> pageMultiTrees = this.getMultiTreesByPersonalizedPage(pageId, personalization);
+        final List<MultiTree> pageMultiTrees = this.getMultiTreesByPersonalizedPage(pageId,
+                personalization, variantName);
+
         new DotConnect().setSQL(DELETE_SQL_PERSONALIZATION_PER_PAGE)
                 .addParam(pageId)
                 .addParam(personalization)
+                .addParam(variantName)
                 .loadResult();
         pageMultiTrees.forEach(multiTree -> this.multiTreeCache.get().removeContentletReferenceCount(multiTree.getContentlet()));
         updateHTMLPageVersionTS(pageId);
@@ -429,12 +464,16 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      */
     @CloseDBIfOpened
     @Override
-    public List<MultiTree> getMultiTreesByPersonalizedPage(final String pageId, final String personalization) throws DotDataException {
+    public List<MultiTree> getMultiTreesByPersonalizedPage(final String pageId,
+            final String personalization, final String variantName) throws DotDataException {
 
         return TransformerLocator.createMultiTreeTransformer(
                 new DotConnect().setSQL(SELECT_BY_PAGE_AND_PERSONALIZATION)
-                        .addParam(pageId).addParam(personalization).loadObjectResults())
-                .asList();
+                        .addParam(pageId)
+                        .addParam(personalization)
+                        .addParam(variantName)
+                        .loadObjectResults()
+                ).asList();
     }
 
     /**
@@ -675,6 +714,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
         this.refreshContentletReferenceCount(originalContentletIds, multiTrees);
         updateHTMLPageVersionTS(pageId, variantId);
+
         refreshPageInCache(pageId, variantId);
     }
 
@@ -803,7 +843,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      */
     @Override
     @WrapInTransaction
-    public void saveMultiTrees(final String pageId, final List<MultiTree> mTrees) throws DotDataException {
+    public void saveMultiTrees(final String pageId, final String variantName, final List<MultiTree> mTrees) throws DotDataException {
+
+        DotPreconditions.isTrue(mTrees.stream().filter(mTree -> !mTree.getVariantId().equals(variantName)).count() == 0,
+                () -> "All the MultiTree must have the variantName: " + variantName);
+
         Logger.debug(this, () -> String
                 .format("Saving MultiTrees: pageId -> %s multiTrees-> %s", pageId, mTrees));
         if (mTrees == null) {
@@ -813,9 +857,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", mTrees));
         final Set<String> originalContents = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE);
         final DotConnect db = new DotConnect();
-        db.setSQL(DELETE_ALL_MULTI_TREE_SQL).addParam(pageId).addParam(ContainerUUID.UUID_DEFAULT_VALUE).loadResult();
-
-        final Set<String> variants = new TreeSet();
+        db.setSQL(DELETE_ALL_MULTI_TREE_SQL)
+                .addParam(pageId)
+                .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
+                .addParam(variantName)
+                .loadResult();
 
         if (!mTrees.isEmpty()) {
             final List<Params> insertParams = Lists.newArrayList();
@@ -823,21 +869,15 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 insertParams
                         .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
                                 tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(), tree.getVariantId()));
-                variants.add(tree.getVariantId());
             }
 
             db.executeBatch(INSERT_SQL, insertParams);
         }
-        this.refreshContentletReferenceCount(originalContents, mTrees);
-        for (String variantId : variants) {
-            updateHTMLPageVersionTS(pageId, variantId);
-            refreshPageInCache(pageId,variantId );
-        }
 
-        if (!variants.contains(VariantAPI.DEFAULT_VARIANT.name())) {
-            updateHTMLPageVersionTS(pageId, VariantAPI.DEFAULT_VARIANT.name());
-            refreshPageInCache(pageId, VariantAPI.DEFAULT_VARIANT.name() );
-        }
+        this.refreshContentletReferenceCount(originalContents, mTrees);
+        updateHTMLPageVersionTS(pageId, variantName);
+
+        refreshPageInCache(pageId, variantName);
     }
 
     @Override
@@ -909,7 +949,28 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
     }
 
+    private void refreshPageInCache(final String pageIdentifier) {
+        CacheLocator.getMultiTreeCache().getVariantsInCache(pageIdentifier).stream()
+                .forEach(variantName -> {
+                    try {
+                        refreshPageInCacheInner(pageIdentifier, variantName);
+                    } catch (DotDataException e) {
+                        Logger.error(this, e.getMessage(), e);
+                    }
+                });
+    }
+
     private void refreshPageInCache(final String pageIdentifier, final String variantName) throws DotDataException {
+
+        if (VariantAPI.DEFAULT_VARIANT.name().equals(variantName)) {
+            refreshPageInCache(pageIdentifier);
+        } else {
+            refreshPageInCacheInner(pageIdentifier, variantName);
+        }
+    }
+
+    private void refreshPageInCacheInner(final String pageIdentifier, final String variantName)
+            throws DotDataException {
 
         CacheLocator.getMultiTreeCache()
                 .removePageMultiTrees(pageIdentifier, variantName);

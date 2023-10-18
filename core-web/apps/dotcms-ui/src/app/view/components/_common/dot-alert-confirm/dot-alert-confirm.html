@@ -2,24 +2,21 @@
     #cd
     *ngIf="dotAlertConfirmService.confirmModel"
     [closable]="false"
-    [style]="{width: '400px'}"
->
+    [style]="{width: '400px'}">
     <p-footer>
         <button
-            class="p-button-secondary"
+            class="p-button-outlined"
             type="button"
             pButton
             tabindex="-1"
             [label]="dotAlertConfirmService.confirmModel.footerLabel.reject"
-            (click)="onClickConfirm('reject')"
-        ></button>
+            (click)="onClickConfirm('reject')"></button>
         <button
             type="button"
             pButton
             #confirmBtn
             [label]="dotAlertConfirmService.confirmModel.footerLabel.accept"
-            (click)="onClickConfirm('accept')"
-        ></button>
+            (click)="onClickConfirm('accept')"></button>
     </p-footer>
 </p-confirmDialog>
 
@@ -30,24 +27,21 @@
     [header]="dotAlertConfirmService.alertModel.header"
     [visible]="true"
     modal="modal"
-    [style]="{width: '400px'}"
->
+    [style]="{width: '400px'}">
     <div [innerHTML]="dotAlertConfirmService.alertModel.message"></div>
     <p-footer>
         <button
-            class="p-button-secondary"
+            class="p-button-outlined"
             *ngIf="dotAlertConfirmService.alertModel.footerLabel.reject"
             type="button"
             pButton
             (click)="dotAlertConfirmService.alertReject($event)"
-            [label]="dotAlertConfirmService.alertModel.footerLabel.reject"
-        ></button>
+            [label]="dotAlertConfirmService.alertModel.footerLabel.reject"></button>
         <button
             type="button"
             pButton
             #acceptBtn
             (click)="dotAlertConfirmService.alertAccept($event)"
-            [label]="dotAlertConfirmService.alertModel.footerLabel.accept"
-        ></button>
+            [label]="dotAlertConfirmService.alertModel.footerLabel.accept"></button>
     </p-footer>
 </p-dialog>

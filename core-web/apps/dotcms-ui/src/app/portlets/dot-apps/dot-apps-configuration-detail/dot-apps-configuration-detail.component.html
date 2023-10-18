@@ -5,21 +5,19 @@
             <span>{{ apps.sites[0].name }}</span>
             <div class="dot-apps-configuration-detail-actions">
                 <button
-                    pButton
-                    class="p-button-secondary"
-                    data-testid="cancelBtn"
-                    type="button"
+                    class="p-button-outlined"
                     [label]="'Cancel' | dm"
                     (click)="goToApps(apps.key)"
-                ></button>
-                <button
                     pButton
-                    data-testid="saveBtn"
-                    type="button"
-                    (click)="onSubmit()"
+                    data-testid="cancelBtn"
+                    type="button"></button>
+                <button
                     [label]="'Save' | dm"
                     [disabled]="!formValid"
-                ></button>
+                    (click)="onSubmit()"
+                    pButton
+                    data-testid="saveBtn"
+                    type="button"></button>
             </div>
         </div>
     </div>
@@ -29,8 +27,7 @@
                 [appConfigured]="apps.sites[0].configured"
                 [formFields]="formFields"
                 (data)="formData = $event"
-                (valid)="formValid = $event"
-            ></dot-apps-configuration-detail-form>
+                (valid)="formValid = $event"></dot-apps-configuration-detail-form>
             <div *ngIf="apps.allowExtraParams">
                 <h5>{{ 'apps.custom.properties' | dm }}</h5>
                 <dot-key-value-ng
@@ -38,8 +35,7 @@
                     [showHiddenField]="true"
                     [variables]="dynamicVariables"
                     (delete)="deleteDynamicVariable($event)"
-                    (save)="saveDynamicVariable($event)"
-                ></dot-key-value-ng>
+                    (save)="saveDynamicVariable($event)"></dot-key-value-ng>
             </div>
         </div>
     </div>

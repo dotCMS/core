@@ -5,10 +5,11 @@ import { CUSTOM_ELEMENTS_SCHEMA, Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { RouterTestingModule } from '@angular/router/testing';
 
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
+import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import {
     DotDevicesServiceMock,
@@ -18,18 +19,46 @@ import {
 
 import { DotDeviceSelectorSeoComponent } from './dot-device-selector-seo.component';
 
+export const CurrentUserAdminDataMock = {
+    admin: true,
+    email: 'admin@dotcms.com',
+    givenName: 'TEST',
+    roleId: 'e7d23sde-5127-45fc-8123-d424fd510e3',
+    surnaname: 'User',
+    userId: 'testId'
+};
+
+export const CurrentUserDataMock = {
+    admin: false,
+    email: 'admin@dotcms.com',
+    givenName: 'TEST',
+    roleId: 'e7d23sde-5127-45fc-8123-d424fd510e3',
+    surnaname: 'User',
+    userId: 'testId'
+};
+
+export class DotCurrentUserServiceMock {
+    getCurrentUser() {
+        return of(CurrentUserAdminDataMock);
+    }
+}
+
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-device-selector-seo></dot-device-selector-seo> `
+    template: `<button (click)="op.openMenu($event)" type="text">Open</button>
+        <dot-device-selector-seo #op [apiLink]="apiLink"></dot-device-selector-seo> `
 })
-class TestHostComponent {}
+class TestHostComponent {
+    apiLink = 'api/v1/page/render/an/url/test?language_id=1';
+    linkToAddDevice = '/c/c_Devices';
+}
 
 describe('DotDeviceSelectorSeoComponent', () => {
     let fixtureHost: ComponentFixture<TestHostComponent>;
     let deHost: DebugElement;
     let component: DotDeviceSelectorSeoComponent;
     let de: DebugElement;
-
+    let dotCurrentUserService: DotCurrentUserService;
     const messageServiceMock = new MockDotMessageService({
         'editpage.device.selector.title': 'Devices',
         'editpage.device.selector.media.tile': 'Social Media Tiles',
@@ -50,7 +79,8 @@ describe('DotDeviceSelectorSeoComponent', () => {
                 DotDeviceSelectorSeoComponent,
                 HttpClientTestingModule,
                 OverlayPanelModule,
-                BrowserAnimationsModule
+                BrowserAnimationsModule,
+                RouterTestingModule
             ],
             providers: [
                 {
@@ -64,7 +94,8 @@ describe('DotDeviceSelectorSeoComponent', () => {
                 {
                     provide: CoreWebService,
                     useClass: CoreWebServiceMock
-                }
+                },
+                { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock }
             ],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
@@ -77,15 +108,15 @@ describe('DotDeviceSelectorSeoComponent', () => {
         component = de.componentInstance;
         TestBed.inject(DotDevicesService);
         spyOn(component, 'getOptions').and.returnValue(of(mockDotDevices));
+
+        dotCurrentUserService = de.injector.get(DotCurrentUserService);
+
+        fixtureHost.detectChanges();
+        const buttonEl = fixtureHost.debugElement.query(By.css('button')).nativeElement;
+        buttonEl.click();
     });
 
     it('should emit selected device on change', async () => {
-        const selectorButton: DebugElement = de.query(
-            By.css('[data-testId="device-selector-button"]')
-        );
-
-        selectorButton.nativeElement.click();
-
         await fixtureHost.whenStable();
         fixtureHost.detectChanges();
         spyOn(component.selected, 'emit');
@@ -101,11 +132,6 @@ describe('DotDeviceSelectorSeoComponent', () => {
     });
 
     it('should set user devices', async () => {
-        const selectorButton: DebugElement = de.query(
-            By.css('[data-testId="device-selector-button"]')
-        );
-
-        selectorButton.nativeElement.click();
         await fixtureHost.whenStable();
         fixtureHost.detectChanges();
 
@@ -116,30 +142,74 @@ describe('DotDeviceSelectorSeoComponent', () => {
     });
 
     it('should open the overlayPanel', () => {
-        const selectorButton: DebugElement = de.query(
-            By.css('[data-testId="device-selector-button"]')
-        );
+        const buttonEl = fixtureHost.debugElement.query(By.css('button')).nativeElement;
+        buttonEl.click();
+
         const devicesSelector: DebugElement = de.query(
             By.css('[data-testId="dot-devices-selector"]')
         );
-
-        selectorButton.nativeElement.click();
 
         fixtureHost.detectChanges();
         expect(devicesSelector).toBeDefined();
     });
 
     it('should close the overlayPanel', () => {
-        const selectorButton: DebugElement = de.query(
-            By.css('[data-testId="device-selector-button"]')
-        );
         const devicesSelector: DebugElement = de.query(
             By.css('[data-testId="dot-devices-selector"]')
         );
-
-        selectorButton.nativeElement.click();
-
-        fixtureHost.detectChanges();
         expect(devicesSelector).toBeNull();
+    });
+
+    it('should have link to open in a new tab', () => {
+        fixtureHost.detectChanges();
+
+        const addContent: DebugElement = de.query(
+            By.css('[data-testId="dot-device-selector-link"]')
+        );
+        expect(addContent.nativeElement.href).toContain(
+            '/an/url/test?language_id=1&disabledNavigateMode=true'
+        );
+    });
+
+    it('should have a link to add device', () => {
+        fixtureHost.detectChanges();
+
+        const link = de.query(By.css('[data-testId="dot-device-link-add"]'));
+        expect(link.properties.href).toContain('/c/content');
+    });
+
+    it('should not have a link to add device', async () => {
+        spyOn(dotCurrentUserService, 'getCurrentUser').and.returnValue(of(CurrentUserDataMock));
+
+        const link = de.query(By.css('[data-testId="dot-device-link-add"]'));
+        expect(link).toBeNull();
+    });
+
+    it('should have link to open in a new tab', () => {
+        fixtureHost.detectChanges();
+
+        const addContent: DebugElement = de.query(
+            By.css('[data-testId="dot-device-selector-link"]')
+        );
+        expect(addContent.nativeElement.href).toContain(
+            '/an/url/test?language_id=1&disabledNavigateMode=true'
+        );
+    });
+
+    it('should trigger the changeSeoMedia', () => {
+        spyOn(component, 'changeSeoMediaEvent');
+        fixtureHost.detectChanges();
+
+        const buttonMedia = de.query(By.css('[data-testId="device-list-button-media"]'));
+
+        buttonMedia.triggerEventHandler('click', 'Google');
+
+        expect(component.changeSeoMediaEvent).toHaveBeenCalled();
+    });
+
+    it('should emit hideOverlayPanel event when onHideDeviceSelector is called', () => {
+        spyOn(component.hideOverlayPanel, 'emit');
+        component.onHideDeviceSelector();
+        expect(component.hideOverlayPanel.emit).toHaveBeenCalled();
     });
 });

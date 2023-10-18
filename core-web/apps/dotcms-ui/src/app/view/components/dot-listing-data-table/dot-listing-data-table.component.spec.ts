@@ -1,7 +1,6 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import formatDistanceStrict from 'date-fns/formatDistanceStrict';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -12,15 +11,20 @@ import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, SharedModule } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { ContextMenuModule } from 'primeng/contextmenu';
 import { MenuModule } from 'primeng/menu';
 import { TableModule } from 'primeng/table';
+import { TooltipModule } from 'primeng/tooltip';
 
-import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
-import { DotIconModule, DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
+import {
+    DotIconModule,
+    DotMessagePipe,
+    DotRelativeDatePipe,
+    DotStringFormatPipe
+} from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
@@ -30,7 +34,6 @@ import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-men
 import { ActionHeaderComponent } from './action-header/action-header.component';
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';
 
-import { DotRelativeDatePipe } from '../../pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotActionButtonComponent } from '../_common/dot-action-button/dot-action-button.component';
 import { DotActionMenuButtonComponent } from '../_common/dot-action-menu-button/dot-action-menu-button.component';
 import { DotMenuModule } from '../_common/dot-menu/dot-menu.module';
@@ -58,8 +61,7 @@ class EmptyMockComponent {}
         [mapItems]="mapItems"
         [paginatorExtraParams]="paginatorExtraParams"
         (rowWasClicked)="rowWasClicked($event)"
-        (selectedItems)="selectedItems($event)"
-    >
+        (selectedItems)="selectedItems($event)">
         <dot-empty-state></dot-empty-state>
     </dot-listing-data-table>`
 })
@@ -135,23 +137,23 @@ describe('DotListingDataTableComponent', () => {
                 RouterTestingModule.withRoutes([
                     { path: 'test', component: DotListingDataTableComponent }
                 ]),
-                UiDotIconButtonTooltipModule,
                 MenuModule,
                 DotMenuModule,
                 DotIconModule,
                 DotRelativeDatePipe,
-                UiDotIconButtonModule,
                 HttpClientTestingModule,
                 DotPipesModule,
                 DotMessagePipe,
                 FormsModule,
-                ContextMenuModule
+                ContextMenuModule,
+                ButtonModule,
+                TooltipModule,
+                DotStringFormatPipe
             ],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 LoggerService,
-                DotFormatDateService,
                 DotAlertConfirmService,
                 ConfirmationService,
                 StringUtils,
@@ -356,10 +358,13 @@ describe('DotListingDataTableComponent', () => {
                         const textContent = cells[cellIndex].textContent;
                         const itemContent =
                             comp.columns[cellIndex].format === 'date'
-                                ? formatDistanceStrict(
-                                      item[comp.columns[cellIndex].fieldName],
-                                      new Date()
-                                  )
+                                ? new Date(
+                                      item[comp.columns[cellIndex].fieldName]
+                                  ).toLocaleDateString('US-en', {
+                                      month: '2-digit',
+                                      day: '2-digit',
+                                      year: 'numeric'
+                                  })
                                 : item[comp.columns[cellIndex].fieldName];
                         expect(textContent).toContain(itemContent);
                     }

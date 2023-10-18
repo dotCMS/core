@@ -59,9 +59,14 @@
 
     String counter = (String) request.getAttribute("counter");
 
-%>
-<div class="fieldWrapper">
+    boolean fullScreenField = Try.of(()->(boolean)request.getAttribute("DOT_FULL_SCREEN_FIELD")).getOrElse(false);
+    String fullScreenClass=fullScreenField ? "edit-content-full-screen": "";
+    String fullScreenHeight=fullScreenField ? "height: 100%;": "";
 
+
+%>
+
+<div class="fieldWrapper" >
     <div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
         <% if (hint != null) {%>
         <a href="#" id="tip-<%=field.getVelocityVarName()%>"><span class="hintIcon"></span></a>
@@ -89,7 +94,7 @@
 		<% } %>
     </div>
 
-    <div class="fieldValue field__<%=field.getFieldType()%>" id="<%=field.getVelocityVarName()%>_field">
+    <div class="fieldValue field__<%=field.getFieldType()%> <%= fullScreenClass%>" id="<%=field.getVelocityVarName()%>_field">
         <%
             //TEXT kind of field rendering
             if (field.getFieldType().equals(Field.FieldType.TEXT.toString())) {
@@ -173,7 +178,7 @@
                 JSONValue = new JSONObject(textValue);
             } catch(Exception e) {
                 // Need it in case the value contains Single quote/backtick.
-                textValue = "`" + StringEscapeUtils.escapeJavaScript(textValue.replaceAll("`", "&#96;").replaceAll("\\$", "&#36;")) + "`"; 
+                textValue = "`" + StringEscapeUtils.escapeJavaScript(textValue.replaceAll("`", "&#96;").replaceAll("\\$", "&#36;")) + "`";
             }
 
             List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
@@ -199,7 +204,6 @@
                 }
             }
             %>
-            <script src="/html/dotcms-block-editor.js"></script>
             <script src="/html/showdown.min.js"></script>
             <dotcms-block-editor
                 id="block-editor-<%=field.getVelocityVarName()%>"
@@ -211,8 +215,9 @@
                 lang="<%=contentLanguage%>"
                 custom-blocks='<%=customBlocks%>'
                 contentlet-identifier='<%=contentletIdentifier%>'
+                is-fullscreen='<%=fullScreenField%>'
             >
-                
+
             </dotcms-block-editor>
             <input type="hidden" name="<%=field.getFieldContentlet()%>" id="editor-input-value-<%=field.getVelocityVarName()%>"/>
 
@@ -239,7 +244,7 @@
                     } catch (error) {
                         const text = (<%=textValue%>).replace(/&#96;/g, '`').replace(/&#36;/g, '$');
                         const converter = new showdown.Converter({tables: true});
-                        content = converter.makeHtml(text);                      
+                        content = converter.makeHtml(text);
                     }
 
                     const blockEditor = document.getElementById("block-editor-<%=field.getVelocityVarName()%>");
@@ -247,7 +252,7 @@
                     const field = document.querySelector('#editor-input-value-<%=field.getVelocityVarName()%>');
 
                     /**
-                     * Safeguard just in case the editor changes are not triggering the 
+                     * Safeguard just in case the editor changes are not triggering the
                      * "valueChange" event.
                      */
                     if (typeof <%=textValue%> === 'object') {
@@ -325,12 +330,12 @@
         <script type="text/javascript">
             dojo.addOnLoad(function () {
                 <%if(toggleOn){ %>
-                aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');
+                aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>', '<%=fullScreenField%>');
                 <%} %>
             });
         </script>
-        <div id="aceTextArea_<%=field.getVelocityVarName()%>" class="classAce"></div>
-        <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;min-height:100px;max-height: 600px\""%>
+        <div id="aceTextArea_<%=field.getVelocityVarName()%>" class="classAce" style="width:100%; <%=fullScreenHeight%>"></div>
+        <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> style="width:100%; <%=fullScreenHeight%>" dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;min-height:100px;max-height: 600px\""%>
                                                                                                    name="<%=field.getFieldContentlet()%>"
                                                                                                    id="<%=field.getVelocityVarName()%>" class="editTextAreaField" onchange="emmitFieldDataChange(true)"><%= UtilMethods.htmlifyString(textValue) %></textarea>
         <%
@@ -339,9 +344,9 @@
         <div class="editor-toolbar">
             <div class="toggleEditorField checkbox">
                 <%if(toggleOn){ %>
-                <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="true" checked="true"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');" />
+                <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="true" checked="true"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>', '<%=fullScreenField%>');" />
                 <%}else{ %>
-                <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="false"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');" />
+                <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="false"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>' , '<%=fullScreenField%>');" />
                 <%} %>
                 <label for="toggleEditor_<%=field.getVelocityVarName()%>"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
             </div>
@@ -409,7 +414,9 @@
                 }
             }
         %>
-        <div class="wysiwyg-wrapper">
+
+
+        <div class="wysiwyg-wrapper <%= fullScreenClass%>">
             <div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce aceTall" style="display: none"></div>
 
             <%
@@ -427,18 +434,22 @@
                         }
                     }
             %>
-                <div class="wysiwyg-container" data-select-folder="<%=String.join(", ", defaultPathFolderPathIds)%>" >
+                <div class="wysiwyg-container" data-select-folder="<%=String.join(", ", defaultPathFolderPathIds)%>" style="<%= fullScreenHeight%>" >
             <% if (dragAndDrop) {  %>
                   <dot-asset-drop-zone id="dot-asset-drop-zone-<%=field.getVelocityVarName()%>" class="wysiwyg__dot-asset-drop-zone"></dot-asset-drop-zone>
             <% }  %>
                   <textarea <%= isReadOnly?"readonly=\"readonly\"":"" %>
                       class="editWYSIWYGField aceText aceTall"
                       name="<%=field.getFieldContentlet()%>"
-                      id="<%=field.getVelocityVarName()%>"><%=UtilMethods.htmlifyString(textValue)%>
+                      id="<%=field.getVelocityVarName()%>"
+                      style="<%= fullScreenHeight%>">
+
+                      <%=UtilMethods.htmlifyString(textValue)%>
+
                   </textarea>
                 </div>
             <div class="wysiwyg-tools">
-              <select  autocomplete="false" dojoType="dijit.form.Select" id="<%=field.getVelocityVarName()%>_toggler" onChange="enableDisableWysiwygCodeOrPlain('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)">
+              <select  autocomplete="false" dojoType="dijit.form.Select" id="<%=field.getVelocityVarName()%>_toggler" onChange="enableDisableWysiwygCodeOrPlain('<%=field.getVelocityVarName()%>', '<%=fullScreenField%>');emmitFieldDataChange(true)">
                   <option value="WYSIWYG">WYSIWYG</option>
                   <option value="CODE" <%= !wysiwygPlain&&wysiwygDisabled?"selected='true'":"" %>>CODE</option>
                   <option value="PLAIN" <%= wysiwygPlain?"selected='true'":"" %>>PLAIN</option>
@@ -474,7 +485,7 @@
         <script type="text/javascript">
             dojo.addOnLoad(function () {
                 <% if (!wysiwygDisabled) { %>
-                    enableWYSIWYG('<%=field.getVelocityVarName()%>', false);
+                    enableWYSIWYG('<%=field.getVelocityVarName()%>', false, '<%=fullScreenField%>');
                 <% } else if (wysiwygPlain) { %>
                     toPlainView('<%=field.getVelocityVarName()%>');
                 <% } else {%>
@@ -652,12 +663,75 @@
 
         %>
 
+
+
+        <%
+            String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
+            if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
+        %>
+
+            <%
+                String accept="";
+                String maxFileLength="0";
+                String helperText="";
+
+                List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
+                for(FieldVariable fv : acceptTypes){
+                    if("accept".equalsIgnoreCase(fv.getKey())){
+                        accept = fv.getValue();
+                    }
+                    if("maxFileLength".equalsIgnoreCase(fv.getKey())){
+                        maxFileLength=fv.getValue();
+                    }
+
+                    if("helperText".equalsIgnoreCase(fv.getKey())){
+                        helperText=fv.getValue();
+                    }
+                }
+
+
+                %>
+
+            <div id="container-binary-field-<%=field.getVelocityVarName()%>"></div>
+            <input name="<%=field.getFieldContentlet()%>" id="binary-field-input-<%=field.getFieldContentlet()%>ValueField" type="hidden" />
+
+            <script>
+                // Create a new scope so that variables defined here can have the same name without being overwritten.
+                (function autoexecute() {
+                    const binaryFieldContainer = document.getElementById("container-binary-field-<%=field.getVelocityVarName()%>");
+                    const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
+                    const acceptArr = "<%= accept%>".split(',');
+                    const acceptTypes = acceptArr.map((type) => type.trim()).filter((type) => type !== "");
+                    const maxFileSize = Number("<%= maxFileLength%>");
+
+                    // Creating the binary field dynamically
+                    // Help us to set inputs before the ngInit is executed.
+                    const binaryField = document.createElement('dotcms-binary-field');
+                    binaryField.id = "binary-field-<%=field.getVelocityVarName()%>";
+                    binaryField.setAttribute("fieldName", "<%=field.getVelocityVarName()%>")
+
+                    // Set the initial value.
+                    binaryField.maxFileSize = isNaN(maxFileSize) ? 0 : maxFileSize;
+                    binaryField.accept = acceptTypes;
+                    binaryField.helperText ="<%= helperText%>";
+
+                    binaryField.addEventListener('tempFile', (event) => {
+                        const tempFile = event.detail;
+                        field.value = tempFile?.id || '';
+                    });
+
+                    binaryFieldContainer.appendChild(binaryField);
+                })();
+
+            </script>
+        <%}else{%>
+
         <!--  display -->
         <% if(UtilMethods.isSet(value)){
             String mimeType="application/octet-stream";
             fileName="unknown";
-            
-            
+
+
 
             try{
                 java.io.File fileValue = (java.io.File)value;
@@ -676,9 +750,9 @@
                 fileName = value.toString();
             }
             %>
-        
 
-        
+
+
 
         <%if(mimeType.startsWith("video/")){%>
             <div id="thumbnailParent<%=field.getVelocityVarName()%>">
@@ -691,9 +765,9 @@
                 </a>
             </div>
         <%}%>
-        
 
-    
+
+
 
         <%if(UtilMethods.isImage(fileName)){%>
         <%int showDim=300; %>
@@ -829,10 +903,15 @@
 
     </script>
 
-
+    <%} %>
     <%
 
-        if(UtilMethods.isSet(value) && UtilMethods.isSet(resourceLink)){
+        String bnFlag = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
+        Boolean newBinaryOn = bnFlag != null && bnFlag.equalsIgnoreCase("true");
+        Boolean isBinaryField = field.getFieldType().equals(Field.FieldType.BINARY.toString());
+        Boolean shouldShowEditFileOnBn = isBinaryField && !newBinaryOn; // If the new binary field is on, we don't show the edit field
+
+        if(UtilMethods.isSet(value) && UtilMethods.isSet(resourceLink) && shouldShowEditFileOnBn){
 
           boolean canUserWriteToContentlet = APILocator.getPermissionAPI().doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE, user);
 

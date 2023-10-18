@@ -3,8 +3,6 @@ import { Observable, of } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
-import { map } from 'rxjs/operators';
-
 import { DotPropertiesService } from '@dotcms/data-access';
 
 /**
@@ -12,7 +10,7 @@ import { DotPropertiesService } from '@dotcms/data-access';
  *
  * @export
  * @class DotFeatureFlagResolver
- * @implements {Resolve<Observable<boolean>>}
+ * @implements {Observable<Record<string, boolean>>}
  *
  * Need set in data the feature flag with the index name featuredFlag and the FeatureFlag needed
  * @example
@@ -21,14 +19,14 @@ import { DotPropertiesService } from '@dotcms/data-access';
  *  }
  */
 @Injectable()
-export class DotFeatureFlagResolver implements Resolve<Observable<boolean>> {
+export class DotFeatureFlagResolver
+    implements Resolve<Observable<Record<string, boolean>> | Observable<boolean>>
+{
     constructor(private readonly dotConfigurationService: DotPropertiesService) {}
 
     resolve(route: ActivatedRouteSnapshot) {
-        if (route.data.featuredFlagToCheck) {
-            return this.dotConfigurationService
-                .getKey(route.data.featuredFlagToCheck)
-                .pipe(map((result) => result && result === 'true'));
+        if (route.data.featuredFlagsToCheck) {
+            return this.dotConfigurationService.getFeatureFlags(route.data.featuredFlagsToCheck);
         }
 
         return of(false);

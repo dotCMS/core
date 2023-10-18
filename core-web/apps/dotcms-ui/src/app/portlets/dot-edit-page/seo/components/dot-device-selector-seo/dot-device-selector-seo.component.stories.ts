@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
@@ -33,6 +34,10 @@ const messageServiceMock = new MockDotMessageService({
     'editpage.device.selector.tablet.portrait': 'Tablet Portrait',
     'editpage.device.selector.tablet.landscape': 'Tablet Landscape'
 });
+
+const mockActivatedRoute = {
+    snapshot: {}
+};
 
 export default {
     title: 'dotcms/Device Selector SEO',
@@ -62,15 +67,28 @@ export default {
                         get: () => of(mockDotDevices),
                         request: () => of(mockDotDevices)
                     }
-                }
+                },
+                { provide: ActivatedRoute, useValue: mockActivatedRoute }
             ]
         })
     ]
 };
 
-export const Default = () => ({
-    component: DotDeviceSelectorSeoComponent,
-    props: {
-        selected: action('selected')
-    }
-});
+export const Default = () => {
+    const handleClick = () => {
+        // open selector logic
+    };
+
+    return {
+        template: `
+        <p-button label="Open Selector" styleClass="p-button-outlined" (click)="op.openMenu($event)"></p-button>
+        <dot-device-selector-seo #op></dot-device-selector-seo>
+      `,
+        props: {
+            handleClick,
+            props: {
+                selected: action('selected')
+            }
+        }
+    };
+};

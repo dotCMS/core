@@ -1,10 +1,13 @@
 package com.dotcms.cli.command.files;
 
 import com.dotcms.api.LanguageAPI;
-import com.dotcms.api.traversal.RemoteFolderTraversalService;
+import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.language.Language;
+import org.apache.commons.lang3.tuple.Pair;
 import picocli.CommandLine;
 import picocli.CommandLine.Parameters;
 
@@ -28,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
                 "" // empty string here so we can have a new line
         }
 )
-public class FilesTree extends AbstractFilesCommand implements Callable<Integer> {
+public class FilesTree extends AbstractFilesCommand implements Callable<Integer>, DotCommand {
 
     static final String NAME = "tree";
 
@@ -79,68 +82,80 @@ public class FilesTree extends AbstractFilesCommand implements Callable<Integer>
     String includeAssetPatternsOption;
 
     @Inject
-    RemoteFolderTraversalService folderTraversalService;
+    RemoteTraversalService remoteTraversalService;
+
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
 
     @Override
     public Integer call() throws Exception {
 
-        try {
+        // Checking for unmatched arguments
+        output.throwIfUnmatchedArguments(spec.commandLine());
 
-            var includeFolderPatterns = parsePatternOption(includeFolderPatternsOption);
-            var includeAssetPatterns = parsePatternOption(includeAssetPatternsOption);
-            var excludeFolderPatterns = parsePatternOption(excludeFolderPatternsOption);
-            var excludeAssetPatterns = parsePatternOption(excludeAssetPatternsOption);
+        var includeFolderPatterns = parsePatternOption(includeFolderPatternsOption);
+        var includeAssetPatterns = parsePatternOption(includeAssetPatternsOption);
+        var excludeFolderPatterns = parsePatternOption(excludeFolderPatternsOption);
+        var excludeAssetPatterns = parsePatternOption(excludeAssetPatternsOption);
 
-            CompletableFuture<TreeNode> folderTraversalFuture = CompletableFuture.supplyAsync(
-                    () -> {
-                        // Service to handle the traversal of the folder
-                        return folderTraversalService.traverse(
-                                folderPath,
-                                depth,
-                                includeFolderPatterns,
-                                includeAssetPatterns,
-                                excludeFolderPatterns,
-                                excludeAssetPatterns
-                        );
-                    });
+        CompletableFuture<Pair<List<Exception>, TreeNode>> folderTraversalFuture = CompletableFuture.supplyAsync(
+                () -> {
+                    // Service to handle the traversal of the folder
+                    return remoteTraversalService.traverseRemoteFolder(
+                            folderPath,
+                            depth,
+                            true,
+                            includeFolderPatterns,
+                            includeAssetPatterns,
+                            excludeFolderPatterns,
+                            excludeAssetPatterns
+                    );
+                });
 
-            // ConsoleLoadingAnimation instance to handle the waiting "animation"
-            ConsoleLoadingAnimation consoleLoadingAnimation = new ConsoleLoadingAnimation(
-                    output,
-                    folderTraversalFuture
-            );
+        // ConsoleLoadingAnimation instance to handle the waiting "animation"
+        ConsoleLoadingAnimation consoleLoadingAnimation = new ConsoleLoadingAnimation(
+                output,
+                folderTraversalFuture
+        );
 
-            CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
-                    consoleLoadingAnimation
-            );
+        CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
+                consoleLoadingAnimation
+        );
 
-            // Waits for the completion of both the folder traversal and console loading animation tasks.
-            // This line blocks the current thread until both CompletableFuture instances
-            // (folderTraversalFuture and animationFuture) have completed.
-            CompletableFuture.allOf(folderTraversalFuture, animationFuture).join();
-            final var result = folderTraversalFuture.get();
+        // Waits for the completion of both the folder traversal and console loading animation tasks.
+        // This line blocks the current thread until both CompletableFuture instances
+        // (folderTraversalFuture and animationFuture) have completed.
+        CompletableFuture.allOf(folderTraversalFuture, animationFuture).join();
+        final var result = folderTraversalFuture.get();
 
-            if (result == null) {
-                output.error(String.format(
-                        "Error occurred while pulling folder info: [%s].", folderPath));
-                return CommandLine.ExitCode.SOFTWARE;
-            }
-
-            // We need to retrieve the languages
-            final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
-            final List<Language> languages = languageAPI.list().entity();
-
-            // Display the result
-            StringBuilder sb = new StringBuilder();
-            TreePrinter.getInstance().filteredFormat(sb, result, !excludeEmptyFolders, languages);
-
-            output.info(sb.toString());
-
-        } catch (Exception e) {
-            return handleFolderTraversalExceptions(folderPath, e);
+        if (result == null) {
+            output.error(String.format(
+                    "Error occurred while pulling folder info: [%s].", folderPath));
+            return CommandLine.ExitCode.SOFTWARE;
         }
 
+        // We need to retrieve the languages
+        final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
+        final List<Language> languages = languageAPI.list().entity();
+
+        // Display the result
+        StringBuilder sb = new StringBuilder();
+        TreePrinter.getInstance()
+                .filteredFormat(sb, result.getRight(), !excludeEmptyFolders, languages);
+
+        output.info(sb.toString());
+
         return CommandLine.ExitCode.OK;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
     }
 
 }

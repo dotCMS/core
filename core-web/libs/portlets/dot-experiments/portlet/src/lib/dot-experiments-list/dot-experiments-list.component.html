@@ -2,50 +2,45 @@
     <dot-experiments-header
         [isLoading]="vm.isLoading"
         [title]="vm.pageTitle"
-        (goBack)="goToBrowserBack()"
-    />
+        (goBack)="goToBrowserBack()" />
     <div class="dot-experiment">
         <ng-container
-            *ngIf="vm.experiments.length; else vm.isLoading ? loadingExperiments : noExperiments"
-        >
+            *ngIf="vm.experiments.length; else vm.isLoading ? loadingExperiments : noExperiments">
             <div class="dot-experiment__actions">
                 <dot-experiments-status-filter
                     [options]="statusOptionList"
                     [selectedItems]="vm.filterStatus"
-                    (switch)="selectedStatusFilter($event)"
-                />
+                    (switch)="selectedStatusFilter($event)" />
 
                 <button
                     (click)="addExperiment()"
                     data-testId="add-experiment-button"
                     label="{{ 'experimentspage.add.new.experiment' | dm }}"
                     pButton
-                    type="button"
-                ></button>
+                    type="button"></button>
             </div>
 
             <dot-experiments-list-table
                 [experimentGroupedByStatus]="vm.experimentsFiltered"
-                (goToContainer)="goToContainerAction($event)"
-            />
+                (goToContainer)="goToContainerAction($event)" />
         </ng-container>
     </div>
     <dot-add-to-bundle
         *ngIf="vm.addToBundleContentId"
         [assetIdentifier]="vm.addToBundleContentId"
-        (cancel)="vm.addToBundleContentId = null"
-    />
+        (cancel)="vm.addToBundleContentId = null" />
 </ng-container>
 
 <ng-template #noExperiments>
-    <dot-experiments-empty-experiments
-        (addNew)="addExperiment()"
-        description="{{ 'experimentspage.not.experiments.founds' | dm }}"
-    />
+    <dot-empty-container
+        [buttonLabel]="'experimentspage.add.new.experiment' | dm"
+        [configuration]="emptyConfiguration"
+        [hideContactUsLink]="true"
+        (buttonAction)="addExperiment()" />
 </ng-template>
 <ng-template #loadingExperiments>
     <dot-experiments-list-skeleton />
 </ng-template>
 
 <ng-template dotDynamic></ng-template>
-<p-confirmDialog [style]="{ width: '30vw' }" key="positionDialog"></p-confirmDialog>
+<p-confirmDialog [key]="confirmDialogKey" [style]="{ width: '30vw' }"></p-confirmDialog>

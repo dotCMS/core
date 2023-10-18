@@ -1,0 +1,33 @@
+# action.yml
+name: 'Issue Labeler'
+description: 'Given a JSON with issues and commits, it labels the issues with the corresponding labels'
+author: 'victoralfaro-dotcms'
+inputs:
+  issues_json:
+    description: 'Issues JSON to label'
+    required: true
+    default: '[]'
+  labels:
+    description: 'Comman delimited labels to add to issues'
+    required: true
+    default: ''
+  operation:
+    description: 'Operation to perform on the issues'
+    required: true
+    type: choice
+    options:
+      - 'ADD'
+      - 'REMOVE'
+      - 'NONE'
+    default: 'ADD'
+  github_token:
+    description: 'Github token'
+    required: true
+outputs:
+  affected_issues:
+    description: 'Label affected issues json'
+  ignored_issues:
+    description: 'Ignored issues json'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

@@ -1,3 +1,6 @@
+@import "../../../../dotcms-scss/shared/common";
+@import "../../../../dotcms-scss/shared/colors";
+
 dot-material-icon-picker {
     display: flex;
 }
@@ -7,6 +10,7 @@ dot-material-icon-picker {
     flex-direction: column;
     flex-grow: 1;
     position: relative;
+    height: $field-height-md;
 }
 
 .dot-material-icon__select-options-container {
@@ -83,6 +87,7 @@ dot-material-icon-picker {
 
     mwc-icon {
         --mdc-icon-size: 1em;
+        color: $color-palette-primary;
     }
 }
 

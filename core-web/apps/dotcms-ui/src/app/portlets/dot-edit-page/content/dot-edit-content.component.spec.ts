@@ -102,6 +102,7 @@ import { DotPageStateService } from './services/dot-page-state/dot-page-state.se
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
+import { DotSeoMetaTagsService } from './services/html/dot-seo-meta-tags.service';
 
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotPageContent } from '../shared/models';
@@ -152,6 +153,20 @@ export class MockDotFormSelectorComponent {
     template: ''
 })
 export class MockDotEditPageToolbarComponent {
+    @Input() pageState = mockDotRenderedPageState;
+    @Input() variant;
+    @Input() runningExperiment;
+    @Output() actionFired = new EventEmitter<DotCMSContentlet>();
+    @Output() cancel = new EventEmitter<boolean>();
+    @Output() favoritePage = new EventEmitter<boolean>();
+    @Output() whatschange = new EventEmitter<boolean>();
+}
+
+@Component({
+    selector: 'dot-edit-page-toolbar-seo',
+    template: ''
+})
+export class MockDotEditPageToolbarSeoComponent {
     @Input() pageState = mockDotRenderedPageState;
     @Input() variant;
     @Input() runningExperiment;
@@ -236,7 +251,8 @@ describe('DotEditContentComponent', () => {
                 MockDotIconComponent,
                 MockDotPaletteComponent,
                 HostTestComponent,
-                MockGlobalMessageComponent
+                MockGlobalMessageComponent,
+                MockDotEditPageToolbarSeoComponent
             ],
             imports: [
                 HttpClientTestingModule,
@@ -280,6 +296,7 @@ describe('DotEditContentComponent', () => {
                 DotCopyContentModalService,
                 DotFavoritePageService,
                 DotExperimentsService,
+                DotSeoMetaTagsService,
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -364,6 +381,8 @@ describe('DotEditContentComponent', () => {
         spyOn(dotPageStateService, 'reload');
 
         spyOn(dotEditContentHtmlService, 'renderAddedForm');
+
+        spyOn(component, 'reload').and.callThrough();
     });
 
     describe('elements', () => {
@@ -529,6 +548,18 @@ describe('DotEditContentComponent', () => {
                     data: 'test'
                 });
             });
+
+            it('should reload page when triggering save-page', () => {
+                dotEditContentlet.triggerEventHandler('custom', {
+                    detail: {
+                        name: 'save-page',
+                        payload: {}
+                    }
+                });
+                dotContentletEditorService.close$.next(true);
+
+                expect(component.reload).toHaveBeenCalledWith(null);
+            });
         });
 
         describe('dot-create-contentlet', () => {
@@ -546,6 +577,18 @@ describe('DotEditContentComponent', () => {
                 expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({
                     data: 'test'
                 });
+            });
+
+            it('should reload page when triggering save-page', () => {
+                dotCreateContentlet.triggerEventHandler('custom', {
+                    detail: {
+                        name: 'save-page',
+                        payload: {}
+                    }
+                });
+                dotContentletEditorService.close$.next(true);
+
+                expect(component.reload).toHaveBeenCalledWith(null);
             });
 
             it('should remove Contentlet Placeholder on close', () => {
@@ -640,7 +683,7 @@ describe('DotEditContentComponent', () => {
 
                 it('should add inline styles to device wrapper', (done) => {
                     setTimeout(() => {
-                        const deviceWraper = de.query(By.css('.dot-edit__device-wrapper'));
+                        const deviceWraper = de.query(By.css('.dot-edit__iframe-wrapper'));
                         expect(deviceWraper.styles.cssText).toEqual('width: 100px; height: 100px;');
                         done();
                     }, 100);
@@ -688,18 +731,24 @@ describe('DotEditContentComponent', () => {
 
                 it('should render in preview mode', fakeAsync(() => {
                     detectChangesForIframeRender(fixture);
-
+                    component.isEditMode = false;
                     expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith(
                         mockRenderedPageState,
                         jasmine.any(ElementRef)
                     );
+                    fixture.detectChanges();
+                    const wrapperEdit = de.query(By.css('[data-testId="edit-content-wrapper"]'));
+
                     expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
                     expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(
                         mockRenderedPageState.page
                     );
+                    expect(wrapperEdit.nativeElement).toHaveClass('dot-edit-content__preview');
                 }));
 
                 it('should render in edit mode', fakeAsync(() => {
+                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+                    component.isEditMode = true;
                     const state = new DotPageRenderState(
                         mockUser(),
                         new DotPageRender({
@@ -717,7 +766,9 @@ describe('DotEditContentComponent', () => {
                         content: state
                     });
                     detectChangesForIframeRender(fixture);
+                    fixture.detectChanges();
 
+                    const wrapperEdit = de.query(By.css('[data-testId="edit-content-wrapper"]'));
                     expect(dotEditContentHtmlService.initEditMode).toHaveBeenCalledWith(
                         state,
                         jasmine.any(ElementRef)
@@ -726,6 +777,7 @@ describe('DotEditContentComponent', () => {
                     expect(dotEditContentHtmlService.setCurrentPage).toHaveBeenCalledWith(
                         state.page
                     );
+                    expect(wrapperEdit.nativeElement).not.toHaveClass('dot-edit-content__preview');
                 }));
 
                 it('should show/hide content palette in edit mode with correct content', fakeAsync(() => {

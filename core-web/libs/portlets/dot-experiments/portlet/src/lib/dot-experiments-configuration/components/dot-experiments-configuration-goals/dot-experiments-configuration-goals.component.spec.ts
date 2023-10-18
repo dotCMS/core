@@ -11,10 +11,16 @@ import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { Card } from 'primeng/card';
-import { ConfirmPopup } from 'primeng/confirmpopup';
+import { Tooltip } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus, ExperimentSteps, Goals, StepStatus } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    ExperimentSteps,
+    GOAL_TYPES,
+    Goals,
+    StepStatus
+} from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
@@ -35,15 +41,40 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.add': 'button add',
     'experiments.goal.reach_page.name': 'reach_page',
     'experiments.goal.reach_page.description': 'description',
-    'experiments.configure.goals.no.seleted.goal.message': 'empty message'
+    'experiments.configure.goals.no.seleted.goal.message': 'empty message',
+    'experiments.goal.conditions.query.parameter': 'Query Parameter'
 });
 const EXPERIMENT_MOCK = getExperimentMock(0);
 const EXPERIMENT_MOCK_WITH_GOAL = getExperimentMock(2);
+
+function getVmMock(
+    goals = GoalsMock,
+    disabledTooltipLabel = null
+): {
+    experimentId: string;
+    goals: Goals;
+    status: StepStatus;
+    isExperimentADraft: boolean;
+    disabledTooltipLabel: null | string;
+} {
+    return {
+        experimentId: EXPERIMENT_MOCK.id,
+        goals: goals,
+        status: {
+            status: ComponentStatus.IDLE,
+            isOpen: false,
+            experimentStep: null
+        },
+        isExperimentADraft: true,
+        disabledTooltipLabel
+    };
+}
+
 describe('DotExperimentsConfigurationGoalsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationGoalsComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
-    let confirmPopupComponent: ConfirmPopup;
+    let confirmationService: ConfirmationService;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigurationGoalsComponent,
@@ -70,6 +101,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         store = spectator.inject(DotExperimentsConfigurationStore);
 
         dotExperimentsService = spectator.inject(DotExperimentsService);
+        confirmationService = spectator.inject(ConfirmationService);
     });
 
     describe('no goal selected yet', () => {
@@ -101,28 +133,21 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         });
 
         test('should disable the button of add goal if a goal was selected already', () => {
-            const vmMock$: {
-                experimentId: string;
-                goals: Goals;
-                status: StepStatus;
-                isExperimentADraft: boolean;
-            } = {
-                experimentId: EXPERIMENT_MOCK.id,
-                goals: GoalsMock,
-                status: {
-                    status: ComponentStatus.IDLE,
-                    isOpen: false,
-                    experimentStep: null
-                },
-                isExperimentADraft: true
-            };
-
-            spectator.component.vm$ = of(vmMock$);
+            spectator.component.vm$ = of(getVmMock());
             spectator.detectComponentChanges();
 
             const addButton = spectator.query(byTestId('goals-add-button')) as HTMLButtonElement;
             expect(addButton.disabled).toBe(true);
             expect(spectator.query(DotExperimentsDetailsTableComponent)).toExist();
+        });
+
+        test('should disable the button of add goal if there is an error', () => {
+            spectator.component.vm$ = of(getVmMock(null, 'error'));
+            spectator.detectComponentChanges();
+
+            const addButton = spectator.query(byTestId('goals-add-button')) as HTMLButtonElement;
+            expect(addButton.disabled).toBe(true);
+            expect(spectator.query(Tooltip).disabled).toEqual(false);
         });
 
         test('should call openSelectGoalSidebar if you click the add goal button', () => {
@@ -162,6 +187,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         });
         test('should show a confirmation to delete a goal', () => {
             jest.spyOn(store, 'deleteGoal');
+            jest.spyOn(confirmationService, 'confirm');
 
             spectator.detectComponentChanges();
             const deleteIcon = spectator.query(byTestId('goal-delete-button'));
@@ -171,10 +197,20 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             spectator.dispatchMouseEvent(deleteIcon, 'click');
             spectator.detectComponentChanges();
 
-            confirmPopupComponent = spectator.query(ConfirmPopup);
-            confirmPopupComponent.accept();
+            expect(confirmationService.confirm).toHaveBeenCalled();
+        });
 
-            expect(store.deleteGoal).toHaveBeenCalled();
+        test('should render the params header correctly', () => {
+            spectator.component.vm$ = of(
+                getVmMock({
+                    ...GoalsMock,
+                    primary: { ...GoalsMock.primary, type: GOAL_TYPES.URL_PARAMETER }
+                })
+            );
+            spectator.detectComponentChanges();
+            const paramsHeader = spectator.query(byTestId('goal-header-parameter'));
+
+            expect(paramsHeader).toContainText('Query Parameter');
         });
     });
 });
