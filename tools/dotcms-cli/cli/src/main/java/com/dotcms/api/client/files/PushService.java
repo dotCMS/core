@@ -14,7 +14,7 @@ public interface PushService {
     /**
      * Traverses the local folders and retrieves the hierarchical tree representation of their
      * contents with the push related information for each file and folder. Each folder is
-     * represented as a pair of its local path structure and the corresponding tree node.
+     * represented as a TraverseResult with the corresponding local path structure and tree node.
      *
      * @param output             the output option mixin
      * @param source             the source to traverse

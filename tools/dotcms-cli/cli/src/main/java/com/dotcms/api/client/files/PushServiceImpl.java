@@ -129,7 +129,7 @@ public class PushServiceImpl implements PushService {
      The Folder must be removed from working branch but aldo from live one, so it becomes clear that we intend to remove the folder
      If we leave folders hanging all around we're not being explicitly clear about our intention to remove the folder
      This method resolves these discrepancies.
-     It is only when the folder exists remotely and all occurrences of that folder has been removed locally that we consider the folder properly marked for delte
+     It is only when the folder exists remotely and all occurrences of that folder has been removed locally that we consider the folder properly marked for delete
      * @param indexedByStatusLangAndSite The mapped TreeNodes
      * @param path the folder path
      */
@@ -280,6 +280,10 @@ public class PushServiceImpl implements PushService {
 
     }
 
+    /**
+     * Simple class to glue together TreeNode,
+     * LocalPath, and any exceptions encountered during the traverse process
+     */
     public static class TraverseResult {
 
         final List<Exception> exceptions;
