@@ -294,14 +294,19 @@ const seoOGTagsResultOgMock = [
     {
         key: 'twitter:image',
         title: 'image',
-        keyIcon: 'pi-check-circle',
-        keyColor: 'results-seo-tool__result-icon--alert-green',
+        keyIcon: 'pi-exclamation-triangle',
+        keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
                 message:
                     '<code>twitter:image</code> meta tag found, with an appropriate sized image!',
                 color: 'results-seo-tool__result-icon--alert-green',
                 itemIcon: 'pi-check'
+            },
+            {
+                message: '<code>twitter:image</code> meta tag not found!',
+                color: 'results-seo-tool__result-icon--alert-red',
+                itemIcon: 'pi-times'
             },
             {
                 message: '<code>twitter:image</code> meta tag found, but image is over 5 MB.',

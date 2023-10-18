@@ -132,6 +132,7 @@ $device-selector-name-margin: 0.375rem;
     .p-divider {
         &.p-component {
             color: $color-palette-gray-300;
+            margin: 0;
         }
     }
 }
