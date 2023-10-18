@@ -1,6 +1,6 @@
 package com.dotcms.api.client.files;
 
-import com.dotcms.api.client.files.PushServiceImpl.TraverseResult;
+import com.dotcms.api.client.files.traversal.AbstractTraverseResult;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.common.OutputOptionMixin;
@@ -28,7 +28,7 @@ public interface PushService {
      * @throws IllegalArgumentException if the source path or workspace path does not exist, or if
      *                                  the source path is outside the workspace
      */
-    List<TraverseResult> traverseLocalFolders(
+    List<AbstractTraverseResult> traverseLocalFolders(
             OutputOptionMixin output, File workspace, File source, boolean removeAssets, boolean removeFolders,
             boolean ignoreEmptyFolders, final boolean failFast);
 

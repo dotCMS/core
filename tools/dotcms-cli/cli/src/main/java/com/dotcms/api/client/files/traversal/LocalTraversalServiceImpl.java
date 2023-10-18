@@ -2,12 +2,10 @@ package com.dotcms.api.client.files.traversal;
 
 import static com.dotcms.common.AssetsUtils.parseLocalPath;
 
-import com.dotcms.api.client.files.PushServiceImpl.TraverseResult;
 import com.dotcms.api.client.files.traversal.data.Downloader;
 import com.dotcms.api.client.files.traversal.data.Retriever;
 import com.dotcms.api.client.files.traversal.task.LocalFolderTraversalTask;
 import com.dotcms.api.client.files.traversal.task.PullTreeNodeTask;
-import com.dotcms.api.client.files.traversal.task.TraverseParams;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.common.AssetsUtils;
@@ -46,14 +44,13 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
      * order to determine if there are any differences between the local and remote file system.
      *
      * @param params Traverse params
-     * @return a TraverseResult
-     * corresponding root node of the hierarchical tree
+     * @return a TraverseResult corresponding root node of the hierarchical tree
      */
     @ActivateRequestContext
     @Override
     public TraverseResult traverseLocalFolder(final TraverseParams params) {
-        final String source = params.getSourcePath();
-        final File workspace = params.getWorkspace();
+        final String source = params.sourcePath();
+        final File workspace = params.workspace();
 
         logger.debug(String.format("Traversing file system folder: %s - in workspace: %s",
                 source, workspace.getAbsolutePath()));
@@ -88,13 +85,16 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
 
         var task = new LocalFolderTraversalTask(TraverseParams.builder()
                 .from(params)
-                .withLogger(logger)
-                .withRetriever(retriever)
-                .withSiteExists(siteExists)
+                .logger(logger)
+                .retriever(retriever)
+                .siteExists(siteExists)
                 .build()
         );
         var result = forkJoinPool.invoke(task);
-        return TraverseResult.of(result.getLeft(), localPath, result.getRight());
+        return TraverseResult.builder()
+                .exceptions(result.getLeft())
+                .localPaths(localPath)
+                .treeNode(result.getRight()).build();
     }
 
     /**

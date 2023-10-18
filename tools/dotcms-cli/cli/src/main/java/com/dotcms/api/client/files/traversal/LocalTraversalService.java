@@ -1,7 +1,5 @@
 package com.dotcms.api.client.files.traversal;
 
-import com.dotcms.api.client.files.PushServiceImpl.TraverseResult;
-import com.dotcms.api.client.files.traversal.task.TraverseParams;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import java.util.List;
@@ -18,9 +16,9 @@ public interface LocalTraversalService {
      * representation of its contents. The folders and contents are compared to the remote server in
      * order to determine if there are any differences between the local and remote file system.
      *
-     * @param params  traversal params
-     * @return a TraverseResult containing a list of exceptions, the folder's local path structure and its
-     * corresponding root node of the hierarchical tree
+     * @param params traversal params
+     * @return a TraverseResult containing a list of exceptions, the folder's local path structure
+     * and its corresponding root node of the hierarchical tree
      */
     TraverseResult traverseLocalFolder(TraverseParams params);
 

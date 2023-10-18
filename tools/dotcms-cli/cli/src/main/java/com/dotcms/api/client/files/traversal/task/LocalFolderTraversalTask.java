@@ -5,6 +5,7 @@ import static com.dotcms.common.AssetsUtils.statusToBoolean;
 import static com.dotcms.model.asset.BasicMetadataFields.PATH_META_KEY;
 import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
 
+import com.dotcms.api.client.files.traversal.TraverseParams;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.HiddenFileFilter;
@@ -44,7 +45,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
      */
     public LocalFolderTraversalTask(final TraverseParams params) {
         this.params = params;
-        this.logger = params.getLogger();
+        this.logger = params.logger();
     }
 
     /**
@@ -59,14 +60,14 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
 
         var errors = new ArrayList<Exception>();
 
-        File folderOrFile = new File(params.getSourcePath());
+        File folderOrFile = new File(params.sourcePath());
 
         TreeNode currentNode = null;
         try {
-            final var localPathStructure = parseLocalPath(params.getWorkspace(), folderOrFile);
-            currentNode = gatherSyncInformation(params.getWorkspace(), folderOrFile, localPathStructure);
+            final var localPathStructure = parseLocalPath(params.workspace(), folderOrFile);
+            currentNode = gatherSyncInformation(params.workspace(), folderOrFile, localPathStructure);
         } catch (Exception e) {
-            if (params.isFailFast()) {
+            if (params.failFast()) {
                 throw e;
             } else {
                 errors.add(e);
@@ -87,7 +88,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
                         LocalFolderTraversalTask subTask = new LocalFolderTraversalTask(
                                 TraverseParams.builder()
                                         .from(params)
-                                        .withSourcePath(file.getAbsolutePath())
+                                        .sourcePath(file.getAbsolutePath())
                                         .build()
                         );
                         forks.add(subTask);
@@ -269,7 +270,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
             File[] folderFiles) {
 
         if (remoteFolder == null) {
-            if (params.isIgnoreEmptyFolders()) {
+            if (params.ignoreEmptyFolders()) {
                 if (folderFiles != null && folderFiles.length > 0) {
                     // Does  not exist on remote server, so we need to push it
                     folder.markForPush(true);
@@ -295,7 +296,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
             File[] folderChildren, FolderView remoteFolder) {
 
         // The option to remove assets is disabled
-        if (!params.isRemoveAssets()) {
+        if (!params.removeAssets()) {
             return;
         }
 
@@ -335,7 +336,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
             File[] folderChildren, FolderView remoteFolder) {
 
         // The option to remove folders is disabled
-        if (!params.isRemoveFolders() && !params.isRemoveAssets()) {
+        if (!params.removeFolders() && !params.removeAssets()) {
             return;
         }
 
@@ -349,7 +350,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
 
                     // Folder exist on remote server, but not locally, so we need to remove it and also the assets
                     // inside it, this is important because depending on the status (live/working), a delete of a
-                    // folder can be an unpublish of the assets inside it or a delete of the folder itself, we need
+                    // folder can be an "un-publish" of the assets inside it or a delete of the folder itself, we need
                     // to have all the assets inside the folder to be able to handle all the cases.
                     // TODO: This is not going to work because even if you have all the assets inside the folder locally.
                     //  If we delete the remote folder and it has pages in it, the pages will be lost. We need some sort of merge folder mechanism.
@@ -358,7 +359,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
 
                         boolean ignore = false;
 
-                        if (params.isIgnoreEmptyFolders()) {
+                        if (params.ignoreEmptyFolders()) {
                             //This is basically a check for delete
                             ignore = ignoreFolder(live, lang, remoteSubFolder);
                         }
@@ -374,7 +375,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
 
                             // Folder exist on remote server, but not locally, so we need to remove it
                             logger.debug(String.format("Marking folder [%s] for delete.", subFolder.path()));
-                            if (params.isRemoveFolders()) {
+                            if (params.removeFolders()) {
                                 subFolder = subFolder.withMarkForDelete(true);
                             }
                             folder.addSubFolders(subFolder);
@@ -433,7 +434,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
      */
     private AssetVersionsView retrieveAsset(LocalPathStructure localPathStructure) {
 
-        if (!params.isSiteExists()) {
+        if (!params.siteExists()) {
             // Site doesn't exist on remote server
             // No need to pass a siteExists flag we could NullRetriever when the site doesn't exist
             return null;
@@ -442,7 +443,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
         AssetVersionsView remoteAsset = null;
 
         try {
-            remoteAsset = params.getRetriever().retrieveAssetInformation(
+            remoteAsset = params.retriever().retrieveAssetInformation(
                     localPathStructure.site(),
                     localPathStructure.folderPath(),
                     localPathStructure.fileName()
@@ -475,7 +476,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
      */
     private FolderView retrieveFolder(final String site, final String folderPath) {
 
-        if (!params.isSiteExists()) {
+        if (!params.siteExists()) {
             // Site doesn't exist on remote server
             return null;
         }
@@ -483,7 +484,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
         FolderView remoteFolder = null;
 
         try {
-            remoteFolder = params.getRetriever().retrieveFolderInformation(site, folderPath);
+            remoteFolder = params.retriever().retrieveFolderInformation(site, folderPath);
         } catch (NotFoundException e) {
             // Folder doesn't exist on remote server
             logger.debug(String.format("Local folder [%s] doesn't exist on remote server.", folderPath));

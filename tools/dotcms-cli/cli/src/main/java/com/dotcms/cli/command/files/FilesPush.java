@@ -5,7 +5,7 @@ import static com.dotcms.cli.command.files.TreePrinter.COLOR_MODIFIED;
 import static com.dotcms.cli.command.files.TreePrinter.COLOR_NEW;
 
 import com.dotcms.api.client.files.PushService;
-import com.dotcms.api.client.files.PushServiceImpl.TraverseResult;
+import com.dotcms.api.client.files.traversal.AbstractTraverseResult;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.command.DotCommand;
@@ -63,7 +63,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
         // Getting the workspace
         var workspace = getWorkspaceDirectory(pushMixin.path());
 
-        CompletableFuture<List<TraverseResult>>
+        CompletableFuture<List<AbstractTraverseResult>>
                 folderTraversalFuture = CompletableFuture.supplyAsync(
                 () ->
                     // Service to handle the traversal of the folder
@@ -98,8 +98,8 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
 
         // Let's try to print these tree with some order
         result.sort((o1, o2) -> {
-            var left = o1.getLocalPaths();
-            var right = o2.getLocalPaths();
+            var left = o1.localPaths();
+            var right = o2.localPaths();
             return left.filePath().compareTo(right.filePath());
         });
 
@@ -108,8 +108,8 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
         if (!result.isEmpty()) {
             for (var treeNodeData : result) {
 
-                var localPaths = treeNodeData.getLocalPaths();
-                var treeNode = treeNodeData.getTreeNode();
+                var localPaths = treeNodeData.localPaths();
+                var treeNode = treeNodeData.treeNode();
 
                 var outputBuilder = new StringBuilder();
 

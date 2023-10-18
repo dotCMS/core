@@ -4,8 +4,9 @@ import static java.util.stream.Collectors.groupingBy;
 
 import com.dotcms.api.client.files.traversal.LocalTraversalService;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
+import com.dotcms.api.client.files.traversal.AbstractTraverseResult;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
-import com.dotcms.api.client.files.traversal.task.TraverseParams;
+import com.dotcms.api.client.files.traversal.TraverseParams;
 import com.dotcms.api.client.push.exception.PushException;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
@@ -60,11 +61,11 @@ public class PushServiceImpl implements PushService {
      */
     @ActivateRequestContext
     @Override
-    public List<TraverseResult> traverseLocalFolders(
+    public List<AbstractTraverseResult> traverseLocalFolders(
             OutputOptionMixin output, final File workspace, final File source, final boolean removeAssets,
             final boolean removeFolders, final boolean ignoreEmptyFolders, final boolean failFast) {
 
-        var traversalResult = new ArrayList<TraverseResult>();
+        var traversalResult = new ArrayList<AbstractTraverseResult>();
 
         // Parsing the source in order to get the root or roots for the traversal
         //By root we mean the folder that holds the asset info starting from the site
@@ -78,13 +79,13 @@ public class PushServiceImpl implements PushService {
         for (var root : roots) {
 
             final TraverseParams params = TraverseParams.builder()
-                    .withOutput(output)
-                    .withWorkspace(workspace)
-                    .withSourcePath(root)
-                    .withRemoveAssets(removeAssets)
-                    .withRemoveFolders(removeFolders)
-                    .withIgnoreEmptyFolders(ignoreEmptyFolders)
-                    .withFailFast(failFast)
+                    .output(output)
+                    .workspace(workspace)
+                    .sourcePath(root)
+                    .removeAssets(removeAssets)
+                    .removeFolders(removeFolders)
+                    .ignoreEmptyFolders(ignoreEmptyFolders)
+                    .failFast(failFast)
                     .build();
 
             // Traversing the local folder
@@ -100,7 +101,7 @@ public class PushServiceImpl implements PushService {
      * Any ambiguity should be held here
      * @param traversalResult
      */
-    private void normalize(ArrayList<TraverseResult> traversalResult) {
+    private void normalize(ArrayList<AbstractTraverseResult> traversalResult) {
         // Once we have all roots data here we need to eliminate ambiguity
         final Map<String, Map<String, TreeNode>> indexedByStatusLangAndSite = indexByStatusLangAndSite(
                 traversalResult);
@@ -151,14 +152,14 @@ public class PushServiceImpl implements PushService {
      * @return an indexed representation of the local folders  first indexed by  status language and site
      * The most outer map is organized by composite key like status:lang:site the inner map is the folder path
      */
-    private Map<String,Map<String, TreeNode>> indexByStatusLangAndSite(List<TraverseResult> traverseResult) {
-        final Map<String, List<TraverseResult>> groupBySite = traverseResult.stream()
-                .collect(groupingBy(ctx -> ctx.localPaths.site()));
+    private Map<String,Map<String, TreeNode>> indexByStatusLangAndSite(List<AbstractTraverseResult> traverseResult) {
+        final Map<String, List<AbstractTraverseResult>> groupBySite = traverseResult.stream()
+                .collect(groupingBy(ctx -> ctx.localPaths().site()));
 
         Map<String,Map<String, TreeNode>> indexedFolders = new HashMap<>();
         groupBySite.forEach((site, list) -> list.forEach(ctx -> {
-            final String key = ctx.localPaths.status() + ":" + ctx.localPaths.language() + ":" + site;
-            ctx.treeNode.flattened().forEach(node -> indexedFolders.computeIfAbsent(key, k -> new HashMap<>()).put(node.folder().path(), node));
+            final String key = ctx.localPaths().status() + ":" + ctx.localPaths().language() + ":" + site;
+            ctx.treeNode().flattened().forEach(node -> indexedFolders.computeIfAbsent(key, k -> new HashMap<>()).put(node.folder().path(), node));
         }));
         return indexedFolders;
     }
@@ -277,50 +278,6 @@ public class PushServiceImpl implements PushService {
                 }
             }
         } while (failed && retryAttempts++ < maxRetryAttempts);
-
-    }
-
-    /**
-     * Simple class to glue together TreeNode,
-     * LocalPath, and any exceptions encountered during the traverse process
-     */
-    public static class TraverseResult {
-
-        final List<Exception> exceptions;
-        final LocalPathStructure localPaths;
-        final TreeNode treeNode;
-
-        private TraverseResult(List<Exception> exceptions, LocalPathStructure localPaths,
-                TreeNode treeNode) {
-            this.exceptions = exceptions;
-            this.localPaths = localPaths;
-            this.treeNode = treeNode;
-        }
-
-        public List<Exception> getExceptions() {
-            return exceptions;
-        }
-
-        public LocalPathStructure getLocalPaths() {
-            return localPaths;
-        }
-
-        public TreeNode getTreeNode() {
-            return treeNode;
-        }
-
-        @Override
-        public String toString() {
-            return "TraverseContext{" +
-                    "exceptions=" + exceptions +
-                    ", localPaths=" + localPaths +
-                    ", treeNode=" + treeNode +
-                    '}';
-        }
-
-        public static TraverseResult of(List<Exception> exceptions, LocalPathStructure localPaths, TreeNode treeNode){
-            return new TraverseResult(exceptions,localPaths, treeNode);
-        }
 
     }
 

@@ -112,10 +112,10 @@ class PushServiceIT extends FilesTestHelper {
 
             Assertions.assertNotNull(traversalResult);
             Assertions.assertEquals(2, traversalResult.size());// Live and working folders
-            Assertions.assertTrue( traversalResult.get(0).getExceptions().isEmpty());// No errors should be found
-            Assertions.assertTrue( traversalResult.get(1).getExceptions().isEmpty());// No errors should be found
+            Assertions.assertTrue( traversalResult.get(0).exceptions().isEmpty());// No errors should be found
+            Assertions.assertTrue( traversalResult.get(1).exceptions().isEmpty());// No errors should be found
 
-            var treeNode = traversalResult.get(0).getTreeNode();
+            var treeNode = traversalResult.get(0).treeNode();
             var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
 
             // Should be nothing to push as we are pushing the same folder we pull
@@ -127,7 +127,7 @@ class PushServiceIT extends FilesTestHelper {
             Assertions.assertEquals(0, treeNodePushInfo.foldersToDeleteCount());
 
             pushService.processTreeNodes(outputOptions, tempFolder.toAbsolutePath().toString(),
-                    traversalResult.get(0).getLocalPaths(), traversalResult.get(0).getTreeNode(), treeNodePushInfo,
+                    traversalResult.get(0).localPaths(), traversalResult.get(0).treeNode(), treeNodePushInfo,
                     true, 0);
         } finally {
             // Clean up the temporal folder
@@ -190,10 +190,10 @@ class PushServiceIT extends FilesTestHelper {
 
             Assertions.assertNotNull(traversalResult);
             Assertions.assertEquals(2, traversalResult.size());// Live and working folders
-            Assertions.assertTrue(traversalResult.get(0).getExceptions().isEmpty());// No errors should be found
-            Assertions.assertTrue(traversalResult.get(1).getExceptions().isEmpty());// No errors should be found
+            Assertions.assertTrue(traversalResult.get(0).exceptions().isEmpty());// No errors should be found
+            Assertions.assertTrue(traversalResult.get(1).exceptions().isEmpty());// No errors should be found
 
-            var treeNode = traversalResult.get(0).getTreeNode();
+            var treeNode = traversalResult.get(0).treeNode();
             var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
 
             // Should be nothing to push as we are pushing the same folder we pull
@@ -205,7 +205,7 @@ class PushServiceIT extends FilesTestHelper {
             Assertions.assertEquals(0, treeNodePushInfo.foldersToDeleteCount());
 
             pushService.processTreeNodes(outputOptions, tempFolder.toAbsolutePath().toString(),
-                    traversalResult.get(0).getLocalPaths(), traversalResult.get(0).getTreeNode(), treeNodePushInfo,
+                    traversalResult.get(0).localPaths(), traversalResult.get(0).treeNode(), treeNodePushInfo,
                     true, 0);
 
             // Validate some pushed data, giving some time to the system to index the new data
@@ -329,10 +329,10 @@ class PushServiceIT extends FilesTestHelper {
 
             Assertions.assertNotNull(traversalResult);
             Assertions.assertEquals(2, traversalResult.size());// Live and working folders
-            Assertions.assertTrue(traversalResult.get(0).getExceptions().isEmpty());// No errors should be found
-            Assertions.assertTrue(traversalResult.get(1).getExceptions().isEmpty());// No errors should be found
+            Assertions.assertTrue(traversalResult.get(0).exceptions().isEmpty());// No errors should be found
+            Assertions.assertTrue(traversalResult.get(1).exceptions().isEmpty());// No errors should be found
 
-            var treeNode = traversalResult.get(0).getTreeNode();
+            var treeNode = traversalResult.get(0).treeNode();
             var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
 
             // Should be nothing to push as we are pushing the same folder we pull
@@ -344,7 +344,7 @@ class PushServiceIT extends FilesTestHelper {
             Assertions.assertEquals(1, treeNodePushInfo.foldersToDeleteCount());
 
             pushService.processTreeNodes(outputOptions, tempFolder.toAbsolutePath().toString(),
-                    traversalResult.get(0).getLocalPaths(), traversalResult.get(0).getTreeNode(), treeNodePushInfo,
+                    traversalResult.get(0).localPaths(), traversalResult.get(0).treeNode(), treeNodePushInfo,
                     true, 0);
 
             // Validate some pushed data, giving some time to the system to index the new data
@@ -448,7 +448,7 @@ class PushServiceIT extends FilesTestHelper {
             var traversalResultLiveRemoved = pushService.traverseLocalFolders(outputOptions, tempFolder.toFile(), tempFolder.toFile(),
                     true, true, true, true);
 
-            var treeNode1 = traversalResultLiveRemoved.get(0).getTreeNode();
+            var treeNode1 = traversalResultLiveRemoved.get(0).treeNode();
             var treeNodePushInfo1 = treeNode1.collectTreeNodePushInfo();
 
             //This is zero because there is still another folder hanging under the "working"  branch which needs to be removed
@@ -460,7 +460,7 @@ class PushServiceIT extends FilesTestHelper {
             var traversalResultWorkingRemoved = pushService.traverseLocalFolders(outputOptions, tempFolder.toFile(), tempFolder.toFile(),
                     true, true, true, true);
 
-            var treeNode2 = traversalResultWorkingRemoved.get(0).getTreeNode();
+            var treeNode2 = traversalResultWorkingRemoved.get(0).treeNode();
             var treeNodePushInfo2 = treeNode2.collectTreeNodePushInfo();
 
             //Now we should expect this to be 1, because both folder are removed
