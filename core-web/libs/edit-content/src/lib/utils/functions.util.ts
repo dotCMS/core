@@ -1,3 +1,5 @@
+import { DotEditContentFieldDataType } from '../enums/dot-edit-content-field.enum';
+
 export const mapOptions = (
     input: string,
     dataType: string
@@ -15,11 +17,14 @@ export const mapOptions = (
         }
 
         let newValue: string | number | boolean = value;
-        if (dataType === 'INTEGER' || dataType === 'FLOAT') {
+        if (
+            dataType === DotEditContentFieldDataType.INTEGER ||
+            dataType === DotEditContentFieldDataType.FLOAT
+        ) {
             newValue = Number(value);
         }
 
-        if (dataType === 'BOOL') {
+        if (dataType === DotEditContentFieldDataType.BOOL) {
             newValue = value === 'true';
         }
 
