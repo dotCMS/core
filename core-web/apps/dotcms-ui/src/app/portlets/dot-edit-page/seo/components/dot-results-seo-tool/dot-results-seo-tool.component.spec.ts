@@ -352,4 +352,24 @@ describe('DotResultsSeoToolComponent', () => {
             '<span><a target="_blank" href="https://ahrefs.com/blog/seo-meta-tags/">Meta Tags for SEO: A Simple Guide for Beginners</a>. <i class="pi pi-external-link"></i></span>'
         );
     });
+
+    it('should display the default icon when noFavicon is true', () => {
+        const imageElement = spectator.query(byTestId('favicon-image'));
+        spectator.dispatchFakeEvent(imageElement, 'error');
+        spectator.detectComponentChanges();
+
+        const defaultIcon = spectator.query(byTestId('favicon-default'));
+        expect(defaultIcon).toBeTruthy();
+        expect(defaultIcon.querySelector('.pi-globe')).toBeTruthy();
+    });
+
+    it('should display the favicon image when noFavicon is false', () => {
+        spectator.component.seoOGTags.favicon = 'favicon-image-url.png';
+
+        spectator.detectComponentChanges();
+
+        const faviconImage = spectator.query(byTestId('favicon-image'));
+        expect(faviconImage).toBeTruthy();
+        expect(faviconImage.getAttribute('src')).toBe('favicon-image-url.png');
+    });
 });

@@ -35,6 +35,7 @@ export enum SEO_LIMITS {
     MAX_IMAGE_BYTES = 8000000,
     MAX_TWITTER_IMAGE_BYTES = 5000000,
     MAX_TWITTER_DESCRIPTION_LENGTH = 200,
+    MIN_TWITTER_DESCRIPTION_LENGTH = 30,
     MIN_TWITTER_TITLE_LENGTH = 30,
     MAX_TWITTER_TITLE_LENGTH = 70
 }
@@ -185,3 +186,5 @@ export interface SocialMediaOption {
     icon: string;
     description: string;
 }
+
+export const IMG_NOT_FOUND_KEY = 'not-found';
