@@ -118,7 +118,7 @@ export class DotSeoMetaTagsService {
     private openGraphMap(): Record<SEO_OPTIONS, OpenGraphOptions> {
         return {
             [SEO_OPTIONS.FAVICON]: {
-                getItems: (metaTagsObject: SeoMetaTags) => of(this.getFaviconItems(metaTagsObject)),
+                getItems: (metaTagsObject: SeoMetaTags) => this.getFaviconItems(metaTagsObject),
                 sort: 1
             },
             [SEO_OPTIONS.DESCRIPTION]: {
@@ -166,39 +166,48 @@ export class DotSeoMetaTagsService {
         };
     }
 
-    private getFaviconItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {
-        const items: SeoRulesResult[] = [];
+    private getFaviconItems(metaTagsObject: SeoMetaTags): Observable<SeoRulesResult[]> {
         const favicon = metaTagsObject['favicon'];
         const faviconElements = metaTagsObject['faviconElements'];
 
-        if (
-            faviconElements.length <= SEO_LIMITS.MAX_FAVICONS &&
-            this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([favicon])
-        ) {
-            items.push(
-                this.dotSeoMetaTagsUtilService.getErrorItem(
-                    this.dotMessageService.get('seo.rules.favicon.not.found')
-                )
-            );
-        }
+        return this.dotSeoMetaTagsUtilService.getImageFileSize(favicon).pipe(
+            switchMap((imageMetaData: ImageMetaData) => {
+                const items: SeoRulesResult[] = [];
+                if (
+                    (faviconElements.length <= SEO_LIMITS.MAX_FAVICONS &&
+                        this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([favicon])) ||
+                    imageMetaData?.url === IMG_NOT_FOUND_KEY
+                ) {
+                    items.push(
+                        this.dotSeoMetaTagsUtilService.getErrorItem(
+                            this.dotMessageService.get('seo.rules.favicon.not.found')
+                        )
+                    );
+                }
 
-        if (faviconElements.length > SEO_LIMITS.MAX_FAVICONS) {
-            items.push(
-                this.dotSeoMetaTagsUtilService.getErrorItem(
-                    this.dotMessageService.get('seo.rules.favicon.more.one.found')
-                )
-            );
-        }
+                if (faviconElements.length > SEO_LIMITS.MAX_FAVICONS) {
+                    items.push(
+                        this.dotSeoMetaTagsUtilService.getErrorItem(
+                            this.dotMessageService.get('seo.rules.favicon.more.one.found')
+                        )
+                    );
+                }
 
-        if (favicon && faviconElements.length === SEO_LIMITS.MAX_FAVICONS) {
-            items.push(
-                this.dotSeoMetaTagsUtilService.getDoneItem(
-                    this.dotMessageService.get('seo.rules.favicon.found')
-                )
-            );
-        }
+                if (
+                    favicon &&
+                    faviconElements.length === SEO_LIMITS.MAX_FAVICONS &&
+                    imageMetaData?.url !== IMG_NOT_FOUND_KEY
+                ) {
+                    items.push(
+                        this.dotSeoMetaTagsUtilService.getDoneItem(
+                            this.dotMessageService.get('seo.rules.favicon.found')
+                        )
+                    );
+                }
 
-        return items;
+                return of(items);
+            })
+        );
     }
 
     private getOgDescriptionItems(metaTagsObject: SeoMetaTags): SeoRulesResult[] {

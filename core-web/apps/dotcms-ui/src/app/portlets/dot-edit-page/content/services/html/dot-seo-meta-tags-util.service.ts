@@ -148,10 +148,7 @@ export class DotSeoMetaTagsUtilService {
         return from(fetch(imageUrl)).pipe(
             switchMap((response) => {
                 if (response.status === 404) {
-                    return of({
-                        size: 0,
-                        url: IMG_NOT_FOUND_KEY
-                    });
+                    imageUrl = IMG_NOT_FOUND_KEY;
                 }
 
                 return response.clone().blob();
