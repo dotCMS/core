@@ -8,11 +8,11 @@
             >{{ field.name }}</label
         >
         <dot-edit-content-text-field
-            *ngSwitchCase="'Text'"
+            *ngSwitchCase="fieldTypes.TEXT"
             [field]="field"
             [attr.data-testId]="'field-' + field.variable"></dot-edit-content-text-field>
         <dot-edit-content-text-area
-            *ngSwitchCase="'Textarea'"
+            *ngSwitchCase="fieldTypes.TEXTAREA"
             [field]="field"
             [attr.data-testId]="'field-' + field.variable"></dot-edit-content-text-area>
         <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{

@@ -5,6 +5,8 @@ import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
+import { FIELD_TYPES } from './utils';
+
 import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields.module';
 
 @Component({
@@ -30,4 +32,5 @@ import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields
 })
 export class DotEditContentFieldComponent {
     @Input() field!: DotCMSContentTypeField;
+    readonly fieldTypes = FIELD_TYPES;
 }
