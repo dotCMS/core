@@ -15,6 +15,7 @@ import { TEMP_FILE_MOCK } from '../../store/binary-field.store.spec';
 
 describe('DotBinaryFieldUrlModeComponent', () => {
     let spectator: Spectator<DotBinaryFieldUrlModeComponent>;
+    let component: DotBinaryFieldUrlModeComponent;
 
     let store: DotBinaryFieldUrlModeStore;
 
@@ -47,6 +48,7 @@ describe('DotBinaryFieldUrlModeComponent', () => {
             detectChanges: false
         });
 
+        component = spectator.component;
         store = spectator.inject(DotBinaryFieldUrlModeStore, true);
         spectator.detectChanges();
     });
@@ -65,22 +67,24 @@ describe('DotBinaryFieldUrlModeComponent', () => {
 
     describe('Actions', () => {
         it('should upload file by url form when click on import button', async () => {
+            const spy = jest.spyOn(component.tempFileUploaded, 'emit');
             const spyUploadFileByUrl = jest.spyOn(store, 'uploadFileByUrl');
-            const button = spectator.query('[data-testId="import-button"] button');
+            const importButton = spectator.query('[data-testId="import-button"] button');
             const form = spectator.component.form;
 
             form.setValue({ url: 'http://dotcms.com' });
-            spectator.click(button);
+            spectator.click(importButton);
 
+            expect(spy).toHaveBeenCalledWith(TEMP_FILE_MOCK);
             expect(spectator.component.form.valid).toBeTruthy();
             expect(spyUploadFileByUrl).toHaveBeenCalled();
         });
 
         it('should cancel when click on cancel button', () => {
             const spyCancel = jest.spyOn(spectator.component.cancel, 'emit');
-            const button = spectator.query('[data-testId="cancel-button"] button');
+            const cancelButton = spectator.query('[data-testId="cancel-button"] button');
 
-            spectator.click(button);
+            spectator.click(cancelButton);
 
             expect(spyCancel).toHaveBeenCalled();
         });

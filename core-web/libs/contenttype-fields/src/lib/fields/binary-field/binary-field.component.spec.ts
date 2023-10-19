@@ -262,7 +262,7 @@ describe('DotBinaryFieldComponent', () => {
             spectator.detectChanges();
             await spectator.fixture.whenStable();
 
-            const editorElement = spectator.query(byTestId('editor'));
+            const editorElement = spectator.query(byTestId('editor-mode'));
             const isDialogOpen = spectator.fixture.componentInstance.openDialog;
 
             expect(editorElement).toBeTruthy();
@@ -278,7 +278,7 @@ describe('DotBinaryFieldComponent', () => {
             spectator.detectChanges();
             await spectator.fixture.whenStable();
 
-            const urlElement = spectator.query(byTestId('url'));
+            const urlElement = spectator.query(byTestId('url-mode'));
             const isDialogOpen = spectator.fixture.componentInstance.openDialog;
 
             expect(urlElement).toBeTruthy();
