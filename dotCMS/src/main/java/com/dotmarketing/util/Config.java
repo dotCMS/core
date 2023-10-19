@@ -53,7 +53,7 @@ public class Config {
     private static SystemTableConfigSource systemTableConfigSource = null;
 
     @VisibleForTesting
-    public static boolean enableSystemTableConfigSource = "true".equalsIgnoreCase(EnvironmentVariablesService.getInstance().getenv().getOrDefault("DOT_ENABLE_SYSTEM_TABLE_CONFIG_SOURCE", "false"));
+    public static boolean enableSystemTableConfigSource = "true".equalsIgnoreCase(EnvironmentVariablesService.getInstance().getenv().getOrDefault("DOT_ENABLE_SYSTEM_TABLE_CONFIG_SOURCE", "true"));
 
     public static void initSystemTableConfigSource() {
         systemTableConfigSource = new SystemTableConfigSource();
