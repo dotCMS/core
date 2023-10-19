@@ -27,6 +27,7 @@ import {
     SEO_MEDIA_TYPES,
     SEO_LIMITS
 } from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
+import { DotSeoMetaTagsUtilService } from '../../../content/services/html/dot-seo-meta-tags-util.service';
 import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-meta-tags.service';
 import { DotSelectSeoToolComponent } from '../dot-select-seo-tool/dot-select-seo-tool.component';
 import { DotSeoImagePreviewComponent } from '../dot-seo-image-preview/dot-seo-image-preview.component';
@@ -63,7 +64,10 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     currentResults$: Observable<SeoMetaTagsResult[]>;
     readMoreValues: Record<SEO_MEDIA_TYPES, string[]>;
 
-    constructor(private dotSeoMetaTagsService: DotSeoMetaTagsService) {}
+    constructor(
+        private dotSeoMetaTagsService: DotSeoMetaTagsService,
+        private dotSeoMetaTagsUtilService: DotSeoMetaTagsUtilService
+    ) {}
     allPreview: MetaTagsPreview[];
     mainPreview: MetaTagsPreview;
     seoMediaTypes = SEO_MEDIA_TYPES;
@@ -114,13 +118,16 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
 
         const [preview] = this.allPreview;
         this.mainPreview = preview;
-        this.readMoreValues = this.dotSeoMetaTagsService.getReadMore();
+        this.readMoreValues = this.dotSeoMetaTagsUtilService.getReadMore();
     }
 
     ngOnChanges() {
         this.currentResults$ = this.seoOGTagsResults.pipe(
             map((tags) => {
-                return this.dotSeoMetaTagsService.getFilteredMetaTagsByMedia(tags, this.seoMedia);
+                return this.dotSeoMetaTagsUtilService.getFilteredMetaTagsByMedia(
+                    tags,
+                    this.seoMedia
+                );
             })
         );
     }

@@ -6,6 +6,7 @@ import { TestBed } from '@angular/core/testing';
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
+import { DotSeoMetaTagsUtilService } from './dot-seo-meta-tags-util.service';
 import { DotSeoMetaTagsService } from './dot-seo-meta-tags.service';
 
 import { seoOGTagsResultOgMock } from '../../../seo/components/dot-results-seo-tool/mocks';
@@ -13,6 +14,7 @@ import { IMG_NOT_FOUND_KEY } from '../dot-edit-content-html/models/meta-tags-mod
 
 describe('DotSetMetaTagsService', () => {
     let service: DotSeoMetaTagsService;
+    let serviceUtil: DotSeoMetaTagsUtilService;
     let testDoc: Document;
     let head: HTMLElement;
     let getImageFileSizeSpy;
@@ -22,10 +24,12 @@ describe('DotSetMetaTagsService', () => {
             imports: [HttpClientTestingModule],
             providers: [
                 DotSeoMetaTagsService,
+                DotSeoMetaTagsUtilService,
                 {
                     provide: DotMessageService,
                     useValue: new MockDotMessageService({
-                        'seo.rules.favicon.not.found': 'FavIcon not found!',
+                        'seo.rules.favicon.not.found':
+                            'Favicon not found, or image link in Favicon not valid!',
                         'seo.rules.favicon.more.one.found': 'More than 1 Favicon found!',
                         'seo.rules.favicon.found': 'Favicon found!',
                         'seo.rules.description.found.empty':
@@ -118,7 +122,8 @@ describe('DotSetMetaTagsService', () => {
             ]
         });
         service = TestBed.inject(DotSeoMetaTagsService);
-        getImageFileSizeSpy = spyOn(service, 'getImageFileSize').and.returnValue(
+        serviceUtil = TestBed.inject(DotSeoMetaTagsUtilService);
+        getImageFileSizeSpy = spyOn(serviceUtil, 'getImageFileSize').and.returnValue(
             of({
                 length: 8000000,
                 url: 'https://www.dotcms.com/dA/4e870b9fe0/1200w/jpeg/70/dotcms-defualt-og.jpg'
@@ -334,6 +339,50 @@ describe('DotSetMetaTagsService', () => {
         service.getMetaTagsResults(descriptionDocument).subscribe((value) => {
             expect(value[5].items[0].message).toEqual(
                 '<code>og:description</code> meta tag found, but has more than 150 characters.'
+            );
+            done();
+        });
+    });
+
+    it('should found title meta tag, with an appropriate amount of content!', (done) => {
+        const titleDoc: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        const head = titleDoc.createElement('head');
+        titleDoc.documentElement.appendChild(head);
+
+        const title = titleDoc.createElement('title');
+        title.innerHTML = 'HTML TITLE -------------- TEST';
+        head.appendChild(title);
+
+        service.getMetaTagsResults(titleDoc).subscribe((value) => {
+            expect(value[4].items[0].message).toEqual(
+                'HTML Title found, with an appropriate amount of content!'
+            );
+            done();
+        });
+    });
+
+    it('should found title meta tag, with an appropriate amount of content!', (done) => {
+        const titleDoc: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        const head = titleDoc.createElement('head');
+        titleDoc.documentElement.appendChild(head);
+
+        const title = titleDoc.createElement('title');
+        title.innerHTML = 'HTML TITLE -------------- TEST';
+        head.appendChild(title);
+
+        service.getMetaTagsResults(titleDoc).subscribe((value) => {
+            expect(value[4].items[0].message).toEqual(
+                'HTML Title found, with an appropriate amount of content!'
             );
             done();
         });

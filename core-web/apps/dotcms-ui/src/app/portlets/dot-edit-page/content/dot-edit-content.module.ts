@@ -45,6 +45,7 @@ import { DotSeoMetaTagsService } from './services/html/dot-seo-meta-tags.service
 import { DotEditPageToolbarSeoComponent } from '../seo/components/dot-edit-page-toolbar-seo/dot-edit-page-toolbar-seo.component';
 import { DotResultsSeoToolComponent } from '../seo/components/dot-results-seo-tool/dot-results-seo-tool.component';
 import { DotSelectSeoToolComponent } from '../seo/components/dot-select-seo-tool/dot-select-seo-tool.component';
+import { DotSeoMetaTagsUtilService } from './services/html/dot-seo-meta-tags-util.service';
 const routes: Routes = [
     {
         component: DotEditContentComponent,
@@ -97,7 +98,8 @@ const routes: Routes = [
         DotLicenseService,
         DialogService,
         DotCopyContentModalService,
-        DotSeoMetaTagsService
+        DotSeoMetaTagsService,
+        DotSeoMetaTagsUtilService
     ]
 })
 export class DotEditContentModule {}

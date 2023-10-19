@@ -106,6 +106,7 @@ import { DotSeoMetaTagsService } from './services/html/dot-seo-meta-tags.service
 
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotPageContent } from '../shared/models';
+import { DotSeoMetaTagsUtilService } from './services/html/dot-seo-meta-tags-util.service';
 
 const EXPERIMENT_MOCK = getExperimentMock(1);
 
@@ -297,6 +298,7 @@ describe('DotEditContentComponent', () => {
                 DotFavoritePageService,
                 DotExperimentsService,
                 DotSeoMetaTagsService,
+                DotSeoMetaTagsUtilService,
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
