@@ -102,11 +102,11 @@ import { DotPageStateService } from './services/dot-page-state/dot-page-state.se
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
+import { DotSeoMetaTagsUtilService } from './services/html/dot-seo-meta-tags-util.service';
 import { DotSeoMetaTagsService } from './services/html/dot-seo-meta-tags.service';
 
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotPageContent } from '../shared/models';
-import { DotSeoMetaTagsUtilService } from './services/html/dot-seo-meta-tags-util.service';
 
 const EXPERIMENT_MOCK = getExperimentMock(1);
 
