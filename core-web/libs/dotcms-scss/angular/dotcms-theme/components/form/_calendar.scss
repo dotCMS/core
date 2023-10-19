@@ -214,6 +214,7 @@ $month-year-border-radius: 100px;
     align-items: center;
     cursor: pointer;
     transition: background-color $basic-speed;
+    border-radius: $month-year-border-radius;
 }
 
 // Days, Months and Years span container
@@ -229,10 +230,6 @@ $month-year-border-radius: 100px;
         background: $color-accessible-text-blue-bg;
         color: $color-accessible-text-blue;
     }
-}
-.p-datepicker .p-monthpicker .p-monthpicker-month,
-.p-datepicker .p-yearpicker .p-yearpicker-year {
-    border-radius: $month-year-border-radius;
 }
 
 // Hover when no disabled
