@@ -2,7 +2,7 @@ import { Observable, forkJoin, from, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { map, switchMap } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
@@ -20,12 +20,14 @@ import {
     ImageMetaData,
     OpenGraphOptions,
     SEO_TAGS,
-    SEO_MEDIA_TYPES
+    SEO_MEDIA_TYPES,
+    IMG_NOT_FOUND_KEY
 } from '../dot-edit-content-html/models/meta-tags-model';
 
 @Injectable()
 export class DotSeoMetaTagsService {
     readMoreValues: Record<SEO_MEDIA_TYPES, string[]>;
+    seoMedia: string;
 
     constructor(
         private dotMessageService: DotMessageService,
@@ -70,7 +72,7 @@ export class DotSeoMetaTagsService {
 
         metaTagsObject['faviconElements'] = favicon;
         metaTagsObject['titleElements'] = title;
-        metaTagsObject['favicon'] = (favicon[0] as HTMLLinkElement)?.href;
+        metaTagsObject['favicon'] = (favicon[0] as HTMLLinkElement)?.href || null;
         metaTagsObject['title'] = title[0]?.innerText;
         metaTagsObject['titleOgElements'] = titleOgElements;
         metaTagsObject['imageOgElements'] = imagesOgElements;
@@ -189,7 +191,10 @@ export class DotSeoMetaTagsService {
         const favicon = metaTagsObject['favicon'];
         const faviconElements = metaTagsObject['faviconElements'];
 
-        if (faviconElements.length === 0) {
+        if (
+            faviconElements.length <= SEO_LIMITS.MAX_FAVICONS &&
+            this.areAllFalsyOrEmpty([favicon])
+        ) {
             items.push(
                 this.getErrorItem(this.dotMessageService.get('seo.rules.favicon.not.found'))
             );
@@ -258,13 +263,13 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (description && this.areAllFalsyOrEmpty([ogDescription, descriptionOgElements])) {
+        if (description && this.areAllFalsyOrEmpty([ogDescription])) {
             result.push(
                 this.getErrorItem(this.dotMessageService.get('seo.rules.og-description.not.found'))
             );
         }
 
-        if (ogDescription?.length === 0) {
+        if (descriptionOgElements?.length >= 1 && this.areAllFalsyOrEmpty([ogDescription])) {
             result.push(
                 this.getErrorItem(
                     this.dotMessageService.get('seo.rules.og-description.found.empty')
@@ -444,16 +449,22 @@ export class DotSeoMetaTagsService {
         const imageOg = metaTagsObject['og:image'];
 
         return this.getImageFileSize(imageOg).pipe(
-            switchMap((imageMetaData) => {
+            switchMap((imageMetaData: ImageMetaData) => {
                 const result: SeoRulesResult[] = [];
 
-                if (imageOg && imageMetaData.length <= SEO_LIMITS.MAX_IMAGE_BYTES) {
+                if (
+                    imageMetaData?.url !== IMG_NOT_FOUND_KEY &&
+                    imageMetaData.length <= SEO_LIMITS.MAX_IMAGE_BYTES
+                ) {
                     result.push(
                         this.getDoneItem(this.dotMessageService.get('seo.rules.og-image.found'))
                     );
                 }
 
-                if (this.areAllFalsyOrEmpty([imageOgElements, imageOg])) {
+                if (
+                    imageMetaData?.url === IMG_NOT_FOUND_KEY ||
+                    this.areAllFalsyOrEmpty([imageOgElements, imageOg])
+                ) {
                     result.push(
                         this.getErrorItem(
                             this.dotMessageService.get('seo.rules.og-image.not.found')
@@ -522,11 +533,21 @@ export class DotSeoMetaTagsService {
         const result: SeoRulesResult[] = [];
         const titleCardElements = metaTagsObject['twitterTitleElements'];
         const titleCard = metaTagsObject['twitter:title'];
+        const title = metaTagsObject['title'];
+        const titleElements = metaTagsObject['titleElements'];
 
-        if (this.areAllFalsyOrEmpty([titleCard, titleCardElements])) {
+        if (title && this.areAllFalsyOrEmpty([titleCard, titleCardElements])) {
             result.push(
                 this.getErrorItem(
                     this.dotMessageService.get('seo.rules.twitter-card-title.not.found')
+                )
+            );
+        }
+
+        if (this.areAllFalsyOrEmpty([title, titleCard, titleElements, titleCardElements])) {
+            result.push(
+                this.getErrorItem(
+                    this.dotMessageService.get('seo.rules.twitter-card-title.title.not.found')
                 )
             );
         }
@@ -621,7 +642,19 @@ export class DotSeoMetaTagsService {
 
         if (
             twitterDescription &&
-            twitterDescription.length < SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH
+            twitterDescription.length < SEO_LIMITS.MIN_TWITTER_DESCRIPTION_LENGTH
+        ) {
+            result.push(
+                this.getWarningItem(
+                    this.dotMessageService.get('seo.rules.twitter-card-description.less')
+                )
+            );
+        }
+
+        if (
+            twitterDescription &&
+            twitterDescription?.length > SEO_LIMITS.MIN_TWITTER_DESCRIPTION_LENGTH &&
+            twitterDescription?.length < SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH
         ) {
             result.push(
                 this.getDoneItem(
@@ -638,10 +671,12 @@ export class DotSeoMetaTagsService {
         const twitterImage = metaTagsObject['twitter:image'];
 
         return this.getImageFileSize(twitterImage).pipe(
-            switchMap((imageMetaData) => {
+            switchMap((imageMetaData: ImageMetaData) => {
                 const result: SeoRulesResult[] = [];
-
-                if (twitterImage && imageMetaData.length <= SEO_LIMITS.MAX_IMAGE_BYTES) {
+                if (
+                    imageMetaData?.url !== IMG_NOT_FOUND_KEY &&
+                    imageMetaData.length <= SEO_LIMITS.MAX_IMAGE_BYTES
+                ) {
                     result.push(
                         this.getDoneItem(
                             this.dotMessageService.get('seo.rules.twitter-image.found')
@@ -649,10 +684,23 @@ export class DotSeoMetaTagsService {
                     );
                 }
 
-                if (this.areAllFalsyOrEmpty([twitterImage, twitterImageElements])) {
+                if (
+                    imageMetaData?.url === IMG_NOT_FOUND_KEY ||
+                    this.areAllFalsyOrEmpty([twitterImage, twitterImageElements])
+                ) {
                     result.push(
                         this.getErrorItem(
                             this.dotMessageService.get('seo.rules.twitter-image.not.found')
+                        )
+                    );
+                }
+
+                if (twitterImageElements?.length >= 1 && this.areAllFalsyOrEmpty([twitterImage])) {
+                    result.push(
+                        this.getErrorItem(
+                            this.dotMessageService.get(
+                                'seo.rules.twitter-image.more.one.found.empty'
+                            )
                         )
                     );
                 }
@@ -753,28 +801,48 @@ export class DotSeoMetaTagsService {
     }
 
     /**
-     * This uploads the image temporaly to get the file size, only if it is external
+     * This uploads the image temporaly to get the file size, only if it is external.
+     * Checks if the imageUrl has been sent.
      * @param imageUrl string
      * @returns
      */
     getImageFileSize(imageUrl: string): Observable<DotCMSTempFile | ImageMetaData> {
-        return from(
-            fetch(imageUrl)
-                .then((response) => response.blob())
-                .then((blob) => {
-                    return {
-                        length: blob.size,
-                        url: imageUrl
-                    };
-                })
-                .catch((error) => {
-                    console.warn(
-                        'Getting the file size from an external URL failed, so we upload it to the server:',
-                        error
-                    );
+        if (!imageUrl) {
+            return of({
+                length: 0,
+                url: IMG_NOT_FOUND_KEY
+            });
+        }
 
-                    return this.dotUploadService.uploadFile({ file: imageUrl });
-                })
+        return from(fetch(imageUrl)).pipe(
+            switchMap((response) => {
+                if (response.status === 404) {
+                    return of({
+                        size: 0,
+                        url: IMG_NOT_FOUND_KEY
+                    });
+                }
+
+                return response.clone().blob();
+            }),
+            map(({ size }) => {
+                return {
+                    length: size,
+                    url: imageUrl
+                };
+            }),
+            catchError(() => {
+                return from(this.dotUploadService.uploadFile({ file: imageUrl })).pipe(
+                    catchError((uploadError) => {
+                        console.warn('Error while uploading:', uploadError);
+
+                        return of({
+                            length: 0,
+                            url: IMG_NOT_FOUND_KEY
+                        });
+                    })
+                );
+            })
         );
     }
 }
