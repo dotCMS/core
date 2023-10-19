@@ -292,7 +292,7 @@ jobs:
           echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
           echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
       - name: Build
-        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS -Dtestcontainers.docker.image=${{ needs.build-jdk11.outputs.docker-tag }} -pl :dotcms-api-data-model,:dotcms-cli test ${{ matrix.java.maven_args}}
+        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS -Dtestcontainers.docker.image=${{ needs.build-jdk11.outputs.docker-tag }} -pl :dotcms-api-data-model,:dotcms-cli verify ${{ matrix.java.maven_args}}
       - name: Prepare reports archive (if maven failed)
         if: failure()
         shell: bash

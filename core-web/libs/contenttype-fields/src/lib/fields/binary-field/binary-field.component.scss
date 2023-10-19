@@ -1,5 +1,14 @@
 @use "variables" as *;
 
+::ng-deep {
+    .screen-cover {
+        width: 90vw;
+        height: 90vh;
+        min-width: 40rem;
+        min-height: 40rem;
+    }
+}
+
 .binary-field__container {
     display: flex;
     justify-content: center;

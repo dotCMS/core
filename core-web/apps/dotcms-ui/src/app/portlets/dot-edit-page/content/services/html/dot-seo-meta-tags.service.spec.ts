@@ -9,11 +9,13 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotSeoMetaTagsService } from './dot-seo-meta-tags.service';
 
 import { seoOGTagsResultOgMock } from '../../../seo/components/dot-results-seo-tool/mocks';
+import { IMG_NOT_FOUND_KEY } from '../dot-edit-content-html/models/meta-tags-model';
 
 describe('DotSetMetaTagsService', () => {
     let service: DotSeoMetaTagsService;
     let testDoc: Document;
     let head: HTMLElement;
+    let getImageFileSizeSpy;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -116,7 +118,7 @@ describe('DotSetMetaTagsService', () => {
             ]
         });
         service = TestBed.inject(DotSeoMetaTagsService);
-        spyOn(service, 'getImageFileSize').and.returnValue(
+        getImageFileSizeSpy = spyOn(service, 'getImageFileSize').and.returnValue(
             of({
                 length: 8000000,
                 url: 'https://www.dotcms.com/dA/4e870b9fe0/1200w/jpeg/70/dotcms-defualt-og.jpg'
@@ -279,6 +281,59 @@ describe('DotSetMetaTagsService', () => {
         service.getMetaTagsResults(testDoc).subscribe((value) => {
             expect(value[5].items[0].message).toEqual(
                 '<code>og:description</code> meta tag, and Meta Description not found!'
+            );
+            done();
+        });
+    });
+
+    it('should og:image meta tag not found!', (done) => {
+        const imageDocument: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        const head = imageDocument.createElement('head');
+        imageDocument.documentElement.appendChild(head);
+
+        const ogImage = imageDocument.createElement('og:image');
+        imageDocument.documentElement.appendChild(ogImage);
+        head.appendChild(ogImage);
+
+        getImageFileSizeSpy.and.callFake(() => {
+            return of({
+                length: 0,
+                url: IMG_NOT_FOUND_KEY
+            });
+        });
+
+        service.getMetaTagsResults(imageDocument).subscribe((value) => {
+            expect(value[1].items[0].message).toEqual('<code>og:image</code> meta tag not found!');
+            done();
+        });
+    });
+
+    it('should og:image meta tag not found!', (done) => {
+        const descriptionDocument: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        const head = descriptionDocument.createElement('head');
+        descriptionDocument.documentElement.appendChild(head);
+
+        const ogDescription = descriptionDocument.createElement('meta');
+        ogDescription.setAttribute('property', 'og:description');
+        ogDescription.setAttribute(
+            'content',
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla pharetra maximus enim ac tincidunt. Vivamus vestibulum sed enim sed consectetur. Nulla malesuada libero a tristique bibendum. Suspendisse blandit ligula velit, eu volutpat arcu ornare sed.'
+        );
+        head.appendChild(ogDescription);
+
+        service.getMetaTagsResults(descriptionDocument).subscribe((value) => {
+            expect(value[5].items[0].message).toEqual(
+                '<code>og:description</code> meta tag found, but has more than 150 characters.'
             );
             done();
         });
