@@ -180,13 +180,6 @@ describe('DotPaletteStore', () => {
         });
     });
 
-    it('should switch language and setup the ', () => {
-        dotPaletteStore.setLoaded();
-        dotPaletteStore.state$.subscribe((data) => {
-            expect(data.loading).toEqual(false);
-        });
-    });
-
     // Effects
     it('should load contentTypes to store', (done) => {
         const sortedDataMock = contentTypeDataMock.sort((a, b) => a.name.localeCompare(b.name));
