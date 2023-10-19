@@ -1,49 +1,20 @@
 import { Spectator, createComponentFactory } from '@ngneat/spectator';
 
 import { CommonModule } from '@angular/common';
-import {
-    ControlContainer,
-    FormControl,
-    FormGroup,
-    FormGroupDirective,
-    ReactiveFormsModule
-} from '@angular/forms';
+import { ControlContainer, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
 
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
+import {
+    SELECT_FIELD_BOOLEAN_MOCK,
+    SELECT_FIELD_FLOAT_MOCK,
+    SELECT_FIELD_INTEGER_MOCK,
+    SELECT_FIELD_TEXT_MOCK,
+    createFormGroupDirectiveMock
+} from './../../utils/mock';
 import { DotEditContentSelectFieldComponent } from './dot-edit-content-select-field.component';
-
-const SELECT_FIELD_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
-    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
-    dataType: 'TEXT',
-    defaultValue: '123-ad',
-    fieldType: 'Select',
-    fieldTypeLabel: 'Select',
-    fieldVariables: [],
-    fixed: false,
-    forceIncludeInApi: false,
-    iDate: 1697579843000,
-    id: 'a6f33b8941b6c06c8ab36e44c4bf6500',
-    indexed: false,
-    listed: false,
-    modDate: 1697661626000,
-    name: 'selectNormal',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 3,
-    unique: false,
-    values: 'Option 1|Test,1\r\nOption 2|2\r\nOption 3|3\r\n123-ad\r\nrules and weird code',
-    variable: 'selectNormal'
-};
-const FORM_GROUP_MOCK = new FormGroup({
-    selectNormal: new FormControl('')
-});
-const FORM_GROUP_DIRECTIVE_MOCK: FormGroupDirective = new FormGroupDirective([], []);
-FORM_GROUP_DIRECTIVE_MOCK.form = FORM_GROUP_MOCK;
 
 describe('DotEditContentSelectFieldComponent', () => {
     let spectator: Spectator<DotEditContentSelectFieldComponent>;
@@ -52,20 +23,17 @@ describe('DotEditContentSelectFieldComponent', () => {
         component: DotEditContentSelectFieldComponent,
         imports: [CommonModule, DropdownModule, ReactiveFormsModule, DotFieldRequiredDirective],
         componentViewProviders: [
-            { provide: ControlContainer, useValue: FORM_GROUP_DIRECTIVE_MOCK }
+            { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
         ],
-        providers: [FormGroupDirective]
+        providers: [FormGroupDirective],
+        detectChanges: false
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                field: SELECT_FIELD_MOCK
-            }
-        });
+        spectator = createComponent();
     });
 
-    it('should have a options array', () => {
+    it('should have a options array as select with Text dataType', () => {
         const expectedList = [
             {
                 label: 'Option 1',
@@ -88,7 +56,88 @@ describe('DotEditContentSelectFieldComponent', () => {
                 value: 'rules and weird code'
             }
         ];
+        spectator.setInput('field', SELECT_FIELD_TEXT_MOCK);
         spectator.detectChanges();
         expect(spectator.component.options).toEqual(expectedList);
+    });
+
+    it('should have a options array as select with Bool dataType', () => {
+        const expectedList = [
+            {
+                label: 'Verdadero',
+                value: true
+            },
+            {
+                label: 'Falso',
+                value: false
+            }
+        ];
+        spectator.setInput('field', SELECT_FIELD_BOOLEAN_MOCK);
+        spectator.detectChanges();
+        expect(spectator.component.options).toEqual(expectedList);
+    });
+
+    it('should have a options array as select with Float dataType', () => {
+        const expectedList = [
+            {
+                label: 'Cien punto cinco',
+                value: 100.5
+            },
+            {
+                label: 'Diez punto tres',
+                value: 10.3
+            }
+        ];
+        spectator.setInput('field', SELECT_FIELD_FLOAT_MOCK);
+        spectator.detectChanges();
+        expect(spectator.component.options).toEqual(expectedList);
+    });
+
+    it('shoueld have a options array as select with Integer dataType', () => {
+        const expectedList = [
+            {
+                label: 'Cien',
+                value: 100
+            },
+            {
+                label: 'Mil',
+                value: 1000
+            },
+            {
+                label: 'Diez mil',
+                value: 10000
+            }
+        ];
+        spectator.setInput('field', SELECT_FIELD_INTEGER_MOCK);
+        spectator.detectChanges();
+        expect(spectator.component.options).toEqual(expectedList);
+    });
+
+    it('should if have an object without value and label, the label must be the same as the value, and of the same type', () => {
+        const SELECT_FIELD_INTEGER_MOCK_WITHOUT_VALUE_AND_LABEL = {
+            ...SELECT_FIELD_INTEGER_MOCK,
+            values: '1000'
+        };
+        spectator.setInput('field', SELECT_FIELD_INTEGER_MOCK_WITHOUT_VALUE_AND_LABEL);
+        spectator.detectChanges();
+
+        const expectedList = [
+            {
+                label: '1000',
+                value: 1000
+            }
+        ];
+        expect(spectator.component.options).toEqual(expectedList);
+    });
+
+    it('should if the formControl has no value (Or not defaultValue), the formControl must have the value of the first element, and render the label', () => {
+        spectator.setInput('field', SELECT_FIELD_TEXT_MOCK);
+        spectator.component.formControl.setValue(null);
+        spectator.detectChanges();
+        expect(spectator.component.formControl.value).toEqual('Test,1');
+
+        const spanElement = spectator.query('span.p-dropdown-label');
+        expect(spanElement).toBeTruthy();
+        expect(spanElement.textContent).toEqual('Option 1');
     });
 });

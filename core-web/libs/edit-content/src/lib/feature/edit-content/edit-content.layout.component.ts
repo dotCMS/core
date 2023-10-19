@@ -30,13 +30,13 @@ export class EditContentLayoutComponent {
 
     formData$: Observable<EditContentFormData> = this.identifier
         ? this.dotEditContentService.getContentById(this.identifier).pipe(
-              switchMap(({ contentType, ...other }) => {
+              switchMap(({ contentType, ...contentData }) => {
                   if (contentType) {
                       this.contentType = contentType;
 
                       return this.dotEditContentService
                           .getContentTypeFormData(contentType)
-                          .pipe(map((res) => ({ values: { ...other }, layout: res })));
+                          .pipe(map((res) => ({ values: { ...contentData }, layout: res })));
                   } else {
                       return EMPTY;
                   }

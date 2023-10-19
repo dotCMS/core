@@ -1,26 +1,38 @@
 <ng-container [ngSwitch]="field.fieldType">
-    <div class="field" *ngSwitchCase="'Text'">
+    <div class="field">
         <label
-            [attr.data-testId]="'label-' + field.variable"
             [for]="field.variable"
+            [id]="'aria-' + field.variable"
             [checkIsRequiredControl]="field.variable"
             dotFieldRequired
             >{{ field.name }}</label
         >
-        <input
-            [id]="field.variable"
-            [formControlName]="field.variable"
-            [attr.data-testId]="'input-' + field.variable"
-            type="text"
-            pInputText />
+        <div class="field" *ngSwitchCase="'Text'">
+            <label
+                [attr.data-testId]="'label-' + field.variable"
+                [for]="field.variable"
+                [checkIsRequiredControl]="field.variable"
+                dotFieldRequired
+                >{{ field.name }}</label
+            >
+            <input
+                [id]="field.variable"
+                [formControlName]="field.variable"
+                [attr.data-testId]="'input-' + field.variable"
+                type="text"
+                pInputText />
+            <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{
+                field.hint
+            }}</small>
+        </div>
+
+        <dot-edit-content-select-field *ngSwitchCase="'Select'" [field]="field" />
+
+        <dot-edit-content-radio-field
+            *ngSwitchCase="'Radio'"
+            [field]="field"></dot-edit-content-radio-field>
         <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{
             field.hint
         }}</small>
     </div>
-
-    <dot-edit-content-select-field *ngSwitchCase="'Select'" [field]="field" />
-
-    <dot-edit-content-radio-field
-        *ngSwitchCase="'Radio'"
-        [field]="field"></dot-edit-content-radio-field>
 </ng-container>

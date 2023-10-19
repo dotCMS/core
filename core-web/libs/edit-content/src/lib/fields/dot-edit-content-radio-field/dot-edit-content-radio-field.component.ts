@@ -7,7 +7,7 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
-import { mapOptions } from '../../utils/functions.util';
+import { mapSelectableOptions } from '../../utils/functions.util';
 
 @Component({
     selector: 'dot-edit-content-radio-field',
@@ -30,8 +30,9 @@ export class DotEditContentRadioFieldComponent implements OnInit {
     options = [];
 
     ngOnInit() {
-        this.options = mapOptions(this.field.values || '', this.field.dataType);
-        if (!this.formControl.value) {
+        this.options = mapSelectableOptions(this.field.values || '', this.field.dataType);
+
+        if (this.formControl.value === null) {
             this.formControl.setValue(this.options[0]?.value);
         }
     }

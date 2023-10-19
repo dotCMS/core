@@ -1,18 +1,16 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
 
-import { mapOptions } from '../../utils/functions.util';
+import { mapSelectableOptions } from '../../utils/functions.util';
 
 @Component({
     selector: 'dot-edit-content-select-field',
     standalone: true,
-    imports: [CommonModule, DropdownModule, ReactiveFormsModule, DotFieldRequiredDirective],
+    imports: [DropdownModule, ReactiveFormsModule],
     templateUrl: './dot-edit-content-select-field.component.html',
     styleUrls: ['./dot-edit-content-select-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -30,8 +28,9 @@ export class DotEditContentSelectFieldComponent implements OnInit {
     options = [];
 
     ngOnInit() {
-        this.options = mapOptions(this.field.values || '', this.field.dataType);
-        if (!this.formControl.value) {
+        this.options = mapSelectableOptions(this.field?.values || '', this.field.dataType);
+
+        if (this.formControl.value === null) {
             this.formControl.setValue(this.options[0]?.value);
         }
     }

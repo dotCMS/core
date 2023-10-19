@@ -1,6 +1,21 @@
-import { DotEditContentFieldDataType } from '../enums/dot-edit-content-field.enum';
+import { DotEditContentFieldSelectableDataType } from '../enums/dot-edit-content-field.enum';
 
-export const mapOptions = (
+const castValue = (value: string, type: string) => {
+    if (type === DotEditContentFieldSelectableDataType.BOOL) {
+        return value === 'true';
+    }
+
+    if (
+        type === DotEditContentFieldSelectableDataType.INTEGER ||
+        type === DotEditContentFieldSelectableDataType.FLOAT
+    ) {
+        return Number(value);
+    }
+
+    return value;
+};
+
+export const mapSelectableOptions = (
     input: string,
     dataType: string
 ): { label: string; value: string | boolean | number }[] => {
@@ -13,22 +28,10 @@ export const mapOptions = (
     const result = lines?.map((line) => {
         const [label, value] = line.split('|');
         if (!value) {
-            return { label, value: label };
+            return { label, value: castValue(label, dataType) };
         }
 
-        let newValue: string | number | boolean = value;
-        if (
-            dataType === DotEditContentFieldDataType.INTEGER ||
-            dataType === DotEditContentFieldDataType.FLOAT
-        ) {
-            newValue = Number(value);
-        }
-
-        if (dataType === DotEditContentFieldDataType.BOOL) {
-            newValue = value === 'true';
-        }
-
-        return { label, value: newValue };
+        return { label, value: castValue(value, dataType) };
     });
 
     return result;

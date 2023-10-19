@@ -1,13 +1,7 @@
 import { Spectator, createComponentFactory } from '@ngneat/spectator';
 
 import { CommonModule } from '@angular/common';
-import {
-    ControlContainer,
-    FormControl,
-    FormGroup,
-    FormGroupDirective,
-    ReactiveFormsModule
-} from '@angular/forms';
+import { ControlContainer, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 
 import { RadioButtonModule } from 'primeng/radiobutton';
 
@@ -15,35 +9,13 @@ import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotEditContentRadioFieldComponent } from './dot-edit-content-radio-field.component';
 
-export const FIELD_RADIO_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
-    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
-    dataType: 'TEXT',
-    fieldType: 'Radio',
-    fieldTypeLabel: 'Radio',
-    fieldVariables: [],
-    fixed: false,
-    forceIncludeInApi: false,
-    iDate: 1697598313000,
-    id: '824b4e9907fe4f450ced438598cc0ce8',
-    indexed: false,
-    listed: false,
-    modDate: 1697662296000,
-    name: 'radio',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 8,
-    unique: false,
-    values: 'Uno|uno\r\nDos|dos',
-    variable: 'radio'
-};
-
-const FORM_GROUP_MOCK = new FormGroup({
-    radio: new FormControl('')
-});
-const FORM_GROUP_DIRECTIVE_MOCK: FormGroupDirective = new FormGroupDirective([], []);
-FORM_GROUP_DIRECTIVE_MOCK.form = FORM_GROUP_MOCK;
+import {
+    RADIO_FIELD_BOOLEAN_MOCK,
+    RADIO_FIELD_FLOAT_MOCK,
+    RADIO_FIELD_INTEGER_MOCK,
+    RADIO_FIELD_TEXT_MOCK,
+    createFormGroupDirectiveMock
+} from '../../utils/mock';
 
 describe('DotEditContentRadioFieldComponent', () => {
     let spectator: Spectator<DotEditContentRadioFieldComponent>;
@@ -52,19 +24,16 @@ describe('DotEditContentRadioFieldComponent', () => {
         component: DotEditContentRadioFieldComponent,
         imports: [CommonModule, RadioButtonModule, ReactiveFormsModule, DotFieldRequiredDirective],
         componentViewProviders: [
-            { provide: ControlContainer, useValue: FORM_GROUP_DIRECTIVE_MOCK }
+            { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
         ],
-        providers: [FormGroupDirective]
+        providers: [FormGroupDirective],
+        detectChanges: false
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                field: FIELD_RADIO_MOCK
-            }
-        });
+        spectator = createComponent();
     });
-    it('should have a options array', () => {
+    it('should have a options array as radio with Text dataType', () => {
         const expectedList = [
             {
                 label: 'Uno',
@@ -75,7 +44,114 @@ describe('DotEditContentRadioFieldComponent', () => {
                 value: 'dos'
             }
         ];
+        spectator.setInput('field', RADIO_FIELD_TEXT_MOCK);
         spectator.detectChanges();
         expect(spectator.component.options).toEqual(expectedList);
+    });
+
+    it('should have a options array as radio with Boolean dataType', () => {
+        const expectedList = [
+            {
+                label: 'Falso',
+                value: false
+            },
+            {
+                label: 'Verdadero',
+                value: true
+            }
+        ];
+        spectator.setInput('field', RADIO_FIELD_BOOLEAN_MOCK);
+        spectator.detectChanges();
+        expect(spectator.component.options).toEqual(expectedList);
+    });
+
+    it('should have a options array as radio with Integer dataType', () => {
+        const expectedList = [
+            {
+                label: 'Doce',
+                value: 12
+            },
+            {
+                label: 'Veinte',
+                value: 20
+            },
+            {
+                label: 'Treinta',
+                value: 30
+            }
+        ];
+        spectator.setInput('field', RADIO_FIELD_INTEGER_MOCK);
+        spectator.detectChanges();
+        expect(spectator.component.options).toEqual(expectedList);
+    });
+
+    it('should have a options array as radio with Float dataType', () => {
+        const expectedList = [
+            {
+                label: 'Cinco punto dos',
+                value: 5.2
+            },
+            {
+                label: 'Nueve punto 3',
+                value: 9.3
+            }
+        ];
+        spectator.setInput('field', RADIO_FIELD_FLOAT_MOCK);
+        spectator.detectChanges();
+        expect(spectator.component.options).toEqual(expectedList);
+    });
+
+    it('should if have an object without value and label, the label must be the same as the value, and of the same type', () => {
+        const RADIO_FIELD_FLOAT_MOCK_WITHOUT_VALUE_AND_LABEL = {
+            ...RADIO_FIELD_FLOAT_MOCK,
+            values: '100.5'
+        };
+        spectator.setInput('field', RADIO_FIELD_FLOAT_MOCK_WITHOUT_VALUE_AND_LABEL);
+        spectator.detectChanges();
+
+        const expectedList = [
+            {
+                label: '100.5',
+                value: 100.5
+            }
+        ];
+        expect(spectator.component.options).toEqual(expectedList);
+    });
+
+    it('should if have an object without value and label, the label must be the same as the value, and of the same type', () => {
+        const RADIO_FIELD_TEXT_MOCK_WITHOUT_VALUE_AND_LABEL = {
+            ...RADIO_FIELD_TEXT_MOCK,
+            values: 'Dot'
+        };
+        spectator.setInput('field', RADIO_FIELD_TEXT_MOCK_WITHOUT_VALUE_AND_LABEL);
+        spectator.detectChanges();
+
+        const expectedList = [
+            {
+                label: 'Dot',
+                value: 'Dot'
+            }
+        ];
+        expect(spectator.component.options).toEqual(expectedList);
+    });
+
+    it('should dont have any radio selected if the form value and defaultValue is null', () => {
+        spectator.setInput('field', RADIO_FIELD_TEXT_MOCK);
+        spectator.component.formControl.setValue(null);
+        spectator.detectComponentChanges();
+
+        const inputChecked = spectator.queryAll('div.p-radiobutton-checked');
+        expect(inputChecked.length).toBe(0);
+    });
+
+    it('should render radio selected if the form have value ', () => {
+        spectator.setInput('field', RADIO_FIELD_TEXT_MOCK);
+        spectator.component.formControl.setValue('uno');
+        spectator.detectComponentChanges();
+
+        expect(spectator.component.formControl.value).toEqual('uno');
+
+        const inputChecked = spectator.queryAll('div.p-radiobutton-checked');
+        expect(inputChecked.length).toBe(1);
     });
 });

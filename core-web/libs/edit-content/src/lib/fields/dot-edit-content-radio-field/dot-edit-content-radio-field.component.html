@@ -1,17 +1,7 @@
-<div class="field">
-    <label
-        [attr.data-testId]="'label-' + field.variable"
-        [for]="field.variable"
-        [checkIsRequiredControl]="field.variable"
-        dotFieldRequired
-        >{{ field.name }}</label
-    >
-    <div class="field-checkbox" *ngFor="let option of options">
-        <p-radioButton
-            [inputId]="option.value"
-            [value]="option.value"
-            [formControlName]="field.variable"></p-radioButton>
-        <label class="ml-2" [for]="option.value">{{ option.label }}</label>
-    </div>
-    <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>
+<div class="field-checkbox" *ngFor="let option of options">
+    <p-radioButton
+        [inputId]="option.value"
+        [value]="option.value"
+        [formControlName]="field.variable"></p-radioButton>
+    <label class="ml-2" [for]="option.value">{{ option.label }}</label>
 </div>
