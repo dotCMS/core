@@ -13,56 +13,56 @@ import {
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
 
-export const FIELDS_MOCK = [
-    {
-        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-        contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-        dataType: 'TEXT',
-        fieldType: 'Text',
-        fieldTypeLabel: 'Text',
-        fieldVariables: [],
-        fixed: false,
-        iDate: 1696896882000,
-        id: 'c3b928bc2b59fc22c67022de4dd4b5c4',
-        indexed: false,
-        listed: false,
-        hint: 'A helper text',
-        modDate: 1696896882000,
-        name: 'testVariable',
-        readOnly: false,
-        required: false,
-        searchable: false,
-        sortOrder: 2,
-        unique: false,
-        variable: 'testVariable'
-    },
-    {
-        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextAreaField',
-        contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
-        dataType: 'LONG_TEXT',
-        defaultValue: 'Some value',
-        fieldType: 'Textarea',
-        fieldTypeLabel: 'Textarea',
-        fieldVariables: [],
-        fixed: false,
-        forceIncludeInApi: false,
-        hint: 'Some hint',
-        iDate: 1697553818000,
-        id: '950c7ddbbe59996386330316a32cccc4',
-        indexed: false,
-        listed: false,
-        modDate: 1697554437000,
-        name: 'some text area',
-        readOnly: false,
-        required: true,
-        searchable: false,
-        sortOrder: 2,
-        unique: false,
-        variable: 'someTextArea'
-    }
-];
+export const TEXT_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+    contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
+    dataType: 'TEXT',
+    fieldType: 'Text',
+    fieldTypeLabel: 'Text',
+    fieldVariables: [],
+    fixed: false,
+    iDate: 1696896882000,
+    id: 'c3b928bc2b59fc22c67022de4dd4b5c4',
+    indexed: false,
+    listed: false,
+    hint: 'A helper text',
+    modDate: 1696896882000,
+    name: 'testVariable',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 2,
+    unique: false,
+    variable: 'testVariable'
+};
 
-export const FIELD_MOCK: DotCMSContentTypeField = FIELDS_MOCK[0];
+export const TEXT_AREA_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextAreaField',
+    contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
+    dataType: 'LONG_TEXT',
+    defaultValue: 'Some value',
+    fieldType: 'Textarea',
+    fieldTypeLabel: 'Textarea',
+    fieldVariables: [],
+    fixed: false,
+    hint: 'Some hint',
+    iDate: 1697553818000,
+    id: '950c7ddbbe59996386330316a32cccc4',
+    indexed: false,
+    listed: false,
+    modDate: 1697554437000,
+    name: 'some text area',
+    readOnly: false,
+    required: true,
+    searchable: false,
+    sortOrder: 2,
+    unique: false,
+    variable: 'someTextArea'
+};
+
+export const FIELDS_MOCK: DotCMSContentTypeField[] = [TEXT_FIELD_MOCK, TEXT_AREA_FIELD_MOCK];
+
+export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;
 
 // This creates a mock FormGroup from an array of fielda
 export const createFormControlObjectMock = (fields = FIELDS_MOCK) => {

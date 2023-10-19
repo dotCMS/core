@@ -11,7 +11,7 @@ import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotEditContentTextFieldComponent } from './dot-edit-content-text-field.component';
 import { INPUT_TEXT_OPTIONS, INPUT_TYPE } from './utils';
 
-import { FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
+import { TEXT_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
 
 describe('DotEditContentTextFieldComponent', () => {
     let spectator: Spectator<DotEditContentTextFieldComponent>;
@@ -31,20 +31,20 @@ describe('DotEditContentTextFieldComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                field: FIELD_MOCK
+                field: TEXT_FIELD_MOCK
             }
         });
 
-        textInput = spectator.query(byTestId(FIELD_MOCK.variable));
+        textInput = spectator.query(byTestId(TEXT_FIELD_MOCK.variable));
     });
 
     test.each([
         {
-            variable: FIELD_MOCK.variable,
+            variable: TEXT_FIELD_MOCK.variable,
             attribute: 'id'
         },
         {
-            variable: FIELD_MOCK.variable,
+            variable: TEXT_FIELD_MOCK.variable,
             attribute: 'ng-reflect-name'
         }
     ])('should have the $variable as $attribute', ({ variable, attribute }) => {
@@ -67,11 +67,11 @@ describe('DotEditContentTextFieldComponent', () => {
         beforeEach(() => {
             spectator = createComponent({
                 props: {
-                    field: { ...FIELD_MOCK, dataType }
+                    field: { ...TEXT_FIELD_MOCK, dataType }
                 }
             });
 
-            textInput = spectator.query(byTestId(FIELD_MOCK.variable));
+            textInput = spectator.query(byTestId(TEXT_FIELD_MOCK.variable));
         });
 
         it('should have the type as defined in the options', () => {
