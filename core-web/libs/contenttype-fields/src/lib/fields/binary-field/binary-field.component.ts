@@ -29,6 +29,7 @@ import {
     DropZoneFileValidity
 } from '@dotcms/ui';
 
+import { DotBinaryFieldPreviewComponent } from './components/dot-binary-field-preview/dot-binary-field-preview.component';
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
 import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
 import {
@@ -41,6 +42,24 @@ import {
 import { UI_MESSAGE_KEYS, UiMessageI, getUiMessage } from '../../utils/binary-field-utils';
 
 const initialState: BinaryFieldState = {
+    previewFile: {
+        type: 'image',
+        resolution: {
+            width: '400',
+            height: '400'
+        },
+        fileSize: 8000,
+        content: '',
+        mimeType: 'image/png',
+        inode: '123456789',
+        titleImage: 'true',
+        name: 'image.jpg',
+        title: 'image.jpg',
+        hasTitleImage: 'true',
+        contentType: 'image/png',
+        __icon__: 'contentIcon',
+        contentTypeIcon: 'image'
+    },
     file: null,
     tempFile: null,
     mode: BINARY_FIELD_MODE.DROPZONE,
@@ -63,7 +82,8 @@ const initialState: BinaryFieldState = {
         DotSpinnerModule,
         HttpClientModule,
         InputTextModule,
-        DotBinaryFieldUrlModeComponent
+        DotBinaryFieldUrlModeComponent,
+        DotBinaryFieldPreviewComponent
     ],
     providers: [DotBinaryFieldStore],
     templateUrl: './binary-field.component.html',

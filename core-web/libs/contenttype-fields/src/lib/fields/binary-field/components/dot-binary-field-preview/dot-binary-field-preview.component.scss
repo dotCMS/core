@@ -1,0 +1,101 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.preview_container {
+    display: flex;
+    gap: $spacing-1;
+    align-items: flex-start;
+    height: 100%;
+    max-width: 36rem;
+    width: 100%;
+    position: relative;
+}
+
+.preview-image_container ::ng-deep {
+    height: 100%;
+    width: 280px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: $color-palette-gray-200;
+
+    .thumbnail {
+        img,
+        video {
+            object-fit: contain;
+        }
+    }
+}
+
+.preview_container--fade::after {
+    content: "";
+    background: linear-gradient(0deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
+    position: absolute;
+    width: 100%;
+    height: 50%;
+    bottom: 0;
+    left: 0;
+    border-radius: $border-radius-md;
+}
+
+.preview-metadata_container {
+    flex-grow: 1;
+    padding: $spacing-1;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    height: 100%;
+}
+
+.preview-metadata_info {
+    flex-grow: 1;
+    display: flex;
+    gap: $spacing-1;
+    flex-direction: column;
+
+    h4 {
+        font-size: $font-size-md;
+        font-weight: $font-weight-bold;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+.preview-metadata {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: $spacing-1;
+
+    span {
+        color: $color-palette-gray-700;
+    }
+}
+
+.preview-metadata_actions {
+    position: absolute;
+    bottom: $spacing-1;
+    right: $spacing-1;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: $spacing-1;
+    width: 100%;
+    z-index: 100;
+}
+
+code {
+    background: $white;
+    color: $color-palette-primary-500;
+    height: 100%;
+    width: 100%;
+    white-space: pre-wrap;
+    overflow: hidden;
+}

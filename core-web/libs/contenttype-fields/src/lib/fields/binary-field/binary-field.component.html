@@ -60,19 +60,13 @@
         *ngIf="vm.status === BINARY_FIELD_STATUS.UPLOADING"
         data-testId="loading"></dot-spinner>
 
-    <!-- This component is another ticket -->
-    <div *ngIf="vm.status === BINARY_FIELD_STATUS.PREVIEW" data-testId="preview">
-        <span>
-            {{ vm.tempFile.fileName }}
-        </span>
-        <br />
-        <p-button
-            class="p-button-outlined"
-            [label]="'dot.binary.field.action.remove' | dm"
-            (click)="removeFile()"
-            data-testId="action-remove-btn"
-            icon="pi pi-trash"></p-button>
-    </div>
+    <dot-binary-field-preview
+        *ngIf="vm.status === BINARY_FIELD_STATUS.PREVIEW"
+        [previewData]="vm.previewFile"
+        (click)="removeFile()"
+        data-testId="preview">
+    </dot-binary-field-preview>
+
     <p-dialog
         [(visible)]="dialogOpen"
         [modal]="true"

@@ -11,6 +11,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import {
+    DotContentThumbnailComponent,
     DotDropZoneComponent,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
@@ -18,6 +19,7 @@ import {
 } from '@dotcms/ui';
 
 import { DotBinaryFieldComponent } from './binary-field.component';
+import { DotBinaryFieldPreviewComponent } from './components/dot-binary-field-preview/dot-binary-field-preview.component';
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
 import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
 import { DotBinaryFieldStore } from './store/binary-field.store';
@@ -42,7 +44,9 @@ export default {
                 DotSpinnerModule,
                 InputTextModule,
                 DotBinaryFieldUrlModeComponent,
-                DotFieldValidationMessageComponent
+                DotBinaryFieldPreviewComponent,
+                DotFieldValidationMessageComponent,
+                DotContentThumbnailComponent
             ],
             providers: [
                 DotBinaryFieldStore,
@@ -50,21 +54,18 @@ export default {
                     provide: DotUploadService,
                     useValue: {
                         uploadFile: () => {
-                            return new Promise((resolve, reject) => {
+                            return new Promise((resolve, _reject) => {
                                 setTimeout(() => {
-                                    reject({
-                                        message: 'error URL'
+                                    resolve({
+                                        fileName: 'Image.jpg',
+                                        folder: 'folder',
+                                        id: 'tempFileId',
+                                        image: true,
+                                        length: 10000,
+                                        mimeType: 'mimeType',
+                                        referenceUrl: 'referenceUrl',
+                                        thumbnailUrl: 'thumbnailUrl'
                                     });
-                                    // resolve({
-                                    //     fileName: 'Image.jpg',
-                                    //     folder: 'folder',
-                                    //     id: 'tempFileId',
-                                    //     image: true,
-                                    //     length: 10000,
-                                    //     mimeType: 'mimeType',
-                                    //     referenceUrl: 'referenceUrl',
-                                    //     thumbnailUrl: 'thumbnailUrl'
-                                    // });
                                 }, 4000);
                             });
                         }

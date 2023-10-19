@@ -1,0 +1,12 @@
+<div class="thumbnail" [ngSwitch]="type">
+    <img *ngSwitchCase="'image'" [src]="src" [title]="title" (error)="handleError()" />
+
+    <video *ngSwitchCase="'video'" controls>
+        <source [src]="src" />
+    </video>
+
+    <i
+        *ngSwitchDefault
+        [ngClass]="['pi', thumbnailIcon]"
+        [ngStyle]="{ 'font-size': iconSize, color: 'var(--color-palette-secondary-400)' }"></i>
+</div>

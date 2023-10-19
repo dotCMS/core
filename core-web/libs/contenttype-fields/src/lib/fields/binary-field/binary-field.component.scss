@@ -10,7 +10,8 @@
     border: $field-border-size solid $color-palette-gray-300;
     padding: $spacing-1;
     margin-bottom: $spacing-1;
-    height: 10rem;
+    height: 12.5rem;
+    max-width: 36rem;
 }
 
 .binary-field__container--uploading {

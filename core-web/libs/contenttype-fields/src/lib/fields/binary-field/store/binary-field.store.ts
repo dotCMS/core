@@ -9,8 +9,10 @@ import { DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import { UI_MESSAGE_KEYS, UiMessageI, getUiMessage } from '../../../utils/binary-field-utils';
+import { BinaryPreview } from '../components/dot-binary-field-preview/dot-binary-field-preview.component';
 
 export interface BinaryFieldState {
+    previewFile: BinaryPreview;
     file: File;
     tempFile: DotCMSTempFile;
     mode: BINARY_FIELD_MODE;
