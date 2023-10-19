@@ -387,4 +387,184 @@ describe('DotSetMetaTagsService', () => {
             done();
         });
     });
+
+    it('should found title meta tag, with an appropriate amount of content when min limit', (done) => {
+        const titleDoc: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        const head = titleDoc.createElement('head');
+        titleDoc.documentElement.appendChild(head);
+
+        const title = titleDoc.createElement('title');
+        title.innerHTML = 'HTML TITLE -------------- TEST';
+        head.appendChild(title);
+
+        service.getMetaTagsResults(titleDoc).subscribe((value) => {
+            expect(value[4].items[0].message).toEqual(
+                'HTML Title found, with an appropriate amount of content!'
+            );
+            done();
+        });
+    });
+
+    it('should found title meta tag, with an appropriate amount of content when max limit', (done) => {
+        const titleDoc: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        const head = titleDoc.createElement('head');
+        titleDoc.documentElement.appendChild(head);
+
+        const title = titleDoc.createElement('title');
+        title.innerHTML = 'HTML TITLE -------------- TEST******************************';
+        head.appendChild(title);
+
+        service.getMetaTagsResults(titleDoc).subscribe((value) => {
+            expect(value[4].items[0].message).toEqual(
+                'HTML Title found, with an appropriate amount of content!'
+            );
+            done();
+        });
+    });
+
+    it('should found description meta tag, with an appropriate amount of content when min limit', (done) => {
+        const doc: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaDesc = doc.createElement('meta');
+        metaDesc.name = 'description';
+        metaDesc.content = 'DESCRIPTION ****TEST.Lorem ipsum dolor sit amet.-------';
+        head.appendChild(metaDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[0].items[0].message).toEqual('Meta Description found!');
+            done();
+        });
+    });
+
+    it('should found description meta tag, with an appropriate amount of content when max limit', (done) => {
+        const doc: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaDesc = doc.createElement('meta');
+        metaDesc.name = 'description';
+        metaDesc.content =
+            'DESCRIPTION ****TEST.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis ante metus, posuere quis posuere eu, varius nec ante. Aenean nec dictum purus';
+        head.appendChild(metaDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[0].items[0].message).toEqual('Meta Description found!');
+            done();
+        });
+    });
+
+    it('should found og:title meta tag, with an appropriate amount of content when max limit', (done) => {
+        const doc: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaTitle = doc.createElement('meta');
+        metaTitle.name = 'og:title';
+        metaTitle.content = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.****';
+        head.appendChild(metaTitle);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[2].items[0].message).toEqual(
+                '<code>og:title</code> meta tag found, with an appropriate amount of content!'
+            );
+            done();
+        });
+    });
+
+    it('should found og:title meta tag, with an appropriate amount of content when min limit', (done) => {
+        const doc: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaTitle = doc.createElement('meta');
+        metaTitle.name = 'og:title';
+        metaTitle.content = 'Lorem ipsum dolor sit amet****';
+        head.appendChild(metaTitle);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[2].items[0].message).toEqual(
+                '<code>og:title</code> meta tag found, with an appropriate amount of content!'
+            );
+            done();
+        });
+    });
+
+    it('should found og:description meta tag, with an appropriate amount of content when max limit', (done) => {
+        const doc: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaDesc = doc.createElement('meta');
+        metaDesc.name = 'og:description';
+        metaDesc.content = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit';
+        head.appendChild(metaDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[5].items[0].message).toEqual(
+                '<code>og:description</code> meta tag with valid content found!'
+            );
+            done();
+        });
+    });
+
+    it('should found og:description meta tag, with an appropriate amount of content when max limit', (done) => {
+        const doc: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaDesc = doc.createElement('meta');
+        metaDesc.name = 'og:description';
+        metaDesc.content =
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis ante metus, posuere quis posuere eu, varius nec ante. Aenean nec dictum purus.**********';
+        head.appendChild(metaDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[5].items[0].message).toEqual(
+                '<code>og:description</code> meta tag with valid content found!'
+            );
+            done();
+        });
+    });
 });

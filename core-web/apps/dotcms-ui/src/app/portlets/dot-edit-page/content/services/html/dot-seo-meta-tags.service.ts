@@ -250,7 +250,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (ogDescription?.length <= SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH) {
+        if (ogDescription?.length < SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.og-description.less')
@@ -258,7 +258,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (ogDescription?.length >= SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) {
+        if (ogDescription?.length > SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.og-description.greater')
@@ -313,7 +313,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (description?.length <= SEO_LIMITS.MIN_DESCRIPTION_LENGTH) {
+        if (description?.length < SEO_LIMITS.MIN_DESCRIPTION_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.description.less')
@@ -321,7 +321,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (description?.length >= SEO_LIMITS.MAX_DESCRIPTION_LENGTH) {
+        if (description?.length > SEO_LIMITS.MAX_DESCRIPTION_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.description.greater')
@@ -331,8 +331,8 @@ export class DotSeoMetaTagsService {
 
         if (
             description &&
-            description?.length >= SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH &&
-            description?.length <= SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH
+            description?.length >= SEO_LIMITS.MIN_DESCRIPTION_LENGTH &&
+            description?.length <= SEO_LIMITS.MAX_DESCRIPTION_LENGTH
         ) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getDoneItem(
