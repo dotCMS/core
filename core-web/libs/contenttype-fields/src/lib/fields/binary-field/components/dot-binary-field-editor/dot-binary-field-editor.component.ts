@@ -142,12 +142,12 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
     }
 
     private setEditorLanguage(fileName: string = '') {
-        const fileExtension = fileName?.split('.').pop();
+        const fileExtension = fileName?.includes('.') ? fileName.split('.').pop() : '';
         const { id, mimetypes, extensions } = this.getLanguage(fileExtension) || {};
         this.mimeType = mimetypes?.[0];
         this.extension = extensions?.[0];
 
-        if (!this.isValidType()) {
+        if (fileExtension && !this.isValidType()) {
             this.name.setErrors({ invalidExtension: this.invalidFileMessage });
         }
 
