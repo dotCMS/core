@@ -1,0 +1,50 @@
+<form class="editor-mode__form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="editor-mode__input-container">
+        <label class="editor-mode__label" for="file-name">
+            <span class="editor-mode__label-text">File Name</span>
+        </label>
+        <input
+            id="file-name"
+            type="text"
+            pInputText
+            formControlName="name"
+            autocomplete="off"
+            pInputText
+            placeholder="Ex. template.html" />
+        <div class="error-message">
+            <dot-field-validation-message
+                [patternErrorMessage]="'dot.binary.field.error.type.file.not.extension'"
+                [field]="form.get('name')"
+                data-testId="error-message"></dot-field-validation-message>
+        </div>
+    </div>
+    <div class="binary-field__editor-container">
+        <ngx-monaco-editor
+            class="binary-field__code-editor"
+            #editorRef
+            [ngClass]="{ 'binary-field__code-editor--disabled': form.disabled }"
+            [options]="editorOptions"
+            formControlName="content"
+            data-testId="code-editor"></ngx-monaco-editor>
+
+        <div class="editor-mode__helper" [ngClass]="{ 'editor-mode__helper--visible': mimeType }">
+            <i class="pi pi-info-circle"></i>
+            <small>Mime Type: {{ mimeType }}</small>
+        </div>
+    </div>
+    <div class="editor-mode__actions">
+        <p-button
+            [label]="'dot.common.cancel' | dm"
+            (click)="cancel.emit()"
+            styleClass="p-button-outlined"
+            type="button"
+            aria-label="Cancel button"
+            data-testId="cancel-button"></p-button>
+
+        <p-button
+            [label]="'dot.common.save' | dm"
+            type="submit"
+            aria-label="Import button"
+            data-testId="import-button"></p-button>
+    </div>
+</form>
