@@ -81,9 +81,8 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
     private extension = '';
     private invalidFileMessage = '';
     private editor: monaco.editor.IStandaloneCodeEditor;
-    private readonly regex = new RegExp('^.+\\..+$');
     readonly form = new FormGroup({
-        name: new FormControl('', [Validators.required, Validators.pattern(this.regex)]),
+        name: new FormControl('', [Validators.required, Validators.pattern(/^[^.]+\.[^.]+$/)]),
         content: new FormControl('')
     });
 
