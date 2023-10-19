@@ -1,6 +1,8 @@
 package com.dotcms.business;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
@@ -47,6 +49,9 @@ class SystemTableImpl implements SystemTable {
         Logger.debug(this, ()-> "Saving or Updating the key: " + key + " value: " + value);
         Try.run(()-> this.systemTableFactory.saveOrUpdate(key, value))
                 .getOrElseThrow((e)-> new DotRuntimeException(e.getMessage(), e));
+
+        Try.run(()->HibernateUtil.addCommitListener(()->
+                APILocator.getLocalSystemEventsAPI().asyncNotify(new SystemTableUpdatedKeyEvent(key))));
     }
 
     @Override
@@ -56,5 +61,8 @@ class SystemTableImpl implements SystemTable {
         Logger.debug(this, ()-> "Deleting the key: " + key);
         Try.run(()-> this.systemTableFactory.delete(key))
                 .getOrElseThrow((e)-> new DotRuntimeException(e.getMessage(), e));
+
+        Try.run(()->HibernateUtil.addCommitListener(()->
+                APILocator.getLocalSystemEventsAPI().asyncNotify(new SystemTableUpdatedKeyEvent(key))));
     }
 }

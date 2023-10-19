@@ -44,7 +44,8 @@ import {
         PanelModule,
         DividerModule,
         DotMessagePipe,
-        RouterLink
+        RouterLink,
+        DividerModule
     ],
     providers: [DotDevicesService],
     selector: 'dot-device-selector-seo',

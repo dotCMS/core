@@ -29,6 +29,7 @@ import {
     DropZoneFileValidity
 } from '@dotcms/ui';
 
+import { DotBinaryFieldEditorComponent } from './components/dot-binary-field-editor/dot-binary-field-editor.component';
 import { DotBinaryFieldPreviewComponent } from './components/dot-binary-field-preview/dot-binary-field-preview.component';
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
 import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
@@ -81,6 +82,7 @@ const initialState: BinaryFieldState = {
         DotBinaryFieldUiMessageComponent,
         DotSpinnerModule,
         HttpClientModule,
+        DotBinaryFieldEditorComponent,
         InputTextModule,
         DotBinaryFieldUrlModeComponent,
         DotBinaryFieldPreviewComponent
@@ -218,13 +220,13 @@ export class DotBinaryFieldComponent implements OnInit {
         this.dotBinaryFieldStore.removeFile();
     }
 
-    handleCreateFile(_event) {
-        // TODO: Implement - Write Code
-    }
-
     setTempFile(tempFile: DotCMSTempFile) {
         this.dotBinaryFieldStore.setTempFile(tempFile);
         this.dialogOpen = false;
+    }
+
+    isEditorMode(mode: BINARY_FIELD_MODE): boolean {
+        return mode === BINARY_FIELD_MODE.EDITOR;
     }
 
     /**
