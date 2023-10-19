@@ -1,27 +1,16 @@
 import { describe } from '@jest/globals';
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
-import { CommonModule } from '@angular/common';
-import { ControlContainer, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
-
-import { DotFieldRequiredDirective } from '@dotcms/ui';
+import { ControlContainer, FormGroupDirective } from '@angular/forms';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
-import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields.module';
 import { FIELDS_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
 
 describe.each([...FIELDS_MOCK])('DotFieldComponent', (fieldMock) => {
     let spectator: Spectator<DotEditContentFieldComponent>;
     const createComponent = createComponentFactory({
         component: DotEditContentFieldComponent,
-        imports: [
-            DotEditContentFieldComponent,
-            CommonModule,
-            ReactiveFormsModule,
-            DotEditContentFieldsModule,
-            DotFieldRequiredDirective
-        ],
         componentViewProviders: [
             {
                 provide: ControlContainer,

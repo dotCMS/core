@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
@@ -11,7 +11,9 @@ import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields
     selector: 'dot-edit-content-field',
     standalone: true,
     imports: [
-        CommonModule,
+        NgSwitch,
+        NgSwitchCase,
+        NgIf,
         ReactiveFormsModule,
         DotEditContentFieldsModule,
         DotFieldRequiredDirective
