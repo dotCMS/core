@@ -6,7 +6,7 @@ import tippy, { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
 
-import { takeUntil } from 'rxjs/operators';
+import { take, takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
@@ -88,27 +88,18 @@ export class AIContentActionsView {
     }
 
     private generateContent() {
-        const nodeType = this.getNodeType();
-
         this.editor.commands.closeAIContentActions();
 
-        this.component.instance.getNewContent(nodeType).subscribe((newContent) => {
-            if (newContent) {
-                this.editor.commands.deleteSelection();
-                this.editor.commands.insertAINode(newContent);
-                this.editor.commands.openAIContentActions();
-            }
-        });
-    }
-
-    private getNodeType() {
-        const { state } = this.editor.view;
-        const { doc, selection } = state;
-        const { ranges } = selection;
-        const from = Math.min(...ranges.map((range) => range.$from.pos));
-        const node = doc?.nodeAt(from);
-
-        return node.type.name;
+        this.component.instance
+            .getNewContent()
+            .pipe(take(1), takeUntil(this.destroy$))
+            .subscribe((newContent) => {
+                if (newContent) {
+                    this.editor.commands.deleteSelection();
+                    this.editor.commands.insertAINode(newContent);
+                    this.editor.commands.openAIContentActions();
+                }
+            });
     }
 
     private deleteContent() {
