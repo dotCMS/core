@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
-import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
+import { AbstractControl, ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
+import { DotEditContentFieldSingleSelectableDataTypes } from '../../types/dot-edit-content-field.type';
 import { mapSelectableOptions } from '../../utils/functions.util';
 
 @Component({
@@ -40,6 +41,8 @@ export class DotEditContentSelectFieldComponent implements OnInit {
      * @returns {AbstractControl} The form control for the select field.
      */
     get formControl() {
-        return this.controlContainer.control.get(this.field.variable);
+        return this.controlContainer.control.get(
+            this.field.variable
+        ) as AbstractControl<DotEditContentFieldSingleSelectableDataTypes>;
     }
 }

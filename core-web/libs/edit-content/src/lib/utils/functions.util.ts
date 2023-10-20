@@ -1,6 +1,7 @@
 import { DotEditContentFieldSingleSelectableDataType } from '../enums/dot-edit-content-field.enum';
+import { DotEditContentFieldSingleSelectableDataTypes } from '../types/dot-edit-content-field.type';
 
-const castValue = (value: string, type: string) => {
+const castValue = (value: string, type: string): DotEditContentFieldSingleSelectableDataTypes => {
     if (type === DotEditContentFieldSingleSelectableDataType.BOOL) {
         return value === 'true';
     }
@@ -18,7 +19,7 @@ const castValue = (value: string, type: string) => {
 export const mapSelectableOptions = (
     options: string,
     dataType: string
-): { label: string; value: string | boolean | number }[] => {
+): { label: string; value: DotEditContentFieldSingleSelectableDataTypes }[] => {
     const lines = options?.split('\r\n');
 
     if (lines.length === 0) {

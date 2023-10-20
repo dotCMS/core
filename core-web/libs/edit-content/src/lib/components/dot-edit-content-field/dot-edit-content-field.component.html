@@ -6,9 +6,15 @@
     >{{ field.name }}</label
 >
 <ng-container [ngSwitch]="field.fieldType">
-    <dot-edit-content-select-field *ngSwitchCase="fieldTypes.SELECT" [field]="field" />
+    <dot-edit-content-select-field
+        *ngSwitchCase="fieldTypes.SELECT"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
 
-    <dot-edit-content-radio-field *ngSwitchCase="fieldTypes.RADIO" [field]="field" />
+    <dot-edit-content-radio-field
+        *ngSwitchCase="fieldTypes.RADIO"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
 
     <dot-edit-content-text-field
         *ngSwitchCase="fieldTypes.TEXT"
