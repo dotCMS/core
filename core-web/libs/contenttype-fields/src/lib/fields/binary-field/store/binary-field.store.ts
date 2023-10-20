@@ -73,6 +73,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     readonly setTempFile = this.updater<DotCMSTempFile>((state, tempFile) => ({
         ...state,
         status: BINARY_FIELD_STATUS.PREVIEW,
+        previewFile: this.previewFileFromTempFile(tempFile),
         tempFile
     }));
 
@@ -155,5 +156,16 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
                 () => this.setError(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR))
             )
         );
+    }
+
+    private previewFileFromTempFile(tempFile: DotCMSTempFile): BinaryPreview {
+        return {
+            type: tempFile.image ? 'image' : 'file',
+            url: tempFile.thumbnailUrl || tempFile.referenceUrl,
+            fileSize: tempFile.length,
+            mimeType: tempFile.mimeType,
+            name: tempFile.fileName,
+            title: tempFile.fileName
+        };
     }
 }

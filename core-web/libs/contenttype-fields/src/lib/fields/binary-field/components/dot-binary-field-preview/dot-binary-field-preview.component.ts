@@ -12,23 +12,21 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotContentThumbnailComponent } from '@dotcms/ui';
 
+interface Resolution {
+    width: string;
+    height: string;
+}
 export interface BinaryPreview {
     type: string;
-    resolution?: {
-        width: string;
-        height: string;
-    };
+    resolution?: Resolution;
     fileSize?: number;
-    content: string;
+    content?: string;
     mimeType: string;
-    inode: string;
-    titleImage: string;
-    name: string;
+    url?: string;
+    inode?: string;
     title: string;
-    hasTitleImage: string;
-    contentType: string;
-    __icon__: string;
-    contentTypeIcon: string;
+    name: string;
+    titleImage?: string;
 }
 
 @Component({
@@ -40,17 +38,15 @@ export interface BinaryPreview {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBinaryFieldPreviewComponent implements OnInit {
-    @Input() previewData: BinaryPreview;
+    @Input() previewFile: BinaryPreview;
     @Input() variableName: string;
 
     @Output() editFile: EventEmitter<string> = new EventEmitter();
     @Output() removeFile: EventEmitter<void> = new EventEmitter();
 
-    contentType: string;
     resolution;
 
     ngOnInit(): void {
-        this.contentType = this.previewData.contentType;
-        this.resolution = this.previewData.resolution;
+        this.resolution = this.previewFile?.resolution;
     }
 }

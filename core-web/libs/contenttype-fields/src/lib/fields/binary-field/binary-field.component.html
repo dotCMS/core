@@ -62,7 +62,7 @@
 
     <dot-binary-field-preview
         *ngIf="vm.status === BINARY_FIELD_STATUS.PREVIEW"
-        [previewData]="vm.previewFile"
+        [previewFile]="vm.previewFile"
         (click)="removeFile()"
         data-testId="preview">
     </dot-binary-field-preview>

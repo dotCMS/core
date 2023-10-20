@@ -1,32 +1,33 @@
 <div
     class="preview_container"
-    [ngClass]="{ 'preview_container--fade': previewData?.type === 'file' }">
-    <ng-container *ngIf="previewData.type !== 'file'; else filePreview">
+    [ngClass]="{ 'preview_container--fade': previewFile?.type === 'file' }">
+    <ng-container *ngIf="previewFile.type !== 'file'; else filePreview">
         <div class="preview-image_container">
             <dot-content-thumbnail
-                [contentType]="previewData.contentType"
-                [inode]="previewData.inode"
-                [name]="previewData.name"
+                [tempUrl]="previewFile.url"
+                [contentType]="previewFile.mimeType"
+                [inode]="previewFile.inode"
+                [name]="previewFile.name"
                 [iconSize]="'48px'"></dot-content-thumbnail>
         </div>
 
         <div class="preview-metadata_container">
             <div class="preview-metadata_info">
-                <h4>{{ previewData.name }}</h4>
+                <h4>{{ previewFile.name }}</h4>
                 <div class="preview-metadata" *ngIf="resolution">
                     <i class="pi pi-arrows-alt" style="font-size: 1rem"></i>
                     <span>{{ resolution.width }}px, {{ resolution.height }}px</span>
                 </div>
                 <div class="preview-metadata">
                     <i class="pi pi-file" style="font-size: 1rem"></i>
-                    <span>{{ previewData.fileSize | number : '1.0-2' }} Bytes</span>
+                    <span>{{ previewFile.fileSize | number : '1.0-2' }} Bytes</span>
                 </div>
             </div>
         </div>
     </ng-container>
 
     <ng-template #filePreview>
-        <code>{{ previewData.content }}</code>
+        <code>{{ previewFile.content }}</code>
     </ng-template>
 
     <div></div>
@@ -39,7 +40,7 @@
             icon="pi pi-trash"></p-button>
         <p-button
             [label]="'Edit'"
-            (click)="editFile.emit(contentType)"
+            (click)="editFile.emit(previewFile.mimeType)"
             severity="secondary"
             styleClass="p-button-outlined p-button-sm p-button-secondary"
             icon="pi pi-pencil"></p-button>

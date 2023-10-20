@@ -21,9 +21,8 @@ const previewImage = {
     titleImage: 'true',
     name: 'image.jpg',
     title: 'image.jpg',
-    hasTitleImage: 'true',
+
     contentType: 'image/png',
-    __icon__: 'contentIcon',
     contentTypeIcon: 'image'
 };
 
@@ -36,9 +35,8 @@ const previewVideo = {
     titlevideo: 'true',
     name: 'video.jpg',
     title: 'video.jpg',
-    hasTitleImage: 'true',
-    contentType: 'video/png',
-    __icon__: 'video'
+
+    contentType: 'video/png'
 };
 
 const previewFile = {
@@ -49,7 +47,7 @@ const previewFile = {
     titlevideo: 'true',
     name: 'template.html',
     title: 'template.html',
-    hasTitleImage: 'true',
+
     contentType: 'text/html',
     content: `<!DOCTYPE html>
     <html lang="en">
@@ -61,8 +59,7 @@ const previewFile = {
     <body>
         <h1>I have styles</h1>
     </body>
-    </html>`,
-    __icon__: 'page'
+    </html>`
 };
 
 export default {
@@ -80,11 +77,11 @@ export default {
         }
     },
     args: {
-        previewData: previewImage,
+        previewFile: previewImage,
         variableName: 'binaryField'
     },
     argTypes: {
-        previewData: {
+        previewFile: {
             defaultValue: previewImage,
             control: 'object',
             description: 'Preview object'
@@ -119,7 +116,7 @@ const Template: Story<DotBinaryFieldPreviewComponent> = (args: DotBinaryFieldPre
     template: `
         <div class="container">
             <dot-binary-field-preview
-                [previewData]="previewData"
+                [previewFile]="previewFile"
                 [variableName]="variableName"
                 (editFile)="editFile($event)"
                 (removeFile)="removeFile($event)"
@@ -133,13 +130,13 @@ export const Image = Template.bind({});
 export const Video = Template.bind({});
 
 Video.args = {
-    previewData: previewVideo,
+    previewFile: previewVideo,
     variableName: 'binaryField'
 };
 
 export const file = Template.bind({});
 
 file.args = {
-    previewData: previewFile,
+    previewFile: previewFile,
     variableName: 'binaryField'
 };

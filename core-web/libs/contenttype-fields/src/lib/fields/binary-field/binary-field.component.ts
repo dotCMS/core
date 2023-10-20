@@ -55,11 +55,7 @@ const initialState: BinaryFieldState = {
         inode: '123456789',
         titleImage: 'true',
         name: 'image.jpg',
-        title: 'image.jpg',
-        hasTitleImage: 'true',
-        contentType: 'image/png',
-        __icon__: 'contentIcon',
-        contentTypeIcon: 'image'
+        title: 'image.jpg'
     },
     file: null,
     tempFile: null,

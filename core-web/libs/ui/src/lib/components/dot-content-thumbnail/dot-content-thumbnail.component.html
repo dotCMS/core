@@ -1,5 +1,7 @@
 <div class="thumbnail" [ngSwitch]="type">
-    <img *ngSwitchCase="'image'" [src]="src" [title]="title" (error)="handleError()" />
+    <ng-container *ngSwitchCase="'image'">
+        <img [src]="url" [title]="title" (error)="handleError()" />
+    </ng-container>
 
     <video *ngSwitchCase="'video'" controls>
         <source [src]="src" />
