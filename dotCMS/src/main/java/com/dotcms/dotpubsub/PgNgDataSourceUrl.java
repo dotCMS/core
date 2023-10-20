@@ -9,13 +9,18 @@ import io.vavr.control.Try;
  * A Utility Class that converts the default dotCMS postgres DB connection/driver to a url using the
  * pgjdbc-ng driver, which supports Postgres PubSub. We use this driver to listen for incoming
  * events
- * 
+ *
  * @author will
  *
  */
 class PgNgDataSourceUrl {
 
     private final String finalUrl;
+
+
+    private final String SSL_MODE = System.getenv("DOT_PUBSUB_SSL_MODE") != null ? System.getenv("DOT_PUBSUB_SSL_MODE") : "prefer";
+
+
 
     /**
      * Use our existing database connection/url and
@@ -75,7 +80,7 @@ class PgNgDataSourceUrl {
             sw.append( "?");
         }
 
-        sw.append("ssl.mode=require");
+        sw.append("ssl.mode=" + SSL_MODE);
         return  sw.toString();
 
 
