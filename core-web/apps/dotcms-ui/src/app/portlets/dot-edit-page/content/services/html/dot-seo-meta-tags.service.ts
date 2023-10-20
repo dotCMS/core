@@ -32,64 +32,12 @@ export class DotSeoMetaTagsService {
     ) {}
 
     /**
-     * Get meta tags from the document
-     * @param pageDocument
-     * @returns
-     */
-    getMetaTags(pageDocument: Document): SeoMetaTags {
-        const metaTags = pageDocument.getElementsByTagName('meta');
-        const metaTagsObject = {};
-
-        for (const metaTag of metaTags) {
-            const name = metaTag.getAttribute('name');
-            const property = metaTag.getAttribute('property');
-            const content = metaTag.getAttribute('content');
-
-            const key = name ?? property;
-
-            if (key) {
-                metaTagsObject[key] = content;
-            }
-        }
-
-        const favicon = pageDocument.querySelectorAll('link[rel="icon"]');
-        const title = pageDocument.querySelectorAll('title');
-        const titleOgElements = pageDocument.querySelectorAll('meta[property="og:title"]');
-        const imagesOgElements = pageDocument.querySelectorAll('meta[property="og:image"]');
-        const descriptionOgElements = pageDocument.querySelectorAll(
-            'meta[property="og:description"]'
-        );
-        const descriptionElements = pageDocument.querySelectorAll('meta[name="description"]');
-        const twitterCardElements = pageDocument.querySelectorAll('meta[name="twitter:card"]');
-        const twitterTitleElements = pageDocument.querySelectorAll('meta[name="twitter:title"]');
-        const twitterImageElements = pageDocument.querySelectorAll('meta[name="twitter:image"]');
-        const twitterDescriptionElements = pageDocument.querySelectorAll(
-            'meta[name="twitter:description"]'
-        );
-
-        metaTagsObject['faviconElements'] = favicon;
-        metaTagsObject['titleElements'] = title;
-        metaTagsObject['favicon'] = (favicon[0] as HTMLLinkElement)?.href || null;
-        metaTagsObject['title'] = title[0]?.innerText;
-        metaTagsObject['titleOgElements'] = titleOgElements;
-        metaTagsObject['imageOgElements'] = imagesOgElements;
-        metaTagsObject['twitterCardElements'] = twitterCardElements;
-        metaTagsObject['twitterTitleElements'] = twitterTitleElements;
-        metaTagsObject['twitterDescriptionElements'] = twitterDescriptionElements;
-        metaTagsObject['twitterImageElements'] = twitterImageElements;
-        metaTagsObject['descriptionOgElements'] = descriptionOgElements;
-        metaTagsObject['descriptionElements'] = descriptionElements;
-
-        return metaTagsObject;
-    }
-
-    /**
      * Get the object with the SEO Result,
      * @param pageDocument
      * @returns
      */
     getMetaTagsResults(pageDocument: Document): Observable<SeoMetaTagsResult[]> {
-        const metaTagsObject = this.getMetaTags(pageDocument);
+        const metaTagsObject = this.dotSeoMetaTagsUtilService.getMetaTags(pageDocument);
         const ogMap = this.openGraphMap();
 
         const resolves = SeoMediaKeys.all.map((key) => ogMap[key]?.getItems(metaTagsObject));
@@ -600,8 +548,8 @@ export class DotSeoMetaTagsService {
         const result: SeoRulesResult[] = [];
         const titleCardElements = metaTagsObject['twitterTitleElements'];
         const titleCard = metaTagsObject['twitter:title'];
-        const title = metaTagsObject['title'];
-        const titleElements = metaTagsObject['titleElements'];
+        const title = metaTagsObject['og:title'];
+        const titleElements = metaTagsObject['titleOgElements'];
 
         if (
             title &&
@@ -683,8 +631,11 @@ export class DotSeoMetaTagsService {
         const result: SeoRulesResult[] = [];
         const twitterDescriptionElements = metaTagsObject['twitterDescriptionElements'];
         const twitterDescription = metaTagsObject['twitter:description'];
+        const ogDescriptionElements = metaTagsObject['ogDescriptionElements'];
+        const ogDescription = metaTagsObject['og:description'];
 
         if (
+            ogDescription &&
             this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([
                 twitterDescription,
                 twitterDescriptionElements
@@ -693,6 +644,23 @@ export class DotSeoMetaTagsService {
             result.push(
                 this.dotSeoMetaTagsUtilService.getErrorItem(
                     this.dotMessageService.get('seo.rules.twitter-card-description.not.found')
+                )
+            );
+        }
+
+        if (
+            this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([
+                twitterDescription,
+                twitterDescriptionElements,
+                ogDescriptionElements,
+                ogDescriptionElements
+            ])
+        ) {
+            result.push(
+                this.dotSeoMetaTagsUtilService.getErrorItem(
+                    this.dotMessageService.get(
+                        'seo.rules.twitter-card-description.description.not.found'
+                    )
                 )
             );
         }

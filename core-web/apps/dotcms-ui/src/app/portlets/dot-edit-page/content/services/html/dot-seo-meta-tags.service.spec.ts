@@ -182,7 +182,7 @@ describe('DotSetMetaTagsService', () => {
         const descriptionElements = testDoc.querySelectorAll('meta[name="description"]');
         const descriptionOgElements = testDoc.querySelectorAll('meta[property="og:description"]');
 
-        expect(service.getMetaTags(testDoc)).toEqual({
+        expect(serviceUtil.getMetaTags(testDoc)).toEqual({
             title: 'Costa Rica Special Offer',
             description:
                 'Get down to Costa Rica this winter for some of the best surfing int he world. Large winter swell is pushing across the Pacific.',
@@ -563,6 +563,53 @@ describe('DotSetMetaTagsService', () => {
         service.getMetaTagsResults(doc).subscribe((value) => {
             expect(value[5].items[0].message).toEqual(
                 '<code>og:description</code> meta tag with valid content found!'
+            );
+            done();
+        });
+    });
+
+    it('should found twitter:description meta tag, with an appropriate amount of content when min limit', (done) => {
+        const doc: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const twitterDesc = doc.createElement('meta');
+        twitterDesc.name = 'twitter:description';
+        twitterDesc.content =
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis ante metus, posuere quis posuere eu, varius nec ante. Aenean nec dictum purus. Nullam rhoncus velit mauris, vel fringilla purus mollis ege';
+        head.appendChild(twitterDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[8].items[0].message).toEqual(
+                '<code>twitter:description</code> meta tag with valid content found!'
+            );
+            done();
+        });
+    });
+
+    it('should found twitter:description meta tag, with an appropriate amount of content when max limit', (done) => {
+        const doc: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const twitterDesc = doc.createElement('meta');
+        twitterDesc.name = 'twitter:description';
+        twitterDesc.content = 'Lorem ipsum dolor sit amettest';
+        head.appendChild(twitterDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[8].items[0].message).toEqual(
+                '<code>twitter:description</code> meta tag with valid content found!'
             );
             done();
         });

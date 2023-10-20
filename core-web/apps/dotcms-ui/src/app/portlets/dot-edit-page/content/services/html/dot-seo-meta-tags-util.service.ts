@@ -16,6 +16,7 @@ import {
     SEO_TAGS,
     SeoKeyResult,
     SeoMediaKeys,
+    SeoMetaTags,
     SeoMetaTagsResult,
     SeoRulesResult
 } from '../dot-edit-content-html/models/meta-tags-model';
@@ -28,7 +29,59 @@ export class DotSeoMetaTagsUtilService {
     ) {}
 
     /**
-     * Getthe error item
+     * Get meta tags from the document
+     * @param pageDocument
+     * @returns
+     */
+    getMetaTags(pageDocument: Document): SeoMetaTags {
+        const metaTags = pageDocument.getElementsByTagName('meta');
+        const metaTagsObject = {};
+
+        for (const metaTag of metaTags) {
+            const name = metaTag.getAttribute('name');
+            const property = metaTag.getAttribute('property');
+            const content = metaTag.getAttribute('content');
+
+            const key = name ?? property;
+
+            if (key) {
+                metaTagsObject[key] = content;
+            }
+        }
+
+        const favicon = pageDocument.querySelectorAll('link[rel="icon"]');
+        const title = pageDocument.querySelectorAll('title');
+        const titleOgElements = pageDocument.querySelectorAll('meta[property="og:title"]');
+        const imagesOgElements = pageDocument.querySelectorAll('meta[property="og:image"]');
+        const descriptionOgElements = pageDocument.querySelectorAll(
+            'meta[property="og:description"]'
+        );
+        const descriptionElements = pageDocument.querySelectorAll('meta[name="description"]');
+        const twitterCardElements = pageDocument.querySelectorAll('meta[name="twitter:card"]');
+        const twitterTitleElements = pageDocument.querySelectorAll('meta[name="twitter:title"]');
+        const twitterImageElements = pageDocument.querySelectorAll('meta[name="twitter:image"]');
+        const twitterDescriptionElements = pageDocument.querySelectorAll(
+            'meta[name="twitter:description"]'
+        );
+
+        metaTagsObject['faviconElements'] = favicon;
+        metaTagsObject['titleElements'] = title;
+        metaTagsObject['favicon'] = (favicon[0] as HTMLLinkElement)?.href || null;
+        metaTagsObject['title'] = title[0]?.innerText;
+        metaTagsObject['titleOgElements'] = titleOgElements;
+        metaTagsObject['imageOgElements'] = imagesOgElements;
+        metaTagsObject['twitterCardElements'] = twitterCardElements;
+        metaTagsObject['twitterTitleElements'] = twitterTitleElements;
+        metaTagsObject['twitterDescriptionElements'] = twitterDescriptionElements;
+        metaTagsObject['twitterImageElements'] = twitterImageElements;
+        metaTagsObject['descriptionOgElements'] = descriptionOgElements;
+        metaTagsObject['descriptionElements'] = descriptionElements;
+
+        return metaTagsObject;
+    }
+
+    /**
+     * Get the error item
      * @param message
      * @returns
      */
@@ -80,6 +133,10 @@ export class DotSeoMetaTagsUtilService {
         return message.replace(regexPattern, '<code>$&</code>');
     }
 
+    /**
+     * Get the read more messages based on the media type
+     * @returns
+     */
     getReadMore(): Record<SEO_MEDIA_TYPES, string[]> {
         return {
             [SEO_MEDIA_TYPES.FACEBOOK]: [
