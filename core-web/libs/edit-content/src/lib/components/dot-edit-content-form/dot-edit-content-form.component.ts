@@ -78,9 +78,7 @@ export class DotEditContentFormComponent implements OnInit {
 
         return this.fb.control(
             {
-                value:
-                    /* TODO: We should add the value when editing here || */ field.defaultValue ||
-                    '',
+                value: field.defaultValue || '',
                 disabled: field.readOnly
             },
             { validators }
