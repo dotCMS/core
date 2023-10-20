@@ -51,10 +51,11 @@ import {
     AssetUploader,
     DotComands,
     AIContentPromptExtension,
+    AIImagePromptExtension,
     AIContentActionsExtension
 } from '../../extensions';
 import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
-import { ContentletBlock, ImageNode, VideoNode, AIContentNode } from '../../nodes';
+import { ContentletBlock, ImageNode, VideoNode, AIContentNode, LoaderNode } from '../../nodes';
 import {
     formatHTML,
     removeInvalidNodes,
@@ -62,6 +63,7 @@ import {
     DotMarketingConfigService,
     RestoreDefaultDOMAttrs
 } from '../../shared';
+
 @Component({
     selector: 'dot-block-editor',
     templateUrl: './dot-block-editor.component.html',
@@ -111,7 +113,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         ['image', ImageNode],
         ['video', VideoNode],
         ['table', DotTableExtension()],
-        ['aiContent', AIContentNode]
+        ['aiContent', AIContentNode],
+        ['loader', LoaderNode]
     ]);
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -383,6 +386,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
             AIContentPromptExtension(this.viewContainerRef),
+            AIImagePromptExtension(this.viewContainerRef),
             AIContentActionsExtension(this.viewContainerRef),
             DotFloatingButton(this.injector, this.viewContainerRef),
             DotTableCellExtension(this.viewContainerRef),
