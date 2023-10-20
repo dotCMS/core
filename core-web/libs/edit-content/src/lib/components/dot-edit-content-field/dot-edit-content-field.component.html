@@ -1,20 +1,18 @@
+<label
+    [attr.data-testId]="'label-' + field.variable"
+    [for]="field.variable"
+    [checkIsRequiredControl]="field.variable"
+    dotFieldRequired
+    >{{ field.name }}</label
+>
 <ng-container [ngSwitch]="field.fieldType">
-    <div class="field" *ngSwitchCase="'Text'">
-        <label
-            [attr.data-testId]="'label-' + field.variable"
-            [for]="field.variable"
-            [checkIsRequiredControl]="field.variable"
-            dotFieldRequired
-            >{{ field.name }}</label
-        >
-        <input
-            [id]="field.variable"
-            [formControlName]="field.variable"
-            [attr.data-testId]="'input-' + field.variable"
-            type="text"
-            pInputText />
-        <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{
-            field.hint
-        }}</small>
-    </div>
+    <dot-edit-content-text-field
+        *ngSwitchCase="fieldTypes.TEXT"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable"></dot-edit-content-text-field>
+    <dot-edit-content-text-area
+        *ngSwitchCase="fieldTypes.TEXTAREA"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable"></dot-edit-content-text-area>
 </ng-container>
+<small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>

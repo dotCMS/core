@@ -66,6 +66,11 @@ export class AIContentPromptView {
         this.component.instance.formSubmission.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.editor.commands.closeAIPrompt();
         });
+
+        this.component.instance.aiResponse.pipe(takeUntil(this.destroy$)).subscribe((content) => {
+            this.editor.commands.insertAINode(content);
+            this.editor.commands.openAIContentActions();
+        });
     }
 
     update(view: EditorView, prevState?: EditorState) {
