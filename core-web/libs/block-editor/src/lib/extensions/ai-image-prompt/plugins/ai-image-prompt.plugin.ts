@@ -10,16 +10,16 @@ import { takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
-import { AIContentPromptComponent } from '../ai-content-prompt.component';
-import { AI_CONTENT_PROMPT_PLUGIN_KEY } from '../ai-content-prompt.extension';
+import { AIImagePromptComponent } from '../ai-image-prompt.component';
+import { AI_IMAGE_PROMPT_PLUGIN_KEY } from '../ai-image-prompt.extension';
 import { TIPPY_OPTIONS } from '../utils';
 
-interface AIContentPromptProps {
+interface AIImagePromptProps {
     pluginKey: PluginKey;
     editor: Editor;
     element: HTMLElement;
     tippyOptions: Partial<Props>;
-    component: ComponentRef<AIContentPromptComponent>;
+    component: ComponentRef<AIImagePromptComponent>;
 }
 
 interface PluginState {
@@ -27,11 +27,11 @@ interface PluginState {
     form: [];
 }
 
-export type AIContentPromptViewProps = AIContentPromptProps & {
+export type AIImagePromptViewProps = AIImagePromptProps & {
     view: EditorView;
 };
 
-export class AIContentPromptView {
+export class AIImagePromptView {
     public editor: Editor;
 
     public node: Node;
@@ -46,11 +46,11 @@ export class AIContentPromptView {
 
     public pluginKey: PluginKey;
 
-    public component: ComponentRef<AIContentPromptComponent>;
+    public component: ComponentRef<AIImagePromptComponent>;
 
     private destroy$ = new Subject<boolean>();
 
-    constructor(props: AIContentPromptViewProps) {
+    constructor(props: AIImagePromptViewProps) {
         const { editor, element, view, tippyOptions = {}, pluginKey, component } = props;
 
         this.editor = editor;
@@ -63,14 +63,32 @@ export class AIContentPromptView {
         this.pluginKey = pluginKey;
         this.component = component;
 
+        this.view.dom.addEventListener('keydown', this.handleKeyDown.bind(this));
+
         this.component.instance.formSubmission.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.editor.commands.closeAIPrompt();
+            this.editor.commands.closeImagePrompt();
+            this.editor.commands.insertLoaderNode();
         });
 
-        this.component.instance.aiResponse.pipe(takeUntil(this.destroy$)).subscribe((content) => {
-            this.editor.commands.insertAINode(content);
-            this.editor.commands.openAIContentActions();
-        });
+        this.component.instance.aiResponse
+            .pipe(takeUntil(this.destroy$))
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .subscribe((contentlet: any) => {
+                this.editor.commands.deleteSelection();
+                const data = Object.values(contentlet[0])[0];
+
+                if (data) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    this.editor.commands.insertImage(data as any);
+                    this.editor.commands.openAIContentActions();
+                }
+            });
+    }
+
+    private handleKeyDown(event: KeyboardEvent) {
+        if (event.key === 'Backspace') {
+            this.editor.commands.closeAIContentActions();
+        }
     }
 
     update(view: EditorView, prevState?: EditorState) {
@@ -100,22 +118,18 @@ export class AIContentPromptView {
             return;
         }
 
-        this.tippy = tippy(editorElement, {
+        this.tippy = tippy(document.body, {
             ...TIPPY_OPTIONS,
             ...this.tippyOptions,
             content: this.element,
             onHide: () => {
-                this.editor.commands.closeAIPrompt();
-            },
-            onShow: (instance) => {
-                (instance.popper as HTMLElement).style.width = '100%';
+                this.editor.commands.closeImagePrompt();
             }
         });
     }
 
     show() {
         this.tippy?.show();
-        this.component.instance.focusField();
     }
 
     hide() {
@@ -130,10 +144,10 @@ export class AIContentPromptView {
     }
 }
 
-export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
+export const aiImagePromptPlugin = (options: AIImagePromptProps) => {
     return new Plugin({
         key: options.pluginKey as PluginKey,
-        view: (view) => new AIContentPromptView({ view, ...options }),
+        view: (view) => new AIImagePromptView({ view, ...options }),
         state: {
             init(): PluginState {
                 return {
@@ -147,14 +161,13 @@ export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
                 value: PluginState,
                 oldState: EditorState
             ): PluginState {
-                const { open, form } = transaction.getMeta(AI_CONTENT_PROMPT_PLUGIN_KEY) || {};
-                const state = AI_CONTENT_PROMPT_PLUGIN_KEY.getState(oldState);
+                const { open, form } = transaction.getMeta(AI_IMAGE_PROMPT_PLUGIN_KEY) || {};
+                const state = AI_IMAGE_PROMPT_PLUGIN_KEY.getState(oldState);
 
                 if (typeof open === 'boolean') {
                     return { open, form };
                 }
 
-                // keep the old state in case we do not receive a new one.
                 return state || value;
             }
         }
