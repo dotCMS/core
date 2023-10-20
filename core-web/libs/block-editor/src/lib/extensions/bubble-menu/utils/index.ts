@@ -9,9 +9,7 @@ const hideBubbleMenuOn: HideBubbleMenuExtensions = {
     tableCell: true,
     table: true,
     youtube: true,
-    dotVideo: true,
-    aiContent: true,
-    loader: true
+    dotVideo: true
 };
 
 /**

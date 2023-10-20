@@ -11,8 +11,6 @@ import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import {
     AIContentPromptComponent,
-    AIContentActionsComponent,
-    AIImagePromptComponent,
     BubbleLinkFormComponent,
     BubbleMenuButtonComponent,
     BubbleMenuComponent,
@@ -54,9 +52,7 @@ import { SharedModule } from './shared/shared.module';
         DotBlockEditorComponent,
         DotEditorCountBarComponent,
         FloatingButtonComponent,
-        AIContentPromptComponent,
-        AIContentActionsComponent,
-        AIImagePromptComponent
+        AIContentPromptComponent
     ],
     providers: [DotUploadFileService, LoggerService, StringUtils, AiContentService],
     exports: [
@@ -67,9 +63,7 @@ import { SharedModule } from './shared/shared.module';
         SharedModule,
         BubbleFormComponent,
         DotBlockEditorComponent,
-        AIContentPromptComponent,
-        AIContentActionsComponent,
-        AIImagePromptComponent
+        AIContentPromptComponent
     ]
 })
 export class BlockEditorModule {}
