@@ -441,6 +441,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 "You don't have permission to archive the Experiment. "
                         + "Experiment Id: " + persistedExperiment.get().id());
 
+        if(persistedExperiment.get().status()==ARCHIVED) {
+            return persistedExperiment.get();
+        }
+
         DotPreconditions.isTrue(persistedExperiment.get().status()==ENDED,
                 ()-> "Only ENDED experiments can be archived",
                 DotStateException.class);
