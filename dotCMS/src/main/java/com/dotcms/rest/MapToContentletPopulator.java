@@ -808,7 +808,7 @@ public class MapToContentletPopulator  {
                                 contentlet.getLanguageId(),
                                 APILocator.getUserAPI().getSystemUser(), false);
                 APILocator.getContentletAPI().copyProperties(contentlet, existing.getMap());
-                contentlet.setInode(BLANK);
+//                contentlet.setInode(BLANK);
             } catch (Exception e) {
 
                 Logger.debug(this.getClass(),
