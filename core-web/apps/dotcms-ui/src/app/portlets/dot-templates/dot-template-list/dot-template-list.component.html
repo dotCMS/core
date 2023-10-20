@@ -21,7 +21,7 @@
                 (onChange)="handleArchivedFilter($event.checked)"
                 data-testid="archiveCheckbox"></p-checkbox>
             <button
-                class="p-button-outlined p-button-sm"
+                class="p-button-outlined"
                 [disabled]="!this.selectedTemplates?.length"
                 [label]="'Actions' | dm"
                 (click)="actionsMenu.toggle($event)"

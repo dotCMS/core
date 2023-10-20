@@ -1,0 +1,31 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: $spacing-3;
+    height: 100%;
+    padding: $spacing-3;
+}
+
+.icon-container {
+    border-radius: 50%;
+    padding: $spacing-3;
+
+    &.info {
+        color: $color-palette-secondary-500;
+        background: $color-palette-secondary-200;
+    }
+
+    &.error {
+        color: $color-alert-yellow;
+        background: $color-alert-yellow-light;
+    }
+}
+
+.text {
+    text-align: center;
+    line-height: 140%;
+}

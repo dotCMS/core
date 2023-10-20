@@ -7,16 +7,26 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotUploadService } from '@dotcms/data-access';
+import {
+    DotDropZoneComponent,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe,
+    DotSpinnerModule
+} from '@dotcms/ui';
 
-import { BinaryFieldComponent } from './binary-field.component';
+import { DotBinaryFieldComponent } from './binary-field.component';
+import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
+import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
+import { DotBinaryFieldStore } from './store/binary-field.store';
 
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../utils/mock';
 
 export default {
-    title: 'Library / Contenttype Fields / Fields / BinaryFieldComponent',
-    component: BinaryFieldComponent,
+    title: 'Library / Contenttype Fields / DotBinaryFieldComponent',
+    component: DotBinaryFieldComponent,
     decorators: [
         moduleMetadata({
             imports: [
@@ -25,20 +35,76 @@ export default {
                 CommonModule,
                 ButtonModule,
                 DialogModule,
-                MonacoEditorModule
+                MonacoEditorModule,
+                DotDropZoneComponent,
+                DotBinaryFieldUiMessageComponent,
+                DotMessagePipe,
+                DotSpinnerModule,
+                InputTextModule,
+                DotBinaryFieldUrlModeComponent,
+                DotFieldValidationMessageComponent
             ],
             providers: [
+                DotBinaryFieldStore,
+                {
+                    provide: DotUploadService,
+                    useValue: {
+                        uploadFile: () => {
+                            return new Promise((resolve, _reject) => {
+                                setTimeout(() => {
+                                    resolve({
+                                        fileName: 'Image.jpg',
+                                        folder: 'folder',
+                                        id: 'tempFileId',
+                                        image: true,
+                                        length: 10000,
+                                        mimeType: 'mimeType',
+                                        referenceUrl: 'referenceUrl',
+                                        thumbnailUrl: 'thumbnailUrl'
+                                    });
+                                }, 4000);
+                            });
+                        }
+                    }
+                },
                 {
                     provide: DotMessageService,
                     useValue: CONTENTTYPE_FIELDS_MESSAGE_MOCK
                 }
             ]
         })
-    ]
-} as Meta<BinaryFieldComponent>;
+    ],
+    args: {
+        accept: ['image/*', '.ts'],
+        maxFileSize: 1000000,
+        helperText: 'This field accepts only images with a maximum size of 1MB.'
+    },
+    argTypes: {
+        accept: {
+            defaultValue: ['image/*'],
+            control: 'object',
+            description: 'Accepted file types'
+        },
+        maxFileSize: {
+            defaultValue: 1000000,
+            control: 'number',
+            description: 'Maximum file size in bytes'
+        },
+        helperText: {
+            defaultValue: 'This field accepts only images with a maximum size of 1MB.',
+            control: 'text',
+            description: 'Helper label to be displayed below the field'
+        }
+    }
+} as Meta<DotBinaryFieldComponent>;
 
-const Template: Story<BinaryFieldComponent> = (args: BinaryFieldComponent) => ({
-    props: args
+const Template: Story<DotBinaryFieldComponent> = (args: DotBinaryFieldComponent) => ({
+    props: args,
+    template: `<dot-binary-field
+        [accept]="accept"
+        [maxFileSize]="maxFileSize"
+        [helperText]="helperText"
+    ></dot-binary-field>`
 });
 
 export const Primary = Template.bind({});

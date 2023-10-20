@@ -28,6 +28,7 @@ import {
     DotLocalstorageService,
     DotPageTypesService,
     DotPageWorkflowsActionsService,
+    DotPropertiesService,
     DotRenderMode,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
@@ -38,6 +39,7 @@ import {
     CoreWebServiceMock,
     DotcmsConfigService,
     DotcmsEventsService,
+    DotPushPublishDialogService,
     LoggerService,
     LoginService,
     SiteService,
@@ -112,6 +114,8 @@ describe('DotPageStore', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotFavoritePageService: DotFavoritePageService;
     let dotLocalstorageService: DotLocalstorageService;
+    let dotPropertiesService: DotPropertiesService;
+    let dotPushPublishDialogService: DotPushPublishDialogService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -131,6 +135,8 @@ describe('DotPageStore', () => {
                 StringUtils,
                 DotFavoritePageService,
                 DotLocalstorageService,
+                DotPropertiesService,
+                DotPushPublishDialogService,
                 { provide: DialogService, useClass: DialogServiceMock },
                 { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -157,10 +163,14 @@ describe('DotPageStore', () => {
         dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
         dotFavoritePageService = TestBed.inject(DotFavoritePageService);
         dotLocalstorageService = TestBed.inject(DotLocalstorageService);
+        dotPropertiesService = TestBed.inject(DotPropertiesService);
+        dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
 
         spyOn(dialogService, 'open').and.callThrough();
         spyOn(dotHttpErrorManagerService, 'handle');
         spyOn(dotLocalstorageService, 'getItem').and.returnValue(`true`);
+        spyOn(dotPropertiesService, 'getKey').and.returnValue(of('*'));
+        spyOn(dotPropertiesService, 'getFeatureFlag').and.returnValue(of(false));
 
         dotPageStore.setInitialStateData(5);
         dotPageStore.setKeyword('test');
@@ -424,7 +434,11 @@ describe('DotPageStore', () => {
         expect(dialogService.open).toHaveBeenCalledWith(DotPagesCreatePageDialogComponent, {
             header: 'create.page',
             width: '58rem',
-            data: expectedInputArray
+            data: {
+                pageTypes: expectedInputArray,
+                isContentEditor2Enabled: false,
+                availableContentTypes: ['*']
+            }
         });
     });
 
@@ -575,6 +589,46 @@ describe('DotPageStore', () => {
             favoritePagesInitialTestData[0].inode,
             DotRenderMode.LISTING
         );
+    });
+
+    it('should trigger push publish dialog with the correct item identifier', (done) => {
+        const expectedInputArray = [{ ...dotcmsContentTypeBasicMock, ...contentTypeDataMock[0] }];
+
+        const item = favoritePagesInitialTestData[0];
+
+        spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(of(mockWorkflowsActions));
+        spyOn(dotFavoritePageService, 'get').and.returnValue(
+            of({
+                contentTook: 0,
+                jsonObjectView: {
+                    contentlets: expectedInputArray as unknown as DotCMSContentlet[]
+                },
+                queryTook: 1,
+                resultsSize: 4
+            })
+        );
+
+        spyOn(dotPushPublishDialogService, 'open').and.callThrough();
+
+        dotPageStore.showActionsMenu({
+            item,
+            actionMenuDomId: 'test1'
+        });
+
+        dotPageStore.state$.subscribe((data) => {
+            const menuActions = data.pages.menuActions;
+
+            expect(menuActions[7].label).toEqual('contenttypes.content.push_publish');
+
+            menuActions[7].command();
+
+            expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
+                assetIdentifier: item.identifier,
+                title: 'contenttypes.content.push_publish'
+            });
+
+            done();
+        });
     });
 
     it('should get all Workflow actions and static actions from a favorite page', () => {

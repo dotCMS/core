@@ -337,13 +337,15 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 var write = userHasWritePermission (data, userId)?"1":"0";
                 var publish = userHasPublishPermission (data, userId)?"1":"0";
                 var structure_id = data["structureInode"];
-
+                var typeVariable = data["typeVariable"];
                 var editRef ='';
 
                 if(structure_id == '<%=calendarEventInode %>'){
-              editRef = " editEvent('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ") ";
+
+
+                editRef = `editEvent('${inode}','<%=user.getUserId()%>','<%= referer %>','${liveSt}','${workingSt}','${write}','${typeVariable}')`;
             }else{
-              editRef = " editContentlet('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ") ";
+                editRef = `editContentlet('${inode}','<%=user.getUserId()%>','<%= referer %>',${liveSt},${workingSt},${write},'${typeVariable}')`;
             }
 
             var ref = "<div class='content-search__result-item'><tr>";
@@ -372,7 +374,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 }
 
                 ref+=  "<td valign='top'>"
-                ref+=   "<a  href=\"javascript: " + editRef + "\">";
+                ref+=   "<a draggable='false' href=\"javascript: " + editRef + "\">";
                 ref+=   text;
                 ref+=   "</a>";
                 ref+=   "</td>";
@@ -831,21 +833,24 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 			addNewContentlet(structureInode);
 		}
 
-        function dispatchCreateContentletEvent(url) {
+        function dispatchCreateContentletEvent(url, contentType) {
             var customEvent = document.createEvent("CustomEvent");
             customEvent.initCustomEvent("ng-event", false, false,  {
                 name: "create-contentlet",
                 data: {
-                    url: url
+                    url,
+                    contentType
                 }
             });
+
             document.dispatchEvent(customEvent);
             dijit.byId("selectStructureDiv").hide();
         }
 
 
-        function addNewContentlet(structureInode){
+        function addNewContentlet(structureInode, contentType){
 			if(structureInode == undefined || structureInode==""){
+                        // This gets the catchall and opens the dialog to select a contentType, and also retrieves the content type when is a custom portlet
         		structureInode = dijit.byId('structure_inode').value;
         	}
 			if(structureInode == undefined || structureInode=="" || structureInode == "catchall"){
@@ -861,7 +866,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 href += "</portlet:actionURL>";
                 href += "&selectedStructure=" + structureInode ;
                 href += "&lang=" + getSelectedLanguageId();
-                dispatchCreateContentletEvent(href);
+                dispatchCreateContentletEvent(href, contentType);
           }else{
                 var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
                 href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
@@ -871,7 +876,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 href += "</portlet:actionURL>";
                 href += "&selectedStructure=" + structureInode ;
                 href += "&lang=" + getSelectedLanguageId();
-                dispatchCreateContentletEvent(href)
+                dispatchCreateContentletEvent(href, contentType);
           }
         }
 

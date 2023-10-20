@@ -42,27 +42,6 @@
 }
 
 .dot-container-properties__code-loop-container {
-    background: $white;
-    border: 1px solid $input-border-color;
-}
-
-:host ::ng-deep {
-    .tab-panel-btn,
-    .tab-panel-btn:hover {
-        background: $color-palette-primary-500;
-
-        a.p-tabview-nav-link {
-            padding: 0;
-        }
-
-        i {
-            color: $white;
-            padding: 1.2rem $spacing-6 1.35rem;
-        }
-    }
-
-    .p-tabview-panel {
-        padding: 0;
-        padding-top: $spacing-1;
-    }
+    border: $field-border-size solid $color-palette-gray-400;
+    border-radius: $field-border-radius;
 }

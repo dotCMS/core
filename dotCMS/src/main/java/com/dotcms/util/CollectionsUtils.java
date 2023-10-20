@@ -8,8 +8,30 @@ import org.elasticsearch.common.collect.MapBuilder;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
+<<<<<<< HEAD
 import java.util.*;
 import java.util.function.*;
+=======
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+>>>>>>> a43911ccaefcb920abe07820d28ab99a3f55f5d1
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
@@ -1000,18 +1022,6 @@ public class CollectionsUtils implements Serializable {
     }
 
     /**
-     * Concat two arrays in one
-     * @param array1 array of T
-     * @param array2 array of T
-     * @return array composite by array1 + array2
-     * @param <T>
-     */
-    public static <T> T[] concat(final T[] array1, final T[] array2) {
-        return Stream.concat(Arrays.stream(array1), Arrays.stream(array2))
-                .toArray(size -> (T[]) Array.newInstance(array1.getClass().getComponentType(), size));
-    }
-
-    /**
      * Took a non serializable map and convert it and all the contents inside to a serializable map
      * Note: if a value is a map, use recursive to create that inner map to a serializable map (if it is not already)
      * if the value is not a map, but it is not serializable, then convert it to a string by calling toString
@@ -1178,6 +1188,19 @@ public class CollectionsUtils implements Serializable {
             return (current,last) -> comparator.compare(current,last) >= 0 ? current : last;
         }
 
-
     }
+
+    /**
+     * Concatenates the contents of one array into the other one.
+     *
+     * @param array1 The base array used in the concatenation.
+     * @param array2 The array that will be added to the first array.
+     *
+     * @return The resulting array
+     */
+    public static <T> T[] concat(final T[] array1, final T[] array2) {
+        return Stream.concat(Arrays.stream(array1), Arrays.stream(array2))
+                .toArray(size -> (T[]) Array.newInstance(array1.getClass().getComponentType(), size));
+    }
+
 }

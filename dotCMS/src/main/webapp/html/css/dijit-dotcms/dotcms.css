@@ -5043,13 +5043,18 @@
   margin-top: 0.5rem;
 }
 .dijitComboBoxMenuPopup .dijitMenuItem {
+  padding: 0 0.75rem;
+  color: #14151a;
+  height: 2.5rem;
+}
+.dijitComboBoxMenuPopup .dijitMenuItem .dijitComboBoxHighlightMatch {
+  font-weight: 700;
+}
+.dijitComboBoxMenuPopup .dijitMenuItem:has(small) {
   display: flex;
   align-items: start;
   flex-direction: column;
   justify-content: center;
-  padding: 0 0.75rem;
-  color: #14151a;
-  height: 2.5rem;
 }
 .dijitComboBoxMenuPopup .dijitComboBoxMenu {
   min-width: 200px;
@@ -8890,12 +8895,13 @@ Styles for commons fields along the backend
   background: var(--color-palette-primary-200);
   border-radius: 0.25rem;
   color: var(--color-palette-primary-500);
-  font-size: 0.75rem;
+  font-size: 0.813rem;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.25rem;
   text-decoration: none;
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 .tagLink.persona:before {
   content: "\f007";
@@ -8904,7 +8910,7 @@ Styles for commons fields along the backend
 .tagLink:after {
   color: var(--color-palette-primary-500);
   content: "✕";
-  font-size: 0.75rem;
+  font-size: 0.813rem;
   text-align: center;
 }
 .tagLink:hover {
@@ -8941,10 +8947,8 @@ Styles for commons fields along the backend
 - Handle vertical and horizontal forms
 */
 #label, .fieldName, dl.vertical dt label {
-  color: #14151a;
   display: block;
-  font-size: 0.75rem;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
 #checkbox-radio, .radio,
@@ -10377,8 +10381,8 @@ a.category_higlighted, a.tag_higlighted {
   display: none;
 }
 .context-menu__item .arrowRightIcon {
-  font-size: 0.75rem;
-  margin-top: -0.375rem;
+  font-size: 0.813rem;
+  margin-top: -0.4065rem;
   position: absolute;
   right: 0.5rem;
   top: 50%;
@@ -11182,4 +11186,13 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.edit-content-full-screen {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0px;
+  max-height: none;
+  padding: 0;
+  height: calc(100vh - 3rem - 20px - 1rem - 0.5rem - 20px - 61px - 1rem);
 }

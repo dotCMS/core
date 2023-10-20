@@ -58,6 +58,7 @@ import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMapTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockTest;
 import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
 import com.dotcms.rest.IntegrityResourceIntegrationTest;
+import com.dotcms.rest.api.v1.apps.SiteViewPaginatorIntegrationTest;
 import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.asset.AssetPathResolverImplIntegrationTest;
 import com.dotcms.rest.api.v1.asset.WebAssetHelperIntegrationTest;
@@ -95,6 +96,7 @@ import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionletIntegrationTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
 import com.dotmarketing.quartz.DotStatefulJobTest;
+import com.dotmarketing.quartz.job.DropOldContentVersionsJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.quartz.job.PopulateContentletAsJSONJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorDataTest;
@@ -135,22 +137,23 @@ import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValueTest;
 import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletNameTest;
 import com.dotmarketing.startup.runonce.Task220822CreateVariantTableTest;
 import com.dotmarketing.startup.runonce.Task220824CreateDefaultVariantTest;
+import com.dotmarketing.startup.runonce.Task220825CreateVariantFieldTest;
 import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
 import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuPropertyTest;
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
+import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
 import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest;
 import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByColTest;
-import com.dotmarketing.startup.runonce.Task230707CreateSystemTableTest;
-import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
-import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSizeTest;
 import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentletIntegrationTest;
+import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
+import com.dotmarketing.startup.runonce.Task230707CreateSystemTableTest;
+import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSizeTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.UtilMethodsITest;
 import com.dotmarketing.util.contentlet.pagination.PaginatedContentletsIntegrationTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
-import com.dotcms.rest.api.v1.apps.SiteViewPaginatorIntegrationTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -159,6 +162,8 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        Task220825CreateVariantFieldTest.class,
+        Task221007AddVariantIntoPrimaryKeyTest.class,
         Task05380ChangeContainerPathToAbsoluteTest.class,
         DotTemplateToolTest.class,
         Task05370AddAppsPortletToLayoutTest.class,
@@ -313,7 +318,8 @@ import org.junit.runners.Suite.SuiteClasses;
         IndexRegexUrlPatterStrategyIntegrationTest.class,
         RootIndexRegexUrlPatterStrategyIntegrationTest.class,
         SiteViewPaginatorIntegrationTest.class,
-        Task230523CreateVariantFieldInContentletIntegrationTest.class
+        Task230523CreateVariantFieldInContentletIntegrationTest.class,
+        DropOldContentVersionsJobTest.class
 })
 
 public class MainSuite2b {

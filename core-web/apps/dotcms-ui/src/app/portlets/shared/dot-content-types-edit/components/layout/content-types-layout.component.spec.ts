@@ -15,7 +15,6 @@ import { TabViewModule } from 'primeng/tabview';
 
 import { DotInlineEditModule } from '@components/_common/dot-inline-edit/dot-inline-edit.module';
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
-import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
@@ -23,7 +22,7 @@ import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotCurrentUserService, DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotCopyButtonComponent, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
@@ -144,7 +143,7 @@ describe('ContentTypesLayoutComponent', () => {
                 DotInlineEditModule,
                 HttpClientTestingModule,
                 DotPortletBoxModule,
-                DotCopyButtonModule
+                DotCopyButtonComponent
             ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },

@@ -40,20 +40,26 @@ $device-selector-name-margin: 0.375rem;
     all: unset;
     display: flex;
     flex-direction: row;
+    align-items: flex-start;
     gap: $spacing-1;
     color: $color-palette-gray-600;
+    width: 100%;
 }
 
 .dot-device-selector__grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 0fr 1fr;
     width: $device-selector-grid-width;
+    height: 22.75rem;
+    overflow: auto;
 }
 
 .device-list {
     width: 100%;
-    padding: 0;
+    padding: $spacing-1 0;
+    margin: 0;
     color: $color-palette-gray-600;
+    overflow: auto;
 }
 
 .device-list-item {
@@ -108,8 +114,8 @@ $device-selector-name-margin: 0.375rem;
             gap: $spacing-3;
         }
 
-        border-radius: 0.75rem;
-        margin-top: 5px;
+        border-radius: $border-radius-md;
+        margin-top: $spacing-3;
     }
 
     .dot-device-selector__divider {
@@ -120,6 +126,13 @@ $device-selector-name-margin: 0.375rem;
     .dot-device-selector__link--container {
         .pi.pi-external-link {
             color: $color-palette-primary;
+        }
+    }
+
+    .p-divider {
+        &.p-component {
+            color: $color-palette-gray-300;
+            margin: 0;
         }
     }
 }

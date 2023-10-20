@@ -33,6 +33,7 @@
                         </button>
                     </li>
                 </ul>
+                <p-divider [align]="'center'" layout="vertical"></p-divider>
                 <ul class="device-list">
                     <li
                         class="device-list-item"
@@ -66,7 +67,7 @@
                         *ngFor="let tile of socialMediaTiles">
                         <button
                             class="device-list__button"
-                            (click)="changeSeoMediaEvent(tile.label); deviceSelector.hide()"
+                            (click)="changeSeoMediaEvent(tile.value); deviceSelector.hide()"
                             data-testId="device-list-button">
                             <i [class]="tile.icon"></i>
                             <span class="device-list-item__name">{{ tile.label }}</span>

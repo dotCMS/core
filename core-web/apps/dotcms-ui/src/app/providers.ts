@@ -20,11 +20,11 @@ import {
     PaginatorService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { DotFormatDateService } from '@dotcms/ui';
 import { CanDeactivateGuardService } from '@services/guards/can-deactivate-guard.service';
 import { DotTitleStrategy } from '@shared/services/dot-title-strategy.service';
 
 import { DotAccountService } from './api/services/dot-account-service';
-import { DotFormatDateService } from './api/services/dot-format-date-service';
 import { DotUiColorsService } from './api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotWorkflowEventHandlerService } from './api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { AuthGuardService } from './api/services/guards/auth-guard.service';

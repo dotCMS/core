@@ -156,7 +156,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                         .getLookBackWindow();
                 assertNotNull(lookBackWindow);
                 assertNotNull(lookBackWindow.getValue());
-                assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
+                assertEquals(TimeUnit.DAYS.toMillis(14), lookBackWindow.getExpireMillis());
 
             }
         } finally {
@@ -214,7 +214,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                         .getLookBackWindow();
                 assertNotNull(lookBackWindow);
                 assertNotNull(lookBackWindow.getValue());
-                assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
+                assertEquals(TimeUnit.DAYS.toMillis(14), lookBackWindow.getExpireMillis());
 
             }
         } finally {
@@ -270,7 +270,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                         .getLookBackWindow();
                 assertNotNull(lookBackWindow);
                 assertNotNull(lookBackWindow.getValue());
-                assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
+                assertEquals(TimeUnit.DAYS.toMillis(14), lookBackWindow.getExpireMillis());
 
             }
         } finally {
@@ -332,7 +332,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                         .getLookBackWindow();
                 assertNotNull(lookBackWindow);
                 assertNotNull(lookBackWindow.getValue());
-                assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
+                assertEquals(TimeUnit.DAYS.toMillis(14), lookBackWindow.getExpireMillis());
 
             }
         } finally {
@@ -402,7 +402,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                         .getLookBackWindow();
                 assertNotNull(lookBackWindow);
                 assertNotNull(lookBackWindow.getValue());
-                assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
+                assertEquals(TimeUnit.DAYS.toMillis(14), lookBackWindow.getExpireMillis());
 
             }
         } finally {
@@ -458,7 +458,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                         .getLookBackWindow();
                 assertNotNull(lookBackWindow);
                 assertNotNull(lookBackWindow.getValue());
-                assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
+                assertEquals(TimeUnit.DAYS.toMillis(14), lookBackWindow.getExpireMillis());
             }
         } finally {
             ExperimentDataGen.end(experiment_1);
@@ -499,7 +499,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                     .getLookBackWindow();
             assertNotNull(lookBackWindow);
             assertNull(lookBackWindow.getValue());
-            assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
+            assertEquals(TimeUnit.DAYS.toMillis(14), lookBackWindow.getExpireMillis());
         }
     }
 

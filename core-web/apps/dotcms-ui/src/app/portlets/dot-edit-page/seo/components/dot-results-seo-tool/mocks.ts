@@ -14,65 +14,68 @@ const seoOGTagsMock = {
 const seoOGTagsResultOgMockTwitter = [
     {
         key: 'twitter:card',
+        title: 'card',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'seo.rules.twitter-card.not.found',
+                message: '<code>twitter:card</code> meta tag not found!',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             }
         ],
-        sort: 1,
-        info: ''
+        sort: 1
     },
     {
         key: 'twitter:title',
+        title: 'title',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'seo.rules.twitter-card.not.found',
+                message:
+                    '<code>twitter:title</code> meta tag not found! Showing HTML Title instead.',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             }
         ],
-        sort: 2,
-        info: ''
+        sort: 2
     },
     {
         key: 'twitter:description',
+        title: 'description',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'seo.rules.twitter-card.not.found',
+                message:
+                    '<code>twitter:description</code> meta tag not found! Showing Description instead.',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             }
         ],
-        sort: 3,
-        info: ''
+        sort: 3
     },
     {
         key: 'twitter:image',
+        title: 'image',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'og:image metatag not found!',
+                message: '<code>og:image</code> metatag not found!',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             }
         ],
-        sort: 4,
-        info: ''
+        sort: 4
     }
 ];
 
 const seoOGTagsResultMock = [
     {
         key: 'Favicon',
+        title: 'favicon',
         keyIcon: 'pi-check-circle',
         keyColor: 'results-seo-tool__result-icon--alert-green',
         items: [
@@ -86,6 +89,7 @@ const seoOGTagsResultMock = [
     },
     {
         key: 'Description',
+        title: 'Description',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
@@ -95,11 +99,11 @@ const seoOGTagsResultMock = [
                 itemIcon: 'pi-times'
             }
         ],
-        sort: 2,
-        info: "The length of the description allowed will depend on the reader's device size; on the smallest size only about 110 characters are allowed."
+        sort: 2
     },
     {
         key: 'Title',
+        title: 'Title',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-yellow',
         items: [
@@ -109,36 +113,50 @@ const seoOGTagsResultMock = [
                 itemIcon: 'pi-exclamation-circle'
             }
         ],
-        sort: 3,
-        info: 'HTML Title content should be between 30 and 60 characters.'
+        sort: 3
     },
     {
         key: 'Og:title',
+        title: 'title',
         keyIcon: 'pi-check-circle',
         keyColor: 'results-seo-tool__result-icon--alert-green',
         items: [
             {
-                message: 'og:title metatag found, with an appropriate amount of content!',
+                message:
+                    '<code>og:title</code> metatag found, with an appropriate amount of content!',
                 color: 'results-seo-tool__result-icon--alert-green',
                 itemIcon: 'pi-exclamation-circle'
             }
         ],
-        sort: 4,
-        info: 'HTML Title content should be between 30 and 60 characters.'
+        sort: 4
     },
     {
         key: 'Og:image',
+        title: 'image',
         keyIcon: 'pi-check-circle',
         keyColor: 'results-seo-tool__result-icon--alert-green',
         items: [
             {
-                message: 'og:image metatag found, with an appropriate sized image!',
+                message: '<code>og:image</code> metatag found, with an appropriate sized image!',
                 color: 'results-seo-tool__result-icon--alert-green',
                 itemIcon: 'pi-exclamation-circle'
             }
         ],
-        sort: 5,
-        info: 'HTML Title content should be between 30 and 60 characters.'
+        sort: 5
+    },
+    {
+        key: 'Og:description',
+        title: 'Description',
+        keyIcon: 'pi-exclamation-triangle',
+        keyColor: 'results-seo-tool__result-icon--alert-red',
+        items: [
+            {
+                message: 'Meta Description not found! Showing Description instead.',
+                color: 'results-seo-tool__result-icon--alert-red',
+                itemIcon: 'pi-times'
+            }
+        ],
+        sort: 2
     },
     ...seoOGTagsResultOgMockTwitter
 ];
@@ -146,48 +164,49 @@ const seoOGTagsResultMock = [
 const seoOGTagsResultOgMock = [
     {
         key: 'description',
-        keyIcon: 'pi-exclamation-triangle',
-        keyColor: 'results-seo-tool__result-icon--alert-red',
-        items: [
-            {
-                message: 'og:description meta tag not found! Showing Meta Description instead.',
-                color: 'results-seo-tool__result-icon--alert-red',
-                itemIcon: 'pi-times'
-            }
-        ],
-        sort: 2,
-        info: "The length of the description allowed will depend on the reader's device size; on the smallest size only about 110 characters are allowed."
-    },
-    {
-        key: 'og:image',
+        title: 'description',
         keyIcon: 'pi-check-circle',
         keyColor: 'results-seo-tool__result-icon--alert-green',
         items: [
             {
-                message: 'og:image metatag found, with an appropriate sized image!',
+                message: 'Meta Description found!',
                 color: 'results-seo-tool__result-icon--alert-green',
                 itemIcon: 'pi-check'
             }
         ],
-        sort: 6,
-        info: ''
+        sort: 3
+    },
+    {
+        key: 'og:image',
+        title: 'image',
+        keyIcon: 'pi-check-circle',
+        keyColor: 'results-seo-tool__result-icon--alert-green',
+        items: [
+            {
+                message: '<code>og:image</code> meta tag found, with an appropriate sized image!',
+                color: 'results-seo-tool__result-icon--alert-green',
+                itemIcon: 'pi-check'
+            }
+        ],
+        sort: 6
     },
     {
         key: 'og:title',
+        title: 'title',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-yellow',
         items: [
             {
-                message: 'title metatag found, but has fewer than 30 characters of content.',
+                message: 'title meta tag found, but has fewer than 30 characters of content.',
                 color: 'results-seo-tool__result-icon--alert-yellow',
                 itemIcon: 'pi-exclamation-circle'
             }
         ],
-        sort: 5,
-        info: 'HTML Title content should be between 30 and 60 characters.'
+        sort: 2
     },
     {
         key: 'favicon',
+        title: 'favicon',
         keyIcon: 'pi-check-circle',
         keyColor: 'results-seo-tool__result-icon--alert-green',
         items: [
@@ -197,11 +216,11 @@ const seoOGTagsResultOgMock = [
                 itemIcon: 'pi-check'
             }
         ],
-        sort: 1,
-        info: ''
+        sort: 1
     },
     {
         key: 'title',
+        title: 'title',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-yellow',
         items: [
@@ -211,83 +230,91 @@ const seoOGTagsResultOgMock = [
                 itemIcon: 'pi-exclamation-circle'
             }
         ],
-        sort: 4,
-        info: 'HTML Title content should be between 30 and 60 characters.'
+        sort: 2
     },
     {
         key: 'og:description',
+        title: 'description',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'og:description meta tag not found! Showing Meta Description instead.',
+                message:
+                    '<code>og:description</code> meta tag not found! Showing Meta Description instead.',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             }
         ],
-        sort: 3,
-        info: "The length of the description allowed will depend on the reader's device size; on the smallest size only about 110 characters are allowed."
+        sort: 4
     },
     {
         key: 'twitter:card',
+        title: 'card',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'twitter:card meta tag not found!',
+                message: '<code>twitter:card</code> meta tag not found!',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             }
         ],
-        sort: 1,
-        info: ''
+        sort: 2
     },
     {
         key: 'twitter:title',
+        title: 'title',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'twitter:card meta tag not found!',
+                message:
+                    '<code>twitter:title</code> meta tag not found! Showing HTML Title instead.',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             }
         ],
-        sort: 2,
-        info: ''
+        sort: 1
     },
     {
         key: 'twitter:description',
+        title: 'description',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'twitter:card meta tag not found!',
+                message:
+                    '<code>twitter:description</code> meta tag not found! Showing Description instead.',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             }
         ],
-        sort: 3,
-        info: ''
+        sort: 3
     },
     {
         key: 'twitter:image',
+        title: 'image',
         keyIcon: 'pi-exclamation-triangle',
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
-                message: 'seo.rules.image.not.found',
+                message:
+                    '<code>twitter:image</code> meta tag found, with an appropriate sized image!',
+                color: 'results-seo-tool__result-icon--alert-green',
+                itemIcon: 'pi-check'
+            },
+            {
+                message: '<code>twitter:image</code> meta tag not found!',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'
             },
             {
-                message: 'twitter:image meta tag found, but image is over 5 MB.',
+                message: '<code>twitter:image</code> meta tag found, but image is over 5 MB.',
                 color: 'results-seo-tool__result-icon--alert-green',
                 itemIcon: 'pi-check'
             }
         ],
-        sort: 4,
-        info: ''
+        sort: 4
     }
 ];
 

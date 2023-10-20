@@ -1,8 +1,5 @@
 package com.dotcms.experiments.business;
 
-import com.dotcms.analytics.app.AnalyticsApp;
-import com.dotcms.analytics.model.AccessToken;
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentResults;
@@ -28,8 +25,9 @@ public interface ExperimentsAPI {
 
     String PRIMARY_GOAL = "primary";
     Lazy<Integer> EXPERIMENTS_MAX_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MAX_DURATION", 90));
-    Lazy<Integer> EXPERIMENTS_MIN_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MIN_DURATION", 14));
-    Lazy<Integer> EXPERIMENT_LOOKBACK_WINDOW = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_LOOKBACK_WINDOW", 10));
+    Lazy<Integer> EXPERIMENTS_DEFAULT_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_DEFAULT_DURATION", 14));
+    Lazy<Integer> EXPERIMENTS_MIN_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MIN_DURATION", 7));
+    Lazy<Integer> EXPERIMENT_LOOKBACK_WINDOW = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_LOOKBACK_WINDOW", 14));
 
     enum Health {
         OK, NOT_CONFIGURED, CONFIGURATION_ERROR
@@ -100,7 +98,15 @@ public interface ExperimentsAPI {
      * Similar to #start, but it forces the start of the Experiment even if there is an Experiment
      * already running for the same page, which would then be stopped.
      */
-    Experiment forceStart(final String experimentId, final User user)
+    Experiment forceStart(final String experimentId, final User user, Scheduling scheduling)
+            throws DotDataException, DotSecurityException;
+
+    /**
+     * Similar to #start when it is used with an Experiment with not null Scheduling,
+     * but it forces the start of the Experiment even if there is an Experiment
+     * already running for the same page, which would then be stopped.
+     */
+    Experiment forceScheduled(final String experimentId, final User user, final Scheduling scheduling)
             throws DotDataException, DotSecurityException;
 
     /**

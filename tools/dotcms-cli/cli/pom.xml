@@ -3,28 +3,25 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>dotCMS-cli</artifactId>
+        <artifactId>dotcms-cli-parent</artifactId>
         <groupId>com.dotcms</groupId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>cli</artifactId>
+    <artifactId>dotcms-cli</artifactId>
     <packaging>jar</packaging>
 
     <properties>
-        <compiler-plugin.version>3.8.1</compiler-plugin.version>
-        <failsafe.useModulePath>false</failsafe.useModulePath>
-        <maven.compiler.release>11</maven.compiler.release>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
-        <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>2.9.1.Final</quarkus.platform.version>
+        <picocli.codegen.version>4.6.3</picocli.codegen.version>
         <testcontainers.version>1.17.6</testcontainers.version>
-        <failsafe-plugin.version>3.0.0-M5</failsafe-plugin.version>
         <test.failure.ignore>false</test.failure.ignore>
+        <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
+        <docker.version.tag>${project.version}</docker.version.tag>
+        <testcontainers.docker.image>${docker.output.image.name}/${docker.version.tag}</testcontainers.docker.image>
+        <java.keytar.version>1.0.0</java.keytar.version>
     </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -36,16 +33,17 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>com.dotcms</groupId>
-            <artifactId>api-data-model</artifactId>
+            <artifactId>dotcms-api-data-model</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
             <groupId>com.dotcms</groupId>
-            <artifactId>api-data-model</artifactId>
+            <artifactId>dotcms-api-data-model</artifactId>
             <version>1.0.0-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -94,7 +92,7 @@
         <dependency>
             <groupId>com.starxg</groupId>
             <artifactId>java-keytar</artifactId>
-            <version>1.0.0</version>
+            <version>${java.keytar.version}</version>
         </dependency>
 
         <dependency>
@@ -102,6 +100,21 @@
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.immutables</groupId>
+            <artifactId>value</artifactId>
+            <version>${immutables.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>${google.findbugs.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -118,12 +131,16 @@
                             <goal>generate-code</goal>
                             <goal>generate-code-tests</goal>
                         </goals>
+                        <configuration>
+                            <systemProperties>
+                                <testcontainers.docker.image>${testcontainers.docker.image}</testcontainers.docker.image>
+                            </systemProperties>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${compiler-plugin.version}</version>
                 <configuration>
                     <compilerArgs>
                         <arg>-parameters</arg>
@@ -134,11 +151,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>${failsafe-plugin.version}</version>
                 <configuration>
                     <testFailureIgnore>${test.failure.ignore}</testFailureIgnore>
                     <includes>
-                        <include>**/*Test.java</include>
+                        <include>**/*IT.java</include>
                     </includes>
                 </configuration>
                 <executions>
@@ -157,6 +173,43 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generateManPages</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <includeProjectDependencies>true</includeProjectDependencies>
+                    <includePluginDependencies>true</includePluginDependencies>
+                    <mainClass>picocli.codegen.docgen.manpage.ManPageGenerator</mainClass>
+                    <arguments>
+                        <argument>--outdir=${project.basedir}/docs</argument>
+                        <argument>com.dotcms.cli.command.InstanceCommand</argument>
+                        <argument>com.dotcms.cli.command.LoginCommand</argument>
+                        <argument>com.dotcms.cli.command.PushCommand</argument>
+                        <argument>com.dotcms.cli.command.StatusCommand</argument>
+                        <argument>com.dotcms.cli.command.contenttype.ContentTypeCommand</argument>
+                        <argument>com.dotcms.cli.command.files.FilesCommand</argument>
+                        <argument>com.dotcms.cli.command.language.LanguageCommand</argument>
+                        <argument>com.dotcms.cli.command.site.SiteCommand</argument>
+                    </arguments>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>info.picocli</groupId>
+                        <artifactId>picocli-codegen</artifactId>
+                        <version>${picocli.codegen.version}</version>
+                        <type>jar</type>
+                    </dependency>
+                </dependencies>
+            </plugin>
         </plugins>
     </build>
 
@@ -172,7 +225,6 @@
                 <plugins>
                     <plugin>
                         <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>${surefire-plugin.version}</version>
                         <executions>
                             <execution>
                                 <goals>

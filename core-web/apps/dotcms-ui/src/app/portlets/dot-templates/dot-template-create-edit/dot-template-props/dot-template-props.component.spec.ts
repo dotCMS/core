@@ -12,9 +12,12 @@ import { By } from '@angular/platform-browser';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTemplatePropsComponent } from './dot-template-props.component';
@@ -117,7 +120,7 @@ describe('DotTemplatePropsComponent', () => {
                 DotMessagePipe,
                 FormsModule,
                 ReactiveFormsModule,
-                DotFieldValidationMessageModule,
+                DotFieldValidationMessageComponent,
                 DotFieldRequiredDirective
             ],
             providers: [

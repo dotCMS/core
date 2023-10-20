@@ -1,188 +1,206 @@
 name: Core
 on:
-  pull_request:
-    paths:
-      - '.cicd/**'
-      - '.github/**'
-      - 'cicd/**'
-      - 'docker/**'
-      - '!docker/dotcms-compose-examples/**'
-      - 'dotCMS/**'
-      - '!dotCMS/src/main/webapp/html'
-      - 'pom.xml'
-      - 'tools/**'
   push:
     branches:
-      - master
-      - release-*
+      - none
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
-  postman-tests-setup-job:
-    name: Postman Matrix Setup
+
+  build-jdk11:
+    name: "Initial JDK 11 Build"
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
+        shell: bash
+      - name: Cache Maven Repository
+        id: cache-maven
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: mavencore-${{ steps.get-date.outputs.date }}
+      - name: Cache Node
+        id: cache-node
+        uses: actions/cache@v3
+        with:
+          path: |
+            core-web/node_modules
+            core-web/installs
+          key: node-${{ steps.get-date.outputs.date }}
+      - name: Build and Test with Maven
+        run: ./mvnw --show-version -DskipTests=true -DskipITs=true clean install --file pom.xml
+      - name: Tar Maven Repo
+        shell: bash
+        run: tar -czf maven-repo.tgz -C ~ .m2/repository
+      - name: Persist Maven Repo
+        uses: actions/upload-artifact@v3
+        with:
+          name: maven-repo
+          path: maven-repo.tgz
+      - name: Delete Local Artifacts From Cache
+        shell: bash
+        run: rm -r ~/.m2/repository/com/dotcms
+      - name: Upload build reports
+        uses: actions/upload-artifact@v3
+        if: ${{ always() }}
+        with:
+          name: "build-reports-Initial JDK 11 Build" #Should not be picked up for JunitReports
+          path: |
+            target/build-report.json
+            LICENSE
+          retention-days: 2
+
+
+
+
+
+  postman-tests-setup-job:
+    name: dotCMS image setup
+    runs-on: ubuntu-latest
+    needs: build-jdk11
     outputs:
-      built_image_name: ${{ steps.build-dotcms-image.outputs.built_image_name }}
+      dotcms_image: ${{ steps.common-vars.outputs.dotcms_image }}
     steps:
       - id: fetch-core
         name: Fetch Core Repo
-        uses: actions/checkout@v3
-      - id: read-cicd-local-env
-        name: Read CICD local library
-        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+        uses: actions/checkout@v4.0.0
+
+      - id: common-vars
+        name: Common vars
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == 'pull_request' ]]; then
+            BUILD_ID=${GITHUB_HEAD_REF}
+          else
+            BUILD_ID=$(basename "${GITHUB_REF}")
+          fi
+          if [[ -z "${GITHUB_SHA}" ]]; then
+            BUILD_HASH=$(git log -1 --pretty=%h)
+          else
+            BUILD_HASH=${GITHUB_SHA::7}
+          fi
+          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
+          echo "BUILD_HASH=${BUILD_HASH}" >> $GITHUB_ENV
+          echo "dotcms_image=ghcr.io/dotcms/core:cicd-${BUILD_HASH}" >> $GITHUB_OUTPUT
+
       - id: docker-login
         name: Login to GHCR
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3.0.0
         with:
           registry: ghcr.io
-          username: ${{ env.GITHUB_USER }}
+          username: ${{ vars.ACTION_USER }}
           password: ${{ secrets.GHCR_TOKEN }}
-      - id: build-dotcms-image
-        name: Build DotCMS docker image
-        uses: ./.github/actions/build-docker-image
+
+      - name: Build dotCMS image
+        uses: docker/build-push-action@v5.0.0
         with:
-          build_id: ${{ env.BUILD_ID }}
-          image_name: ghcr.io/dotcms/core:cicd-${{ env.BUILD_HASH }}
+          context: ./docker/dotcms
           push: true
-      - id: github-init-test-results
-        name: Github init tests results
-        uses: ./.github/actions/publish-test-results
-        with:
-          build_id: ${{ env.BUILD_ID }}
-          build_hash: ${{ env.BUILD_HASH }}
-          test_type: postman
-          mode: init
-          pull_request: ${{ github.event.number }}
-          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          tags: ${{ steps.common-vars.outputs.dotcms_image }}
+          platforms: amd64
+          build-args: |
+            BUILD_FROM=COMMIT
+            BUILD_ID=${{ env.BUILD_ID }}
 
   run-postman-tests-job:
     name: Run Postman Tests
     runs-on: ubuntu-latest
     needs: postman-tests-setup-job
-    if: success()
-    outputs:
-      tests_results_status: ${{ steps.run-postman-tests.outputs.tests_results_status }}
-      tests_results_skip_report: ${{ steps.run-postman-tests.outputs.tests_results_skip_report }}
-      tests_results_report_url: ${{ steps.github-publish-postman-tests.outputs.tests_report_url }}
-      tests_results_log_url: ${{ steps.github-publish-postman-tests.outputs.test_logs_url }}
+    if: "github.repository == 'dotCMS/core' || !endsWith(github.ref, '/master')"
     strategy:
       fail-fast: false
       matrix:
-        parallel_collection: ['graphql', 'workflow', 'template', 'page', 'container', 'pp', 'experiment', 'container', '*']
+        collection_group: ['graphql', 'workflow', 'template', 'page', 'container', 'pp', 'experiment', '*']
     steps:
       - id: fetch-core
         name: Fetch Core Repo
         uses: actions/checkout@v3
-      - id: read-cicd-local-env
-        name: Read CICD local library
-        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
-      - id: get-commit-message
-        name: Get commit message
-        uses: dotcms/get-commit-message@master
-        with:
-          accessToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: |
+          npm install --location=global newman
+
       - id: docker-login
         name: Login to GHCR
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3.0.0
         with:
           registry: ghcr.io
-          username: ${{ env.GITHUB_USER }}
+          username: ${{ vars.ACTION_USER }}
           password: ${{ secrets.GHCR_TOKEN }}
+
+      - id: resolve-postman-collections
+        uses: ./.github/actions/resolve-postman-collections
+        with:
+          current: ${{ matrix.collection_group }}
+
+      - name: Prepare license
+        run: |
+          mkdir -p dotcms-postman/license
+          touch dotcms-postman/license/license.dat
+          echo "${{ secrets.DOTCMS_LICENSE }}" > dotcms-postman/license/license.dat
+          chmod 777 dotcms-postman/license/license.dat
+
       - id: run-postman-tests
         name: Run Postman Tests
         timeout-minutes: 90
-        uses: ./.github/actions/run-postman-tests
+        run: |
+          collections="${{ steps.resolve-postman-collections.outputs.collections_to_run }}"
+          #export DOTCMS_IMAGE="${{ needs.postman-tests-setup-job.outputs.dotcms_image }}"
+          export DOTCMS_IMAGE='dotcms/dotcms:latest'
+          
+          cmd="./mvnw $JVM_TEST_MAVEN_OPTS verify -pl :dotcms-postman -Dpostman.collections=\"${collections}\""
+          echo "Running command: $cmd"
+          eval $cmd
+        env:
+          JVM_TEST_MAVEN_OPTS: "-e -B"
+
+      - name: Prepare reports archive (if maven failed)
+        if: failure()
+        shell: bash
+        run: find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
+
+      - name: Upload failure Archive (if maven failed)
+        uses: actions/upload-artifact@v3
+        if: failure()
         with:
-          built_image_name: ${{ needs.postman-tests-setup-job.outputs.built_image_name }}
-          license_key: ${{ secrets.DOTCMS_LICENSE }}
-          tests: ${{ steps.get-commit-message.outputs.commit_message }}
-          parallel_collection: ${{ matrix.parallel_collection }}
-          export_report: true
-      - id: github-publish-postman-tests
-        name: Github publish postman tests
-        uses: ./.github/actions/publish-test-results
+          name: test-reports-postman-${{ matrix.collection_group }}
+          path: 'test-reports.tgz'
+
+      - name: failsafe-postman-tests  # Uploads will be merged with same name
+        uses: actions/upload-artifact@v3
+        if: always()
         with:
-          build_id: ${{ env.BUILD_ID }}
-          build_hash: ${{ env.BUILD_HASH }}
-          test_type: postman
-          pull_request: ${{ github.event.number }}
-          tests_results_status: ${{ steps.run-postman-tests.outputs.tests_results_status }}
-          tests_results_location: ${{ steps.run-postman-tests.outputs.tests_results_location }}
-          tests_results_report_location: ${{ steps.run-postman-tests.outputs.tests_results_report_location }}
-          tests_results_log_location: ${{ github.WORKSPACE }}/dotCMS/*.log
-          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-          include: ALL
-          run_identifier: ${{ steps.run-postman-tests.outputs.normalized_parallel_collection }}
-        if: (success() || failure()) && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
+          name: "build-reports-postman-tests - ${{ matrix.collection_group }}"
+          path: |
+            **/target/*-reports/TEST-*.xml
+            target/build-report.json
+            LICENSE
+          retention-days: 2
 
   postman-tests-complete-job:
     name: Close Postman Tests
     runs-on: ubuntu-latest
-    needs: run-postman-tests-job
-    if: (success() || failure()) && needs.run-postman-tests-job.outputs.tests_results_skip_report != 'true'
+    needs: [postman-tests-setup-job, run-postman-tests-job]
+    if: (success() || failure())
     steps:
-      - id: fetch-core
+      -
+        id: fetch-core
         name: Fetch Core Repo
         uses: actions/checkout@v3
-      - id: read-cicd-local-env
-        name: Read CICD local library
-        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
-      - id: cleanup-package
+      -
+        id: cleanup-package
         name: Clean up CICD packages
         uses: ./.github/actions/cleanup-gh-packages
         with:
-          delete_version: ${{ needs.postman-tests-setup-job.outputs.built_image_name }}
+          delete_version: ${{ needs.postman-tests-setup-job.outputs.dotcms_image }}
           access_token: ${{ secrets.GHCR_TOKEN }}
-      - id: github-close-test-results
-        name: Github close tests results
-        uses: ./.github/actions/publish-test-results
-        with:
-          build_id: ${{ env.BUILD_ID }}
-          build_hash: ${{ env.BUILD_HASH }}
-          test_type: postman
-          mode: close
-          pull_request: ${{ github.event.number }}
-          tests_results_location: ${{ github.workspace }}/dotCMS/build/test-results/postmanTest
-          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-      - id: github-status
-        name: Send Github Status
-        uses: ./.github/actions/github-status
-        with:
-          test_type: postman
-          test_results_status: ${{ needs.run-postman-tests-job.outputs.tests_results_status }}
-          pull_request: ${{ github.event.number }}
-          github_user: ${{ env.GITHUB_USER }}
-          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-          tests_report_url: ${{ steps.github-close-test-results.outputs.tests_report_url }}
-        if: (success() || failure()) && steps.github-close-test-results.outputs.tests_report_url != ''
-
-  test-results-handler-job:
-    name: Tests Results Handler
-    runs-on: ubuntu-latest
-    needs: [run-postman-tests-job]
-    if: (success() || failure()) && (needs.run-unit-tests-job.outputs.tests_results_report_url != '' || needs.run-integration-tests-job.outputs.postgres_tests_results_report_url != '' || needs.run-postman-tests-job.outputs.tests_results_report_url != '')
-    steps:
-      - id: fetch-core
-        name: Fetch Core Repo
-        uses: actions/checkout@v3
-      - id: tests-status-aggregator
-        name: Tests status aggregator
-        uses: ./.github/actions/tests-status-aggregator
-        with:
-          postman_tests_results_status: ${{ needs.run-postman-tests-job.outputs.tests_results_status }}
-          postman_tests_results_report_url: ${{ needs.run-postman-tests-job.outputs.tests_results_report_url }}
-          postman_tests_results_log_url: ${{ needs.run-postman-tests-job.outputs.tests_results_log_url }}
-      - id: tests-results-slack
-        name: Tests results Slack notification
-        if: steps.tests-status-aggregator.outputs.status != ''
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.CORE_SLACK_WEBHOOK }}
-          SLACK_USERNAME: dotBot
-          SLACK_ICON: https://avatars.slack-edge.com/2020-09-21/1362682893351_5b474f175640cf5f5912_72.png
-          SLACK_COLOR: ${{ steps.tests-status-aggregator.outputs.color }}
-          SLACK_TITLE: ${{ steps.tests-status-aggregator.outputs.status }}
-          SLACK_MESSAGE: ${{ steps.tests-status-aggregator.outputs.message }}
-          SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}

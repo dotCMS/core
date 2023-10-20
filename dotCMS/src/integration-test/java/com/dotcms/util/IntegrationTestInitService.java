@@ -48,14 +48,11 @@ public class IntegrationTestInitService {
     public void init() throws Exception {
         try {
             if (initCompleted.compareAndSet(false, true)) {
-                String classpath = System.getProperty("java.class.path");
-                String[] classPathValues = classpath.split(File.pathSeparator);
-                Logger.info(IntegrationTestInitService.class,"Classpath="+Arrays.toString(classPathValues));
 
                 System.setProperty(TestUtil.DOTCMS_INTEGRATION_TEST, TestUtil.DOTCMS_INTEGRATION_TEST);
-                
-                
-                
+
+
+
                 Awaitility.setDefaultPollInterval(10, TimeUnit.MILLISECONDS);
                 Awaitility.setDefaultPollDelay(Duration.ZERO);
                 Awaitility.setDefaultTimeout(Duration.ONE_MINUTE);

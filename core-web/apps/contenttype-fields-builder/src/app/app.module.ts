@@ -1,11 +1,12 @@
-import { HttpClientModule } from '@angular/common/http';
+import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
+
 import { DoBootstrap, Injector, NgModule, Type } from '@angular/core';
 import { createCustomElement } from '@angular/elements';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { ContenttypeFieldsModule } from '@dotcms/contenttype-fields';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotBinaryFieldComponent } from '@dotcms/contenttype-fields';
+import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 
 import { AppComponent } from './app.component';
 
@@ -14,13 +15,17 @@ interface ContenttypeFieldElement {
     component: Type<unknown>; // Expected to be a component
 }
 
-const CONTENTTYPE_FIELDS: ContenttypeFieldElement[] = [];
+const CONTENTTYPE_FIELDS: ContenttypeFieldElement[] = [
+    {
+        tag: 'dotcms-binary-field',
+        component: DotBinaryFieldComponent
+    }
+];
 
 @NgModule({
     declarations: [AppComponent],
-    imports: [BrowserModule, BrowserAnimationsModule, HttpClientModule, ContenttypeFieldsModule],
-    providers: [DotMessageService],
-    bootstrap: [AppComponent]
+    imports: [BrowserModule, BrowserAnimationsModule, DotBinaryFieldComponent, MonacoEditorModule],
+    providers: [DotMessageService, DotUploadService]
 })
 export class AppModule implements DoBootstrap {
     constructor(private readonly injector: Injector) {}
