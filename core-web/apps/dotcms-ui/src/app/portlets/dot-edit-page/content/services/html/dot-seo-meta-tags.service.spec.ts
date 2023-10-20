@@ -115,7 +115,9 @@ describe('DotSetMetaTagsService', () => {
                         'seo.rules.description.more.one.found':
                             'More than 1 Meta Description found!',
                         'seo.rules.og-description.description.not.found':
-                            'og:description meta tag, and Meta Description not found!'
+                            'og:description meta tag, and Meta Description not found!',
+                        'seo.rules.twitter-card-description.description.not.found':
+                            'twitter:description meta tag not found! Showing Description instead.'
                     })
                 },
                 DotUploadService
