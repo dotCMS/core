@@ -1,12 +1,13 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
+import { NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
+import { ChangeDetectionStrategy, Component, HostBinding, Input, inject } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
-
-import { InputTextModule } from 'primeng/inputtext';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
+import { FIELD_TYPES } from './utils';
+
+import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields.module';
 import { DotEditContentRadioFieldComponent } from '../../fields/dot-edit-content-radio-field/dot-edit-content-radio-field.component';
 import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-content-select-field/dot-edit-content-select-field.component';
 
@@ -14,9 +15,11 @@ import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-conten
     selector: 'dot-edit-content-field',
     standalone: true,
     imports: [
-        CommonModule,
+        NgSwitch,
+        NgSwitchCase,
+        NgIf,
         ReactiveFormsModule,
-        InputTextModule,
+        DotEditContentFieldsModule,
         DotFieldRequiredDirective,
         DotEditContentSelectFieldComponent,
         DotEditContentRadioFieldComponent
@@ -32,5 +35,7 @@ import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-conten
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentFieldComponent {
+    @HostBinding('class') class = 'field';
     @Input() field!: DotCMSContentTypeField;
+    readonly fieldTypes = FIELD_TYPES;
 }

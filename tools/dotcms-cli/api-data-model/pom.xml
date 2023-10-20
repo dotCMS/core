@@ -16,7 +16,6 @@
         <testcontainers.version>1.17.6</testcontainers.version>
         <test.failure.ignore>false</test.failure.ignore>
         <maven.plugin.jar.version>3.3.0</maven.plugin.jar.version>
-        <google.findbugs.version>3.0.2</google.findbugs.version>
         <jackson.module.model.version>1.2.2</jackson.module.model.version>
         <jackson.datatype.guava.version>2.13.3</jackson.datatype.guava.version>
         <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>

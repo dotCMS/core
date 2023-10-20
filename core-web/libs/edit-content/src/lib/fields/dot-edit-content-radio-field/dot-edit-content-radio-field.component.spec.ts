@@ -10,7 +10,7 @@ import {
     RADIO_FIELD_INTEGER_MOCK,
     RADIO_FIELD_TEXT_MOCK,
     createFormGroupDirectiveMock
-} from '../../utils/mock';
+} from '../../utils/mocks';
 
 describe('DotEditContentRadioFieldComponent', () => {
     let spectator: Spectator<DotEditContentRadioFieldComponent>;

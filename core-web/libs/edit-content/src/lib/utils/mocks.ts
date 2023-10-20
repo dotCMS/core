@@ -13,6 +13,286 @@ import {
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
 
+export const TEXT_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+    contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
+    dataType: 'TEXT',
+    fieldType: 'Text',
+    fieldTypeLabel: 'Text',
+    fieldVariables: [],
+    fixed: false,
+    iDate: 1696896882000,
+    id: 'c3b928bc2b59fc22c67022de4dd4b5c4',
+    indexed: false,
+    listed: false,
+    hint: 'A helper text',
+    modDate: 1696896882000,
+    name: 'testVariable',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 2,
+    unique: false,
+    variable: 'testVariable'
+};
+
+export const TEXT_AREA_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextAreaField',
+    contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
+    dataType: 'LONG_TEXT',
+    defaultValue: 'Some value',
+    fieldType: 'Textarea',
+    fieldTypeLabel: 'Textarea',
+    fieldVariables: [],
+    fixed: false,
+    hint: 'Some hint',
+    iDate: 1697553818000,
+    id: '950c7ddbbe59996386330316a32cccc4',
+    indexed: false,
+    listed: false,
+    modDate: 1697554437000,
+    name: 'some text area',
+    readOnly: false,
+    required: true,
+    searchable: false,
+    sortOrder: 2,
+    unique: false,
+    variable: 'someTextArea'
+};
+
+export const SELECT_FIELD_TEXT_MOCK = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
+    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
+    dataType: 'TEXT',
+    defaultValue: '123-ad',
+    fieldType: 'Select',
+    fieldTypeLabel: 'Select',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1697579843000,
+    id: 'a6f33b8941b6c06c8ab36e44c4bf6500',
+    indexed: false,
+    listed: false,
+    modDate: 1697661626000,
+    name: 'selectNormal',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 3,
+    unique: false,
+    values: 'Option 1|Test,1\r\nOption 2|2\r\nOption 3|3\r\n123-ad\r\nrules and weird code',
+    variable: 'selectNormal'
+};
+
+export const SELECT_FIELD_BOOLEAN_MOCK = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
+    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
+    dataType: 'BOOL',
+    fieldType: 'Select',
+    fieldTypeLabel: 'Select',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1697661273000,
+    id: '8c5648fe4dedc06baf314f362c00431b',
+    indexed: false,
+    listed: false,
+    modDate: 1697661626000,
+    name: 'selectBoolean',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 4,
+    unique: false,
+    values: 'Verdadero|true\r\nFalso|false',
+    variable: 'selectBoolean'
+};
+
+export const SELECT_FIELD_FLOAT_MOCK = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
+    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
+    dataType: 'FLOAT',
+    fieldType: 'Select',
+    fieldTypeLabel: 'Select',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1697661848000,
+    id: '8c2edc3ee461fa50041a9e5831f1a86a',
+    indexed: false,
+    listed: false,
+    modDate: 1697661848000,
+    name: 'selectDecimal',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 5,
+    unique: false,
+    values: 'Cien punto cinco|100.5\r\nDiez punto tres|10.3',
+    variable: 'selectDecimal'
+};
+
+export const SELECT_FIELD_INTEGER_MOCK = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
+    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
+    dataType: 'INTEGER',
+    fieldType: 'Select',
+    fieldTypeLabel: 'Select',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1697662296000,
+    id: '89bdd8e525ef9a4c923f4b54d9a0e4f8',
+    indexed: false,
+    listed: false,
+    modDate: 1697662296000,
+    name: 'selectWholeNumber',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 6,
+    unique: false,
+    values: 'Cien|100\r\nMil|1000\r\nDiez mil|10000',
+    variable: 'selectWholeNumber'
+};
+
+export const RADIO_FIELD_TEXT_MOCK = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
+    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
+    dataType: 'TEXT',
+    fieldType: 'Radio',
+    fieldTypeLabel: 'Radio',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1697598313000,
+    id: '824b4e9907fe4f450ced438598cc0ce8',
+    indexed: false,
+    listed: false,
+    modDate: 1697662296000,
+    name: 'radio',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 8,
+    unique: false,
+    values: 'Uno|uno\r\nDos|dos',
+    variable: 'radio'
+};
+
+export const RADIO_FIELD_BOOLEAN_MOCK = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
+    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
+    dataType: 'BOOL',
+    fieldType: 'Radio',
+    fieldTypeLabel: 'Radio',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1697656862000,
+    id: 'e4b3ef6a8cb50ff77fe2534c2b237d71',
+    indexed: false,
+    listed: false,
+    modDate: 1697662296000,
+    name: 'radioTrueFalse',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 9,
+    unique: false,
+    values: 'Falso|false\r\nVerdadero|true',
+    variable: 'radioTrueFalse'
+};
+
+export const RADIO_FIELD_FLOAT_MOCK = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
+    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
+    dataType: 'FLOAT',
+    defaultValue: '9.3',
+    fieldType: 'Radio',
+    fieldTypeLabel: 'Radio',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1697656895000,
+    id: 'b26138321e5a449cdf7b73f927643016',
+    indexed: false,
+    listed: false,
+    modDate: 1697662296000,
+    name: 'radioDecimal',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 10,
+    unique: false,
+    values: 'Cinco punto dos|5.2\r\nNueve punto 3|9.3',
+    variable: 'radioDecimal'
+};
+
+export const RADIO_FIELD_INTEGER_MOCK = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
+    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
+    dataType: 'INTEGER',
+    defaultValue: '30',
+    fieldType: 'Radio',
+    fieldTypeLabel: 'Radio',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1697656956000,
+    id: 'bdd0f00375e23b7a64608d78c8fcb2dc',
+    indexed: false,
+    listed: false,
+    modDate: 1697662296000,
+    name: 'radioWholeNumber',
+    readOnly: false,
+    required: true,
+    searchable: false,
+    sortOrder: 11,
+    unique: false,
+    values: 'Doce|12\r\nVeinte|20\r\nTreinta|30',
+    variable: 'radioWholeNumber'
+};
+
+export const FIELDS_MOCK: DotCMSContentTypeField[] = [
+    TEXT_FIELD_MOCK,
+    TEXT_AREA_FIELD_MOCK,
+    SELECT_FIELD_TEXT_MOCK,
+    SELECT_FIELD_BOOLEAN_MOCK,
+    SELECT_FIELD_FLOAT_MOCK,
+    SELECT_FIELD_INTEGER_MOCK,
+    RADIO_FIELD_TEXT_MOCK,
+    RADIO_FIELD_BOOLEAN_MOCK,
+    RADIO_FIELD_FLOAT_MOCK,
+    RADIO_FIELD_INTEGER_MOCK
+];
+
+export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;
+
+// This creates a mock FormGroup from an array of fielda
+export const createFormControlObjectMock = (fields = FIELDS_MOCK) => {
+    return fields.reduce((acc, field) => {
+        acc[field.variable] = new FormControl('');
+
+        return acc;
+    }, {});
+};
+
+export const FORM_GROUP_MOCK = new FormGroup(createFormControlObjectMock());
+
+// Create a mock FormGroupDirective
+export const createFormGroupDirectiveMock = (
+    validator: (Validator | ValidatorFn)[] = [],
+    asyncValidators: AsyncValidator[] = []
+) => {
+    const formGroupDirectiveMock = new FormGroupDirective(validator, asyncValidators);
+
+    formGroupDirectiveMock.form = FORM_GROUP_MOCK;
+
+    return formGroupDirectiveMock;
+};
+
 export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
     {
         divider: {
@@ -322,279 +602,4 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
         }
     ],
     nEntries: 0
-};
-
-export const SELECT_FIELD_TEXT_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
-    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
-    dataType: 'TEXT',
-    defaultValue: '123-ad',
-    fieldType: 'Select',
-    fieldTypeLabel: 'Select',
-    fieldVariables: [],
-    fixed: false,
-    forceIncludeInApi: false,
-    iDate: 1697579843000,
-    id: 'a6f33b8941b6c06c8ab36e44c4bf6500',
-    indexed: false,
-    listed: false,
-    modDate: 1697661626000,
-    name: 'selectNormal',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 3,
-    unique: false,
-    values: 'Option 1|Test,1\r\nOption 2|2\r\nOption 3|3\r\n123-ad\r\nrules and weird code',
-    variable: 'selectNormal'
-};
-
-export const SELECT_FIELD_BOOLEAN_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
-    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
-    dataType: 'BOOL',
-    fieldType: 'Select',
-    fieldTypeLabel: 'Select',
-    fieldVariables: [],
-    fixed: false,
-    forceIncludeInApi: false,
-    iDate: 1697661273000,
-    id: '8c5648fe4dedc06baf314f362c00431b',
-    indexed: false,
-    listed: false,
-    modDate: 1697661626000,
-    name: 'selectBoolean',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 4,
-    unique: false,
-    values: 'Verdadero|true\r\nFalso|false',
-    variable: 'selectBoolean'
-};
-
-export const SELECT_FIELD_FLOAT_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
-    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
-    dataType: 'FLOAT',
-    fieldType: 'Select',
-    fieldTypeLabel: 'Select',
-    fieldVariables: [],
-    fixed: false,
-    forceIncludeInApi: false,
-    iDate: 1697661848000,
-    id: '8c2edc3ee461fa50041a9e5831f1a86a',
-    indexed: false,
-    listed: false,
-    modDate: 1697661848000,
-    name: 'selectDecimal',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 5,
-    unique: false,
-    values: 'Cien punto cinco|100.5\r\nDiez punto tres|10.3',
-    variable: 'selectDecimal'
-};
-
-export const SELECT_FIELD_INTEGER_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
-    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
-    dataType: 'INTEGER',
-    fieldType: 'Select',
-    fieldTypeLabel: 'Select',
-    fieldVariables: [],
-    fixed: false,
-    forceIncludeInApi: false,
-    iDate: 1697662296000,
-    id: '89bdd8e525ef9a4c923f4b54d9a0e4f8',
-    indexed: false,
-    listed: false,
-    modDate: 1697662296000,
-    name: 'selectWholeNumber',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 6,
-    unique: false,
-    values: 'Cien|100\r\nMil|1000\r\nDiez mil|10000',
-    variable: 'selectWholeNumber'
-};
-
-export const RADIO_FIELD_TEXT_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
-    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
-    dataType: 'TEXT',
-    fieldType: 'Radio',
-    fieldTypeLabel: 'Radio',
-    fieldVariables: [],
-    fixed: false,
-    forceIncludeInApi: false,
-    iDate: 1697598313000,
-    id: '824b4e9907fe4f450ced438598cc0ce8',
-    indexed: false,
-    listed: false,
-    modDate: 1697662296000,
-    name: 'radio',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 8,
-    unique: false,
-    values: 'Uno|uno\r\nDos|dos',
-    variable: 'radio'
-};
-
-export const RADIO_FIELD_BOOLEAN_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
-    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
-    dataType: 'BOOL',
-    fieldType: 'Radio',
-    fieldTypeLabel: 'Radio',
-    fieldVariables: [],
-    fixed: false,
-    forceIncludeInApi: false,
-    iDate: 1697656862000,
-    id: 'e4b3ef6a8cb50ff77fe2534c2b237d71',
-    indexed: false,
-    listed: false,
-    modDate: 1697662296000,
-    name: 'radioTrueFalse',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 9,
-    unique: false,
-    values: 'Falso|false\r\nVerdadero|true',
-    variable: 'radioTrueFalse'
-};
-
-export const RADIO_FIELD_FLOAT_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
-    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
-    dataType: 'FLOAT',
-    defaultValue: '9.3',
-    fieldType: 'Radio',
-    fieldTypeLabel: 'Radio',
-    fieldVariables: [],
-    fixed: false,
-    forceIncludeInApi: false,
-    iDate: 1697656895000,
-    id: 'b26138321e5a449cdf7b73f927643016',
-    indexed: false,
-    listed: false,
-    modDate: 1697662296000,
-    name: 'radioDecimal',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 10,
-    unique: false,
-    values: 'Cinco punto dos|5.2\r\nNueve punto 3|9.3',
-    variable: 'radioDecimal'
-};
-
-export const RADIO_FIELD_INTEGER_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
-    contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
-    dataType: 'INTEGER',
-    defaultValue: '30',
-    fieldType: 'Radio',
-    fieldTypeLabel: 'Radio',
-    fieldVariables: [],
-    fixed: false,
-    forceIncludeInApi: false,
-    iDate: 1697656956000,
-    id: 'bdd0f00375e23b7a64608d78c8fcb2dc',
-    indexed: false,
-    listed: false,
-    modDate: 1697662296000,
-    name: 'radioWholeNumber',
-    readOnly: false,
-    required: true,
-    searchable: false,
-    sortOrder: 11,
-    unique: false,
-    values: 'Doce|12\r\nVeinte|20\r\nTreinta|30',
-    variable: 'radioWholeNumber'
-};
-
-export const FIELDS_MOCK = [
-    {
-        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-        contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-        dataType: 'TEXT',
-        fieldType: 'Text',
-        fieldTypeLabel: 'Text',
-        fieldVariables: [],
-        fixed: false,
-        iDate: 1696896882000,
-        id: 'c3b928bc2b59fc22c67022de4dd4b5c4',
-        indexed: false,
-        listed: false,
-        hint: 'A helper text',
-        modDate: 1696896882000,
-        name: 'testVariable',
-        readOnly: false,
-        required: false,
-        searchable: false,
-        sortOrder: 2,
-        unique: false,
-        variable: 'testVariable'
-    },
-    {
-        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextAreaField',
-        contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
-        dataType: 'LONG_TEXT',
-        defaultValue: 'Some value',
-        fieldType: 'Textarea',
-        fieldTypeLabel: 'Textarea',
-        fieldVariables: [],
-        fixed: false,
-        forceIncludeInApi: false,
-        hint: 'Some hint',
-        iDate: 1697553818000,
-        id: '950c7ddbbe59996386330316a32cccc4',
-        indexed: false,
-        listed: false,
-        modDate: 1697554437000,
-        name: 'some text area',
-        readOnly: false,
-        required: true,
-        searchable: false,
-        sortOrder: 2,
-        unique: false,
-        variable: 'someTextArea'
-    },
-    SELECT_FIELD_TEXT_MOCK,
-    SELECT_FIELD_BOOLEAN_MOCK,
-    SELECT_FIELD_FLOAT_MOCK,
-    SELECT_FIELD_INTEGER_MOCK,
-    RADIO_FIELD_TEXT_MOCK,
-    RADIO_FIELD_BOOLEAN_MOCK,
-    RADIO_FIELD_FLOAT_MOCK,
-    RADIO_FIELD_INTEGER_MOCK
-];
-
-export const FIELD_MOCK: DotCMSContentTypeField = FIELDS_MOCK[0];
-
-export const createFormControlObjectMock = (fields = FIELDS_MOCK) => {
-    return fields.reduce((acc, field) => {
-        acc[field.variable] = new FormControl('');
-
-        return acc;
-    }, {});
-};
-
-export const FORM_GROUP_MOCK = new FormGroup(createFormControlObjectMock());
-
-export const createFormGroupDirectiveMock = (
-    validator: (Validator | ValidatorFn)[] = [],
-    asyncValidators: AsyncValidator[] = []
-) => {
-    const formGroupDirectiveMock = new FormGroupDirective(validator, asyncValidators);
-
-    formGroupDirectiveMock.form = FORM_GROUP_MOCK;
-
-    return formGroupDirectiveMock;
 };

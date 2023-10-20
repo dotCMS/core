@@ -6,159 +6,14 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
 import { EditContentFormData } from '../../interfaces/dot-edit-content-form.interface';
+import { FIELDS_MOCK, FIELD_MOCK, LAYOUT_MOCK } from '../../utils/mocks';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
-import { FIELD_MOCK } from '../dot-edit-content-field/dot-edit-content-field.component.spec';
-
-export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
-    {
-        divider: {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
-            contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-            dataType: 'SYSTEM',
-            fieldType: 'Row',
-            fieldTypeLabel: 'Row',
-            fieldVariables: [],
-            fixed: false,
-            iDate: 1697051073000,
-            id: 'a31ea895f80eb0a3754e4a2292e09a52',
-            indexed: false,
-            listed: false,
-            modDate: 1697051077000,
-            name: 'fields-0',
-            readOnly: false,
-            required: false,
-            searchable: false,
-            sortOrder: 0,
-            unique: false,
-            variable: 'fields0'
-        },
-        columns: [
-            {
-                columnDivider: {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
-                    contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-                    dataType: 'SYSTEM',
-                    fieldType: 'Column',
-                    fieldTypeLabel: 'Column',
-                    fieldVariables: [],
-                    fixed: false,
-                    iDate: 1697051073000,
-                    id: 'd4c32b4b9fb5b11c58c245d4a02bef47',
-                    indexed: false,
-                    listed: false,
-                    modDate: 1697051077000,
-                    name: 'fields-1',
-                    readOnly: false,
-                    required: false,
-                    searchable: false,
-                    sortOrder: 1,
-                    unique: false,
-                    variable: 'fields1'
-                },
-                fields: [
-                    {
-                        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-                        contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-                        dataType: 'TEXT',
-                        defaultValue: 'Placeholder',
-                        fieldType: 'Text',
-                        fieldTypeLabel: 'Text',
-                        fieldVariables: [],
-                        fixed: false,
-                        hint: 'A hint Text',
-                        iDate: 1697051093000,
-                        id: '1d1505a4569681b923769acb785fd093',
-                        indexed: false,
-                        listed: false,
-                        modDate: 1697051093000,
-                        name: 'name1',
-                        readOnly: false,
-                        required: true,
-                        searchable: false,
-                        sortOrder: 2,
-                        unique: false,
-                        variable: 'name1'
-                    },
-                    {
-                        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-                        contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-                        dataType: 'TEXT',
-                        fieldType: 'Text',
-                        fieldTypeLabel: 'Text',
-                        fieldVariables: [],
-                        fixed: false,
-                        iDate: 1697051107000,
-                        id: 'fc776c45044f2d043f5e98eaae36c9ff',
-                        indexed: false,
-                        listed: false,
-                        modDate: 1697051107000,
-                        name: 'text2',
-                        readOnly: false,
-                        required: true,
-                        searchable: false,
-                        sortOrder: 3,
-                        unique: false,
-                        variable: 'text2'
-                    }
-                ]
-            },
-            {
-                columnDivider: {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
-                    contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-                    dataType: 'SYSTEM',
-                    fieldType: 'Column',
-                    fieldTypeLabel: 'Column',
-                    fieldVariables: [],
-                    fixed: false,
-                    iDate: 1697051077000,
-                    id: '848fc78a11e7290efad66eb39333ae2b',
-                    indexed: false,
-                    listed: false,
-                    modDate: 1697051107000,
-                    name: 'fields-2',
-                    readOnly: false,
-                    required: false,
-                    searchable: false,
-                    sortOrder: 4,
-                    unique: false,
-                    variable: 'fields2'
-                },
-                fields: [
-                    {
-                        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-                        contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-                        dataType: 'TEXT',
-                        fieldType: 'Text',
-                        fieldTypeLabel: 'Text',
-                        fieldVariables: [],
-                        fixed: false,
-                        hint: 'A hint text2',
-                        iDate: 1697051118000,
-                        id: '1f6765de8d4ad069ff308bfca56b9255',
-                        indexed: false,
-                        listed: false,
-                        modDate: 1697051118000,
-                        name: 'text3',
-                        readOnly: false,
-                        required: false,
-                        searchable: false,
-                        sortOrder: 5,
-                        unique: false,
-                        variable: 'text3'
-                    }
-                ]
-            }
-        ]
-    }
-];
 
 export const VALUES_MOCK = {
     name1: 'Name1',
@@ -215,6 +70,11 @@ describe('DotFormComponent', () => {
 
             expect(formControl).toBeDefined();
             expect(formControl.validator).toBeDefined();
+        });
+
+        it('should have a default value if is defined', () => {
+            const formControl = spectator.component.initializeFormControl(FIELDS_MOCK[1]);
+            expect(formControl.value).toEqual(FIELDS_MOCK[1].defaultValue);
         });
     });
 

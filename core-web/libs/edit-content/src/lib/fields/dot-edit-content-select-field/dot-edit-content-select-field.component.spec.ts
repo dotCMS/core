@@ -2,14 +2,15 @@ import { Spectator, createComponentFactory } from '@ngneat/spectator';
 
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 
+import { DotEditContentSelectFieldComponent } from './dot-edit-content-select-field.component';
+
 import {
     SELECT_FIELD_BOOLEAN_MOCK,
     SELECT_FIELD_FLOAT_MOCK,
     SELECT_FIELD_INTEGER_MOCK,
     SELECT_FIELD_TEXT_MOCK,
     createFormGroupDirectiveMock
-} from './../../utils/mock';
-import { DotEditContentSelectFieldComponent } from './dot-edit-content-select-field.component';
+} from '../../utils/mocks';
 
 describe('DotEditContentSelectFieldComponent', () => {
     let spectator: Spectator<DotEditContentSelectFieldComponent>;

@@ -211,6 +211,7 @@ import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentlet
 import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
 import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSizeTest;
 import com.dotmarketing.util.HashBuilderTest;
+import com.dotmarketing.util.ITConfigTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.TestConfig;
@@ -652,7 +653,9 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230701AddHashIndicesToWorkflowTablesTest.class,
         Task230713IncreaseDisabledWysiwygColumnSizeTest.class,
         BundleFactoryImplTest.class,
-        DropOldContentVersionsJobTest.class
+        DropOldContentVersionsJobTest.class,
+        ITConfigTest.class
+
 })
 
 public class MainSuite {

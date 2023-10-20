@@ -298,6 +298,12 @@ const seoOGTagsResultOgMock = [
         keyColor: 'results-seo-tool__result-icon--alert-red',
         items: [
             {
+                message:
+                    '<code>twitter:image</code> meta tag found, with an appropriate sized image!',
+                color: 'results-seo-tool__result-icon--alert-green',
+                itemIcon: 'pi-check'
+            },
+            {
                 message: '<code>twitter:image</code> meta tag not found!',
                 color: 'results-seo-tool__result-icon--alert-red',
                 itemIcon: 'pi-times'

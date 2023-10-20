@@ -1,13 +1,13 @@
-import { DotEditContentFieldSelectableDataType } from '../enums/dot-edit-content-field.enum';
+import { DotEditContentFieldSingleSelectableDataType } from '../enums/dot-edit-content-field.enum';
 
 const castValue = (value: string, type: string) => {
-    if (type === DotEditContentFieldSelectableDataType.BOOL) {
+    if (type === DotEditContentFieldSingleSelectableDataType.BOOL) {
         return value === 'true';
     }
 
     if (
-        type === DotEditContentFieldSelectableDataType.INTEGER ||
-        type === DotEditContentFieldSelectableDataType.FLOAT
+        type === DotEditContentFieldSingleSelectableDataType.INTEGER ||
+        type === DotEditContentFieldSingleSelectableDataType.FLOAT
     ) {
         return Number(value);
     }

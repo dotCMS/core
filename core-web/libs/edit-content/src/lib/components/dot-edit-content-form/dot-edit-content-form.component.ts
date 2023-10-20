@@ -77,9 +77,13 @@ export class DotEditContentFormComponent implements OnInit {
             }
         }
 
-        return this.fb.control(this.formData.values?.[field.variable] ?? field.defaultValue, {
-            validators
-        });
+        return this.fb.control(
+            {
+                value: this.formData.values?.[field.variable] ?? field.defaultValue,
+                disabled: field.readOnly
+            },
+            { validators }
+        );
     }
 
     /**
