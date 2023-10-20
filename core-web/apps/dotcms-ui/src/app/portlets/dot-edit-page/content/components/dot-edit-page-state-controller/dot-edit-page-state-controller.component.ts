@@ -58,7 +58,7 @@ export class DotEditPageStateControllerComponent implements OnChanges, OnInit {
     mode: DotPageMode;
     options: SelectItem[] = [];
     featureFlagEditURLContentMapIsOn = false;
-    menuItems: MenuItem[];
+    menuItems: MenuItem[] = [];
 
     readonly dotPageMode = DotPageMode;
     readonly featureFlagEditURLContentMap = FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP;
@@ -89,6 +89,12 @@ export class DotEditPageStateControllerComponent implements OnChanges, OnInit {
             this.lock = this.isLocked(pageState);
             this.lockWarn = this.shouldWarnLock(pageState);
             this.mode = pageState.state.mode;
+
+            if (this.featureFlagEditURLContentMapIsOn && pageState.params.urlContentMap) {
+                this.menuItems = this.getMenuItems();
+            } else if (this.menuItems.length) {
+                this.menuItems = []; // We have to clean the menu items because the menu is not re-rendered when the flag is off or the urlContentMap is null
+            }
         }
     }
 
