@@ -76,6 +76,7 @@ class PgNgDataSourceUrl {
         }
 
         sw.append("ssl.mode=require");
+        return  sw.toString();
 
 
     }
