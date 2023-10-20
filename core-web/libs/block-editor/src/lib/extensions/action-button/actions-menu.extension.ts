@@ -173,9 +173,7 @@ function execCommand({
         subscript: () => editor.chain().setSubscript().focus().run(),
         superscript: () => editor.chain().setSuperscript().focus().run(),
         video: () => editor.commands.openAssetForm({ type: 'video' }),
-        aiContentPrompt: () => editor.commands.openAIPrompt(),
-        aiContent: () => editor.commands.insertAINode(),
-        aiImagePrompt: () => editor.commands.openImagePrompt()
+        aiContentPrompt: () => editor.commands.openAIPrompt()
     };
 
     getCustomActions(customBlocks).forEach((option) => {
