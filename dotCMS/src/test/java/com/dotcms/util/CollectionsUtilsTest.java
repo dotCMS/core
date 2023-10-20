@@ -1,12 +1,20 @@
 package com.dotcms.util;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.mock.request.DotCMSMockRequest;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.response.DotCMSMockResponse;
+import com.dotcms.mock.response.MockHeaderResponse;
+import com.dotcms.rendering.engine.ScriptEngine;
+import com.dotcms.rendering.engine.ScriptEngineFactory;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.Serializable;
+import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -367,11 +375,50 @@ public class CollectionsUtilsTest extends UnitTestBase {
         assertEquals( map.get("key2"), null);
     }
 
+    /**
+     * Method to test: {@link CollectionsUtils#concat(Object[], Object[])}
+     * Given Scenario: concat two arrays
+     * ExpectedResult: a resulting array with the elements of both arrays
+     *
+     */
     @Test
     public void testConcatPrimitive(){
         Integer [] array1 = {1,2,3};
         Integer [] array2 = {4,5,6};
         Integer [] array3 = CollectionsUtils.concat( array1, array2);
         assertArrayEquals( array3, new Integer[]{1,2,3,4,5,6});
+    }
+
+    private final static String JS_JSON_MAP = "(function test(context) {\n" +
+            "\n" +
+            "    \n" +
+            "    const contentJsonOut = {\n" +
+            "        \"message\":\"Contentlet 1 deleted\",\n" +
+            "        \"inner\": {\n" +
+            "            \"inner-message\":\"Contentlet 2 deleted\"\n" +
+            "        }\n" +
+            "    }\n" +
+            "\n" +
+            "    return contentJsonOut;\n" +
+            "})\n";
+
+    /**
+     * Method to test: {@link CollectionsUtils#toSerializableMap(Map)}
+     * Given Scenario: Convert an non serializable Map to a serializable map, should have inner non serializable maps
+     * ExpectedResult: a resulting Map should be serializable
+     *
+     */
+    @Test
+    public void test_toSerializableMap(){
+
+        final ScriptEngine scriptEngine = ScriptEngineFactory.getInstance().getEngine(ScriptEngineFactory.JAVASCRIPT_ENGINE);
+        final Object resultMap = scriptEngine.eval(new DotCMSMockRequest(), new DotCMSMockResponse(), new StringReader(JS_JSON_MAP), Map.of());
+
+        Assert.assertNotNull(resultMap);
+        Assert.assertTrue(resultMap instanceof Map);
+        Assert.assertTrue(resultMap instanceof Serializable);
+        Assert.assertTrue(Map.class.cast(resultMap).get("inner") instanceof Map);
+        Assert.assertTrue(Map.class.cast(resultMap).get("inner") instanceof Serializable);
+
     }
 }

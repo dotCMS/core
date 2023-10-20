@@ -21,6 +21,7 @@ import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
+import io.vavr.control.Try;
 import org.apache.velocity.tools.view.context.ChainedContext;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.graalvm.polyglot.Context;
@@ -31,7 +32,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -140,6 +143,12 @@ public class JsEngine implements ScriptEngine {
 
             if (isString(eval)) {
                 return eval.as(String.class);
+            }
+
+            final Value finalValue = eval;
+            final Map resultMap = Try.of(()-> finalValue.as(Map.class)).getOrNull();
+            if (Objects.nonNull(resultMap)) {
+                return CollectionsUtils.toSerializableMap(resultMap); // we need to do that b.c the context will be close after the return and the resultMap won;t be usable.
             }
 
             return CollectionsUtils.map("output", eval.asString(), "dotJSON", dotJSON);

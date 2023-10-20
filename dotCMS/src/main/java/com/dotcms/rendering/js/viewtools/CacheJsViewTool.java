@@ -3,9 +3,12 @@ package com.dotcms.rendering.js.viewtools;
 import com.dotcms.rendering.js.JsViewTool;
 import com.dotcms.rendering.js.proxy.JsProxyFactory;
 import com.dotcms.rendering.velocity.viewtools.dotcache.DotCacheTool;
+import com.dotcms.util.CollectionsUtils;
 import org.graalvm.polyglot.HostAccess;
+import org.graalvm.polyglot.Value;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * Wraps the {@link com.dotcms.rendering.velocity.viewtools.dotcache.DotCacheTool} (categories) into the JS context.
@@ -46,8 +49,25 @@ public class CacheJsViewTool implements JsViewTool{
      * @param value The object being cached.
      */
     public void put(final String key, final Object value) {
-        this.dotCacheTool.put(key, (Serializable) JsProxyFactory.unwrap(value));
+
+        final Object unwrapValue = JsProxyFactory.unwrap(value);
+        if (null != unwrapValue) {
+
+            this.dotCacheTool.put(key, (unwrapValue instanceof Serializable)? unwrapValue:
+                    makeSerializable(unwrapValue));
+        }
     }
+
+    private Serializable makeSerializable(final Object unwrapValue) {
+
+        if (unwrapValue instanceof Map && !(unwrapValue instanceof Serializable)) {
+
+            return CollectionsUtils.toSerializableMap((Map)unwrapValue);
+        }
+
+        return unwrapValue instanceof Serializable? (Serializable)unwrapValue: unwrapValue.toString();
+    }
+
 
     @HostAccess.Export
     /**
