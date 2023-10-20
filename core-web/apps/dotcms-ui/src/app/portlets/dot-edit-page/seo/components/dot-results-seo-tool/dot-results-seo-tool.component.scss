@@ -48,6 +48,7 @@
     border-radius: 6.25rem;
     background: $color-palette-gray-200;
     padding: $spacing-1;
+    color: $color-palette-gray-800;
 }
 
 .results-seo-tool__search-title {
@@ -108,10 +109,6 @@
 
 .results-seo-tool__result-icon--alert-green {
     color: $color-alert-green;
-}
-
-.results-seo-tool__preview-image {
-    width: 100%;
 }
 
 .results-seo-tool__preview {

@@ -20,6 +20,14 @@ export class AiContentService {
 
     constructor(private http: HttpClient) {}
 
+    getLastUsedPrompt(): string | null {
+        return this.lastUsedPrompt;
+    }
+
+    getLastContentResponse(): string | null {
+        return this.lastContentResponse;
+    }
+
     getIAContent(prompt: string): Observable<string> {
         this.lastUsedPrompt = prompt;
 
