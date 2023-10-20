@@ -444,7 +444,7 @@ export class DotEditContentHtmlService {
     getMetaTags(): SeoMetaTags {
         const pageDocument = this.getEditPageDocument();
 
-        return this.DotSeoMetaTagsUtilService.getMetaTags(pageDocument);
+        return this.dotSeoMetaTagsUtilService.getMetaTags(pageDocument);
     }
 
     private setMaterialIcons(): void {
