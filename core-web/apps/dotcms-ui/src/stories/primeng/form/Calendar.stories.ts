@@ -21,7 +21,6 @@ const meta: Meta<Calendar> = {
         showTime: true,
         showClear: true,
         inline: false,
-
         placeholder: 'Select a date',
         minDate: TODAY,
         disabledDates: DISABLED_DAYS,

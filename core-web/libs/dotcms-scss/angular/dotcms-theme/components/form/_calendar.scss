@@ -3,7 +3,6 @@
 @import "common";
 @import "../buttons/common";
 
-$btn-height: 2.3125rem;
 $calendar-th-height: 22px;
 $month-year-picker-width: 328px;
 $month-year-border-radius: 100px;
@@ -19,6 +18,7 @@ $month-year-border-radius: 100px;
         height: auto;
         @include truncate-text;
     }
+
     &:focus-within {
         background-color: transparent;
         @include field-focus;
@@ -46,6 +46,7 @@ $month-year-border-radius: 100px;
         height: auto;
         aspect-ratio: 1/1;
         background-color: $color-palette-gray-200;
+
         .pi {
             width: $icon-lg-box;
             font-size: $icon-lg;
