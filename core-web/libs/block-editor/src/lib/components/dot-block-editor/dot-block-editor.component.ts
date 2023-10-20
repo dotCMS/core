@@ -50,10 +50,11 @@ import {
     FREEZE_SCROLL_KEY,
     AssetUploader,
     DotComands,
-    AIContentPromptExtension
+    AIContentPromptExtension,
+    AIContentActionsExtension
 } from '../../extensions';
 import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
-import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
+import { ContentletBlock, ImageNode, VideoNode, AIContentNode } from '../../nodes';
 import {
     formatHTML,
     removeInvalidNodes,
@@ -109,7 +110,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         ['dotContent', ContentletBlock(this.injector)],
         ['image', ImageNode],
         ['video', VideoNode],
-        ['table', DotTableExtension()]
+        ['table', DotTableExtension()],
+        ['aiContent', AIContentNode]
     ]);
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -381,6 +383,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
             AIContentPromptExtension(this.viewContainerRef),
+            AIContentActionsExtension(this.viewContainerRef),
             DotFloatingButton(this.injector, this.viewContainerRef),
             DotTableCellExtension(this.viewContainerRef),
             BubbleAssetFormExtension(this.viewContainerRef),
