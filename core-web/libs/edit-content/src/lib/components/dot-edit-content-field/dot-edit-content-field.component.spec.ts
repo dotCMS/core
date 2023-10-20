@@ -1,65 +1,32 @@
+import { describe } from '@jest/globals';
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
-import { CommonModule } from '@angular/common';
-import {
-    ControlContainer,
-    FormControl,
-    FormGroup,
-    FormGroupDirective,
-    ReactiveFormsModule
-} from '@angular/forms';
-
-import { InputTextModule } from 'primeng/inputtext';
-
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
+import { ControlContainer, FormGroupDirective } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
+import { FIELD_TYPES, FIELD_TYPES_COMPONENTS } from './utils';
 
-export const FIELD_MOCK: DotCMSContentTypeField = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-    contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-    dataType: 'TEXT',
-    fieldType: 'Text',
-    fieldTypeLabel: 'Text',
-    fieldVariables: [],
-    fixed: false,
-    iDate: 1696896882000,
-    id: 'c3b928bc2b59fc22c67022de4dd4b5c4',
-    indexed: false,
-    listed: false,
-    hint: 'A helper text',
-    modDate: 1696896882000,
-    name: 'testVariable',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 2,
-    unique: false,
-    variable: 'testVariable'
-};
+import { FIELDS_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
 
-const FORM_GROUP_MOCK = new FormGroup({
-    testVariable: new FormControl('')
+describe('FIELD_TYPES and FIELDS_MOCK', () => {
+    it('should be in sync', () => {
+        expect(
+            Object.values(FIELD_TYPES).every((fieldType) =>
+                FIELDS_MOCK.find((f) => f.fieldType === fieldType)
+            )
+        ).toBeTruthy();
+    });
 });
-const FORM_GROUP_DIRECTIVE_MOCK: FormGroupDirective = new FormGroupDirective([], []);
-FORM_GROUP_DIRECTIVE_MOCK.form = FORM_GROUP_MOCK;
 
-describe('DotFieldComponent', () => {
+describe.each([...FIELDS_MOCK])('DotFieldComponent', (fieldMock) => {
     let spectator: Spectator<DotEditContentFieldComponent>;
     const createComponent = createComponentFactory({
         component: DotEditContentFieldComponent,
-        imports: [
-            DotEditContentFieldComponent,
-            CommonModule,
-            ReactiveFormsModule,
-            InputTextModule,
-            DotFieldRequiredDirective
-        ],
         componentViewProviders: [
             {
                 provide: ControlContainer,
-                useValue: FORM_GROUP_DIRECTIVE_MOCK
+                useValue: createFormGroupDirectiveMock()
             }
         ],
         providers: [FormGroupDirective]
@@ -68,26 +35,31 @@ describe('DotFieldComponent', () => {
     beforeEach(async () => {
         spectator = createComponent({
             props: {
-                field: FIELD_MOCK
+                field: fieldMock
             }
         });
     });
 
     it('should render the label', () => {
         spectator.detectChanges();
-        const label = spectator.query(byTestId(`label-${FIELD_MOCK.variable}`));
-        expect(label?.textContent).toContain(FIELD_MOCK.name);
+        const label = spectator.query(byTestId(`label-${fieldMock.variable}`));
+        expect(label?.textContent).toContain(fieldMock.name);
     });
 
     it('should render the hint', () => {
         spectator.detectChanges();
-        const hint = spectator.query(byTestId(`hint-${FIELD_MOCK.variable}`));
-        expect(hint?.textContent).toContain(FIELD_MOCK.hint);
+        const hint = spectator.query(byTestId(`hint-${fieldMock.variable}`));
+        expect(hint?.textContent).toContain(fieldMock.hint);
     });
 
-    it('should render the input', () => {
+    it('should render the correct field type', () => {
         spectator.detectChanges();
-        const input = spectator.query(byTestId(`input-${FIELD_MOCK.variable}`));
-        expect(input).toBeDefined();
+        const field = spectator.debugElement.query(
+            By.css(`[data-testId="field-${fieldMock.variable}"]`)
+        );
+
+        expect(
+            field.componentInstance instanceof FIELD_TYPES_COMPONENTS[fieldMock.fieldType]
+        ).toBeTruthy();
     });
 });
