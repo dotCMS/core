@@ -7,9 +7,28 @@ import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.common.collect.MapBuilder;
 
 import java.io.Serializable;
-import java.util.*;
-import java.util.function.*;
+import java.lang.reflect.Array;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
+import java.util.stream.Stream;
 
 /**
  * This utility class provides common use methods for creating and interacting
@@ -1099,6 +1118,19 @@ public class CollectionsUtils implements Serializable {
             return (current,last) -> comparator.compare(current,last) >= 0 ? current : last;
         }
 
-
     }
+
+    /**
+     * Concatenates the contents of one array into the other one.
+     *
+     * @param array1 The base array used in the concatenation.
+     * @param array2 The array that will be added to the first array.
+     *
+     * @return The resulting array
+     */
+    public static <T> T[] concat(final T[] array1, final T[] array2) {
+        return Stream.concat(Arrays.stream(array1), Arrays.stream(array2))
+                .toArray(size -> (T[]) Array.newInstance(array1.getClass().getComponentType(), size));
+    }
+
 }
