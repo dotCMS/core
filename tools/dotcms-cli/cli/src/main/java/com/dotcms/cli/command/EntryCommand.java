@@ -16,6 +16,8 @@ import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
+
+import io.quarkus.runtime.annotations.QuarkusMain;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Model.CommandSpec;
@@ -48,6 +50,7 @@ import picocli.CommandLine.ParameterException;
                 FilesCommand.class
         }
 )
+@QuarkusMain
 public class EntryCommand  {
 
     // Declared here, so we have an instance available via Arc container
