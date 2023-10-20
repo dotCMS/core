@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { Component, EventEmitter, Output, OnInit } from '@angular/core';
 
@@ -26,7 +26,6 @@ export class AIContentActionsComponent implements OnInit {
     @Output() actionEmitter = new EventEmitter<ACTIONS>();
 
     actionOptions!: ActionOption[];
-    tooltipContent = 'Describe the size, color palette, style, mood, etc.';
 
     constructor(private aiContentService: AiContentService) {}
 
@@ -57,11 +56,17 @@ export class AIContentActionsComponent implements OnInit {
         this.actionEmitter.emit(action);
     }
 
-    getLatestContent(): string {
-        return this.aiContentService.getLatestContent();
+    getLatestContent() {
+        return this.aiContentService.getLastContentResponse();
     }
 
-    getNewContent(contentType: string): Observable<string> {
-        return this.aiContentService.getNewContent(contentType);
+    getNewContent(): Observable<string> {
+        const promptToUse: string = this.aiContentService.getLastUsedPrompt();
+
+        if (promptToUse) {
+            return this.aiContentService.getIAContent(promptToUse);
+        }
+
+        return of('');
     }
 }

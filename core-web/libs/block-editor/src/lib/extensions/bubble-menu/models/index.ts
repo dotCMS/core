@@ -84,5 +84,4 @@ export interface HideBubbleMenuExtensions {
     dotVideo: boolean;
     youtube: boolean;
     aiContent: boolean;
-    loader: boolean;
 }

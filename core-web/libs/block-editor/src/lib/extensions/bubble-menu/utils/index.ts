@@ -10,8 +10,7 @@ const hideBubbleMenuOn: HideBubbleMenuExtensions = {
     table: true,
     youtube: true,
     dotVideo: true,
-    aiContent: true,
-    loader: true
+    aiContent: true
 };
 
 /**
