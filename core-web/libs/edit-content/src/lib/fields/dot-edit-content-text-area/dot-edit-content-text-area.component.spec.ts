@@ -32,6 +32,7 @@ describe('DotEditContentTextAreaComponent', () => {
         ],
         providers: [FormGroupDirective]
     });
+
     beforeEach(() => {
         spectator = createComponent({
             props: {

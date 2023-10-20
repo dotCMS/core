@@ -1,5 +1,5 @@
 import { NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostBinding, Input, inject } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -31,6 +31,7 @@ import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentFieldComponent {
+    @HostBinding('class') class = 'field';
     @Input() field!: DotCMSContentTypeField;
     readonly fieldTypes = FIELD_TYPES;
 }

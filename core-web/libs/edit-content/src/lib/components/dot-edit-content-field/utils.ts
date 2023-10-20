@@ -3,6 +3,7 @@ import { Type } from '@angular/core';
 import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-text-area/dot-edit-content-text-area.component';
 import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-text-field/dot-edit-content-text-field.component';
 
+// Map to match the field type to component selector
 export enum FIELD_TYPES {
     TEXT = 'Text',
     TEXTAREA = 'Textarea'

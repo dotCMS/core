@@ -7,11 +7,11 @@
     padding: $spacing-4;
     padding-bottom: 0;
     height: 100%;
+}
 
-    form {
-        overflow: auto;
-        padding-right: $spacing-4;
-    }
+.edit-content-form {
+    overflow: auto;
+    padding-right: $spacing-4;
 }
 
 .row {
@@ -19,10 +19,10 @@
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
     gap: $spacing-2;
+}
 
-    .column {
-        display: flex;
-        flex-direction: column;
-        gap: $spacing-3;
-    }
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-3;
 }
