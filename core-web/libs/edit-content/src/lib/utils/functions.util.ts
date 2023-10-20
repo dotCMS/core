@@ -16,10 +16,10 @@ const castValue = (value: string, type: string) => {
 };
 
 export const mapSelectableOptions = (
-    input: string,
+    options: string,
     dataType: string
 ): { label: string; value: string | boolean | number }[] => {
-    const lines = input?.split('\r\n');
+    const lines = options?.split('\r\n');
 
     if (lines.length === 0) {
         return [];

@@ -1,18 +1,8 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
-import { CommonModule } from '@angular/common';
-import {
-    ControlContainer,
-    FormControl,
-    FormGroup,
-    FormGroupDirective,
-    ReactiveFormsModule
-} from '@angular/forms';
-
-import { InputTextModule } from 'primeng/inputtext';
+import { ControlContainer, FormControl, FormGroup, FormGroupDirective } from '@angular/forms';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
@@ -49,13 +39,6 @@ describe('DotFieldComponent', () => {
     let spectator: Spectator<DotEditContentFieldComponent>;
     const createComponent = createComponentFactory({
         component: DotEditContentFieldComponent,
-        imports: [
-            DotEditContentFieldComponent,
-            CommonModule,
-            ReactiveFormsModule,
-            InputTextModule,
-            DotFieldRequiredDirective
-        ],
         componentViewProviders: [
             {
                 provide: ControlContainer,

@@ -1,11 +1,6 @@
 import { Spectator, createComponentFactory } from '@ngneat/spectator';
 
-import { CommonModule } from '@angular/common';
-import { ControlContainer, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
-
-import { DropdownModule } from 'primeng/dropdown';
-
-import { DotFieldRequiredDirective } from '@dotcms/ui';
+import { ControlContainer, FormGroupDirective } from '@angular/forms';
 
 import {
     SELECT_FIELD_BOOLEAN_MOCK,
@@ -21,7 +16,6 @@ describe('DotEditContentSelectFieldComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotEditContentSelectFieldComponent,
-        imports: [CommonModule, DropdownModule, ReactiveFormsModule, DotFieldRequiredDirective],
         componentViewProviders: [
             { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
         ],

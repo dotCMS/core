@@ -1,11 +1,6 @@
 import { Spectator, createComponentFactory } from '@ngneat/spectator';
 
-import { CommonModule } from '@angular/common';
-import { ControlContainer, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
-
-import { RadioButtonModule } from 'primeng/radiobutton';
-
-import { DotFieldRequiredDirective } from '@dotcms/ui';
+import { ControlContainer, FormGroupDirective } from '@angular/forms';
 
 import { DotEditContentRadioFieldComponent } from './dot-edit-content-radio-field.component';
 
@@ -22,7 +17,6 @@ describe('DotEditContentRadioFieldComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotEditContentRadioFieldComponent,
-        imports: [CommonModule, RadioButtonModule, ReactiveFormsModule, DotFieldRequiredDirective],
         componentViewProviders: [
             { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
         ],
