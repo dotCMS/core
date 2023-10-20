@@ -126,7 +126,7 @@ export class DotEditContentHtmlService {
         private dotCopyContentService: DotCopyContentService,
         private dotLoadingIndicatorService: DotLoadingIndicatorService,
         private dotSeoMetaTagsService: DotSeoMetaTagsService,
-        private DotSeoMetaTagsUtilService: DotSeoMetaTagsUtilService
+        private dotSeoMetaTagsUtilService: DotSeoMetaTagsUtilService
     ) {
         this.contentletEvents$.subscribe(
             (
