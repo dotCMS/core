@@ -10,27 +10,28 @@ import { takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
-import { ACTIONS, AIContentActionsComponent } from '../ai-content-actions.component';
-import { AI_CONTENT_ACTIONS_PLUGIN_KEY } from '../ai-content-actions.extension';
+import { AIImagePromptComponent } from '../ai-image-prompt.component';
+import { AI_IMAGE_PROMPT_PLUGIN_KEY } from '../ai-image-prompt.extension';
 import { TIPPY_OPTIONS } from '../utils';
 
-interface AIContentActionsProps {
+interface AIImagePromptProps {
     pluginKey: PluginKey;
     editor: Editor;
     element: HTMLElement;
-    tippyOptions?: Partial<Props>;
-    component: ComponentRef<AIContentActionsComponent>;
+    tippyOptions: Partial<Props>;
+    component: ComponentRef<AIImagePromptComponent>;
 }
 
 interface PluginState {
     open: boolean;
+    form: [];
 }
 
-export type AIContentActionsViewProps = AIContentActionsProps & {
+export type AIImagePromptViewProps = AIImagePromptProps & {
     view: EditorView;
 };
 
-export class AIContentActionsView {
+export class AIImagePromptView {
     public editor: Editor;
 
     public node: Node;
@@ -41,15 +42,15 @@ export class AIContentActionsView {
 
     public tippy: Instance | undefined;
 
-    public tippyOptions?: Partial<Props>;
+    public tippyOptions: Partial<Props>;
 
     public pluginKey: PluginKey;
 
-    public component: ComponentRef<AIContentActionsComponent>;
+    public component: ComponentRef<AIImagePromptComponent>;
 
     private destroy$ = new Subject<boolean>();
 
-    constructor(props: AIContentActionsViewProps) {
+    constructor(props: AIImagePromptViewProps) {
         const { editor, element, view, tippyOptions = {}, pluginKey, component } = props;
 
         this.editor = editor;
@@ -62,58 +63,26 @@ export class AIContentActionsView {
         this.pluginKey = pluginKey;
         this.component = component;
 
-        this.component.instance.actionEmitter.pipe(takeUntil(this.destroy$)).subscribe((action) => {
-            switch (action) {
-                case ACTIONS.ACCEPT:
-                    this.acceptContent();
-                    break;
-
-                case ACTIONS.REGENERATE:
-                    this.generateContent();
-                    break;
-
-                case ACTIONS.DELETE:
-                    this.deleteContent();
-                    break;
-            }
-        });
-
         this.view.dom.addEventListener('keydown', this.handleKeyDown.bind(this));
-    }
 
-    private acceptContent() {
-        this.editor.commands.closeAIContentActions();
-        const content = this.component.instance.getLatestContent();
-        this.editor.commands.insertContent(content);
-    }
-
-    private generateContent() {
-        const nodeType = this.getNodeType();
-
-        this.editor.commands.closeAIContentActions();
-
-        this.component.instance.getNewContent(nodeType).subscribe((newContent) => {
-            if (newContent) {
-                this.editor.commands.deleteSelection();
-                this.editor.commands.insertAINode(newContent);
-                this.editor.commands.openAIContentActions();
-            }
+        this.component.instance.formSubmission.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            this.editor.commands.closeImagePrompt();
+            this.editor.commands.insertLoaderNode();
         });
-    }
 
-    private getNodeType() {
-        const { state } = this.editor.view;
-        const { doc, selection } = state;
-        const { ranges } = selection;
-        const from = Math.min(...ranges.map((range) => range.$from.pos));
-        const node = doc?.nodeAt(from);
+        this.component.instance.aiResponse
+            .pipe(takeUntil(this.destroy$))
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .subscribe((contentlet: any) => {
+                this.editor.commands.deleteSelection();
+                const data = Object.values(contentlet[0])[0];
 
-        return node.type.name;
-    }
-
-    private deleteContent() {
-        this.editor.commands.closeAIContentActions();
-        this.editor.commands.deleteSelection();
+                if (data) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    this.editor.commands.insertImage(data as any);
+                    this.editor.commands.openAIContentActions();
+                }
+            });
     }
 
     private handleKeyDown(event: KeyboardEvent) {
@@ -132,6 +101,10 @@ export class AIContentActionsView {
             return;
         }
 
+        if (!next.open) {
+            this.component.instance.cleanForm();
+        }
+
         this.createTooltip();
 
         next.open ? this.show() : this.hide();
@@ -145,10 +118,13 @@ export class AIContentActionsView {
             return;
         }
 
-        this.tippy = tippy(editorElement.parentElement, {
+        this.tippy = tippy(document.body, {
             ...TIPPY_OPTIONS,
             ...this.tippyOptions,
-            content: this.element
+            content: this.element,
+            onHide: () => {
+                this.editor.commands.closeImagePrompt();
+            }
         });
     }
 
@@ -165,18 +141,18 @@ export class AIContentActionsView {
         this.tippy?.destroy();
         this.destroy$.next(true);
         this.destroy$.complete();
-        this.view.dom.removeEventListener('keydown', this.handleKeyDown);
     }
 }
 
-export const aiContentActionsPlugin = (options: AIContentActionsProps) => {
+export const aiImagePromptPlugin = (options: AIImagePromptProps) => {
     return new Plugin({
         key: options.pluginKey as PluginKey,
-        view: (view) => new AIContentActionsView({ view, ...options }),
+        view: (view) => new AIImagePromptView({ view, ...options }),
         state: {
             init(): PluginState {
                 return {
-                    open: false
+                    open: false,
+                    form: []
                 };
             },
 
@@ -185,11 +161,11 @@ export const aiContentActionsPlugin = (options: AIContentActionsProps) => {
                 value: PluginState,
                 oldState: EditorState
             ): PluginState {
-                const { open } = transaction.getMeta(AI_CONTENT_ACTIONS_PLUGIN_KEY) || {};
-                const state = AI_CONTENT_ACTIONS_PLUGIN_KEY?.getState(oldState);
+                const { open, form } = transaction.getMeta(AI_IMAGE_PROMPT_PLUGIN_KEY) || {};
+                const state = AI_IMAGE_PROMPT_PLUGIN_KEY.getState(oldState);
 
                 if (typeof open === 'boolean') {
-                    return { open };
+                    return { open, form };
                 }
 
                 return state || value;
