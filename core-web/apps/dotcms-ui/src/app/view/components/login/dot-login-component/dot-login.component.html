@@ -77,14 +77,13 @@
                 formControlName="rememberMe"
                 data-testId="rememberMe"
                 binary="true"></p-checkbox>
-            <button
-                class="p-button-text p-button-sm p-button-secondary"
+            <a
+                class="password-settings__forgot-password"
                 *ngIf="!isLoginInProgress"
-                (click)="goToForgotPassword()"
-                pButton
-                data-testId="actionLink">
-                {{ loginInfo.i18nMessagesMap['get-new-password'] }}
-            </button>
+                [routerLink]="['/public/forgotPassword']"
+                data-testId="actionLink"
+                >{{ loginInfo.i18nMessagesMap['get-new-password'] }}</a
+            >
         </div>
         <div class="field">
             <dot-loading-indicator></dot-loading-indicator>

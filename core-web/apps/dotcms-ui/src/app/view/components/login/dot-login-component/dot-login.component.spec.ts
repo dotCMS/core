@@ -8,7 +8,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { ActivatedRoute, Params } from '@angular/router';
+import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ButtonModule } from 'primeng/button';
@@ -85,7 +85,8 @@ describe('DotLoginComponent', () => {
                 RouterTestingModule,
                 FormsModule,
                 ReactiveFormsModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                RouterLink
             ],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
@@ -155,11 +156,11 @@ describe('DotLoginComponent', () => {
             expect(loginPageStateService.update).toHaveBeenCalledWith('es_ES');
         });
 
-        it('should navigate to the recover password screen', () => {
+        it('should have a link to forgot password', () => {
             const forgotPasswordLink: DebugElement = de.query(By.css('[data-testId="actionLink"]'));
-            spyOn(dotRouterService, 'goToForgotPassword');
-            forgotPasswordLink.triggerEventHandler('click', { value: '' });
-            expect(dotRouterService.goToForgotPassword).toHaveBeenCalledTimes(1);
+            expect(forgotPasswordLink.nativeElement.getAttribute('href')).toEqual(
+                '/public/forgotPassword'
+            );
         });
 
         it('should load initial value of the form', () => {
