@@ -360,9 +360,13 @@ public class CircuitBreakerUrl {
         private final T response;
         private final int statusCode;
 
-        private Response(final T response, final int statusCode) {
+        private final Header[] responseHeaders;
+
+
+        private Response(final T response, final int statusCode, final Header[] responseHeaders) {
             this.response = response;
             this.statusCode = statusCode;
+            this.responseHeaders = responseHeaders;
         }
 
         Response(final CircuitBreakerUrl circuitBreakerUrl, final Class<T> clazz) throws IOException {
@@ -370,12 +374,17 @@ public class CircuitBreakerUrl {
                 clazz.equals(String.class)
                     ? clazz.cast(circuitBreakerUrl.doString())
                     : circuitBreakerUrl.doObject(clazz),
-                circuitBreakerUrl.response()
+                circuitBreakerUrl.response(),
+                circuitBreakerUrl.getResponseHeaders()
             );
         }
 
         Response(final CircuitBreakerUrl circuitBreakerUrl) throws IOException {
             this(circuitBreakerUrl, (Class<T>) String.class);
+        }
+
+        public Header[] getResponseHeaders() {
+            return responseHeaders;
         }
 
         public T getResponse() {

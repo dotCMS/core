@@ -2,6 +2,7 @@ package com.dotcms.rendering.js;
 
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.rendering.engine.ScriptEngine;
+import com.dotcms.rendering.js.fetch.JsFetch;
 import com.dotcms.rendering.js.proxy.JsProxyFactory;
 import com.dotcms.rendering.js.proxy.JsRequest;
 import com.dotcms.rendering.js.proxy.JsResponse;
@@ -114,6 +115,8 @@ public class JsEngine implements ScriptEngine {
 
         final DotJSON dotJSON = (DotJSON)contextParams.getOrDefault("dotJSON", new DotJSON());
         try (Context context = Context.newBuilder(ENGINE_JS)
+                .out(new ConsumerOutputStream((msg)->Logger.debug(JsEngine.class, msg)))
+                .err(new ConsumerOutputStream((msg)->Logger.debug(JsEngine.class, msg)))
                 //.allowHostAccess(HostAccess.ALL) // todo: ask if we want all access to the classpath
                 //allows access to all Java classes
                 //.allowHostClassLookup(className -> true)
@@ -130,6 +133,7 @@ public class JsEngine implements ScriptEngine {
             bindings.putMember("dotJSON", dotJSON);
             bindings.putMember("request",  jsRequest);
             bindings.putMember("response", jsResponse);
+            bindings.putMember("fetch", new JsFetch(context));
             Value eval   = context.eval(source);
             if (eval.canExecute()) {
                 eval = contextParams.containsKey("dot:arguments")?
