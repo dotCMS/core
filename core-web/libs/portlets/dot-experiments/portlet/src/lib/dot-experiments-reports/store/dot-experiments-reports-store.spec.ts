@@ -647,4 +647,44 @@ describe('DotExperimentsReportsStore', () => {
             });
         });
     });
+
+    it('should show the summary table data correctly', (done) => {
+        dotExperimentsService.getById.mockReturnValue(
+            of({
+                ...EXPERIMENT_MOCK,
+                status: DotExperimentStatus.RUNNING
+            })
+        );
+        spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
+
+        const expectedResult = [
+            {
+                conversionRate: '0%',
+                conversionRateRange: '19.4% to 93.2%',
+                conversions: 0,
+                id: '111',
+                isPromoted: false,
+                isWinner: false,
+                name: 'Variant 111 Name',
+                probabilityToBeBest: '7.69%',
+                sessions: 0
+            },
+            {
+                conversionRate: '100%',
+                conversionRateRange: '66.4% to 99.7%',
+                conversions: 2,
+                id: 'DEFAULT',
+                isPromoted: false,
+                isWinner: false,
+                name: 'DEFAULT Name',
+                probabilityToBeBest: '92.3%',
+                sessions: 2
+            }
+        ];
+
+        store.vm$.subscribe(({ detailData }) => {
+            expect(detailData).toEqual(expectedResult);
+            done();
+        });
+    });
 });
