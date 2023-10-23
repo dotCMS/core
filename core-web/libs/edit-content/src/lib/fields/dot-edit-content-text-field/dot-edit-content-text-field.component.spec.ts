@@ -11,7 +11,7 @@ import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotEditContentTextFieldComponent } from './dot-edit-content-text-field.component';
 import { INPUT_TEXT_OPTIONS, INPUT_TYPE } from './utils';
 
-import { TEXT_FIELD_MOCK, createFormGroupDirectiveMock } from '../../shared/utils/mocks';
+import { TEXT_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
 
 describe('DotEditContentTextFieldComponent', () => {
     let spectator: Spectator<DotEditContentTextFieldComponent>;

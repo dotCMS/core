@@ -6,8 +6,8 @@ import { ActivatedRoute } from '@angular/router';
 
 import { EditContentLayoutComponent } from './edit-content.layout.component';
 
-import { DotEditContentService } from '../../shared/services/dot-edit-content.service';
-import { CONTENT_TYPE_MOCK, LAYOUT_MOCK } from '../../shared/utils/mocks';
+import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { CONTENT_TYPE_MOCK, LAYOUT_MOCK } from '../../utils/mocks';
 
 const createEditContentLayoutComponent = (params: { contentType?: string; id?: string }) => {
     return createComponentFactory({

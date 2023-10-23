@@ -12,7 +12,7 @@ import {
     createFormGroupDirectiveMock,
     SELECT_FIELD_INTEGER_MOCK,
     SELECT_FIELD_FLOAT_MOCK
-} from '../../shared/utils/mocks';
+} from '../../utils/mocks';
 
 describe('DotEditContentSelectFieldComponent', () => {
     let spectator: Spectator<DotEditContentSelectFieldComponent>;

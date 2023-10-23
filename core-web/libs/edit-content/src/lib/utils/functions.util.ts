@@ -1,5 +1,5 @@
-import { DotEditContentFieldSingleSelectableDataType } from '../enums/dot-edit-content-field.enum';
-import { DotEditContentFieldSingleSelectableDataTypes } from '../types/dot-edit-content-field.type';
+import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
+import { DotEditContentFieldSingleSelectableDataTypes } from '../models/dot-edit-content-field.type';
 
 const castValue = (value: string, type: string): DotEditContentFieldSingleSelectableDataTypes => {
     if (type === DotEditContentFieldSingleSelectableDataType.BOOL) {

@@ -5,8 +5,8 @@ import { DropdownModule } from 'primeng/dropdown';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { DotEditContentFieldSingleSelectableDataTypes } from '../../shared/types/dot-edit-content-field.type';
-import { mapSelectableOptions } from '../../shared/utils/functions.util';
+import { DotEditContentFieldSingleSelectableDataTypes } from '../../models/dot-edit-content-field.type';
+import { mapSelectableOptions } from '../../utils/functions.util';
 
 @Component({
     selector: 'dot-edit-content-select-field',

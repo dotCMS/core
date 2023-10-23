@@ -11,8 +11,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
-import { EditContentFormData } from '../../shared/interfaces/dot-edit-content-form.interface';
-import { FIELDS_MOCK, FIELD_MOCK, LAYOUT_MOCK } from '../../shared/utils/mocks';
+import { EditContentFormData } from '../../models/dot-edit-content-form.interface';
+import { FIELDS_MOCK, FIELD_MOCK, LAYOUT_MOCK } from '../../utils/mocks';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 
 export const VALUES_MOCK = {

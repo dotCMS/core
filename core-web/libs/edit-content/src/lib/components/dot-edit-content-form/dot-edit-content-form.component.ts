@@ -15,7 +15,7 @@ import { ButtonModule } from 'primeng/button';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { EditContentFormData } from '../../shared/interfaces/dot-edit-content-form.interface';
+import { EditContentFormData } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 @Component({
     selector: 'dot-edit-content-form',
