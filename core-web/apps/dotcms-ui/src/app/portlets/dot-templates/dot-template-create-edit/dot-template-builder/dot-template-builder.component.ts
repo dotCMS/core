@@ -84,13 +84,13 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
         this.templateUpdate$
             .pipe(debounceTime(AUTOSAVE_DEBOUNCE_TIME), takeUntil(this.destroy$))
             .subscribe((templateItem) => {
-                this.saveAndPublish.emit(templateItem);
+                this.save.emit(templateItem);
             });
     }
 
     private subscribeOnChangeBeforeLeaveHandler(): void {
         this.dotRouterService.pageLeaveRequest$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.saveAndPublish.emit(this.lastTemplate);
+            this.save.emit(this.lastTemplate);
         });
     }
 }
