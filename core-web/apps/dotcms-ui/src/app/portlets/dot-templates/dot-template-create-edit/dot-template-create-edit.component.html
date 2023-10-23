@@ -8,8 +8,7 @@
                     (click)="editTemplateProps()"
                     data-testId="editTemplateButton"
                     pButton
-                    icon="pi pi-pencil"
-                ></button>
+                    icon="pi pi-pencil"></button>
                 <dot-api-link [href]="vm.apiLink"></dot-api-link>
             </ng-container>
         </dot-portlet-toolbar>
@@ -22,8 +21,7 @@
                 (saveAndPublish)="saveAndPublishTemplate($event)"
                 (save)="saveTemplate($event)"
                 (cancel)="cancelTemplate()"
-                (custom)="onCustomEvent($event)"
-            ></dot-template-builder>
+                (custom)="onCustomEvent($event)"></dot-template-builder>
         </ng-container>
     </dot-portlet-base>
 </ng-container>
