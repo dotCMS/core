@@ -1,7 +1,7 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { GOAL_TYPES, Goals, RangeOfDateAndTime, SummaryLegend } from '@dotcms/dotcms-models';
+import { Goals, RangeOfDateAndTime, SummaryLegend } from '@dotcms/dotcms-models';
 import { GoalsMock, MockDotMessageService, suggestedWinnerMock } from '@dotcms/utils-testing';
 
 import { DotExperimentsExperimentSummaryComponent } from './dot-experiments-experiment-summary.component';
@@ -30,14 +30,13 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
     });
 
     it('should rendered the goal Input', () => {
+        const GOAL_NAME = GoalsMock.primary.name;
         const goals: Goals = GoalsMock;
         spectator.setInput({
             goals
         });
 
-        expect(spectator.query(byTestId('goal-label'))).toHaveText(
-            spectator.component.goalTypeMap[GOAL_TYPES.REACH_PAGE].label
-        );
+        expect(spectator.query(byTestId('goal-label'))).toHaveText(GOAL_NAME);
     });
 
     it('should rendered the scheduling Input', () => {
@@ -79,6 +78,7 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
             suggestedWinner.legend
         );
     });
+
     it('should rendered session reached number', () => {
         const sessionsReached = 50;
         spectator.setInput({
