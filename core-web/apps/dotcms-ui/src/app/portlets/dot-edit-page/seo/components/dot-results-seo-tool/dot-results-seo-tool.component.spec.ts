@@ -7,7 +7,11 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotResultsSeoToolComponent } from './dot-results-seo-tool.component';
 import { seoOGTagsMock, seoOGTagsResultMock, seoOGTagsResultOgMockTwitter } from './mocks';
 
-import { SEO_MEDIA_TYPES } from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
+import {
+    SEO_MEDIA_TYPES,
+    SEO_LIMITS
+} from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
+import { DotSeoMetaTagsUtilService } from '../../../content/services/html/dot-seo-meta-tags-util.service';
 import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-meta-tags.service';
 
 describe('DotResultsSeoToolComponent', () => {
@@ -16,10 +20,12 @@ describe('DotResultsSeoToolComponent', () => {
         component: DotResultsSeoToolComponent,
         providers: [
             DotSeoMetaTagsService,
+            DotSeoMetaTagsUtilService,
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
-                    'seo.rules.favicon.not.found': 'FavIcon not found!',
+                    'seo.rules.favicon.not.found':
+                        'Favicon not found, or image link in Favicon not valid!',
                     'seo.rules.favicon.more.one.found': 'More than 1 Favicon found!',
                     'seo.rules.favicon.found': 'Favicon found!',
                     'seo.rules.description.found.empty': 'Meta Description found, but is empty!',
@@ -55,11 +61,10 @@ describe('DotResultsSeoToolComponent', () => {
                     'seo.rules.og-image.over': 'og:image metatag found, but image is over 8 MB.',
                     'seo.rules.og-image.found':
                         'og:image metatag found, with an appropriate sized image!',
-
                     'seo.rules.read-more.facebook.learn':
-                        'Learn more about <span><a target="_blank" href="https://ogp.me/">The Open Graph Protocol.</a> <i class="pi pi-external-link"></i></span>',
+                        'Learn more about <span><a target="_blank" href="https://ogp.me/">The Open Graph Protocol</a>. <i class="pi pi-external-link"></i></span>',
                     'seo.rules.read-more.facebook.sharing':
-                        'Explore the <span><a target="_blank" href="https://developers.facebook.com/tools/debug/">Sharing Debugger - Meta for Developers</a> <i class="pi pi-external-link"></i></span>',
+                        'Explore the <span><a target="_blank" href="https://developers.facebook.com/tools/debug/">Sharing Debugger</a>. <i class="pi pi-external-link"></i></span>',
                     'seo.rules.read-more.facebook.title':
                         'Ensure that your <code>og:title</code> content is between 55 and 150 characters.',
                     'seo.rules.read-more.facebook.title.unique':
@@ -69,14 +74,11 @@ describe('DotResultsSeoToolComponent', () => {
                     'seo.rules.read-more.facebook.og-image':
                         'Make sure your <code>og:image</code> file sizes are under 8 MB.',
                     'seo.rules.read-more.facebook.social':
-                        'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a> <i class="pi pi-external-link"></i></span>',
-
+                        'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a>. <i class="pi pi-external-link"></i></span>',
                     'seo.rules.read-more.twitter.learn':
-                        'Read more about <span><a target="_blank" href="https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/abouts-cards">About Twitter Cards</a> <i class="pi pi-external-link"></i></span> on the Twitter Developer Platform',
+                        'Learn more about <span><a target="_blank" href="https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/abouts-cards">About Twitter Cards</a>. <i class="pi pi-external-link"></i></span>',
                     'seo.rules.read-more.twitter.suggest':
-                        'Suggest using the <code>twitter:card</code> value of <span><a target="_blank" href="https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image">summary_large_image</a> <i class="pi pi-external-link"></i></span> for most content, which uses a 16:9 image aspect ratio; this is similar to other social media cards.',
-                    'seo.rules.read-more.twitter.twitter-card':
-                        'A <code>twitter:card</code> value of summary corresponds instead to a 1:1 image.',
+                        'Suggest using the <code>twitter:card</code> value of <span><a target="_blank" href="https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image">summary_large_image</a> <i class="pi pi-external-link"></i></span> for most content.',
                     'seo.rules.read-more.twitter.twitter-title':
                         '<code>twitter:title</code> content should be between 30 and 70 characters.',
                     'seo.rules.read-more.twitter.twitter-title.content':
@@ -90,17 +92,16 @@ describe('DotResultsSeoToolComponent', () => {
                     'seo.rules.read-more.twitter.twitter-image.content':
                         '<code>twitter:image</code> content should be smaller than 5MB.',
                     'seo.rules.read-more.twitter.twitter-image.social':
-                        'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a> <i class="pi pi-external-link"></i></span>',
-
+                        'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a>. <i class="pi pi-external-link"></i></span>',
                     'seo.rules.read-more.linkedin.learn':
-                        'LinkedIn’s <span><a target="_blank"  href="https://www.linkedin.com/post-inspector/">Post Inspector</a> <i class="pi pi-external-link"></i></span> Tool',
+                        'Learn more about <span><a target="_blank"  href="https://www.linkedin.com/post-inspector/">LinkedIn\'s Post InspectorTool</a>. <i class="pi pi-external-link"></i></span>',
                     'seo.rules.read-more.linkedin.meta':
-                        'Meta Tags: Getting Them Right for <span><a target="_blank" href="https://www.linkedin.com/pulse/meta-tags-getting-them-right-linkedin-evelyn-pei/">LinkedIn.</a> <i class="pi pi-external-link"></i></span>',
+                        'Learn more about <span><a target="_blank" href="https://www.linkedin.com/pulse/meta-tags-getting-them-right-linkedin-evelyn-pei/">Meta Tags: Getting Them Right for LinkedIn</a>. <i class="pi pi-external-link"></i></span>',
                     'seo.rules.read-more.linkedin.summary':
-                        'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a> <i class="pi pi-external-link"></i></span>',
+                        'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a>. <i class="pi pi-external-link"></i></span>',
 
                     'seo.rules.read-more.google.favicons':
-                        'Favicons should be <span><a target="_blank" href="https://favicon.io/">.ico</a> <i class="pi pi-external-link"></i></span> files.',
+                        'Favicons should be <span><a target="_blank" href="https://favicon.io/">.ico files</a>. <i class="pi pi-external-link"></i></span>',
                     'seo.rules.read-more.google.title':
                         'HTML Title content should be between 30 and 60 characters.',
                     'seo.rules.read-more.google.title.unique':
@@ -110,11 +111,11 @@ describe('DotResultsSeoToolComponent', () => {
                     'seo.rules.read-more.google.length':
                         'The length of the Description allowed will depend on the reader\'s device size; on the smallest size only about 110 characters are allowed. Longer descriptions will show up with some sort of "read more" or "expand" option.',
                     'seo.rules.read-more.google.meta-tags':
-                        'Meta Tags for SEO: A Simple Guide for Beginners <i class="pi pi-external-link"></i>',
+                        '<span><a target="_blank" href="https://ahrefs.com/blog/seo-meta-tags/">Meta Tags for SEO: A Simple Guide for Beginners</a>. <i class="pi pi-external-link"></i></span>',
                     'seo.rules.read-more.google.meta-description':
-                        'What Are Meta Descriptions And How to Write Them <i class="pi pi-external-link"></i>',
+                        '<span><a target="_blank" href="https://moz.com/learn/seo/meta-description">What Are Meta Descriptions And How to Write Them</a>. <i class="pi pi-external-link"></i></span>',
                     'seo.rules.read-more.google.image-sizes':
-                        'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a></span>'
+                        'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a>. <i class="pi pi-external-link"></i></span>'
                 })
             }
         ]
@@ -129,6 +130,18 @@ describe('DotResultsSeoToolComponent', () => {
                 seoMedia: SEO_MEDIA_TYPES.GOOGLE
             }
         });
+    });
+
+    it('should display title', () => {
+        const titleElement = spectator.query(byTestId('results-seo-tool-search-title'));
+        expect(titleElement.textContent).toContain(seoOGTagsMock.title);
+        expect(titleElement.textContent.length).toBeLessThan(SEO_LIMITS.MAX_TITLE_LENGTH);
+    });
+
+    it('should display description', () => {
+        const titleElement = spectator.query(byTestId('results-seo-tool-search-description'));
+        expect(titleElement.textContent).toContain(seoOGTagsMock.description);
+        expect(titleElement.textContent.length).toBeLessThan(SEO_LIMITS.MAX_DESCRIPTION_LENGTH);
     });
 
     it('should display host Name', () => {
@@ -204,7 +217,7 @@ describe('DotResultsSeoToolComponent', () => {
         spectator.detectChanges();
         spectator.component.currentResults$.subscribe((items) => {
             expect(items.length).toEqual(3);
-            expect(items[0].key).toEqual(seoOGTagsResultMock[1].key);
+            expect(items[0].key).toEqual(seoOGTagsResultMock[5].key);
             expect(items[1].key).toEqual(seoOGTagsResultMock[3].key);
             expect(items[2].key).toEqual(seoOGTagsResultMock[4].key);
             done();
@@ -234,34 +247,31 @@ describe('DotResultsSeoToolComponent', () => {
         expect(readmore).toExist();
 
         expect(readmore[0].innerHTML).toEqual(
-            'Read more about <span><a target="_blank" href="https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/abouts-cards">About Twitter Cards</a> <i class="pi pi-external-link"></i></span> on the Twitter Developer Platform'
+            'Learn more about <span><a target="_blank" href="https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/abouts-cards">About Twitter Cards</a>. <i class="pi pi-external-link"></i></span>'
         );
         expect(readmore[1].innerHTML).toEqual(
-            'Suggest using the <code>twitter:card</code> value of <span><a target="_blank" href="https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image">summary_large_image</a> <i class="pi pi-external-link"></i></span> for most content, which uses a 16:9 image aspect ratio; this is similar to other social media cards.'
+            'Suggest using the <code>twitter:card</code> value of <span><a target="_blank" href="https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image">summary_large_image</a> <i class="pi pi-external-link"></i></span> for most content.'
         );
         expect(readmore[2].innerHTML).toEqual(
-            'A <code>twitter:card</code> value of summary corresponds instead to a 1:1 image.'
-        );
-        expect(readmore[3].innerHTML).toEqual(
             '<code>twitter:title</code> content should be between 30 and 70 characters.'
         );
-        expect(readmore[4].innerHTML).toEqual(
+        expect(readmore[3].innerHTML).toEqual(
             '<code>twitter:title</code> content should be unique across your site.'
         );
-        expect(readmore[5].innerHTML).toEqual(
+        expect(readmore[4].innerHTML).toEqual(
             'The length of the description allowed will depend on the reader\'s device size; on the smallest size only about 110 characters are allowed. Longer descriptions will show up with some sort of "read more" or "expand" option.'
         );
-        expect(readmore[6].innerHTML).toEqual(
+        expect(readmore[5].innerHTML).toEqual(
             '<code>twitter:image</code> content should be in JPG, PNG, WEBP, or GIF format.'
         );
-        expect(readmore[7].innerHTML).toEqual(
+        expect(readmore[6].innerHTML).toEqual(
             '<code>twitter:image</code> content should use a 16:9 aspect ratio, with a max of 1200 x 675 pixels.'
         );
-        expect(readmore[8].innerHTML).toEqual(
+        expect(readmore[7].innerHTML).toEqual(
             '<code>twitter:image</code> content should be smaller than 5MB.'
         );
-        expect(readmore[9].innerHTML).toEqual(
-            'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a> <i class="pi pi-external-link"></i></span>'
+        expect(readmore[8].innerHTML).toEqual(
+            'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a>. <i class="pi pi-external-link"></i></span>'
         );
     });
 
@@ -275,10 +285,10 @@ describe('DotResultsSeoToolComponent', () => {
         expect(readmore).toExist();
 
         expect(readmore[0].innerHTML).toEqual(
-            'Learn more about <span><a target="_blank" href="https://ogp.me/">The Open Graph Protocol.</a> <i class="pi pi-external-link"></i></span>'
+            'Learn more about <span><a target="_blank" href="https://ogp.me/">The Open Graph Protocol</a>. <i class="pi pi-external-link"></i></span>'
         );
         expect(readmore[1].innerHTML).toEqual(
-            'Explore the <span><a target="_blank" href="https://developers.facebook.com/tools/debug/">Sharing Debugger - Meta for Developers</a> <i class="pi pi-external-link"></i></span>'
+            'Explore the <span><a target="_blank" href="https://developers.facebook.com/tools/debug/">Sharing Debugger</a>. <i class="pi pi-external-link"></i></span>'
         );
         expect(readmore[2].innerHTML).toEqual(
             'Ensure that your <code>og:title</code> content is between 55 and 150 characters.'
@@ -293,7 +303,7 @@ describe('DotResultsSeoToolComponent', () => {
             'Make sure your <code>og:image</code> file sizes are under 8 MB.'
         );
         expect(readmore[6].innerHTML).toEqual(
-            'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a> <i class="pi pi-external-link"></i></span>'
+            'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a>. <i class="pi pi-external-link"></i></span>'
         );
     });
 
@@ -307,13 +317,13 @@ describe('DotResultsSeoToolComponent', () => {
         expect(readmore).toExist();
 
         expect(readmore[0].innerHTML).toEqual(
-            'LinkedIn’s <span><a target="_blank" href="https://www.linkedin.com/post-inspector/">Post Inspector</a> <i class="pi pi-external-link"></i></span> Tool'
+            'Learn more about <span><a target="_blank" href="https://www.linkedin.com/post-inspector/">LinkedIn\'s Post InspectorTool</a>. <i class="pi pi-external-link"></i></span>'
         );
         expect(readmore[1].innerHTML).toEqual(
-            'Meta Tags: Getting Them Right for <span><a target="_blank" href="https://www.linkedin.com/pulse/meta-tags-getting-them-right-linkedin-evelyn-pei/">LinkedIn.</a> <i class="pi pi-external-link"></i></span>'
+            'Learn more about <span><a target="_blank" href="https://www.linkedin.com/pulse/meta-tags-getting-them-right-linkedin-evelyn-pei/">Meta Tags: Getting Them Right for LinkedIn</a>. <i class="pi pi-external-link"></i></span>'
         );
         expect(readmore[2].innerHTML).toEqual(
-            'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a> <i class="pi pi-external-link"></i></span>'
+            'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a>. <i class="pi pi-external-link"></i></span>'
         );
     });
 
@@ -327,7 +337,7 @@ describe('DotResultsSeoToolComponent', () => {
         expect(readmore).toExist();
 
         expect(readmore[0].innerHTML).toEqual(
-            'Favicons should be <span><a target="_blank" href="https://favicon.io/">.ico</a> <i class="pi pi-external-link"></i></span> files.'
+            'Favicons should be <span><a target="_blank" href="https://favicon.io/">.ico files</a>. <i class="pi pi-external-link"></i></span>'
         );
         expect(readmore[1].innerHTML).toEqual(
             'HTML Title content should be between 30 and 60 characters.'
@@ -342,13 +352,27 @@ describe('DotResultsSeoToolComponent', () => {
             'The length of the Description allowed will depend on the reader\'s device size; on the smallest size only about 110 characters are allowed. Longer descriptions will show up with some sort of "read more" or "expand" option.'
         );
         expect(readmore[5].innerHTML).toEqual(
-            'Meta Tags for SEO: A Simple Guide for Beginners <i class="pi pi-external-link"></i>'
+            '<span><a target="_blank" href="https://ahrefs.com/blog/seo-meta-tags/">Meta Tags for SEO: A Simple Guide for Beginners</a>. <i class="pi pi-external-link"></i></span>'
         );
-        expect(readmore[6].innerHTML).toEqual(
-            'What Are Meta Descriptions And How to Write Them <i class="pi pi-external-link"></i>'
-        );
-        expect(readmore[7].innerHTML).toEqual(
-            'Read more about social media tile <span><a target="_blank" href="https://blog.hootsuite.com/social-media-image-sizes-guide/">image sizes</a></span>'
-        );
+    });
+
+    it('should display the default icon when noFavicon is true', () => {
+        const imageElement = spectator.query(byTestId('favicon-image'));
+        spectator.dispatchFakeEvent(imageElement, 'error');
+        spectator.detectComponentChanges();
+
+        const defaultIcon = spectator.query(byTestId('favicon-default'));
+        expect(defaultIcon).toBeTruthy();
+        expect(defaultIcon.querySelector('.pi-globe')).toBeTruthy();
+    });
+
+    it('should display the favicon image when noFavicon is false', () => {
+        spectator.component.seoOGTags.favicon = 'favicon-image-url.png';
+
+        spectator.detectComponentChanges();
+
+        const faviconImage = spectator.query(byTestId('favicon-image'));
+        expect(faviconImage).toBeTruthy();
+        expect(faviconImage.getAttribute('src')).toBe('favicon-image-url.png');
     });
 });

@@ -6,24 +6,34 @@ import { TestBed } from '@angular/core/testing';
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
+import { DotSeoMetaTagsUtilService } from './dot-seo-meta-tags-util.service';
 import { DotSeoMetaTagsService } from './dot-seo-meta-tags.service';
 
 import { seoOGTagsResultOgMock } from '../../../seo/components/dot-results-seo-tool/mocks';
+import { IMG_NOT_FOUND_KEY } from '../dot-edit-content-html/models/meta-tags-model';
+
+function createTestDocument(): XMLDocument {
+    return document.implementation.createDocument('http://www.w3.org/1999/xhtml', 'html', null);
+}
 
 describe('DotSetMetaTagsService', () => {
     let service: DotSeoMetaTagsService;
-    let testDoc: Document;
+    let serviceUtil: DotSeoMetaTagsUtilService;
+    let testDoc: XMLDocument;
     let head: HTMLElement;
+    let getImageFileSizeSpy;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
             providers: [
                 DotSeoMetaTagsService,
+                DotSeoMetaTagsUtilService,
                 {
                     provide: DotMessageService,
                     useValue: new MockDotMessageService({
-                        'seo.rules.favicon.not.found': 'FavIcon not found!',
+                        'seo.rules.favicon.not.found':
+                            'Favicon not found, or image link in Favicon not valid!',
                         'seo.rules.favicon.more.one.found': 'More than 1 Favicon found!',
                         'seo.rules.favicon.found': 'Favicon found!',
                         'seo.rules.description.found.empty':
@@ -39,29 +49,25 @@ describe('DotSetMetaTagsService', () => {
                             'HTML Title found, with an appropriate amount of content!',
                         'seo.resuls.tool.read.more': 'Read More',
                         'seo.resuls.tool.version': 'Version',
-                        'seo.rules.description.info':
-                            "The length of the description allowed will depend on the reader's device size; on the smallest size only about 110 characters are allowed.",
-                        'seo.rules.title.info':
-                            'HTML Title content should be between 30 and 60 characters.',
                         'seo.rules.og-title.not.found':
-                            'og:title metatag not found! Showing HTML Title instead.',
-                        'seo.rules.og-title.more.one.found': 'more than 1 og:title metatag found!',
+                            'og:title meta tag not found! Showing HTML Title instead.',
+                        'seo.rules.og-title.more.one.found': 'more than 1 og:title meta tag found!',
                         'seo.rules.og-title.more.one.found.empty':
-                            'og:title metatag found, but is empty!',
+                            'og:title meta tag found, but is empty!',
                         'seo.rules.og-title.greater':
-                            'og:title metatag found, but has more than 160 characters.',
+                            'og:title meta tag found, but has more than 160 characters.',
                         'seo.rules.og-title.less':
-                            'title metatag found, but has fewer than 30 characters of content.',
+                            'title meta tag found, but has fewer than 30 characters of content.',
                         'seo.rules.og-title.found':
-                            'og:title metatag found, with an appropriate amount of content!',
-                        'seo.rules.og-image.not.found': 'og:image metatag not found!',
-                        'seo.rules.og-image.more.one.found': 'more than 1 og:image metatag found!',
+                            'og:title meta tag found, with an appropriate amount of content!',
+                        'seo.rules.og-image.not.found': 'og:image meta tag not found!',
+                        'seo.rules.og-image.more.one.found': 'more than 1 og:image meta tag found!',
                         'seo.rules.og-image.more.one.found.empty':
-                            'og:image metatag found, but is empty!',
+                            'og:image meta tag found, but is empty!',
                         'seo.rules.og-image.over':
-                            'og:image metatag found, but image is over 8 MB.',
+                            'og:image meta tag found, but image is over 8 MB.',
                         'seo.rules.og-image.found':
-                            'og:image metatag found, with an appropriate sized image!',
+                            'og:image meta tag found, with an appropriate sized image!',
                         'seo.rules.twitter-card.not.found': 'twitter:card meta tag not found!',
                         'seo.rules.twitter-card.more.one.found':
                             'more than 1 twitter:card meta tag found!',
@@ -109,25 +115,30 @@ describe('DotSetMetaTagsService', () => {
                         'seo.rules.og-description.less':
                             'og:description meta tag found, but has fewer than 55 characters of content.',
                         'seo.rules.og-description.found':
-                            'og:description meta tag with valid content found!'
+                            'og:description meta tag with valid content found!',
+                        'seo.rules.description.more.one.found':
+                            'More than 1 Meta Description found!',
+                        'seo.rules.og-description.description.not.found':
+                            'og:description meta tag, and Meta Description not found!',
+                        'seo.rules.twitter-card-description.description.not.found':
+                            'twitter:description meta tag, and Meta Description not found!',
+                        'seo.rules.twitter-card-title.title.not.found':
+                            'twitter:title meta tag not found, and HTML Title not found!'
                     })
                 },
                 DotUploadService
             ]
         });
         service = TestBed.inject(DotSeoMetaTagsService);
-        spyOn(service, 'getImageFileSize').and.returnValue(
+        serviceUtil = TestBed.inject(DotSeoMetaTagsUtilService);
+        getImageFileSizeSpy = spyOn(serviceUtil, 'getImageFileSize').and.returnValue(
             of({
                 length: 8000000,
                 url: 'https://www.dotcms.com/dA/4e870b9fe0/1200w/jpeg/70/dotcms-defualt-og.jpg'
             })
         );
 
-        testDoc = document.implementation.createDocument(
-            'http://www.w3.org/1999/xhtml',
-            'html',
-            null
-        );
+        testDoc = createTestDocument();
 
         const title = document.createElement('title');
         title.innerText = 'Costa Rica Special Offer';
@@ -172,10 +183,10 @@ describe('DotSetMetaTagsService', () => {
         const twitterDescriptionElements = testDoc.querySelectorAll(
             'meta[name="twitter:description"]'
         );
-
+        const descriptionElements = testDoc.querySelectorAll('meta[name="description"]');
         const descriptionOgElements = testDoc.querySelectorAll('meta[property="og:description"]');
 
-        expect(service.getMetaTags(testDoc)).toEqual({
+        expect(serviceUtil.getMetaTags(testDoc)).toEqual({
             title: 'Costa Rica Special Offer',
             description:
                 'Get down to Costa Rica this winter for some of the best surfing int he world. Large winter swell is pushing across the Pacific.',
@@ -190,7 +201,8 @@ describe('DotSetMetaTagsService', () => {
             twitterTitleElements,
             twitterImageElements,
             twitterDescriptionElements,
-            descriptionOgElements
+            descriptionOgElements,
+            descriptionElements
         });
     });
 
@@ -202,7 +214,7 @@ describe('DotSetMetaTagsService', () => {
         });
     });
 
-    it('should that got more than one og-description error', (done) => {
+    it('should get more than one og-description error', (done) => {
         const ogMetaDescription = document.createElement('meta');
         ogMetaDescription.setAttribute('property', 'og:description');
         ogMetaDescription.setAttribute('content', 'BE');
@@ -215,17 +227,17 @@ describe('DotSetMetaTagsService', () => {
         testDoc.head.appendChild(ogMetaDescriptionSecond);
 
         service.getMetaTagsResults(testDoc).subscribe((value) => {
-            expect(value[0].items[0].message).toEqual(
+            expect(value[5].items[0].message).toEqual(
                 'more than 1 <code>og:description</code> meta tag found!'
             );
-            expect(value[0].items[1].message).toEqual(
+            expect(value[5].items[1].message).toEqual(
                 '<code>og:description</code> meta tag found, but has fewer than 55 characters of content.'
             );
             done();
         });
     });
 
-    it('should that got more than one og:title error', (done) => {
+    it('should get more than one og:title error', (done) => {
         const ogMetaTitle = document.createElement('meta');
         ogMetaTitle.setAttribute('property', 'og:title');
         ogMetaTitle.setAttribute('content', 'Costa Rica Special Offer');
@@ -239,10 +251,375 @@ describe('DotSetMetaTagsService', () => {
 
         service.getMetaTagsResults(testDoc).subscribe((value) => {
             expect(value[2].items[0].message).toEqual(
-                'more than 1 <code>og:title</code> metatag found!'
+                'more than 1 <code>og:title</code> meta tag found!'
             );
             expect(value[2].items[1].message).toEqual(
-                'title metatag found, but has fewer than 30 characters of content.'
+                'title meta tag found, but has fewer than 30 characters of content.'
+            );
+            done();
+        });
+    });
+
+    it('should get more than description error', (done) => {
+        const description = document.createElement('meta');
+        description.setAttribute('name', 'description');
+        description.setAttribute('content', 'Costa Rica Special Offer');
+
+        testDoc.head.appendChild(description);
+
+        service.getMetaTagsResults(testDoc).subscribe((value) => {
+            expect(value[0].items[0].message).toEqual('More than 1 Meta Description found!');
+            done();
+        });
+    });
+
+    it('should get description found', (done) => {
+        service.getMetaTagsResults(testDoc).subscribe((value) => {
+            expect(value[0].items[0].message).toEqual('Meta Description found!');
+            done();
+        });
+    });
+
+    it('should og:description meta tag, and Meta Description not found!', (done) => {
+        const testDoc: XMLDocument = createTestDocument();
+
+        service.getMetaTagsResults(testDoc).subscribe((value) => {
+            expect(value[5].items[0].message).toEqual(
+                '<code>og:description</code> meta tag, and Meta Description not found!'
+            );
+            done();
+        });
+    });
+
+    it('should og:image meta tag not found!', (done) => {
+        const imageDocument: XMLDocument = createTestDocument();
+
+        const head = imageDocument.createElement('head');
+        imageDocument.documentElement.appendChild(head);
+
+        const ogImage = imageDocument.createElement('og:image');
+        imageDocument.documentElement.appendChild(ogImage);
+        head.appendChild(ogImage);
+
+        getImageFileSizeSpy.and.callFake(() => {
+            return of({
+                length: 0,
+                url: IMG_NOT_FOUND_KEY
+            });
+        });
+
+        service.getMetaTagsResults(imageDocument).subscribe((value) => {
+            expect(value[1].items[0].message).toEqual('<code>og:image</code> meta tag not found!');
+            done();
+        });
+    });
+
+    it('should og:image meta tag not found!', (done) => {
+        const descriptionDocument: XMLDocument = createTestDocument();
+
+        const head = descriptionDocument.createElement('head');
+        descriptionDocument.documentElement.appendChild(head);
+
+        const ogDescription = descriptionDocument.createElement('meta');
+        ogDescription.setAttribute('property', 'og:description');
+        ogDescription.setAttribute(
+            'content',
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla pharetra maximus enim ac tincidunt. Vivamus vestibulum sed enim sed consectetur. Nulla malesuada libero a tristique bibendum. Suspendisse blandit ligula velit, eu volutpat arcu ornare sed.'
+        );
+        head.appendChild(ogDescription);
+
+        service.getMetaTagsResults(descriptionDocument).subscribe((value) => {
+            expect(value[5].items[0].message).toEqual(
+                '<code>og:description</code> meta tag found, but has more than 150 characters.'
+            );
+            done();
+        });
+    });
+
+    it('should found title meta tag, with an appropriate amount of content!', (done) => {
+        const titleDoc: XMLDocument = createTestDocument();
+
+        const head = titleDoc.createElement('head');
+        titleDoc.documentElement.appendChild(head);
+
+        const title = titleDoc.createElement('title');
+        title.innerHTML = 'HTML TITLE -------------- TEST';
+        head.appendChild(title);
+
+        service.getMetaTagsResults(titleDoc).subscribe((value) => {
+            expect(value[4].items[0].message).toEqual(
+                'HTML Title found, with an appropriate amount of content!'
+            );
+            done();
+        });
+    });
+
+    it('should found title meta tag, with an appropriate amount of content!', (done) => {
+        const titleDoc: XMLDocument = createTestDocument();
+
+        const head = titleDoc.createElement('head');
+        titleDoc.documentElement.appendChild(head);
+
+        const title = titleDoc.createElement('title');
+        title.innerHTML = 'HTML TITLE -------------- TEST';
+        head.appendChild(title);
+
+        service.getMetaTagsResults(titleDoc).subscribe((value) => {
+            expect(value[4].items[0].message).toEqual(
+                'HTML Title found, with an appropriate amount of content!'
+            );
+            done();
+        });
+    });
+
+    it('should found title meta tag, with an appropriate amount of content when min limit', (done) => {
+        const titleDoc: XMLDocument = createTestDocument();
+
+        const head = titleDoc.createElement('head');
+        titleDoc.documentElement.appendChild(head);
+
+        const title = titleDoc.createElement('title');
+        title.innerHTML = 'HTML TITLE -------------- TEST';
+        head.appendChild(title);
+
+        service.getMetaTagsResults(titleDoc).subscribe((value) => {
+            expect(value[4].items[0].message).toEqual(
+                'HTML Title found, with an appropriate amount of content!'
+            );
+            done();
+        });
+    });
+
+    it('should found title meta tag, with an appropriate amount of content when max limit', (done) => {
+        const titleDoc: XMLDocument = createTestDocument();
+
+        const head = titleDoc.createElement('head');
+        titleDoc.documentElement.appendChild(head);
+
+        const title = titleDoc.createElement('title');
+        title.innerHTML = 'HTML TITLE -------------- TEST******************************';
+        head.appendChild(title);
+
+        service.getMetaTagsResults(titleDoc).subscribe((value) => {
+            expect(value[4].items[0].message).toEqual(
+                'HTML Title found, with an appropriate amount of content!'
+            );
+            done();
+        });
+    });
+
+    it('should found description meta tag, with an appropriate amount of content when min limit', (done) => {
+        const doc: XMLDocument = createTestDocument();
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaDesc = doc.createElement('meta');
+        metaDesc.name = 'description';
+        metaDesc.content = 'DESCRIPTION ****TEST.Lorem ipsum dolor sit amet.-------';
+        head.appendChild(metaDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[0].items[0].message).toEqual('Meta Description found!');
+            done();
+        });
+    });
+
+    it('should found description meta tag, with an appropriate amount of content when max limit', (done) => {
+        const doc: XMLDocument = createTestDocument();
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaDesc = doc.createElement('meta');
+        metaDesc.name = 'description';
+        metaDesc.content =
+            'DESCRIPTION ****TEST.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis ante metus, posuere quis posuere eu, varius nec ante. Aenean nec dictum purus';
+        head.appendChild(metaDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[0].items[0].message).toEqual('Meta Description found!');
+            done();
+        });
+    });
+
+    it('should found og:title meta tag, with an appropriate amount of content when max limit', (done) => {
+        const doc: XMLDocument = createTestDocument();
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaTitle = doc.createElement('meta');
+        metaTitle.name = 'og:title';
+        metaTitle.content = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.****';
+        head.appendChild(metaTitle);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[2].items[0].message).toEqual(
+                '<code>og:title</code> meta tag found, with an appropriate amount of content!'
+            );
+            done();
+        });
+    });
+
+    it('should found og:title meta tag, with an appropriate amount of content when min limit', (done) => {
+        const doc: XMLDocument = createTestDocument();
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaTitle = doc.createElement('meta');
+        metaTitle.name = 'og:title';
+        metaTitle.content = 'Lorem ipsum dolor sit amet****';
+        head.appendChild(metaTitle);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[2].items[0].message).toEqual(
+                '<code>og:title</code> meta tag found, with an appropriate amount of content!'
+            );
+            done();
+        });
+    });
+
+    it('should found og:description meta tag, with an appropriate amount of content when max limit', (done) => {
+        const doc: XMLDocument = createTestDocument();
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaDesc = doc.createElement('meta');
+        metaDesc.name = 'og:description';
+        metaDesc.content = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit';
+        head.appendChild(metaDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[5].items[0].message).toEqual(
+                '<code>og:description</code> meta tag with valid content found!'
+            );
+            done();
+        });
+    });
+
+    it('should found og:description meta tag, with an appropriate amount of content when max limit', (done) => {
+        const doc: XMLDocument = createTestDocument();
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaDesc = doc.createElement('meta');
+        metaDesc.name = 'og:description';
+        metaDesc.content =
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis ante metus, posuere quis posuere eu, varius nec ante. Aenean nec dictum purus.**********';
+        head.appendChild(metaDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[5].items[0].message).toEqual(
+                '<code>og:description</code> meta tag with valid content found!'
+            );
+            done();
+        });
+    });
+
+    it('should found twitter:description meta tag, with an appropriate amount of content when min limit', (done) => {
+        const doc: XMLDocument = createTestDocument();
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const twitterDesc = doc.createElement('meta');
+        twitterDesc.name = 'twitter:description';
+        twitterDesc.content =
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis ante metus, posuere quis posuere eu, varius nec ante. Aenean nec dictum purus. Nullam rhoncus velit mauris, vel fringilla purus mollis ege';
+        head.appendChild(twitterDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[8].items[0].message).toEqual(
+                '<code>twitter:description</code> meta tag with valid content found!'
+            );
+            done();
+        });
+    });
+
+    it('should found twitter:description meta tag, with an appropriate amount of content when max limit', (done) => {
+        const doc: XMLDocument = createTestDocument();
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const twitterDesc = doc.createElement('meta');
+        twitterDesc.name = 'twitter:description';
+        twitterDesc.content = 'Lorem ipsum dolor sit amettest';
+        head.appendChild(twitterDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[8].items[0].message).toEqual(
+                '<code>twitter:description</code> meta tag with valid content found!'
+            );
+            done();
+        });
+    });
+
+    it('should found twitter:description meta tag not found! Showing Description instead.', (done) => {
+        const doc: XMLDocument = createTestDocument();
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaDesc = document.createElement('meta');
+        metaDesc.name = 'description';
+        metaDesc.content =
+            'Get down to Costa Rica this winter for some of the best surfing int he world. Large winter swell is pushing across the Pacific.';
+        head.appendChild(metaDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[8].items[0].message).toEqual(
+                '<code>twitter:description</code> meta tag not found! Showing Description instead.'
+            );
+            done();
+        });
+    });
+
+    it('should found twitter:description meta tag', (done) => {
+        const doc: XMLDocument = createTestDocument();
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[8].items[0].message).toEqual(
+                '<code>twitter:description</code> meta tag, and Meta Description not found!'
+            );
+            done();
+        });
+    });
+
+    it('should found twitter:title meta tag not found and HTML Title not found!', (done) => {
+        const doc: XMLDocument = createTestDocument();
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[7].items[0].message).toEqual(
+                '<code>twitter:title</code> meta tag not found, and HTML Title not found!'
+            );
+            done();
+        });
+    });
+
+    it('should found twitter:title meta tag, Showing HTML Title instead.', (done) => {
+        const doc: XMLDocument = createTestDocument();
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const title = document.createElement('title');
+        title.innerText = 'Costa Rica Special Offer';
+        head.appendChild(title);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[7].items[0].message).toEqual(
+                '<code>twitter:title</code> meta tag not found! Showing HTML Title instead.'
             );
             done();
         });

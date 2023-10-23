@@ -26,6 +26,12 @@ import { DotCurrentUser, DotDevice, DotDeviceListItem } from '@dotcms/dotcms-mod
 import { DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
+import {
+    SEO_MEDIA_TYPES,
+    SocialMediaOption,
+    socialMediaTiles
+} from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
+
 @Component({
     standalone: true,
     imports: [
@@ -38,7 +44,8 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         PanelModule,
         DividerModule,
         DotMessagePipe,
-        RouterLink
+        RouterLink,
+        DividerModule
     ],
     providers: [DotDevicesService],
     selector: 'dot-device-selector-seo',
@@ -61,11 +68,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
 
     options$: Observable<DotDevice[]>;
     isCMSAdmin$: Observable<boolean>;
-    socialMediaTiles = [
-        { label: 'Facebook', icon: 'pi pi-facebook' },
-        { label: 'Twitter', icon: 'pi pi-twitter' },
-        { label: 'LinkedIn', icon: 'pi pi-linkedin' }
-    ];
+    socialMediaTiles: SocialMediaOption[];
     defaultOptions: DotDeviceListItem[] = [
         {
             name: this.dotMessageService.get('editpage.device.selector.mobile.portrait'),
@@ -86,16 +89,16 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         {
             name: this.dotMessageService.get('editpage.device.selector.hd.monitor'),
             icon: 'pi pi-desktop',
-            cssHeight: '1920',
-            cssWidth: '1080',
+            cssHeight: '1080',
+            cssWidth: '1920',
             inode: '0',
             identifier: ''
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.4k.monitor'),
             icon: 'pi pi-desktop',
-            cssHeight: '3840',
-            cssWidth: '2160',
+            cssHeight: '2160',
+            cssWidth: '3840',
             inode: '0',
             identifier: ''
         },
@@ -126,6 +129,12 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     ngOnInit() {
         this.options$ = this.getOptions();
         this.isCMSAdmin$ = this.checkIfCMSAdmin();
+        this.socialMediaTiles = Object.values(socialMediaTiles).filter(
+            (item) =>
+                item.value === SEO_MEDIA_TYPES.FACEBOOK ||
+                item.value === SEO_MEDIA_TYPES.TWITTER ||
+                item.value === SEO_MEDIA_TYPES.LINKEDIN
+        );
     }
 
     /**
