@@ -12,10 +12,14 @@ import { DotSeoMetaTagsService } from './dot-seo-meta-tags.service';
 import { seoOGTagsResultOgMock } from '../../../seo/components/dot-results-seo-tool/mocks';
 import { IMG_NOT_FOUND_KEY } from '../dot-edit-content-html/models/meta-tags-model';
 
+function createTestDocument(): XMLDocument {
+    return document.implementation.createDocument('http://www.w3.org/1999/xhtml', 'html', null);
+}
+
 describe('DotSetMetaTagsService', () => {
     let service: DotSeoMetaTagsService;
     let serviceUtil: DotSeoMetaTagsUtilService;
-    let testDoc: Document;
+    let testDoc: XMLDocument;
     let head: HTMLElement;
     let getImageFileSizeSpy;
 
@@ -117,7 +121,9 @@ describe('DotSetMetaTagsService', () => {
                         'seo.rules.og-description.description.not.found':
                             'og:description meta tag, and Meta Description not found!',
                         'seo.rules.twitter-card-description.description.not.found':
-                            'twitter:description meta tag not found! Showing Description instead.'
+                            'twitter:description meta tag, and Meta Description not found!',
+                        'seo.rules.twitter-card-title.title.not.found':
+                            'twitter:title meta tag not found, and HTML Title not found!'
                     })
                 },
                 DotUploadService
@@ -132,11 +138,7 @@ describe('DotSetMetaTagsService', () => {
             })
         );
 
-        testDoc = document.implementation.createDocument(
-            'http://www.w3.org/1999/xhtml',
-            'html',
-            null
-        );
+        testDoc = createTestDocument();
 
         const title = document.createElement('title');
         title.innerText = 'Costa Rica Special Offer';
@@ -279,11 +281,7 @@ describe('DotSetMetaTagsService', () => {
     });
 
     it('should og:description meta tag, and Meta Description not found!', (done) => {
-        const testDoc: Document = document.implementation.createDocument(
-            'http://www.w3.org/1999/xhtml',
-            'html',
-            null
-        );
+        const testDoc: XMLDocument = createTestDocument();
 
         service.getMetaTagsResults(testDoc).subscribe((value) => {
             expect(value[5].items[0].message).toEqual(
@@ -294,11 +292,7 @@ describe('DotSetMetaTagsService', () => {
     });
 
     it('should og:image meta tag not found!', (done) => {
-        const imageDocument: Document = document.implementation.createDocument(
-            'http://www.w3.org/1999/xhtml',
-            'html',
-            null
-        );
+        const imageDocument: XMLDocument = createTestDocument();
 
         const head = imageDocument.createElement('head');
         imageDocument.documentElement.appendChild(head);
@@ -321,11 +315,7 @@ describe('DotSetMetaTagsService', () => {
     });
 
     it('should og:image meta tag not found!', (done) => {
-        const descriptionDocument: Document = document.implementation.createDocument(
-            'http://www.w3.org/1999/xhtml',
-            'html',
-            null
-        );
+        const descriptionDocument: XMLDocument = createTestDocument();
 
         const head = descriptionDocument.createElement('head');
         descriptionDocument.documentElement.appendChild(head);
@@ -347,11 +337,7 @@ describe('DotSetMetaTagsService', () => {
     });
 
     it('should found title meta tag, with an appropriate amount of content!', (done) => {
-        const titleDoc: Document = document.implementation.createDocument(
-            'http://www.w3.org/1999/xhtml',
-            'html',
-            null
-        );
+        const titleDoc: XMLDocument = createTestDocument();
 
         const head = titleDoc.createElement('head');
         titleDoc.documentElement.appendChild(head);
@@ -369,11 +355,7 @@ describe('DotSetMetaTagsService', () => {
     });
 
     it('should found title meta tag, with an appropriate amount of content!', (done) => {
-        const titleDoc: Document = document.implementation.createDocument(
-            'http://www.w3.org/1999/xhtml',
-            'html',
-            null
-        );
+        const titleDoc: XMLDocument = createTestDocument();
 
         const head = titleDoc.createElement('head');
         titleDoc.documentElement.appendChild(head);
@@ -391,11 +373,7 @@ describe('DotSetMetaTagsService', () => {
     });
 
     it('should found title meta tag, with an appropriate amount of content when min limit', (done) => {
-        const titleDoc: Document = document.implementation.createDocument(
-            'http://www.w3.org/1999/xhtml',
-            'html',
-            null
-        );
+        const titleDoc: XMLDocument = createTestDocument();
 
         const head = titleDoc.createElement('head');
         titleDoc.documentElement.appendChild(head);
@@ -413,11 +391,7 @@ describe('DotSetMetaTagsService', () => {
     });
 
     it('should found title meta tag, with an appropriate amount of content when max limit', (done) => {
-        const titleDoc: Document = document.implementation.createDocument(
-            'http://www.w3.org/1999/xhtml',
-            'html',
-            null
-        );
+        const titleDoc: XMLDocument = createTestDocument();
 
         const head = titleDoc.createElement('head');
         titleDoc.documentElement.appendChild(head);
@@ -435,11 +409,7 @@ describe('DotSetMetaTagsService', () => {
     });
 
     it('should found description meta tag, with an appropriate amount of content when min limit', (done) => {
-        const doc: Document = document.implementation.createDocument(
-            'http://www.w3.org/1999/xhtml',
-            'html',
-            null
-        );
+        const doc: XMLDocument = createTestDocument();
 
         const head = doc.createElement('head');
         doc.documentElement.appendChild(head);
@@ -456,11 +426,7 @@ describe('DotSetMetaTagsService', () => {
     });
 
     it('should found description meta tag, with an appropriate amount of content when max limit', (done) => {
-        const doc: Document = document.implementation.createDocument(
-            'http://www.w3.org/1999/xhtml',
-            'html',
-            null
-        );
+        const doc: XMLDocument = createTestDocument();
 
         const head = doc.createElement('head');
         doc.documentElement.appendChild(head);
@@ -478,11 +444,7 @@ describe('DotSetMetaTagsService', () => {
     });
 
     it('should found og:title meta tag, with an appropriate amount of content when max limit', (done) => {
-        const doc: Document = document.implementation.createDocument(
-            'http://www.w3.org/1999/xhtml',
-            'html',
-            null
-        );
+        const doc: XMLDocument = createTestDocument();
 
         const head = doc.createElement('head');
         doc.documentElement.appendChild(head);
@@ -501,11 +463,7 @@ describe('DotSetMetaTagsService', () => {
     });
 
     it('should found og:title meta tag, with an appropriate amount of content when min limit', (done) => {
-        const doc: Document = document.implementation.createDocument(
-            'http://www.w3.org/1999/xhtml',
-            'html',
-            null
-        );
+        const doc: XMLDocument = createTestDocument();
 
         const head = doc.createElement('head');
         doc.documentElement.appendChild(head);
@@ -524,11 +482,7 @@ describe('DotSetMetaTagsService', () => {
     });
 
     it('should found og:description meta tag, with an appropriate amount of content when max limit', (done) => {
-        const doc: Document = document.implementation.createDocument(
-            'http://www.w3.org/1999/xhtml',
-            'html',
-            null
-        );
+        const doc: XMLDocument = createTestDocument();
 
         const head = doc.createElement('head');
         doc.documentElement.appendChild(head);
@@ -547,11 +501,7 @@ describe('DotSetMetaTagsService', () => {
     });
 
     it('should found og:description meta tag, with an appropriate amount of content when max limit', (done) => {
-        const doc: Document = document.implementation.createDocument(
-            'http://www.w3.org/1999/xhtml',
-            'html',
-            null
-        );
+        const doc: XMLDocument = createTestDocument();
 
         const head = doc.createElement('head');
         doc.documentElement.appendChild(head);
@@ -571,11 +521,7 @@ describe('DotSetMetaTagsService', () => {
     });
 
     it('should found twitter:description meta tag, with an appropriate amount of content when min limit', (done) => {
-        const doc: Document = document.implementation.createDocument(
-            'http://www.w3.org/1999/xhtml',
-            'html',
-            null
-        );
+        const doc: XMLDocument = createTestDocument();
 
         const head = doc.createElement('head');
         doc.documentElement.appendChild(head);
@@ -595,11 +541,7 @@ describe('DotSetMetaTagsService', () => {
     });
 
     it('should found twitter:description meta tag, with an appropriate amount of content when max limit', (done) => {
-        const doc: Document = document.implementation.createDocument(
-            'http://www.w3.org/1999/xhtml',
-            'html',
-            null
-        );
+        const doc: XMLDocument = createTestDocument();
 
         const head = doc.createElement('head');
         doc.documentElement.appendChild(head);
@@ -612,6 +554,72 @@ describe('DotSetMetaTagsService', () => {
         service.getMetaTagsResults(doc).subscribe((value) => {
             expect(value[8].items[0].message).toEqual(
                 '<code>twitter:description</code> meta tag with valid content found!'
+            );
+            done();
+        });
+    });
+
+    it('should found twitter:description meta tag not found! Showing Description instead.', (done) => {
+        const doc: XMLDocument = createTestDocument();
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaDesc = document.createElement('meta');
+        metaDesc.name = 'description';
+        metaDesc.content =
+            'Get down to Costa Rica this winter for some of the best surfing int he world. Large winter swell is pushing across the Pacific.';
+        head.appendChild(metaDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[8].items[0].message).toEqual(
+                '<code>twitter:description</code> meta tag not found! Showing Description instead.'
+            );
+            done();
+        });
+    });
+
+    it('should found twitter:description meta tag', (done) => {
+        const doc: XMLDocument = createTestDocument();
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[8].items[0].message).toEqual(
+                '<code>twitter:description</code> meta tag, and Meta Description not found!'
+            );
+            done();
+        });
+    });
+
+    it('should found twitter:title meta tag not found and HTML Title not found!', (done) => {
+        const doc: XMLDocument = createTestDocument();
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[7].items[0].message).toEqual(
+                '<code>twitter:title</code> meta tag not found, and HTML Title not found!'
+            );
+            done();
+        });
+    });
+
+    it('should found twitter:title meta tag, Showing HTML Title instead.', (done) => {
+        const doc: XMLDocument = createTestDocument();
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const title = document.createElement('title');
+        title.innerText = 'Costa Rica Special Offer';
+        head.appendChild(title);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[7].items[0].message).toEqual(
+                '<code>twitter:title</code> meta tag not found! Showing HTML Title instead.'
             );
             done();
         });
