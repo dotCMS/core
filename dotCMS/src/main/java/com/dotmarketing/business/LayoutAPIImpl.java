@@ -169,6 +169,12 @@ public class LayoutAPIImpl implements LayoutAPI {
 		return layouts;
 	}
 
+	//Determine if the user can edit the page based on the given permissions
+	private boolean doesUserCanEditPage(Permission perm){
+		return (perm.getType().equals(IHTMLPage.class.getCanonicalName()) || perm.getType().equals(Contentlet.class.getCanonicalName())) &&
+				(perm.getPermission() == PermissionAPI.PERMISSION_EDIT || perm.getPermission() == PermissionAPI.PERMISSION_EDIT + PermissionAPI.PERMISSION_READ );
+	}
+
 	/* this method is used to check if the user has access to edit the page portlet
 	* all the users should have access to Edit Page, regardless of the assigned portlets.
 	*/
@@ -183,8 +189,7 @@ public class LayoutAPIImpl implements LayoutAPI {
 			final List<Permission> perms = permAPI.getPermissionsByRole(role, true, true);
 			//determine if the user can edit the page
 			for(final Permission perm : perms){
-				if((perm.getType().equals(IHTMLPage.class.getCanonicalName()) || perm.getType().equals(Contentlet.class.getCanonicalName()))
-						&& (perm.getPermission() == PermissionAPI.PERMISSION_EDIT || perm.getPermission() == 3)){
+				if(doesUserCanEditPage(perm)){
 					return true;
 				}
 			}
