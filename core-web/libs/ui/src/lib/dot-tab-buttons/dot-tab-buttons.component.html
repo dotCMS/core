@@ -19,6 +19,7 @@
             <button
                 class="dot-tab__dropdown"
                 *ngIf="item.value.showDropdownButton"
+                [disabled]="item.disabled"
                 [ngClass]="{ 'dot-tab-dropdown--active': activeId === item.value.id }"
                 (click)="onClickDropdown($event, item.value.id)"
                 data-testId="dot-tab-button-dropdown">
