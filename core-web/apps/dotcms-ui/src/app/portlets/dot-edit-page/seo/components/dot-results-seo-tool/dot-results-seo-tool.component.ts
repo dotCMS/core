@@ -94,7 +94,7 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
 
         const twitterTitle = twitterTitleProperties
             .map((property) =>
-                this.seoOGTags[property]?.slice(0, SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH)
+                this.seoOGTags[property]?.slice(0, SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH)
             )
             .find((value) => value !== undefined);
 
