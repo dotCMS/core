@@ -38,14 +38,6 @@ public interface AbstractAssetView {
 
     Map<String, Object> metadata();
 
-    //Optional<Boolean> markForPush();
-
-    //Optional<Boolean> pushTypeNew();
-
-    //Optional<Boolean> pushTypeModified();
-
-    //Optional<Boolean> markForDelete();
-
     @Auxiliary
     Optional<AssetSyncMeta> syncMeta();
 

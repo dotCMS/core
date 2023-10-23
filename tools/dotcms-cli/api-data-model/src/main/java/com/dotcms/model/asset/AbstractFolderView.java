@@ -75,10 +75,6 @@ public interface AbstractFolderView {
     @Nullable
     List<FolderView> subFolders();
 
-    //Optional<Boolean> markForPush();
-
-    //Optional<Boolean> markForDelete();
-
     @Auxiliary
     Optional<FolderSyncMeta> syncMeta();
 }
