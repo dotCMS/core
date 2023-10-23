@@ -7,8 +7,8 @@ import { ActivatedRoute } from '@angular/router';
 import { map, switchMap } from 'rxjs/operators';
 
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
-import { EditContentFormData } from '../../interfaces/dot-edit-content-form.interface';
-import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { EditContentFormData } from '../../shared/interfaces/dot-edit-content-form.interface';
+import { DotEditContentService } from '../../shared/services/dot-edit-content.service';
 
 @Component({
     selector: 'dot-edit-content-form-layout',

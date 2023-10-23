@@ -15,7 +15,7 @@ import { ButtonModule } from 'primeng/button';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { EditContentFormData } from '../../interfaces/dot-edit-content-form.interface';
+import { EditContentFormData } from '../../shared/interfaces/dot-edit-content-form.interface';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 @Component({
     selector: 'dot-edit-content-form',
@@ -79,7 +79,7 @@ export class DotEditContentFormComponent implements OnInit {
 
         return this.fb.control(
             {
-                value: this.formData.values?.[field.variable] ?? field.defaultValue,
+                value: this.formData.contentlet?.[field.variable] ?? field.defaultValue,
                 disabled: field.readOnly
             },
             { validators }

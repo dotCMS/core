@@ -10,7 +10,7 @@ import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotEditContentTextAreaComponent } from './dot-edit-content-text-area.component';
 
-import { createFormGroupDirectiveMock, TEXT_AREA_FIELD_MOCK } from '../../utils/mocks';
+import { createFormGroupDirectiveMock, TEXT_AREA_FIELD_MOCK } from '../../shared/utils/mocks';
 
 describe('DotEditContentTextAreaComponent', () => {
     let spectator: Spectator<DotEditContentTextAreaComponent>;

@@ -7,7 +7,7 @@ import { By } from '@angular/platform-browser';
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 import { FIELD_TYPES, FIELD_TYPES_COMPONENTS } from './utils';
 
-import { FIELDS_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
+import { FIELDS_MOCK, createFormGroupDirectiveMock } from '../../shared/utils/mocks';
 
 describe('FIELD_TYPES and FIELDS_MOCK', () => {
     it('should be in sync', () => {

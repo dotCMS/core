@@ -107,7 +107,7 @@ export const SELECT_FIELD_BOOLEAN_MOCK = {
     searchable: false,
     sortOrder: 4,
     unique: false,
-    values: 'Verdadero|true\r\nFalso|false',
+    values: 'Truthy|true\r\nFalsy|false',
     variable: 'selectBoolean'
 };
 
@@ -132,7 +132,7 @@ export const SELECT_FIELD_FLOAT_MOCK = {
     searchable: false,
     sortOrder: 5,
     unique: false,
-    values: 'Cien punto cinco|100.5\r\nDiez punto tres|10.3',
+    values: 'One hundred point five|100.5\r\nThree point five|10.3',
     variable: 'selectDecimal'
 };
 
@@ -157,7 +157,7 @@ export const SELECT_FIELD_INTEGER_MOCK = {
     hint: 'A hint Text',
     sortOrder: 6,
     unique: false,
-    values: 'Cien|100\r\nMil|1000\r\nDiez mil|10000',
+    values: 'One hundred|100\r\nOne thousand|1000\r\nTen thousand|10000',
     variable: 'selectWholeNumber'
 };
 
@@ -182,7 +182,7 @@ export const RADIO_FIELD_TEXT_MOCK = {
     searchable: false,
     sortOrder: 8,
     unique: false,
-    values: 'Uno|uno\r\nDos|dos',
+    values: 'One|one\r\nTwo|two',
     variable: 'radio'
 };
 
@@ -207,7 +207,7 @@ export const RADIO_FIELD_BOOLEAN_MOCK = {
     sortOrder: 9,
     hint: 'A hint Text',
     unique: false,
-    values: 'Falso|false\r\nVerdadero|true',
+    values: 'Falsy|false\r\nTruthy|true',
     variable: 'radioTrueFalse'
 };
 
@@ -233,7 +233,7 @@ export const RADIO_FIELD_FLOAT_MOCK = {
     searchable: false,
     sortOrder: 10,
     unique: false,
-    values: 'Cinco punto dos|5.2\r\nNueve punto 3|9.3',
+    values: 'Five point two|5.2\r\nNine point three|9.3',
     variable: 'radioDecimal'
 };
 
@@ -259,7 +259,7 @@ export const RADIO_FIELD_INTEGER_MOCK = {
     searchable: false,
     sortOrder: 11,
     unique: false,
-    values: 'Doce|12\r\nVeinte|20\r\nTreinta|30',
+    values: 'Twelve|12\r\nTwenty|20\r\nThirty|30',
     variable: 'radioWholeNumber'
 };
 

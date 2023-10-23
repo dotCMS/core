@@ -7,8 +7,8 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
-import { DotEditContentFieldSingleSelectableDataTypes } from '../../types/dot-edit-content-field.type';
-import { mapSelectableOptions } from '../../utils/functions.util';
+import { DotEditContentFieldSingleSelectableDataTypes } from '../../shared/types/dot-edit-content-field.type';
+import { mapSelectableOptions } from '../../shared/utils/functions.util';
 
 @Component({
     selector: 'dot-edit-content-radio-field',
