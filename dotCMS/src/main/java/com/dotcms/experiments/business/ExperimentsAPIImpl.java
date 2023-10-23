@@ -849,7 +849,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         publishExperimentPage(running, user);
         publishContentOnExperimentVariants(user, running);
 
-        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been saved by User" +
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been started by User" +
                 " ID '%s'", running.name(), running.id(), user.getUserId()));
 
         return running;
