@@ -86,20 +86,17 @@ export const checkIfExperimentDescriptionIsSaving = (stepStatusSidebar) =>
  *  To put together the summary table in the experiment results screen  */
 export const getConversionRateRage = (
     data: DotCreditabilityInterval,
-    noDataLabel: string
+    noDataLabel: string,
+    separatorLabel: string
 ): string => {
     return data
-        ? `${formatPercent(data.lower, 'en-US', '1.0-2')} to ${formatPercent(
-              data.upper,
-              'en-US',
-              '1.0-2'
-          )}`
+        ? `${getPercentageFormat(data.lower)} ${separatorLabel} ${getPercentageFormat(data.upper)}`
         : noDataLabel;
 };
 
 export const getConversionRate = (uniqueBySession: number, sessions: number): string => {
     if (uniqueBySession !== 0 && sessions !== 0) {
-        return formatPercent(uniqueBySession / sessions, 'en-US', '1.0-2');
+        return getPercentageFormat(uniqueBySession / sessions);
     }
 
     return '0%';
@@ -113,7 +110,7 @@ export const getBayesianVariantResult = (
 };
 
 export const getProbabilityToBeBest = (probability: number, noDataLabel: string): string => {
-    return probability ? formatPercent(probability, 'en-US', '1.0-2') : noDataLabel;
+    return probability ? getPercentageFormat(probability) : noDataLabel;
 };
 
 export const isPromotedVariant = (experiment: DotExperiment, variantName: string): boolean => {
@@ -251,4 +248,13 @@ const arePointsALine = (points: { x: number; y: number }[]): boolean => {
     }
 
     return true;
+};
+
+/**
+ * Given a number, identify if is lower that 10% round 2 decimals if is higher than 10 round to 1 decimal
+ */
+const getPercentageFormat = (value: number): string => {
+    return value < 0.1
+        ? formatPercent(value, 'en-US', '1.0-2')
+        : formatPercent(value, 'en-US', '1.0-1');
 };

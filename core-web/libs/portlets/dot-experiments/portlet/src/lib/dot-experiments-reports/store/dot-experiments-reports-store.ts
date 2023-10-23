@@ -76,6 +76,7 @@ export interface VmReportExperiment {
 }
 
 const NOT_ENOUGH_DATA_LABEL = 'experiments.reports.not.enough.data';
+const CONVERSION_RATE_RANGE_SEPARATOR_LABEL = 'to';
 
 @Injectable()
 export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsReportsState> {
@@ -157,7 +158,10 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
 
     readonly getDetailData$: Observable<DotExperimentVariantDetail[]> = this.select(
         ({ experiment, results }) => {
-            const noData = this.dotMessageService.get(NOT_ENOUGH_DATA_LABEL);
+            const noDataLabel = this.dotMessageService.get(NOT_ENOUGH_DATA_LABEL);
+            const separatorLabel = this.dotMessageService.get(
+                CONVERSION_RATE_RANGE_SEPARATOR_LABEL
+            );
 
             return results
                 ? Object.values(results.goals.primary.variants).map((variant) => {
@@ -165,7 +169,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                           experiment,
                           results,
                           variant,
-                          noData
+                          noDataLabel,
+                          separatorLabel
                       );
                   })
                 : [];
@@ -357,7 +362,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         experiment: DotExperiment,
         results: DotExperimentResults,
         variant: DotResultVariant,
-        noDataLabel: string
+        noDataLabel: string,
+        separatorLabel: string
     ): DotExperimentVariantDetail {
         const variantBayesianResult = getBayesianVariantResult(
             variant.variantName,
@@ -374,7 +380,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             ),
             conversionRateRange: getConversionRateRage(
                 variantBayesianResult?.credibilityInterval,
-                noDataLabel
+                noDataLabel,
+                separatorLabel
             ),
             sessions: results.sessions.variants[variant.variantName],
             probabilityToBeBest: getProbabilityToBeBest(
