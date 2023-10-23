@@ -3,10 +3,6 @@
 @import "common";
 @import "../buttons/common";
 
-$calendar-th-height: 22px;
-$month-year-picker-width: 328px;
-$month-year-border-radius: 100px;
-
 // Input with Button
 .p-calendar.p-calendar-w-btn {
     border-radius: $border-radius-md;
@@ -176,7 +172,7 @@ $month-year-border-radius: 100px;
 
             th > span {
                 width: $spacing-6;
-                height: $calendar-th-height;
+                height: 22px;
             }
 
             td.p-datepicker-today > span:not(.p-highlight) {
@@ -226,12 +222,12 @@ $month-year-border-radius: 100px;
         grid-template-columns: repeat(3, 1fr);
         justify-items: center;
         gap: $spacing-1;
-        width: $month-year-picker-width;
+        width: 328px;
 
         span {
             width: $spacing-9;
             height: $spacing-6;
-            border-radius: $month-year-border-radius;
+            border-radius: 100px;
         }
     }
 }
