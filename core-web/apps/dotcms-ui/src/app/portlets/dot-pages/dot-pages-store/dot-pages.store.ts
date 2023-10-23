@@ -815,7 +815,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         if (isEnterprise && environments) {
             actionsMenu.push({
                 label: this.dotMessageService.get('contenttypes.content.push_publish'),
-                command: (item) =>
+                command: () =>
                     this.dotPushPublishDialogService.open({
                         assetIdentifier: item.identifier,
                         title: this.dotMessageService.get('contenttypes.content.push_publish')
