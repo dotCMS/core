@@ -18,7 +18,7 @@ export const CONTENT_FORM_DATA_MOCK: EditContentFormData = {
     layout: LAYOUT_MOCK
 };
 
-xdescribe('DotFormComponent', () => {
+describe('DotFormComponent', () => {
     let spectator: Spectator<DotEditContentFormComponent>;
     const createComponent = createComponentFactory({
         component: DotEditContentFormComponent,
@@ -29,25 +29,23 @@ xdescribe('DotFormComponent', () => {
                     Save: 'Save'
                 })
             }
-        ],
-        detectChanges: false
+        ]
     });
 
     beforeEach(() => {
-        spectator = createComponent();
+        spectator = createComponent({
+            props: {
+                formData: CONTENT_FORM_DATA_MOCK
+            }
+        });
     });
 
     it('should initialize the form group with form controls for each field in the `formData` array', () => {
-        spectator.setInput('formData', CONTENT_FORM_DATA_MOCK);
-        spectator.detectChanges();
-
         expect(spectator.component.form.controls['name1']).toBeDefined();
         expect(spectator.component.form.controls['text2']).toBeDefined();
     });
 
     it('should initialize a form control for a given DotCMSContentTypeField', () => {
-        spectator.setInput('formData', CONTENT_FORM_DATA_MOCK);
-        spectator.detectChanges();
         const formControl = spectator.component.initializeFormControl(FIELD_MOCK);
 
         expect(formControl).toBeDefined();
@@ -55,25 +53,16 @@ xdescribe('DotFormComponent', () => {
     });
 
     it('should have a default value if is defined', () => {
-        spectator.setInput('formData', CONTENT_FORM_DATA_MOCK);
-        spectator.detectChanges();
-
         const formControl = spectator.component.initializeFormControl(FIELDS_MOCK[1]);
         expect(formControl.value).toEqual(FIELDS_MOCK[1].defaultValue);
     });
 
     it('should render a dot-edit-content-field and pass the field', () => {
-        spectator.setInput('formData', CONTENT_FORM_DATA_MOCK);
-        spectator.detectComponentChanges();
-
         expect(spectator.query(DotEditContentFieldComponent)).toBeDefined();
         expect(spectator.query(DotEditContentFieldComponent).field).toBeTruthy();
     });
 
     it('should emit the form value through the `formSubmit` event', () => {
-        spectator.setInput('formData', CONTENT_FORM_DATA_MOCK);
-        spectator.detectChanges();
-
         jest.spyOn(spectator.component.formSubmit, 'emit');
         const button = spectator.query(byTestId('button-save'));
         spectator.click(button);
