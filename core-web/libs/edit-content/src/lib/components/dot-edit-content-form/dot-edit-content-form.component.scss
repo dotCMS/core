@@ -5,6 +5,13 @@
     grid-template-columns: 1fr 16rem;
     gap: $spacing-4;
     padding: $spacing-4;
+    padding-bottom: 0;
+    height: 100%;
+}
+
+.edit-content-form {
+    overflow: auto;
+    padding-right: $spacing-4;
 }
 
 .row {
@@ -12,9 +19,10 @@
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
     gap: $spacing-2;
+}
 
-    .column {
-        display: grid;
-        min-height: $spacing-7;
-    }
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-3;
 }

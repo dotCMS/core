@@ -79,19 +79,24 @@
         [header]="dialogHeaderMap[vm.mode] | dm"
         [draggable]="false"
         [resizable]="false"
+        [closeOnEscape]="false"
+        [styleClass]="isEditorMode(vm.mode) ? 'screen-cover' : ''"
         (onHide)="afterDialogClose()">
-        <div [ngSwitch]="vm.mode">
-            <div *ngSwitchCase="BINARY_FIELD_MODE.URL" data-testId="url">
-                <dot-dot-binary-field-url-mode
-                    [accept]="accept"
-                    [maxFileSize]="maxFileSize"
-                    (tempFileUploaded)="setTempFile($event)"
-                    (cancel)="closeDialog()"></dot-dot-binary-field-url-mode>
-            </div>
-            <div *ngSwitchCase="BINARY_FIELD_MODE.EDITOR" data-testId="editor">
-                TODO: Implement Write Code
-            </div>
-        </div>
+        <ng-container [ngSwitch]="vm.mode">
+            <dot-dot-binary-field-url-mode
+                *ngSwitchCase="BINARY_FIELD_MODE.URL"
+                [accept]="accept"
+                [maxFileSize]="maxFileSize"
+                (tempFileUploaded)="setTempFile($event)"
+                (cancel)="closeDialog()"
+                data-testId="url-mode"></dot-dot-binary-field-url-mode>
+            <dot-dot-binary-field-editor
+                *ngSwitchCase="BINARY_FIELD_MODE.EDITOR"
+                [accept]="accept"
+                (tempFileUploaded)="setTempFile($event)"
+                (cancel)="closeDialog()"
+                data-testId="editor-mode"></dot-dot-binary-field-editor>
+        </ng-container>
     </p-dialog>
 </div>
 

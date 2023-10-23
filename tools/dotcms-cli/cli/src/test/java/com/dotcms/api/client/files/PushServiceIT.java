@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import javax.inject.Inject;
 import org.apache.commons.io.FileUtils;
@@ -111,10 +112,10 @@ class PushServiceIT extends FilesTestHelper {
 
             Assertions.assertNotNull(traversalResult);
             Assertions.assertEquals(2, traversalResult.size());// Live and working folders
-            Assertions.assertEquals(0, traversalResult.get(0).getLeft().size());// No errors should be found
-            Assertions.assertEquals(0, traversalResult.get(1).getLeft().size());// No errors should be found
+            Assertions.assertTrue( traversalResult.get(0).exceptions().isEmpty());// No errors should be found
+            Assertions.assertTrue( traversalResult.get(1).exceptions().isEmpty());// No errors should be found
 
-            var treeNode = traversalResult.get(0).getRight();
+            var treeNode = traversalResult.get(0).treeNode();
             var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
 
             // Should be nothing to push as we are pushing the same folder we pull
@@ -126,7 +127,7 @@ class PushServiceIT extends FilesTestHelper {
             Assertions.assertEquals(0, treeNodePushInfo.foldersToDeleteCount());
 
             pushService.processTreeNodes(outputOptions, tempFolder.toAbsolutePath().toString(),
-                    traversalResult.get(0).getMiddle(), traversalResult.get(0).getRight(), treeNodePushInfo,
+                    traversalResult.get(0).localPaths(), traversalResult.get(0).treeNode(), treeNodePushInfo,
                     true, 0);
         } finally {
             // Clean up the temporal folder
@@ -189,10 +190,10 @@ class PushServiceIT extends FilesTestHelper {
 
             Assertions.assertNotNull(traversalResult);
             Assertions.assertEquals(2, traversalResult.size());// Live and working folders
-            Assertions.assertEquals(0, traversalResult.get(0).getLeft().size());// No errors should be found
-            Assertions.assertEquals(0, traversalResult.get(1).getLeft().size());// No errors should be found
+            Assertions.assertTrue(traversalResult.get(0).exceptions().isEmpty());// No errors should be found
+            Assertions.assertTrue(traversalResult.get(1).exceptions().isEmpty());// No errors should be found
 
-            var treeNode = traversalResult.get(0).getRight();
+            var treeNode = traversalResult.get(0).treeNode();
             var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
 
             // Should be nothing to push as we are pushing the same folder we pull
@@ -204,7 +205,7 @@ class PushServiceIT extends FilesTestHelper {
             Assertions.assertEquals(0, treeNodePushInfo.foldersToDeleteCount());
 
             pushService.processTreeNodes(outputOptions, tempFolder.toAbsolutePath().toString(),
-                    traversalResult.get(0).getMiddle(), traversalResult.get(0).getRight(), treeNodePushInfo,
+                    traversalResult.get(0).localPaths(), traversalResult.get(0).treeNode(), treeNodePushInfo,
                     true, 0);
 
             // Validate some pushed data, giving some time to the system to index the new data
@@ -273,19 +274,25 @@ class PushServiceIT extends FilesTestHelper {
 
             // Pulling the content
             OutputOptionMixin outputOptions = new MockOutputOptionMixin();
-            pullService.pullTree(outputOptions, result.getRight(), workspace.files().toAbsolutePath().toFile(),
+            final Path absolutePath = workspace.files().toAbsolutePath();
+            pullService.pullTree(outputOptions, result.getRight(), absolutePath.toFile(),
                     true, true, true, 0);
 
             // --
             // Modifying the pulled data
-            // Removing a folder
-            var folderToRemove = workspace.files().toAbsolutePath() + "/live/en-us/" + testSiteName + "/folder3";
-            FileUtils.deleteDirectory(new File(folderToRemove));
+            // Removing the folder under live
+            Path liveFolderToRemove = Paths.get(absolutePath.toString(),"live","en-us",testSiteName,"folder3");
 
+            //The folder also needs to be removed from the working branch of the folders tree. So it get removed
+            //If we leave folders hanging under a different language or status the system isn't going to know what folder must be kept and what folders needs to be removed
+            //If we want a folder to be removed from the remote instance it needs to be removed from all our folder branches for good
+            Path workingFolderToRemove = Paths.get(absolutePath.toString(),"working","en-us",testSiteName,"folder3");
             // Removing an asset
-            var assetToRemove = workspace.files().toAbsolutePath() + "/live/en-us/" + testSiteName +
-                    "/folder2/subfolder2-1/subfolder2-1-1/image2.png";
-            FileUtils.delete(new File(assetToRemove));
+            Path assetToRemove = Paths.get(absolutePath.toString(),"live","en-us",testSiteName,"folder2","subFolder2-1","subFolder2-1-1","image2.png");
+
+            FileUtils.deleteDirectory(liveFolderToRemove.toFile());
+            FileUtils.deleteDirectory(workingFolderToRemove.toFile());
+            FileUtils.delete(assetToRemove.toFile());
 
             // Modifying an asset
             var toModifyAsset = workspace.files().toAbsolutePath() + "/live/en-us/" + testSiteName +
@@ -322,10 +329,10 @@ class PushServiceIT extends FilesTestHelper {
 
             Assertions.assertNotNull(traversalResult);
             Assertions.assertEquals(2, traversalResult.size());// Live and working folders
-            Assertions.assertEquals(0, traversalResult.get(0).getLeft().size());// No errors should be found
-            Assertions.assertEquals(0, traversalResult.get(1).getLeft().size());// No errors should be found
+            Assertions.assertTrue(traversalResult.get(0).exceptions().isEmpty());// No errors should be found
+            Assertions.assertTrue(traversalResult.get(1).exceptions().isEmpty());// No errors should be found
 
-            var treeNode = traversalResult.get(0).getRight();
+            var treeNode = traversalResult.get(0).treeNode();
             var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
 
             // Should be nothing to push as we are pushing the same folder we pull
@@ -337,7 +344,7 @@ class PushServiceIT extends FilesTestHelper {
             Assertions.assertEquals(1, treeNodePushInfo.foldersToDeleteCount());
 
             pushService.processTreeNodes(outputOptions, tempFolder.toAbsolutePath().toString(),
-                    traversalResult.get(0).getMiddle(), traversalResult.get(0).getRight(), treeNodePushInfo,
+                    traversalResult.get(0).localPaths(), traversalResult.get(0).treeNode(), treeNodePushInfo,
                     true, 0);
 
             // Validate some pushed data, giving some time to the system to index the new data
@@ -386,14 +393,93 @@ class PushServiceIT extends FilesTestHelper {
     }
 
     /**
-     * This method checks and waits for the indexing of a specific asset in a given folder of a
-     * site. It validates the existence of the site, folder, and asset and waits for a specified
-     * time period for the system to index the new data.
-     *
-     * @param siteName   the name of the site
-     * @param folderPath the path of the folder where the asset is located
-     * @param assetName  the name of the asset
+     * Given scenario: Initially our code would explore the file system looking for folders that would exist remotely but not locally marking them as "to be deleted"
+     * But it wouldn't take into account that the same folder could also be represented under different status or language see <a href="https://github.com/dotCMS/core/issues/26380">Bug</a>
+     * So Given that the same folder can live under different lang/status branch. If we really want to delete it from the remote instance should imply we remove everywhere.
+     * Expected Result: If the folder only gets removed from under "live" it shouldn't get marked for delete.
+     * If the real intend if really removing the folder remotely. The folder needs to me removed  also from the "working" tree nodes branch
+     * @throws IOException
      */
+    @Test
+    void Test_Delete_Folder() throws IOException {
+
+        // Create a temporal folder for the pull
+        var tempFolder = createTempFolder();
+        var workspace = workspaceManager.getOrCreate(tempFolder);
+
+        try {
+
+            // Preparing the data for the test
+            final var testSiteName = prepareData();
+
+            final var folderPath = String.format("//%s", testSiteName);
+
+            var result = remoteTraversalService.traverseRemoteFolder(
+                    folderPath,
+                    null,
+                    true,
+                    new HashSet<>(),
+                    new HashSet<>(),
+                    new HashSet<>(),
+                    new HashSet<>()
+            );
+
+            OutputOptionMixin outputOptions = new MockOutputOptionMixin();
+            final Path absolutePath = workspace.files().toAbsolutePath();
+
+            pullService.pullTree(outputOptions, result.getRight(), absolutePath.toFile(),
+                    true, true, true, 0);
+
+            Files.find(absolutePath, Integer.MAX_VALUE,
+                    (filePath, fileAttr) -> fileAttr.isRegularFile())
+                    .forEach(System.out::println);
+
+
+            Path liveFolderToRemove = Paths.get(absolutePath.toString(),"live","en-us",testSiteName,"folder3");
+            Path workingFolderToRemove = Paths.get(absolutePath.toString(),"working","en-us",testSiteName,"folder3");
+
+            // Here's where the actual test takes place:
+            // So in order to delete the folder it  needs to be physically removed from the two locations where it appears
+            // Otherwise the cli does not understand there's intention for remove
+
+            FileUtils.deleteDirectory(liveFolderToRemove.toFile());
+
+            // Now we are going to push the content
+            var traversalResultLiveRemoved = pushService.traverseLocalFolders(outputOptions, tempFolder.toFile(), tempFolder.toFile(),
+                    true, true, true, true);
+
+            var treeNode1 = traversalResultLiveRemoved.get(0).treeNode();
+            var treeNodePushInfo1 = treeNode1.collectTreeNodePushInfo();
+
+            //This is zero because there is still another folder hanging under the "working"  branch which needs to be removed
+            Assertions.assertEquals(0, treeNodePushInfo1.foldersToDeleteCount());
+            // so let's do it
+            FileUtils.deleteDirectory(workingFolderToRemove.toFile());
+
+            // Push again after deleting the working folder too
+            var traversalResultWorkingRemoved = pushService.traverseLocalFolders(outputOptions, tempFolder.toFile(), tempFolder.toFile(),
+                    true, true, true, true);
+
+            var treeNode2 = traversalResultWorkingRemoved.get(0).treeNode();
+            var treeNodePushInfo2 = treeNode2.collectTreeNodePushInfo();
+
+            //Now we should expect this to be 1, because both folder are removed
+            Assertions.assertEquals(1, treeNodePushInfo2.foldersToDeleteCount());
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+            /**
+             * This method checks and waits for the indexing of a specific asset in a given folder of a
+             * site. It validates the existence of the site, folder, and asset and waits for a specified
+             * time period for the system to index the new data.
+             *
+             * @param siteName   the name of the site
+             * @param folderPath the path of the folder where the asset is located
+             * @param assetName  the name of the asset
+             */
     private void indexCheckAndWait(final String siteName, final String folderPath,
             final String assetName) {
 

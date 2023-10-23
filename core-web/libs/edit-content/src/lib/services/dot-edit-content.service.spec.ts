@@ -11,7 +11,7 @@ import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/da
 
 import { DotEditContentService } from './dot-edit-content.service';
 
-import { CONTENT_TYPE_MOCK } from '../feature/edit-content/edit-content.layout.component.spec';
+import { CONTENT_TYPE_MOCK } from '../utils/mocks';
 
 const API_ENDPOINT = '/api/v1/content';
 
