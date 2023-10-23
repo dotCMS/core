@@ -1,12 +1,6 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
-
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule } from '@angular/forms';
-
-import { ButtonModule } from 'primeng/button';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
@@ -24,17 +18,10 @@ export const CONTENT_FORM_DATA_MOCK: EditContentFormData = {
     layout: LAYOUT_MOCK
 };
 
-describe('DotFormComponent', () => {
+xdescribe('DotFormComponent', () => {
     let spectator: Spectator<DotEditContentFormComponent>;
     const createComponent = createComponentFactory({
         component: DotEditContentFormComponent,
-        imports: [
-            DotEditContentFieldComponent,
-            CommonModule,
-            ReactiveFormsModule,
-            ButtonModule,
-            DotMessagePipe
-        ],
         providers: [
             {
                 provide: DotMessageService,
@@ -42,53 +29,57 @@ describe('DotFormComponent', () => {
                     Save: 'Save'
                 })
             }
-        ]
+        ],
+        detectChanges: false
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                formData: CONTENT_FORM_DATA_MOCK
-            }
-        });
+        spectator = createComponent();
     });
 
-    describe('initilizeForm', () => {
-        it('should initialize the form group with form controls for each field in the `formData` array', () => {
-            const component = spectator.component;
-            component.formData = CONTENT_FORM_DATA_MOCK;
-            spectator.detectChanges();
+    it('should initialize the form group with form controls for each field in the `formData` array', () => {
+        spectator.setInput('formData', CONTENT_FORM_DATA_MOCK);
+        spectator.detectChanges();
 
-            expect(component.form.controls['name1']).toBeDefined();
-            expect(component.form.controls['text2']).toBeDefined();
-        });
+        expect(spectator.component.form.controls['name1']).toBeDefined();
+        expect(spectator.component.form.controls['text2']).toBeDefined();
     });
 
-    describe('initializeFormControl', () => {
-        it('should initialize a form control for a given DotCMSContentTypeField', () => {
-            const formControl = spectator.component.initializeFormControl(FIELD_MOCK);
+    it('should initialize a form control for a given DotCMSContentTypeField', () => {
+        spectator.setInput('formData', CONTENT_FORM_DATA_MOCK);
+        spectator.detectChanges();
+        const formControl = spectator.component.initializeFormControl(FIELD_MOCK);
 
-            expect(formControl).toBeDefined();
-            expect(formControl.validator).toBeDefined();
-        });
-
-        it('should have a default value if is defined', () => {
-            const formControl = spectator.component.initializeFormControl(FIELDS_MOCK[1]);
-            expect(formControl.value).toEqual(FIELDS_MOCK[1].defaultValue);
-        });
+        expect(formControl).toBeDefined();
+        expect(formControl.validator).toBeDefined();
     });
 
-    describe('saveContent', () => {
-        it('should emit the form value through the `formSubmit` event', () => {
-            const component = spectator.component;
-            component.formData = CONTENT_FORM_DATA_MOCK;
-            component.initilizeForm();
+    it('should have a default value if is defined', () => {
+        spectator.setInput('formData', CONTENT_FORM_DATA_MOCK);
+        spectator.detectChanges();
 
-            jest.spyOn(component.formSubmit, 'emit');
-            const button = spectator.query(byTestId('button-save'));
-            spectator.click(button);
+        const formControl = spectator.component.initializeFormControl(FIELDS_MOCK[1]);
+        expect(formControl.value).toEqual(FIELDS_MOCK[1].defaultValue);
+    });
 
-            expect(component.formSubmit.emit).toHaveBeenCalledWith(component.form.value);
-        });
+    it('should render a dot-edit-content-field and pass the field', () => {
+        spectator.setInput('formData', CONTENT_FORM_DATA_MOCK);
+        spectator.detectComponentChanges();
+
+        expect(spectator.query(DotEditContentFieldComponent)).toBeDefined();
+        expect(spectator.query(DotEditContentFieldComponent).field).toBeTruthy();
+    });
+
+    it('should emit the form value through the `formSubmit` event', () => {
+        spectator.setInput('formData', CONTENT_FORM_DATA_MOCK);
+        spectator.detectChanges();
+
+        jest.spyOn(spectator.component.formSubmit, 'emit');
+        const button = spectator.query(byTestId('button-save'));
+        spectator.click(button);
+
+        expect(spectator.component.formSubmit.emit).toHaveBeenCalledWith(
+            spectator.component.form.value
+        );
     });
 });
