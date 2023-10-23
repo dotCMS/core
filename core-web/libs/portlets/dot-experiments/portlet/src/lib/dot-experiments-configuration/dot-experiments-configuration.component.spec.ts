@@ -37,7 +37,7 @@ import {
     DotExperimentsConfigurationStore
 } from './store/dot-experiments-configuration-store';
 
-import { DotExperimentsExperimentSummaryComponent } from '../shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
+import { DotExperimentsExperimentSummaryComponent } from '../dot-experiments-reports/components/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 

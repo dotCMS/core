@@ -1,15 +1,19 @@
 import { Route } from '@angular/router';
 
 import { EditContentShellComponent } from './edit-content.shell.component';
-import { FormComponent } from './feature/form/form.component';
+import { EditContentLayoutComponent } from './feature/edit-content/edit-content.layout.component';
 
 export const DotEditContentRoutes: Route[] = [
     {
         path: '',
         component: EditContentShellComponent,
         children: [
-            { path: 'new/:contentType', title: 'Create Content', component: FormComponent },
-            { path: ':id', title: 'Edit Content', component: FormComponent }
+            {
+                path: 'new/:contentType',
+                title: 'Create Content',
+                component: EditContentLayoutComponent
+            },
+            { path: ':id', title: 'Edit Content', component: EditContentLayoutComponent }
         ]
     }
 ];

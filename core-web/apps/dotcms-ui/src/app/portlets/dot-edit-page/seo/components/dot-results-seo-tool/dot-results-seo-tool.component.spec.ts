@@ -7,7 +7,11 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotResultsSeoToolComponent } from './dot-results-seo-tool.component';
 import { seoOGTagsMock, seoOGTagsResultMock, seoOGTagsResultOgMockTwitter } from './mocks';
 
-import { SEO_MEDIA_TYPES } from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
+import {
+    SEO_MEDIA_TYPES,
+    SEO_LIMITS
+} from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
+import { DotSeoMetaTagsUtilService } from '../../../content/services/html/dot-seo-meta-tags-util.service';
 import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-meta-tags.service';
 
 describe('DotResultsSeoToolComponent', () => {
@@ -16,10 +20,12 @@ describe('DotResultsSeoToolComponent', () => {
         component: DotResultsSeoToolComponent,
         providers: [
             DotSeoMetaTagsService,
+            DotSeoMetaTagsUtilService,
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
-                    'seo.rules.favicon.not.found': 'FavIcon not found!',
+                    'seo.rules.favicon.not.found':
+                        'Favicon not found, or image link in Favicon not valid!',
                     'seo.rules.favicon.more.one.found': 'More than 1 Favicon found!',
                     'seo.rules.favicon.found': 'Favicon found!',
                     'seo.rules.description.found.empty': 'Meta Description found, but is empty!',
@@ -124,6 +130,18 @@ describe('DotResultsSeoToolComponent', () => {
                 seoMedia: SEO_MEDIA_TYPES.GOOGLE
             }
         });
+    });
+
+    it('should display title', () => {
+        const titleElement = spectator.query(byTestId('results-seo-tool-search-title'));
+        expect(titleElement.textContent).toContain(seoOGTagsMock.title);
+        expect(titleElement.textContent.length).toBeLessThan(SEO_LIMITS.MAX_TITLE_LENGTH);
+    });
+
+    it('should display description', () => {
+        const titleElement = spectator.query(byTestId('results-seo-tool-search-description'));
+        expect(titleElement.textContent).toContain(seoOGTagsMock.description);
+        expect(titleElement.textContent.length).toBeLessThan(SEO_LIMITS.MAX_DESCRIPTION_LENGTH);
     });
 
     it('should display host Name', () => {
@@ -336,5 +354,25 @@ describe('DotResultsSeoToolComponent', () => {
         expect(readmore[5].innerHTML).toEqual(
             '<span><a target="_blank" href="https://ahrefs.com/blog/seo-meta-tags/">Meta Tags for SEO: A Simple Guide for Beginners</a>. <i class="pi pi-external-link"></i></span>'
         );
+    });
+
+    it('should display the default icon when noFavicon is true', () => {
+        const imageElement = spectator.query(byTestId('favicon-image'));
+        spectator.dispatchFakeEvent(imageElement, 'error');
+        spectator.detectComponentChanges();
+
+        const defaultIcon = spectator.query(byTestId('favicon-default'));
+        expect(defaultIcon).toBeTruthy();
+        expect(defaultIcon.querySelector('.pi-globe')).toBeTruthy();
+    });
+
+    it('should display the favicon image when noFavicon is false', () => {
+        spectator.component.seoOGTags.favicon = 'favicon-image-url.png';
+
+        spectator.detectComponentChanges();
+
+        const faviconImage = spectator.query(byTestId('favicon-image'));
+        expect(faviconImage).toBeTruthy();
+        expect(faviconImage.getAttribute('src')).toBe('favicon-image-url.png');
     });
 });

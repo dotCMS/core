@@ -5,8 +5,8 @@ export default {
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {
         'ts-jest': {
-            tsconfig: '<rootDir>/tsconfig.spec.json',
-            stringifyContentPathRegex: '\\.(html|svg)$'
+            stringifyContentPathRegex: '\\.(html|svg)$',
+            tsconfig: '<rootDir>/tsconfig.spec.json'
         }
     },
     coverageDirectory: '../../coverage/libs/edit-content',

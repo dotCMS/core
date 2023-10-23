@@ -54,6 +54,7 @@ import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
 
+import com.dotcms.metrics.timing.TimeMetric;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
@@ -440,6 +441,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 "You don't have permission to archive the Experiment. "
                         + "Experiment Id: " + persistedExperiment.get().id());
 
+        if(persistedExperiment.get().status()==ARCHIVED) {
+            return persistedExperiment.get();
+        }
+
         DotPreconditions.isTrue(persistedExperiment.get().status()==ENDED,
                 ()-> "Only ENDED experiments can be archived",
                 DotStateException.class);
@@ -588,8 +593,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling)
                         .withStatus(SCHEDULED);
                 validateNoConflictsWithScheduledExperiments(experimentToSave, user);
-                toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED),
-                        user);
+                toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED).
+                                withRunningIds(getRunningIds(experimentToSave)), user);
             }
 
             return toReturn;
@@ -814,7 +819,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Experiment readyToStart = save(Experiment.builder().from(persistedExperiment)
                         .status(RUNNING).build(), user);
 
-        return innerStart(readyToStart, user, true);
+        return innerStart(readyToStart, user, false);
     }
 
     private Experiment innerStart(final Experiment persistedExperiment, final User user,
@@ -1236,6 +1241,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @Override
     public List<BrowserSession> getEvents(final Experiment experiment,
                                           final User user) throws DotDataException, DotSecurityException {
+        final TimeMetric timeMetric = TimeMetric.mark(getClass().getSimpleName() + ".getEvents()");
+
         final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
         final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
                 .create(experiment);
@@ -1280,6 +1287,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     e.getMessage());
             Logger.error(this, message, e);
             throw new DotDataException(message, e);
+        } finally {
+            timeMetric.stop();
         }
     }
 

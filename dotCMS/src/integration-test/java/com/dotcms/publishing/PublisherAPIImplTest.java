@@ -11,29 +11,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.BundleDataGen;
-import com.dotcms.datagen.CategoryDataGen;
-import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.EnvironmentDataGen;
-import com.dotcms.datagen.ExperimentDataGen;
-import com.dotcms.datagen.FieldDataGen;
-import com.dotcms.datagen.FieldRelationshipDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FilterDescriptorDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.LanguageDataGen;
-import com.dotcms.datagen.LinkDataGen;
-import com.dotcms.datagen.PushPublishingEndPointDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.TemplateLayoutDataGen;
-import com.dotcms.datagen.UserDataGen;
-import com.dotcms.datagen.WorkflowActionDataGen;
-import com.dotcms.datagen.WorkflowDataGen;
-import com.dotcms.datagen.WorkflowStepDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
@@ -58,16 +36,15 @@ import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -108,7 +85,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -120,9 +96,7 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -192,9 +166,10 @@ public class PublisherAPIImplTest {
                 getRuleWithDependencies(),
                 getContentWithSeveralVersions(),
                 getUser(),
-                getExperiment()
-                //getExperimentWithSystemTemplate() //for some reason it is failing on the cloud, we need to check it later
-                //getExperimentVariantDifferentLayout() //for some reason it is failing on the cloud, we need to check it later
+                getExperiment(),
+                getExperimentWithSystemTemplate(),
+                getExperimentVariantDifferentLayout(),
+                getExperimentContentletInDifferentLang()
         };
     }
 
@@ -267,7 +242,55 @@ public class PublisherAPIImplTest {
                 map(
                         experiment, list(variant, experimentPage, pageNewVersion),
                         variant, list(variantTemplate),
-                        experimentPage, list(host, template, pageContentType, language)
+                        experimentPage, list(host, template, variantTemplate, pageContentType, language, variantTemplate)
+                ),
+                "/bundlers-test/experiment/experiment.json", true);
+    }
+
+    private static TestAsset getExperimentContentletInDifferentLang()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        ContentletDataGen.publish(experimentPage);
+
+        final Language language = APILocator.getLanguageAPI()
+                .getLanguage(experimentPage.getLanguageId());
+
+        final ContentType pageContentType = experimentPage.getContentType();
+        final Experiment experiment = new ExperimentDataGen().page(experimentPage).nextPersisted();
+
+        final ExperimentVariant experimentNoDefaultVariant = experiment.trafficProportion().variants()
+                .stream()
+                .filter(experimentVariant -> !DEFAULT_VARIANT.name().equals(experimentVariant.id()))
+                .findFirst()
+                .orElseThrow();
+
+        final Variant variant = APILocator.getVariantAPI().get(experimentNoDefaultVariant.id())
+                .orElseThrow();
+
+        final ContentType contentType = new ContentTypeDataGen().host(host).nextPersisted();
+        Language languageToContentlet = new LanguageDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .host(host)
+                .languageId(languageToContentlet.getId())
+                .variant(variant)
+                .nextPersisted();
+
+        final MultiTree multiTree = new MultiTreeDataGen()
+                .setContentlet(contentlet)
+                .setPage(experimentPage)
+                .setVariant(variant)
+                .setContainer(APILocator.getContainerAPI().systemContainer())
+                .nextPersisted();
+
+        return new TestAsset(experiment,
+                map(
+                        experiment, list(variant, experimentPage, contentlet),
+                        contentlet, list(languageToContentlet, contentType),
+                        experimentPage, list(host, template, pageContentType, language),
+                        contentType, list(host)
                 ),
                 "/bundlers-test/experiment/experiment.json", true);
     }

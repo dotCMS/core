@@ -49,6 +49,7 @@ import { DotCopyContentModalService } from '../dot-copy-content-modal/dot-copy-c
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
+import { DotSeoMetaTagsUtilService } from '../html/dot-seo-meta-tags-util.service';
 import { DotSeoMetaTagsService } from '../html/dot-seo-meta-tags.service';
 import { getEditPageCss } from '../html/libraries/iframe-edit-mode.css';
 
@@ -124,7 +125,8 @@ export class DotEditContentHtmlService {
         private dotCopyContentModalService: DotCopyContentModalService,
         private dotCopyContentService: DotCopyContentService,
         private dotLoadingIndicatorService: DotLoadingIndicatorService,
-        private dotSeoMetaTagsService: DotSeoMetaTagsService
+        private dotSeoMetaTagsService: DotSeoMetaTagsService,
+        private dotSeoMetaTagsUtilService: DotSeoMetaTagsUtilService
     ) {
         this.contentletEvents$.subscribe(
             (
@@ -442,7 +444,7 @@ export class DotEditContentHtmlService {
     getMetaTags(): SeoMetaTags {
         const pageDocument = this.getEditPageDocument();
 
-        return this.dotSeoMetaTagsService.getMetaTags(pageDocument);
+        return this.dotSeoMetaTagsUtilService.getMetaTags(pageDocument);
     }
 
     private setMaterialIcons(): void {

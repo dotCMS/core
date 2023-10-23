@@ -35,6 +35,7 @@ export enum SEO_LIMITS {
     MAX_IMAGE_BYTES = 8000000,
     MAX_TWITTER_IMAGE_BYTES = 5000000,
     MAX_TWITTER_DESCRIPTION_LENGTH = 200,
+    MIN_TWITTER_DESCRIPTION_LENGTH = 30,
     MIN_TWITTER_TITLE_LENGTH = 30,
     MAX_TWITTER_TITLE_LENGTH = 70
 }
@@ -156,22 +157,26 @@ export const socialMediaTiles: Record<SEO_MEDIA_TYPES, SocialMediaOption> = {
     [SEO_MEDIA_TYPES.FACEBOOK]: {
         label: 'Facebook',
         value: SEO_MEDIA_TYPES.FACEBOOK,
-        icon: 'pi pi-facebook'
+        icon: 'pi pi-facebook',
+        description: 'seo.rules.media.preview.tile'
     },
     [SEO_MEDIA_TYPES.TWITTER]: {
         label: 'X (Formerly Twitter)',
         value: SEO_MEDIA_TYPES.TWITTER,
-        icon: 'pi pi-twitter'
+        icon: 'pi pi-twitter',
+        description: 'seo.rules.media.preview.tile'
     },
     [SEO_MEDIA_TYPES.LINKEDIN]: {
         label: 'Linkedin',
         value: SEO_MEDIA_TYPES.LINKEDIN,
-        icon: 'pi pi-linkedin'
+        icon: 'pi pi-linkedin',
+        description: 'seo.rules.media.preview.tile'
     },
     [SEO_MEDIA_TYPES.GOOGLE]: {
         label: 'Google',
         value: SEO_MEDIA_TYPES.GOOGLE,
-        icon: 'pi pi-google'
+        icon: 'pi pi-google',
+        description: 'seo.rules.media.search.engine'
     }
 };
 
@@ -179,4 +184,7 @@ export interface SocialMediaOption {
     label: string;
     value: SEO_MEDIA_TYPES;
     icon: string;
+    description: string;
 }
+
+export const IMG_NOT_FOUND_KEY = 'not-found';

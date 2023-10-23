@@ -2,25 +2,25 @@ package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.viewtools.secrets.DotVelocitySecretAppConfig;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.util.HashMap;
 import java.util.Optional;
 
 /**
@@ -30,8 +30,7 @@ import java.util.Optional;
  */
 public class SecretTool implements ViewTool {
 
-    private InternalContextAdapterImpl internalContextAdapter;
-    private Context context;
+	private Context context;
 	private HttpServletRequest request;
 
 	@Override
@@ -57,8 +56,8 @@ public class SecretTool implements ViewTool {
 
 		canUserEvaluate();
 
-		final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-		final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(request);
+		final HttpServletRequest requestFromThreadLocal = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(requestFromThreadLocal);
 		return config.isPresent()? config.get().getStringOrNull(key) : null;
 	}
 
@@ -90,8 +89,8 @@ public class SecretTool implements ViewTool {
 	public char[] getCharArray(final String key) {
 
 		canUserEvaluate();
-		final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-		final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(request);
+		final HttpServletRequest requestFromThreadLocal = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(requestFromThreadLocal);
 		return config.isPresent()? config.get().getCharArrayOrNull(key) : null;
 	}
 
@@ -108,53 +107,74 @@ public class SecretTool implements ViewTool {
 		return config.isPresent()? config.get().getCharArrayOrNull(key, defaultValue) : defaultValue;
 	}
 
-    private static final boolean ENABLE_SCRIPTING = Config.getBooleanProperty("secrets.scripting.enabled", false);
+    private static final boolean ENABLE_SCRIPTING = Config.getBooleanProperty("secrets.scripting.enabled", true);
 
-    /**
-     * Test 2 things.
-	 * 1) see if the user has the scripting role
-	 * 2) otherwise check if the last modified user has the scripting role
-     * @return boolean
-     */
+	/**
+	 * Checks for the existence of the mandatory Scripting Role based on the following criteria:
+	 * <ol>
+	 *     <li>The User that last modified the Contentlet rendering the Secrets has the Scripting
+	 *     Role.</li>
+	 *     <li>The User present in the HTTP Request has the Scripting Role assigned to it.</li>
+	 * </ol>
+	 *
+	 * @throws SecurityException The User that either added the Secrets ViewTool code or the User
+	 *                           present in the HTTP Request does not have the required Role.
+	 */
     protected void canUserEvaluate() {
-
-        if(!ENABLE_SCRIPTING) {
-
+		final String disabledScriptingErrorMsg = "External scripting is disabled in your dotcms instance";
+        if (!ENABLE_SCRIPTING) {
             Logger.warn(this.getClass(), "Scripting called and ENABLE_SCRIPTING set to false");
-			throw new SecurityException("External scripting is disabled in your dotcms instance.");
+			throw new SecurityException(disabledScriptingErrorMsg);
         }
 
         try {
-
-			boolean hasScriptingRole = false;
 			final Role scripting = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
-
-			this.internalContextAdapter    = new InternalContextAdapterImpl(context);
-			final String fieldResourceName = this.internalContextAdapter.getCurrentTemplateName();
-			if (UtilMethods.isSet(fieldResourceName)) {
-				final String contentletFileAssetInode = fieldResourceName.substring(fieldResourceName.indexOf("/") + 1, fieldResourceName.indexOf("_"));
-				final Contentlet contentlet = APILocator.getContentletAPI().find(contentletFileAssetInode, APILocator.systemUser(), true);
-				final User lastModifiedUser = APILocator.getUserAPI().loadUserById(contentlet.getModUser(), APILocator.systemUser(), true);
-				hasScriptingRole = APILocator.getRoleAPI().doesUserHaveRole(lastModifiedUser, scripting);
-			}
-
+			boolean hasScriptingRole = checkRoleFromLastModUser(scripting);
 			if (!hasScriptingRole) {
 				final User user = WebAPILocator.getUserWebAPI().getUser(this.request);
 				// try with the current user
 				if (null != user) {
-
 					hasScriptingRole = APILocator.getRoleAPI().doesUserHaveRole(user, scripting);
 				}
 			}
 
 			if (!hasScriptingRole) {
-
-				throw new SecurityException("External scripting is disabled in your dotcms instance.");
+				throw new SecurityException(disabledScriptingErrorMsg);
 			}
-        } catch(Exception e) {
-
-            Logger.warn(this.getClass(), "Scripting called with error" + e);
-			throw new SecurityException("External scripting is disabled in your dotcms instance.", e);
+        } catch (final Exception e) {
+			Logger.warnAndDebug(this.getClass(), String.format("Failed to evaluate Scripting Role " +
+					"presence: %s", ExceptionUtil.getErrorMessage(e)), e);
+			throw new SecurityException(disabledScriptingErrorMsg, e);
         }
     } // canUserEvaluate.
+
+	/**
+	 * Checks whether the User who last edited the Contentlet rendering the Secrets has the
+	 * specified dotCMS Role or not.
+	 *
+	 * @param role The {@link Role} that will be checked.
+	 *
+	 * @return If the User has the specified Role, returns {@code true}.
+	 */
+	private boolean checkRoleFromLastModUser(final Role role) {
+		final InternalContextAdapterImpl internalContextAdapter = new InternalContextAdapterImpl(context);
+		final String resourcePath = internalContextAdapter.getCurrentTemplateName();
+		boolean hasRole = false;
+		if (UtilMethods.isSet(resourcePath)) {
+			String contentletInode = StringPool.BLANK;
+			try {
+				contentletInode = CMSUrlUtil.getInstance().getInodeFromUrlPath(resourcePath);
+				final Contentlet contentlet = APILocator.getContentletAPI().find(contentletInode, APILocator.systemUser(), true);
+				final User lastModifiedUser = APILocator.getUserAPI().loadUserById(contentlet.getModUser(), APILocator.systemUser(), true);
+				hasRole = APILocator.getRoleAPI().doesUserHaveRole(lastModifiedUser, role);
+			} catch (final Exception e) {
+				Logger.warnAndDebug(SecretTool.class, String.format("Failed to find last " +
+						"modification user from Retrieved ID '%s' in URL Path '%s': %s",
+						contentletInode, resourcePath,
+						ExceptionUtil.getErrorMessage(e)), e);
+			}
+		}
+		return hasRole;
+	}
+
 }
