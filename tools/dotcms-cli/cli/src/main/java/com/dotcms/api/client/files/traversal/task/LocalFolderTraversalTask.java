@@ -11,8 +11,12 @@ import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.HiddenFileFilter;
 import com.dotcms.common.AssetsUtils;
 import com.dotcms.common.AssetsUtils.LocalPathStructure;
+import com.dotcms.model.asset.AbstractAssetSyncMeta.PushType;
+import com.dotcms.model.asset.AssetSyncMeta;
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.AssetView;
+import com.dotcms.model.asset.FolderSyncMeta;
+import com.dotcms.model.asset.FolderSyncMeta.Builder;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.security.Utils;
 import com.google.common.base.Strings;
@@ -21,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.RecursiveTask;
 import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.tuple.Pair;
@@ -185,10 +190,13 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
                                             "- New [%b] - Modified [%b].",
                                     localPathStructure.filePath(), live, lang, pushInfo.isNew(),
                                     pushInfo.isModified()));
+
                     var asset = assetViewFromFile(localPathStructure);
-                    asset.markForPush(true).
-                            pushTypeNew(pushInfo.isNew()).
-                            pushTypeModified(pushInfo.isModified());
+                    final AssetSyncMeta syncMeta = AssetSyncMeta.builder().
+                            markedForPush(true).
+                            pushType(pushInfo.pushType()).
+                            build();
+                    asset.syncMeta(syncMeta);
                     assetVersions.addVersions(
                             asset.build()
                     );
@@ -242,11 +250,14 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
                                         "- New [%b] - Modified [%b].",
                                 file.toPath(), live, lang, pushInfo.isNew(), pushInfo.isModified()));
 
+                        final AssetSyncMeta syncMeta = AssetSyncMeta.builder()
+                                .markedForPush(true)
+                                .pushType(pushInfo.pushType())
+                                .build();
+
                         assetVersionsBuilder.addVersions(
                                 assetViewFromFile(workspaceFile, file).
-                                        markForPush(true).
-                                        pushTypeNew(pushInfo.isNew()).
-                                        pushTypeModified(pushInfo.isModified()).
+                                        syncMeta(syncMeta).
                                         build()
                         );
                     } else {
@@ -270,15 +281,17 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
             File[] folderFiles) {
 
         if (remoteFolder == null) {
+            boolean markForPush = false;
             if (params.ignoreEmptyFolders()) {
                 if (folderFiles != null && folderFiles.length > 0) {
                     // Does  not exist on remote server, so we need to push it
-                    folder.markForPush(true);
+                    markForPush = true;
                 }
             } else {
                 // Does  not exist on remote server, so we need to push it
-                folder.markForPush(true);
+                markForPush = true;
             }
+            folder.syncMeta(FolderSyncMeta.builder().markedForPush(markForPush).build());
         }
     }
 
@@ -312,9 +325,16 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
                             String.format("Marking file [%s] - live [%b] - lang [%s] for delete.",
                                     version.name(), live, lang));
 
-                    var copy = version.withMarkForDelete(true);
-                    copy = copy.withLive(live);
-                    copy = copy.withWorking(!live);
+                    final Optional<AssetSyncMeta> existingSyncMeta = version.syncMeta();
+
+                    final AssetSyncMeta.Builder builder = AssetSyncMeta.builder();
+                    existingSyncMeta.ifPresent(builder::from);
+                    builder.markedForDelete(true);
+
+                    final AssetSyncMeta syncMeta = builder.build();
+                    var copy = version.withSyncMeta(syncMeta)
+                            .withLive(live)
+                            .withWorking(!live);
                     assetVersions.addVersions(copy);
 
                 }
@@ -376,7 +396,10 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
                             // Folder exist on remote server, but not locally, so we need to remove it
                             logger.debug(String.format("Marking folder [%s] for delete.", subFolder.path()));
                             if (params.removeFolders()) {
-                                subFolder = subFolder.withMarkForDelete(true);
+                                final Optional<FolderSyncMeta> existingSyncMeta = subFolder.syncMeta();
+                                final Builder builder = FolderSyncMeta.builder();
+                                existingSyncMeta.ifPresent(builder::from);
+                                subFolder = subFolder.withSyncMeta(builder.markedForDelete(true).build());
                             }
                             folder.addSubFolders(subFolder);
                         }
@@ -710,6 +733,14 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
          */
         public boolean isModified() {
             return isModified;
+        }
+
+        PushType pushType() {
+            PushType pushType = isNew() ? PushType.NEW : PushType.UNKNOWN;
+            if(pushType == PushType.UNKNOWN){
+                pushType = isModified() ? PushType.NEW : PushType.UNKNOWN;
+            }
+            return pushType;
         }
 
     }

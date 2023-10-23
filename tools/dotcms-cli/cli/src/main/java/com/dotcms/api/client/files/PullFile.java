@@ -58,7 +58,7 @@ public class PullFile extends PullBase {
             TreeNode tree = new TreeNode(folder);
 
             // Collect important information about the tree
-            final var treeNodeInfo = tree.collectUniqueStatusesAndLanguages(false);
+            final var treeNodeInfo = tree.collectUniqueStatusAndLanguage(false);
 
             output.info(String.format("\rStarting pull process for: " +
                             "@|bold,green [%s]|@ Assets in " +

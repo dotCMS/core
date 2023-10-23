@@ -1,8 +1,15 @@
 package com.dotcms.common;
 
 import static com.dotcms.common.LocationUtils.encodePath;
+import static com.dotcms.model.config.Workspace.*;
 
-import com.dotcms.model.config.Workspace;
+
+import com.dotcms.model.asset.AbstractAssetSyncMeta;
+import com.dotcms.model.asset.AbstractAssetSyncMeta.PushType;
+import com.dotcms.model.asset.AssetSyncMeta;
+import com.dotcms.model.asset.AssetView;
+import com.dotcms.model.asset.FolderSyncMeta;
+import com.dotcms.model.asset.FolderView;
 import com.google.common.base.Strings;
 import java.io.File;
 import java.net.URI;
@@ -12,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class AssetsUtils {
 
@@ -176,13 +184,13 @@ public class AssetsUtils {
         // Check if we are inside the workspace but also inside the files folder
         if (sourceCount > workspaceCount + 1) {
             if (!source.getAbsolutePath().startsWith(
-                    workspace.getAbsolutePath() + File.separator + Workspace.FILES_NAMESPACE + File.separator
+                    workspace.getAbsolutePath() + File.separator + FILES_NAMESPACE + File.separator
             )) {
                 throw new IllegalArgumentException("Invalid source path. Source path must be inside the files folder or " +
                         "at the root of the workspace");
             }
         } else if (sourceCount == workspaceCount + 1) {
-            if (!source.getName().equals(Workspace.FILES_NAMESPACE)) {
+            if (!source.getName().equals(FILES_NAMESPACE)) {
                 throw new IllegalArgumentException("Invalid source path. Source path must be inside the files folder or " +
                         "at the root of the workspace");
             }
@@ -224,7 +232,7 @@ public class AssetsUtils {
      * @return a list of root paths
      */
     private static List<String> fromRootFolder(File source) {
-        return fromFilesFolder(new File(source, Workspace.FILES_NAMESPACE));
+        return fromFilesFolder(new File(source, FILES_NAMESPACE));
     }
 
     /**
@@ -349,7 +357,7 @@ public class AssetsUtils {
 
         // Finding the files section
         var sourcePart = sourcePath.getName(workspaceCount);
-        if (sourcePart.getFileName().toString().equals(Workspace.FILES_NAMESPACE)) {
+        if (sourcePart.getFileName().toString().equals(FILES_NAMESPACE)) {
 
             // Finding the status section
             var statusPart = sourcePath.getName(++workspaceCount);
@@ -604,6 +612,71 @@ public class AssetsUtils {
                 return new LocalPathStructure(this);
             }
         }
+    }
+
+
+    /**
+     * Checks if the given folder hs any sync metadata indicating that it  must be removed
+     * @param folder
+     * @return
+     */
+    public static boolean isMarkedForDelete(FolderView folder) {
+        return  folder.syncMeta().map(FolderSyncMeta::markedForDelete).orElse(false);
+    }
+
+    /**
+     * Checks if the given folder hs any sync metadata indicating that it  must be pushed
+     * @param folder
+     * @return
+     */
+    public static boolean isMarkedForPush(FolderView folder) {
+        return  folder.syncMeta().map(FolderSyncMeta::markedForPush).orElse(false);
+    }
+
+    /**
+     * Checks if the given asset hs any sync metadata indicating that it  must be removed
+     * @param asset
+     * @return
+     */
+    public static boolean isMarkedForDelete(AssetView asset) {
+        return  asset.syncMeta().map(AssetSyncMeta::markedForDelete).orElse(false);
+    }
+
+    /**
+     * Checks if the given asset hs any sync metadata indicating that it  must be pushed
+     * @param asset
+     * @return
+     */
+    public static boolean isMarkedForPush(AssetView asset) {
+        return  asset.syncMeta().map(AssetSyncMeta::markedForPush).orElse(false);
+    }
+
+    /**
+     * Checks if the given asset hs any sync metadata indicating that it  must be pushed as existing but modified content
+     * @param asset
+     * @return
+     */
+    public static boolean isPushModified(AssetView asset) {
+        final Optional<AssetSyncMeta> optional = asset.syncMeta();
+        if (optional.isPresent()) {
+            final AssetSyncMeta assetSyncMeta = optional.get();
+            return assetSyncMeta.markedForPush() && assetSyncMeta.pushType() == PushType.MODIFIED;
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the given asset hs any sync metadata indicating that it  must be pushed as new content
+     * @param asset
+     * @return
+     */
+    public static boolean isPushNew(AssetView asset) {
+        final Optional<AssetSyncMeta> optional = asset.syncMeta();
+        if (optional.isPresent()) {
+            final AssetSyncMeta assetSyncMeta = optional.get();
+            return assetSyncMeta.markedForPush() && assetSyncMeta.pushType() == PushType.NEW;
+        }
+        return false;
     }
 
 }

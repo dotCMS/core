@@ -1,5 +1,8 @@
 package com.dotcms.api.client.files.traversal.task;
 
+import static com.dotcms.common.AssetsUtils.isMarkedForDelete;
+import static com.dotcms.common.AssetsUtils.isMarkedForPush;
+
 import com.dotcms.api.client.files.traversal.data.Pusher;
 import com.dotcms.api.client.files.traversal.exception.SiteCreationException;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
@@ -142,76 +145,76 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
      */
     private void processFolder(final FolderView folder) {
 
-        if (folder.markForDelete().isPresent() || folder.markForPush().isPresent()) {
+            if (isMarkedForDelete(folder)) {// Delete
+                doDeleteFolder(folder);
+            } else if (isMarkedForPush(folder)) {// Push
+                doPushFolder(folder);
+            }
 
-            if (folder.markForDelete().isPresent() && folder.markForDelete().get()) {// Delete
+    }
 
-                try {
+    private void doPushFolder(FolderView folder) {
+        var isSite = Objects.equals(folder.path(), "/") && Objects.equals(folder.name(), "/");
+        try {
+            if (isSite) {
+                // And we need to create the non-existing site
+                pusher.pushSite(folder.host(), this.localPathStructure.status());
+                logger.debug(String.format("Site [%s] created", folder.host()));
+            } else {
 
-                    pusher.deleteFolder(folder.host(), folder.path());
-                    logger.debug(String.format("Folder [%s] deleted", folder.path()));
-                } catch (Exception e) {
+                // Creating the non-existing folder
+                pusher.createFolder(folder.host(), folder.path());
+                logger.debug(String.format("Folder [%s] created", folder.path()));
+            }
+        } catch (Exception e) {
+            var message = String.format("Error creating %s [%s]",
+                    isSite ? "site" : "folder",
+                    isSite ? folder.host() : folder.path());
+            logger.debug(message, e);
+            if (isSite) {
 
-                    // If we are trying to delete a folder that does not exist anymore we could ignore the error on retries
-                    if (!this.isRetry || !(e instanceof NotFoundException)) {
+                // Using the exception to check if the site already exist
+                var alreadyExist = checkIfSiteAlreadyExist(e);
 
-                        var message = String.format("Error deleting folder [%s]", folder.path());
-                        logger.error(message, e);
-                        throw new TraversalTaskException(message, e);
-                    }
-
-                } finally {
-                    // Folder processed, updating the progress bar
-                    this.progressBar.incrementStep();
+                // If we are trying to create a site that already exist we could ignore the error on retries
+                if (!this.isRetry || !alreadyExist) {
+                    logger.error(message, e);
+                    throw new SiteCreationException(message, e);
                 }
-            } else if (folder.markForPush().isPresent() && folder.markForPush().get()) {// Push
+            } else {
+                // Using the exception to check if the folder already exist
+                var alreadyExist = checkIfAssetOrFolderAlreadyExist(e);
 
-                var isSite = Objects.equals(folder.path(), "/") && Objects.equals(folder.name(), "/");
-
-                try {
-
-                    if (isSite) {
-
-                        // And we need to create the non-existing site
-                        pusher.pushSite(folder.host(), this.localPathStructure.status());
-                        logger.debug(String.format("Site [%s] created", folder.host()));
-                    } else {
-
-                        // Creating the non-existing folder
-                        pusher.createFolder(folder.host(), folder.path());
-                        logger.debug(String.format("Folder [%s] created", folder.path()));
-                    }
-                } catch (Exception e) {
-                    var message = String.format("Error creating %s [%s]",
-                            isSite ? "site" : "folder",
-                            isSite ? folder.host() : folder.path());
-                    logger.debug(message, e);
-                    if (isSite) {
-
-                        // Using the exception to check if the site already exist
-                        var alreadyExist = checkIfSiteAlreadyExist(e);
-
-                        // If we are trying to create a site that already exist we could ignore the error on retries
-                        if (!this.isRetry || !alreadyExist) {
-                            logger.error(message, e);
-                            throw new SiteCreationException(message, e);
-                        }
-                    } else {
-
-                        // Using the exception to check if the folder already exist
-                        var alreadyExist = checkIfAssetOrFolderAlreadyExist(e);
-
-                        // If we are trying to create a folder that already exist we could ignore the error on retries
-                        if (!this.isRetry || !alreadyExist) {
-                            logger.error(message, e);
-                            throw new TraversalTaskException(message, e);
-                        }
-                    }
-                } finally {
-                    // Folder processed, updating the progress bar
-                    this.progressBar.incrementStep();
+                // If we are trying to create a folder that already exist we could ignore the error on retries
+                if (!this.isRetry || !alreadyExist) {
+                    logger.error(message, e);
+                    throw new TraversalTaskException(message, e);
                 }
             }
+        } finally {
+            // Folder processed, updating the progress bar
+            this.progressBar.incrementStep();
+        }
+    }
+
+    private void doDeleteFolder(FolderView folder) {
+        try {
+
+            pusher.deleteFolder(folder.host(), folder.path());
+            logger.debug(String.format("Folder [%s] deleted", folder.path()));
+        } catch (Exception e) {
+
+            // If we are trying to delete a folder that does not exist anymore we could ignore the error on retries
+            if (!this.isRetry || !(e instanceof NotFoundException)) {
+
+                var message = String.format("Error deleting folder [%s]", folder.path());
+                logger.error(message, e);
+                throw new TraversalTaskException(message, e);
+            }
+
+        } finally {
+            // Folder processed, updating the progress bar
+            this.progressBar.incrementStep();
         }
     }
 
@@ -222,64 +225,63 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
      * @param asset  the asset to process
      */
     private void processAsset(final FolderView folder, final AssetView asset) {
+        if (isMarkedForDelete(asset)) {
+            doDeleteAsset(folder, asset);
+        } else if (isMarkedForPush(asset)) {
+            doPushAsset(folder, asset);
+        }
+    }
 
-        if (asset.markForDelete().isPresent() || asset.markForPush().isPresent()) {
+    private void doPushAsset(FolderView folder, AssetView asset) {
+        try {
 
-            if (asset.markForDelete().isPresent() && asset.markForDelete().get()) {
+            pusher.push(this.workspacePath, this.localPathStructure.status(), localPathStructure.language(),
+                    localPathStructure.site(), folder.path(), asset.name());
+            logger.debug(String.format("Asset [%s%s] pushed", folder.path(), asset.name()));
+        } catch (Exception e) {
 
-                try {
+            // Using the exception to check if the asset already exist
+            var alreadyExist = checkIfAssetOrFolderAlreadyExist(e);
 
-                    // Check if we already deleted the folder
-                    if ((folder.markForDelete().isPresent() && folder.markForDelete().get())) {
-
-                        // Folder already deleted, we don't need to delete the asset
-                        logger.debug(String.format("Folder [%s] already deleted, ignoring deletion of [%s] asset",
-                                folder.path(), asset.name()));
-                    } else {
-
-                        pusher.archive(folder.host(), folder.path(), asset.name());
-                        logger.debug(String.format("Asset [%s] deleted", asset.name()));
-                    }
-                } catch (Exception e) {
-
-                    // If we are trying to delete an asset that does not exist anymore we could ignore the error on retries
-                    if (!this.isRetry || !(e instanceof NotFoundException)) {
-
-                        var message = String.format("Error deleting asset [%s%s]", folder.path(), asset.name());
-                        logger.error(message, e);
-                        throw new TraversalTaskException(message, e);
-                    }
-
-                } finally {
-                    // Asset processed, updating the progress bar
-                    this.progressBar.incrementStep();
-                }
-
-            } else if (asset.markForPush().isPresent() && asset.markForPush().get()) {
-
-                try {
-
-                    pusher.push(this.workspacePath, this.localPathStructure.status(), localPathStructure.language(),
-                            localPathStructure.site(), folder.path(), asset.name());
-                    logger.debug(String.format("Asset [%s%s] pushed", folder.path(), asset.name()));
-                } catch (Exception e) {
-
-                    // Using the exception to check if the asset already exist
-                    var alreadyExist = checkIfAssetOrFolderAlreadyExist(e);
-
-                    // If we are trying to push an asset that already exist we could ignore the error on retries
-                    if (!this.isRetry || !alreadyExist) {
-                        var message = String.format("Error pushing asset [%s%s]", folder.path(), asset.name());
-                        logger.error(message, e);
-                        throw new TraversalTaskException(message, e);
-                    }
-
-                } finally {
-                    // Asset processed, updating the progress bar
-                    this.progressBar.incrementStep();
-                }
-
+            // If we are trying to push an asset that already exist we could ignore the error on retries
+            if (!this.isRetry || !alreadyExist) {
+                var message = String.format("Error pushing asset [%s%s]", folder.path(), asset.name());
+                logger.error(message, e);
+                throw new TraversalTaskException(message, e);
             }
+
+        } finally {
+            // Asset processed, updating the progress bar
+            this.progressBar.incrementStep();
+        }
+    }
+
+    private void doDeleteAsset(FolderView folder, AssetView asset) {
+        try {
+
+            // Check if we already deleted the folder
+            if (isMarkedForDelete(folder)) {
+                // Folder already deleted, we don't need to delete the asset
+                logger.debug(String.format("Folder [%s] already deleted, ignoring deletion of [%s] asset",
+                        folder.path(), asset.name()));
+            } else {
+
+                pusher.archive(folder.host(), folder.path(), asset.name());
+                logger.debug(String.format("Asset [%s] deleted", asset.name()));
+            }
+        } catch (Exception e) {
+
+            // If we are trying to delete an asset that does not exist anymore we could ignore the error on retries
+            if (!this.isRetry || !(e instanceof NotFoundException)) {
+
+                var message = String.format("Error deleting asset [%s%s]", folder.path(), asset.name());
+                logger.error(message, e);
+                throw new TraversalTaskException(message, e);
+            }
+
+        } finally {
+            // Asset processed, updating the progress bar
+            this.progressBar.incrementStep();
         }
     }
 

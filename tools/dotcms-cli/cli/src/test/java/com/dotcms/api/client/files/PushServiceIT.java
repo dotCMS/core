@@ -116,7 +116,7 @@ class PushServiceIT extends FilesTestHelper {
             Assertions.assertTrue( traversalResult.get(1).exceptions().isEmpty());// No errors should be found
 
             var treeNode = traversalResult.get(0).treeNode();
-            var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
+            var treeNodePushInfo = treeNode.collectPushInfo();
 
             // Should be nothing to push as we are pushing the same folder we pull
             Assertions.assertEquals(0, treeNodePushInfo.assetsToPushCount());
@@ -194,7 +194,7 @@ class PushServiceIT extends FilesTestHelper {
             Assertions.assertTrue(traversalResult.get(1).exceptions().isEmpty());// No errors should be found
 
             var treeNode = traversalResult.get(0).treeNode();
-            var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
+            var treeNodePushInfo = treeNode.collectPushInfo();
 
             // Should be nothing to push as we are pushing the same folder we pull
             Assertions.assertEquals(5, treeNodePushInfo.assetsToPushCount());
@@ -333,7 +333,7 @@ class PushServiceIT extends FilesTestHelper {
             Assertions.assertTrue(traversalResult.get(1).exceptions().isEmpty());// No errors should be found
 
             var treeNode = traversalResult.get(0).treeNode();
-            var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
+            var treeNodePushInfo = treeNode.collectPushInfo();
 
             // Should be nothing to push as we are pushing the same folder we pull
             Assertions.assertEquals(3, treeNodePushInfo.assetsToPushCount());
@@ -449,7 +449,7 @@ class PushServiceIT extends FilesTestHelper {
                     true, true, true, true);
 
             var treeNode1 = traversalResultLiveRemoved.get(0).treeNode();
-            var treeNodePushInfo1 = treeNode1.collectTreeNodePushInfo();
+            var treeNodePushInfo1 = treeNode1.collectPushInfo();
 
             //This is zero because there is still another folder hanging under the "working"  branch which needs to be removed
             Assertions.assertEquals(0, treeNodePushInfo1.foldersToDeleteCount());
@@ -461,7 +461,7 @@ class PushServiceIT extends FilesTestHelper {
                     true, true, true, true);
 
             var treeNode2 = traversalResultWorkingRemoved.get(0).treeNode();
-            var treeNodePushInfo2 = treeNode2.collectTreeNodePushInfo();
+            var treeNodePushInfo2 = treeNode2.collectPushInfo();
 
             //Now we should expect this to be 1, because both folder are removed
             Assertions.assertEquals(1, treeNodePushInfo2.foldersToDeleteCount());
