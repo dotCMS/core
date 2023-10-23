@@ -9,6 +9,7 @@
                 }"
                 [value]="item.value.id"
                 [disabled]="item.disabled"
+                [item.disabled]="item.disabled"
                 [pTooltip]="'editpage.toolbar.' + item.label.toLowerCase() + '.page.clipboard' | dm"
                 (click)="onClickOption($event, item.value.id)"
                 data-testId="dot-tab-button-text"
@@ -20,6 +21,7 @@
                 class="dot-tab__dropdown"
                 *ngIf="item.value.showDropdownButton"
                 [disabled]="item.disabled"
+                [aria-disabled]="item.disabled"
                 [ngClass]="{ 'dot-tab-dropdown--active': activeId === item.value.id }"
                 (click)="onClickDropdown($event, item.value.id)"
                 data-testId="dot-tab-button-dropdown">
