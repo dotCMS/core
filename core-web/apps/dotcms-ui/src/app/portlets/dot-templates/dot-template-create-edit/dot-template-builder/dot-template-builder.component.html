@@ -1,6 +1,5 @@
 <p-tabView
     [styleClass]="(featureFlagIsOn$ | async) && 'dot-template-builder__new-template-builder'">
-    <!-- we should change save in advance with saveAndPublish and in onTemplateItemChange we should trigger the saveTemplate event? -->
     <p-tabPanel
         [header]="item.type === 'advanced' ? ('code' | dm) : ('design' | dm)"
         data-testId="builder">
