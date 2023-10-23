@@ -15,7 +15,7 @@ public class PgNgDataSourceUrlTest {
 
     
 
-    final String PgNgUrl = "jdbc:pgsql://dotcmsUserName:dotcmsPassword@dbServer.com/dotcms";
+    final String PgNgUrl = "jdbc:pgsql://dotcmsUserName:dotcmsPassword@dbServer.com/dotcms?ssl.mode=" + PgNgDataSourceUrl.SSL_MODE;
 
     
     
@@ -85,14 +85,14 @@ public class PgNgDataSourceUrlTest {
 
         PgNgDataSourceUrl testDataSource = new PgNgDataSourceUrl(username, password, url);
 
-        assert testDataSource.getDbUrl().contains("?ssl.mode=require");
+        assert testDataSource.getDbUrl().contains("?ssl.mode=" + PgNgDataSourceUrl.SSL_MODE);
 
         url = "jdbc:postgresql://dbServer.com/dotcms?test=here";
 
 
         testDataSource = new PgNgDataSourceUrl(username, password, url);
 
-        assert testDataSource.getDbUrl().contains("&ssl.mode=require");
+        assert testDataSource.getDbUrl().contains("&ssl.mode=" + PgNgDataSourceUrl.SSL_MODE);
 
     }
 }

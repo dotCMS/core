@@ -18,7 +18,7 @@ class PgNgDataSourceUrl {
     private final String finalUrl;
 
 
-    private final String SSL_MODE = System.getenv("DOT_PUBSUB_SSL_MODE") != null ? System.getenv("DOT_PUBSUB_SSL_MODE") : "prefer";
+    static final String SSL_MODE = System.getenv("DOT_PUBSUB_SSL_MODE") != null ? System.getenv("DOT_PUBSUB_SSL_MODE") : "prefer";
 
 
 
