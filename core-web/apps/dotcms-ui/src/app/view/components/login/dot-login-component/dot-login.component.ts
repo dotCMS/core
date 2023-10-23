@@ -110,15 +110,6 @@ export class DotLoginComponent implements OnInit, OnDestroy {
         this.dotMessageService.init({ language: lang });
     }
 
-    /**
-     * Display the forgot password card
-     *
-     * @memberof DotLoginComponent
-     */
-    goToForgotPassword(): void {
-        this.dotRouterService.goToForgotPassword();
-    }
-
     private setInitialFormValues(loginInfo: DotLoginInformation): void {
         this.loginForm
             .get('language')
