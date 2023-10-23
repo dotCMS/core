@@ -28,3 +28,40 @@ const MESSAGES_MOCK = {
 };
 
 export const CONTENTTYPE_FIELDS_MESSAGE_MOCK = new MockDotMessageService(MESSAGES_MOCK);
+
+const TEMP_IMAGE_MOCK = {
+    fileName: 'Image.jpg',
+    folder: 'folder',
+    id: 'tempFileId',
+    image: true,
+    length: 10000,
+    mimeType: 'image/jpeg',
+    referenceUrl: '',
+    thumbnailUrl:
+        'https://images.unsplash.com/photo-1575936123452-b67c3203c357?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aW1hZ2V8ZW58MHx8MHx8fDA%3D'
+};
+
+const TEMP_VIDEO_MOCK = {
+    fileName: 'video.mp4',
+    folder: 'folder',
+    id: 'tempFileId',
+    image: false,
+    length: 10000,
+    mimeType: 'video/mp4',
+    referenceUrl: 'https://www.w3schools.com/tags/movie.mp4',
+    thumbnailUrl: ''
+};
+
+const TEMP_FILE_MOCK = {
+    fileName: 'template.html',
+    folder: 'folder',
+    id: 'tempFileId',
+    image: false,
+    length: 10000,
+    mimeType: 'text/html',
+    referenceUrl: 'https://raw.githubusercontent.com/angular/angular/master/README.md',
+    thumbnailUrl: '',
+    content: 'HOLA'
+};
+
+export const TEMP_FILES_MOCK = [TEMP_IMAGE_MOCK, TEMP_VIDEO_MOCK, TEMP_FILE_MOCK];

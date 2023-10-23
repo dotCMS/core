@@ -1,9 +1,9 @@
-<div class="thumbnail" [ngSwitch]="type">
-    <ng-container *ngSwitchCase="'image'">
-        <img [src]="url" [title]="title" (error)="handleError()" />
+<div class="thumbnail" [ngSwitch]="thumbnailType">
+    <ng-container *ngSwitchCase="CONTENT_THUMBNAIL_TYPE.image">
+        <img [src]="src" [title]="name" (error)="handleError()" />
     </ng-container>
 
-    <video *ngSwitchCase="'video'" controls>
+    <video *ngSwitchCase="CONTENT_THUMBNAIL_TYPE.video" controls>
         <source [src]="src" />
     </video>
 

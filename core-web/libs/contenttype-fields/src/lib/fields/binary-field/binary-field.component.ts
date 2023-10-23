@@ -43,21 +43,7 @@ import {
 import { UI_MESSAGE_KEYS, UiMessageI, getUiMessage } from '../../utils/binary-field-utils';
 
 const initialState: BinaryFieldState = {
-    previewFile: {
-        type: 'image',
-        resolution: {
-            width: '400',
-            height: '400'
-        },
-        fileSize: 8000,
-        content: '',
-        mimeType: 'image/png',
-        inode: '123456789',
-        titleImage: 'true',
-        name: 'image.jpg',
-        title: 'image.jpg'
-    },
-    file: null,
+    previewFile: null,
     tempFile: null,
     mode: BINARY_FIELD_MODE.DROPZONE,
     status: BINARY_FIELD_STATUS.INIT,
@@ -223,6 +209,14 @@ export class DotBinaryFieldComponent implements OnInit {
 
     isEditorMode(mode: BINARY_FIELD_MODE): boolean {
         return mode === BINARY_FIELD_MODE.EDITOR;
+    }
+
+    onEditFile({ content }: { content?: string }) {
+        if (!content) {
+            return;
+        }
+
+        this.openDialog(BINARY_FIELD_MODE.EDITOR);
     }
 
     /**

@@ -12,8 +12,7 @@ import { UI_MESSAGE_KEYS, UiMessageI, getUiMessage } from '../../../utils/binary
 import { BinaryPreview } from '../components/dot-binary-field-preview/dot-binary-field-preview.component';
 
 export interface BinaryFieldState {
-    previewFile: BinaryPreview;
-    file: File;
+    previewFile?: BinaryPreview;
     tempFile: DotCMSTempFile;
     mode: BINARY_FIELD_MODE;
     status: BINARY_FIELD_STATUS;
@@ -45,9 +44,6 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
             isLoading: state.status === BINARY_FIELD_STATUS.UPLOADING
         };
     });
-
-    // File state
-    readonly file$ = this.select((state) => state.file);
 
     // Temp file state
     readonly tempFile$ = this.select((state) => state.tempFile);
@@ -115,7 +111,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
 
     readonly removeFile = this.updater((state) => ({
         ...state,
-        file: null,
+        previewFile: null,
         tempFile: null,
         status: BINARY_FIELD_STATUS.INIT
     }));
@@ -126,11 +122,6 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
             tap(() => this.setUploading()),
             switchMap((file) => this.uploadTempFile(file))
         );
-    });
-
-    readonly handleCreateFile = this.effect<{ name: string; code: string }>((fileDetails$) => {
-        /* To be implemented */
-        return fileDetails$.pipe();
     });
 
     /**
@@ -158,14 +149,20 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         );
     }
 
-    private previewFileFromTempFile(tempFile: DotCMSTempFile): BinaryPreview {
+    private previewFileFromTempFile({
+        length,
+        thumbnailUrl,
+        referenceUrl,
+        fileName,
+        mimeType,
+        content = ''
+    }: DotCMSTempFile): BinaryPreview {
         return {
-            type: tempFile.image ? 'image' : 'file',
-            url: tempFile.thumbnailUrl || tempFile.referenceUrl,
-            fileSize: tempFile.length,
-            mimeType: tempFile.mimeType,
-            name: tempFile.fileName,
-            title: tempFile.fileName
+            url: thumbnailUrl || referenceUrl,
+            fileSize: length,
+            mimeType,
+            name: fileName,
+            content
         };
     }
 }

@@ -10,10 +10,21 @@
     display: flex;
     gap: $spacing-1;
     align-items: flex-start;
+    justify-content: center;
     height: 100%;
-    max-width: 36rem;
     width: 100%;
     position: relative;
+    &:only-child {
+        gap: 0; // Remove gap if only one preview
+    }
+}
+
+.preview-code_container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
 }
 
 .preview-image_container ::ng-deep {

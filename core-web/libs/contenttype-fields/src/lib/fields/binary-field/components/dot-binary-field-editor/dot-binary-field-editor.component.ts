@@ -68,6 +68,8 @@ const EDITOR_CONFIG: MonacoEditorConstructionOptions = {
 })
 export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
     @Input() accept: string[];
+    @Input() title = '';
+    @Input() content = '';
 
     @Output() readonly tempFileUploaded = new EventEmitter<DotCMSTempFile>();
     @Output() readonly cancel = new EventEmitter<void>();
@@ -93,11 +95,13 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
         return this.form.get('name') as FormControl;
     }
 
-    get content(): FormControl {
+    get ngContent(): FormControl {
         return this.form.get('content') as FormControl;
     }
 
     ngOnInit(): void {
+        this.setFormValues();
+
         this.name.valueChanges
             .pipe(debounceTime(350))
             .subscribe((name) => this.setEditorLanguage(name));
@@ -109,6 +113,9 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
 
     ngAfterViewInit(): void {
         this.editor = this.editorRef.editor;
+        if (this.title) {
+            this.setEditorLanguage(this.title);
+        }
     }
 
     onSubmit(): void {
@@ -120,10 +127,15 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
             return;
         }
 
-        const file = new File([this.content.value], this.name.value, {
+        const file = new File([this.ngContent.value], this.name.value, {
             type: this.mimeType
         });
         this.uploadFile(file);
+    }
+
+    private setFormValues(): void {
+        this.name.setValue(this.title);
+        this.ngContent.setValue(this.content);
     }
 
     private markControlInvalid(control: FormControl): void {
@@ -137,7 +149,10 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
         this.disableEditor();
         obs$.subscribe((tempFile) => {
             this.enableEditor();
-            this.tempFileUploaded.emit(tempFile);
+            this.tempFileUploaded.emit({
+                ...tempFile,
+                content: this.ngContent.value
+            });
         });
     }
 

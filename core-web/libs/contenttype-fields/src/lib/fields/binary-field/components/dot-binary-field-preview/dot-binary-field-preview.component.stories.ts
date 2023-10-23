@@ -2,9 +2,12 @@ import { action } from '@storybook/addon-actions';
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
+
+import { DotContentThumbnailComponent, DotSpinnerModule } from '@dotcms/ui';
 
 import { DotBinaryFieldPreviewComponent } from './dot-binary-field-preview.component';
 
@@ -67,7 +70,14 @@ export default {
     component: DotBinaryFieldPreviewComponent,
     decorators: [
         moduleMetadata({
-            imports: [BrowserAnimationsModule, CommonModule, ButtonModule],
+            imports: [
+                BrowserAnimationsModule,
+                CommonModule,
+                ButtonModule,
+                DotContentThumbnailComponent,
+                DotSpinnerModule,
+                HttpClientModule
+            ],
             providers: []
         })
     ],
@@ -77,11 +87,11 @@ export default {
         }
     },
     args: {
-        previewFile: previewImage,
+        file: previewImage,
         variableName: 'binaryField'
     },
     argTypes: {
-        previewFile: {
+        file: {
             defaultValue: previewImage,
             control: 'object',
             description: 'Preview object'
@@ -116,7 +126,7 @@ const Template: Story<DotBinaryFieldPreviewComponent> = (args: DotBinaryFieldPre
     template: `
         <div class="container">
             <dot-binary-field-preview
-                [previewFile]="previewFile"
+                [file]="file"
                 [variableName]="variableName"
                 (editFile)="editFile($event)"
                 (removeFile)="removeFile($event)"
@@ -130,13 +140,13 @@ export const Image = Template.bind({});
 export const Video = Template.bind({});
 
 Video.args = {
-    previewFile: previewVideo,
+    file: previewVideo,
     variableName: 'binaryField'
 };
 
 export const file = Template.bind({});
 
 file.args = {
-    previewFile: previewFile,
+    file: previewFile,
     variableName: 'binaryField'
 };

@@ -11,6 +11,13 @@ const ICON_MAP = {
     docx: 'pi-file-word'
 };
 
+export enum CONTENT_THUMBNAIL_TYPE {
+    image = 'image',
+    video = 'video',
+    text = 'text',
+    icon = 'icon'
+}
+
 @Component({
     selector: 'dot-content-thumbnail',
     standalone: true,
@@ -20,36 +27,48 @@ const ICON_MAP = {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotContentThumbnailComponent implements OnInit {
-    url: string;
-    type: string;
-    subType: string;
-
+    src: string;
     thumbnailIcon: string;
+    thumbnailType: CONTENT_THUMBNAIL_TYPE;
 
     @Input() tempUrl: string;
     @Input() inode: string;
     @Input() name: string;
-    @Input() icon: string;
     @Input() contentType: string;
     @Input() iconSize: string;
     @Input() titleImage: string;
 
-    private defaultIcon = 'pi-file';
+    readonly CONTENT_THUMBNAIL_TYPE = CONTENT_THUMBNAIL_TYPE;
+    private readonly DEFAULT_ICON = 'pi-file';
 
     ngOnInit(): void {
-        const [type, subtype] = this.contentType.split('/') || [];
-        this.url = this.tempUrl || this.getThumbnailUrl();
-        this.type = type;
-        this.thumbnailIcon = this.icon || ICON_MAP[subtype] || this.defaultIcon;
+        this.setSrc();
+        this.setThumbnailType();
+        this.setThumbnailIcon();
     }
 
     handleError() {
-        this.type = 'icon';
+        this.thumbnailType = this.CONTENT_THUMBNAIL_TYPE.icon;
     }
 
     private getThumbnailUrl(): string {
         return this.contentType === 'application/pdf'
             ? `/contentAsset/image/${this.inode}/${this.titleImage}/pdf_page/1/resize_w/250/quality_q/45`
             : `/dA/${this.inode}/500w/50q`;
+    }
+
+    private setThumbnailType(): void {
+        const type = this.contentType.split('/')[0];
+
+        this.thumbnailType = CONTENT_THUMBNAIL_TYPE[type] || CONTENT_THUMBNAIL_TYPE.icon;
+    }
+
+    private setSrc(): void {
+        this.src = this.tempUrl || this.getThumbnailUrl();
+    }
+
+    private setThumbnailIcon(): void {
+        const extension = this.name.split('.').pop();
+        this.thumbnailIcon = ICON_MAP[extension] || this.DEFAULT_ICON;
     }
 }

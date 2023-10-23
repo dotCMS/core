@@ -24,7 +24,7 @@ import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-
 import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
 import { DotBinaryFieldStore } from './store/binary-field.store';
 
-import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../utils/mock';
+import { CONTENTTYPE_FIELDS_MESSAGE_MOCK, TEMP_FILES_MOCK } from '../../utils/mock';
 
 export default {
     title: 'Library / Contenttype Fields / DotBinaryFieldComponent',
@@ -56,18 +56,10 @@ export default {
                         uploadFile: () => {
                             return new Promise((resolve, _reject) => {
                                 setTimeout(() => {
-                                    resolve({
-                                        fileName: 'Image.jpg',
-                                        folder: 'folder',
-                                        id: 'tempFileId',
-                                        image: true,
-                                        length: 10000,
-                                        mimeType: 'image/jpeg',
-                                        referenceUrl: 'referenceUrl',
-                                        thumbnailUrl:
-                                            'https://images.unsplash.com/photo-1575936123452-b67c3203c357?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aW1hZ2V8ZW58MHx8MHx8fDA%3D'
-                                    });
-                                }, 4000);
+                                    const index = Math.floor(Math.random() * 3);
+                                    const TEMP_FILE = TEMP_FILES_MOCK[index];
+                                    resolve(TEMP_FILE); // TEMP_FILES_MOCK is imported from utils/mock.ts
+                                }, 2000);
                             });
                         }
                     }

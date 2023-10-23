@@ -51,8 +51,7 @@
                 (click)="openDialog(BINARY_FIELD_MODE.EDITOR)"
                 data-testId="action-editor-btn"
                 styleClass="p-button-link"
-                icon="pi pi-code">
-            </p-button>
+                icon="pi pi-code"></p-button>
         </div>
     </div>
 
@@ -62,10 +61,10 @@
 
     <dot-binary-field-preview
         *ngIf="vm.status === BINARY_FIELD_STATUS.PREVIEW"
-        [previewFile]="vm.previewFile"
-        (click)="removeFile()"
-        data-testId="preview">
-    </dot-binary-field-preview>
+        [file]="vm.previewFile"
+        (removeFile)="removeFile()"
+        (editFile)="onEditFile($event)"
+        data-testId="preview"></dot-binary-field-preview>
 
     <p-dialog
         [(visible)]="dialogOpen"
@@ -86,6 +85,8 @@
                 data-testId="url-mode"></dot-dot-binary-field-url-mode>
             <dot-dot-binary-field-editor
                 *ngSwitchCase="BINARY_FIELD_MODE.EDITOR"
+                [title]="vm.previewFile?.name"
+                [content]="vm.previewFile?.content"
                 [accept]="accept"
                 (tempFileUploaded)="setTempFile($event)"
                 (cancel)="closeDialog()"
@@ -93,7 +94,6 @@
         </ng-container>
     </p-dialog>
 </div>
-
 <div class="binary-field__helper" *ngIf="helperText">
     <i class="pi pi-info-circle binary-field__helper-icon"></i>
     <span data-testId="helper-text">{{ helperText }}</span>

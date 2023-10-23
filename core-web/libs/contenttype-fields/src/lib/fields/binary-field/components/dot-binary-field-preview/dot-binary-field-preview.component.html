@@ -1,36 +1,34 @@
-<div
-    class="preview_container"
-    [ngClass]="{ 'preview_container--fade': previewFile?.type === 'file' }">
-    <ng-container *ngIf="previewFile.type !== 'file'; else filePreview">
+<div class="preview_container" [ngClass]="{ 'preview_container--fade': file.content }">
+    <ng-container *ngIf="file.content; else contentThumnail">
+        <div class="preview-code_container">
+            <code *ngIf="file.content">{{ file.content }}</code>
+        </div>
+    </ng-container>
+
+    <ng-template #contentThumnail>
         <div class="preview-image_container">
             <dot-content-thumbnail
-                [tempUrl]="previewFile.url"
-                [contentType]="previewFile.mimeType"
-                [inode]="previewFile.inode"
-                [name]="previewFile.name"
+                [tempUrl]="file.url"
+                [contentType]="file.mimeType"
+                [inode]="file.inode"
+                [name]="file.name"
                 [iconSize]="'48px'"></dot-content-thumbnail>
         </div>
 
         <div class="preview-metadata_container">
             <div class="preview-metadata_info">
-                <h4>{{ previewFile.name }}</h4>
-                <div class="preview-metadata" *ngIf="resolution">
+                <h4>{{ file.name }}</h4>
+                <div class="preview-metadata" *ngIf="file.width && file.height">
                     <i class="pi pi-arrows-alt" style="font-size: 1rem"></i>
-                    <span>{{ resolution.width }}px, {{ resolution.height }}px</span>
+                    <span>{{ file.width }}px, {{ file.height }}px</span>
                 </div>
                 <div class="preview-metadata">
                     <i class="pi pi-file" style="font-size: 1rem"></i>
-                    <span>{{ previewFile.fileSize | number : '1.0-2' }} Bytes</span>
+                    <span>{{ file.fileSize | number : '1.0-2' }} Bytes</span>
                 </div>
             </div>
         </div>
-    </ng-container>
-
-    <ng-template #filePreview>
-        <code>{{ previewFile.content }}</code>
     </ng-template>
-
-    <div></div>
 
     <div class="preview-metadata_actions">
         <p-button
@@ -39,8 +37,9 @@
             styleClass="p-button-link p-button-sm p-button-secondary"
             icon="pi pi-trash"></p-button>
         <p-button
+            *ngIf="isEditable"
             [label]="'Edit'"
-            (click)="editFile.emit(previewFile.mimeType)"
+            (click)="onEdit()"
             severity="secondary"
             styleClass="p-button-outlined p-button-sm p-button-secondary"
             icon="pi pi-pencil"></p-button>
