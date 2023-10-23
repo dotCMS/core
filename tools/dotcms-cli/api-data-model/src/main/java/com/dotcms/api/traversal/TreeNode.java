@@ -2,10 +2,10 @@ package com.dotcms.api.traversal;
 
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A node in a hierarchical tree representation of a file system directory. Each node represents a
@@ -16,8 +16,8 @@ import java.util.stream.Collectors;
  */
 public class TreeNode {
 
-    private final FolderView folder;
-    private List<TreeNode> children;
+    private  FolderView folder;
+    private final List<TreeNode> children;
     private List<AssetView> assets;
 
     /**
@@ -38,16 +38,23 @@ public class TreeNode {
      *                     ({@code false})
      */
     public TreeNode(final FolderView folder, final boolean ignoreAssets) {
-
         this.folder = folder;
         this.children = new ArrayList<>();
         this.assets = new ArrayList<>();
-
-        if (!ignoreAssets) {
-            if (folder.assets() != null) {
-                this.assets.addAll(folder.assets().versions());
-            }
+        if (!ignoreAssets && null != folder.assets()) {
+            this.assets.addAll(folder.assets().versions());
         }
+    }
+
+    /**
+     * Mutators are evil, but we really need to update the status of the folder
+     * @param mark the delete mark
+     */
+    public void markForDelete(boolean mark) {
+        this.folder = FolderView.builder().from(this.folder)
+                .markForDelete(mark)
+                //Here only for compatibility with the actual code will be removed later
+                .build();
     }
 
     /**
@@ -62,6 +69,17 @@ public class TreeNode {
      */
     public List<TreeNode> children() {
         return this.children;
+    }
+
+    /**
+     * Returns a list of child nodes of this TreeNode
+     * Given that this is a recursive structure, this method returns a flattened list of all the
+     * @return the list of child nodes
+     */
+    public Stream<TreeNode> flattened() {
+        return Stream.concat(
+                Stream.of(this),
+                children.stream().flatMap(TreeNode::flattened));
     }
 
     /**
@@ -119,7 +137,7 @@ public class TreeNode {
         boolean includeAssets = includeAssets();
         if (includeAssets && this.assets != null) {
             List<AssetView> filteredAssets = this.assets.stream()
-                    .filter((asset) -> {
+                    .filter(asset -> {
 
                         if (live) {
                             return asset.live() && asset.lang().equalsIgnoreCase(language);

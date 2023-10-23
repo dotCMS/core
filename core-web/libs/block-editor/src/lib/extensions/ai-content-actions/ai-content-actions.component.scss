@@ -1,0 +1,47 @@
+@use "variables" as *;
+
+:host ::ng-deep {
+    .p-listbox {
+        display: block;
+        width: 12.5rem;
+        padding: $spacing-1;
+        margin-left: $spacing-8;
+
+        li {
+            padding: $spacing-2 $spacing-3;
+
+            // accept option
+            &:first-child {
+                background-color: $color-palette-primary-200;
+            }
+
+            // regenerate option
+            &:nth-child(2) {
+                padding: $spacing-3;
+                background-color: $white !important;
+            }
+
+            // delete option
+            &:last-child {
+                border-top: 1px solid $color-palette-gray-300;
+                background-color: $white !important;
+            }
+
+            &:hover {
+                background-color: $color-palette-primary-100;
+            }
+        }
+    }
+}
+
+.action-content {
+    display: flex;
+    align-items: center;
+    color: $black;
+
+    // list option icon
+    i {
+        margin-right: $spacing-0;
+        color: $color-palette-gray-600;
+    }
+}
