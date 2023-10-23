@@ -1,25 +1,23 @@
-package com.dotcms.rendering.js.fetch;
+package com.dotcms.rendering.js.viewtools;
 
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrlBuilder;
+import com.dotcms.rendering.js.JsViewTool;
+import com.dotcms.rendering.js.proxy.JsFetchResponse;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.util.Config;
-import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.HostAccess;
-import org.graalvm.polyglot.Value;
-import org.graalvm.polyglot.proxy.ProxyExecutable;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 /**
  * Implementation of the Fetch API in Java for the Js Context
  * @author jsanca
  */
-public class JsFetch {
+public class FetchJsViewTool implements JsViewTool {
 
-    private final Context context;
+   // private final Context context;
     private final Supplier<CircuitBreakerUrlBuilder> circuitBreakerUrlSupplier;
     private Map<String, CircuitBreakerUrl.Method> methodMapMapping = Map.of(
             "GET", CircuitBreakerUrl.Method.GET,
@@ -28,19 +26,18 @@ public class JsFetch {
             "PATCH", CircuitBreakerUrl.Method.PATCH,
             "DELETE", CircuitBreakerUrl.Method.DELETE);
 
-    public JsFetch(final Context context) {
+    public FetchJsViewTool() {
         super();
         this.circuitBreakerUrlSupplier = CircuitBreakerUrl::builder;
-        this.context = context;
     }
 
     @HostAccess.Export
-    public Value fetch(final String resource) {
+    public JsFetchResponse fetch(final String resource) {
         return fetch(resource, Map.of());
     }
 
     @HostAccess.Export
-    public Value fetch(final String resource, final Map options) {
+    public JsFetchResponse fetch(final String resource, final Map options) {
 
         final CircuitBreakerUrlBuilder builder = this.circuitBreakerUrlSupplier.get()
                 .setMethod(this.getMethod(options))
@@ -61,8 +58,8 @@ public class JsFetch {
         this.tryParams (builder, options);
         this.tryVerbose (builder, options);
 
-        final CircuitBreakerUrl circuitBreakerUrl = builder.build();
-        final CompletableFuture<JsFetchResponse> responseFuture = CompletableFuture.supplyAsync(()-> {
+        return new JsFetchResponse(builder.build().doResponse());
+        /*final CompletableFuture<JsFetchResponse> responseFuture = CompletableFuture.supplyAsync(()-> {
             try {
                 return new JsFetchResponse(circuitBreakerUrl.doResponse());
             } catch (final Exception e) {
@@ -70,10 +67,10 @@ public class JsFetch {
             }
         });
 
-        return wrapPromise(responseFuture);
+        return wrapPromise(responseFuture);*/
     }
 
-    private Value wrapPromise(final CompletableFuture<JsFetchResponse> responseFuture) {
+   /* private Value wrapPromise(final CompletableFuture<JsFetchResponse> responseFuture) {
 
         final Value global = context.getBindings("js");
         final Value promiseConstructor = global.getMember("Promise");
@@ -89,7 +86,7 @@ public class JsFetch {
             });
             return null;
         });
-    }
+    }*/
 
     private void tryVerbose(CircuitBreakerUrlBuilder builder, Map options) {
 
@@ -139,5 +136,10 @@ public class JsFetch {
         return options.containsKey("headers")?
                 (Map)options.get("headers"):
                 Map.of();
+    }
+
+    @Override
+    public String getName() {
+        return "fetchtool";
     }
 }

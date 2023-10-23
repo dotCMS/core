@@ -443,6 +443,6 @@ public class CircuitBreakerUrl {
         }
     }
 
-    public static Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0);
+    public static Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0, null);
 
 }

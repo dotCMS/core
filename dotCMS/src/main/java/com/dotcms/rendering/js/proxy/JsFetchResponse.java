@@ -1,12 +1,15 @@
-package com.dotcms.rendering.js.fetch;
+package com.dotcms.rendering.js.proxy;
 
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rendering.js.JsHeaders;
 import com.dotcms.rendering.js.proxy.JsProxyObject;
+import com.dotmarketing.util.json.JSONObject;
 import org.apache.http.Header;
 import org.graalvm.polyglot.HostAccess;
+import org.graalvm.polyglot.proxy.ProxyHashMap;
 
 import java.io.Serializable;
+import java.util.Map;
 
 public class JsFetchResponse implements Serializable, JsProxyObject<CircuitBreakerUrl.Response<String>> {
 
@@ -48,5 +51,17 @@ public class JsFetchResponse implements Serializable, JsProxyObject<CircuitBreak
         }
 
         return jsHeaders;
+    }
+
+    @HostAccess.Export
+    public ProxyHashMap getJson() {
+
+        final Map json = new JSONObject(this.getBody());
+        return ProxyHashMap.from(json);
+    }
+
+    @HostAccess.Export
+    public ProxyHashMap json() {
+        return this.getJson();
     }
 }

@@ -1,6 +1,6 @@
 package com.dotcms.util;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
 import org.apache.commons.lang3.StringUtils;
@@ -8,10 +8,8 @@ import org.elasticsearch.common.collect.MapBuilder;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
-<<<<<<< HEAD
 import java.util.*;
 import java.util.function.*;
-=======
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,7 +29,6 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
->>>>>>> a43911ccaefcb920abe07820d28ab99a3f55f5d1
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 

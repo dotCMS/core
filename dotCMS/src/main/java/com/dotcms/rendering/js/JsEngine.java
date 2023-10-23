@@ -2,7 +2,7 @@ package com.dotcms.rendering.js;
 
 import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.rendering.engine.ScriptEngine;
-import com.dotcms.rendering.js.fetch.JsFetch;
+import com.dotcms.rendering.js.viewtools.FetchJsViewTool;
 import com.dotcms.rendering.js.proxy.JsProxyFactory;
 import com.dotcms.rendering.js.proxy.JsRequest;
 import com.dotcms.rendering.js.proxy.JsResponse;
@@ -19,6 +19,7 @@ import com.dotcms.rendering.js.viewtools.UserJsViewTool;
 import com.dotcms.rendering.js.viewtools.WorkflowJsViewTool;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ReflectionUtils;
+import com.dotmarketing.beans.Source;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
@@ -33,7 +34,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.HashMap;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,6 +63,7 @@ public class JsEngine implements ScriptEngine {
             this.addJsViewTool(TemplateJsViewTool.class);
             this.addJsViewTool(ContainerJsViewTool.class);
             this.addJsViewTool(CacheJsViewTool.class);
+            this.addJsViewTool(FetchJsViewTool.class);
         }catch (Throwable e) {
             Logger.error(JsEngine.class, "Could not start the js view tools", e);
         }
@@ -123,7 +127,8 @@ public class JsEngine implements ScriptEngine {
                 .build()) {
 
             final Object fileName = contextParams.getOrDefault("dot:jsfilename", "sample.js");
-            final Source source   = Source.newBuilder(ENGINE_JS, scriptReader, fileName.toString()).build();
+            final Source userSource   = Source.newBuilder(ENGINE_JS, scriptReader, fileName.toString()).build();
+            final List<Source> dotSources = getDotSources();
             final Value bindings  = context.getBindings(ENGINE_JS);
             contextParams.entrySet().forEach(entry -> bindings.putMember(entry.getKey(), entry.getValue()));
             this.addTools(request, response, bindings, contextParams);
@@ -133,8 +138,9 @@ public class JsEngine implements ScriptEngine {
             bindings.putMember("dotJSON", dotJSON);
             bindings.putMember("request",  jsRequest);
             bindings.putMember("response", jsResponse);
-            bindings.putMember("fetch", new JsFetch(context));
-            Value eval   = context.eval(source);
+
+            dotSources.stream().forEach(source -> context.eval(source));
+            Value eval   = context.eval(userSource);
             if (eval.canExecute()) {
                 eval = contextParams.containsKey("dot:arguments")?
                         eval.execute(buildArgs(jsRequest, jsResponse, (Object[])contextParams.get("dot:arguments"))):
@@ -161,6 +167,33 @@ public class JsEngine implements ScriptEngine {
             Logger.error(this, e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    // todo: move to a file
+    private static final String FETCH_FUNCTION = "function fetch(resource, options) {\n" +
+            "\n" +
+            "        return  new Promise(function (myResolve, myReject) {\n" +
+            "\n" +
+            "            try {\n" +
+            "\n" +
+            "                const fetchResponse = options ? fetchtool.fetch(resource, options) : fetchtool.fetch(resource);\n" +
+            "                if (fetchResponse.ok()) {\n" +
+            "                    myResolve(fetchResponse);\n" +
+            "                } else {\n" +
+            "                    myReject(fetchResponse);\n" +
+            "                }\n" +
+            "            } catch (e) {\n" +
+            "                myReject(e);\n" +
+            "            }\n" +
+            "        });\n" +
+            "    }";
+
+    private List<Source> getDotSources() {
+
+        final List<Source> sources = new ArrayList<>();
+        final Source fetchSource   = Source.newBuilder(ENGINE_JS, new StringReader(FETCH_FUNCTION), "fetch.js").build();
+        sources.add(fetchSource);
+        return sources;
     }
 
     private boolean isString(final Value eval) {
