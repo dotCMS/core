@@ -57,7 +57,7 @@ describe('DotEditContentSelectFieldComponent', () => {
             values: '1000'
         };
         spectator.setInput('field', SELECT_FIELD_INTEGER_MOCK_WITHOUT_VALUE_AND_LABEL);
-        spectator.detectChanges();
+        spectator.detectComponentChanges();
 
         const expectedList = [
             {
@@ -65,7 +65,7 @@ describe('DotEditContentSelectFieldComponent', () => {
                 value: 1000
             }
         ];
-        expect(spectator.component.options).toEqual(expectedList);
+        expect(spectator.query(Dropdown).options).toEqual(expectedList);
     });
 
     describe('test DataType', () => {

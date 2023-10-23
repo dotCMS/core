@@ -2,6 +2,8 @@ import { Spectator, createComponentFactory } from '@ngneat/spectator';
 
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 
+import { RadioButton } from 'primeng/radiobutton';
+
 import { DotEditContentRadioFieldComponent } from './dot-edit-content-radio-field.component';
 
 import {
@@ -33,7 +35,7 @@ describe('DotEditContentRadioFieldComponent', () => {
             values: 'Dot'
         };
         spectator.setInput('field', RADIO_FIELD_TEXT_MOCK_WITHOUT_VALUE_AND_LABEL);
-        spectator.detectChanges();
+        spectator.detectComponentChanges();
 
         const expectedList = [
             {
@@ -41,7 +43,14 @@ describe('DotEditContentRadioFieldComponent', () => {
                 value: 'Dot'
             }
         ];
-        expect(spectator.component.options).toEqual(expectedList);
+
+        expectedList.forEach((option) => {
+            expect(
+                spectator
+                    .queryAll(RadioButton)
+                    .find((radioOption) => radioOption.value === option.value)
+            ).toBeTruthy();
+        });
     });
 
     it('should render radio options', () => {
@@ -78,7 +87,7 @@ describe('DotEditContentRadioFieldComponent', () => {
             values: '100.5'
         };
         spectator.setInput('field', RADIO_FIELD_FLOAT_MOCK_WITHOUT_VALUE_AND_LABEL);
-        spectator.detectChanges();
+        spectator.detectComponentChanges();
 
         const expectedList = [
             {
@@ -86,7 +95,19 @@ describe('DotEditContentRadioFieldComponent', () => {
                 value: 100.5
             }
         ];
-        expect(spectator.component.options).toEqual(expectedList);
+        expect(
+            spectator
+                .queryAll(RadioButton)
+                .every((radioOption) => typeof radioOption.value === 'number')
+        ).toBeTruthy();
+
+        expectedList.forEach((option) => {
+            expect(
+                spectator
+                    .queryAll(RadioButton)
+                    .find((radioOption) => radioOption.value === option.value)
+            ).toBeTruthy();
+        });
     });
 
     describe('test DataType', () => {
@@ -102,8 +123,21 @@ describe('DotEditContentRadioFieldComponent', () => {
                 }
             ];
             spectator.setInput('field', RADIO_FIELD_TEXT_MOCK);
-            spectator.detectChanges();
-            expect(spectator.component.options).toEqual(expectedList);
+            spectator.detectComponentChanges();
+
+            expect(
+                spectator
+                    .queryAll(RadioButton)
+                    .every((radioOption) => typeof radioOption.value === 'string')
+            ).toBeTruthy();
+
+            expectedList.forEach((option) => {
+                expect(
+                    spectator
+                        .queryAll(RadioButton)
+                        .find((radioOption) => radioOption.value === option.value)
+                ).toBeTruthy();
+            });
         });
 
         it('should have a options array as radio with Boolean dataType', () => {
@@ -118,8 +152,21 @@ describe('DotEditContentRadioFieldComponent', () => {
                 }
             ];
             spectator.setInput('field', RADIO_FIELD_BOOLEAN_MOCK);
-            spectator.detectChanges();
-            expect(spectator.component.options).toEqual(expectedList);
+            spectator.detectComponentChanges();
+
+            expect(
+                spectator
+                    .queryAll(RadioButton)
+                    .every((radioOption) => typeof radioOption.value === 'boolean')
+            ).toBeTruthy();
+
+            expectedList.forEach((option) => {
+                expect(
+                    spectator
+                        .queryAll(RadioButton)
+                        .find((radioOption) => radioOption.value === option.value)
+                ).toBeTruthy();
+            });
         });
         it('should have a options array as radio with Integer dataType', () => {
             const expectedList = [
@@ -137,8 +184,21 @@ describe('DotEditContentRadioFieldComponent', () => {
                 }
             ];
             spectator.setInput('field', RADIO_FIELD_INTEGER_MOCK);
-            spectator.detectChanges();
-            expect(spectator.component.options).toEqual(expectedList);
+            spectator.detectComponentChanges();
+
+            expect(
+                spectator
+                    .queryAll(RadioButton)
+                    .every((radioOption) => typeof radioOption.value === 'number')
+            ).toBeTruthy();
+
+            expectedList.forEach((option) => {
+                expect(
+                    spectator
+                        .queryAll(RadioButton)
+                        .find((radioOption) => radioOption.value === option.value)
+                ).toBeTruthy();
+            });
         });
 
         it('should have a options array as radio with Float dataType', () => {
@@ -153,8 +213,21 @@ describe('DotEditContentRadioFieldComponent', () => {
                 }
             ];
             spectator.setInput('field', RADIO_FIELD_FLOAT_MOCK);
-            spectator.detectChanges();
-            expect(spectator.component.options).toEqual(expectedList);
+            spectator.detectComponentChanges();
+
+            expect(
+                spectator
+                    .queryAll(RadioButton)
+                    .every((radioOption) => typeof radioOption.value === 'number')
+            ).toBeTruthy();
+
+            expectedList.forEach((option) => {
+                expect(
+                    spectator
+                        .queryAll(RadioButton)
+                        .find((radioOption) => radioOption.value === option.value)
+                ).toBeTruthy();
+            });
         });
     });
 });

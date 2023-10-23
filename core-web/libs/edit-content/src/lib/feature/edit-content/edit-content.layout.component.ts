@@ -36,7 +36,7 @@ export class EditContentLayoutComponent {
 
                       return this.dotEditContentService
                           .getContentTypeFormData(contentType)
-                          .pipe(map((res) => ({ values: { ...contentData }, layout: res })));
+                          .pipe(map((res) => ({ contentlet: { ...contentData }, layout: res })));
                   } else {
                       return EMPTY;
                   }
