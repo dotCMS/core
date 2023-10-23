@@ -15,12 +15,8 @@ public interface AbstractAssetSyncMeta {
     @Value.Default
     default boolean markedForDelete(){return false;}
 
-    //@Value.Default  default boolean pushTypeNew(){return false;}
-
-    //@Value.Default default boolean pushTypeModified(){return false;}
-
     @Value.Default
-    default PushType pushType() {return PushType.MODIFIED;}
+    default PushType pushType() {return PushType.UNKNOWN;}
 
     enum PushType {
         NEW, MODIFIED, UNKNOWN

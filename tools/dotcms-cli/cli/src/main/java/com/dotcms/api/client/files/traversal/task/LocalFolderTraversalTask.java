@@ -738,7 +738,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
         PushType pushType() {
             PushType pushType = isNew() ? PushType.NEW : PushType.UNKNOWN;
             if(pushType == PushType.UNKNOWN){
-                pushType = isModified() ? PushType.NEW : PushType.UNKNOWN;
+                pushType = isModified() ? PushType.MODIFIED : PushType.UNKNOWN;
             }
             return pushType;
         }
