@@ -6,7 +6,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DotEditContentFieldSingleSelectableDataTypes } from '../../models/dot-edit-content-field.type';
-import { mapSelectableOptions } from '../../utils/functions.util';
+import { createSingleSelectableFieldOptions } from '../../utils/functions.util';
 
 @Component({
     selector: 'dot-edit-content-select-field',
@@ -29,7 +29,10 @@ export class DotEditContentSelectFieldComponent implements OnInit {
     options = [];
 
     ngOnInit() {
-        this.options = mapSelectableOptions(this.field?.values || '', this.field.dataType);
+        this.options = createSingleSelectableFieldOptions(
+            this.field?.values || '',
+            this.field.dataType
+        );
 
         if (this.formControl.value === null) {
             this.formControl.setValue(this.options[0]?.value);

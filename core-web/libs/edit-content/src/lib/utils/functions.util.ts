@@ -16,7 +16,7 @@ const castValue = (value: string, type: string): DotEditContentFieldSingleSelect
     return value;
 };
 
-export const mapSelectableOptions = (
+export const createSingleSelectableFieldOptions = (
     options: string,
     dataType: string
 ): { label: string; value: DotEditContentFieldSingleSelectableDataTypes }[] => {

@@ -8,7 +8,7 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotEditContentFieldSingleSelectableDataTypes } from '../../models/dot-edit-content-field.type';
-import { mapSelectableOptions } from '../../utils/functions.util';
+import { createSingleSelectableFieldOptions } from '../../utils/functions.util';
 
 @Component({
     selector: 'dot-edit-content-radio-field',
@@ -31,7 +31,10 @@ export class DotEditContentRadioFieldComponent implements OnInit {
     options = [];
 
     ngOnInit() {
-        this.options = mapSelectableOptions(this.field.values || '', this.field.dataType);
+        this.options = createSingleSelectableFieldOptions(
+            this.field.values || '',
+            this.field.dataType
+        );
 
         if (this.formControl.value === null) {
             this.formControl.setValue(this.options[0]?.value);
