@@ -27,6 +27,7 @@ import {
     SEO_MEDIA_TYPES,
     SEO_LIMITS
 } from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
+import { DotSeoMetaTagsUtilService } from '../../../content/services/html/dot-seo-meta-tags-util.service';
 import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-meta-tags.service';
 import { DotSelectSeoToolComponent } from '../dot-select-seo-tool/dot-select-seo-tool.component';
 import { DotSeoImagePreviewComponent } from '../dot-seo-image-preview/dot-seo-image-preview.component';
@@ -63,7 +64,7 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     currentResults$: Observable<SeoMetaTagsResult[]>;
     readMoreValues: Record<SEO_MEDIA_TYPES, string[]>;
 
-    constructor(private dotSeoMetaTagsService: DotSeoMetaTagsService) {}
+    constructor(private dotSeoMetaTagsUtilService: DotSeoMetaTagsUtilService) {}
     allPreview: MetaTagsPreview[];
     mainPreview: MetaTagsPreview;
     seoMediaTypes = SEO_MEDIA_TYPES;
@@ -78,6 +79,25 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
             this.seoOGTags['og:description']?.slice(0, SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) ||
             this.seoOGTags.description?.slice(0, SEO_LIMITS.MAX_DESCRIPTION_LENGTH);
 
+        const twitterDescriptionProperties = [
+            'twitter:description',
+            'og:description',
+            'description'
+        ];
+        const twitterTitleProperties = ['twitter:title', 'og:title', 'title'];
+
+        const twitterDescription = twitterDescriptionProperties
+            .map((property) =>
+                this.seoOGTags[property]?.slice(0, SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH)
+            )
+            .find((value) => value !== undefined);
+
+        const twitterTitle = twitterTitleProperties
+            .map((property) =>
+                this.seoOGTags[property]?.slice(0, SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH)
+            )
+            .find((value) => value !== undefined);
+
         this.allPreview = [
             {
                 hostName: this.hostName,
@@ -86,21 +106,9 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
                 type: 'Desktop',
                 isMobile: false,
                 image: this.seoOGTags['og:image'],
-                twitterTitle:
-                    this.seoOGTags['twitter:title']?.slice(
-                        0,
-                        SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH
-                    ) ?? this.seoOGTags['og:title'],
+                twitterTitle,
+                twitterDescription,
                 twitterCard: this.seoOGTags['twitter:card'],
-                twitterDescription:
-                    this.seoOGTags['twitter:description']?.slice(
-                        0,
-                        SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH
-                    ) ??
-                    this.seoOGTags['og:description']?.slice(
-                        0,
-                        SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH
-                    ),
                 twitterImage: this.seoOGTags['twitter:image']
             },
             {
@@ -114,13 +122,16 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
 
         const [preview] = this.allPreview;
         this.mainPreview = preview;
-        this.readMoreValues = this.dotSeoMetaTagsService.getReadMore();
+        this.readMoreValues = this.dotSeoMetaTagsUtilService.getReadMore();
     }
 
     ngOnChanges() {
         this.currentResults$ = this.seoOGTagsResults.pipe(
             map((tags) => {
-                return this.dotSeoMetaTagsService.getFilteredMetaTagsByMedia(tags, this.seoMedia);
+                return this.dotSeoMetaTagsUtilService.getFilteredMetaTagsByMedia(
+                    tags,
+                    this.seoMedia
+                );
             })
         );
     }
