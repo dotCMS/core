@@ -548,11 +548,13 @@ export class DotSeoMetaTagsService {
         const result: SeoRulesResult[] = [];
         const titleCardElements = metaTagsObject['twitterTitleElements'];
         const titleCard = metaTagsObject['twitter:title'];
-        const title = metaTagsObject['og:title'];
-        const titleElements = metaTagsObject['titleOgElements'];
+        const titleOg = metaTagsObject['og:title'];
+        const titleOgElements = metaTagsObject['titleOgElements'];
+        const title = metaTagsObject['title'];
+        const titleElements = metaTagsObject['titleElements'];
 
         if (
-            title &&
+            (title || titleOg) &&
             this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([titleCard, titleCardElements])
         ) {
             result.push(
@@ -567,7 +569,9 @@ export class DotSeoMetaTagsService {
                 title,
                 titleCard,
                 titleElements,
-                titleCardElements
+                titleCardElements,
+                titleOgElements,
+                titleOg
             ])
         ) {
             result.push(
@@ -631,11 +635,13 @@ export class DotSeoMetaTagsService {
         const result: SeoRulesResult[] = [];
         const twitterDescriptionElements = metaTagsObject['twitterDescriptionElements'];
         const twitterDescription = metaTagsObject['twitter:description'];
-        const ogDescriptionElements = metaTagsObject['ogDescriptionElements'];
+        const ogDescriptionElements = metaTagsObject['descriptionOgElements'];
         const ogDescription = metaTagsObject['og:description'];
+        const descriptionElements = metaTagsObject['descriptionElements'];
+        const description = metaTagsObject['description'];
 
         if (
-            ogDescription &&
+            (description || ogDescription) &&
             this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([
                 twitterDescription,
                 twitterDescriptionElements
@@ -653,7 +659,9 @@ export class DotSeoMetaTagsService {
                 twitterDescription,
                 twitterDescriptionElements,
                 ogDescriptionElements,
-                ogDescriptionElements
+                descriptionElements,
+                ogDescription,
+                description
             ])
         ) {
             result.push(

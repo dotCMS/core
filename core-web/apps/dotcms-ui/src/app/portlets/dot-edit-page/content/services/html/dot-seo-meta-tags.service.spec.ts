@@ -117,7 +117,9 @@ describe('DotSetMetaTagsService', () => {
                         'seo.rules.og-description.description.not.found':
                             'og:description meta tag, and Meta Description not found!',
                         'seo.rules.twitter-card-description.description.not.found':
-                            'twitter:description meta tag not found! Showing Description instead.'
+                            'twitter:description meta tag, and Meta Description not found!',
+                        'seo.rules.twitter-card-title.title.not.found':
+                            'twitter:title meta tag not found, and HTML Title not found!'
                     })
                 },
                 DotUploadService
@@ -612,6 +614,88 @@ describe('DotSetMetaTagsService', () => {
         service.getMetaTagsResults(doc).subscribe((value) => {
             expect(value[8].items[0].message).toEqual(
                 '<code>twitter:description</code> meta tag with valid content found!'
+            );
+            done();
+        });
+    });
+
+    it('should found twitter:description meta tag not found! Showing Description instead.', (done) => {
+        const doc: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const metaDesc = document.createElement('meta');
+        metaDesc.name = 'description';
+        metaDesc.content =
+            'Get down to Costa Rica this winter for some of the best surfing int he world. Large winter swell is pushing across the Pacific.';
+        head.appendChild(metaDesc);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[8].items[0].message).toEqual(
+                '<code>twitter:description</code> meta tag not found! Showing Description instead.'
+            );
+            done();
+        });
+    });
+
+    it('should found twitter:description meta tag', (done) => {
+        const doc: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[8].items[0].message).toEqual(
+                '<code>twitter:description</code> meta tag, and Meta Description not found!'
+            );
+            done();
+        });
+    });
+
+    it('should found twitter:title meta tag not found and HTML Title not found!', (done) => {
+        const doc: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[7].items[0].message).toEqual(
+                '<code>twitter:title</code> meta tag not found, and HTML Title not found!'
+            );
+            done();
+        });
+    });
+
+    it('should found twitter:title meta tag, Showing HTML Title instead.', (done) => {
+        const doc: Document = document.implementation.createDocument(
+            'http://www.w3.org/1999/xhtml',
+            'html',
+            null
+        );
+
+        const head = doc.createElement('head');
+        doc.documentElement.appendChild(head);
+
+        const title = document.createElement('title');
+        title.innerText = 'Costa Rica Special Offer';
+        head.appendChild(title);
+
+        service.getMetaTagsResults(doc).subscribe((value) => {
+            expect(value[7].items[0].message).toEqual(
+                '<code>twitter:title</code> meta tag not found! Showing HTML Title instead.'
             );
             done();
         });
