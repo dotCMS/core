@@ -12,9 +12,11 @@ p-autocomplete.p-inputwrapper-focus {
     height: auto;
     padding-right: 0;
 
-    .p-autocomplete-loader {
+    .p-autocomplete-loader,
+    .p-autocomplete-clear-icon {
         right: $spacing-2;
         color: $color-palette-primary;
+        margin-top: -0.6rem; // Couldn't use flex for this
     }
 
     .p-autocomplete-input {
@@ -31,7 +33,8 @@ p-autocomplete.p-inputwrapper-focus {
     }
 
     &.p-autocomplete-dd {
-        .p-autocomplete-loader {
+        .p-autocomplete-loader,
+        .p-autocomplete-clear-icon {
             right: $spacing-7;
         }
     }
