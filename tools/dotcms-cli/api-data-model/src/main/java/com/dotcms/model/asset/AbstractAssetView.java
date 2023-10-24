@@ -39,6 +39,6 @@ public interface AbstractAssetView {
     Map<String, Object> metadata();
 
     @Auxiliary
-    Optional<AssetSyncMeta> syncMeta();
+    Optional<AssetSync> sync();
 
 }

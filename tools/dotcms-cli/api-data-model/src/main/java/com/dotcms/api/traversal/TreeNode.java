@@ -3,10 +3,10 @@ package com.dotcms.api.traversal;
 import static com.dotcms.common.AssetsUtils.isMarkedForDelete;
 import static com.dotcms.common.AssetsUtils.isMarkedForPush;
 
-import com.dotcms.model.asset.AbstractAssetSyncMeta.PushType;
-import com.dotcms.model.asset.AssetSyncMeta;
+import com.dotcms.model.asset.AbstractAssetSync.PushType;
+import com.dotcms.model.asset.AssetSync;
 import com.dotcms.model.asset.AssetView;
-import com.dotcms.model.asset.FolderSyncMeta;
+import com.dotcms.model.asset.FolderSync;
 import com.dotcms.model.asset.FolderView;
 
 import java.util.ArrayList;
@@ -60,15 +60,15 @@ public class TreeNode {
      * @param mark the delete mark
      */
     public void markForDelete(boolean mark) {
-        final Optional<FolderSyncMeta> syncMeta = this.folder.syncMeta();
-        final FolderSyncMeta meta = syncMeta.map(
-                   folderSyncMeta -> FolderSyncMeta.builder().from(folderSyncMeta)
+        final Optional<FolderSync> syncData = this.folder.sync();
+        final FolderSync sync = syncData.map(
+                   folderSync -> FolderSync.builder().from(folderSync)
                         .markedForDelete(mark).build()
                 ).orElseGet(
-                   () -> FolderSyncMeta.builder().markedForDelete(mark).build()
+                   () -> FolderSync.builder().markedForDelete(mark).build()
                 );
         this.folder = FolderView.builder().from(this.folder)
-                .syncMeta(meta)
+                .sync(sync)
                 .build();
     }
 
@@ -328,11 +328,11 @@ public class TreeNode {
 
     private void assetsPushInfo(final TreeNodePushInfo nodeInfo, List<AssetView> assets) {
         for (AssetView asset : assets) {
-            final Optional<AssetSyncMeta> optional = asset.syncMeta();
+            final Optional<AssetSync> optional = asset.sync();
             if(optional.isEmpty()) {
                 continue;
             }
-            final AssetSyncMeta meta = optional.get();
+            final AssetSync meta = optional.get();
             if(meta.markedForPush()){
                 nodeInfo.incrementAssetsToPushCount();
                 final PushType pushType = meta.pushType();

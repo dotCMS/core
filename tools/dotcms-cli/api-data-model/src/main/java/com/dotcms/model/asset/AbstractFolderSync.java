@@ -3,23 +3,24 @@ package com.dotcms.model.asset;
 import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
+import org.immutables.value.Value.Default;
 
 @ValueType
 @Value.Immutable
-@JsonDeserialize(as = AssetSyncMeta.class)
-public interface AbstractAssetSyncMeta {
+@JsonDeserialize(as = FolderSync.class)
+public interface AbstractFolderSync {
 
-    @Value.Default
+    String UNKNOWN = "unknown";
+
+    @Default
     default boolean markedForPush(){return false;}
 
-    @Value.Default
+    @Default
     default boolean markedForDelete(){return false;}
 
-    @Value.Default
-    default PushType pushType() {return PushType.UNKNOWN;}
+    @Default
+    default String localStatus(){return UNKNOWN;}
 
-    enum PushType {
-        NEW, MODIFIED, UNKNOWN
-    }
-
+    @Default
+    default String localLanguage(){return UNKNOWN;}
 }

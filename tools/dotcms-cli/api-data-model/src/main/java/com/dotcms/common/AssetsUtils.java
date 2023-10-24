@@ -2,10 +2,10 @@ package com.dotcms.common;
 
 import static com.dotcms.common.LocationUtils.encodePath;
 import static com.dotcms.model.config.Workspace.FILES_NAMESPACE;
-import com.dotcms.model.asset.AbstractAssetSyncMeta.PushType;
-import com.dotcms.model.asset.AssetSyncMeta;
+import com.dotcms.model.asset.AbstractAssetSync.PushType;
+import com.dotcms.model.asset.AssetSync;
 import com.dotcms.model.asset.AssetView;
-import com.dotcms.model.asset.FolderSyncMeta;
+import com.dotcms.model.asset.FolderSync;
 import com.dotcms.model.asset.FolderView;
 import com.google.common.base.Strings;
 import java.io.File;
@@ -416,7 +416,7 @@ public class AssetsUtils {
      * @return
      */
     public static boolean isMarkedForDelete(FolderView folder) {
-        return  folder.syncMeta().map(FolderSyncMeta::markedForDelete).orElse(false);
+        return  folder.sync().map(FolderSync::markedForDelete).orElse(false);
     }
 
     /**
@@ -425,7 +425,7 @@ public class AssetsUtils {
      * @return
      */
     public static boolean isMarkedForPush(FolderView folder) {
-        return  folder.syncMeta().map(FolderSyncMeta::markedForPush).orElse(false);
+        return  folder.sync().map(FolderSync::markedForPush).orElse(false);
     }
 
     /**
@@ -434,7 +434,7 @@ public class AssetsUtils {
      * @return
      */
     public static boolean isMarkedForDelete(AssetView asset) {
-        return  asset.syncMeta().map(AssetSyncMeta::markedForDelete).orElse(false);
+        return  asset.sync().map(AssetSync::markedForDelete).orElse(false);
     }
 
     /**
@@ -443,7 +443,7 @@ public class AssetsUtils {
      * @return
      */
     public static boolean isMarkedForPush(AssetView asset) {
-        return  asset.syncMeta().map(AssetSyncMeta::markedForPush).orElse(false);
+        return  asset.sync().map(AssetSync::markedForPush).orElse(false);
     }
 
     /**
@@ -452,10 +452,10 @@ public class AssetsUtils {
      * @return
      */
     public static boolean isPushModified(AssetView asset) {
-        final Optional<AssetSyncMeta> optional = asset.syncMeta();
+        final Optional<AssetSync> optional = asset.sync();
         if (optional.isPresent()) {
-            final AssetSyncMeta assetSyncMeta = optional.get();
-            return assetSyncMeta.markedForPush() && assetSyncMeta.pushType() == PushType.MODIFIED;
+            final AssetSync sync = optional.get();
+            return sync.markedForPush() && sync.pushType() == PushType.MODIFIED;
         }
         return false;
     }
@@ -466,10 +466,10 @@ public class AssetsUtils {
      * @return
      */
     public static boolean isPushNew(AssetView asset) {
-        final Optional<AssetSyncMeta> optional = asset.syncMeta();
+        final Optional<AssetSync> optional = asset.sync();
         if (optional.isPresent()) {
-            final AssetSyncMeta assetSyncMeta = optional.get();
-            return assetSyncMeta.markedForPush() && assetSyncMeta.pushType() == PushType.NEW;
+            final AssetSync sync = optional.get();
+            return sync.markedForPush() && sync.pushType() == PushType.NEW;
         }
         return false;
     }

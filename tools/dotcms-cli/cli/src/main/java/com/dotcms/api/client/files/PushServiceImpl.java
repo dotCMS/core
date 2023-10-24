@@ -181,7 +181,7 @@ public class PushServiceImpl implements PushService {
      * @return
      */
     boolean isAllFoldersMarkedForDelete(List<TreeNode> nodes) {
-        return nodes.stream().map(TreeNode::folder).allMatch(folderView -> folderView.syncMeta().isPresent() && folderView.syncMeta().get().markedForDelete());
+        return nodes.stream().map(TreeNode::folder).allMatch(folderView -> folderView.sync().isPresent() && folderView.sync().get().markedForDelete());
     }
 
     /**

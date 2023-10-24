@@ -76,5 +76,5 @@ public interface AbstractFolderView {
     List<FolderView> subFolders();
 
     @Auxiliary
-    Optional<FolderSyncMeta> syncMeta();
+    Optional<FolderSync> sync();
 }
