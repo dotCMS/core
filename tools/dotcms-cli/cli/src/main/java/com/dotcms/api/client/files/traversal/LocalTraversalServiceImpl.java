@@ -9,6 +9,7 @@ import com.dotcms.api.client.files.traversal.task.PullTreeNodeTask;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.common.AssetsUtils;
+import com.dotcms.common.LocalPathStructure;
 import io.quarkus.arc.DefaultBean;
 import java.io.File;
 import java.nio.file.Paths;
@@ -55,7 +56,7 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
         logger.debug(String.format("Traversing file system folder: %s - in workspace: %s",
                 source, workspace.getAbsolutePath()));
 
-        final var localPath = parseLocalPath(workspace, new File(source));
+        var localPath = parseLocalPath(workspace, new File(source));
 
         // Initial check to see if the site exist
         var siteExists = true;
@@ -71,11 +72,10 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
 
         // Checking if the language exist
         try {
-            localPath.setLanguageExists(true);
             retriever.retrieveLanguage(localPath.language());
+            localPath = LocalPathStructure.builder().from(localPath).languageExists(true).build();
         } catch (NotFoundException e) {
-
-            localPath.setLanguageExists(false);
+            localPath = LocalPathStructure.builder().from(localPath).languageExists(false).build();
 
             // Language doesn't exist on remote server
             logger.debug(String.format("Language [%s] doesn't exist on remote server.", localPath.language()));
