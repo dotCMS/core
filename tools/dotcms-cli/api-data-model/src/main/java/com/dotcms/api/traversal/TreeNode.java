@@ -1,9 +1,18 @@
 package com.dotcms.api.traversal;
 
+import static com.dotcms.common.AssetsUtils.isMarkedForDelete;
+import static com.dotcms.common.AssetsUtils.isMarkedForPush;
+
+import com.dotcms.model.asset.AbstractAssetSync.PushType;
+import com.dotcms.model.asset.AssetSync;
 import com.dotcms.model.asset.AssetView;
+import com.dotcms.model.asset.FolderSync;
 import com.dotcms.model.asset.FolderView;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -16,7 +25,7 @@ import java.util.stream.Stream;
  */
 public class TreeNode {
 
-    private  FolderView folder;
+    private FolderView folder;
     private final List<TreeNode> children;
     private List<AssetView> assets;
 
@@ -51,9 +60,15 @@ public class TreeNode {
      * @param mark the delete mark
      */
     public void markForDelete(boolean mark) {
+        final Optional<FolderSync> syncData = this.folder.sync();
+        final FolderSync sync = syncData.map(
+                   folderSync -> FolderSync.builder().from(folderSync)
+                        .markedForDelete(mark).build()
+                ).orElseGet(
+                   () -> FolderSync.builder().markedForDelete(mark).build()
+                );
         this.folder = FolderView.builder().from(this.folder)
-                .markForDelete(mark)
-                //Here only for compatibility with the actual code will be removed later
+                .sync(sync)
                 .build();
     }
 
@@ -128,63 +143,72 @@ public class TreeNode {
      * parameter.
      */
     public TreeNode cloneAndFilterAssets(final boolean live, final String language,
-                                         final boolean showEmptyFolders,
-                                         final boolean filterForPushChanges) {
+            final boolean showEmptyFolders,
+            final boolean filterForPushChanges) {
 
-        TreeNode newNode = new TreeNode(this.folder, true);
+        final TreeNode newNode = new TreeNode(this.folder, true);
+        boolean includeAssets = includeAssets();
 
         // Clone and filter assets based on the status and language
-        boolean includeAssets = includeAssets();
         if (includeAssets && this.assets != null) {
             List<AssetView> filteredAssets = this.assets.stream()
-                    .filter(asset -> {
-
-                        if (live) {
-                            return asset.live() && asset.lang().equalsIgnoreCase(language);
-                        }
-
-                        return asset.working() && asset.lang().equalsIgnoreCase(language);
-                    })
+                    .filter(filterAssetsPredicate(live, language))
                     .collect(Collectors.toList());
             newNode.assets(filteredAssets);
         }
 
-        // Clone children without assets
-        for (TreeNode child : this.children) {
-
-            // If we have an explicit rule to exclude this folder, we skip it
-            if (child.folder().explicitGlobExclude()) {
-                continue;
-            }
-
-            TreeNode clonedChild = child.cloneAndFilterAssets(live, language, showEmptyFolders, filterForPushChanges);
-
-            if (filterForPushChanges) {
-
-                if (showEmptyFolders
-                        || !clonedChild.assets.isEmpty()
-                        || (child.folder().markForPush().isPresent() || child.folder().markForDelete().isPresent())
-                        || hasAssetsWithChangesInSubtree(clonedChild)
-                        || hasAFolderWithChangesInSubtree(clonedChild)) {
-
-                    if (clonedChild.folder.implicitGlobInclude() || hasIncludeInSubtree(clonedChild)) {
-                        newNode.addChild(clonedChild);
-                    }
-                }
-            } else {
-
-                if (showEmptyFolders
-                        || !clonedChild.assets.isEmpty()
-                        || hasAssetsInSubtree(clonedChild)) {
-
-                    if (clonedChild.folder.implicitGlobInclude() || hasIncludeInSubtree(clonedChild)) {
-                        newNode.addChild(clonedChild);
-                    }
-                }
+        // Clone children without assets and apply filtering conditions
+        for (final TreeNode child : this.children) {
+            if (childShouldBeIncluded(child, showEmptyFolders, filterForPushChanges)) {
+                final TreeNode clonedChild = child.cloneAndFilterAssets(live, language, showEmptyFolders, filterForPushChanges);
+                newNode.addChild(clonedChild);
             }
         }
 
         return newNode;
+    }
+
+
+    /**
+     * Clones the current TreeNode and filters its assets based on the provided status and language.
+     * @param child
+     * @param showEmptyFolders
+     * @param filterForPushChanges
+     * @return
+     */
+    private boolean childShouldBeIncluded(TreeNode child, boolean showEmptyFolders, boolean filterForPushChanges) {
+        if (child.folder().explicitGlobExclude()) {
+            return false;
+        }
+        if (filterForPushChanges) {
+            return showEmptyFolders
+                    || !child.assets.isEmpty()
+                    || isMarkedForPush(child.folder())
+                    || isMarkedForDelete(child.folder())
+                    || hasAssetsWithChangesInSubtree(child)
+                    || hasFolderWithChangesInSubtree(child)
+                    || (child.folder.implicitGlobInclude() || hasIncludeInSubtree(child));
+        } else {
+            return showEmptyFolders
+                    || !child.assets.isEmpty()
+                    || hasAssetsInSubtree(child)
+                    || (child.folder.implicitGlobInclude() || hasIncludeInSubtree(child));
+        }
+    }
+
+    /**
+     * Status and language filter predicate.
+     * @param live
+     * @param language
+     * @return
+     */
+    private static Predicate<AssetView> filterAssetsPredicate(boolean live, String language) {
+        return asset -> {
+            if (live) {
+                return asset.live() && asset.lang().equalsIgnoreCase(language);
+            }
+            return asset.working() && asset.lang().equalsIgnoreCase(language);
+        };
     }
 
     /**
@@ -193,10 +217,10 @@ public class TreeNode {
      * @param showEmptyFolders A boolean indicating whether to include empty folders
      * @return a TreeNodeInfo object containing the collected statuses and languages
      */
-    public TreeNodeInfo collectUniqueStatusesAndLanguages(final boolean showEmptyFolders) {
+    public TreeNodeInfo collectUniqueStatusAndLanguage(final boolean showEmptyFolders) {
 
         TreeNodeInfo nodeInfo = new TreeNodeInfo();
-        collectUniqueStatusesAndLanguagesHelper(nodeInfo, showEmptyFolders);
+        internalCollectUniqueStatusAndLanguage(nodeInfo, showEmptyFolders);
         return nodeInfo;
     }
 
@@ -206,43 +230,55 @@ public class TreeNode {
      * @param collectEmptyFoldersInfo A boolean indicating whether to include empty folders
      * @param nodeInfo                A TreeNodeInfo object containing the collected statuses and languages
      */
-    private void collectUniqueStatusesAndLanguagesHelper(TreeNodeInfo nodeInfo, final boolean collectEmptyFoldersInfo) {
-
+    private void internalCollectUniqueStatusAndLanguage(TreeNodeInfo nodeInfo, final boolean collectEmptyFoldersInfo) {
         boolean includeAssets = includeAssets();
         if (includeAssets && assets() != null) {
-            for (AssetView asset : assets()) {
+            assetsLangAndStatusInfo(nodeInfo, assets());
+        }
+        if(null != children()) {
+            childrenLangAndStatusInfo(nodeInfo, children(), collectEmptyFoldersInfo);
+        }
+    }
 
-                if (asset.live()) {
-                    nodeInfo.addLiveLanguage(asset.lang());
-                    nodeInfo.incrementAssetsCount();
-                }
-                if (asset.working()) {
-                    nodeInfo.addWorkingLanguage(asset.lang());
-                    nodeInfo.incrementAssetsCount();
-                }
-
-                nodeInfo.addLanguage(asset.lang());
+    /**
+     * Collects unique statuses and languages from the current node's assets.
+     * @param nodeInfo
+     * @param children
+     * @param collectEmptyFoldersInfo
+     */
+    private void childrenLangAndStatusInfo(final TreeNodeInfo nodeInfo, final List<TreeNode> children, final boolean collectEmptyFoldersInfo) {
+        for (TreeNode child : children) {
+            if (shouldIncludeChild(child, collectEmptyFoldersInfo)) {
+                child.internalCollectUniqueStatusAndLanguage(nodeInfo, collectEmptyFoldersInfo);
+                nodeInfo.incrementFoldersCount();
             }
         }
+    }
 
-        for (TreeNode child : children()) {
+    // Helper method to determine if a child should be included
+    private boolean shouldIncludeChild(TreeNode child, boolean collectEmptyFoldersInfo) {
+        if (child.folder().explicitGlobExclude()) {
+            return false;
+        }
 
-            // If we have an explicit rule to exclude this folder, we skip it
-            if (child.folder().explicitGlobExclude()) {
-                continue;
+        if (collectEmptyFoldersInfo || !child.assets().isEmpty() || hasAssetsInSubtree(child)) {
+            return child.folder().implicitGlobInclude() || hasIncludeInSubtree(child);
+        }
+
+        return false;
+    }
+
+    private void assetsLangAndStatusInfo(final TreeNodeInfo nodeInfo, final List<AssetView> assets) {
+        for (AssetView asset : assets) {
+            if (asset.live()) {
+                nodeInfo.addLiveLanguage(asset.lang());
+                nodeInfo.incrementAssetsCount();
             }
-
-            if (collectEmptyFoldersInfo
-                    || !child.assets().isEmpty()
-                    || hasAssetsInSubtree(child)) {
-
-                if (child.folder().implicitGlobInclude() || hasIncludeInSubtree(child)) {
-
-                    child.collectUniqueStatusesAndLanguagesHelper(nodeInfo, collectEmptyFoldersInfo);
-
-                    nodeInfo.incrementFoldersCount();
-                }
+            if (asset.working()) {
+                nodeInfo.addWorkingLanguage(asset.lang());
+                nodeInfo.incrementAssetsCount();
             }
+            nodeInfo.addLanguage(asset.lang());
         }
     }
 
@@ -251,10 +287,10 @@ public class TreeNode {
      *
      * @return A TreeNodePushInfo object containing the collected push information.
      */
-    public TreeNodePushInfo collectTreeNodePushInfo() {
+    public TreeNodePushInfo collectPushInfo() {
 
         var nodeInfo = new TreeNodePushInfo();
-        collectTreeNodePushInfoHelper(nodeInfo);
+        internalCollectPushInfo(nodeInfo);
         return nodeInfo;
     }
 
@@ -263,63 +299,56 @@ public class TreeNode {
      *
      * @param nodeInfo A TreeNodePushInfo object containing the collected push information.
      */
-    private void collectTreeNodePushInfoHelper(TreeNodePushInfo nodeInfo) {
+    private void internalCollectPushInfo(TreeNodePushInfo nodeInfo) {
 
-        boolean includeAssets = includeAssets();
-        if (includeAssets && assets() != null) {
-            for (AssetView asset : assets()) {
-
-                if (asset.markForPush().isPresent()) {
-                    if (asset.markForPush().get()) {
-
-                        nodeInfo.incrementAssetsToPushCount();
-
-                        if (asset.pushTypeNew().isPresent()) {
-                            if (asset.pushTypeNew().get()) {
-                                nodeInfo.incrementAssetsNewCount();
-                            }
-                        }
-                        if (asset.pushTypeModified().isPresent()) {
-                            if (asset.pushTypeModified().get()) {
-                                nodeInfo.incrementAssetsModifiedCount();
-                            }
-                        }
-                    }
-                }
-
-                if (asset.markForDelete().isPresent()) {
-                    if (asset.markForDelete().get()) {
-                        nodeInfo.incrementAssetsToDeleteCount();
-                    }
-                }
-            }
+        if (includeAssets() && assets() != null) {
+            assetsPushInfo(nodeInfo, assets());
         }
+        if(null != children()){
+            childrenPushInfo(nodeInfo, children());
+        }
+    }
 
-        for (TreeNode child : children()) {
-
+    private void childrenPushInfo(TreeNodePushInfo nodeInfo, List<TreeNode> children) {
+        for (TreeNode child : children) {
             // If we have an explicit rule to exclude this folder, we skip it
             if (child.folder().explicitGlobExclude()) {
                 continue;
             }
-
             if (child.folder().implicitGlobInclude() || hasIncludeInSubtree(child)) {
-
-                child.collectTreeNodePushInfoHelper(nodeInfo);
-
-                if (child.folder().markForPush().isPresent()) {
-                    if (child.folder().markForPush().get()) {
-                        nodeInfo.incrementFoldersToPushCount();
-                    }
-                }
-
-                if (child.folder().markForDelete().isPresent()) {
-                    if (child.folder().markForDelete().get()) {
-                        nodeInfo.incrementFoldersToDeleteCount();
-                    }
+                child.internalCollectPushInfo(nodeInfo);
+                if(isMarkedForPush(child.folder())){
+                    nodeInfo.incrementFoldersToPushCount();
+                } else if(isMarkedForDelete(child.folder())){
+                    nodeInfo.incrementFoldersToDeleteCount();
                 }
             }
         }
     }
+
+    private void assetsPushInfo(final TreeNodePushInfo nodeInfo, List<AssetView> assets) {
+        for (AssetView asset : assets) {
+            final Optional<AssetSync> optional = asset.sync();
+            if(optional.isEmpty()) {
+                continue;
+            }
+            final AssetSync meta = optional.get();
+            if(meta.markedForPush()){
+                nodeInfo.incrementAssetsToPushCount();
+                final PushType pushType = meta.pushType();
+                if(pushType == PushType.NEW) {
+                    nodeInfo.incrementAssetsNewCount();
+                }
+                if(pushType == PushType.MODIFIED) {
+                    nodeInfo.incrementAssetsModifiedCount();
+                }
+            } else if(meta.markedForDelete()){
+                nodeInfo.incrementAssetsToDeleteCount();
+            }
+        }
+    }
+
+
 
     /**
      * Determines whether the assets should be included for the current TreeNode based on its folder's
@@ -371,11 +400,9 @@ public class TreeNode {
      */
     private boolean hasAssetsWithChangesInSubtree(final TreeNode node) {
 
-        if (!node.assets().isEmpty()) {
-            for (var asset : node.assets()) {
-                if (asset.markForPush().isPresent() || asset.markForDelete().isPresent()) {
-                    return true;
-                }
+        for (var asset : node.assets()) {
+            if (isMarkedForPush(asset) || isMarkedForDelete(asset)) {
+                return true;
             }
         }
 
@@ -384,6 +411,7 @@ public class TreeNode {
                 anyMatch(this::hasAssetsWithChangesInSubtree);
     }
 
+
     /**
      * Recursively checks if the given node or any of its children contains a folder marked for push or delete.
      *
@@ -391,11 +419,11 @@ public class TreeNode {
      * @return {@code true} if the node or any of its children contains a folder marked for push or
      * delete, {@code false} otherwise.
      */
-    private boolean hasAFolderWithChangesInSubtree(final TreeNode node) {
+    private boolean hasFolderWithChangesInSubtree(final TreeNode node) {
 
         if (!node.children().isEmpty()) {
             for (var child : node.children()) {
-                if (child.folder().markForPush().isPresent() || child.folder().markForDelete().isPresent()) {
+                if (isMarkedForPush(child.folder()) || isMarkedForDelete(child.folder())) {
                     return true;
                 }
             }
@@ -403,7 +431,7 @@ public class TreeNode {
 
         return node.children().
                 stream().
-                anyMatch(this::hasAFolderWithChangesInSubtree);
+                anyMatch(this::hasFolderWithChangesInSubtree);
     }
 
     /**

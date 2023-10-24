@@ -1,7 +1,7 @@
 package com.dotcms.api.client.files.traversal;
 
 import com.dotcms.api.traversal.TreeNode;
-import com.dotcms.common.AssetsUtils.LocalPathStructure;
+import com.dotcms.common.LocalPathStructure;
 import com.dotcms.model.annotation.ValueType;
 import java.util.List;
 import org.immutables.value.Value;
