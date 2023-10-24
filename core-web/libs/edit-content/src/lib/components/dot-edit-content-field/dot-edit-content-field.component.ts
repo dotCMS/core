@@ -8,6 +8,8 @@ import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { FIELD_TYPES } from './utils';
 
 import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields.module';
+import { DotEditContentRadioFieldComponent } from '../../fields/dot-edit-content-radio-field/dot-edit-content-radio-field.component';
+import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-content-select-field/dot-edit-content-select-field.component';
 
 @Component({
     selector: 'dot-edit-content-field',
@@ -18,7 +20,9 @@ import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields
         NgIf,
         ReactiveFormsModule,
         DotEditContentFieldsModule,
-        DotFieldRequiredDirective
+        DotFieldRequiredDirective,
+        DotEditContentSelectFieldComponent,
+        DotEditContentRadioFieldComponent
     ],
     templateUrl: './dot-edit-content-field.component.html',
     styleUrls: ['./dot-edit-content-field.component.scss'],
