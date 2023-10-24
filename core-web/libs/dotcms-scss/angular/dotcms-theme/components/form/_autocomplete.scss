@@ -1,6 +1,12 @@
 @use "variables" as *;
 @import "common";
 
+p-autocomplete.p-inputwrapper-focus {
+    .p-autocomplete {
+        @extend #form-field-focus;
+    }
+}
+
 .p-autocomplete {
     @extend #form-field-extend;
     height: auto;
