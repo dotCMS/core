@@ -12,15 +12,6 @@ public interface AbstractFolderSyncMeta {
 
     String UNKNOWN = "unknown";
 
-    @Value.Default
-    default boolean explicitGlobInclude() { return false;}
-
-    @Value.Default
-    default boolean explicitGlobExclude() { return false;}
-
-    @Value.Default
-    default boolean implicitGlobInclude() { return true;}
-
     @Default
     default boolean markedForPush(){return false;}
 
