@@ -246,13 +246,13 @@ describe('DotTemplateBuilderComponent', () => {
             expect(component.updateTemplate.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
         });
 
-        it('should emit save and publish event from dot-edit-layout-designer automatically on template updates', () => {
+        it('should emit save event from dot-edit-layout-designer automatically on template updates', () => {
             fakeAsync(() => {
-                spyOn(component.saveAndPublish, 'emit');
+                spyOn(component.save, 'emit');
                 const builder = de.query(By.css('dot-edit-layout-designer'));
-                builder.triggerEventHandler('saveAndPublish', EMPTY_TEMPLATE_DESIGN);
+                builder.triggerEventHandler('save', EMPTY_TEMPLATE_DESIGN);
                 tick(AUTOSAVE_DEBOUNCE_TIME);
-                expect(component.saveAndPublish.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
+                expect(component.save.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
             });
         });
     });
