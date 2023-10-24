@@ -43,7 +43,7 @@ public class PullFolder extends PullBase {
             }
 
             // Collect important information about the tree
-            final var treeNodeInfo = tree.collectUniqueStatusesAndLanguages(generateEmptyFolders);
+            final var treeNodeInfo = tree.collectUniqueStatusAndLanguage(generateEmptyFolders);
 
             output.info(String.format("\rStarting pull process for: " +
                             "@|bold,green [%s]|@ Assets in " +

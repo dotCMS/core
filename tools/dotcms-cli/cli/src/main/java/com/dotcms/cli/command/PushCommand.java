@@ -50,20 +50,13 @@ public class PushCommand implements Callable<Integer>, DotCommand {
     @Inject
     protected WorkspaceManager workspaceManager;
 
+    @Inject
+    Instance<DotPush> pushCommands;
 
-    /**
-     * The Resolved DotPush command instances
-     * But this also allows for mocking push commands
-     * @return the resolved push commands or mocked instances
-     */
-    Iterable<DotPush> pushCommands(){
-        return CDI.current().select(DotPush.class);
-    }
 
     @Override
     public Integer call() throws Exception {
         // Find the instances of all push subcommands
-        Iterable<DotPush> pushCommands = pushCommands();
 
         // Checking for unmatched arguments
         output.throwIfUnmatchedArguments(spec.commandLine());
