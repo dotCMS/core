@@ -1,12 +1,11 @@
 package com.dotcms.api.client.files;
 
-import com.dotcms.api.client.files.traversal.AbstractTraverseResult;
 import com.dotcms.api.client.files.traversal.TraverseResult;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
-
+import com.dotcms.common.LocalPathStructure;
 import java.io.File;
 import java.util.List;
 
@@ -48,7 +47,7 @@ public interface PushService {
      * @throws RuntimeException if an error occurs during the push process
      */
     void processTreeNodes(OutputOptionMixin output, String workspace,
-                          AssetsUtils.LocalPathStructure localPathStructure, TreeNode treeNode,
+                          LocalPathStructure localPathStructure, TreeNode treeNode,
                           TreeNodePushInfo treeNodePushInfo, final boolean failFast, final int maxRetryAttempts);
 
 }
