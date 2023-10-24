@@ -2,7 +2,6 @@ package com.dotcms.storage;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotmarketing.business.CacheLocator;
-import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
@@ -36,7 +35,7 @@ public class Chainable404StorageCacheTest extends IntegrationTestBase {
     @Test
     public void Test_Cache() {
 
-        final Chainable404StorageCache cache = CacheLocator.getChainable4040StorageCache();
+        final Chainable404StorageCache cache = CacheLocator.getChainable404StorageCache();
         final String groupName = "mem-test";
         final String path1 = "/path1.txt";
         final String path2 = "/path2.txt";
