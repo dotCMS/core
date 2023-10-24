@@ -46,8 +46,8 @@ describe('DotFormComponent', () => {
         it('should initialize the form controls', () => {
             expect(spectator.component.form.value).toEqual({
                 name1: 'Placeholder',
-                text2: undefined,
-                text3: undefined
+                text2: null,
+                text3: null
             });
         });
 
@@ -58,11 +58,16 @@ describe('DotFormComponent', () => {
             expect(
                 spectator.component.form.controls['text2'].hasValidator(Validators.required)
             ).toBe(true);
-            // const regex = new RegExp('^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+.)+[a-zA-Z]{2,4})$')
-            // expect(spectator.component.form.controls['text2'].hasValidator(Validators.pattern(regex))).toBe(true);
             expect(
                 spectator.component.form.controls['text3'].hasValidator(Validators.required)
             ).toBe(false);
+        });
+
+        it('should validate regex', () => {
+            expect(spectator.component.form.controls['text2'].valid).toBeFalsy();
+
+            spectator.component.form.controls['text2'].setValue('dot@gmail.com');
+            expect(spectator.component.form.controls['text2'].valid).toBeTruthy();
         });
 
         it('should have 1 row, 2 columns and 3 fields', () => {

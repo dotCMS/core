@@ -281,7 +281,7 @@ export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;
 // This creates a mock FormGroup from an array of fielda
 export const createFormControlObjectMock = (fields = FIELDS_MOCK) => {
     return fields.reduce((acc, field) => {
-        acc[field.variable] = new FormControl('');
+        acc[field.variable] = new FormControl(null);
 
         return acc;
     }, {});
@@ -291,12 +291,13 @@ export const FORM_GROUP_MOCK = new FormGroup(createFormControlObjectMock());
 
 // Create a mock FormGroupDirective
 export const createFormGroupDirectiveMock = (
+    formGroup: FormGroup = FORM_GROUP_MOCK,
     validator: (Validator | ValidatorFn)[] = [],
     asyncValidators: AsyncValidator[] = []
 ) => {
     const formGroupDirectiveMock = new FormGroupDirective(validator, asyncValidators);
 
-    formGroupDirectiveMock.form = FORM_GROUP_MOCK;
+    formGroupDirectiveMock.form = formGroup;
 
     return formGroupDirectiveMock;
 };

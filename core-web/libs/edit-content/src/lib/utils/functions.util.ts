@@ -1,7 +1,14 @@
 import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
 import { DotEditContentFieldSingleSelectableDataTypes } from '../models/dot-edit-content-field.type';
 
-const castValue = (value: string, type: string): DotEditContentFieldSingleSelectableDataTypes => {
+export const castSingleSelectableValue = (
+    value: string,
+    type: string
+): DotEditContentFieldSingleSelectableDataTypes | null => {
+    if (!value) {
+        return null;
+    }
+
     if (type === DotEditContentFieldSingleSelectableDataType.BOOL) {
         return value === 'true';
     }
@@ -16,7 +23,7 @@ const castValue = (value: string, type: string): DotEditContentFieldSingleSelect
     return value;
 };
 
-export const createSingleSelectableFieldOptions = (
+export const getSingleSelectableFieldOptions = (
     options: string,
     dataType: string
 ): { label: string; value: DotEditContentFieldSingleSelectableDataTypes }[] => {
@@ -29,10 +36,10 @@ export const createSingleSelectableFieldOptions = (
     const result = lines?.map((line) => {
         const [label, value] = line.split('|');
         if (!value) {
-            return { label, value: castValue(label, dataType) };
+            return { label, value: castSingleSelectableValue(label, dataType) };
         }
 
-        return { label, value: castValue(value, dataType) };
+        return { label, value: castSingleSelectableValue(value, dataType) };
     });
 
     return result;

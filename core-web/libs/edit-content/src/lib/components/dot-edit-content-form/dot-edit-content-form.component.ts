@@ -16,6 +16,7 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { EditContentFormData } from '../../models/dot-edit-content-form.interface';
+import { castSingleSelectableValue } from '../../utils/functions.util';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 @Component({
     selector: 'dot-edit-content-form',
@@ -81,9 +82,13 @@ export class DotEditContentFormComponent implements OnInit {
             }
         }
 
+        const value =
+            castSingleSelectableValue(this.formData.contentlet?.[field.variable], field.dataType) ??
+            castSingleSelectableValue(field.defaultValue, field.dataType);
+
         return this.fb.control(
             {
-                value: this.formData.contentlet?.[field.variable] ?? field.defaultValue,
+                value: value ?? null,
                 disabled: field.readOnly
             },
             { validators }
