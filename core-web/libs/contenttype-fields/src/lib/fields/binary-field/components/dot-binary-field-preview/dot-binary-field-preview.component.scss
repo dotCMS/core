@@ -25,11 +25,13 @@
     justify-content: center;
     height: 100%;
     width: 100%;
+    user-select: none;
 }
 
 .preview-image_container ::ng-deep {
     height: 100%;
     width: 280px;
+    min-width: 280px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -61,6 +63,7 @@
     justify-content: center;
     flex-direction: column;
     height: 100%;
+    overflow: auto;
 }
 
 .preview-metadata_info {

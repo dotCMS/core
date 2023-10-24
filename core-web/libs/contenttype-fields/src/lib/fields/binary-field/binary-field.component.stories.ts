@@ -24,7 +24,12 @@ import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-
 import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
 import { DotBinaryFieldStore } from './store/binary-field.store';
 
-import { CONTENTTYPE_FIELDS_MESSAGE_MOCK, TEMP_FILES_MOCK } from '../../utils/mock';
+import {
+    CONTENTLET,
+    CONTENTTYPE_FIELDS_MESSAGE_MOCK,
+    FIELD,
+    TEMP_FILES_MOCK
+} from '../../utils/mock';
 
 export default {
     title: 'Library / Contenttype Fields / DotBinaryFieldComponent',
@@ -72,25 +77,19 @@ export default {
         })
     ],
     args: {
-        accept: ['image/*', '.ts'],
-        maxFileSize: 1000000,
-        helperText: 'This field accepts only images with a maximum size of 1MB.'
+        contentlet: CONTENTLET,
+        field: FIELD
     },
     argTypes: {
-        accept: {
-            defaultValue: ['image/*'],
+        contentlet: {
+            defaultValue: CONTENTLET,
             control: 'object',
-            description: 'Accepted file types'
+            description: 'Contentlet Object'
         },
-        maxFileSize: {
-            defaultValue: 1000000,
-            control: 'number',
-            description: 'Maximum file size in bytes'
-        },
-        helperText: {
-            defaultValue: 'This field accepts only images with a maximum size of 1MB.',
-            control: 'text',
-            description: 'Helper label to be displayed below the field'
+        field: {
+            defaultValue: FIELD,
+            control: 'Object',
+            description: 'Content Type Field Object'
         }
     }
 } as Meta<DotBinaryFieldComponent>;
@@ -98,9 +97,8 @@ export default {
 const Template: Story<DotBinaryFieldComponent> = (args: DotBinaryFieldComponent) => ({
     props: args,
     template: `<dot-binary-field
-        [accept]="accept"
-        [maxFileSize]="maxFileSize"
-        [helperText]="helperText"
+        [contentlet]="contentlet"
+        [field]="field"
     ></dot-binary-field>`
 });
 

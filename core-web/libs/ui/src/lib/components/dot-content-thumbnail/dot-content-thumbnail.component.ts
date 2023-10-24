@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnChanges, OnInit } from '@angular/core';
 
 const ICON_MAP = {
     html: 'pi-file',
@@ -26,7 +26,7 @@ export enum CONTENT_THUMBNAIL_TYPE {
     styleUrls: ['./dot-content-thumbnail.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotContentThumbnailComponent implements OnInit {
+export class DotContentThumbnailComponent implements OnInit, OnChanges {
     src: string;
     thumbnailIcon: string;
     thumbnailType: CONTENT_THUMBNAIL_TYPE;
@@ -42,6 +42,12 @@ export class DotContentThumbnailComponent implements OnInit {
     private readonly DEFAULT_ICON = 'pi-file';
 
     ngOnInit(): void {
+        this.setSrc();
+        this.setThumbnailType();
+        this.setThumbnailIcon();
+    }
+
+    ngOnChanges(): void {
         this.setSrc();
         this.setThumbnailType();
         this.setThumbnailIcon();

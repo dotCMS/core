@@ -61,7 +61,7 @@
 
     <dot-binary-field-preview
         *ngIf="vm.status === BINARY_FIELD_STATUS.PREVIEW"
-        [file]="vm.previewFile"
+        [file]="vm.file"
         (removeFile)="removeFile()"
         (editFile)="onEditFile($event)"
         data-testId="preview"></dot-binary-field-preview>
@@ -73,7 +73,7 @@
         [draggable]="false"
         [resizable]="false"
         [closeOnEscape]="false"
-        [styleClass]="isEditorMode(vm.mode) ? 'screen-cover' : ''"
+        [styleClass]="vm.mode === BINARY_FIELD_MODE.EDITOR ? 'screen-cover' : ''"
         (onHide)="afterDialogClose()">
         <ng-container [ngSwitch]="vm.mode">
             <dot-dot-binary-field-url-mode
@@ -85,8 +85,8 @@
                 data-testId="url-mode"></dot-dot-binary-field-url-mode>
             <dot-dot-binary-field-editor
                 *ngSwitchCase="BINARY_FIELD_MODE.EDITOR"
-                [title]="vm.previewFile?.name"
-                [content]="vm.previewFile?.content"
+                [title]="vm.file?.name"
+                [content]="vm.file?.content"
                 [accept]="accept"
                 (tempFileUploaded)="setTempFile($event)"
                 (cancel)="closeDialog()"

@@ -3,6 +3,7 @@ import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import {
+    AfterViewInit,
     ChangeDetectionStrategy,
     Component,
     ElementRef,
@@ -17,10 +18,10 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { skip } from 'rxjs/operators';
+import { filter, skip } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSTempFile } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 import {
     DotDropZoneComponent,
     DotMessagePipe,
@@ -33,6 +34,7 @@ import { DotBinaryFieldEditorComponent } from './components/dot-binary-field-edi
 import { DotBinaryFieldPreviewComponent } from './components/dot-binary-field-preview/dot-binary-field-preview.component';
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
 import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
+import { DotEditBinaryFieldImageService } from './service/dot-edit-binary-field-image.service';
 import {
     BINARY_FIELD_MODE,
     BINARY_FIELD_STATUS,
@@ -40,10 +42,15 @@ import {
     DotBinaryFieldStore
 } from './store/binary-field.store';
 
-import { UI_MESSAGE_KEYS, UiMessageI, getUiMessage } from '../../utils/binary-field-utils';
+import {
+    UI_MESSAGE_KEYS,
+    UiMessageI,
+    getFieldVariables,
+    getUiMessage
+} from '../../utils/binary-field-utils';
 
 const initialState: BinaryFieldState = {
-    previewFile: null,
+    file: null,
     tempFile: null,
     mode: BINARY_FIELD_MODE.DROPZONE,
     status: BINARY_FIELD_STATUS.INIT,
@@ -69,22 +76,17 @@ const initialState: BinaryFieldState = {
         DotBinaryFieldUrlModeComponent,
         DotBinaryFieldPreviewComponent
     ],
-    providers: [DotBinaryFieldStore],
+    providers: [DotBinaryFieldStore, DotEditBinaryFieldImageService],
     templateUrl: './binary-field.component.html',
     styleUrls: ['./binary-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotBinaryFieldComponent implements OnInit {
-    //Inputs
-    @Input() accept: string[] = [];
-    @Input() maxFileSize: number;
-    @Input() helperText: string;
+export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
+    @Input() field: DotCMSContentTypeField;
+    @Input() contentlet: DotCMSContentlet;
 
     @ViewChild('inputFile') inputFile: ElementRef;
-
     @Output() tempFile = new EventEmitter<DotCMSTempFile>();
-
-    @Input() contentlet;
 
     readonly dialogHeaderMap = {
         [BINARY_FIELD_MODE.URL]: 'dot.binary.field.dialog.import.from.url.header',
@@ -94,11 +96,16 @@ export class DotBinaryFieldComponent implements OnInit {
     readonly BINARY_FIELD_MODE = BINARY_FIELD_MODE;
     readonly vm$ = this.dotBinaryFieldStore.vm$;
 
+    private file;
     dialogOpen = false;
+    accept: string[] = [];
+    maxFileSize: number;
+    helperText: string;
 
     constructor(
         private readonly dotBinaryFieldStore: DotBinaryFieldStore,
-        private readonly dotMessageService: DotMessageService
+        private readonly dotMessageService: DotMessageService,
+        private readonly dotEditBinaryFieldImageService: DotEditBinaryFieldImageService
     ) {
         // WIP - This will receive the contentlet from the parent component (PREVIEW MODE)
         this.dotBinaryFieldStore.setState(initialState);
@@ -112,7 +119,21 @@ export class DotBinaryFieldComponent implements OnInit {
                 this.tempFile.emit(tempFile);
             });
 
+        this.dotEditBinaryFieldImageService
+            .editedImage()
+            .pipe(filter((tempFile) => !!tempFile))
+            .subscribe((tempFile) => {
+                this.setTempFile(tempFile);
+            });
+
         this.dotBinaryFieldStore.setMaxFileSize(this.maxFileSize);
+    }
+
+    ngAfterViewInit() {
+        this.setFieldVariables();
+        if (this.contentlet) {
+            this.setFile();
+        }
     }
 
     /**
@@ -202,21 +223,55 @@ export class DotBinaryFieldComponent implements OnInit {
         this.dotBinaryFieldStore.removeFile();
     }
 
+    /**
+     * Set TempFile
+     *
+     * @param {DotCMSTempFile} tempFile
+     * @memberof DotBinaryFieldComponent
+     */
     setTempFile(tempFile: DotCMSTempFile) {
         this.dotBinaryFieldStore.setTempFile(tempFile);
         this.dialogOpen = false;
-    }
-
-    isEditorMode(mode: BINARY_FIELD_MODE): boolean {
-        return mode === BINARY_FIELD_MODE.EDITOR;
+        this.file = null;
     }
 
     onEditFile({ content }: { content?: string }) {
         if (!content) {
+            this.dotEditBinaryFieldImageService.openImageEditor(
+                this.contentlet.inode,
+                this.field.variable
+            );
+
             return;
         }
 
         this.openDialog(BINARY_FIELD_MODE.EDITOR);
+    }
+
+    private setFile() {
+        const variable = this.field.variable;
+        const { titleImage, inode } = this.contentlet;
+        const { contentType, ...cotentlet } = this.contentlet[variable + 'MetaData'];
+        this.file = {
+            inode,
+            titleImage,
+            mimeType: contentType,
+            ...cotentlet
+        };
+
+        this.dotBinaryFieldStore.setFile(this.file);
+    }
+
+    private setFieldVariables() {
+        const {
+            accept = '',
+            maxFileSize = 0,
+            helperText = ''
+        } = this.field.fieldVariables.reduce(getFieldVariables, {});
+
+        this.accept = accept.split(',').filter((type) => type.trim().length > 0);
+        this.maxFileSize = Number(maxFileSize);
+        this.helperText = helperText;
     }
 
     /**

@@ -1,3 +1,5 @@
+import { DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
+
 export enum UI_MESSAGE_KEYS {
     DEFAULT = 'DEFAULT',
     SERVER_ERROR = 'SERVER_ERROR',
@@ -47,5 +49,15 @@ export const getUiMessage = (messageKey: string, ...args: string[]): UiMessageI 
         severity,
         icon,
         args
+    };
+};
+
+export const getFieldVariables = (
+    prev,
+    current: DotCMSContentTypeFieldVariable
+): Record<string, string> => {
+    return {
+        ...prev,
+        [current.key]: current.value
     };
 };

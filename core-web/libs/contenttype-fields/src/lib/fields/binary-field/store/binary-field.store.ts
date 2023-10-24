@@ -9,10 +9,10 @@ import { DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import { UI_MESSAGE_KEYS, UiMessageI, getUiMessage } from '../../../utils/binary-field-utils';
-import { BinaryPreview } from '../components/dot-binary-field-preview/dot-binary-field-preview.component';
+import { BinaryFile } from '../components/dot-binary-field-preview/dot-binary-field-preview.component';
 
 export interface BinaryFieldState {
-    previewFile?: BinaryPreview;
+    file?: BinaryFile;
     tempFile: DotCMSTempFile;
     mode: BINARY_FIELD_MODE;
     status: BINARY_FIELD_STATUS;
@@ -55,12 +55,6 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         super();
     }
 
-    // Updaters
-    readonly setFile = this.updater<File>((state, file) => ({
-        ...state,
-        file
-    }));
-
     readonly setDropZoneActive = this.updater<boolean>((state, dropZoneActive) => ({
         ...state,
         dropZoneActive
@@ -69,8 +63,14 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     readonly setTempFile = this.updater<DotCMSTempFile>((state, tempFile) => ({
         ...state,
         status: BINARY_FIELD_STATUS.PREVIEW,
-        previewFile: this.previewFileFromTempFile(tempFile),
+        file: this.fileFromTempFile(tempFile),
         tempFile
+    }));
+
+    readonly setFile = this.updater<BinaryFile>((state, file) => ({
+        ...state,
+        status: BINARY_FIELD_STATUS.PREVIEW,
+        file
     }));
 
     readonly setUiMessage = this.updater<UiMessageI>((state, UiMessage) => ({
@@ -111,7 +111,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
 
     readonly removeFile = this.updater((state) => ({
         ...state,
-        previewFile: null,
+        file: null,
         tempFile: null,
         status: BINARY_FIELD_STATUS.INIT
     }));
@@ -149,14 +149,14 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         );
     }
 
-    private previewFileFromTempFile({
+    private fileFromTempFile({
         length,
         thumbnailUrl,
         referenceUrl,
         fileName,
         mimeType,
         content = ''
-    }: DotCMSTempFile): BinaryPreview {
+    }: DotCMSTempFile): BinaryFile {
         return {
             url: thumbnailUrl || referenceUrl,
             fileSize: length,

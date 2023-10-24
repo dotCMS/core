@@ -12,7 +12,7 @@ import { ButtonModule } from 'primeng/button';
 
 import { CONTENT_THUMBNAIL_TYPE, DotContentThumbnailComponent, DotSpinnerModule } from '@dotcms/ui';
 
-export interface BinaryPreview {
+export interface BinaryFile {
     mimeType: string;
     name: string;
     fileSize: number;
@@ -33,7 +33,7 @@ export interface BinaryPreview {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBinaryFieldPreviewComponent implements OnInit {
-    @Input() file: BinaryPreview;
+    @Input() file: BinaryFile;
     @Input() variableName: string;
 
     @Output() editFile: EventEmitter<{
@@ -63,6 +63,6 @@ export class DotBinaryFieldPreviewComponent implements OnInit {
         const type = this.file.mimeType?.split('/')[0];
         const contenttype = CONTENT_THUMBNAIL_TYPE[type] || CONTENT_THUMBNAIL_TYPE.icon;
 
-        this.isEditable = this.editableFiles[contenttype];
+        this.isEditable = this.editableFiles[contenttype] || this.file.content;
     }
 }

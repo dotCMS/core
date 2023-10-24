@@ -1,0 +1,46 @@
+import { BehaviorSubject } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
+import { DotCMSTempFile } from '@dotcms/dotcms-models';
+
+@Injectable()
+export class DotEditBinaryFieldImageService {
+    private subject: BehaviorSubject<DotCMSTempFile> = new BehaviorSubject(null);
+    private variable: string;
+
+    editedImage(): BehaviorSubject<DotCMSTempFile> {
+        return this.subject;
+    }
+
+    openImageEditor(inode: string, variable: string): void {
+        const customEvent = new CustomEvent(`binaryField-open-image-editor-${variable}`, {
+            detail: {
+                inode,
+                variable
+            }
+        });
+        this.variable = variable;
+        document.dispatchEvent(customEvent);
+        this.listenToEditedImage();
+    }
+
+    listenToEditedImage(): void {
+        document.addEventListener(
+            `binaryField-tempfile-${this.variable}`,
+            this.handleNewImage.bind(this)
+        );
+    }
+
+    removeListener(): void {
+        document.removeEventListener(
+            `binaryField-tempfile-${this.variable}`,
+            this.handleNewImage.bind(this)
+        );
+    }
+
+    private handleNewImage({ detail }): void {
+        this.subject.next(detail.tempFile);
+        this.removeListener();
+    }
+}
