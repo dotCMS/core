@@ -2,8 +2,10 @@ package com.dotcms.storage;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotmarketing.business.CacheLocator;
+import org.junit.Assert;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -23,9 +25,9 @@ public class Chainable404StorageCacheTest extends IntegrationTestBase {
 
         final Chainable404StorageCache cache = new Chainable404StorageCache();
 
-        Assert.assertEquals(Chainable404StorageCache.NOT_FOUND_404, "CHAINABLE_404_STORAGE_NOT_FOUND");
-        Assert.assertEquals(cache.getPrimaryGroup(), "Chainable_404_Storage_group");
-        Assert.assertEquals(cache.getGroups(), new String [] {"Chainable_404_Storage_group"});
+        assertEquals(Chainable404StorageCache.NOT_FOUND_404, "CHAINABLE_404_STORAGE_NOT_FOUND");
+        assertEquals(cache.getPrimaryGroup(), "Chainable_404_Storage_group");
+        assertEquals(cache.getGroups(), new String [] {"Chainable_404_Storage_group"});
     }
     /**
      * Method to test: This test tries the {@link Chainable404StorageCache}
