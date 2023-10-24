@@ -2,7 +2,7 @@ package com.dotcms;
 
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.junit.MainBaseSuite;
-import com.dotcms.storage.Chainable4040StorageCacheTest;
+import com.dotcms.storage.Chainable404StorageCacheTest;
 import com.dotcms.storage.FileStorageAPITest;
 import com.dotmarketing.quartz.QuartzUtilsTest;
 import org.junit.runner.RunWith;
@@ -73,7 +73,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v1.contenttype.FieldVariableResourceTest.class,
         com.dotcms.rest.api.v1.contenttype.ContentTypeResourceTest.class,
-        Chainable4040StorageCacheTest.class,
+        Chainable404StorageCacheTest.class,
         FileStorageAPITest.class,
         com.dotcms.analytics.metrics.QueryParameterValuesGetterTest.class,
         com.dotcms.analytics.metrics.QueryParameterValuesTransformerTest.class,

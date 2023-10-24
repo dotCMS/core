@@ -303,7 +303,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 	 *
 	 * @return The {@link Chainable404StorageCache} instance.
 	 */
-	public static Chainable404StorageCache getChainable4040StorageCache() {
+	public static Chainable404StorageCache getChainable404StorageCache() {
 		return (Chainable404StorageCache) getInstance(CacheIndex.CHAINABLE_404_STORAGE_CACHE);
 	}
 
