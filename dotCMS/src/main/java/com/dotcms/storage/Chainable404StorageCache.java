@@ -28,7 +28,7 @@ public class Chainable404StorageCache implements Cachable {
         this.cache = cache;
     }
 
-    // presents a vanity that does not exist on the cache
+    // This is the flag we use to mark an objects previous request and do not exist as 404
     public static final Serializable NOT_FOUND_404 = "CHAINABLE_404_STORAGE_NOT_FOUND";
 
     @Override
