@@ -275,6 +275,7 @@ public class PublisherAPIImplTest {
         final Contentlet contentlet = new ContentletDataGen(contentType)
                 .host(host)
                 .languageId(languageToContentlet.getId())
+                .variant(variant)
                 .nextPersisted();
 
         final MultiTree multiTree = new MultiTreeDataGen()

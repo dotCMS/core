@@ -21,6 +21,7 @@ export class AIContentPromptComponent {
 
     @ViewChild('input') private input: ElementRef;
     @Output() formSubmission = new EventEmitter<boolean>();
+    @Output() aiResponse = new EventEmitter<string>();
 
     form: FormGroup<AIContentForm> = new FormGroup<AIContentForm>({
         textPrompt: new FormControl('', Validators.required)
@@ -36,9 +37,10 @@ export class AIContentPromptComponent {
             this.aiContentService
                 .getIAContent(textPrompt)
                 .pipe(catchError(() => of(null)))
-                .subscribe(() => {
+                .subscribe((response) => {
                     this.isFormSubmitting = false;
                     this.formSubmission.emit(true);
+                    this.aiResponse.emit(response);
                 });
         }
     }

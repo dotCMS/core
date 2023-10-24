@@ -1,16 +1,25 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
+import { NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
+import { ChangeDetectionStrategy, Component, HostBinding, Input, inject } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
-
-import { InputTextModule } from 'primeng/inputtext';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
+import { FIELD_TYPES } from './utils';
+
+import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields.module';
+
 @Component({
     selector: 'dot-edit-content-field',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, InputTextModule, DotFieldRequiredDirective],
+    imports: [
+        NgSwitch,
+        NgSwitchCase,
+        NgIf,
+        ReactiveFormsModule,
+        DotEditContentFieldsModule,
+        DotFieldRequiredDirective
+    ],
     templateUrl: './dot-edit-content-field.component.html',
     styleUrls: ['./dot-edit-content-field.component.scss'],
     viewProviders: [
@@ -22,5 +31,7 @@ import { DotFieldRequiredDirective } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentFieldComponent {
+    @HostBinding('class') class = 'field';
     @Input() field!: DotCMSContentTypeField;
+    readonly fieldTypes = FIELD_TYPES;
 }

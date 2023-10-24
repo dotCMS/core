@@ -11,6 +11,7 @@ import {
     SEO_MEDIA_TYPES,
     SEO_LIMITS
 } from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
+import { DotSeoMetaTagsUtilService } from '../../../content/services/html/dot-seo-meta-tags-util.service';
 import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-meta-tags.service';
 
 describe('DotResultsSeoToolComponent', () => {
@@ -19,10 +20,12 @@ describe('DotResultsSeoToolComponent', () => {
         component: DotResultsSeoToolComponent,
         providers: [
             DotSeoMetaTagsService,
+            DotSeoMetaTagsUtilService,
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
-                    'seo.rules.favicon.not.found': 'FavIcon not found!',
+                    'seo.rules.favicon.not.found':
+                        'Favicon not found, or image link in Favicon not valid!',
                     'seo.rules.favicon.more.one.found': 'More than 1 Favicon found!',
                     'seo.rules.favicon.found': 'Favicon found!',
                     'seo.rules.description.found.empty': 'Meta Description found, but is empty!',
