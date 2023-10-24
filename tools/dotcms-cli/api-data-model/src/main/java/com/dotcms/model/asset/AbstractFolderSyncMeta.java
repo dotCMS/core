@@ -9,6 +9,18 @@ import org.immutables.value.Value.Default;
 @Value.Immutable
 @JsonDeserialize(as = FolderSyncMeta.class)
 public interface AbstractFolderSyncMeta {
+
+    String UNKNOWN = "unknown";
+
+    @Value.Default
+    default boolean explicitGlobInclude() { return false;}
+
+    @Value.Default
+    default boolean explicitGlobExclude() { return false;}
+
+    @Value.Default
+    default boolean implicitGlobInclude() { return true;}
+
     @Default
     default boolean markedForPush(){return false;}
 
@@ -16,8 +28,8 @@ public interface AbstractFolderSyncMeta {
     default boolean markedForDelete(){return false;}
 
     @Default
-    default String localStatus(){return "unknown";}
+    default String localStatus(){return UNKNOWN;}
 
     @Default
-    default String localLanguage(){return "unknown";}
+    default String localLanguage(){return UNKNOWN;}
 }

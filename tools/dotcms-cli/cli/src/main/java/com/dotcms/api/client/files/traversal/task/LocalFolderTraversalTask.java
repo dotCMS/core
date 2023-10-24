@@ -9,8 +9,7 @@ import com.dotcms.api.client.files.traversal.TraverseParams;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.HiddenFileFilter;
-import com.dotcms.common.AssetsUtils;
-import com.dotcms.common.AssetsUtils.LocalPathStructure;
+import com.dotcms.common.LocalPathStructure;
 import com.dotcms.model.asset.AbstractAssetSyncMeta.PushType;
 import com.dotcms.model.asset.AssetSyncMeta;
 import com.dotcms.model.asset.AssetVersionsView;
@@ -121,7 +120,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
      * @return The TreeNode containing the synchronization information for the folder or file
      */
     private TreeNode gatherSyncInformation(File workspaceFile, File folderOrFile,
-                                           AssetsUtils.LocalPathStructure localPathStructure) {
+                                           LocalPathStructure localPathStructure) {
 
         var live = statusToBoolean(localPathStructure.status());
         var lang = localPathStructure.language();
@@ -486,7 +485,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
      * @param localPathStructure the local path structure
      * @return The FolderView representing the retrieved folder data, or null if it doesn't exist
      */
-    private FolderView retrieveFolder(AssetsUtils.LocalPathStructure localPathStructure) {
+    private FolderView retrieveFolder(LocalPathStructure localPathStructure) {
         return retrieveFolder(localPathStructure.site(), localPathStructure.folderPath());
     }
 
@@ -638,7 +637,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
      * @param localPathStructure the local path structure
      * @return The FolderView.Builder representing the folder view
      */
-    private FolderView.Builder folderViewFromFile(AssetsUtils.LocalPathStructure localPathStructure) {
+    private FolderView.Builder folderViewFromFile(LocalPathStructure localPathStructure) {
 
         return FolderView.builder()
 
@@ -670,7 +669,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
      * @param localPathStructure the local path structure
      * @return The AssetView.Builder representing the asset view
      */
-    private AssetView.Builder assetViewFromFile(AssetsUtils.LocalPathStructure localPathStructure) {
+    private AssetView.Builder assetViewFromFile(LocalPathStructure localPathStructure) {
 
         var metadata = new HashMap<String, Object>();
         metadata.put(PATH_META_KEY.key(), localPathStructure.folderPath());

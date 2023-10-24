@@ -13,7 +13,7 @@ import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
-import com.dotcms.common.AssetsUtils.LocalPathStructure;
+import com.dotcms.common.LocalPathStructure;
 import io.quarkus.arc.DefaultBean;
 import java.io.File;
 import java.util.ArrayList;

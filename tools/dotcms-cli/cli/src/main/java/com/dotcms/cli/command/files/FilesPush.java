@@ -14,7 +14,7 @@ import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.AssetsUtils;
-import com.dotcms.common.AssetsUtils.LocalPathStructure;
+import com.dotcms.common.LocalPathStructure;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;

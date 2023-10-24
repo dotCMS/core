@@ -8,17 +8,16 @@ import com.dotcms.api.client.files.traversal.exception.SiteCreationException;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
-import com.dotcms.common.AssetsUtils;
+import com.dotcms.common.LocalPathStructure;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
-import org.jboss.logging.Logger;
-
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.WebApplicationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.RecursiveTask;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.WebApplicationException;
+import org.jboss.logging.Logger;
 
 /**
  * Represents a task that pushes the contents of a tree node to a remote server.
@@ -29,7 +28,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
 
     private final String workspacePath;
 
-    private final AssetsUtils.LocalPathStructure localPathStructure;
+    private final LocalPathStructure localPathStructure;
 
     private final TreeNode rootNode;
 
@@ -54,7 +53,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
      * @param progressBar        the console progress bar to track and display the push progress
      */
     public PushTreeNodeTask(String workspacePath,
-                            AssetsUtils.LocalPathStructure localPathStructure,
+                            LocalPathStructure localPathStructure,
                             TreeNode rootNode,
                             final boolean failFast,
                             final boolean isRetry,

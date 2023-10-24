@@ -1,10 +1,7 @@
 package com.dotcms.common;
 
 import static com.dotcms.common.LocationUtils.encodePath;
-import static com.dotcms.model.config.Workspace.*;
-
-
-import com.dotcms.model.asset.AbstractAssetSyncMeta;
+import static com.dotcms.model.config.Workspace.FILES_NAMESPACE;
 import com.dotcms.model.asset.AbstractAssetSyncMeta.PushType;
 import com.dotcms.model.asset.AssetSyncMeta;
 import com.dotcms.model.asset.AssetView;
@@ -156,8 +153,20 @@ public class AssetsUtils {
             throw new IllegalArgumentException(error, e);
         }
 
+        final AbstractRemotePathStructure.Builder builder = AbstractRemotePathStructure.builder();
+
         // Represents the site and folder path components of the parsed path.
-        return new RemotePathStructure(site, dotCMSPath, isFolder);
+        if(isFolder){
+            return builder
+                    .site(site)
+                    .folder(dotCMSPath)
+                    .build();
+        } else {
+            return builder
+                    .site(site)
+                    .asset(dotCMSPath)
+                    .build();
+        }
     }
 
     /**
@@ -340,9 +349,9 @@ public class AssetsUtils {
         var workspacePath = workspace.toPath();
         var isDirectory = source.isDirectory();
 
-        var pathStructureBuilder = new LocalPathStructure.Builder();
-        pathStructureBuilder.withFilePath(sourcePath);
-        pathStructureBuilder.withIsDirectory(source.isDirectory());
+        var pathStructureBuilder = LocalPathStructure.builder();
+        pathStructureBuilder.filePath(sourcePath);
+        pathStructureBuilder.isDirectory(source.isDirectory());
 
         var workspaceCount = workspacePath.getNameCount();
         var sourceCount = sourcePath.getNameCount();
@@ -364,26 +373,26 @@ public class AssetsUtils {
             if (!Strings.isNullOrEmpty(statusPart.getFileName().toString())) {
 
                 statusToBoolean(statusPart.getFileName().toString());
-                pathStructureBuilder.withStatus(statusPart.getFileName().toString());
+                pathStructureBuilder.status(statusPart.getFileName().toString());
 
                 // Finding the language section
                 var languagePart = sourcePath.getName(++workspaceCount);
                 if (!Strings.isNullOrEmpty(languagePart.getFileName().toString())) {
 
-                    pathStructureBuilder.withLanguage(languagePart.getFileName().toString());
+                    pathStructureBuilder.language(languagePart.getFileName().toString());
 
                     // Finding the site section
                     var site = sourcePath.getName(++workspaceCount);
                     if (!Strings.isNullOrEmpty(site.getFileName().toString())) {
 
-                        pathStructureBuilder.withSite(site.getFileName().toString());
+                        pathStructureBuilder.site(site.getFileName().toString());
 
                         var folderPath = File.separator;
                         // Now calculate the folder path
                         for (var i = workspaceCount + 1; i < sourcePath.getNameCount(); i++) {
 
                             if (!isDirectory && i == sourcePath.getNameCount() - 1) {
-                                pathStructureBuilder.withFileName(source.getName());
+                                pathStructureBuilder.fileName(source.getName());
                                 continue;
                             }
 
@@ -391,227 +400,13 @@ public class AssetsUtils {
                                     concat(sourcePath.getName(i).getFileName().toString()).
                                     concat(File.separator);
                         }
-                        pathStructureBuilder.withFolderPath(folderPath);
+                        pathStructureBuilder.folderPath(folderPath);
                     }
                 }
             }
         }
 
         return pathStructureBuilder.build();
-    }
-
-    /**
-     * Represents the site, folder path and file name components of the parsed remote path.
-     */
-    public static class RemotePathStructure {
-
-        /**
-         * The site component of the parsed path.
-         */
-        private final String site;
-
-        /**
-         * The folder path component of the parsed path.
-         */
-        private final Path folderPath;
-
-        /**
-         * The file name component of the parsed path.
-         */
-        private final String fileName;
-
-        /**
-         * Constructs an RemotePathStructure object with the given site and folder path.
-         *
-         * @param site the site component
-         * @param path the folder path component
-         */
-        public RemotePathStructure(String site, Path path, boolean isFolder) {
-
-            this.site = site;
-
-            if (isFolder) {
-                this.folderPath = path;
-                this.fileName = null;
-            } else {
-                this.folderPath = path.getParent();
-                this.fileName = path.getFileName().toString();
-            }
-        }
-
-        public String site() {
-            return site;
-        }
-
-        public Path folderPath() {
-            return folderPath;
-        }
-
-        public String fileName() {
-            return fileName;
-        }
-
-        public String folderName() {
-
-            int nameCount = folderPath.getNameCount();
-
-            String folderName = "/";
-
-            if (nameCount > 1) {
-                folderName = folderPath.subpath(nameCount - 1, nameCount).toString();
-            } else if (nameCount == 1) {
-                folderName = folderPath.subpath(0, nameCount).toString();
-            }
-
-            return folderName;
-        }
-
-    }
-
-    /**
-     * Represents the structure of a local file or directory path within the workspace.
-     */
-    public static class LocalPathStructure {
-
-        private boolean isDirectory;
-        private String status;
-        private String language;
-        private String site;
-        private String fileName;
-        private String folderPath;
-        private Path filePath;
-        private boolean languageExists;
-
-        private LocalPathStructure(Builder builder) {
-            this.isDirectory = builder.isDirectory;
-            this.status = builder.status;
-            this.language = builder.language;
-            this.site = builder.site;
-            this.fileName = builder.fileName;
-            this.folderPath = builder.folderPath;
-            this.filePath = builder.filePath;
-            this.languageExists = true;
-        }
-
-        public boolean isDirectory() {
-            return isDirectory;
-        }
-
-        public String status() {
-            return status;
-        }
-
-        public String language() {
-            return language;
-        }
-
-        public String site() {
-            return site;
-        }
-
-        public String fileName() {
-            return fileName;
-        }
-
-        public String folderPath() {
-            return folderPath;
-        }
-
-        public Path filePath() {
-            return filePath;
-        }
-
-        public String folderName() {
-
-            int nameCount = filePath().getNameCount();
-
-            String folderName = File.separator;
-
-            if (nameCount > 1) {
-                folderName = filePath().subpath(nameCount - 1, nameCount).toString();
-            } else if (nameCount == 1) {
-                folderName = filePath().subpath(0, nameCount).toString();
-            }
-
-            if (folderName.equalsIgnoreCase(this.site())) {
-                folderName = File.separator;
-            }
-
-            return folderName;
-        }
-
-        public void setLanguageExists(boolean languageExists) {
-            this.languageExists = languageExists;
-        }
-
-        public boolean languageExists() {
-            return this.languageExists;
-        }
-
-        @Override
-        public String toString() {
-            return "LocalPathStructure{" +
-                    "status='" + status + '\'' +
-                    ", language='" + language + '\'' +
-                    ", site='" + site + '\'' +
-                    ", fileName='" + fileName + '\'' +
-                    ", folderPath='" + folderPath + '\'' +
-                    ", filePath='" + filePath + '\'' +
-                    ", isDirectory='" + isDirectory + '\'' +
-                    '}';
-        }
-
-        public static class Builder {
-            private boolean isDirectory;
-            private String status;
-            private String language;
-            private String site;
-            private String fileName;
-            private String folderPath;
-            private Path filePath;
-
-            public Builder() {
-            }
-
-            public Builder withIsDirectory(boolean isDirectory) {
-                this.isDirectory = isDirectory;
-                return this;
-            }
-
-            public Builder withStatus(String status) {
-                this.status = status;
-                return this;
-            }
-
-            public Builder withLanguage(String language) {
-                this.language = language;
-                return this;
-            }
-
-            public Builder withSite(String site) {
-                this.site = site;
-                return this;
-            }
-
-            public Builder withFileName(String fileName) {
-                this.fileName = fileName;
-                return this;
-            }
-
-            public Builder withFolderPath(String folderPath) {
-                this.folderPath = folderPath;
-                return this;
-            }
-
-            public Builder withFilePath(Path filePath) {
-                this.filePath = filePath;
-                return this;
-            }
-
-            public LocalPathStructure build() {
-                return new LocalPathStructure(this);
-            }
-        }
     }
 
 
