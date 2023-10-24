@@ -4,9 +4,6 @@
 package com.dotmarketing.business;
 
 import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.Logger;
 
 import java.util.*;
@@ -16,7 +13,6 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotmarketing.db.DotRunnableFlusherThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
@@ -24,8 +20,10 @@ import com.dotmarketing.util.WebKeys;
 import com.google.common.base.Splitter;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
-import io.vavr.API;
 import io.vavr.control.Try;
+
+import static com.dotmarketing.business.PermissionAPI.PermissionableType.CONTENTLETS;
+import static com.dotmarketing.business.PermissionAPI.PermissionableType.HTMLPAGES;
 
 /**
  * @author jasontesser
@@ -169,32 +167,15 @@ public class LayoutAPIImpl implements LayoutAPI {
 		return layouts;
 	}
 
-	//Determine if the user can edit the page based on the given permissions
-	private boolean doesUserCanEditPage(Permission perm){
-		return (perm.getType().equals(IHTMLPage.class.getCanonicalName()) || perm.getType().equals(Contentlet.class.getCanonicalName())) &&
-				(perm.getPermission() == PermissionAPI.PERMISSION_EDIT || perm.getPermission() == PermissionAPI.PERMISSION_EDIT + PermissionAPI.PERMISSION_READ );
-	}
 
-	/* this method is used to check if the user has access to edit the page portlet
-	* all the users should have access to Edit Page, regardless of the assigned portlets.
-	*/
-	private boolean editPagePortletAccess(final User user) throws DotDataException {
-		final RoleAPI roleAPI = APILocator.getRoleAPI();
-		//verify the roles of the user
-		final List<Role> foundRoles = roleAPI.loadRolesForUser( user.getUserId(), false );
+	/* This method is used to check if the user has access to edit the page portlet.
+	 * All the users should have access to Edit Page, regardless of the assigned portlets.
+	 * To determine if the user has access to edit page, we check if the user can edit HTMLPAGES or CONTENTLETS
+	 */
+	private boolean doesUserHaveAccessEditPagePortlet(User user) throws DotDataException {
 		final PermissionAPI permAPI = APILocator.getPermissionAPI();
-
-		for (final Role role: foundRoles){
-			//get the permissions for the role
-			final List<Permission> perms = permAPI.getPermissionsByRole(role, true, true);
-			//determine if the user can edit the page
-			for(final Permission perm : perms){
-				if(doesUserCanEditPage(perm)){
-					return true;
-				}
-			}
-		}
-		return APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole());
+		return permAPI.doesUserHavePermissions(HTMLPAGES, PermissionAPI.PERMISSION_EDIT, user) ||
+				permAPI.doesUserHavePermissions(CONTENTLETS, PermissionAPI.PERMISSION_EDIT, user);
 	}
 
 	@Override
@@ -205,8 +186,8 @@ public class LayoutAPIImpl implements LayoutAPI {
 		if(loadLayoutsForUser(user).stream(). anyMatch(layout -> layout.getPortletIds().contains(portletId))){
 			return true;
 		}
-		if("edit-page".equals(portletId)){
-			return editPagePortletAccess(user);
+		if("edit-page".equals(portletId) && doesUserHaveAccessEditPagePortlet(user)){
+			return true;
 		}
 		return APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole());
 	}
