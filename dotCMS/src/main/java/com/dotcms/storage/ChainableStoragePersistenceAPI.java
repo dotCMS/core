@@ -35,7 +35,7 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
     private final ObjectWriterDelegate defaultWriterDelegate;
     private final Chainable404StorageCache cache;
 
-    private final static String SUBMITTER_NAME = Config.getStringProperty("COMPOSITE_STORAGE_SUBMITTER_NAME", "SubmitterCompositeStoragePersistenceAPI");
+    private static final String SUBMITTER_NAME = Config.getStringProperty("COMPOSITE_STORAGE_SUBMITTER_NAME", "SubmitterCompositeStoragePersistenceAPI");
 
     public ChainableStoragePersistenceAPI(final List<StoragePersistenceAPI> storagePersistenceAPIList) {
         this(new JsonWriterDelegate(), storagePersistenceAPIList, CacheLocator.getChainable4040StorageCache());

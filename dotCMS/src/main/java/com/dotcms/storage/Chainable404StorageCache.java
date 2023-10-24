@@ -29,7 +29,7 @@ public class Chainable404StorageCache implements Cachable {
     }
 
     // presents a vanity that does not exist on the cache
-    public static Serializable NOT_FOUND404 = "CHAINABLE_404_STORAGE_NOT_FOUND";
+    public static final Serializable NOT_FOUND_404 = "CHAINABLE_404_STORAGE_NOT_FOUND";
 
     @Override
     public String getPrimaryGroup() {
@@ -57,7 +57,7 @@ public class Chainable404StorageCache implements Cachable {
         if (bucket == null || null == path) {
             return;
         }
-        cache.put(key(bucket, path), NOT_FOUND404, this.getPrimaryGroup());
+        cache.put(key(bucket, path), NOT_FOUND_404, this.getPrimaryGroup());
     }
 
     /**
@@ -74,7 +74,7 @@ public class Chainable404StorageCache implements Cachable {
 
         final Object cacheResult = cache.getNoThrow(key(bucket, path), this.getPrimaryGroup());
 
-        return NOT_FOUND404.equals(cacheResult);
+        return NOT_FOUND_404.equals(cacheResult);
     }
 
     /**

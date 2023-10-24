@@ -113,18 +113,19 @@ public class MemoryMockTestStoragePersistanceAPIImpl implements StoragePersisten
 
     @Override
     public File pullFile(final String groupName, final String path) {
-
-        return this.existsGroup(groupName)?
-                storageMapByGroup.get(groupName).get(path) instanceof File?
-                        (File) storageMapByGroup.get(groupName).get(path): null: null;
+        if (this.existsGroup(groupName)) {
+            return storageMapByGroup.get(groupName).get(path) instanceof File ?
+                    (File) storageMapByGroup.get(groupName).get(path) : null;
+        }
+        return null;
     }
 
     @Override
     public Object pullObject(final String groupName, final String path, final ObjectReaderDelegate readerDelegate) {
-
-        return this.existsGroup(groupName)?
-                storageMapByGroup.get(groupName).containsKey(path)?
-                        storageMapByGroup.get(groupName).get(path): null: null;
+        if (this.existsGroup(groupName)) {
+            return storageMapByGroup.get(groupName).getOrDefault(path, null);
+        }
+        return null;
     }
 
     @Override

@@ -60,11 +60,12 @@ public class StoragePersistenceAPITest {
     public void Test_Get_Default_Provider() {
         final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
         try {
-        //if there's a property already set we need to clean it so we can test that by default we will get FileSystem
+            // If there's a property already set, we need to clean it up so that we can test that,
+            // by default, we will get Chainable Provider which has the File System Provider
             Config.setProperty(DEFAULT_STORAGE_TYPE, null);
             final StoragePersistenceProvider persistenceProvider = INSTANCE.get();
-            assertTrue(persistenceProvider
-                    .getStorage() instanceof FileSystemStoragePersistenceAPIImpl);
+            assertTrue("Persistence Provider '" + persistenceProvider.getStorage().getClass() + "' is not the expected one", persistenceProvider
+                    .getStorage() instanceof ChainableStoragePersistenceAPI);
         }finally {
             Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
         }

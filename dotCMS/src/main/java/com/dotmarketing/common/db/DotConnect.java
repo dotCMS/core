@@ -2,6 +2,7 @@ package com.dotmarketing.common.db;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -71,6 +72,8 @@ public class DotConnect {
     final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
             .getDefaultObjectMapper();
 
+    private static final String LOAD_INT_FAILED_ERROR_MSG = "Failed to load the Integer value on column '%s': %s";
+
     public DotConnect() {
         Logger.debug(this, "------------ DotConnect() --------------------");
     }
@@ -110,8 +113,8 @@ public class DotConnect {
         final String lowerColumnName = columnName.toLowerCase();
         try {
             return Integer.parseInt(String.valueOf(loadObjectResults(conn).get(0).get(lowerColumnName)));
-        } catch (Exception e) {
-            Logger.debug(this, "loadInt: " + e);
+        } catch (final Exception e) {
+            Logger.debug(this, String.format(LOAD_INT_FAILED_ERROR_MSG, columnName, ExceptionUtil.getErrorMessage(e)));
             throw new DotDataException(e.toString(), e);
         }
     }
@@ -129,8 +132,8 @@ public class DotConnect {
         x = x.toLowerCase();
         try {
             return Integer.parseInt(String.valueOf(loadObjectResults().get(0).get(x)));
-        } catch (Exception e) {
-            Logger.debug(this, "loadInt: " + e);
+        } catch (final Exception e) {
+            Logger.debug(this, String.format(LOAD_INT_FAILED_ERROR_MSG, x, ExceptionUtil.getErrorMessage(e)));
             throw new DotDataException(e.toString(), e);
         }
     }
@@ -139,8 +142,8 @@ public class DotConnect {
         x = x.toLowerCase();
         try {
             return Long.parseLong(String.valueOf(loadObjectResults().get(0).get(x)));
-        } catch (Exception e) {
-            Logger.debug(this, "loadInt: " + e);
+        } catch (final Exception e) {
+            Logger.debug(this, "loadLong: " + e);
             throw new DotDataException(e.toString(), e);
         }
     }

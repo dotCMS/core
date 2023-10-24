@@ -3,7 +3,6 @@ package com.dotcms.storage;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableMap;
 
 import java.io.File;
 import java.util.Arrays;
@@ -27,7 +26,7 @@ public final class StoragePersistenceProvider {
 
     private final Map<StorageType, StoragePersistenceAPI> storagePersistenceInstances = new ConcurrentHashMap<>();
     
-    private final Map<StorageType, Supplier<StoragePersistenceAPI>> initializers = new ConcurrentHashMap<>(ImmutableMap.of(
+    private final Map<StorageType, Supplier<StoragePersistenceAPI>> initializers = new ConcurrentHashMap<>(Map.of(
             StorageType.FILE_SYSTEM, () -> {
                 final FileSystemStoragePersistenceAPIImpl fileSystemStorage = new FileSystemStoragePersistenceAPIImpl();
                 final String metadataGroupName = Config

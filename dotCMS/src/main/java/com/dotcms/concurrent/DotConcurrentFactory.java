@@ -550,7 +550,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     public <T> CompletableFuture<T> toCompletableAnyFuture(final Future<T>... futures) {
 
         final CompletableFuture<T>[] completableFutures = ConversionUtils.INSTANCE.convertToArray(
-                future -> toCompletableFuture(future), CompletableFuture.class, futures);
+                this::toCompletableFuture, CompletableFuture.class, futures);
 
         return (CompletableFuture<T>) CompletableFuture.anyOf(completableFutures);
     }
@@ -570,13 +570,11 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
                             awaitFutureIsDoneInForkJoinPool(future);
                         }
                         return future.get();
-                    } catch (ExecutionException e) {
-
-                        throw new RuntimeException(e);
-                    } catch (InterruptedException e) {
-
+                    } catch (final ExecutionException e) {
+                        throw new DotRuntimeException(e);
+                    } catch (final InterruptedException e) {
                         Thread.currentThread().interrupt();
-                        throw new RuntimeException(e);
+                        throw new DotRuntimeException(e);
                     }
                 });
     }
@@ -587,7 +585,11 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         T result;
         try {
             result = future.get();
-        } catch (Throwable ex) {
+        } catch (final InterruptedException | ExecutionException ex) {
+            Thread.currentThread().interrupt();
+            completableFuture.completeExceptionally(ex);
+            return completableFuture;
+        } catch (final Throwable ex) {
             completableFuture.completeExceptionally(ex);
             return completableFuture;
         }
@@ -601,8 +603,8 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
             @Override public boolean block() throws InterruptedException {
                 try {
                     future.get();
-                } catch (ExecutionException e) {
-                    throw new RuntimeException(e);
+                } catch (final ExecutionException e) {
+                    throw new DotRuntimeException(e);
                 }
                 return true;
             }
