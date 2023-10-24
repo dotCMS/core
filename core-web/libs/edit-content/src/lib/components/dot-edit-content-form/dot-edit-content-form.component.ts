@@ -46,7 +46,8 @@ export class DotEditContentFormComponent implements OnInit {
 
     /**
      * Initializes the form group with form controls for each field in the `formData` array.
-     * @returns void
+     *
+     * @memberof DotEditContentFormComponent
      */
     initilizeForm() {
         this.form = this.fb.group({});
@@ -62,10 +63,13 @@ export class DotEditContentFormComponent implements OnInit {
 
     /**
      * Initializes a form control for a given DotCMSContentTypeField.
-     * @param field - The DotCMSContentTypeField to initialize the form control for.
-     * @returns The initialized form control.
+     *
+     * @private
+     * @param {DotCMSContentTypeField} field
+     * @return {*}
+     * @memberof DotEditContentFormComponent
      */
-    initializeFormControl(field: DotCMSContentTypeField) {
+    private initializeFormControl(field: DotCMSContentTypeField) {
         const validators = [];
         if (field.required) validators.push(Validators.required);
         if (field.regexCheck) {

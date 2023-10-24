@@ -1,12 +1,14 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
+import { Validators } from '@angular/forms';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
 import { EditContentFormData } from '../../models/dot-edit-content-form.interface';
-import { FIELDS_MOCK, FIELD_MOCK, LAYOUT_MOCK } from '../../utils/mocks';
+import { JUST_FIELDS_MOCKS, LAYOUT_MOCK } from '../../utils/mocks';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 
 export const VALUES_MOCK = {
@@ -32,43 +34,70 @@ describe('DotFormComponent', () => {
         ]
     });
 
-    beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                formData: CONTENT_FORM_DATA_MOCK
-            }
+    describe('with data', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                props: {
+                    formData: CONTENT_FORM_DATA_MOCK
+                }
+            });
+        });
+
+        it('should initialize the form controls', () => {
+            expect(spectator.component.form.value).toEqual({
+                name1: 'Placeholder',
+                text2: undefined,
+                text3: undefined
+            });
+        });
+
+        it('should initialize the form validators', () => {
+            expect(
+                spectator.component.form.controls['name1'].hasValidator(Validators.required)
+            ).toBe(true);
+            expect(
+                spectator.component.form.controls['text2'].hasValidator(Validators.required)
+            ).toBe(true);
+            // const regex = new RegExp('^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+.)+[a-zA-Z]{2,4})$')
+            // expect(spectator.component.form.controls['text2'].hasValidator(Validators.pattern(regex))).toBe(true);
+            expect(
+                spectator.component.form.controls['text3'].hasValidator(Validators.required)
+            ).toBe(false);
+        });
+
+        it('should have 1 row, 2 columns and 3 fields', () => {
+            expect(spectator.queryAll(byTestId('row'))).toHaveLength(1);
+            expect(spectator.queryAll(byTestId('column'))).toHaveLength(2);
+            expect(spectator.queryAll(byTestId('field'))).toHaveLength(3);
+        });
+
+        it('should pass field to attr to dot-edit-content-field', () => {
+            const fields = spectator.queryAll(DotEditContentFieldComponent);
+            JUST_FIELDS_MOCKS.forEach((field, index) => {
+                expect(fields[index].field).toEqual(field);
+            });
+        });
+
+        it('should emit the form value through the `formSubmit` event', () => {
+            jest.spyOn(spectator.component.formSubmit, 'emit');
+            const button = spectator.query(byTestId('button-save'));
+            spectator.click(button);
+
+            expect(spectator.component.formSubmit.emit).toHaveBeenCalledWith(
+                spectator.component.form.value
+            );
         });
     });
 
-    it('should initialize the form group with form controls for each field in the `formData` array', () => {
-        expect(spectator.component.form.controls['name1']).toBeDefined();
-        expect(spectator.component.form.controls['text2']).toBeDefined();
-    });
+    describe('no data', () => {
+        beforeEach(() => {
+            spectator = createComponent({});
+        });
 
-    it('should initialize a form control for a given DotCMSContentTypeField', () => {
-        const formControl = spectator.component.initializeFormControl(FIELD_MOCK);
-
-        expect(formControl).toBeDefined();
-        expect(formControl.validator).toBeDefined();
-    });
-
-    it('should have a default value if is defined', () => {
-        const formControl = spectator.component.initializeFormControl(FIELDS_MOCK[1]);
-        expect(formControl.value).toEqual(FIELDS_MOCK[1].defaultValue);
-    });
-
-    it('should render a dot-edit-content-field and pass the field', () => {
-        expect(spectator.query(DotEditContentFieldComponent)).toBeDefined();
-        expect(spectator.query(DotEditContentFieldComponent).field).toBeTruthy();
-    });
-
-    it('should emit the form value through the `formSubmit` event', () => {
-        jest.spyOn(spectator.component.formSubmit, 'emit');
-        const button = spectator.query(byTestId('button-save'));
-        spectator.click(button);
-
-        expect(spectator.component.formSubmit.emit).toHaveBeenCalledWith(
-            spectator.component.form.value
-        );
+        it('should have form undefined', () => {
+            jest.spyOn(spectator.component, 'initilizeForm');
+            expect(spectator.component.form).toEqual(undefined);
+            expect(spectator.component.initilizeForm).not.toHaveBeenCalled();
+        });
     });
 });

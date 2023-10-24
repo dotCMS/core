@@ -390,7 +390,9 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
                         searchable: false,
                         sortOrder: 3,
                         unique: false,
-                        variable: 'text2'
+                        variable: 'text2',
+                        regexCheck:
+                            '^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+.)+[a-zA-Z]{2,4})$'
                     }
                 ]
             },
@@ -444,6 +446,20 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
         ]
     }
 ];
+
+export const JUST_FIELDS_MOCKS = getAllFields(LAYOUT_MOCK);
+
+function getAllFields(data: DotCMSContentTypeLayoutRow[]) {
+    let fields = [];
+
+    data.forEach((row) => {
+        row.columns.forEach((column) => {
+            fields = [...fields, ...column.fields];
+        });
+    });
+
+    return fields;
+}
 
 export const CONTENT_TYPE_MOCK: DotCMSContentType = {
     baseType: 'CONTENT',
