@@ -1,26 +1,5 @@
 package com.dotmarketing.common.db;
 
-import java.math.BigDecimal;
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-import org.apache.commons.collections.map.LRUMap;
-import org.apache.commons.lang.StringUtils;
-import org.postgresql.util.PGobject;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -36,6 +15,27 @@ import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import io.vavr.control.Try;
+import org.apache.commons.collections.map.LRUMap;
+import org.apache.commons.lang.StringUtils;
+import org.postgresql.util.PGobject;
+
+import java.math.BigDecimal;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * Description of the Class
@@ -95,6 +95,36 @@ public class DotConnect {
         }
     }
 
+    /**
+     * Loads the value of the selected column in the SQL query and parses it into an {@code int}.
+     *
+     * @param columnName The name of the column containing the integer value.
+     * @param conn       The current {@link Connection} object.
+     *
+     * @return The value of the column as an {@code int}.
+     *
+     * @throws DotDataException An error occurred when retrieving the column's value.
+     */
+    public int loadInt(final String columnName, final Connection conn) throws DotDataException {
+
+        final String lowerColumnName = columnName.toLowerCase();
+        try {
+            return Integer.parseInt(String.valueOf(loadObjectResults(conn).get(0).get(lowerColumnName)));
+        } catch (Exception e) {
+            Logger.debug(this, "loadInt: " + e);
+            throw new DotDataException(e.toString(), e);
+        }
+    }
+
+    /**
+     * Loads the value of the selected column in the SQL query and parses it into an {@code int}.
+     *
+     * @param x The name of the column containing the integer value.
+     *
+     * @return The value of the column as an {@code int}.
+     *
+     * @throws DotDataException An error occurred when retrieving the column's value.
+     */
     public int loadInt(String x) throws DotDataException {
         x = x.toLowerCase();
         try {

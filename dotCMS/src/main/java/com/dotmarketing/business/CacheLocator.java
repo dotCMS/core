@@ -26,6 +26,7 @@ import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheImpl;
 import com.dotcms.security.apps.AppsCache;
 import com.dotcms.security.apps.AppsCacheImpl;
+import com.dotcms.storage.Chainable404StorageCache;
 import com.dotcms.test.TestUtil;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
 import com.dotcms.vanityurl.cache.VanityUrlCacheImpl;
@@ -89,8 +90,6 @@ import com.dotmarketing.util.WebKeys;
  * @since 1.6
  */
 public class CacheLocator extends Locator<CacheIndex>{
-
-
 
 	private static CacheLocator instance;
 	private static DotCacheAdministrator adminCache;
@@ -299,6 +298,15 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (GraphQLCache) getInstance(CacheIndex.GraphQLCache);
 	}
     
+	/**
+	 * Returns the current instance of the {@link Chainable404StorageCache} class.
+	 *
+	 * @return The {@link Chainable404StorageCache} instance.
+	 */
+	public static Chainable404StorageCache getChainable4040StorageCache() {
+		return (Chainable404StorageCache) getInstance(CacheIndex.Chainable4040StorageCache);
+	}
+
     /**
      * 
      * @return
@@ -459,7 +467,8 @@ enum CacheIndex
 	Metadata("Metadata"),
 	GraphQLCache("GraphQLCache"),
 	VariantCache("VariantCache"),
-	ExperimentsCache("ExperimentsCache");
+	ExperimentsCache("ExperimentsCache"),
+	Chainable4040StorageCache("Chainable4040StorageCache");
 
 	Cachable create() {
 		switch(this) {
@@ -513,6 +522,7 @@ enum CacheIndex
 			case GraphQLCache: return new GraphQLCache();
 			case VariantCache: return new VariantCacheImpl();
 			case ExperimentsCache: return new ExperimentsCacheImpl();
+			case Chainable4040StorageCache: return new Chainable404StorageCache();
 
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
