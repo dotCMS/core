@@ -19,11 +19,10 @@ public interface StoragePersistenceAPI {
 
     String HASH_OBJECT = "hashObject";
     String HASH_REF = "hashRef";
-
     String STORAGE_POOL = "StoragePool";
 
     /**
-     * Returns true if exists the group
+     * Returns true if the group exists on all storages
      * @param groupName {@link String} group name
      * @return boolean
      */
