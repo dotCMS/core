@@ -122,15 +122,11 @@ public final class StoragePersistenceProvider {
     public void addStorageInitializer(final StorageType storageType, final Supplier<StoragePersistenceAPI> initializer){
         initializers.put(storageType, initializer);
     }
+    
     /**
-<<<<<<< HEAD
      * Returns the default Storage Type set in the current dotCMS instance.
      *
      * @return The specified {@link StorageType}.
-=======
-     * default storage type
-     * @return
->>>>>>> 024c9def13 (feat(core): Multi Metadata Provider/Chainable Metadata Provider #24307)
      */
     public static StorageType getStorageType(){
         final String storageType = Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.DEFAULT_CHAIN.name());
