@@ -1,10 +1,11 @@
-<form class="p-fluid edit-content-form" *ngIf="form" [formGroup]="form">
-    <ng-container *ngFor="let row of formData">
-        <div class="row">
-            <div class="column" *ngFor="let column of row.columns">
+<form class="p-fluid" *ngIf="form" [formGroup]="form">
+    <ng-container *ngFor="let row of formData.layout">
+        <div class="row" data-testId="row">
+            <div class="column" *ngFor="let column of row.columns" data-testId="column">
                 <dot-edit-content-field
                     *ngFor="let field of column.fields"
-                    [field]="field"></dot-edit-content-field>
+                    [field]="field"
+                    data-testId="field" />
             </div>
         </div>
     </ng-container>
@@ -12,5 +13,5 @@
 
 <aside>
     <p-button [label]="'Save' | dm" (click)="saveContenlet()" data-testId="button-save"></p-button>
-    <pre><code>{{form.value | json}}</code></pre>
+    <pre><code>{{form?.value | json}}</code></pre>
 </aside>
