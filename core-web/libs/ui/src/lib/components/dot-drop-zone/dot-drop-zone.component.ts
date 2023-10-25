@@ -178,7 +178,7 @@ export class DotDropZoneComponent {
         const multipleFilesDropped = files.length > 1;
         const fileTypeMismatch = !this.typeMatch(file);
         const maxFileSizeExceeded = this.isFileTooLong(file);
-        const valid = !fileTypeMismatch && !maxFileSizeExceeded && !multipleFilesDropped;
+        const valid = fileTypeMismatch || maxFileSizeExceeded || multipleFilesDropped;
 
         this._validity = {
             ...this._validity,

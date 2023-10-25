@@ -7,6 +7,18 @@
         min-width: 40rem;
         min-height: 40rem;
     }
+    p-dialog {
+        .p-dialog-mask.p-component-overlay {
+            background-color: transparent;
+            -webkit-backdrop-filter: blur($blur-md);
+            backdrop-filter: blur($blur-md);
+        }
+    }
+}
+
+dot-drop-zone {
+    height: 100%;
+    width: 100%;
 }
 
 .binary-field__container {
@@ -113,17 +125,4 @@
     border: 1px solid $input-border-color;
     display: block;
     height: 25rem;
-}
-
-p-dialog {
-    .p-dialog-mask.p-component-overlay {
-        background-color: transparent;
-        -webkit-backdrop-filter: blur($blur-md);
-        backdrop-filter: blur($blur-md);
-    }
-}
-
-dot-drop-zone {
-    height: 100%;
-    width: 100%;
 }

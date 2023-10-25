@@ -12,17 +12,7 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotContentThumbnailComponent, DotSpinnerModule } from '@dotcms/ui';
 
-export interface BinaryFile {
-    mimeType: string;
-    name: string;
-    fileSize: number;
-    content?: string;
-    url?: string;
-    inode?: string;
-    titleImage?: string;
-    width?: string;
-    height?: string;
-}
+import { BinaryFile } from '../../interfaces';
 
 export enum EDITABLE_CONTENT {
     image = 'image',

@@ -6,7 +6,7 @@
     }">
     <div
         class="binary-field__drop-zone-container"
-        *ngIf="vm.status === BinaryFieldStatus.INIT || vm.status === BinaryFieldStatus.ERROR"
+        *ngIf="vm.status === BinaryFieldStatus.INIT"
         data-testId="binary-field__drop-zone-container">
         <div
             class="binary-field__drop-zone"
@@ -18,10 +18,7 @@
                 (fileDragLeave)="setDropZoneActiveState(false)"
                 (fileDropped)="handleFileDrop($event)"
                 data-testId="dropzone">
-                <dot-binary-field-ui-message
-                    [message]="vm.uiMessage.message | dm : vm.uiMessage.args"
-                    [icon]="vm.uiMessage.icon"
-                    [severity]="vm.uiMessage.severity">
+                <dot-binary-field-ui-message [uiMessage]="vm.uiMessage">
                     <button
                         class="binary-field__drop-zone-btn"
                         (click)="openFilePicker()"
@@ -68,14 +65,14 @@
 
     <p-dialog
         [(visible)]="dialogOpen"
+        [keepInViewport]="false"
         [modal]="true"
         [header]="dialogHeaderMap[vm.mode] | dm"
         [draggable]="false"
         [resizable]="false"
         [closeOnEscape]="false"
-        [styleClass]="vm.mode === BinaryFieldMode.EDITOR ? 'screen-cover' : ''"
-        (onHide)="afterDialogClose()">
-        <ng-container [ngSwitch]="vm.mode">
+        [styleClass]="vm.mode === BinaryFieldMode.EDITOR ? 'screen-cover' : ''">
+        <ng-container *ngIf="dialogOpen" [ngSwitch]="vm.mode">
             <dot-dot-binary-field-url-mode
                 *ngSwitchCase="BinaryFieldMode.URL"
                 [accept]="accept"
@@ -85,8 +82,8 @@
                 data-testId="url-mode"></dot-dot-binary-field-url-mode>
             <dot-dot-binary-field-editor
                 *ngSwitchCase="BinaryFieldMode.EDITOR"
-                [title]="vm.file?.name"
-                [content]="vm.file?.content"
+                [fileName]="vm.file?.name"
+                [fileContent]="vm.file?.content"
                 [accept]="accept"
                 (tempFileUploaded)="setTempFile($event)"
                 (cancel)="closeDialog()"

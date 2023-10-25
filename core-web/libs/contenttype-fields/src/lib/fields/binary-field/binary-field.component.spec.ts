@@ -16,15 +16,12 @@ import { DropZoneFileEvent } from '@dotcms/ui';
 
 import { DotBinaryFieldComponent } from './binary-field.component';
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
-import { DotEditBinaryFieldImageService } from './service/dot-edit-binary-field-image.service';
-import {
-    BinaryFieldMode,
-    BinaryFieldStatus,
-    DotBinaryFieldStore
-} from './store/binary-field.store';
+import { BinaryFieldMode, BinaryFieldStatus } from './interfaces';
+import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
+import { DotBinaryFieldStore } from './store/binary-field.store';
 
 import { getUiMessage } from '../../utils/binary-field-utils';
-import { CONTENTTYPE_FIELDS_MESSAGE_MOCK, FIELD, CONTENTLET } from '../../utils/mock';
+import { CONTENTTYPE_FIELDS_MESSAGE_MOCK, FIELD } from '../../utils/mock';
 
 const TEMP_FILE_MOCK: DotCMSTempFile = {
     fileName: 'image.png',
@@ -67,7 +64,7 @@ describe('DotBinaryFieldComponent', () => {
         ],
         componentProviders: [DotBinaryFieldStore],
         providers: [
-            DotEditBinaryFieldImageService,
+            DotBinaryFieldEditImageService,
             {
                 provide: DotUploadService,
                 useValue: {
@@ -92,7 +89,7 @@ describe('DotBinaryFieldComponent', () => {
             detectChanges: false,
             props: {
                 field: FIELD,
-                contentlet: CONTENTLET
+                contentlet: null
             }
         });
         store = spectator.inject(DotBinaryFieldStore, true);
@@ -143,7 +140,7 @@ describe('DotBinaryFieldComponent', () => {
             });
 
             expect(spyInvalidFile).toHaveBeenCalledWith(
-                getUiMessage('FILE_TYPE_MISMATCH', 'image/*')
+                getUiMessage('FILE_TYPE_MISMATCH', 'image/*, .html, .ts')
             );
             expect(spyUploadFile).not.toHaveBeenCalled();
         });
@@ -263,6 +260,7 @@ describe('DotBinaryFieldComponent', () => {
             jest.spyOn(store, 'setFileAndContent').mockReturnValue(of(null).subscribe());
             spectator.detectChanges();
             await spectator.fixture.whenStable();
+            spectator.detectChanges();
         });
 
         it('should open dialog with code component when click on edit button', async () => {

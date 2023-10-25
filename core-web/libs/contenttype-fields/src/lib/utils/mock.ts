@@ -126,7 +126,7 @@ export const FIELD = {
             fieldId: '5df3f8fc49177c195740bcdc02ec2db7',
             id: '1ff1ff05-b9fb-4239-ad3d-b2cfaa9a8406',
             key: 'accept',
-            value: 'image/*'
+            value: 'image/*,.html,.ts'
         },
         {
             clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',

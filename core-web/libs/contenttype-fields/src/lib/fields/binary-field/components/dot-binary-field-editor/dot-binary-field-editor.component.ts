@@ -68,8 +68,8 @@ const EDITOR_CONFIG: MonacoEditorConstructionOptions = {
 })
 export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
     @Input() accept: string[];
-    @Input() title = '';
-    @Input() content = '';
+    @Input() fileName = '';
+    @Input() fileContent = '';
 
     @Output() readonly tempFileUploaded = new EventEmitter<DotCMSTempFile>();
     @Output() readonly cancel = new EventEmitter<void>();
@@ -95,13 +95,12 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
         return this.form.get('name') as FormControl;
     }
 
-    get ngContent(): FormControl {
+    get content(): FormControl {
         return this.form.get('content') as FormControl;
     }
 
     ngOnInit(): void {
         this.setFormValues();
-
         this.name.valueChanges
             .pipe(debounceTime(350))
             .subscribe((name) => this.setEditorLanguage(name));
@@ -113,29 +112,27 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
 
     ngAfterViewInit(): void {
         this.editor = this.editorRef.editor;
-        if (this.title) {
-            this.setEditorLanguage(this.title);
+        if (this.fileName) {
+            this.setEditorLanguage(this.fileName);
         }
     }
 
     onSubmit(): void {
-        if (this.form.invalid) {
-            if (!this.name.dirty) {
-                this.markControlInvalid(this.name);
-            }
+        if (this.name.invalid) {
+            this.markControlInvalid(this.name);
 
             return;
         }
 
-        const file = new File([this.ngContent.value], this.name.value, {
+        const file = new File([this.content.value], this.name.value, {
             type: this.mimeType
         });
         this.uploadFile(file);
     }
 
     private setFormValues(): void {
-        this.name.setValue(this.title);
-        this.ngContent.setValue(this.content);
+        this.name.setValue(this.fileName);
+        this.content.setValue(this.fileContent);
     }
 
     private markControlInvalid(control: FormControl): void {
@@ -151,7 +148,7 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
             this.enableEditor();
             this.tempFileUploaded.emit({
                 ...tempFile,
-                content: this.ngContent.value
+                content: this.content.value
             });
         });
     }

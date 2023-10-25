@@ -1,22 +1,4 @@
-import { DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
-
-export enum UI_MESSAGE_KEYS {
-    DEFAULT = 'DEFAULT',
-    SERVER_ERROR = 'SERVER_ERROR',
-    FILE_TYPE_MISMATCH = 'FILE_TYPE_MISMATCH',
-    MAX_FILE_SIZE_EXCEEDED = 'MAX_FILE_SIZE_EXCEEDED'
-}
-
-export interface UiMessageI {
-    message: string;
-    severity: string;
-    icon: string;
-    args?: string[];
-}
-
-type UiMessageMap = {
-    [key in UI_MESSAGE_KEYS]: UiMessageI;
-};
+import { UiMessageI, UiMessageMap } from '../fields/binary-field/interfaces';
 
 const UiMessageMap: UiMessageMap = {
     DEFAULT: {
@@ -29,7 +11,7 @@ const UiMessageMap: UiMessageMap = {
         severity: 'error',
         icon: 'pi pi-exclamation-triangle'
     },
-    FILE_TYPE_MISMATCH: {
+    INVALID_FILE: {
         message: 'dot.binary.field.drag.and.drop.error.file.not.supported.message',
         severity: 'error',
         icon: 'pi pi-exclamation-triangle'
@@ -42,22 +24,8 @@ const UiMessageMap: UiMessageMap = {
 };
 
 export const getUiMessage = (messageKey: string, ...args: string[]): UiMessageI => {
-    const { message, severity, icon } = UiMessageMap[messageKey];
-
     return {
-        message,
-        severity,
-        icon,
+        ...UiMessageMap[messageKey],
         args
-    };
-};
-
-export const getFieldVariables = (
-    prev,
-    current: DotCMSContentTypeFieldVariable
-): Record<string, string> => {
-    return {
-        ...prev,
-        [current.key]: current.value
     };
 };

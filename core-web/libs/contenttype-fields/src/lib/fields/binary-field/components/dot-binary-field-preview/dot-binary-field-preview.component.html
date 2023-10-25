@@ -35,6 +35,7 @@
             [label]="'Remove'"
             (click)="removeFile.emit()"
             styleClass="p-button-link p-button-sm p-button-secondary"
+            data-testId="remove-button"
             icon="pi pi-trash"></p-button>
         <p-button
             *ngIf="isEditable"
@@ -42,6 +43,7 @@
             (click)="onEdit()"
             severity="secondary"
             styleClass="p-button-outlined p-button-sm p-button-secondary"
+            data-testId="edit-button"
             icon="pi pi-pencil"></p-button>
     </div>
 </div>

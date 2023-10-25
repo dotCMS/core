@@ -32,26 +32,14 @@ import {
 } from '@dotcms/ui';
 
 import { DotBinaryFieldEditorComponent } from './components/dot-binary-field-editor/dot-binary-field-editor.component';
-import {
-    BinaryFile,
-    DotBinaryFieldPreviewComponent
-} from './components/dot-binary-field-preview/dot-binary-field-preview.component';
+import { DotBinaryFieldPreviewComponent } from './components/dot-binary-field-preview/dot-binary-field-preview.component';
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
 import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
-import { DotEditBinaryFieldImageService } from './service/dot-edit-binary-field-image.service';
-import {
-    BinaryFieldMode,
-    BinaryFieldStatus,
-    BinaryFieldState,
-    DotBinaryFieldStore
-} from './store/binary-field.store';
+import { BinaryFieldMode, BinaryFieldStatus, UI_MESSAGE_KEYS, UiMessageI } from './interfaces';
+import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
+import { BinaryFieldState, DotBinaryFieldStore } from './store/binary-field.store';
 
-import {
-    UI_MESSAGE_KEYS,
-    UiMessageI,
-    getFieldVariables,
-    getUiMessage
-} from '../../utils/binary-field-utils';
+import { getUiMessage } from '../../utils/binary-field-utils';
 
 const initialState: BinaryFieldState = {
     file: null,
@@ -80,7 +68,7 @@ const initialState: BinaryFieldState = {
         DotBinaryFieldUrlModeComponent,
         DotBinaryFieldPreviewComponent
     ],
-    providers: [DotBinaryFieldStore, DotEditBinaryFieldImageService],
+    providers: [DotBinaryFieldStore, DotBinaryFieldEditImageService],
     templateUrl: './binary-field.component.html',
     styleUrls: ['./binary-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -99,8 +87,6 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
     readonly BinaryFieldMode = BinaryFieldMode;
     readonly vm$ = this.dotBinaryFieldStore.vm$;
 
-    private file: BinaryFile;
-    private inode: string;
     private tempId = '';
     dialogOpen = false;
     accept: string[] = [];
@@ -110,8 +96,8 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
     constructor(
         private readonly dotBinaryFieldStore: DotBinaryFieldStore,
         private readonly dotMessageService: DotMessageService,
-        private readonly dotEditBinaryFieldImageService: DotEditBinaryFieldImageService,
-        private cdr: ChangeDetectorRef
+        private readonly dotBinaryFieldEditImageService: DotBinaryFieldEditImageService,
+        private readonly cd: ChangeDetectorRef
     ) {
         this.dotBinaryFieldStore.setState(initialState);
         this.dotMessageService.init();
@@ -123,7 +109,7 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
             this.tempFile.emit(tempFile);
         });
 
-        this.dotEditBinaryFieldImageService
+        this.dotBinaryFieldEditImageService
             .editedImage()
             .pipe(filter((tempFile) => !!tempFile))
             .subscribe((tempFile) => {
@@ -134,28 +120,12 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
     }
 
     ngAfterViewInit() {
-        this.inode = this.contentlet?.inode;
         this.setFieldVariables();
         if (this.contentlet) {
-            this.setFile();
+            this.setPreviewFile();
         }
 
-        this.cdr.detectChanges();
-    }
-
-    setDropZoneActiveState(value: boolean) {
-        this.dotBinaryFieldStore.setDropZoneActive(value);
-    }
-
-    handleFileDrop({ validity, file }: DropZoneFileEvent) {
-        if (!validity.valid) {
-            const uiMessage = this.handleFileDropError(validity);
-            this.dotBinaryFieldStore.invalidFile(uiMessage);
-
-            return;
-        }
-
-        this.dotBinaryFieldStore.handleUploadFile(file);
+        this.cd.detectChanges();
     }
 
     openDialog(mode: BinaryFieldMode) {
@@ -165,10 +135,6 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
 
     closeDialog() {
         this.dialogOpen = false;
-    }
-
-    afterDialogClose() {
-        this.dotBinaryFieldStore.setMode(null);
     }
 
     openFilePicker() {
@@ -187,14 +153,13 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
 
     setTempFile(tempFile: DotCMSTempFile) {
         this.dotBinaryFieldStore.setTempFile(tempFile);
-        this.dialogOpen = false;
-        this.file = null;
+        this.closeDialog();
     }
 
     onEditFile({ content }: { content?: string }) {
         if (!content) {
-            this.dotEditBinaryFieldImageService.openImageEditor({
-                inode: this.inode,
+            this.dotBinaryFieldEditImageService.openImageEditor({
+                inode: this.contentlet?.inode,
                 tempId: this.tempId,
                 variable: this.field.variable
             });
@@ -205,45 +170,66 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
         this.openDialog(BinaryFieldMode.EDITOR);
     }
 
-    private setFile() {
+    setDropZoneActiveState(value: boolean) {
+        this.dotBinaryFieldStore.setDropZoneActive(value);
+    }
+
+    handleFileDrop({ validity, file }: DropZoneFileEvent) {
+        if (!validity.valid) {
+            this.handleFileDropError(validity);
+
+            return;
+        }
+
+        this.dotBinaryFieldStore.handleUploadFile(file);
+    }
+
+    private setPreviewFile() {
         const variable = this.field.variable;
-        const { titleImage, inode } = this.contentlet;
-        const { contentType, ...metaData } = this.contentlet[variable + 'MetaData'];
-        this.file = {
-            url: this.contentlet[variable],
+        const metaDataKey = variable + 'MetaData';
+        const { titleImage, inode, [metaDataKey]: metadata } = this.contentlet;
+        const { contentType: mimeType } = metadata;
+
+        this.dotBinaryFieldStore.setFile({
             inode,
             titleImage,
-            mimeType: contentType,
-            ...metaData
-        };
-
-        this.dotBinaryFieldStore.setFileAndContent(this.file);
+            mimeType,
+            url: this.contentlet[variable],
+            ...metadata
+        });
     }
 
     private setFieldVariables() {
-        const {
-            accept = '',
-            maxFileSize = 0,
-            helperText = ''
-        } = this.field.fieldVariables.reduce(getFieldVariables, {});
+        const { accept, maxFileSize = 0, helperText } = this.getFieldVariables();
         this.accept = accept ? accept.split(',') : [];
         this.maxFileSize = Number(maxFileSize);
         this.helperText = helperText;
     }
 
+    private getFieldVariables(): Record<string, string> {
+        return this.field.fieldVariables.reduce(
+            (prev, { key, value }) => ({
+                ...prev,
+                [key]: value
+            }),
+            {}
+        );
+    }
+
     private handleFileDropError({
         fileTypeMismatch,
         maxFileSizeExceeded
-    }: DropZoneFileValidity): UiMessageI {
+    }: DropZoneFileValidity): void {
         const acceptedTypes = this.accept.join(', ');
         const maxSize = `${this.maxFileSize} bytes`;
         let uiMessage: UiMessageI;
+
         if (fileTypeMismatch) {
-            uiMessage = getUiMessage(UI_MESSAGE_KEYS.FILE_TYPE_MISMATCH, acceptedTypes);
+            uiMessage = getUiMessage(UI_MESSAGE_KEYS.INVALID_FILE, acceptedTypes);
         } else if (maxFileSizeExceeded) {
             uiMessage = getUiMessage(UI_MESSAGE_KEYS.MAX_FILE_SIZE_EXCEEDED, maxSize);
         }
 
-        return uiMessage;
+        this.dotBinaryFieldStore.invalidFile(uiMessage);
     }
 }

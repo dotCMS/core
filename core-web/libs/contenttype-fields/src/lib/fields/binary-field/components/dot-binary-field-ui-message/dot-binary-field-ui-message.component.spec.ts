@@ -2,6 +2,8 @@ import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
 
 import { CommonModule } from '@angular/common';
 
+import { DotMessagePipe } from '@dotcms/ui';
+
 import { DotBinaryFieldUiMessageComponent } from './dot-binary-field-ui-message.component';
 
 describe('DotBinaryFieldUiMessageComponent', () => {
@@ -9,7 +11,7 @@ describe('DotBinaryFieldUiMessageComponent', () => {
 
     const createHost = createHostFactory({
         component: DotBinaryFieldUiMessageComponent,
-        imports: [CommonModule],
+        imports: [CommonModule, DotMessagePipe],
         providers: []
     });
 
@@ -20,9 +22,11 @@ describe('DotBinaryFieldUiMessageComponent', () => {
             </dot-binary-field-ui-message>`,
             {
                 hostProps: {
-                    message: 'Drag and Drop File',
-                    icon: 'pi pi-upload',
-                    severity: 'info'
+                    uiMessage: {
+                        message: 'Drag and Drop File',
+                        icon: 'pi pi-upload',
+                        severity: 'info'
+                    }
                 }
             }
         );

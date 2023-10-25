@@ -9,21 +9,14 @@ import { switchMap, tap } from 'rxjs/operators';
 import { DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
-import { UI_MESSAGE_KEYS, UiMessageI, getUiMessage } from '../../../utils/binary-field-utils';
-import { BinaryFile } from '../components/dot-binary-field-preview/dot-binary-field-preview.component';
-
-export enum BinaryFieldMode {
-    DROPZONE = 'DROPZONE',
-    URL = 'URL',
-    EDITOR = 'EDITOR'
-}
-
-export enum BinaryFieldStatus {
-    INIT = 'INIT',
-    UPLOADING = 'UPLOADING',
-    PREVIEW = 'PREVIEW',
-    ERROR = 'ERROR'
-}
+import { getUiMessage } from '../../../utils/binary-field-utils';
+import {
+    BinaryFieldMode,
+    BinaryFieldStatus,
+    BinaryFile,
+    UI_MESSAGE_KEYS,
+    UiMessageI
+} from '../interfaces/index';
 
 export interface BinaryFieldState {
     file?: BinaryFile;
@@ -100,7 +93,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     readonly setError = this.updater<UiMessageI>((state, uiMessage) => ({
         ...state,
         uiMessage,
-        status: BinaryFieldStatus.ERROR,
+        status: BinaryFieldStatus.INIT,
         tempFile: null
     }));
 
@@ -108,7 +101,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         ...state,
         dropZoneActive: false,
         uiMessage,
-        status: BinaryFieldStatus.ERROR
+        status: BinaryFieldStatus.INIT
     }));
 
     readonly removeFile = this.updater((state) => ({
@@ -143,16 +136,18 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         return file$.pipe(
             tap(() => this.setUploading()),
             switchMap((file) => {
-                const type = file.mimeType?.split('/')[0];
-                if (type === 'text') {
-                    return this.http.get(file.url, { responseType: 'text' }).pipe(
-                        tap((content) => {
-                            this.setFile({ ...file, content });
-                        })
-                    );
-                }
+                const { url, mimeType } = file;
+                // TODO: This should be done in the serverside
+                const obs$ = mimeType.includes('text') ? this.getFileContent(url) : of('');
 
-                return of(null).pipe(tap(() => this.setFile(file)));
+                return obs$.pipe(
+                    tap((content) => {
+                        this.setFile({
+                            ...file,
+                            content
+                        });
+                    })
+                );
             })
         );
     });
@@ -164,6 +159,10 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
      */
     setMaxFileSize(bytes: number): void {
         this._maxFileSizeInMB = bytes / (1024 * 1024);
+    }
+
+    private getFileContent(url: string): Observable<string> {
+        return this.http.get(url, { responseType: 'text' });
     }
 
     private fileFromTempFile({

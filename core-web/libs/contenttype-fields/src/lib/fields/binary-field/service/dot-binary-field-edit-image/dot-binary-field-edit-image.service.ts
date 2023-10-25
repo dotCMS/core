@@ -11,7 +11,7 @@ interface ImageEditorProps {
 }
 
 @Injectable()
-export class DotEditBinaryFieldImageService {
+export class DotBinaryFieldEditImageService {
     private subject: BehaviorSubject<DotCMSTempFile> = new BehaviorSubject(null);
     private variable: string;
 

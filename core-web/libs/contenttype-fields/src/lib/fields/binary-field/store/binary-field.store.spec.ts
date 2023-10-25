@@ -8,14 +8,10 @@ import { skip } from 'rxjs/operators';
 import { DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
-import {
-    BinaryFieldMode,
-    BinaryFieldStatus,
-    BinaryFieldState,
-    DotBinaryFieldStore
-} from './binary-field.store';
+import { BinaryFieldState, DotBinaryFieldStore } from './binary-field.store';
 
 import { UI_MESSAGE_KEYS, getUiMessage } from '../../../utils/binary-field-utils';
+import { BinaryFieldMode, BinaryFieldStatus } from '../interfaces';
 
 const INITIAL_STATE: BinaryFieldState = {
     file: null,
