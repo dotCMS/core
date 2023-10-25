@@ -358,7 +358,7 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
     }
 
     private isLocked(pageState: DotPageRenderState): boolean {
-        return pageState.state.locked && !this.canTakeLock(pageState);
+        return pageState.state.locked || !this.canTakeLock(pageState);
     }
 
     private isPersonalized(): boolean {

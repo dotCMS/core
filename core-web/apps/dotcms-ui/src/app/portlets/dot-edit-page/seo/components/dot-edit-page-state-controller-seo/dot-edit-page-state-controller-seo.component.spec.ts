@@ -239,7 +239,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                     'Page locked by Some One'
                 );
                 expect(lockerContainerDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
-                expect(locker.modelValue).toBe(false, 'checked');
+                expect(locker.modelValue).toBe(true, 'checked');
                 expect(locker.disabled).toBe(false, 'disabled');
             });
 
