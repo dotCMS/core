@@ -5,11 +5,9 @@ import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
-import { FIELD_TYPES } from './utils';
-
 import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields.module';
-import { DotEditContentRadioFieldComponent } from '../../fields/dot-edit-content-radio-field/dot-edit-content-radio-field.component';
-import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-content-select-field/dot-edit-content-select-field.component';
+import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { CALENDAR_FIELD_TYPES } from '../../utils/mocks';
 
 @Component({
     selector: 'dot-edit-content-field',
@@ -29,13 +27,12 @@ import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-conten
         NgIf,
         ReactiveFormsModule,
         DotEditContentFieldsModule,
-        DotFieldRequiredDirective,
-        DotEditContentSelectFieldComponent,
-        DotEditContentRadioFieldComponent
+        DotFieldRequiredDirective
     ]
 })
 export class DotEditContentFieldComponent {
     @HostBinding('class') class = 'field';
     @Input() field!: DotCMSContentTypeField;
     readonly fieldTypes = FIELD_TYPES;
+    readonly calendarTypes = CALENDAR_FIELD_TYPES as string[];
 }
