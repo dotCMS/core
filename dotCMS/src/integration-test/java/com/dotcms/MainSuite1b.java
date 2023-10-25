@@ -4,6 +4,7 @@ import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.storage.Chainable404StorageCacheTest;
 import com.dotcms.storage.FileStorageAPITest;
+import com.dotmarketing.common.db.DotConnectTest;
 import com.dotmarketing.quartz.QuartzUtilsTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
@@ -77,7 +78,8 @@ import org.junit.runners.Suite.SuiteClasses;
         FileStorageAPITest.class,
         com.dotcms.analytics.metrics.QueryParameterValuesGetterTest.class,
         com.dotcms.analytics.metrics.QueryParameterValuesTransformerTest.class,
-        QuartzUtilsTest.class
+        QuartzUtilsTest.class,
+        DotConnectTest.class
 })
 
 public class MainSuite1b {

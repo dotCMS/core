@@ -126,6 +126,7 @@ import com.dotmarketing.business.VersionableFactoryImplTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
+import com.dotmarketing.common.db.DotConnectTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.filters.CMSUrlUtilIntegrationTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
@@ -658,7 +659,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230713IncreaseDisabledWysiwygColumnSizeTest.class,
         BundleFactoryImplTest.class,
         DropOldContentVersionsJobTest.class,
-        ITConfigTest.class
+        ITConfigTest.class,
+        DotConnectTest.class
 
 })
 
