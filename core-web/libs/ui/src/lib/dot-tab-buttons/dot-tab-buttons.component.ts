@@ -12,6 +12,7 @@ interface TabButtonOptions {
     toggle?: boolean;
     icon?: string;
     showDropdownButton: boolean;
+    shouldRefresh?: boolean;
 }
 
 /**
@@ -60,7 +61,7 @@ export class DotTabButtonsComponent implements OnChanges {
      * @param event
      */
     onClickOption(event: PointerEvent, optionId: string) {
-        if (optionId === this.activeId) {
+        if (optionId === this.activeId && !this.shouldRefresh(optionId)) {
             return;
         }
 
@@ -132,6 +133,20 @@ export class DotTabButtonsComponent implements OnChanges {
             this._options.find(
                 (option) => option.value.id === menuId && option.value.showDropdownButton
             )
+        );
+    }
+
+    /**
+     * Checks if the option you clicked should refresh the page
+     *
+     * @private
+     * @param {string} menuId
+     * @return {*}  {boolean}
+     * @memberof DotTabButtonsComponent
+     */
+    private shouldRefresh(menuId: string): boolean {
+        return Boolean(
+            this._options.find((option) => option.value.id === menuId && option.value.shouldRefresh)
         );
     }
 }
