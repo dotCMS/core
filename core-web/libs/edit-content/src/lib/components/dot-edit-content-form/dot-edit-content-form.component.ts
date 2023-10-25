@@ -12,9 +12,11 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { EditContentFormData } from '../../models/dot-edit-content-form.interface';
+import { castSingleSelectableValue } from '../../utils/functions.util';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 @Component({
     selector: 'dot-edit-content-form',
@@ -31,7 +33,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentFormComponent implements OnInit {
-    @Input() formData: DotCMSContentTypeLayoutRow[] = [];
+    @Input() formData!: EditContentFormData;
     @Output() formSubmit = new EventEmitter();
 
     private fb = inject(FormBuilder);
@@ -45,11 +47,12 @@ export class DotEditContentFormComponent implements OnInit {
 
     /**
      * Initializes the form group with form controls for each field in the `formData` array.
-     * @returns void
+     *
+     * @memberof DotEditContentFormComponent
      */
     initilizeForm() {
         this.form = this.fb.group({});
-        this.formData.forEach(({ columns }) => {
+        this.formData.layout.forEach(({ columns }) => {
             columns?.forEach((column) => {
                 column.fields.forEach((field) => {
                     const fieldControl = this.initializeFormControl(field);
@@ -61,10 +64,13 @@ export class DotEditContentFormComponent implements OnInit {
 
     /**
      * Initializes a form control for a given DotCMSContentTypeField.
-     * @param field - The DotCMSContentTypeField to initialize the form control for.
-     * @returns The initialized form control.
+     *
+     * @private
+     * @param {DotCMSContentTypeField} field
+     * @return {*}
+     * @memberof DotEditContentFormComponent
      */
-    initializeFormControl(field: DotCMSContentTypeField) {
+    private initializeFormControl(field: DotCMSContentTypeField) {
         const validators = [];
         if (field.required) validators.push(Validators.required);
         if (field.regexCheck) {
@@ -76,9 +82,13 @@ export class DotEditContentFormComponent implements OnInit {
             }
         }
 
+        const value =
+            castSingleSelectableValue(this.formData.contentlet?.[field.variable], field.dataType) ??
+            castSingleSelectableValue(field.defaultValue, field.dataType);
+
         return this.fb.control(
             {
-                value: field.defaultValue || '',
+                value: value ?? null,
                 disabled: field.readOnly
             },
             { validators }
