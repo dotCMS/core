@@ -2,11 +2,11 @@
     class="binary-field__container"
     *ngIf="vm$ | async as vm"
     [ngClass]="{
-        'binary-field__container--uploading': vm.status === BINARY_FIELD_STATUS.UPLOADING
+        'binary-field__container--uploading': vm.status === BinaryFieldStatus.UPLOADING
     }">
     <div
         class="binary-field__drop-zone-container"
-        *ngIf="vm.status === BINARY_FIELD_STATUS.INIT || vm.status === BINARY_FIELD_STATUS.ERROR"
+        *ngIf="vm.status === BinaryFieldStatus.INIT || vm.status === BinaryFieldStatus.ERROR"
         data-testId="binary-field__drop-zone-container">
         <div
             class="binary-field__drop-zone"
@@ -19,9 +19,9 @@
                 (fileDropped)="handleFileDrop($event)"
                 data-testId="dropzone">
                 <dot-binary-field-ui-message
-                    [message]="vm.UiMessage.message | dm : vm.UiMessage.args"
-                    [icon]="vm.UiMessage.icon"
-                    [severity]="vm.UiMessage.severity">
+                    [message]="vm.uiMessage.message | dm : vm.uiMessage.args"
+                    [icon]="vm.uiMessage.icon"
+                    [severity]="vm.uiMessage.severity">
                     <button
                         class="binary-field__drop-zone-btn"
                         (click)="openFilePicker()"
@@ -42,13 +42,13 @@
         <div class="binary-field__actions">
             <p-button
                 [label]="'dot.binary.field.action.import.from.url' | dm"
-                (click)="openDialog(BINARY_FIELD_MODE.URL)"
+                (click)="openDialog(BinaryFieldMode.URL)"
                 data-testId="action-url-btn"
                 styleClass="p-button-link"
                 icon="pi pi-link"></p-button>
             <p-button
                 [label]="'dot.binary.field.action.create.new.file' | dm"
-                (click)="openDialog(BINARY_FIELD_MODE.EDITOR)"
+                (click)="openDialog(BinaryFieldMode.EDITOR)"
                 data-testId="action-editor-btn"
                 styleClass="p-button-link"
                 icon="pi pi-code"></p-button>
@@ -56,11 +56,11 @@
     </div>
 
     <dot-spinner
-        *ngIf="vm.status === BINARY_FIELD_STATUS.UPLOADING"
+        *ngIf="vm.status === BinaryFieldStatus.UPLOADING"
         data-testId="loading"></dot-spinner>
 
     <dot-binary-field-preview
-        *ngIf="vm.status === BINARY_FIELD_STATUS.PREVIEW"
+        *ngIf="vm.status === BinaryFieldStatus.PREVIEW"
         [file]="vm.file"
         (removeFile)="removeFile()"
         (editFile)="onEditFile($event)"
@@ -73,18 +73,18 @@
         [draggable]="false"
         [resizable]="false"
         [closeOnEscape]="false"
-        [styleClass]="vm.mode === BINARY_FIELD_MODE.EDITOR ? 'screen-cover' : ''"
+        [styleClass]="vm.mode === BinaryFieldMode.EDITOR ? 'screen-cover' : ''"
         (onHide)="afterDialogClose()">
         <ng-container [ngSwitch]="vm.mode">
             <dot-dot-binary-field-url-mode
-                *ngSwitchCase="BINARY_FIELD_MODE.URL"
+                *ngSwitchCase="BinaryFieldMode.URL"
                 [accept]="accept"
                 [maxFileSize]="maxFileSize"
                 (tempFileUploaded)="setTempFile($event)"
                 (cancel)="closeDialog()"
                 data-testId="url-mode"></dot-dot-binary-field-url-mode>
             <dot-dot-binary-field-editor
-                *ngSwitchCase="BINARY_FIELD_MODE.EDITOR"
+                *ngSwitchCase="BinaryFieldMode.EDITOR"
                 [title]="vm.file?.name"
                 [content]="vm.file?.content"
                 [accept]="accept"

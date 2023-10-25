@@ -4,6 +4,12 @@ import { Injectable } from '@angular/core';
 
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
+interface ImageEditorProps {
+    inode: string;
+    tempId: string;
+    variable: string;
+}
+
 @Injectable()
 export class DotEditBinaryFieldImageService {
     private subject: BehaviorSubject<DotCMSTempFile> = new BehaviorSubject(null);
@@ -13,10 +19,11 @@ export class DotEditBinaryFieldImageService {
         return this.subject;
     }
 
-    openImageEditor(inode: string, variable: string): void {
+    openImageEditor({ inode, tempId, variable }: ImageEditorProps): void {
         const customEvent = new CustomEvent(`binaryField-open-image-editor-${variable}`, {
             detail: {
                 inode,
+                tempId,
                 variable
             }
         });

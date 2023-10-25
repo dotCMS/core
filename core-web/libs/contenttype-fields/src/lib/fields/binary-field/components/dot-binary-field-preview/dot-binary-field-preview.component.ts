@@ -10,7 +10,7 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 
-import { CONTENT_THUMBNAIL_TYPE, DotContentThumbnailComponent, DotSpinnerModule } from '@dotcms/ui';
+import { DotContentThumbnailComponent, DotSpinnerModule } from '@dotcms/ui';
 
 export interface BinaryFile {
     mimeType: string;
@@ -22,6 +22,12 @@ export interface BinaryFile {
     titleImage?: string;
     width?: string;
     height?: string;
+}
+
+export enum EDITABLE_CONTENT {
+    image = 'image',
+    text = 'text',
+    icon = 'icon'
 }
 
 @Component({
@@ -39,13 +45,15 @@ export class DotBinaryFieldPreviewComponent implements OnInit {
     @Output() editFile: EventEmitter<{
         content?: string;
     }> = new EventEmitter();
+
+    @Output() editImage: EventEmitter<void> = new EventEmitter();
     @Output() removeFile: EventEmitter<void> = new EventEmitter();
 
     private readonly editableFiles = {
-        [CONTENT_THUMBNAIL_TYPE.image]: true,
-        [CONTENT_THUMBNAIL_TYPE.text]: true
+        [EDITABLE_CONTENT.image]: true,
+        [EDITABLE_CONTENT.text]: true
     };
-    readonly CONTENT_THUMBNAIL_TYPE = CONTENT_THUMBNAIL_TYPE;
+    readonly EDITABLE_CONTENT = EDITABLE_CONTENT;
 
     isEditable = false;
 
@@ -61,7 +69,7 @@ export class DotBinaryFieldPreviewComponent implements OnInit {
 
     private setIsEditable() {
         const type = this.file.mimeType?.split('/')[0];
-        const contenttype = CONTENT_THUMBNAIL_TYPE[type] || CONTENT_THUMBNAIL_TYPE.icon;
+        const contenttype = EDITABLE_CONTENT[type];
 
         this.isEditable = this.editableFiles[contenttype] || this.file.content;
     }

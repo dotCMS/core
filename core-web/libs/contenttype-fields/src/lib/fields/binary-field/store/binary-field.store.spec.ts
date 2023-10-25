@@ -1,14 +1,16 @@
 import { expect, describe } from '@jest/globals';
 import { SpectatorService, createServiceFactory } from '@ngneat/spectator';
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+
 import { skip } from 'rxjs/operators';
 
 import { DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import {
-    BINARY_FIELD_MODE,
-    BINARY_FIELD_STATUS,
+    BinaryFieldMode,
+    BinaryFieldStatus,
     BinaryFieldState,
     DotBinaryFieldStore
 } from './binary-field.store';
@@ -18,13 +20,14 @@ import { UI_MESSAGE_KEYS, getUiMessage } from '../../../utils/binary-field-utils
 const INITIAL_STATE: BinaryFieldState = {
     file: null,
     tempFile: null,
-    mode: BINARY_FIELD_MODE.DROPZONE,
-    status: BINARY_FIELD_STATUS.INIT,
-    UiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT),
+    mode: BinaryFieldMode.DROPZONE,
+    status: BinaryFieldStatus.INIT,
+    uiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT),
     dropZoneActive: false
 };
 
 export const TEMP_FILE_MOCK: DotCMSTempFile = {
+    content: 'test',
     fileName: 'image.png',
     folder: '/images',
     id: '12345',
@@ -44,6 +47,7 @@ describe('DotBinaryFieldStore', () => {
 
     const createStoreService = createServiceFactory({
         service: DotBinaryFieldStore,
+        imports: [HttpClientTestingModule],
         providers: [
             {
                 provide: DotUploadService,
@@ -77,11 +81,21 @@ describe('DotBinaryFieldStore', () => {
 
     describe('Updaters', () => {
         it('should set File', (done) => {
-            const mockFile = new File([''], 'filename');
+            const mockFile = {
+                mimeType: 'mimeType',
+                name: 'name',
+                fileSize: 100000,
+                content: 'content',
+                url: 'url',
+                inode: 'inode',
+                titleImage: 'titleImage',
+                width: '20',
+                height: '20'
+            };
             store.setFile(mockFile);
 
-            store.file$.subscribe((file) => {
-                expect(file).toEqual(mockFile);
+            store.vm$.subscribe((state) => {
+                expect(state.file).toEqual(mockFile);
                 done();
             });
         });
@@ -93,28 +107,28 @@ describe('DotBinaryFieldStore', () => {
                 done();
             });
         });
-        it('should set UiMessage', (done) => {
+        it('should set uiMessage', (done) => {
             const uiMessage = getUiMessage(UI_MESSAGE_KEYS.FILE_TYPE_MISMATCH);
             store.setUiMessage(uiMessage);
 
             store.vm$.subscribe((state) => {
-                expect(state.UiMessage).toEqual(uiMessage);
+                expect(state.uiMessage).toEqual(uiMessage);
                 done();
             });
         });
         it('should set Mode', (done) => {
-            store.setMode(BINARY_FIELD_MODE.EDITOR);
+            store.setMode(BinaryFieldMode.EDITOR);
 
             store.vm$.subscribe((state) => {
-                expect(state.mode).toBe(BINARY_FIELD_MODE.EDITOR);
+                expect(state.mode).toBe(BinaryFieldMode.EDITOR);
                 done();
             });
         });
         it('should set Status', (done) => {
-            store.setStatus(BINARY_FIELD_STATUS.PREVIEW);
+            store.setStatus(BinaryFieldStatus.PREVIEW);
 
             store.vm$.subscribe((state) => {
-                expect(state.status).toBe(BINARY_FIELD_STATUS.PREVIEW);
+                expect(state.status).toBe(BinaryFieldStatus.PREVIEW);
                 done();
             });
         });

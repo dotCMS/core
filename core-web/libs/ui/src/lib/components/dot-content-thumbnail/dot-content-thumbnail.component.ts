@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnChanges, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnChanges } from '@angular/core';
 
 const ICON_MAP = {
     html: 'pi-file',
@@ -14,7 +14,6 @@ const ICON_MAP = {
 export enum CONTENT_THUMBNAIL_TYPE {
     image = 'image',
     video = 'video',
-    text = 'text',
     icon = 'icon'
 }
 
@@ -26,7 +25,7 @@ export enum CONTENT_THUMBNAIL_TYPE {
     styleUrls: ['./dot-content-thumbnail.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotContentThumbnailComponent implements OnInit, OnChanges {
+export class DotContentThumbnailComponent implements OnChanges {
     src: string;
     thumbnailIcon: string;
     thumbnailType: CONTENT_THUMBNAIL_TYPE;
@@ -40,14 +39,16 @@ export class DotContentThumbnailComponent implements OnInit, OnChanges {
 
     readonly CONTENT_THUMBNAIL_TYPE = CONTENT_THUMBNAIL_TYPE;
     private readonly DEFAULT_ICON = 'pi-file';
-
-    ngOnInit(): void {
-        this.setSrc();
-        this.setThumbnailType();
-        this.setThumbnailIcon();
-    }
+    private type;
+    a;
+    private thumbnailUrlMap = {
+        image: this.getImageThumbnailUrl.bind(this),
+        video: this.getVideoThumbnailUrl.bind(this),
+        pdf: this.getPdfThumbnailUrl.bind(this)
+    };
 
     ngOnChanges(): void {
+        this.type = this.contentType.split('/')[0];
         this.setSrc();
         this.setThumbnailType();
         this.setThumbnailIcon();
@@ -57,24 +58,28 @@ export class DotContentThumbnailComponent implements OnInit, OnChanges {
         this.thumbnailType = this.CONTENT_THUMBNAIL_TYPE.icon;
     }
 
-    private getThumbnailUrl(): string {
-        return this.contentType === 'application/pdf'
-            ? `/contentAsset/image/${this.inode}/${this.titleImage}/pdf_page/1/resize_w/250/quality_q/45`
-            : `/dA/${this.inode}/500w/50q`;
-    }
-
     private setThumbnailType(): void {
-        const type = this.contentType.split('/')[0];
-
-        this.thumbnailType = CONTENT_THUMBNAIL_TYPE[type] || CONTENT_THUMBNAIL_TYPE.icon;
+        this.thumbnailType = CONTENT_THUMBNAIL_TYPE[this.type] || CONTENT_THUMBNAIL_TYPE.icon;
     }
 
     private setSrc(): void {
-        this.src = this.tempUrl || this.getThumbnailUrl();
+        this.src = this.tempUrl || this.thumbnailUrlMap[this.type]?.();
     }
 
     private setThumbnailIcon(): void {
         const extension = this.name.split('.').pop();
         this.thumbnailIcon = ICON_MAP[extension] || this.DEFAULT_ICON;
+    }
+
+    private getPdfThumbnailUrl(): string {
+        return `/contentAsset/image/${this.inode}/${this.titleImage}/pdf_page/1/resize_w/250/quality_q/45`;
+    }
+
+    private getImageThumbnailUrl(): string {
+        return `/dA/${this.inode}/500w/50q`;
+    }
+
+    private getVideoThumbnailUrl(): string {
+        return `/dA/${this.inode}`;
     }
 }

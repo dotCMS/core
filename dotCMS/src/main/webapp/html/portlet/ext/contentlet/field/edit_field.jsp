@@ -719,9 +719,11 @@
                     const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
                     const variable = "<%=field.getVelocityVarName()%>";
                     const metadataString = '<%=binaryMetada%>';
-                    const contentlet = metadataString ? {
+                    const metaData = metadataString ? JSON.parse(metadataString) : null;
+                    const contentlet = metaData ? {
                         inode: "<%=binInode%>",
-                        [variable+"MetaData"]: JSON.parse(metadataString)
+                        [variable]: `/dA/<%=contentlet.getIdentifier()%>/${variable}/${metaData.name}`,
+                        [variable+"MetaData"]: metaData
                     } : null;
                     const fielData = {
                         ...(JSON.parse('<%=jsonField%>')),
@@ -746,10 +748,11 @@
                     binaryFieldContainer.appendChild(binaryField);
 
                     document.addEventListener(`binaryField-open-image-editor-${variable}`,({ detail }) => {
-                        const { inode, variable } = detail;
+                        const { inode, variable = '', tempId } = detail;
 
                         const imageEditor = new dotcms.dijit.image.ImageEditor({
                             inode,
+                            tempId,
                             variable,
                             fieldName: variable,
                             binaryFieldId:  variable,
