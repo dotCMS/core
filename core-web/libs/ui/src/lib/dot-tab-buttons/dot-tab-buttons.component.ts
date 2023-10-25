@@ -7,7 +7,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessagePipe } from '../dot-message/dot-message.pipe';
 
-export interface TabButtonOptions {
+interface TabButtonOptions {
     id: string;
     toggle?: boolean;
     icon?: string;
