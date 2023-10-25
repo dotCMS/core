@@ -107,7 +107,9 @@ import com.dotcms.security.apps.AppsCacheImplTest;
 import com.dotcms.security.multipart.BoundedBufferedReaderTest;
 import com.dotcms.security.multipart.ContentDispositionFileNameParserTest;
 import com.dotcms.security.multipart.SecureFileValidatorTest;
+import com.dotcms.storage.Chainable404StorageCacheTest;
 import com.dotcms.storage.FileMetadataAPITest;
+import com.dotcms.storage.FileStorageAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.storage.repository.HashedLocalFileRepositoryManagerTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
@@ -124,6 +126,7 @@ import com.dotmarketing.business.VersionableFactoryImplTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
+import com.dotmarketing.common.db.DotConnectTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.filters.CMSUrlUtilIntegrationTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
@@ -651,10 +654,13 @@ import org.junit.runners.Suite.SuiteClasses;
         AssetPathResolverImplIntegrationTest.class,
         WebAssetHelperIntegrationTest.class,
         Task230701AddHashIndicesToWorkflowTablesTest.class,
+        Chainable404StorageCacheTest.class,
+        FileStorageAPITest.class,
         Task230713IncreaseDisabledWysiwygColumnSizeTest.class,
         BundleFactoryImplTest.class,
         DropOldContentVersionsJobTest.class,
-        ITConfigTest.class
+        ITConfigTest.class,
+        DotConnectTest.class
 
 })
 

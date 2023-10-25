@@ -315,7 +315,8 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
             label: this.dotMessageService.get(`editpage.toolbar.${mode}.page`),
             value: {
                 id: enumMode,
-                showDropdownButton: this.shouldShowDropdownButton(enumMode, pageState)
+                showDropdownButton: this.shouldShowDropdownButton(enumMode, pageState),
+                shouldRefresh: enumMode === DotPageMode.PREVIEW
             },
             disabled: disabled[mode]
         };
@@ -358,7 +359,7 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
     }
 
     private isLocked(pageState: DotPageRenderState): boolean {
-        return pageState.state.locked && !this.canTakeLock(pageState);
+        return pageState.state.locked || !this.canTakeLock(pageState);
     }
 
     private isPersonalized(): boolean {
