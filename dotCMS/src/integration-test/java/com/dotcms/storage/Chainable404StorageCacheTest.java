@@ -17,7 +17,7 @@ public class Chainable404StorageCacheTest extends IntegrationTestBase {
 
     /**
      * Method to test: This test tries the {@link Chainable404StorageCache}
-     * Given Scenario: Check the basics just to be align with test coverage :)
+     * Given Scenario: Check the basics just to be aligned with test coverage :)
      * ExpectedResult: Do some implicit asserts
      */
     @Test
@@ -25,10 +25,11 @@ public class Chainable404StorageCacheTest extends IntegrationTestBase {
 
         final Chainable404StorageCache cache = new Chainable404StorageCache();
 
-        assertEquals(Chainable404StorageCache.NOT_FOUND_404, "CHAINABLE_404_STORAGE_NOT_FOUND");
-        assertEquals(cache.getPrimaryGroup(), "Chainable_404_Storage_group");
-        assertEquals(cache.getGroups(), new String [] {"Chainable_404_Storage_group"});
+        assertEquals("The official key for a missing (404) entry is not the expected one.", "CHAINABLE_404_STORAGE_NOT_FOUND", Chainable404StorageCache.NOT_FOUND_404);
+        assertEquals("The primary Storage Group for the 404 cache is not the expected one.", "Chainable_404_Storage_group", cache.getPrimaryGroup());
+        assertEquals("The group list of the chainable 404 Storage Group is not the expected one.", new String [] {"Chainable_404_Storage_group"}, cache.getGroups());
     }
+
     /**
      * Method to test: This test tries the {@link Chainable404StorageCache}
      * Given Scenario: Will add a couple hits to the cache and then test them
