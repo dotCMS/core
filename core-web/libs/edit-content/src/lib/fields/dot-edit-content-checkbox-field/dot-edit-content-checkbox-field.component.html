@@ -1,0 +1,27 @@
+<div class="field-checkbox" *ngFor="let option of options; let i = index">
+    <p-checkbox
+        [formControl]="formControl"
+        [value]="option.value"
+        [inputId]="field.variable + i"
+        [label]="option.label"
+        (onChange)="onChange($event)"
+        name="group1"></p-checkbox>
+</div>
+<!-- [(ngModel)]="selectedValues" -->
+
+{{ selectedValues }}
+
+<!-- <div class="card flex justify-content-center gap-3">
+    <div class="flex align-items-center gap-1">
+        <p-checkbox name="group1" value="New York" [formControlName]="field.variable" inputId="ny"></p-checkbox>
+        <label for="ny">New York</label>
+    </div>
+    <div class="flex align-items-center gap-1">
+        <p-checkbox name="group1" value="San Francisco" [formControlName]="field.variable" inputId="sf"></p-checkbox>
+        <label for="sf">San Francisco</label>
+    </div>
+    <div class="flex align-items-center gap-1">
+        <p-checkbox name="group1" value="Los Angeles" [formControlName]="field.variable" inputId="la"></p-checkbox>
+        <label for="la">Los Angeles</label>
+    </div>
+</div> -->

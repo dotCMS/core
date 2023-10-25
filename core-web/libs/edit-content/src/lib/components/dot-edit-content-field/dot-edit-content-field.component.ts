@@ -14,6 +14,15 @@ import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-conten
 @Component({
     selector: 'dot-edit-content-field',
     standalone: true,
+    templateUrl: './dot-edit-content-field.component.html',
+    styleUrls: ['./dot-edit-content-field.component.scss'],
+    viewProviders: [
+        {
+            provide: ControlContainer,
+            useFactory: () => inject(ControlContainer, { skipSelf: true })
+        }
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         NgSwitch,
         NgSwitchCase,
@@ -23,16 +32,7 @@ import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-conten
         DotFieldRequiredDirective,
         DotEditContentSelectFieldComponent,
         DotEditContentRadioFieldComponent
-    ],
-    templateUrl: './dot-edit-content-field.component.html',
-    styleUrls: ['./dot-edit-content-field.component.scss'],
-    viewProviders: [
-        {
-            provide: ControlContainer,
-            useFactory: () => inject(ControlContainer, { skipSelf: true })
-        }
-    ],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    ]
 })
 export class DotEditContentFieldComponent {
     @HostBinding('class') class = 'field';

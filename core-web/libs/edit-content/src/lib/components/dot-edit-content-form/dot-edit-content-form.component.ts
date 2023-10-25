@@ -100,6 +100,6 @@ export class DotEditContentFormComponent implements OnInit {
      * @returns void
      */
     saveContenlet() {
-        this.formSubmit.emit(this.form.value);
+        this.formSubmit.emit(this.form.getRawValue());
     }
 }

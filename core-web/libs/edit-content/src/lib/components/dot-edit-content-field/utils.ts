@@ -1,5 +1,6 @@
 import { Type } from '@angular/core';
 
+import { DotEditContentCheckboxFieldComponent } from '../../fields/dot-edit-content-checkbox-field/dot-edit-content-checkbox-field.component';
 import { DotEditContentRadioFieldComponent } from '../../fields/dot-edit-content-radio-field/dot-edit-content-radio-field.component';
 import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-content-select-field/dot-edit-content-select-field.component';
 import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-text-area/dot-edit-content-text-area.component';
@@ -10,7 +11,8 @@ export enum FIELD_TYPES {
     TEXT = 'Text',
     TEXTAREA = 'Textarea',
     SELECT = 'Select',
-    RADIO = 'Radio'
+    RADIO = 'Radio',
+    CHECKBOX = 'Checkbox'
 }
 
 // This holds the mapping between the field type and the component that should be used to render it.
@@ -19,5 +21,6 @@ export const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown>> = {
     [FIELD_TYPES.TEXT]: DotEditContentTextFieldComponent,
     [FIELD_TYPES.TEXTAREA]: DotEditContentTextAreaComponent,
     [FIELD_TYPES.SELECT]: DotEditContentSelectFieldComponent,
-    [FIELD_TYPES.RADIO]: DotEditContentRadioFieldComponent
+    [FIELD_TYPES.RADIO]: DotEditContentRadioFieldComponent,
+    [FIELD_TYPES.CHECKBOX]: DotEditContentCheckboxFieldComponent
 };
