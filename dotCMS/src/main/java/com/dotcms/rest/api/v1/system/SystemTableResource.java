@@ -6,7 +6,6 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.util.CollectionsUtils;
-import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.WhiteBlackList;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
