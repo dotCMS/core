@@ -7,7 +7,7 @@ import { ActivatedRoute } from '@angular/router';
 import { EditContentLayoutComponent } from './edit-content.layout.component';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
-import { CONTENT_TYPE_MOCK, LAYOUT_MOCK } from '../../utils/mocks';
+import { CONTENT_TYPE_MOCK, JUST_FIELDS_MOCKS, LAYOUT_MOCK } from '../../utils/mocks';
 
 const createEditContentLayoutComponent = (params: { contentType?: string; id?: string }) => {
     return createComponentFactory({
@@ -35,7 +35,12 @@ describe('EditContentLayoutComponent with identifier', () => {
                 {
                     provide: DotEditContentService,
                     useValue: {
-                        getContentTypeFormData: jest.fn().mockReturnValue(of(LAYOUT_MOCK)),
+                        getContentTypeFormData: jest.fn().mockReturnValue(
+                            of({
+                                layout: LAYOUT_MOCK,
+                                fields: JUST_FIELDS_MOCKS
+                            })
+                        ),
                         getContentById: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK)),
                         saveContentlet: jest.fn().mockReturnValue(of({}))
                     }
@@ -91,7 +96,12 @@ describe('EditContentLayoutComponent without identifier', () => {
                 {
                     provide: DotEditContentService,
                     useValue: {
-                        getContentTypeFormData: jest.fn().mockReturnValue(of(LAYOUT_MOCK)),
+                        getContentTypeFormData: jest.fn().mockReturnValue(
+                            of({
+                                layout: LAYOUT_MOCK,
+                                fields: JUST_FIELDS_MOCKS
+                            })
+                        ),
                         getContentById: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK))
                     }
                 }

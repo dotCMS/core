@@ -6,3 +6,14 @@ export enum DotEditContentFieldSingleSelectableDataType {
     INTEGER = 'INTEGER',
     FLOAT = 'FLOAT'
 }
+
+// Map to match the field type to component selector
+export enum FIELD_TYPES {
+    TEXT = 'Text',
+    TEXTAREA = 'Textarea',
+    SELECT = 'Select',
+    RADIO = 'Radio',
+    DATE = 'Date',
+    DATE_AND_TIME = 'Date-and-Time',
+    TIME = 'Time'
+}
