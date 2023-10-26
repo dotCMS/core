@@ -83,5 +83,9 @@ describe('DotEditContentCalendarFieldComponent', () => {
         it('should have the timeOnly as defined in the options', () => {
             expect(calendar.timeOnly).toBe(options.timeOnly);
         });
+
+        it('should have the icon as defined in the options', () => {
+            expect(calendar.icon).toBe(options.icon);
+        });
     });
 });
