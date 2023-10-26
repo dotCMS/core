@@ -55,12 +55,13 @@ describe('DotEditContentMultiselectFieldComponent', () => {
         });
 
         // Mock de matchMedia
-        // @ts-ignore
         window.matchMedia =
             window.matchMedia ||
             function () {
                 return {
-                    matches: false
+                    matches: false,
+                    addListener: jest.fn(),
+                    removeListener: jest.fn()
                 };
             };
 
