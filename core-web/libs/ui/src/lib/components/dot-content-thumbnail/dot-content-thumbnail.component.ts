@@ -39,8 +39,7 @@ export class DotContentThumbnailComponent implements OnInit {
 
     readonly CONTENT_THUMBNAIL_TYPE = CONTENT_THUMBNAIL_TYPE;
     private readonly DEFAULT_ICON = 'pi-file';
-    private type;
-    a;
+    private type = '';
     private thumbnailUrlMap = {
         image: this.getImageThumbnailUrl.bind(this),
         video: this.getVideoThumbnailUrl.bind(this),

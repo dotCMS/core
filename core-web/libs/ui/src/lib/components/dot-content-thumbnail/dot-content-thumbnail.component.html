@@ -1,14 +1,19 @@
 <div class="thumbnail" [ngSwitch]="thumbnailType">
     <ng-container *ngSwitchCase="CONTENT_THUMBNAIL_TYPE.image">
-        <img [src]="src" [title]="name" (error)="handleError()" />
+        <img [src]="src" [title]="name" (error)="handleError()" data-testId="thumbail-image" />
     </ng-container>
 
-    <video *ngSwitchCase="CONTENT_THUMBNAIL_TYPE.video" controls>
-        <source [src]="src" />
-    </video>
+    <ng-container *ngSwitchCase="CONTENT_THUMBNAIL_TYPE.video">
+        <video controls data-testId="thumbail-video">
+            <source [src]="src" />
+        </video>
+    </ng-container>
 
-    <i
-        *ngSwitchDefault
-        [ngClass]="['pi', thumbnailIcon]"
-        [ngStyle]="{ 'font-size': iconSize, color: 'var(--color-palette-secondary-400)' }"></i>
+    <ng-container *ngSwitchDefault>
+        <i
+            *ngSwitchDefault
+            [ngClass]="['pi', thumbnailIcon]"
+            [ngStyle]="{ 'font-size': iconSize, color: 'var(--color-palette-secondary-400)' }"
+            data-testId="thumbail-icon"></i>
+    </ng-container>
 </div>

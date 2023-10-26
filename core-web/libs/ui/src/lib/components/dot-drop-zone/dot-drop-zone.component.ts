@@ -23,7 +23,7 @@ export interface DropZoneFileValidity {
     fileTypeMismatch: boolean;
     maxFileSizeExceeded: boolean;
     multipleFilesDropped: boolean;
-    errorsType?: DropZoneErrorType[];
+    errorsType: DropZoneErrorType[];
     valid: boolean;
 }
 
@@ -62,6 +62,7 @@ export class DotDropZoneComponent {
         fileTypeMismatch: false,
         maxFileSizeExceeded: false,
         multipleFilesDropped: false,
+        errorsType: [],
         valid: true
     };
 
@@ -175,7 +176,7 @@ export class DotDropZoneComponent {
         const isTooLong = file.size > this.maxFileSize;
 
         if (isTooLong) {
-            this.errorsType.push(DropZoneErrorType.FILE_TYPE_MISMATCH);
+            this.errorsType.push(DropZoneErrorType.MAX_FILE_SIZE_EXCEEDED);
         }
 
         return isTooLong;
