@@ -6,7 +6,7 @@ import { Injectable } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
-import { DotUploadService } from '@dotcms/data-access';
+import { DotLicenseService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import { getUiMessage } from '../../../utils/binary-field-utils';
@@ -25,7 +25,18 @@ export interface BinaryFieldState {
     status: BinaryFieldStatus;
     uiMessage: UiMessageI;
     dropZoneActive: boolean;
+    isEnterprise: boolean;
 }
+
+const initialState: BinaryFieldState = {
+    file: null,
+    tempFile: null,
+    mode: BinaryFieldMode.DROPZONE,
+    status: BinaryFieldStatus.INIT,
+    dropZoneActive: false,
+    uiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT),
+    isEnterprise: false
+};
 
 @Injectable()
 export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
@@ -45,9 +56,13 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
 
     constructor(
         private readonly dotUploadService: DotUploadService,
+        private readonly dotLicenseService: DotLicenseService,
         private readonly http: HttpClient
     ) {
-        super();
+        super(initialState);
+        this.dotLicenseService.isEnterprise().subscribe((isEnterprise) => {
+            this.setIsEnterprise(isEnterprise);
+        });
     }
 
     readonly setDropZoneActive = this.updater<boolean>((state, dropZoneActive) => ({
@@ -81,6 +96,11 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     readonly setStatus = this.updater<BinaryFieldStatus>((state, status) => ({
         ...state,
         status
+    }));
+
+    readonly setIsEnterprise = this.updater<boolean>((state, isEnterprise) => ({
+        ...state,
+        isEnterprise
     }));
 
     readonly setUploading = this.updater((state) => ({
@@ -132,6 +152,11 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         )
     );
 
+    /**
+     * Set the file and the content
+     *
+     * @memberof DotBinaryFieldStore
+     */
     readonly setFileAndContent = this.effect<BinaryFile>((file$: Observable<BinaryFile>) => {
         return file$.pipe(
             tap(() => this.setUploading()),
@@ -161,10 +186,26 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         this._maxFileSizeInMB = bytes / (1024 * 1024);
     }
 
+    /**
+     * Get the file content
+     *
+     * @private
+     * @param {string} url
+     * @return {*}  {Observable<string>}
+     * @memberof DotBinaryFieldStore
+     */
     private getFileContent(url: string): Observable<string> {
         return this.http.get(url, { responseType: 'text' });
     }
 
+    /**
+     * Create a BinaryFile from a DotCMSTempFile
+     *
+     * @private
+     * @param {DotCMSTempFile} tempFile
+     * @return {*}  {BinaryFile}
+     * @memberof DotBinaryFieldStore
+     */
     private fileFromTempFile({
         length,
         thumbnailUrl,

@@ -31,7 +31,6 @@ dot-drop-zone {
     padding: $spacing-1;
     margin-bottom: $spacing-1;
     height: 12.5rem;
-    max-width: 36rem;
 }
 
 .binary-field__container--uploading {
@@ -94,7 +93,6 @@ dot-drop-zone {
     justify-content: center;
     align-items: center;
     border-radius: $border-radius-md;
-    user-select: none;
     cursor: default;
     flex-grow: 1;
     height: 100%;

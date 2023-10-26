@@ -4,7 +4,7 @@ import {
     Component,
     EventEmitter,
     Input,
-    OnInit,
+    OnChanges,
     Output
 } from '@angular/core';
 
@@ -16,9 +16,12 @@ import { BinaryFile } from '../../interfaces';
 
 export enum EDITABLE_CONTENT {
     image = 'image',
-    text = 'text',
-    icon = 'icon'
+    text = 'text'
 }
+
+type EDITABLE_CONTENT_FUNTION_MAP = {
+    [key in EDITABLE_CONTENT]: () => boolean;
+};
 
 @Component({
     selector: 'dot-binary-field-preview',
@@ -28,39 +31,41 @@ export enum EDITABLE_CONTENT {
     styleUrls: ['./dot-binary-field-preview.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotBinaryFieldPreviewComponent implements OnInit {
+export class DotBinaryFieldPreviewComponent implements OnChanges {
     @Input() file: BinaryFile;
-    @Input() variableName: string;
-
-    @Output() editFile: EventEmitter<{
-        content?: string;
-    }> = new EventEmitter();
+    @Input() editableImage: boolean;
 
     @Output() editImage: EventEmitter<void> = new EventEmitter();
+    @Output() editFile: EventEmitter<void> = new EventEmitter();
     @Output() removeFile: EventEmitter<void> = new EventEmitter();
 
-    private readonly editableFiles = {
-        [EDITABLE_CONTENT.image]: true,
-        [EDITABLE_CONTENT.text]: true
+    private readonly editableFiles: EDITABLE_CONTENT_FUNTION_MAP = {
+        [EDITABLE_CONTENT.image]: () => this.editableImage,
+        [EDITABLE_CONTENT.text]: () => !!this.file?.content
     };
+    private contenttype: EDITABLE_CONTENT;
     readonly EDITABLE_CONTENT = EDITABLE_CONTENT;
 
     isEditable = false;
 
-    ngOnInit(): void {
+    ngOnChanges(): void {
         this.setIsEditable();
     }
 
     onEdit(): void {
-        this.editFile.emit({
-            content: this.file.content
-        });
+        if (this.contenttype === EDITABLE_CONTENT.image) {
+            this.editImage.emit();
+
+            return;
+        }
+
+        this.editFile.emit();
     }
 
     private setIsEditable() {
         const type = this.file.mimeType?.split('/')[0];
-        const contenttype = EDITABLE_CONTENT[type];
+        this.contenttype = EDITABLE_CONTENT[type];
 
-        this.isEditable = this.editableFiles[contenttype] || this.file.content;
+        this.isEditable = this.editableFiles[this.contenttype]?.();
     }
 }

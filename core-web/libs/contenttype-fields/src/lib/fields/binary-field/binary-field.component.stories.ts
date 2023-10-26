@@ -1,5 +1,6 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
+import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
@@ -9,7 +10,9 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotMessageService, DotUploadService } from '@dotcms/data-access';
+import { delay } from 'rxjs/operators';
+
+import { DotLicenseService, DotMessageService, DotUploadService } from '@dotcms/data-access';
 import {
     DotContentThumbnailComponent,
     DotDropZoneComponent,
@@ -55,6 +58,12 @@ export default {
             ],
             providers: [
                 DotBinaryFieldStore,
+                {
+                    provide: DotLicenseService,
+                    useValue: {
+                        isEnterprise: () => of(true).pipe(delay(1000))
+                    }
+                },
                 {
                     provide: DotUploadService,
                     useValue: {

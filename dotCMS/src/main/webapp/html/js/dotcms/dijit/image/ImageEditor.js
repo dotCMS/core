@@ -468,6 +468,16 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
     /**
+     * Emit image editor close event if user closes the window without saving
+     */
+    handleOnClose: function() {
+        const variable = this.variable;
+        const customEvent = new CustomEvent(`binaryField-close-image-editor-${variable}`, {});
+        document.dispatchEvent(customEvent);
+        this.closeImageWindow();
+    },
+
+    /**
      * cleans up old references, resets imageEditor
      */
     _cleanUpImageEditor : function (e){

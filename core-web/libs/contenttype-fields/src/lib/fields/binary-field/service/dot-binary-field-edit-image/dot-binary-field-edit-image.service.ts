@@ -20,6 +20,7 @@ export class DotBinaryFieldEditImageService {
     }
 
     openImageEditor({ inode, tempId, variable }: ImageEditorProps): void {
+        this.variable = variable;
         const customEvent = new CustomEvent(`binaryField-open-image-editor-${variable}`, {
             detail: {
                 inode,
@@ -27,9 +28,9 @@ export class DotBinaryFieldEditImageService {
                 variable
             }
         });
-        this.variable = variable;
         document.dispatchEvent(customEvent);
         this.listenToEditedImage();
+        this.listenToCloseImageEditor();
     }
 
     listenToEditedImage(): void {
@@ -39,10 +40,22 @@ export class DotBinaryFieldEditImageService {
         );
     }
 
+    listenToCloseImageEditor(): void {
+        document.addEventListener(
+            `binaryField-close-image-editor-${this.variable}`,
+            this.removeListener.bind(this)
+        );
+    }
+
     removeListener(): void {
         document.removeEventListener(
             `binaryField-tempfile-${this.variable}`,
             this.handleNewImage.bind(this)
+        );
+
+        document.removeEventListener(
+            `binaryField-close-image-editor-${this.variable}`,
+            this.removeListener.bind(this)
         );
     }
 

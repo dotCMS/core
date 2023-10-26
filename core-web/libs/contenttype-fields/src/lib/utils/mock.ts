@@ -11,16 +11,18 @@ const MESSAGES_MOCK = {
     'dot.binary.field.dialog.import.from.url.header': 'URL',
     'dot.binary.field.drag.and.drop.message': 'Drag and Drop or',
     'dot.binary.field.drag.and.drop.error.could.not.load.message':
-        '<strong>Couldn&apos;t load the file.</strong> Please try again or<br/>',
+        '<strong>Couldn&apos;t load the file.</strong> Please try again or',
     'dot.binary.field.drag.and.drop.error.file.not.supported.message':
-        'This type of <strong>file is not supported</strong>, Please select a <br /> {0} file.',
+        'This type of <strong>file is not supported</strong>, Please select a  {0} file.',
     'dot.binary.field.error.type.file.not.supported.message':
         'This type of file is not supported. Please use a {0} file.',
     'dot.binary.field.error.type.file.not.extension': "Please add the file's extension",
+    'dot.binary.field.drag.and.drop.error.multiple.files.dropped.message':
+        'You can only upload one file at a time.',
     'dot.binary.field.drag.and.drop.error.file.maxsize.exceeded.message':
-        'The file weight <strong>exceeds the limits of {0}</strong>, please  <br /> reduce size before uploading.',
+        'The file weight <strong>exceeds the limits of {0}</strong>, please   reduce size before uploading.',
     'dot.binary.field.drag.and.drop.error.server.error.message':
-        '<strong>Something went wrong</strong>, please try again or <br/> contact our support team.',
+        '<strong>Something went wrong</strong>, please try again or  contact our support team.',
     'dot.common.cancel': 'Cancel',
     'dot.common.import': 'Import',
     'dot.common.save': 'Save',

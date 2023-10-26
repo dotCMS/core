@@ -11,13 +11,18 @@ const UiMessageMap: UiMessageMap = {
         severity: 'error',
         icon: 'pi pi-exclamation-triangle'
     },
-    INVALID_FILE: {
+    FILE_TYPE_MISMATCH: {
         message: 'dot.binary.field.drag.and.drop.error.file.not.supported.message',
         severity: 'error',
         icon: 'pi pi-exclamation-triangle'
     },
     MAX_FILE_SIZE_EXCEEDED: {
         message: 'dot.binary.field.drag.and.drop.error.file.maxsize.exceeded.message',
+        severity: 'error',
+        icon: 'pi pi-exclamation-triangle'
+    },
+    MULTIPLE_FILES_DROPPED: {
+        message: 'dot.binary.field.drag.and.drop.error.multiple.files.dropped.message',
         severity: 'error',
         icon: 'pi pi-exclamation-triangle'
     }

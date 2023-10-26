@@ -19,7 +19,7 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { filter, skip } from 'rxjs/operators';
+import { delay, filter, skip, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
@@ -27,6 +27,7 @@ import {
     DotDropZoneComponent,
     DotMessagePipe,
     DotSpinnerModule,
+    DropZoneErrorType,
     DropZoneFileEvent,
     DropZoneFileValidity
 } from '@dotcms/ui';
@@ -35,20 +36,11 @@ import { DotBinaryFieldEditorComponent } from './components/dot-binary-field-edi
 import { DotBinaryFieldPreviewComponent } from './components/dot-binary-field-preview/dot-binary-field-preview.component';
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
 import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
-import { BinaryFieldMode, BinaryFieldStatus, UI_MESSAGE_KEYS, UiMessageI } from './interfaces';
+import { BinaryFieldMode, BinaryFieldStatus } from './interfaces';
 import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
-import { BinaryFieldState, DotBinaryFieldStore } from './store/binary-field.store';
+import { DotBinaryFieldStore } from './store/binary-field.store';
 
 import { getUiMessage } from '../../utils/binary-field-utils';
-
-const initialState: BinaryFieldState = {
-    file: null,
-    tempFile: null,
-    mode: BinaryFieldMode.DROPZONE,
-    status: BinaryFieldStatus.INIT,
-    dropZoneActive: false,
-    uiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT)
-};
 
 @Component({
     selector: 'dot-binary-field',
@@ -99,7 +91,6 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
         private readonly dotBinaryFieldEditImageService: DotBinaryFieldEditImageService,
         private readonly cd: ChangeDetectorRef
     ) {
-        this.dotBinaryFieldStore.setState(initialState);
         this.dotMessageService.init();
     }
 
@@ -111,7 +102,11 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
 
         this.dotBinaryFieldEditImageService
             .editedImage()
-            .pipe(filter((tempFile) => !!tempFile))
+            .pipe(
+                filter((tempFile) => !!tempFile),
+                tap(() => this.dotBinaryFieldStore.setStatus(BinaryFieldStatus.UPLOADING)),
+                delay(500) // Loading animation
+            )
             .subscribe((tempFile) => {
                 this.setTempFile(tempFile);
             });
@@ -156,18 +151,16 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
         this.closeDialog();
     }
 
-    onEditFile({ content }: { content?: string }) {
-        if (!content) {
-            this.dotBinaryFieldEditImageService.openImageEditor({
-                inode: this.contentlet?.inode,
-                tempId: this.tempId,
-                variable: this.field.variable
-            });
-
-            return;
-        }
-
+    onEditFile() {
         this.openDialog(BinaryFieldMode.EDITOR);
+    }
+
+    onEditImage() {
+        this.dotBinaryFieldEditImageService.openImageEditor({
+            inode: this.contentlet?.inode,
+            tempId: this.tempId,
+            variable: this.field.variable
+        });
     }
 
     setDropZoneActiveState(value: boolean) {
@@ -216,19 +209,13 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
         );
     }
 
-    private handleFileDropError({
-        fileTypeMismatch,
-        maxFileSizeExceeded
-    }: DropZoneFileValidity): void {
-        const acceptedTypes = this.accept.join(', ');
-        const maxSize = `${this.maxFileSize} bytes`;
-        let uiMessage: UiMessageI;
-
-        if (fileTypeMismatch) {
-            uiMessage = getUiMessage(UI_MESSAGE_KEYS.INVALID_FILE, acceptedTypes);
-        } else if (maxFileSizeExceeded) {
-            uiMessage = getUiMessage(UI_MESSAGE_KEYS.MAX_FILE_SIZE_EXCEEDED, maxSize);
-        }
+    private handleFileDropError({ errorsType }: DropZoneFileValidity): void {
+        const messageArgs = {
+            [DropZoneErrorType.FILE_TYPE_MISMATCH]: this.accept.join(', '),
+            [DropZoneErrorType.MAX_FILE_SIZE_EXCEEDED]: `${this.maxFileSize} bytes`
+        };
+        const errorType = errorsType[0];
+        const uiMessage = getUiMessage(errorType, messageArgs[errorType]);
 
         this.dotBinaryFieldStore.invalidFile(uiMessage);
     }

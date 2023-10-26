@@ -1,3 +1,5 @@
+import { DropZoneErrorType } from '@dotcms/ui';
+
 export enum BinaryFieldMode {
     DROPZONE = 'DROPZONE',
     URL = 'URL',
@@ -24,13 +26,13 @@ export interface BinaryFile {
 
 export enum UI_MESSAGE_KEYS {
     DEFAULT = 'DEFAULT',
-    SERVER_ERROR = 'SERVER_ERROR',
-    INVALID_FILE = 'INVALID_FILE',
-    MAX_FILE_SIZE_EXCEEDED = 'MAX_FILE_SIZE_EXCEEDED'
+    SERVER_ERROR = 'SERVER_ERROR'
 }
 
+type BINARY_FIELD_MESSAGE_KEY = UI_MESSAGE_KEYS | DropZoneErrorType;
+
 export type UiMessageMap = {
-    [key in UI_MESSAGE_KEYS]: UiMessageI;
+    [key in BINARY_FIELD_MESSAGE_KEY]: UiMessageI;
 };
 
 export interface UiMessageI {

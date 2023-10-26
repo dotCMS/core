@@ -1,17 +1,19 @@
 import { expect, describe } from '@jest/globals';
 import { SpectatorService, createServiceFactory } from '@ngneat/spectator';
+import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { skip } from 'rxjs/operators';
 
-import { DotUploadService } from '@dotcms/data-access';
+import { DotLicenseService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
+import { DropZoneErrorType } from '@dotcms/ui';
 
 import { BinaryFieldState, DotBinaryFieldStore } from './binary-field.store';
 
-import { UI_MESSAGE_KEYS, getUiMessage } from '../../../utils/binary-field-utils';
-import { BinaryFieldMode, BinaryFieldStatus } from '../interfaces';
+import { getUiMessage } from '../../../utils/binary-field-utils';
+import { BinaryFieldMode, BinaryFieldStatus, UI_MESSAGE_KEYS } from '../interfaces';
 
 const INITIAL_STATE: BinaryFieldState = {
     file: null,
@@ -19,7 +21,8 @@ const INITIAL_STATE: BinaryFieldState = {
     mode: BinaryFieldMode.DROPZONE,
     status: BinaryFieldStatus.INIT,
     uiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT),
-    dropZoneActive: false
+    dropZoneActive: false,
+    isEnterprise: false
 };
 
 export const TEMP_FILE_MOCK: DotCMSTempFile = {
@@ -45,6 +48,12 @@ describe('DotBinaryFieldStore', () => {
         service: DotBinaryFieldStore,
         imports: [HttpClientTestingModule],
         providers: [
+            {
+                provide: DotLicenseService,
+                useValue: {
+                    isEnterprise: () => of(true)
+                }
+            },
             {
                 provide: DotUploadService,
                 useValue: {
@@ -104,7 +113,7 @@ describe('DotBinaryFieldStore', () => {
             });
         });
         it('should set uiMessage', (done) => {
-            const uiMessage = getUiMessage(UI_MESSAGE_KEYS.FILE_TYPE_MISMATCH);
+            const uiMessage = getUiMessage(DropZoneErrorType.FILE_TYPE_MISMATCH);
             store.setUiMessage(uiMessage);
 
             store.vm$.subscribe((state) => {

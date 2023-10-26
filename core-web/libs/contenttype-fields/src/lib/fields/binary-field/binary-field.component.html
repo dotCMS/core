@@ -52,16 +52,19 @@
         </div>
     </div>
 
-    <dot-spinner
-        *ngIf="vm.status === BinaryFieldStatus.UPLOADING"
-        data-testId="loading"></dot-spinner>
+    <ng-container *ngIf="vm.status === BinaryFieldStatus.UPLOADING">
+        <dot-spinner data-testId="loading"></dot-spinner>
+    </ng-container>
 
-    <dot-binary-field-preview
-        *ngIf="vm.status === BinaryFieldStatus.PREVIEW"
-        [file]="vm.file"
-        (removeFile)="removeFile()"
-        (editFile)="onEditFile($event)"
-        data-testId="preview"></dot-binary-field-preview>
+    <ng-container *ngIf="vm.status === BinaryFieldStatus.PREVIEW">
+        <dot-binary-field-preview
+            [file]="vm.file"
+            [editableImage]="vm.isEnterprise"
+            (removeFile)="removeFile()"
+            (editFile)="onEditFile()"
+            (editFile)="onEditImage()"
+            data-testId="preview"></dot-binary-field-preview>
+    </ng-container>
 
     <p-dialog
         [(visible)]="dialogOpen"

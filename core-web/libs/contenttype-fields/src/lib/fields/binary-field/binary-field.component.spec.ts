@@ -10,9 +10,9 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
-import { DotMessageService, DotUploadService } from '@dotcms/data-access';
+import { DotLicenseService, DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
-import { DropZoneFileEvent } from '@dotcms/ui';
+import { DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
 
 import { DotBinaryFieldComponent } from './binary-field.component';
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
@@ -40,7 +40,8 @@ const validity = {
     valid: true,
     fileTypeMismatch: false,
     maxFileSizeExceeded: false,
-    multipleFilesDropped: false
+    multipleFilesDropped: false,
+    errorsType: [DropZoneErrorType.FILE_TYPE_MISMATCH]
 };
 
 const DROP_ZONE_FILE_EVENT: DropZoneFileEvent = {
@@ -65,6 +66,12 @@ describe('DotBinaryFieldComponent', () => {
         componentProviders: [DotBinaryFieldStore],
         providers: [
             DotBinaryFieldEditImageService,
+            {
+                provide: DotLicenseService,
+                useValue: {
+                    isEnterprise: () => of(true)
+                }
+            },
             {
                 provide: DotUploadService,
                 useValue: {
