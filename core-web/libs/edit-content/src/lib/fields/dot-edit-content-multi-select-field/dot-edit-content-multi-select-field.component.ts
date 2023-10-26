@@ -1,11 +1,4 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    inject,
-    Input,
-    OnChanges,
-    SimpleChanges
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { MultiSelectModule } from 'primeng/multiselect';
@@ -13,7 +6,6 @@ import { MultiSelectModule } from 'primeng/multiselect';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
-
 @Component({
     selector: 'dot-edit-content-multi-select-field',
     standalone: true,
@@ -28,14 +20,14 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
         }
     ]
 })
-export class DotEditContentMultiSelectFieldComponent implements OnChanges {
+export class DotEditContentMultiSelectFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
     options = [];
 
-    ngOnChanges(changes: SimpleChanges) {
-        if (changes.field && changes.field.currentValue) {
-            const { values, dataType } = changes.field.currentValue;
-            this.options = getSingleSelectableFieldOptions(values || '', dataType);
-        }
+    ngOnInit() {
+        this.options = getSingleSelectableFieldOptions(
+            this.field.values || '',
+            this.field.dataType
+        );
     }
 }
