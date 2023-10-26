@@ -70,12 +70,12 @@ jobs:
           echo "is_lts=${IS_LTS}" >> $GITHUB_OUTPUT
           echo "release_name=${RELEASE_NAME}" >> $GITHUB_OUTPUT
           echo "release_label=${RELEASE_LABEL}" >> $GITHUB_OUTPUT
-      - name: Prepare dot-cicd
-        run: |
-          sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
-      - name: Run DotCMS Release Docker Image
-        run: |
-          ../dotcicd/library/pipeline.sh runRelease
+#      - name: Prepare dot-cicd
+#        run: |
+#          sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
+#      - name: Run DotCMS Release Docker Image
+#        run: |
+#          ../dotcicd/library/pipeline.sh runRelease
 
   publish-release-image:
     name: Publish release image
@@ -140,17 +140,17 @@ jobs:
       - name: Pre build
         run: |
           docker system prune --volumes -af
-      - name: Build and push
-        uses: docker/build-push-action@v5.0.0
-        with:
-          context: ./docker/dotcms
-          push: ${{ needs.release-process.outputs.is_release == 'true' }}
-          tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
-          platforms: ${{ env.PLATFORMS }}
-          build-args: |
-            BUILD_FROM=TAG
-            BUILD_ID=${{ needs.release-process.outputs.build_id }}
-        if: success()
+#      - name: Build and push
+#        uses: docker/build-push-action@v5.0.0
+#        with:
+#          context: ./docker/dotcms
+#          push: ${{ needs.release-process.outputs.is_release == 'true' }}
+#          tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
+#          platforms: ${{ env.PLATFORMS }}
+#          build-args: |
+#            BUILD_FROM=TAG
+#            BUILD_ID=${{ needs.release-process.outputs.build_id }}
+#        if: success()
 
   release-wrap:
     name: Release wrap-up
