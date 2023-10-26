@@ -6,13 +6,29 @@
     >{{ field.name }}</label
 >
 <ng-container [ngSwitch]="field.fieldType">
+    <dot-edit-content-select-field
+        *ngSwitchCase="fieldTypes.SELECT"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
+
+    <dot-edit-content-radio-field
+        *ngSwitchCase="fieldTypes.RADIO"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
+
     <dot-edit-content-text-field
         *ngSwitchCase="fieldTypes.TEXT"
         [field]="field"
-        [attr.data-testId]="'field-' + field.variable"></dot-edit-content-text-field>
+        [attr.data-testId]="'field-' + field.variable" />
     <dot-edit-content-text-area
         *ngSwitchCase="fieldTypes.TEXTAREA"
         [field]="field"
-        [attr.data-testId]="'field-' + field.variable"></dot-edit-content-text-area>
+        [attr.data-testId]="'field-' + field.variable" />
+
+    <dot-edit-content-calendar-field
+        *ngSwitchCase="calendarTypes.includes(field.fieldType) ? field.fieldType : ''"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable">
+    </dot-edit-content-calendar-field>
 </ng-container>
 <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>

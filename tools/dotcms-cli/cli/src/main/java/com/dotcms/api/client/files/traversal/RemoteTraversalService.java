@@ -2,11 +2,10 @@ package com.dotcms.api.client.files.traversal;
 
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
-import com.dotcms.common.AssetsUtils;
-import org.apache.commons.lang3.tuple.Pair;
-
+import com.dotcms.common.LocalPathStructure;
 import java.util.List;
 import java.util.Set;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Service for traversing a dotCMS remote location and building a hierarchical tree representation of
@@ -54,7 +53,7 @@ public interface RemoteTraversalService {
      * @param progressBar        the console progress bar to track and display the push progress
      * @return A list of exceptions encountered during the push process.
      */
-    List<Exception> pushTreeNode(String workspace, AssetsUtils.LocalPathStructure localPathStructure, TreeNode treeNode,
+    List<Exception> pushTreeNode(String workspace, LocalPathStructure localPathStructure, TreeNode treeNode,
                                  final boolean failFast, final boolean isRetry, ConsoleProgressBar progressBar);
 
 }

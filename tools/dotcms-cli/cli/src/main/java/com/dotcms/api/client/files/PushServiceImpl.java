@@ -4,31 +4,29 @@ import static java.util.stream.Collectors.groupingBy;
 
 import com.dotcms.api.client.files.traversal.LocalTraversalService;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
-import com.dotcms.api.client.files.traversal.AbstractTraverseResult;
+import com.dotcms.api.client.files.traversal.TraverseParams;
 import com.dotcms.api.client.files.traversal.TraverseResult;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
-import com.dotcms.api.client.files.traversal.TraverseParams;
 import com.dotcms.api.client.push.exception.PushException;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
-import com.dotcms.common.AssetsUtils.LocalPathStructure;
+import com.dotcms.common.LocalPathStructure;
 import io.quarkus.arc.DefaultBean;
+import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-import org.jboss.logging.Logger;
-
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import org.jboss.logging.Logger;
 
 @DefaultBean
 @Dependent
@@ -183,7 +181,7 @@ public class PushServiceImpl implements PushService {
      * @return
      */
     boolean isAllFoldersMarkedForDelete(List<TreeNode> nodes) {
-        return nodes.stream().map(TreeNode::folder).allMatch(folderView -> folderView.markForDelete().isPresent() && folderView.markForDelete().get());
+        return nodes.stream().map(TreeNode::folder).allMatch(folderView -> folderView.sync().isPresent() && folderView.sync().get().markedForDelete());
     }
 
     /**
