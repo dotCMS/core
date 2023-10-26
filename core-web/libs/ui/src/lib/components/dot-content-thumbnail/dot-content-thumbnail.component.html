@@ -1,10 +1,15 @@
 <div class="thumbnail" [ngSwitch]="thumbnailType">
     <ng-container *ngSwitchCase="CONTENT_THUMBNAIL_TYPE.image">
-        <img [src]="src" [title]="name" (error)="handleError()" data-testId="thumbail-image" />
+        <img
+            [src]="src"
+            [title]="name"
+            [alt]="name"
+            (error)="handleError()"
+            data-testId="thumbail-image" />
     </ng-container>
 
     <ng-container *ngSwitchCase="CONTENT_THUMBNAIL_TYPE.video">
-        <video controls data-testId="thumbail-video">
+        <video (error)="handleError()" controls data-testId="thumbail-video">
             <source [src]="src" />
         </video>
     </ng-container>
