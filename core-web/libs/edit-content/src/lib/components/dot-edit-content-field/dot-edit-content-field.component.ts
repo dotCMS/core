@@ -5,9 +5,9 @@ import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
-import { FIELD_TYPES } from './utils';
-
 import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields.module';
+import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { CALENDAR_FIELD_TYPES } from '../../utils/mocks';
 
 @Component({
     selector: 'dot-edit-content-field',
@@ -34,4 +34,5 @@ export class DotEditContentFieldComponent {
     @HostBinding('class') class = 'field';
     @Input() field!: DotCMSContentTypeField;
     readonly fieldTypes = FIELD_TYPES;
+    readonly calendarTypes = CALENDAR_FIELD_TYPES as string[];
 }

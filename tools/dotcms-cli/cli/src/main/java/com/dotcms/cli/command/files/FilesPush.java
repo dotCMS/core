@@ -5,7 +5,6 @@ import static com.dotcms.cli.command.files.TreePrinter.COLOR_MODIFIED;
 import static com.dotcms.cli.command.files.TreePrinter.COLOR_NEW;
 
 import com.dotcms.api.client.files.PushService;
-import com.dotcms.api.client.files.traversal.AbstractTraverseResult;
 import com.dotcms.api.client.files.traversal.TraverseResult;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
@@ -15,7 +14,7 @@ import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.AssetsUtils;
-import com.dotcms.common.AssetsUtils.LocalPathStructure;
+import com.dotcms.common.LocalPathStructure;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -116,7 +115,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
 
                 header(count++, localPaths, outputBuilder);
 
-                var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
+                var treeNodePushInfo = treeNode.collectPushInfo();
 
                 if (treeNodePushInfo.hasChanges()) {
 
