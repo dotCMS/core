@@ -21,7 +21,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { delay, filter, skip, tap } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 import {
     DotDropZoneComponent,
@@ -60,7 +60,7 @@ import { getUiMessage } from '../../utils/binary-field-utils';
         DotBinaryFieldUrlModeComponent,
         DotBinaryFieldPreviewComponent
     ],
-    providers: [DotBinaryFieldStore, DotBinaryFieldEditImageService],
+    providers: [DotBinaryFieldStore, DotLicenseService, DotBinaryFieldEditImageService],
     templateUrl: './binary-field.component.html',
     styleUrls: ['./binary-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -183,7 +183,7 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
         const { titleImage, inode, [metaDataKey]: metadata } = this.contentlet;
         const { contentType: mimeType } = metadata;
 
-        this.dotBinaryFieldStore.setFile({
+        this.dotBinaryFieldStore.setFileAndContent({
             inode,
             titleImage,
             mimeType,

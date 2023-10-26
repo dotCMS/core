@@ -1,5 +1,6 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
+import { HttpClientModule } from '@angular/common/http';
 import { DoBootstrap, Injector, NgModule, Type } from '@angular/core';
 import { createCustomElement } from '@angular/elements';
 import { BrowserModule } from '@angular/platform-browser';
@@ -7,6 +8,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotBinaryFieldComponent } from '@dotcms/contenttype-fields';
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
+import { CoreWebService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 
 import { AppComponent } from './app.component';
 
@@ -24,8 +26,14 @@ const CONTENTTYPE_FIELDS: ContenttypeFieldElement[] = [
 
 @NgModule({
     declarations: [AppComponent],
-    imports: [BrowserModule, BrowserAnimationsModule, DotBinaryFieldComponent, MonacoEditorModule],
-    providers: [DotMessageService, DotUploadService]
+    imports: [
+        BrowserModule,
+        BrowserAnimationsModule,
+        HttpClientModule,
+        DotBinaryFieldComponent,
+        MonacoEditorModule
+    ],
+    providers: [DotMessageService, DotUploadService, CoreWebService, LoggerService, StringUtils]
 })
 export class AppModule implements DoBootstrap {
     constructor(private readonly injector: Injector) {}
