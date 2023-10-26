@@ -108,6 +108,15 @@ export class DotEditContentFormComponent implements OnInit {
      * @returns void
      */
     saveContenlet() {
-        this.formSubmit.emit(this.form.value);
+        // Maybe we will need to abstract this logic to a function
+        const parsedContent = Object.keys(this.form.value).reduce((acc, key) => {
+            acc[key] = Array.isArray(this.form.value[key])
+                ? this.form.value[key].join(',')
+                : this.form.value[key];
+
+            return acc;
+        }, {});
+
+        this.formSubmit.emit(parsedContent);
     }
 }
