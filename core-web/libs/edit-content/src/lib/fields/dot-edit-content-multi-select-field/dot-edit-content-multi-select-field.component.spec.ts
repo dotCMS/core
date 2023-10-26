@@ -9,6 +9,21 @@ import { DotEditContentMultiSelectFieldComponent } from './dot-edit-content-mult
 
 import { MULTI_SELECT_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
 
+// https://jestjs.io/docs/manual-mocks#mocking-methods-which-are-not-implemented-in-jsdom
+Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation((query) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: jest.fn(), // deprecated
+        removeListener: jest.fn(), // deprecated
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn()
+    }))
+});
+
 describe('DotEditContentMultiselectFieldComponent', () => {
     describe('test with value', () => {
         let spectator: Spectator<DotEditContentMultiSelectFieldComponent>;
@@ -26,6 +41,7 @@ describe('DotEditContentMultiselectFieldComponent', () => {
                 }
             ],
             providers: [FormGroupDirective],
+            imports: [],
             detectChanges: false
         });
 
@@ -68,10 +84,9 @@ describe('DotEditContentMultiselectFieldComponent', () => {
         });
 
         it('should render options', () => {
-            //Working on this test.
             spectator.setInput('field', MULTI_SELECT_FIELD_MOCK);
-            spectator.detectComponentChanges();
             spectator.query(MultiSelect).show();
+            spectator.detectComponentChanges();
 
             const multiSelectItems = spectator.queryAll(MultiSelectItem);
             expect(multiSelectItems.length).toBe(2);
