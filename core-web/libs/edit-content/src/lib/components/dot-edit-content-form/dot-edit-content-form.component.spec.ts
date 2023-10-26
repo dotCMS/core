@@ -1,30 +1,30 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule } from '@angular/forms';
-
-import { ButtonModule } from 'primeng/button';
+import { Validators } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
-import { FIELDS_MOCK, FIELD_MOCK, LAYOUT_MOCK } from '../../utils/mocks';
+import { EditContentFormData } from '../../models/dot-edit-content-form.interface';
+import { JUST_FIELDS_MOCKS, LAYOUT_MOCK } from '../../utils/mocks';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
+
+export const VALUES_MOCK = {
+    name1: 'Name1',
+    text2: 'Text2'
+};
+
+export const CONTENT_FORM_DATA_MOCK: EditContentFormData = {
+    layout: LAYOUT_MOCK,
+    fields: JUST_FIELDS_MOCKS
+};
 
 describe('DotFormComponent', () => {
     let spectator: Spectator<DotEditContentFormComponent>;
     const createComponent = createComponentFactory({
         component: DotEditContentFormComponent,
-        imports: [
-            DotEditContentFieldComponent,
-            CommonModule,
-            ReactiveFormsModule,
-            ButtonModule,
-            DotMessagePipe
-        ],
         providers: [
             {
                 provide: DotMessageService,
@@ -35,50 +35,75 @@ describe('DotFormComponent', () => {
         ]
     });
 
-    beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                formData: LAYOUT_MOCK
-            }
-        });
-    });
-
-    describe('initilizeForm', () => {
-        it('should initialize the form group with form controls for each field in the `formData` array', () => {
-            const component = spectator.component;
-            component.formData = LAYOUT_MOCK;
-            spectator.detectChanges();
-
-            expect(component.form.controls['name1']).toBeDefined();
-            expect(component.form.controls['text2']).toBeDefined();
-        });
-    });
-
-    describe('initializeFormControl', () => {
-        it('should initialize a form control for a given DotCMSContentTypeField', () => {
-            const formControl = spectator.component.initializeFormControl(FIELD_MOCK);
-
-            expect(formControl).toBeDefined();
-            expect(formControl.validator).toBeDefined();
+    describe('with data', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                props: {
+                    formData: CONTENT_FORM_DATA_MOCK
+                }
+            });
         });
 
-        it('should have a default value if is defined', () => {
-            const formControl = spectator.component.initializeFormControl(FIELDS_MOCK[1]);
-            expect(formControl.value).toEqual(FIELDS_MOCK[1].defaultValue);
+        it('should initialize the form controls', () => {
+            expect(spectator.component.form.value).toEqual({
+                name1: 'Placeholder',
+                text2: null,
+                text3: null
+            });
         });
-    });
 
-    describe('saveContent', () => {
+        it('should initialize the form validators', () => {
+            expect(
+                spectator.component.form.controls['name1'].hasValidator(Validators.required)
+            ).toBe(true);
+            expect(
+                spectator.component.form.controls['text2'].hasValidator(Validators.required)
+            ).toBe(true);
+            expect(
+                spectator.component.form.controls['text3'].hasValidator(Validators.required)
+            ).toBe(false);
+        });
+
+        it('should validate regex', () => {
+            expect(spectator.component.form.controls['text2'].valid).toBeFalsy();
+
+            spectator.component.form.controls['text2'].setValue('dot@gmail.com');
+            expect(spectator.component.form.controls['text2'].valid).toBeTruthy();
+        });
+
+        it('should have 1 row, 2 columns and 3 fields', () => {
+            expect(spectator.queryAll(byTestId('row'))).toHaveLength(1);
+            expect(spectator.queryAll(byTestId('column'))).toHaveLength(2);
+            expect(spectator.queryAll(byTestId('field'))).toHaveLength(3);
+        });
+
+        it('should pass field to attr to dot-edit-content-field', () => {
+            const fields = spectator.queryAll(DotEditContentFieldComponent);
+            JUST_FIELDS_MOCKS.forEach((field, index) => {
+                expect(fields[index].field).toEqual(field);
+            });
+        });
+
         it('should emit the form value through the `formSubmit` event', () => {
-            const component = spectator.component;
-            component.formData = LAYOUT_MOCK;
-            component.initilizeForm();
-
-            jest.spyOn(component.formSubmit, 'emit');
+            jest.spyOn(spectator.component.formSubmit, 'emit');
             const button = spectator.query(byTestId('button-save'));
             spectator.click(button);
 
-            expect(component.formSubmit.emit).toHaveBeenCalledWith(component.form.value);
+            expect(spectator.component.formSubmit.emit).toHaveBeenCalledWith(
+                spectator.component.form.value
+            );
+        });
+    });
+
+    describe('no data', () => {
+        beforeEach(() => {
+            spectator = createComponent({});
+        });
+
+        it('should have form undefined', () => {
+            jest.spyOn(spectator.component, 'initilizeForm');
+            expect(spectator.component.form).toEqual(undefined);
+            expect(spectator.component.initilizeForm).not.toHaveBeenCalled();
         });
     });
 });
