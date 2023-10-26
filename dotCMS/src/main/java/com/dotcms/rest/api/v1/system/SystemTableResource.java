@@ -6,11 +6,11 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.WhiteBlackList;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.exception.DotDuplicateDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
@@ -32,6 +32,9 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
 
 /**
  * This Jersey end-point provides access to the system table.
@@ -96,7 +99,7 @@ public class SystemTableResource implements Serializable {
 											 @Context final HttpServletResponse response,
 											 @PathParam("key") final String key)
 			throws IllegalAccessException {
-
+		checkNotEmpty(key, IllegalArgumentException.class, "Key cannot be null or empty");
 		this.init(request, response);
 		this.checkBlackList(key);
 
@@ -143,7 +146,7 @@ public class SystemTableResource implements Serializable {
 	}
 
 	/**
-	 * Saves a value to the system table.
+	 * Saves or updates the value of a given key to the system table.
 	 *
 	 * @param request  The current instance of the {@link HttpServletRequest}.
 	 * @param response The current instance of the {@link HttpServletResponse}.
@@ -152,7 +155,6 @@ public class SystemTableResource implements Serializable {
 	 * @return The key that was saved.
 	 *
 	 * @throws IllegalArgumentException If the key is blacklisted.
-	 * @throws DotDuplicateDataException The key already exists.
 	 */
 	@POST
 	@JSONP
@@ -162,18 +164,13 @@ public class SystemTableResource implements Serializable {
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
 			final KeyValueForm form) throws IllegalAccessException {
-
+		checkNotNull(form, IllegalArgumentException.class, "KeyValueForm cannot be null");
 		this.init(request, response);
 		this.checkBlackList(form.getKey());
-
-		if (this.systemTable.get(form.getKey()).isPresent()) {
-			throw new DotDuplicateDataException("Key already exist: " + form.getKey());
-		}
-
-		Logger.debug(this, ()-> "Saving system table value for key: " + form.getKey());
+		Logger.debug(this, ()-> "Saving/updating system table value for key: " + form.getKey());
 		this.systemTable.set(form.getKey(), form.getValue());
 		
-		return new ResponseEntityStringView(form.getKey() + " Saved");
+		return new ResponseEntityStringView(form.getKey() + " saved/updated");
 	}
 
 	/**
@@ -194,7 +191,7 @@ public class SystemTableResource implements Serializable {
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
 			final KeyValueForm form) throws IllegalAccessException {
-
+		checkNotNull(form, IllegalArgumentException.class, "KeyValueForm cannot be null");
 		this.init(request, response);
 		this.checkBlackList(form.getKey());
 
@@ -228,7 +225,7 @@ public class SystemTableResource implements Serializable {
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
 			@PathParam("key") final String key) throws IllegalAccessException {
-
+		checkNotEmpty(key, IllegalArgumentException.class, "Key cannot be null or empty");
 		this.init(request, response);
 		this.checkBlackList(key);
 
