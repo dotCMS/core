@@ -24,5 +24,11 @@
         *ngSwitchCase="fieldTypes.TEXTAREA"
         [field]="field"
         [attr.data-testId]="'field-' + field.variable" />
+
+    <dot-edit-content-calendar-field
+        *ngSwitchCase="calendarTypes.includes(field.fieldType) ? field.fieldType : ''"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable">
+    </dot-edit-content-calendar-field>
 </ng-container>
 <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>

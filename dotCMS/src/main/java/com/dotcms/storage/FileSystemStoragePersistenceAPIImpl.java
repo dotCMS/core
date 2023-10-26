@@ -8,25 +8,29 @@ import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.FileUtil;
-import java.nio.file.Paths;
+import io.vavr.Lazy;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
-import org.apache.commons.lang3.mutable.MutableInt;
 
 /**
- * Represents a Storage on the file system The groups here are folder previously registered, you can
- * subscribe more by using {@link #addGroupMapping(String, File)}
- * By default the API loads up and maps a root folder. Which can be override by a property.
- * Any new group created will result in a new folder under that root folder.
+ * Represents a Storage Provider base on the File System. The groups used by this implementation are
+ * folders that have been previously created. You can add more of them via the
+ * {@link #addGroupMapping(String, File)}.
+ * <p>By default, the API loads up and maps a root folder, which can be overridden by a
+ * configuration property named {@code ROOT_GROUP_FOLDER_PATH}. Any new group created will result in
+ * a new folder under such a root folder.</p>
+ *
  * @author jsanca
  */
 public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAPI {
@@ -36,6 +40,8 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     private static final String STORAGE_POOL = "StoragePool";
 
     private final Map<String, File> groups = new ConcurrentHashMap<>();
+
+    private final Lazy<String> contentMetadataCompressor = Lazy.of(()->Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none"));
 
     /**
      * default constructor
@@ -119,11 +125,16 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         final String groupNameLC = groupName.toLowerCase();
         final File rootGroup = groups.get(getRootGroupKey());
         final File destBucketFile = new File(rootGroup, groupNameLC);
-        final boolean mkdirs = destBucketFile.mkdirs();
-        if(mkdirs) {
-           groups.put(groupNameLC, destBucketFile);
+        if (!destBucketFile.exists()) {
+            final boolean bucketCreated = destBucketFile.mkdirs();
+            if (bucketCreated) {
+               groups.put(groupNameLC, destBucketFile);
+            }
+            return bucketCreated;
         }
-        return mkdirs;
+
+        groups.put(groupNameLC, destBucketFile);
+        return true; // the bucket already exist
     }
 
     /**
@@ -237,18 +248,21 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
             try {
                 final File destBucketFile = Paths.get(groupDir.getCanonicalPath(),path.toLowerCase()).toFile();
                 this.prepareParent(destBucketFile);
-
-                final String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
-                try (OutputStream outputStream = FileUtil.createOutputStream(destBucketFile.toPath(), compressor)) {
+                final boolean bucketCreated = destBucketFile.createNewFile();   // we create the file if it does not exist and then write on it.
+                if (!bucketCreated) {
+                    Logger.debug(this, String.format("Destination bucket '%s' could not be created", destBucketFile));
+                }
+                final String compressor = contentMetadataCompressor.get();
+                try (final OutputStream outputStream = FileUtil.createOutputStream(destBucketFile.toPath(), compressor)) {
                     writerDelegate.write(outputStream, object);
                     outputStream.flush();
                 }
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
                 throw new  DotDataException(e.getMessage(),e);
             }
         } else {
-            throw new IllegalArgumentException("The bucket: " + groupName + " could not write");
+            throw new IllegalArgumentException(String.format("Bucket '%s' could not be created", groupName));
         }
 
         return true;

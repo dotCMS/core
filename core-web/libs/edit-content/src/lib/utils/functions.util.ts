@@ -1,4 +1,11 @@
-import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+
+import { CALENDAR_FIELD_TYPES } from './mocks';
+
+import {
+    DotEditContentFieldSingleSelectableDataType,
+    FIELD_TYPES
+} from '../models/dot-edit-content-field.enum';
 import { DotEditContentFieldSingleSelectableDataTypes } from '../models/dot-edit-content-field.type';
 
 export const castSingleSelectableValue = (
@@ -43,4 +50,20 @@ export const getSingleSelectableFieldOptions = (
     });
 
     return result;
+};
+
+// This function is used to cast the value to a correct type for the Angular Form
+export const getFinalCastedValue = (value: string | null, field: DotCMSContentTypeField) => {
+    if (CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
+        const parseResult = new Date(value);
+
+        // When we create a field, we can set the default value to "now" so, it will cast to Invalid Date. But an undefined value can also be casted to Invalid Date.
+        // So if the getTime() method returns NaN that means the value is invalid and it's either undefined or "now". Otherwise just return the parsed date.
+        return isNaN(parseResult.getTime()) ? value && new Date() : parseResult;
+    }
+
+    return (
+        castSingleSelectableValue(value, field.dataType) ??
+        castSingleSelectableValue(value, field.dataType)
+    );
 };
