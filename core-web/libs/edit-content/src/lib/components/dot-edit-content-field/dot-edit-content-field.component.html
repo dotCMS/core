@@ -30,5 +30,10 @@
         [field]="field"
         [attr.data-testId]="'field-' + field.variable">
     </dot-edit-content-calendar-field>
+
+    <dot-edit-content-tag-field
+        *ngSwitchCase="fieldTypes.TAG"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
 </ng-container>
 <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>
