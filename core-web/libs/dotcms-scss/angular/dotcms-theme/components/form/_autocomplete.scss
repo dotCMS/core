@@ -19,6 +19,26 @@ p-autocomplete.p-inputwrapper-focus {
         margin-top: -0.6rem; // Couldn't use flex for this
     }
 
+    &:has(.p-autocomplete-loader) {
+        padding-right: $spacing-5; // This padding is to avoid the text to be hidden by the loader
+
+        &:has(.p-autocomplete-clear-icon) {
+            padding-right: calc(
+                $spacing-5 + 1.5625rem
+            ); // This is to make space between the clear icon and loader from the input, so text does not mix with them
+        }
+    }
+
+    &:has(.p-autocomplete-clear-icon) {
+        padding-right: $spacing-5; // This padding is to avoid the text to be hidden by the clear icon
+
+        .p-autocomplete-loader {
+            right: calc(
+                $spacing-2 + 1.5625rem
+            ); // This is to position the clear icon after the loader
+        }
+    }
+
     .p-autocomplete-input {
         all: unset;
         border: none;
