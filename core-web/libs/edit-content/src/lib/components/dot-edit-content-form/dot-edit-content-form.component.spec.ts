@@ -17,7 +17,8 @@ export const VALUES_MOCK = {
 };
 
 export const CONTENT_FORM_DATA_MOCK: EditContentFormData = {
-    layout: LAYOUT_MOCK
+    layout: LAYOUT_MOCK,
+    fields: JUST_FIELDS_MOCKS
 };
 
 describe('DotFormComponent', () => {
