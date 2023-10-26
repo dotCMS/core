@@ -1,65 +1,51 @@
+import { describe } from '@jest/globals';
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
-import { CommonModule } from '@angular/common';
-import {
-    ControlContainer,
-    FormControl,
-    FormGroup,
-    FormGroupDirective,
-    ReactiveFormsModule
-} from '@angular/forms';
-
-import { InputTextModule } from 'primeng/inputtext';
-
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
+import { Type } from '@angular/core';
+import { ControlContainer, FormGroupDirective } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
-export const FIELD_MOCK: DotCMSContentTypeField = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-    contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-    dataType: 'TEXT',
-    fieldType: 'Text',
-    fieldTypeLabel: 'Text',
-    fieldVariables: [],
-    fixed: false,
-    iDate: 1696896882000,
-    id: 'c3b928bc2b59fc22c67022de4dd4b5c4',
-    indexed: false,
-    listed: false,
-    hint: 'A helper text',
-    modDate: 1696896882000,
-    name: 'testVariable',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 2,
-    unique: false,
-    variable: 'testVariable'
+import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
+import { DotEditContentRadioFieldComponent } from '../../fields/dot-edit-content-radio-field/dot-edit-content-radio-field.component';
+import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-content-select-field/dot-edit-content-select-field.component';
+import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-text-area/dot-edit-content-text-area.component';
+import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-text-field/dot-edit-content-text-field.component';
+import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { FIELDS_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
+
+// This holds the mapping between the field type and the component that should be used to render it.
+// We need to hold this record here, because for some reason the references just fall to undefined.
+const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown>> = {
+    // We had to use unknown because components have different types.
+    [FIELD_TYPES.TEXT]: DotEditContentTextFieldComponent,
+    [FIELD_TYPES.TEXTAREA]: DotEditContentTextAreaComponent,
+    [FIELD_TYPES.SELECT]: DotEditContentSelectFieldComponent,
+    [FIELD_TYPES.RADIO]: DotEditContentRadioFieldComponent,
+    [FIELD_TYPES.DATE]: DotEditContentCalendarFieldComponent,
+    [FIELD_TYPES.DATE_AND_TIME]: DotEditContentCalendarFieldComponent,
+    [FIELD_TYPES.TIME]: DotEditContentCalendarFieldComponent
 };
 
-const FORM_GROUP_MOCK = new FormGroup({
-    testVariable: new FormControl('')
+describe('FIELD_TYPES and FIELDS_MOCK', () => {
+    it('should be in sync', () => {
+        expect(
+            Object.values(FIELD_TYPES).every((fieldType) =>
+                FIELDS_MOCK.find((f) => f.fieldType === fieldType)
+            )
+        ).toBeTruthy();
+    });
 });
-const FORM_GROUP_DIRECTIVE_MOCK: FormGroupDirective = new FormGroupDirective([], []);
-FORM_GROUP_DIRECTIVE_MOCK.form = FORM_GROUP_MOCK;
 
-describe('DotFieldComponent', () => {
+describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fieldMock) => {
     let spectator: Spectator<DotEditContentFieldComponent>;
     const createComponent = createComponentFactory({
         component: DotEditContentFieldComponent,
-        imports: [
-            DotEditContentFieldComponent,
-            CommonModule,
-            ReactiveFormsModule,
-            InputTextModule,
-            DotFieldRequiredDirective
-        ],
         componentViewProviders: [
             {
                 provide: ControlContainer,
-                useValue: FORM_GROUP_DIRECTIVE_MOCK
+                useValue: createFormGroupDirectiveMock()
             }
         ],
         providers: [FormGroupDirective]
@@ -68,26 +54,33 @@ describe('DotFieldComponent', () => {
     beforeEach(async () => {
         spectator = createComponent({
             props: {
-                field: FIELD_MOCK
+                field: fieldMock
             }
         });
     });
 
-    it('should render the label', () => {
-        spectator.detectChanges();
-        const label = spectator.query(byTestId(`label-${FIELD_MOCK.variable}`));
-        expect(label?.textContent).toContain(FIELD_MOCK.name);
-    });
+    describe(`${fieldMock.fieldType} - ${fieldMock.dataType}`, () => {
+        it('should render the label', () => {
+            spectator.detectChanges();
+            const label = spectator.query(byTestId(`label-${fieldMock.variable}`));
+            expect(label?.textContent).toContain(fieldMock.name);
+        });
 
-    it('should render the hint', () => {
-        spectator.detectChanges();
-        const hint = spectator.query(byTestId(`hint-${FIELD_MOCK.variable}`));
-        expect(hint?.textContent).toContain(FIELD_MOCK.hint);
-    });
+        it('should render the hint if present', () => {
+            spectator.detectChanges();
+            const hint = spectator.query(byTestId(`hint-${fieldMock.variable}`));
+            expect(hint?.textContent ?? '').toContain(fieldMock.hint ?? '');
+        });
 
-    it('should render the input', () => {
-        spectator.detectChanges();
-        const input = spectator.query(byTestId(`input-${FIELD_MOCK.variable}`));
-        expect(input).toBeDefined();
+        it('should render the correct field type', () => {
+            spectator.detectChanges();
+            const field = spectator.debugElement.query(
+                By.css(`[data-testId="field-${fieldMock.variable}"]`)
+            );
+
+            expect(
+                field.componentInstance instanceof FIELD_TYPES_COMPONENTS[fieldMock.fieldType]
+            ).toBeTruthy();
+        });
     });
 });

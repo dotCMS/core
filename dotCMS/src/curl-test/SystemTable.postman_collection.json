@@ -1,76 +1,23 @@
 {
 	"info": {
-		"_postman_id": "268d46df-9822-4de1-b0ff-c3d03e715902",
+		"_postman_id": "66446a0d-a484-449f-8b78-a69e14929ad1",
 		"name": "SystemTable",
+		"description": "This Postman test verifies that CRUD operations executed on the System Table API work as expected. This API allows users and developers to store global properties in the application.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "781456"
+		"_exporter_id": "5403727",
+		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-66446a0d-a484-449f-8b78-a69e14929ad1?action=share&source=collection_link&creator=5403727"
 	},
 	"item": [
 		{
-			"name": "GetInvalidKey",
+			"name": "Getting an Non-Existing Key",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"400\", function () {",
-							"    pm.response.to.have.status(400);",
-							"});",
-							"",
-							"",
-							"",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/system-table/non-valid-key",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"system-table",
-						"non-valid-key"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get404",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"404\", function () {",
+							"pm.test(\"Expecting a Status 404 when asking for a non-existing key\", function () {",
 							"    pm.response.to.have.status(404);",
 							"});",
-							"",
-							"",
-							"",
 							""
 						],
 						"type": "text/javascript"
@@ -96,7 +43,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/system-table/DOT_404-key",
+					"raw": "{{serverURL}}/api/v1/system-table/key-404",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -104,25 +51,22 @@
 						"api",
 						"v1",
 						"system-table",
-						"DOT_404-key"
+						"key-404"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "TryAddInvalidKey",
+			"name": "Saving a New Key",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Saving a new key in the System Table\", function () {",
+							"    pm.response.to.have.status(200);",
 							"});",
-							"",
-							"",
-							"",
 							""
 						],
 						"type": "text/javascript"
@@ -149,7 +93,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"key\":\"non-valid\",\n    \"value\":\"non-valid\"\n}",
+					"raw": "{\n    \"key\":\"MY_KEY1\",\n    \"value\":\"value1\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -171,93 +115,25 @@
 			"response": []
 		},
 		{
-			"name": "SaveKey",
+			"name": "Getting the Previously Added Key",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"200\", function () {",
+							"pm.test(\"Expecting a Status 200 response\", function () {",
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"",
-							"",
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"key\":\"DOT_KEY1\",\n    \"value\":\"value1\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/system-table",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"system-table"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "GetRecentAdded",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"No errors\", function () {",
-							"    ",
+							"pm.test(\"No errors should be thrown\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData.errors.length).to.eql(0);",
 							"});",
 							"",
-							"pm.test(\"Information Saved Correctly\", function () {",
-							"    ",
+							"pm.test(\"Expecting the correct value of the previously added key\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData.entity).to.eql(\"value1\");",
-							"    ",
 							"});",
-							"",
-							"",
-							"",
-							"",
-							"",
 							""
 						],
 						"type": "text/javascript"
@@ -283,7 +159,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/system-table/DOT_KEY1",
+					"raw": "{{serverURL}}/api/v1/system-table/MY_KEY1",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -291,25 +167,22 @@
 						"api",
 						"v1",
 						"system-table",
-						"DOT_KEY1"
+						"MY_KEY1"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "UpdateKey",
+			"name": "Updating the Existing Key",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"200\", function () {",
+							"pm.test(\"Updating the existing key in the System Table\", function () {",
 							"    pm.response.to.have.status(200);",
 							"});",
-							"",
-							"",
-							"",
 							""
 						],
 						"type": "text/javascript"
@@ -336,7 +209,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"key\":\"DOT_KEY1\",\n    \"value\":\"value2\"\n}",
+					"raw": "{\n    \"key\":\"MY_KEY1\",\n    \"value\":\"value2\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -358,33 +231,25 @@
 			"response": []
 		},
 		{
-			"name": "GetRecentUpdated",
+			"name": "Getting the Previously Updated Key",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"200\", function () {",
+							"pm.test(\"Expecting a Status 200 response\", function () {",
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"No errors\", function () {",
-							"    ",
+							"pm.test(\"No errors should be thrown\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData.errors.length).to.eql(0);",
 							"});",
 							"",
-							"pm.test(\"Information Saved Correctly\", function () {",
-							"    ",
+							"pm.test(\"Expecting the correct updated value of the key\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData.entity).to.eql(\"value2\");",
-							"    ",
 							"});",
-							"",
-							"",
-							"",
-							"",
-							"",
 							""
 						],
 						"type": "text/javascript"
@@ -410,7 +275,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/system-table/DOT_KEY1",
+					"raw": "{{serverURL}}/api/v1/system-table/MY_KEY1",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -418,22 +283,23 @@
 						"api",
 						"v1",
 						"system-table",
-						"DOT_KEY1"
+						"MY_KEY1"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Delete",
+			"name": "Deleting the Key",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"200\", function () {",
+							"pm.test(\"Deleting the existing key\", function () {",
 							"    pm.response.to.have.status(200);",
-							"});"
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -458,7 +324,7 @@
 				"method": "DELETE",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/system-table/DOT_KEY1",
+					"raw": "{{serverURL}}/api/v1/system-table/MY_KEY1",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -466,25 +332,22 @@
 						"api",
 						"v1",
 						"system-table",
-						"DOT_KEY1"
+						"MY_KEY1"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Get404RecentDeleted",
+			"name": "Getting a 404 for the Previously Deleted Key",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"404\", function () {",
+							"pm.test(\"Retrieving the key after it was deleted\", function () {",
 							"    pm.response.to.have.status(404);",
 							"});",
-							"",
-							"",
-							"",
 							""
 						],
 						"type": "text/javascript"
@@ -510,7 +373,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/system-table/DOT_KEY1",
+					"raw": "{{serverURL}}/api/v1/system-table/MY_KEY1",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -518,7 +381,7 @@
 						"api",
 						"v1",
 						"system-table",
-						"DOT_KEY1"
+						"MY_KEY1"
 					]
 				}
 			},

@@ -877,9 +877,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                 .getMultiTreesByVariant(experiment.pageId(), variant.name());
 
         for (MultiTree multiTree : multiTrees) {
-            Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifier(
-                    multiTree.getContentlet(), false, languageId, variant.name(), user,
-                    false);
+            Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguageAnyVariant(
+                    multiTree.getContentlet());
 
             if(!UtilMethods.isSet(contentlet)) {
                 contentlet = APILocator.getContentletAPI().findContentletByIdentifier(

@@ -34,13 +34,17 @@
     a {
         align-self: center;
     }
+
+    .password-settings__forgot-password {
+        font-size: $font-size-sm;
+    }
 }
 
 .login__footer {
     color: $color-palette-gray-500;
     text-align: center;
     text-transform: uppercase;
-    font-size: $font-size-xs;
+    font-size: $font-size-sm;
 }
 
 .login__button {

@@ -1,27 +1,25 @@
 package com.dotcms.api.client.files.traversal;
 
+import static com.dotcms.common.AssetsUtils.parseLocalPath;
+
 import com.dotcms.api.client.files.traversal.data.Downloader;
 import com.dotcms.api.client.files.traversal.data.Retriever;
 import com.dotcms.api.client.files.traversal.task.LocalFolderTraversalTask;
 import com.dotcms.api.client.files.traversal.task.PullTreeNodeTask;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
-import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
+import com.dotcms.common.LocalPathStructure;
 import io.quarkus.arc.DefaultBean;
-import org.apache.commons.lang3.tuple.Triple;
-import org.jboss.logging.Logger;
-
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
-
-import static com.dotcms.common.AssetsUtils.parseLocalPath;
+import javax.enterprise.context.Dependent;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
+import org.jboss.logging.Logger;
 
 /**
  * Service for traversing a file system directory and building a hierarchical tree representation of
@@ -43,71 +41,60 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
 
     /**
      * Traverses the file system directory at the specified path and builds a hierarchical tree
-     * representation of its contents. The folders and contents are compared to the remote server in order to determine
-     * if there are any differences between the local and remote file system.
+     * representation of its contents. The folders and contents are compared to the remote server in
+     * order to determine if there are any differences between the local and remote file system.
      *
-     * @param output             the output option mixin
-     * @param workspace          the project workspace
-     * @param source             local the source file or directory
-     * @param removeAssets       true to allow remove assets, false otherwise
-     * @param removeFolders      true to allow remove folders, false otherwise
-     * @param ignoreEmptyFolders true to ignore empty folders, false otherwise
-     * @param failFast           true to fail fast, false to continue on error
-     * @return a Triple containing a list of exceptions, the folder's local path structure and its corresponding
-     * root node of the hierarchical tree
+     * @param params Traverse params
+     * @return a TraverseResult corresponding root node of the hierarchical tree
      */
     @ActivateRequestContext
     @Override
-    public Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode> traverseLocalFolder(
-            OutputOptionMixin output, final File workspace, final String source,
-            final boolean removeAssets, final boolean removeFolders,
-            final boolean ignoreEmptyFolders, final boolean failFast) {
+    public TraverseResult traverseLocalFolder(final TraverseParams params) {
+        final String source = params.sourcePath();
+        final File workspace = params.workspace();
 
         logger.debug(String.format("Traversing file system folder: %s - in workspace: %s",
                 source, workspace.getAbsolutePath()));
 
-        final var localPathStructure = parseLocalPath(workspace, new File(source));
+        var localPath = parseLocalPath(workspace, new File(source));
 
         // Initial check to see if the site exist
         var siteExists = true;
         try {
-            retriever.retrieveFolderInformation(localPathStructure.site(), null);
+            retriever.retrieveFolderInformation(localPath.site(), null);
         } catch (NotFoundException e) {
 
             siteExists = false;
 
             // Site doesn't exist on remote server
-            logger.debug(String.format("Local site [%s] doesn't exist on remote server.", localPathStructure.site()));
+            logger.debug(String.format("Local site [%s] doesn't exist on remote server.", localPath.site()));
         }
 
         // Checking if the language exist
         try {
-            localPathStructure.setLanguageExists(true);
-            retriever.retrieveLanguage(localPathStructure.language());
+            retriever.retrieveLanguage(localPath.language());
+            localPath = LocalPathStructure.builder().from(localPath).languageExists(true).build();
         } catch (NotFoundException e) {
-
-            localPathStructure.setLanguageExists(false);
+            localPath = LocalPathStructure.builder().from(localPath).languageExists(false).build();
 
             // Language doesn't exist on remote server
-            logger.debug(String.format("Language [%s] doesn't exist on remote server.", localPathStructure.language()));
+            logger.debug(String.format("Language [%s] doesn't exist on remote server.", localPath.language()));
         }
 
         var forkJoinPool = ForkJoinPool.commonPool();
 
-        var task = new LocalFolderTraversalTask(
-                logger,
-                retriever,
-                siteExists,
-                source,
-                workspace,
-                removeAssets,
-                removeFolders,
-                ignoreEmptyFolders,
-                failFast
+        var task = new LocalFolderTraversalTask(TraverseParams.builder()
+                .from(params)
+                .logger(logger)
+                .retriever(retriever)
+                .siteExists(siteExists)
+                .build()
         );
         var result = forkJoinPool.invoke(task);
-
-        return Triple.of(result.getLeft(), localPathStructure, result.getRight());
+        return TraverseResult.builder()
+                .exceptions(result.getLeft())
+                .localPaths(localPath)
+                .treeNode(result.getRight()).build();
     }
 
     /**

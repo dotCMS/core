@@ -1,17 +1,5 @@
 package com.dotcms.storage;
 
-import static com.dotcms.storage.model.BasicMetadataFields.CONTENT_TYPE_META_KEY;
-import static com.dotcms.storage.model.BasicMetadataFields.HEIGHT_META_KEY;
-import static com.dotcms.storage.model.BasicMetadataFields.IS_IMAGE_META_KEY;
-import static com.dotcms.storage.model.BasicMetadataFields.LENGTH_META_KEY;
-import static com.dotcms.storage.model.BasicMetadataFields.MOD_DATE_META_KEY;
-import static com.dotcms.storage.model.BasicMetadataFields.NAME_META_KEY;
-import static com.dotcms.storage.model.BasicMetadataFields.PATH_META_KEY;
-import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
-import static com.dotcms.storage.model.BasicMetadataFields.SIZE_META_KEY;
-import static com.dotcms.storage.model.BasicMetadataFields.TITLE_META_KEY;
-import static com.dotcms.storage.model.BasicMetadataFields.WIDTH_META_KEY;
-
 import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.image.filter.ImageFilterAPI;
@@ -23,7 +11,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import java.awt.Dimension;
+
+import java.awt.*;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Comparator;
@@ -31,6 +20,18 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+
+import static com.dotcms.storage.model.BasicMetadataFields.CONTENT_TYPE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.HEIGHT_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.IS_IMAGE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.LENGTH_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.MOD_DATE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.NAME_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.PATH_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.SIZE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.TITLE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.WIDTH_META_KEY;
 
 /**
  * Tika based metadata generator.
@@ -64,16 +65,18 @@ class MetadataGeneratorImpl implements MetadataGenerator {
     public TreeMap<String, Serializable> standAloneMetadata(final File binary){
         final TreeMap<String, Serializable> metadataMap = new TreeMap<>(Comparator.naturalOrder());
         final String binaryName = binary.getName();
+        final String mimeType = Try.of(()->MimeTypeUtils.getMimeType(binary)).getOrElse(MimeTypeUtils.MIME_TYPE_APP_OCTET_STREAM);
         metadataMap.put(NAME_META_KEY.key(), binaryName);
-        metadataMap.put(TITLE_META_KEY.key(), binaryName); //Title gets replaced by the loaded metadata. Otherwise iwe set a default
+        // Title gets replaced by the loaded metadata. Otherwise, we set a default
+        metadataMap.put(TITLE_META_KEY.key(), binaryName);
         final String relativePath = binary.getAbsolutePath()
-                .replace(ConfigUtils.getAbsoluteAssetsRootPath(),
+                .replace(ConfigUtils.getAssetPath(),
                         StringPool.BLANK);
         metadataMap.put(PATH_META_KEY.key(), relativePath);
         final long length = binary.length();
         metadataMap.put(LENGTH_META_KEY.key(), length);
         metadataMap.put(SIZE_META_KEY.key(), length);
-        metadataMap.put(CONTENT_TYPE_META_KEY.key(), MimeTypeUtils.getMimeType(binary));
+        metadataMap.put(CONTENT_TYPE_META_KEY.key(), mimeType);
         metadataMap.put(MOD_DATE_META_KEY.key(), binary.lastModified());
         metadataMap.put(SHA256_META_KEY.key(),
                 Try.of(() -> FileUtil.sha256toUnixHash(binary)).getOrElse("unknown"));

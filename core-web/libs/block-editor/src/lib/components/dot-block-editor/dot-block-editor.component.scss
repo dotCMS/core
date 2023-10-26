@@ -9,11 +9,18 @@
     .editor-wrapper {
         display: block;
         border-radius: $border-radius-sm;
-        height: 500px;
         overflow: hidden;
         position: relative;
         resize: vertical;
         outline: $color-palette-gray-500 solid 1px;
+    }
+
+    .editor-wrapper--default {
+        height: 500px;
+    }
+
+    .editor-wrapper--fullscreen {
+        height: 100%;
     }
 
     // If a child is focused, set this style to the parent
@@ -297,6 +304,45 @@
                 img {
                     outline: 1px solid $color-palette-primary;
                 }
+            }
+        }
+
+        .ai-content-container {
+            &.ProseMirror-selectednode {
+                background-color: $color-palette-primary-op-20;
+                border: 1px solid $color-palette-primary-300;
+            }
+        }
+
+        .loader-style {
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            min-height: 12.5rem;
+            min-width: 25rem;
+            width: 25.5625rem;
+            height: 17.375rem;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            border: 1.5px solid $color-palette-gray-400;
+        }
+
+        .p-progress-spinner {
+            border: 5px solid $color-palette-gray-300;
+            border-radius: 50%;
+            border-top: 5px solid $color-palette-primary;
+            width: 2.4rem;
+            height: 2.4rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
             }
         }
     }

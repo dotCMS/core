@@ -7,6 +7,7 @@ import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.WorkspaceManager;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.enterprise.inject.Instance;
@@ -49,10 +50,13 @@ public class PushCommand implements Callable<Integer>, DotCommand {
     @Inject
     protected WorkspaceManager workspaceManager;
 
+    @Inject
+    Instance<DotPush> pushCommands;
+
+
     @Override
     public Integer call() throws Exception {
         // Find the instances of all push subcommands
-        Instance<DotPush> pushCommands = CDI.current().select(DotPush.class);
 
         // Checking for unmatched arguments
         output.throwIfUnmatchedArguments(spec.commandLine());
