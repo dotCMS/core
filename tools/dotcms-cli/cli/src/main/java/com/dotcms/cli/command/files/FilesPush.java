@@ -5,6 +5,8 @@ import static com.dotcms.cli.command.files.TreePrinter.COLOR_MODIFIED;
 import static com.dotcms.cli.command.files.TreePrinter.COLOR_NEW;
 
 import com.dotcms.api.client.files.PushService;
+import com.dotcms.api.client.files.traversal.PushTraverseParams;
+import com.dotcms.cli.command.PushContext;
 import com.dotcms.api.client.files.traversal.TraverseResult;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
@@ -49,6 +51,9 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
 
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
+
+    @Inject
+    PushContext pushContext;
 
     @Override
     public Integer call() throws Exception {
@@ -131,10 +136,15 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                     // Pushing the tree
                     if (!pushMixin.dryRun) {
 
-                         pushService.processTreeNodes(output, workspace.getAbsolutePath(),
-                                localPaths, treeNode, treeNodePushInfo, pushMixin.failFast,
-                                pushMixin.retryAttempts);
-
+                         pushService.processTreeNodes(output, treeNodePushInfo,
+                                 PushTraverseParams.builder()
+                                         .rootNode(treeNode)
+                                         .localPaths(localPaths)
+                                         .failFast(pushMixin.failFast)
+                                         .maxRetryAttempts(pushMixin.retryAttempts)
+                                         .pushContext(pushContext)
+                                         .build()
+                         );
                     }
 
                 } else {

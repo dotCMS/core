@@ -14,6 +14,7 @@ import com.dotcms.model.language.Language;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.SiteView;
 import com.google.common.collect.ImmutableList;
+import java.io.Serializable;
 import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -29,7 +30,7 @@ import static com.dotcms.common.AssetsUtils.*;
 import static com.dotcms.common.LocationUtils.localPathFromAssetData;
 
 @ApplicationScoped
-public class Pusher {
+public class Pusher implements Serializable {
 
     @Inject
     protected RestClientFactory clientFactory;
@@ -101,7 +102,7 @@ public class Pusher {
      * @return true if the folder was deleted successfully, false otherwise
      */
     @ActivateRequestContext
-    public Boolean deleteFolder(String siteName, String folderPath) {
+    public boolean deleteFolder(String siteName, String folderPath) {
 
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
 

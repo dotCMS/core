@@ -5,7 +5,7 @@ import static com.dotcms.common.AssetsUtils.statusToBoolean;
 import static com.dotcms.model.asset.BasicMetadataFields.PATH_META_KEY;
 import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
 
-import com.dotcms.api.client.files.traversal.TraverseParams;
+import com.dotcms.api.client.files.traversal.LocalTraverseParams;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.HiddenFileFilter;
@@ -39,7 +39,7 @@ import org.jboss.logging.Logger;
  */
 public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>, TreeNode>> {
 
-    private final TraverseParams params;
+    private final LocalTraverseParams params;
 
     private final Logger logger;
 
@@ -47,7 +47,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
      * Constructs a new LocalFolderTraversalTask instance.
      * @param params the traverse parameters
      */
-    public LocalFolderTraversalTask(final TraverseParams params) {
+    public LocalFolderTraversalTask(final LocalTraverseParams params) {
         this.params = params;
         this.logger = params.logger();
     }
@@ -90,7 +90,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
 
                     if (file.isDirectory()) {
                         LocalFolderTraversalTask subTask = new LocalFolderTraversalTask(
-                                TraverseParams.builder()
+                                LocalTraverseParams.builder()
                                         .from(params)
                                         .sourcePath(file.getAbsolutePath())
                                         .build()
