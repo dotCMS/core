@@ -5,7 +5,7 @@
 		"description": "This Postman test verifies that CRUD operations executed on the System Table API work as expected. This API allows users and developers to store global properties in the application.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5403727",
-		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-ce070bf0-e702-4ae1-a6e6-615cfe50ec8c?action=share&source=collection_link&creator=5403727"
+		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-66446a0d-a484-449f-8b78-a69e14929ad1?action=share&source=collection_link&creator=5403727"
 	},
 	"item": [
 		{
