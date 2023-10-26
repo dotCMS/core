@@ -29,6 +29,12 @@
         *ngSwitchCase="fieldTypes.CHECKBOX"
         [field]="field"
         [attr.data-testId]="'field-' + field.variable" />
+
+    <dot-edit-content-multi-select-field
+        *ngSwitchCase="fieldTypes.MULTI_SELECT"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
+
     <dot-edit-content-calendar-field
         *ngSwitchCase="calendarTypes.includes(field.fieldType) ? field.fieldType : ''"
         [field]="field"

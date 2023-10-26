@@ -6,8 +6,8 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields.module';
+import { CALENDAR_FIELD_TYPES } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
-import { CALENDAR_FIELD_TYPES } from '../../utils/mocks';
 
 @Component({
     selector: 'dot-edit-content-field',

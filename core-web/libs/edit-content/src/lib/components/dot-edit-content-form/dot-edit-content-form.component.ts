@@ -21,10 +21,12 @@ import { ButtonModule } from 'primeng/button';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { FLATTENED_FIELD_TYPES } from '../../models/dot-edit-content-field.constant';
 import { FILTERED_TYPES } from '../../models/dot-edit-content-form.enum';
 import { EditContentFormData } from '../../models/dot-edit-content-form.interface';
 import { getFinalCastedValue } from '../../utils/functions.util';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
+import { FIELD_TYPES } from '../dot-edit-content-field/utils';
 
 @Component({
     selector: 'dot-edit-content-form',
@@ -108,6 +110,15 @@ export class DotEditContentFormComponent implements OnInit {
      * @returns void
      */
     saveContenlet() {
-        this.formSubmit.emit(this.form.getRawValue());
+        const formValue = this.form.getRawValue();
+        this.formData.fields.forEach((field) => {
+            if (!FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
+                return;
+            }
+
+            formValue[field.variable] = formValue[field.variable]?.join(',');
+        });
+
+        this.formSubmit.emit(formValue);
     }
 }

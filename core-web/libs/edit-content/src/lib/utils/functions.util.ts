@@ -1,7 +1,9 @@
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { CALENDAR_FIELD_TYPES } from './mocks';
-
+import {
+    CALENDAR_FIELD_TYPES,
+    FLATTENED_FIELD_TYPES
+} from '../models/dot-edit-content-field.constant';
 import {
     DotEditContentFieldSingleSelectableDataType,
     FIELD_TYPES
@@ -60,6 +62,10 @@ export const getFinalCastedValue = (value: string | null, field: DotCMSContentTy
         // When we create a field, we can set the default value to "now" so, it will cast to Invalid Date. But an undefined value can also be casted to Invalid Date.
         // So if the getTime() method returns NaN that means the value is invalid and it's either undefined or "now". Otherwise just return the parsed date.
         return isNaN(parseResult.getTime()) ? value && new Date() : parseResult;
+    }
+
+    if (FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
+        return value.split(',');
     }
 
     return (

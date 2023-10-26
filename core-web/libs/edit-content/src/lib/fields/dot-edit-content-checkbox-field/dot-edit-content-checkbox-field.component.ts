@@ -4,8 +4,6 @@ import { ControlContainer, FormControl, FormsModule, ReactiveFormsModule } from 
 
 import { CheckboxModule } from 'primeng/checkbox';
 
-import { distinctUntilChanged } from 'rxjs/operators';
-
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
@@ -25,7 +23,6 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
 })
 export class DotEditContentCheckboxFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
-    selectedValues: string[] = [];
     private readonly controlContainer = inject(ControlContainer);
     options = [];
 
@@ -34,19 +31,6 @@ export class DotEditContentCheckboxFieldComponent implements OnInit {
             this.field.values || '',
             this.field.dataType
         );
-        this.listenChangeValue();
-    }
-
-    listenChangeValue() {
-        this.formControl.valueChanges.pipe(distinctUntilChanged()).subscribe((value: string[]) => {
-            if (value.length > 0) {
-                // this.formControl.setValue(value.join(','), { emitEvent: false });
-            }
-        });
-    }
-    onChange(event) {
-        const value = event.checked;
-        this.formControl.setValue(value.join(','), { emitEvent: false });
     }
 
     /**
