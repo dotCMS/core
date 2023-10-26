@@ -3,11 +3,11 @@ import { createComponentFactory } from '@ngneat/spectator/jest';
 
 import { ControlContainer, FormControl, FormGroup, FormGroupDirective } from '@angular/forms';
 
-import { MultiSelect, MultiSelectItem } from 'primeng/multiselect';
+import { MultiSelect, MultiSelectItem, MultiSelectModule } from 'primeng/multiselect';
 
 import { DotEditContentMultiSelectFieldComponent } from './dot-edit-content-multi-select-field.component';
 
-import { MULTI_SELECT_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
+import { createFormGroupDirectiveMock, MULTI_SELECT_FIELD_MOCK } from '../../utils/mocks';
 
 describe('DotEditContentMultiselectFieldComponent', () => {
     describe('test with value', () => {
@@ -25,18 +25,16 @@ describe('DotEditContentMultiselectFieldComponent', () => {
                     useValue: createFormGroupDirectiveMock(FAKE_FORM_GROUP)
                 }
             ],
-            providers: [FormGroupDirective],
-            detectChanges: false
+            providers: [FormGroupDirective]
         });
 
         beforeEach(() => {
-            spectator = createComponent();
+            spectator = createComponent({ detectChanges: false });
         });
 
         it('should render a options selected if the form have value', () => {
             spectator.setInput('field', MULTI_SELECT_FIELD_MOCK);
-            spectator.detectComponentChanges();
-
+            spectator.detectChanges();
             expect(spectator.query(MultiSelect).valuesAsString).toEqual('one, two');
         });
     });
@@ -52,29 +50,41 @@ describe('DotEditContentMultiselectFieldComponent', () => {
                     useValue: createFormGroupDirectiveMock()
                 }
             ],
-            providers: [FormGroupDirective],
-            detectChanges: false
+            imports: [MultiSelectModule],
+            providers: [FormGroupDirective]
         });
 
+        // Mock de matchMedia
+        // @ts-ignore
+        window.matchMedia =
+            window.matchMedia ||
+            function () {
+                return {
+                    matches: false
+                };
+            };
+
         beforeEach(() => {
-            spectator = createComponent();
+            spectator = createComponent({
+                detectChanges: false
+            });
         });
 
         it('should render no options selected', () => {
             spectator.setInput('field', MULTI_SELECT_FIELD_MOCK);
-            spectator.detectComponentChanges();
+            spectator.detectChanges();
 
             expect(spectator.query(MultiSelect).valuesAsString).toEqual(undefined);
         });
 
         it('should render options', () => {
-            //Working on this test.
             spectator.setInput('field', MULTI_SELECT_FIELD_MOCK);
-            spectator.detectComponentChanges();
-            spectator.query(MultiSelect).show();
+            spectator.detectChanges();
 
-            const multiSelectItems = spectator.queryAll(MultiSelectItem);
-            expect(multiSelectItems.length).toBe(2);
+            spectator.query(MultiSelect).show();
+            spectator.detectComponentChanges();
+
+            expect(spectator.queryAll(MultiSelectItem).length).toBe(2);
         });
     });
 });
