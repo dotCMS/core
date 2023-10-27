@@ -43,10 +43,7 @@ export const getSingleSelectableFieldOptions = (
     }
 
     const result = lines?.map((line) => {
-        const [label, value] = line.split('|');
-        if (!value) {
-            return { label, value: castSingleSelectableValue(label, dataType) };
-        }
+        const [label, value = label] = line.split('|');
 
         return { label, value: castSingleSelectableValue(value, dataType) };
     });
@@ -55,7 +52,7 @@ export const getSingleSelectableFieldOptions = (
 };
 
 // This function is used to cast the value to a correct type for the Angular Form
-export const getFinalCastedValue = (value: string | null, field: DotCMSContentTypeField) => {
+export const getFinalCastedValue = (value: string | undefined, field: DotCMSContentTypeField) => {
     if (CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
         const parseResult = new Date(value);
 
@@ -65,11 +62,8 @@ export const getFinalCastedValue = (value: string | null, field: DotCMSContentTy
     }
 
     if (FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
-        return value.split(',');
+        return value?.split(',').map((value) => value.trim());
     }
 
-    return (
-        castSingleSelectableValue(value, field.dataType) ??
-        castSingleSelectableValue(value, field.dataType)
-    );
+    return castSingleSelectableValue(value, field.dataType);
 };
