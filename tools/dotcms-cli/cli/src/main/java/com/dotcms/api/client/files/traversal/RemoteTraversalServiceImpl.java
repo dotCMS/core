@@ -8,6 +8,7 @@ import com.dotcms.api.traversal.Filter;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.common.AssetsUtils;
+import com.dotcms.common.LocalPathStructure;
 import com.dotcms.model.asset.FolderView;
 import io.quarkus.arc.DefaultBean;
 import org.apache.commons.lang3.tuple.Pair;
@@ -119,7 +120,7 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
      * @param progressBar        the console progress bar to track and display the push progress
      * @return A list of exceptions encountered during the push process.
      */
-    public List<Exception> pushTreeNode(final String workspace, final AssetsUtils.LocalPathStructure localPathStructure,
+    public List<Exception> pushTreeNode(final String workspace, final LocalPathStructure localPathStructure,
                                         final TreeNode treeNode, final boolean failFast, final boolean isRetry,
                                         ConsoleProgressBar progressBar) {
 

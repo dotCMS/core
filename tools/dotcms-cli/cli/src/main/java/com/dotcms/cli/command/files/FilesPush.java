@@ -5,20 +5,22 @@ import static com.dotcms.cli.command.files.TreePrinter.COLOR_MODIFIED;
 import static com.dotcms.cli.command.files.TreePrinter.COLOR_NEW;
 
 import com.dotcms.api.client.files.PushService;
+import com.dotcms.api.client.files.traversal.TraverseResult;
 import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.AssetsUtils;
+import com.dotcms.common.LocalPathStructure;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
-import org.apache.commons.lang3.tuple.Triple;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -61,15 +63,15 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
         // Getting the workspace
         var workspace = getWorkspaceDirectory(pushMixin.path());
 
-        CompletableFuture<List<Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode>>>
+        CompletableFuture<List<TraverseResult>>
                 folderTraversalFuture = CompletableFuture.supplyAsync(
-                () -> {
+                () ->
                     // Service to handle the traversal of the folder
-                    return pushService.traverseLocalFolders(output, workspace,
+                     pushService.traverseLocalFolders(output, workspace,
                             pushMixin.path().toFile(),
                             filesPushMixin.removeAssets, filesPushMixin.removeFolders,
-                            false, true);
-                });
+                            false, true)
+                );
 
         // ConsoleLoadingAnimation instance to handle the waiting "animation"
         ConsoleLoadingAnimation consoleLoadingAnimation = new ConsoleLoadingAnimation(
@@ -96,8 +98,8 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
 
         // Let's try to print these tree with some order
         result.sort((o1, o2) -> {
-            var left = o1.getMiddle();
-            var right = o2.getMiddle();
+            var left = o1.localPaths();
+            var right = o2.localPaths();
             return left.filePath().compareTo(right.filePath());
         });
 
@@ -106,60 +108,21 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
         if (!result.isEmpty()) {
             for (var treeNodeData : result) {
 
-                var localPathStructure = treeNodeData.getMiddle();
-                var treeNode = treeNodeData.getRight();
+                var localPaths = treeNodeData.localPaths();
+                var treeNode = treeNodeData.treeNode();
 
                 var outputBuilder = new StringBuilder();
 
-                outputBuilder.append(count++ == 0 ? "\r\n" : "\n\n").
-                        append(" ──────\n").
-                        append(String.format(
-                                " @|bold Folder [%s]|@ --- Site: [%s] - Status [%s] - Language [%s] \n",
-                                localPathStructure.filePath(),
-                                localPathStructure.site(),
-                                localPathStructure.status(),
-                                localPathStructure.language()));
+                header(count++, localPaths, outputBuilder);
 
-                var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
+                var treeNodePushInfo = treeNode.collectPushInfo();
 
                 if (treeNodePushInfo.hasChanges()) {
 
-                    var assetsToPushCount = treeNodePushInfo.assetsToPushCount();
-                    if (assetsToPushCount > 0) {
-                        outputBuilder.append(String.format(" Push Data: " +
-                                        "@|bold [%s]|@ Assets to push: " +
-                                        "(@|bold," + COLOR_NEW + " %s|@ New " +
-                                        "- @|bold," + COLOR_MODIFIED + " %s|@ Modified) " +
-                                        "- @|bold," + COLOR_DELETED + " [%s]|@ Assets to delete " +
-                                        "- @|bold," + COLOR_NEW + " [%s]|@ Folders to push " +
-                                        "- @|bold," + COLOR_DELETED + " [%s]|@ Folders to delete\n\n",
-                                treeNodePushInfo.assetsToPushCount(),
-                                treeNodePushInfo.assetsNewCount(),
-                                treeNodePushInfo.assetsModifiedCount(),
-                                treeNodePushInfo.assetsToDeleteCount(),
-                                treeNodePushInfo.foldersToPushCount(),
-                                treeNodePushInfo.foldersToDeleteCount()));
-                    } else {
-                        outputBuilder.append(String.format(" Push Data: " +
-                                        "@|bold," + COLOR_NEW + " [%s]|@ Assets to push " +
-                                        "- @|bold," + COLOR_DELETED + " [%s]|@ Assets to delete " +
-                                        "- @|bold," + COLOR_NEW + " [%s]|@ Folders to push " +
-                                        "- @|bold," + COLOR_DELETED + " [%s]|@ Folders to delete\n\n",
-                                treeNodePushInfo.assetsToPushCount(),
-                                treeNodePushInfo.assetsToDeleteCount(),
-                                treeNodePushInfo.foldersToPushCount(),
-                                treeNodePushInfo.foldersToDeleteCount()));
-                    }
+                    changesSummary(treeNodePushInfo, outputBuilder);
 
                     if (pushMixin.dryRun) {
-                        TreePrinter.getInstance().formatByStatus(
-                                outputBuilder,
-                                AssetsUtils.statusToBoolean(localPathStructure.status()),
-                                List.of(localPathStructure.language()),
-                                treeNode,
-                                false,
-                                true,
-                                localPathStructure.languageExists());
+                        dryRunSummary(localPaths, treeNode, outputBuilder);
                     }
 
                     output.info(outputBuilder.toString());
@@ -167,9 +130,11 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                     // ---
                     // Pushing the tree
                     if (!pushMixin.dryRun) {
-                        pushService.processTreeNodes(output, workspace.getAbsolutePath(),
-                                localPathStructure, treeNode, treeNodePushInfo, pushMixin.failFast,
+
+                         pushService.processTreeNodes(output, workspace.getAbsolutePath(),
+                                localPaths, treeNode, treeNodePushInfo, pushMixin.failFast,
                                 pushMixin.retryAttempts);
+
                     }
 
                 } else {
@@ -188,6 +153,60 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
         }
 
         return CommandLine.ExitCode.OK;
+    }
+
+    private void header(int count, LocalPathStructure localPaths,
+            StringBuilder outputBuilder) {
+        outputBuilder.append(count == 0 ? "\r\n" : "\n\n").
+                append(" ──────\n").
+                append(String.format(
+                        " @|bold Folder [%s]|@ --- Site: [%s] - Status [%s] - Language [%s] %n",
+                        localPaths.filePath(),
+                        localPaths.site(),
+                        localPaths.status(),
+                        localPaths.language()));
+    }
+
+    private void dryRunSummary(LocalPathStructure localPaths, TreeNode treeNode,
+            StringBuilder outputBuilder) {
+        TreePrinter.getInstance().formatByStatus(
+                outputBuilder,
+                AssetsUtils.statusToBoolean(localPaths.status()),
+                List.of(localPaths.language()),
+                treeNode,
+                false,
+                true,
+                localPaths.languageExists());
+    }
+
+    private void changesSummary(TreeNodePushInfo pushInfo, StringBuilder outputBuilder) {
+        var assetsToPushCount = pushInfo.assetsToPushCount();
+        if (assetsToPushCount > 0) {
+            outputBuilder.append(String.format(" Push Data: " +
+                            "@|bold [%s]|@ Assets to push: " +
+                            "(@|bold,%s %s|@ New " +
+                            "- @|bold,%s %s|@ Modified) " +
+                            "- @|bold,%s [%s]|@ Assets to delete " +
+                            "- @|bold,%s [%s]|@ Folders to push " +
+                            "- @|bold,%s [%s]|@ Folders to delete\n\n",
+                    COLOR_NEW,pushInfo.assetsToPushCount(),
+                    COLOR_MODIFIED,pushInfo.assetsNewCount(),
+                    COLOR_DELETED,pushInfo.assetsModifiedCount(),
+                    COLOR_NEW,pushInfo.assetsToDeleteCount(),
+                    COLOR_DELETED,pushInfo.foldersToPushCount(),
+                    pushInfo.foldersToDeleteCount())
+            );
+        } else {
+            outputBuilder.append(String.format(" Push Data: " +
+                            "@|bold,%s [%s]|@ Assets to push " +
+                            "- @|bold,%s [%s]|@ Assets to delete " +
+                            "- @|bold,%s [%s]|@ Folders to push " +
+                            "- @|bold,%s [%s]|@ Folders to delete\n\n",
+                    COLOR_NEW,pushInfo.assetsToPushCount(),
+                    COLOR_DELETED,pushInfo.assetsToDeleteCount(),
+                    COLOR_NEW,pushInfo.foldersToPushCount(),
+                    COLOR_DELETED,pushInfo.foldersToDeleteCount()));
+        }
     }
 
     @Override

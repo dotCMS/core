@@ -4,179 +4,10 @@ import { of } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotCMSContentType } from '@dotcms/dotcms-models';
-
 import { EditContentLayoutComponent } from './edit-content.layout.component';
 
-import { LAYOUT_MOCK } from '../../components/dot-edit-content-form/dot-edit-content-form.component.spec';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
-
-export const CONTENT_TYPE_MOCK: DotCMSContentType = {
-    baseType: 'CONTENT',
-    clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-    defaultType: false,
-    fields: [
-        {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
-            contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-            dataType: 'SYSTEM',
-            fieldType: 'Row',
-            fieldTypeLabel: 'Row',
-            fieldVariables: [],
-            fixed: false,
-            iDate: 1697051073000,
-            id: 'a31ea895f80eb0a3754e4a2292e09a52',
-            indexed: false,
-            listed: false,
-            modDate: 1697051077000,
-            name: 'fields-0',
-            readOnly: false,
-            required: false,
-            searchable: false,
-            sortOrder: 0,
-            unique: false,
-            variable: 'fields0'
-        },
-        {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
-            contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-            dataType: 'SYSTEM',
-            fieldType: 'Column',
-            fieldTypeLabel: 'Column',
-            fieldVariables: [],
-            fixed: false,
-            iDate: 1697051073000,
-            id: 'd4c32b4b9fb5b11c58c245d4a02bef47',
-            indexed: false,
-            listed: false,
-            modDate: 1697051077000,
-            name: 'fields-1',
-            readOnly: false,
-            required: false,
-            searchable: false,
-            sortOrder: 1,
-            unique: false,
-            variable: 'fields1'
-        },
-        {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-            contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-            dataType: 'TEXT',
-            defaultValue: 'Placeholder',
-            fieldType: 'Text',
-            fieldTypeLabel: 'Text',
-            fieldVariables: [],
-            fixed: false,
-            hint: 'A hint Text',
-            iDate: 1697051093000,
-            id: '1d1505a4569681b923769acb785fd093',
-            indexed: false,
-            listed: false,
-            modDate: 1697051093000,
-            name: 'name1',
-            readOnly: false,
-            required: true,
-            searchable: false,
-            sortOrder: 2,
-            unique: false,
-            variable: 'name1'
-        },
-        {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-            contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-            dataType: 'TEXT',
-            fieldType: 'Text',
-            fieldTypeLabel: 'Text',
-            fieldVariables: [],
-            fixed: false,
-            iDate: 1697051107000,
-            id: 'fc776c45044f2d043f5e98eaae36c9ff',
-            indexed: false,
-            listed: false,
-            modDate: 1697051107000,
-            name: 'text2',
-            readOnly: false,
-            required: true,
-            searchable: false,
-            sortOrder: 3,
-            unique: false,
-            variable: 'text2'
-        },
-        {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
-            contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-            dataType: 'SYSTEM',
-            fieldType: 'Column',
-            fieldTypeLabel: 'Column',
-            fieldVariables: [],
-            fixed: false,
-            iDate: 1697051077000,
-            id: '848fc78a11e7290efad66eb39333ae2b',
-            indexed: false,
-            listed: false,
-            modDate: 1697051107000,
-            name: 'fields-2',
-            readOnly: false,
-            required: false,
-            searchable: false,
-            sortOrder: 4,
-            unique: false,
-            variable: 'fields2'
-        },
-        {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-            contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-            dataType: 'TEXT',
-            fieldType: 'Text',
-            fieldTypeLabel: 'Text',
-            fieldVariables: [],
-            fixed: false,
-            hint: 'A hint text2',
-            iDate: 1697051118000,
-            id: '1f6765de8d4ad069ff308bfca56b9255',
-            indexed: false,
-            listed: false,
-            modDate: 1697051118000,
-            name: 'text3',
-            readOnly: false,
-            required: false,
-            searchable: false,
-            sortOrder: 5,
-            unique: false,
-            variable: 'text3'
-        }
-    ],
-    fixed: false,
-    folder: 'SYSTEM_FOLDER',
-    host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-    iDate: 1697051073000,
-    icon: 'event_note',
-    id: 'd46d6404125ac27e6ab68fad09266241',
-    layout: LAYOUT_MOCK,
-    modDate: 1697051118000,
-    multilingualable: false,
-    name: 'Test',
-    contentType: 'Test',
-    system: false,
-    systemActionMappings: {},
-    variable: 'Test',
-    versionable: true,
-    workflows: [
-        {
-            archived: false,
-            creationDate: new Date(1697047303976),
-            defaultScheme: false,
-            description: '',
-            entryActionId: null,
-            id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
-            mandatory: false,
-            modDate: new Date(1697047292887),
-            name: 'System Workflow',
-            system: true
-        }
-    ],
-    nEntries: 0
-};
+import { CONTENT_TYPE_MOCK, JUST_FIELDS_MOCKS, LAYOUT_MOCK } from '../../utils/mocks';
 
 const createEditContentLayoutComponent = (params: { contentType?: string; id?: string }) => {
     return createComponentFactory({
@@ -204,7 +35,12 @@ describe('EditContentLayoutComponent with identifier', () => {
                 {
                     provide: DotEditContentService,
                     useValue: {
-                        getContentTypeFormData: jest.fn().mockReturnValue(of(LAYOUT_MOCK)),
+                        getContentTypeFormData: jest.fn().mockReturnValue(
+                            of({
+                                layout: LAYOUT_MOCK,
+                                fields: JUST_FIELDS_MOCKS
+                            })
+                        ),
                         getContentById: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK)),
                         saveContentlet: jest.fn().mockReturnValue(of({}))
                     }
@@ -260,7 +96,12 @@ describe('EditContentLayoutComponent without identifier', () => {
                 {
                     provide: DotEditContentService,
                     useValue: {
-                        getContentTypeFormData: jest.fn().mockReturnValue(of(LAYOUT_MOCK)),
+                        getContentTypeFormData: jest.fn().mockReturnValue(
+                            of({
+                                layout: LAYOUT_MOCK,
+                                fields: JUST_FIELDS_MOCKS
+                            })
+                        ),
                         getContentById: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK))
                     }
                 }

@@ -1,25 +1,32 @@
 package com.dotcms.api.client.files;
 
+import static java.util.stream.Collectors.groupingBy;
+
 import com.dotcms.api.client.files.traversal.LocalTraversalService;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
+import com.dotcms.api.client.files.traversal.TraverseParams;
+import com.dotcms.api.client.files.traversal.TraverseResult;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
+import com.dotcms.api.client.push.exception.PushException;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
+import com.dotcms.common.LocalPathStructure;
 import io.quarkus.arc.DefaultBean;
-import org.apache.commons.lang3.tuple.Triple;
-import org.jboss.logging.Logger;
-
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import org.jboss.logging.Logger;
 
 @DefaultBean
 @Dependent
@@ -35,9 +42,9 @@ public class PushServiceImpl implements PushService {
     RemoteTraversalService remoteTraversalService;
 
     /**
-     * Traverses the local folders and retrieves the hierarchical tree representation of their contents with the push
-     * related information for each file and folder.
-     * Each folder is represented as a pair of its local path structure and the corresponding tree node.
+     * Traverses the local folders and retrieves the hierarchical tree representation of their
+     * contents with the push related information for each file and folder. Each folder is
+     * represented as a pair of its local path structure and the corresponding tree node.
      *
      * @param output             the output option mixin
      * @param workspace          the project workspace
@@ -46,33 +53,135 @@ public class PushServiceImpl implements PushService {
      * @param removeFolders      true to allow remove folders, false otherwise
      * @param ignoreEmptyFolders true to ignore empty folders, false otherwise
      * @param failFast           true to fail fast, false to continue on error
-     * @return a list of Triple, where each Triple contains a list of exceptions, the folder's local path structure
-     * and its corresponding root node of the hierarchical tree
-     * @throws IllegalArgumentException if the source path or workspace path does not exist, or if the source path is
-     *                                  outside the workspace
+     * @return a list of Triple, where each Triple contains a list of exceptions, the folder's local
+     * path structure and its corresponding root node of the hierarchical tree
+     * @throws IllegalArgumentException if the source path or workspace path does not exist, or if
+     *                                  the source path is outside the workspace
      */
     @ActivateRequestContext
     @Override
-    public List<Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode>> traverseLocalFolders(
+    public List<TraverseResult> traverseLocalFolders(
             OutputOptionMixin output, final File workspace, final File source, final boolean removeAssets,
             final boolean removeFolders, final boolean ignoreEmptyFolders, final boolean failFast) {
 
-        var traversalResult = new ArrayList<Triple<List<Exception>, AssetsUtils.LocalPathStructure, TreeNode>>();
+        var traversalResult = new ArrayList<TraverseResult>();
 
         // Parsing the source in order to get the root or roots for the traversal
+        //By root we mean the folder that holds the asset info starting from the site
+        //For example:
+        // /home/user/workspace/files/live/es/demo.dotcms.com
+        // /home/user/workspace/files/working/es/demo.dotcms.com
+        // /home/user/workspace/files/live/en-us/demo.dotcms.com
+        // /home/user/workspace/files/working/en-us/demo.dotcms.com
+
         var roots = AssetsUtils.parseRootPaths(workspace, source);
         for (var root : roots) {
 
-            // Traversing the local folder
-            var result = localTraversalService.traverseLocalFolder(output, workspace, root,
-                    removeAssets, removeFolders, ignoreEmptyFolders, failFast);
+            final TraverseParams params = TraverseParams.builder()
+                    .output(output)
+                    .workspace(workspace)
+                    .sourcePath(root)
+                    .removeAssets(removeAssets)
+                    .removeFolders(removeFolders)
+                    .ignoreEmptyFolders(ignoreEmptyFolders)
+                    .failFast(failFast)
+                    .build();
 
-            traversalResult.add(
-                    result
-            );
+            // Traversing the local folder
+            var result = localTraversalService.traverseLocalFolder(params);
+            traversalResult.add(result);
         }
 
+        normalize(traversalResult);
         return traversalResult;
+    }
+
+    /**
+     * Any ambiguity should be held here
+     * @param traversalResult
+     */
+    private void normalize(ArrayList<TraverseResult> traversalResult) {
+        // Once we have all roots data here we need to eliminate ambiguity
+        final Map<String, Map<String, TreeNode>> indexedByStatusLangAndSite = indexByStatusLangAndSite(
+                traversalResult);
+        indexedByStatusLangAndSite.forEach((lang, folders) -> {
+            logger.info("Lang: " + lang);
+            folders.forEach((path, folder) -> normalizeCandidatesForDelete(indexedByStatusLangAndSite, path));
+        });
+    }
+
+    /**
+     If we have a structure like this, and we plan to remove one folder :
+
+     ├── files
+     │       ├── live
+     │       │       └── en-us
+     │       │           └── site-1697486558495
+     │       │               ├── folder1
+     │       │               │       ├── subFolder1-1
+     │       ├── working
+     │       │       └── en-us
+     │       │           └── site-1697486558495
+     │       │               ├── folder1
+     │       │               │       ├── subFolder1-1
+
+     the folder must be gone in both branches
+     The Folder must be removed from working branch but aldo from live one, so it becomes clear that we intend to remove the folder
+     If we leave folders hanging all around we're not being explicitly clear about our intention to remove the folder
+     This method resolves these discrepancies.
+     It is only when the folder exists remotely and all occurrences of that folder has been removed locally that we consider the folder properly marked for delete
+     * @param indexedByStatusLangAndSite The mapped TreeNodes
+     * @param path the folder path
+     */
+    private void normalizeCandidatesForDelete(Map<String, Map<String, TreeNode>> indexedByStatusLangAndSite,
+            String path) {
+        // here I need to get a hold of the other folders under different languages and or status but with the same path
+        // and check if they're all marked for delete as well
+        // if they all are marked for delete then it is safe to keep it marked for delete
+        // otherwise the delete op isn't valid
+        final List<TreeNode> nodes = findAllNodesWithTheSamePath(indexedByStatusLangAndSite, path);
+        if (!isAllFoldersMarkedForDelete(nodes)) {
+            nodes.forEach(node -> node.markForDelete(false));
+        }
+    }
+
+    /**
+     * Build a map first separated by site then by status and language
+     * @param traverseResult the result of the local traversal process
+     * @return an indexed representation of the local folders  first indexed by  status language and site
+     * The most outer map is organized by composite key like status:lang:site the inner map is the folder path
+     */
+    private Map<String,Map<String, TreeNode>> indexByStatusLangAndSite(List<TraverseResult> traverseResult) {
+        final Map<String, List<TraverseResult>> groupBySite = traverseResult.stream()
+                .collect(groupingBy(ctx -> ctx.localPaths().site()));
+
+        Map<String,Map<String, TreeNode>> indexedFolders = new HashMap<>();
+        groupBySite.forEach((site, list) -> list.forEach(ctx -> {
+            final String key = ctx.localPaths().status() + ":" + ctx.localPaths().language() + ":" + site;
+            ctx.treeNode().flattened().forEach(node -> indexedFolders.computeIfAbsent(key, k -> new HashMap<>()).put(node.folder().path(), node));
+        }));
+        return indexedFolders;
+    }
+
+    /**
+     * Finds all the folders with the same path
+     * @param indexByStatusAndLanguage indexed Nodes by path and grouped by site
+     * @param path the path I am looking for
+     * @return All nodes matching the path
+     */
+    List<TreeNode> findAllNodesWithTheSamePath(Map<String, Map<String, TreeNode>> indexByStatusAndLanguage, String path){
+        return indexByStatusAndLanguage.values().stream()
+                .filter(map -> map.containsKey(path)).map(map -> map.get(path))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Checks if all the folders in the list are marked for delete
+     * @param nodes
+     * @return
+     */
+    boolean isAllFoldersMarkedForDelete(List<TreeNode> nodes) {
+        return nodes.stream().map(TreeNode::folder).allMatch(folderView -> folderView.sync().isPresent() && folderView.sync().get().markedForDelete());
     }
 
     /**
@@ -92,7 +201,7 @@ public class PushServiceImpl implements PushService {
     @ActivateRequestContext
     @Override
     public void processTreeNodes(OutputOptionMixin output, final String workspace,
-                                 final AssetsUtils.LocalPathStructure localPathStructure, final TreeNode treeNode,
+                                 final LocalPathStructure localPathStructure, final TreeNode treeNode,
                                  final TreeNodePushInfo treeNodePushInfo, final boolean failFast,
                                  final int maxRetryAttempts) {
 
@@ -155,7 +264,8 @@ public class PushServiceImpl implements PushService {
 
                 var errorMessage = String.format("Error occurred while pushing contents: [%s].", e.getMessage());
                 logger.error(errorMessage, e);
-                throw new RuntimeException(errorMessage, e);
+                Thread.currentThread().interrupt();
+                throw new PushException(errorMessage, e);
             } catch (Exception e) {// Fail fast
 
                 failed = true;

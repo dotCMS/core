@@ -1,13 +1,15 @@
-import { EMPTY } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { switchMap } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
+import { EditContentFormData } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+
 @Component({
     selector: 'dot-edit-content-form-layout',
     standalone: true,
@@ -25,19 +27,28 @@ export class EditContentLayoutComponent {
 
     private readonly dotEditContentService = inject(DotEditContentService);
     isContentSaved = false;
-    formData$ = this.identifier
+
+    formData$: Observable<EditContentFormData> = this.identifier
         ? this.dotEditContentService.getContentById(this.identifier).pipe(
-              switchMap(({ contentType }) => {
+              switchMap(({ contentType, ...contentData }) => {
                   if (contentType) {
                       this.contentType = contentType;
 
-                      return this.dotEditContentService.getContentTypeFormData(contentType);
+                      return this.dotEditContentService.getContentTypeFormData(contentType).pipe(
+                          map(({ layout, fields }) => ({
+                              contentlet: { ...contentData },
+                              layout,
+                              fields
+                          }))
+                      );
                   } else {
                       return EMPTY;
                   }
               })
           )
-        : this.dotEditContentService.getContentTypeFormData(this.contentType);
+        : this.dotEditContentService
+              .getContentTypeFormData(this.contentType)
+              .pipe(map(({ layout, fields }) => ({ layout, fields })));
 
     /**
      * Saves the contentlet with the given values.
@@ -45,7 +56,11 @@ export class EditContentLayoutComponent {
      */
     saveContent(value: { [key: string]: string }) {
         this.dotEditContentService
-            .saveContentlet({ ...value, inode: this.identifier, contentType: this.contentType })
+            .saveContentlet({
+                ...value,
+                inode: this.identifier,
+                contentType: this.contentType
+            })
             .subscribe({
                 next: () => {
                     this.isContentSaved = true;

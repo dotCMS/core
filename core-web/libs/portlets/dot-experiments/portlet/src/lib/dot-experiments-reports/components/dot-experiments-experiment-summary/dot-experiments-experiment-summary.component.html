@@ -15,7 +15,7 @@
         <i class="pi pi-flag"></i>
         <div class="flex-grow-1">
             <span class="font-bold">{{ 'experiments.summary.winner.testing' | dm }} </span>
-            <span data-TestId="goal-label">{{ goalTypeMap[goals.primary.type].label | dm }}</span>
+            <span data-TestId="goal-label">{{ goals.primary.name }}</span>
         </div>
     </div>
     <div class="flex align-items-center justify-content-center gap-3" *ngIf="scheduling">
@@ -42,9 +42,9 @@
             class="p-button-outlined"
             [label]="'Refresh' | dm"
             (click)="updateResults.emit()"
-            pButton
+            data-testId="reload-button"
             icon="pi pi-refresh"
-            data-testId="reload-button"></button>
+            pButton></button>
     </div>
 </div>
 

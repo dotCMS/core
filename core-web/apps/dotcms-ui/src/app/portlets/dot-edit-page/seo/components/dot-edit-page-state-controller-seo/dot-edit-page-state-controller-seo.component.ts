@@ -87,7 +87,7 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
     featureFlagEditURLContentMapIsOn = false;
     mode: DotPageMode;
     options: SelectItem[] = [];
-    menuItems: MenuItem[];
+    menuItems: MenuItem[] = [];
 
     readonly dotPageMode = DotPageMode;
 
@@ -128,6 +128,12 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
             this.lock = this.isLocked(pageState);
             this.lockWarn = this.shouldWarnLock(pageState);
             this.mode = pageState.state.mode;
+
+            if (this.featureFlagEditURLContentMapIsOn && pageState.params.urlContentMap) {
+                this.menuItems = this.getMenuItems();
+            } else if (this.menuItems.length) {
+                this.menuItems = []; // We have to clean the menu items because the menu is not re-rendered when the flag is off or the urlContentMap is null
+            }
         }
     }
 
@@ -309,7 +315,8 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
             label: this.dotMessageService.get(`editpage.toolbar.${mode}.page`),
             value: {
                 id: enumMode,
-                showDropdownButton: this.shouldShowDropdownButton(enumMode, pageState)
+                showDropdownButton: this.shouldShowDropdownButton(enumMode, pageState),
+                shouldRefresh: enumMode === DotPageMode.PREVIEW
             },
             disabled: disabled[mode]
         };
@@ -352,7 +359,7 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
     }
 
     private isLocked(pageState: DotPageRenderState): boolean {
-        return pageState.state.locked && !this.canTakeLock(pageState);
+        return pageState.state.locked || !this.canTakeLock(pageState);
     }
 
     private isPersonalized(): boolean {
