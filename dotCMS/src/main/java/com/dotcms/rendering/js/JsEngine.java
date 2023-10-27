@@ -19,7 +19,6 @@ import com.dotcms.rendering.js.viewtools.UserJsViewTool;
 import com.dotcms.rendering.js.viewtools.WorkflowJsViewTool;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ReflectionUtils;
-import com.dotmarketing.beans.Source;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
@@ -188,7 +187,7 @@ public class JsEngine implements ScriptEngine {
             "        });\n" +
             "    }";
 
-    private List<Source> getDotSources() {
+    private List<Source> getDotSources() throws IOException {
 
         final List<Source> sources = new ArrayList<>();
         final Source fetchSource   = Source.newBuilder(ENGINE_JS, new StringReader(FETCH_FUNCTION), "fetch.js").build();
