@@ -12,9 +12,12 @@ import com.dotcms.cli.command.PushContext;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
+import com.dotcms.model.site.SiteView;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.RecursiveTask;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.WebApplicationException;
@@ -66,7 +69,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
         // Handle assets for the current node
         for (AssetView asset : rootNode.assets()) {
             try {
-                processAsset(rootNode.folder(), asset);
+                processAsset(rootNode.folder(), asset, pushContext);
             } catch (Exception e) {
                 if (params.failFast()) {
                     //This adds a line so when the exception gets written to the console it looks consistent
@@ -113,23 +116,44 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
             if (isMarkedForDelete(folder)) {// Delete
                 doDeleteFolder(folder, pushContext);
             } else if (isMarkedForPush(folder)) {// Push
-                doPushFolder(folder);
+                doPushFolder(folder, pushContext);
             }
 
     }
 
-    private void doPushFolder(FolderView folder) {
+    private void doPushFolder(FolderView folder,  PushContext pushContext) {
         var isSite = Objects.equals(folder.path(), "/") && Objects.equals(folder.name(), "/");
         try {
             if (isSite) {
+                final String status = params.localPaths().status();
                 // And we need to create the non-existing site
-                pusher.pushSite(folder.host(), params.localPaths().status());
-                logger.debug(String.format("Site [%s] created", folder.host()));
+                final Optional<SiteView> optional = pushContext.execPush(folder.host(),
+                        () -> Optional.of(
+                                pusher.pushSite(folder.host(), status))
+                );
+                if (optional.isPresent()){
+                   logger.debug(String.format("Site [%s] created", folder.host()));
+                } else {
+                   logger.debug(String.format("Site [%s] already exist", folder.host()));
+                }
             } else {
 
-                // Creating the non-existing folder
-                pusher.createFolder(folder.host(), folder.path());
-                logger.debug(String.format("Folder [%s] created", folder.path()));
+                // Creating the non-existing folder only if it hasn't been created already
+                final Optional<Map<String, Object>> optional = pushContext.execPush(
+                        String.format("%s:%s", folder.host(), folder.path()),
+                        () -> {
+                            final List<Map<String, Object>> created = pusher.createFolder(
+                                    folder.host(), folder.path());
+                            if (created != null && !created.isEmpty()) {
+                                return Optional.of(created.get(0));
+                            }
+                            return Optional.empty();
+                        });
+               if (optional.isPresent()) {
+                   logger.debug(String.format("Folder [%s] created", folder.path()));
+               } else {
+                   logger.debug(String.format("Folder [%s] already exist", folder.path()));
+               }
             }
         } catch (Exception e) {
             var message = String.format("Error creating %s [%s]",
@@ -164,14 +188,12 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
 
     private void doDeleteFolder(FolderView folder, PushContext pushContext) {
         try {
-            //check if the resource was already deleted by another thread
-            if(pushContext.contains(folder.path())){
-                logger.debug(String.format("Folder [%s] already deleted", folder.path()));
-                return;
-            }
-
-            if(pushContext.execWithinLock(folder.path(), () -> pusher.deleteFolder(folder.host(), folder.path()))){
+            final Optional<Boolean> delete = pushContext.execDelete(folder.path(),
+                    () -> Optional.of(pusher.deleteFolder(folder.host(), folder.path())));
+            if (delete.isPresent()) {
                 logger.debug(String.format("Folder [%s] deleted", folder.path()));
+            } else {
+                logger.debug(String.format("Folder [%s] already deleted", folder.path()));
             }
 
         } catch (Exception e) {
@@ -196,9 +218,9 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
      * @param folder the folder containing the asset
      * @param asset  the asset to process
      */
-    private void processAsset(final FolderView folder, final AssetView asset) {
+    private void processAsset(final FolderView folder, final AssetView asset, final PushContext pushContext) {
         if (isMarkedForDelete(asset)) {
-            doDeleteAsset(folder, asset);
+            doDeleteAsset(folder, asset, pushContext);
         } else if (isMarkedForPush(asset)) {
             doPushAsset(folder, asset);
         }
@@ -228,18 +250,30 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
         }
     }
 
-    private void doDeleteAsset(FolderView folder, AssetView asset) {
+    private void doDeleteAsset(final FolderView folder, final AssetView asset, final PushContext pushContext) {
         try {
-
             // Check if we already deleted the folder
             if (isMarkedForDelete(folder)) {
                 // Folder already deleted, we don't need to delete the asset
                 logger.debug(String.format("Folder [%s] already deleted, ignoring deletion of [%s] asset",
                         folder.path(), asset.name()));
             } else {
-
-                pusher.archive(folder.host(), folder.path(), asset.name());
-                logger.debug(String.format("Asset [%s] deleted", asset.name()));
+                //TODO: Why is it we're only archiving the asset and not deleting it?
+                final Optional<Boolean> optional = pushContext.execArchive(
+                        String.format("%s/%s/%s", folder.host(), folder.path(), asset.name()),
+                        () -> {
+                            final Boolean archive = pusher.archive(folder.host(), folder.path(),
+                                    asset.name());
+                            if (archive) {
+                                return Optional.of(true);
+                            }
+                            return Optional.empty();
+                        });
+                if (optional.isPresent()) {
+                    logger.debug(String.format("Asset [%s%s] archived", folder.path(), asset.name()));
+                } else {
+                    logger.debug(String.format("Asset [%s%s] already archived", folder.path(), asset.name()));
+                }
             }
         } catch (Exception e) {
 
