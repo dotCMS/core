@@ -157,7 +157,6 @@ public class JVMInfoResource implements Serializable {
         resultMap.put("buildDate",UtilMethods.dateToHTMLDate (ReleaseInfo.getBuildDate()));
 
         resultMap.put("name",ReleaseInfo.getName());
-        resultMap.put("codeName",ReleaseInfo.getCodeName());
         resultMap.put("buildNumber",ReleaseInfo.getBuildNumber());
         resultMap.put("serverInfo",ReleaseInfo.getServerInfo());
         resultMap.put("releaseInfo",ReleaseInfo.getReleaseInfo());
