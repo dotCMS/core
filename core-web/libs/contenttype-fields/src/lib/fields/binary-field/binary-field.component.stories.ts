@@ -13,6 +13,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { delay } from 'rxjs/operators';
 
 import { DotLicenseService, DotMessageService, DotUploadService } from '@dotcms/data-access';
+import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import {
     DotContentThumbnailComponent,
     DotDropZoneComponent,
@@ -57,6 +58,7 @@ export default {
                 DotContentThumbnailComponent
             ],
             providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotBinaryFieldStore,
                 {
                     provide: DotLicenseService,
