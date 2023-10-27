@@ -11,7 +11,7 @@ p-autocomplete.p-inputwrapper-focus {
 .p-autocomplete {
     display: grid;
     align-items: center;
-    grid-template-columns: auto max-content max-content max-content; // This will make the grid to remove the columns that are not in the grid
+    grid-template-columns: auto repeat(3, max-content); // This will make the grid to remove the columns that are not in the grid
 }
 
 .p-autocomplete {
