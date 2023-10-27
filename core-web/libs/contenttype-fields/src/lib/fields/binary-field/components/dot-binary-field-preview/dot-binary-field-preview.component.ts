@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { DotContentThumbnailComponent, DotSpinnerModule } from '@dotcms/ui';
 
@@ -26,7 +27,13 @@ type EDITABLE_CONTENT_FUNTION_MAP = {
 @Component({
     selector: 'dot-binary-field-preview',
     standalone: true,
-    imports: [CommonModule, ButtonModule, DotContentThumbnailComponent, DotSpinnerModule],
+    imports: [
+        CommonModule,
+        ButtonModule,
+        DotContentThumbnailComponent,
+        DotSpinnerModule,
+        OverlayPanelModule
+    ],
     templateUrl: './dot-binary-field-preview.component.html',
     styleUrls: ['./dot-binary-field-preview.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -46,7 +53,7 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
     private contenttype: EDITABLE_CONTENT;
     readonly EDITABLE_CONTENT = EDITABLE_CONTENT;
 
-    isEditable = false;
+    isEditable = true;
 
     ngOnChanges(): void {
         this.setIsEditable();

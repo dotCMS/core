@@ -17,7 +17,7 @@
 
         <div class="preview-metadata_container">
             <div class="preview-metadata_info">
-                <h4>{{ file.name }}</h4>
+                <h4 class="preview-metadata_header">{{ file.name }}</h4>
                 <div class="preview-metadata" *ngIf="file.width && file.height">
                     <i class="pi pi-arrows-alt" style="font-size: 1rem"></i>
                     <span>{{ file.width }}px, {{ file.height }}px</span>
@@ -46,4 +46,38 @@
             data-testId="edit-button"
             icon="pi pi-pencil"></p-button>
     </div>
+
+    <div class="preview-metadata_actions_responsive">
+        <p-button
+            *ngIf="isEditable"
+            (click)="onEdit()"
+            styleClass="p-button-rounded p-button-text p-button-semi-transparent"
+            data-testId="edit-button"
+            icon="pi pi-pencil"></p-button>
+        <p-button
+            (click)="op.toggle($event)"
+            styleClass="p-button-rounded p-button-text p-button-semi-transparent"
+            icon="pi pi-info"></p-button>
+        <p-button
+            (click)="removeFile.emit()"
+            styleClass="p-button-rounded p-button-text p-button-semi-transparent"
+            data-testId="remove-button"
+            icon="pi pi-trash"></p-button>
+    </div>
 </div>
+
+<p-overlayPanel #op>
+    <div class="preview-metadata_info">
+        <p>{{ file.name }}</p>
+        <ng-container *ngIf="file.width && file.height">
+            <p>
+                Dimension: <span>{{ file.width }}px, {{ file.height }}px</span>
+            </p>
+        </ng-container>
+        <ng-container *ngIf="file.fileSize">
+            <p>
+                File Size: <span>{{ file.fileSize }} Bytes</span>
+            </p>
+        </ng-container>
+    </div>
+</p-overlayPanel>

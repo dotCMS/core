@@ -71,11 +71,9 @@ export const TEMP_FILES_MOCK = [TEMP_IMAGE_MOCK, TEMP_VIDEO_MOCK, TEMP_FILE_MOCK
 export const CONTENTLET = {
     publishDate: '2023-10-24 13:21:49.682',
     inode: 'b22aa2f3-12af-4ea8-9d7d-164f98ea30b1',
-    binaryField2:
-        '/dA/af9294c29906dea7f4a58d845f569219/binaryField2/Screenshot 2023-10-24 at 9.21.45â¯AM.png',
+    binaryField2: '/dA/af9294c29906dea7f4a58d845f569219/binaryField2/New-Image.png',
     host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-    binaryField2Version:
-        '/dA/b22aa2f3-12af-4ea8-9d7d-164f98ea30b1/binaryField2/Screenshot 2023-10-24 at 9.21.45â¯AM.png',
+    binaryField2Version: '/dA/b22aa2f3-12af-4ea8-9d7d-164f98ea30b1/binaryField2/New-Image.png',
     locked: false,
     stInode: 'd1901a41d38b6686dd5ed8f910346d7a',
     contentType: 'BinaryField',
@@ -87,11 +85,11 @@ export const CONTENTLET = {
         modDate: 1698153707197,
         sha256: 'e84030fe91978e483e34242f0631a81903cf53a945475d8dcfbb72da484a28d5',
         length: 29848,
-        title: 'Screenshot 2023-10-24 at 9.21.45â¯AM.png',
+        title: 'New-Image.png',
         version: 20220201,
         isImage: true,
         fileSize: 29848,
-        name: 'Screenshot 2023-10-24 at 9.21.45â¯AM.png',
+        name: 'New-Image.png',
         width: 738,
         contentType: 'image/png',
         height: 435
