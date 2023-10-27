@@ -263,6 +263,121 @@ export const RADIO_FIELD_INTEGER_MOCK = {
     variable: 'radioWholeNumber'
 };
 
+export const DATE_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableDateField',
+    contentTypeId: '4d22214338844b4aed0367933e9bf500',
+    dataType: 'DATE',
+    fieldType: 'Date',
+    fieldTypeLabel: 'Date',
+    fieldVariables: [],
+    fixed: false,
+    iDate: 1698250833000,
+    id: '55b4fdcf51eddf01b0f462384e8b3439',
+    indexed: false,
+    listed: false,
+    modDate: 1698250833000,
+    name: 'date',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 2,
+    unique: false,
+    variable: 'date'
+};
+
+export const DATE_AND_TIME_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
+    contentTypeId: '4d22214338844b4aed0367933e9bf500',
+    dataType: 'DATE',
+    defaultValue: 'now',
+    fieldType: 'Date-and-Time',
+    fieldTypeLabel: 'Date and Time',
+    fieldVariables: [],
+    fixed: false,
+    iDate: 1698250840000,
+    id: '9e669bacc84ce6530bba5f295becc76c',
+    indexed: false,
+    listed: false,
+    modDate: 1698250840000,
+    name: 'date and time',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 3,
+    unique: false,
+    variable: 'dateAndTime'
+};
+
+export const TIME_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableTimeField',
+    contentTypeId: '4d22214338844b4aed0367933e9bf500',
+    dataType: 'DATE',
+    fieldType: 'Time',
+    fieldTypeLabel: 'Time',
+    fieldVariables: [],
+    fixed: false,
+    iDate: 1698250847000,
+    id: '1005cde03b962dd0ce7bb4c4ec97f89c',
+    indexed: false,
+    listed: false,
+    modDate: 1698250847000,
+    name: 'time',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 4,
+    unique: false,
+    variable: 'time'
+};
+
+export const CHECKBOX_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableCheckboxField',
+    contentTypeId: '93ebaff75f3e3887bea73eca04588dc9',
+    dataType: 'TEXT',
+    fieldType: 'Checkbox',
+    fieldTypeLabel: 'Checkbox',
+    fieldVariables: [],
+    fixed: false,
+    hint: 'A hint text',
+    iDate: 1698291913000,
+    id: '96909fa20a00497ce3b766b52edac0ec',
+    indexed: false,
+    listed: false,
+    modDate: 1698291913000,
+    name: 'check',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 2,
+    unique: false,
+    values: 'one|one\r\ntwo|two',
+    variable: 'check'
+};
+
+export const MULTI_SELECT_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableMultiSelectField',
+    contentTypeId: '93ebaff75f3e3887bea73eca04588dc9',
+    dataType: 'LONG_TEXT',
+    fieldType: 'Multi-Select',
+    fieldTypeLabel: 'Multi Select',
+    fieldVariables: [],
+    fixed: false,
+    hint: 'A hint text',
+    iDate: 1698264695000,
+    id: '535a6de288e3fe91fad2679e8d7d966b',
+    indexed: false,
+    listed: false,
+    modDate: 1698291913000,
+    name: 'multiSelect',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 3,
+    unique: false,
+    values: 'one|one\r\ntwo|two',
+    variable: 'multiSelect'
+};
+
 export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     TEXT_FIELD_MOCK,
     TEXT_AREA_FIELD_MOCK,
@@ -273,7 +388,12 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     RADIO_FIELD_TEXT_MOCK,
     RADIO_FIELD_BOOLEAN_MOCK,
     RADIO_FIELD_FLOAT_MOCK,
-    RADIO_FIELD_INTEGER_MOCK
+    RADIO_FIELD_INTEGER_MOCK,
+    DATE_FIELD_MOCK,
+    DATE_AND_TIME_FIELD_MOCK,
+    TIME_FIELD_MOCK,
+    CHECKBOX_FIELD_MOCK,
+    MULTI_SELECT_FIELD_MOCK
 ];
 
 export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;

@@ -1,13 +1,5 @@
 package com.dotcms.storage;
 
-import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
-import static com.dotcms.unittest.TestUtil.upperCaseRandom;
-import static junit.framework.Assert.assertNotSame;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertTrue;
-
 import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.storage.StoragePersistenceProvider.INSTANCE;
 import com.dotcms.storage.repository.BinaryFileWrapper;
@@ -20,18 +12,26 @@ import com.liferay.util.Encryptor;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.RandomStringUtils;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.RandomStringUtils;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
+import static com.dotcms.unittest.TestUtil.upperCaseRandom;
+import static junit.framework.Assert.assertNotSame;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertTrue;
 
 @RunWith(DataProviderRunner.class)
 public class StoragePersistenceAPITest {
@@ -60,11 +60,12 @@ public class StoragePersistenceAPITest {
     public void Test_Get_Default_Provider() {
         final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
         try {
-        //if there's a property already set we need to clean it so we can test that by default we will get FileSystem
+            // If there's a property already set, we need to clean it up so that we can test that,
+            // by default, we will get Chainable Provider which has the File System Provider
             Config.setProperty(DEFAULT_STORAGE_TYPE, null);
             final StoragePersistenceProvider persistenceProvider = INSTANCE.get();
-            assertTrue(persistenceProvider
-                    .getStorage() instanceof FileSystemStoragePersistenceAPIImpl);
+            assertTrue("Persistence Provider '" + persistenceProvider.getStorage().getClass() + "' is not the expected one", persistenceProvider
+                    .getStorage() instanceof ChainableStoragePersistenceAPI);
         }finally {
             Config.setProperty(DEFAULT_STORAGE_TYPE, stringProperty);
         }
@@ -197,7 +198,7 @@ public class StoragePersistenceAPITest {
         final String groupName = testCase.groupName;
         assertFalse(storage.existsGroup(groupName));
         assertTrue(storage.createGroup(groupName));
-        assertFalse(storage.createGroup(groupName));
+        assertTrue(storage.createGroup(groupName));
     }
 
     @DataProvider
