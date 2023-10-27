@@ -23,12 +23,12 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 
 import com.dotmarketing.util.Logger;
 
+import com.google.common.collect.Maps;
 import java.io.IOException;
 import java.net.URL;
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
-
-import com.liferay.util.GetterUtil;
 
 /**
  * <a href="ReleaseInfo.java.html"><b><i>View Source</i></b></a>
@@ -42,8 +42,7 @@ public final class ReleaseInfo {
 
 
 
-    private volatile Map<String, String> values = ImmutableMap.of("name", "dotCMS Platform", "version", "UNVERSIONED", "codename",
-            "UNVERSIONED", "build", "0", "date", "March 6 2009");
+    private volatile Map<String, String> values = ImmutableMap.of("name", "dotCMS Platform", "version", "UNVERSIONED", "revision", "0", "timestamp", "March 6 2009");
 
     protected ReleaseInfo() {
         load();
@@ -55,62 +54,46 @@ public final class ReleaseInfo {
         final Properties props = new Properties();
 
         try {
-            URL url = this.getClass().getClassLoader().getResource("release.properties");
+            final URL url = this.getClass().getClassLoader().getResource("build.properties");
             props.load(url.openStream());
         } catch (IOException e) {
             Logger.error(ReleaseInfo.class, "IOException: " + e.getMessage(), e);
         }
 
-        final Map<String, String> tempValuesMap = new HashMap<>(values);
-
-        for (String key : values.keySet()) {
-            String value = props.getProperty("dotcms.release." + key);
-            if (value != null && !value.startsWith("${")) {
-                tempValuesMap.put(key, value);
-            }
-        }
-
-        values = ImmutableMap.copyOf(tempValuesMap);
+        values = Maps.fromProperties(props);
     }
 
     private final static ReleaseInfo instance = new ReleaseInfo();
 
-    public static final String getName() {
+    public static String getName() {
 
         return instance.values.get("name");
     }
 
-    public static final String getVersion() {
+    public static String getVersion() {
 
         return instance.values.get("version");
     }
 
-    public static final String getCodeName() {
-        return instance.values.get("codename");
+    public static String getBuildNumber() {
+        return instance.values.get("revision");
     }
 
-    public static final int getBuildNumber() {
-        return Integer.parseInt(instance.values.get("build"));
+    public static String getBuildDateString() {
+        return new SimpleDateFormat("MMMM dd, yyyy", Locale.US).format(getBuildDate());
     }
 
-    public static final String getBuildDateString() {
-        return instance.values.get("date");
-    }
-
-    public static final String getBuildDateString(Locale locale) {
+    public static String getBuildDateString(Locale locale) {
         return DateFormat.getDateInstance(DateFormat.LONG, locale).format(getBuildDate());
     }
 
-    public static final Date getBuildDate() {
-        DateFormat df = DateFormat.getDateInstance(DateFormat.LONG);
-        return GetterUtil.getDate(instance.values.get("date"), df);
+    public static Date getBuildDate() {
+        return new Date(Long.parseLong(instance.values.get("timestamp")));
     }
 
 
-    public static final String getReleaseInfo() {
-        // return getName() + " " + getVersion() + " (" + getCodeName() + " / Build " +
-        // getBuildNumber() + " / " + getBuildDateString()+ ")";
-        return getName() + " " + getVersion() + " (" + getCodeName() + " / " + getBuildDateString() + ")";
+    public static String getReleaseInfo() {
+        return getName() + " " + getVersion() + " (" + getBuildDateString() + ")";
     }
 
     public static String getServerInfo() {
