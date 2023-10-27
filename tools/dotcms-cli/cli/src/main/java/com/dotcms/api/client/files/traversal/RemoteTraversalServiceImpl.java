@@ -121,6 +121,7 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
         var forkJoinPool = ForkJoinPool.commonPool();
         var task = new PushTreeNodeTask(PushTraverseParams.builder()
                 .from(params)
+                .pusher(pusher)
                 .build());
         return forkJoinPool.invoke(task);
     }

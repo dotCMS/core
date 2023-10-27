@@ -58,6 +58,9 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
     @Override
     public Integer call() throws Exception {
 
+
+        System.out.println(" PushContext :::  "+ pushContext);
+
         // When calling from the global push we should avoid the validation of the unmatched
         // arguments as we may send arguments meant for other push subcommands
         if (!pushMixin.noValidateUnmatchedArguments) {
@@ -138,6 +141,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
 
                          pushService.processTreeNodes(output, treeNodePushInfo,
                                  PushTraverseParams.builder()
+                                         .workspacePath(workspace.getAbsolutePath())
                                          .rootNode(treeNode)
                                          .localPaths(localPaths)
                                          .failFast(pushMixin.failFast)

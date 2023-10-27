@@ -165,7 +165,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
     private void doDeleteFolder(FolderView folder, PushContext pushContext) {
         try {
             //check if the resource was already deleted by another thread
-            if(pushContext.deletedAlready(folder.path())){
+            if(pushContext.contains(folder.path())){
                 logger.debug(String.format("Folder [%s] already deleted", folder.path()));
                 return;
             }

@@ -222,7 +222,7 @@ public class PushServiceImpl implements PushService {
                     () -> remoteTraversalService.pushTreeNode(
                             PushTraverseParams.builder().from(params)
                                     .progressBar(progressBar)
-                                    //.pusher(pusher)
+                                    .logger(logger)
                                     .isRetry(isRetry).build()
                     )
             );

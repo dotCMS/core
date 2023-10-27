@@ -2,13 +2,13 @@ package com.dotcms.cli.command;
 
 public interface PushContext {
 
-    boolean deletedAlready(String uri);
+    boolean contains(String uri);
 
-    <T> T execWithinLock(String key, Delegate<T> delegate) throws LockExecException;
+    boolean execWithinLock(String key, SaveDelegate delegate) throws LockExecException;
 
     @FunctionalInterface
-    public interface Delegate<T> {
-        T execute() throws LockExecException;
+    interface SaveDelegate {
+        boolean execute() throws LockExecException;
     }
 
     class LockExecException extends Exception {
