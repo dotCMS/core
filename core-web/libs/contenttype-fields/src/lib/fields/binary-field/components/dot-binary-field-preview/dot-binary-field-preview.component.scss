@@ -77,14 +77,18 @@
     white-space: nowrap;
     gap: $spacing-2;
 
-    span {
-        color: $color-palette-gray-700;
-    }
-
     .preview-metadata_header {
         font-size: $font-size-md;
         font-weight: $font-weight-bold;
         margin: 0;
+    }
+
+    p {
+        margin: 0;
+    }
+
+    span {
+        color: $color-palette-gray-700;
     }
 }
 

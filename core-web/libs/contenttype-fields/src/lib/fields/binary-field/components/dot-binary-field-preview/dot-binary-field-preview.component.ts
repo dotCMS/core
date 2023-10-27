@@ -11,7 +11,7 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { DotContentThumbnailComponent, DotSpinnerModule } from '@dotcms/ui';
+import { DotContentThumbnailComponent, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
 
 import { BinaryFile } from '../../interfaces';
 
@@ -32,7 +32,8 @@ type EDITABLE_CONTENT_FUNTION_MAP = {
         ButtonModule,
         DotContentThumbnailComponent,
         DotSpinnerModule,
-        OverlayPanelModule
+        OverlayPanelModule,
+        DotMessagePipe
     ],
     templateUrl: './dot-binary-field-preview.component.html',
     styleUrls: ['./dot-binary-field-preview.component.scss'],

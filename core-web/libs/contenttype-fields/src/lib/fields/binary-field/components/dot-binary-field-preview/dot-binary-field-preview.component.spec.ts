@@ -1,5 +1,7 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+
 import { DotBinaryFieldPreviewComponent } from './dot-binary-field-preview.component';
 
 import { BinaryFile } from '../../interfaces';
@@ -27,7 +29,10 @@ const fileText: BinaryFile = {
 
 describe('DotBinaryFieldPreviewComponent', () => {
     let spectator: Spectator<DotBinaryFieldPreviewComponent>;
-    const createComponent = createComponentFactory(DotBinaryFieldPreviewComponent);
+    const createComponent = createComponentFactory({
+        component: DotBinaryFieldPreviewComponent,
+        imports: [HttpClientTestingModule]
+    });
 
     beforeEach(() => {
         spectator = createComponent({
