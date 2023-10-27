@@ -8,6 +8,8 @@ import { By } from '@angular/platform-browser';
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
+import { DotEditContentCheckboxFieldComponent } from '../../fields/dot-edit-content-checkbox-field/dot-edit-content-checkbox-field.component';
+import { DotEditContentMultiSelectFieldComponent } from '../../fields/dot-edit-content-multi-select-field/dot-edit-content-multi-select-field.component';
 import { DotEditContentRadioFieldComponent } from '../../fields/dot-edit-content-radio-field/dot-edit-content-radio-field.component';
 import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-content-select-field/dot-edit-content-select-field.component';
 import { DotEditContentTagFieldComponent } from '../../fields/dot-edit-content-tag-field/dot-edit-content-tag-field.component';
@@ -27,7 +29,9 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown>> = {
     [FIELD_TYPES.DATE]: DotEditContentCalendarFieldComponent,
     [FIELD_TYPES.DATE_AND_TIME]: DotEditContentCalendarFieldComponent,
     [FIELD_TYPES.TIME]: DotEditContentCalendarFieldComponent,
-    [FIELD_TYPES.TAG]: DotEditContentTagFieldComponent
+    [FIELD_TYPES.TAG]: DotEditContentTagFieldComponent,
+    [FIELD_TYPES.CHECKBOX]: DotEditContentCheckboxFieldComponent,
+    [FIELD_TYPES.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent
 };
 
 describe('FIELD_TYPES and FIELDS_MOCK', () => {
