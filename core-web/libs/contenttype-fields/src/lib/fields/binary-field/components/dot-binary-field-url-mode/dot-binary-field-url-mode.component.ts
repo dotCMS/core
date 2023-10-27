@@ -87,6 +87,12 @@ export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
         this.abortController?.abort(); // Abort fetch request if component is destroyed
     }
 
+    /**
+     * Submit form
+     *
+     * @return {*}  {void}
+     * @memberof DotBinaryFieldUrlModeComponent
+     */
     onSubmit(): void {
         if (this.form.invalid) {
             return;
@@ -99,11 +105,21 @@ export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
         this.form.reset({ url }); // Reset form to initial state
     }
 
+    /**
+     * Cancel upload
+     *
+     * @memberof DotBinaryFieldUrlModeComponent
+     */
     cancelUpload(): void {
         this.abortController?.abort();
         this.cancel.emit();
     }
 
+    /**
+     * Handle focus event and clear server error message
+     *
+     * @memberof DotBinaryFieldUrlModeComponent
+     */
     handleFocus(): void {
         this.store.setError(''); // Clear server  error message when user focus on input
     }

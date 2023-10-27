@@ -60,6 +60,12 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
         this.setIsEditable();
     }
 
+    /**
+     * Emits event to remove the file
+     *
+     * @return {*}  {void}
+     * @memberof DotBinaryFieldPreviewComponent
+     */
     onEdit(): void {
         if (this.contenttype === EDITABLE_CONTENT.image) {
             this.editImage.emit();
@@ -73,7 +79,6 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
     private setIsEditable() {
         const type = this.file.mimeType?.split('/')[0];
         this.contenttype = EDITABLE_CONTENT[type];
-
         this.isEditable = this.editableFiles[this.contenttype]?.();
     }
 }

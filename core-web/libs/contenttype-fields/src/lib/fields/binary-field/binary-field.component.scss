@@ -1,10 +1,5 @@
 @use "variables" as *;
 
-:host {
-    display: block;
-    min-width: 17.5rem;
-}
-
 ::ng-deep {
     .screen-cover {
         width: 90vw;
@@ -36,6 +31,7 @@ dot-drop-zone {
     padding: $spacing-1;
     margin-bottom: $spacing-1;
     height: 12.5rem;
+    min-width: 17.5rem;
 }
 
 .binary-field__container--uploading {

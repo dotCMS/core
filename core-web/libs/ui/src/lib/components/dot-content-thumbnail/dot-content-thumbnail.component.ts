@@ -53,31 +53,76 @@ export class DotContentThumbnailComponent implements OnInit {
         this.setThumbnailIcon();
     }
 
+    /**
+     * Handle error when image/video is not found
+     * Set thumbnail type to icon
+     *
+     * @memberof DotContentThumbnailComponent
+     */
     handleError() {
         this.thumbnailType = this.CONTENT_THUMBNAIL_TYPE.icon;
     }
 
+    /**
+     * Set thumbnail type
+     *
+     * @private
+     * @memberof DotContentThumbnailComponent
+     */
     private setThumbnailType(): void {
         this.thumbnailType = CONTENT_THUMBNAIL_TYPE[this.type] || CONTENT_THUMBNAIL_TYPE.icon;
     }
 
+    /**
+     * Set thumbnail src
+     *
+     * @private
+     * @memberof DotContentThumbnailComponent
+     */
     private setSrc(): void {
         this.src = this.tempUrl || this.thumbnailUrlMap[this.type]?.();
     }
 
+    /**
+     * Set thumbnail icon
+     *
+     * @private
+     * @memberof DotContentThumbnailComponent
+     */
     private setThumbnailIcon(): void {
         const extension = this.name.split('.').pop();
         this.thumbnailIcon = ICON_MAP[extension] || this.DEFAULT_ICON;
     }
 
+    /**
+     * Get pdf thumbnail url
+     *
+     * @private
+     * @return {*}  {string}
+     * @memberof DotContentThumbnailComponent
+     */
     private getPdfThumbnailUrl(): string {
         return `/contentAsset/image/${this.inode}/${this.titleImage}/pdf_page/1/resize_w/250/quality_q/45`;
     }
 
+    /**
+     * Get image thumbnail url
+     *
+     * @private
+     * @return {*}  {string}
+     * @memberof DotContentThumbnailComponent
+     */
     private getImageThumbnailUrl(): string {
         return `/dA/${this.inode}/500w/50q`;
     }
 
+    /**
+     * Get video thumbnail url
+     *
+     * @private
+     * @return {*}  {string}
+     * @memberof DotContentThumbnailComponent
+     */
     private getVideoThumbnailUrl(): string {
         return `/dA/${this.inode}`;
     }

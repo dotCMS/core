@@ -107,9 +107,7 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
                 tap(() => this.dotBinaryFieldStore.setStatus(BinaryFieldStatus.UPLOADING)),
                 delay(500) // Loading animation
             )
-            .subscribe((tempFile) => {
-                this.setTempFile(tempFile);
-            });
+            .subscribe((tempFile) => this.setTempFile(tempFile));
 
         this.dotBinaryFieldStore.setMaxFileSize(this.maxFileSize);
     }
@@ -123,38 +121,81 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
         this.cd.detectChanges();
     }
 
+    /**
+     * Open dialog to create new file or import from url
+     *
+     * @param {BinaryFieldMode} mode
+     * @memberof DotBinaryFieldComponent
+     */
     openDialog(mode: BinaryFieldMode) {
         this.dialogOpen = true;
         this.dotBinaryFieldStore.setMode(mode);
     }
 
+    /**
+     * Close dialog
+     *
+     * @memberof DotBinaryFieldComponent
+     */
     closeDialog() {
         this.dialogOpen = false;
     }
 
+    /**
+     * Open file picker
+     *
+     * @memberof DotBinaryFieldComponent
+     */
     openFilePicker() {
         this.inputFile.nativeElement.click();
     }
 
+    /**
+     * Handle file selection
+     *
+     * @param {Event} event
+     * @memberof DotBinaryFieldComponent
+     */
     handleFileSelection(event: Event) {
         const input = event.target as HTMLInputElement;
         const file = input.files[0];
         this.dotBinaryFieldStore.handleUploadFile(file);
     }
 
+    /**
+     * Remove file
+     *
+     * @memberof DotBinaryFieldComponent
+     */
     removeFile() {
         this.dotBinaryFieldStore.removeFile();
     }
 
+    /**
+     * Set temp file
+     *
+     * @param {DotCMSTempFile} tempFile
+     * @memberof DotBinaryFieldComponent
+     */
     setTempFile(tempFile: DotCMSTempFile) {
         this.dotBinaryFieldStore.setTempFile(tempFile);
         this.closeDialog();
     }
 
+    /**
+     * Open Dialog to edit file in editor
+     *
+     * @memberof DotBinaryFieldComponent
+     */
     onEditFile() {
         this.openDialog(BinaryFieldMode.EDITOR);
     }
 
+    /**
+     * Open Image Editor
+     *
+     * @memberof DotBinaryFieldComponent
+     */
     onEditImage() {
         this.dotBinaryFieldEditImageService.openImageEditor({
             inode: this.contentlet?.inode,
@@ -163,10 +204,23 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
         });
     }
 
+    /**
+     * Set drop zone active state
+     *
+     * @param {boolean} value
+     * @memberof DotBinaryFieldComponent
+     */
     setDropZoneActiveState(value: boolean) {
         this.dotBinaryFieldStore.setDropZoneActive(value);
     }
 
+    /**
+     * Handle file drop
+     *
+     * @param {DropZoneFileEvent} { validity, file }
+     * @return {*}
+     * @memberof DotBinaryFieldComponent
+     */
     handleFileDrop({ validity, file }: DropZoneFileEvent) {
         if (!validity.valid) {
             this.handleFileDropError(validity);
@@ -177,6 +231,12 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
         this.dotBinaryFieldStore.handleUploadFile(file);
     }
 
+    /**
+     * Set preview file
+     *
+     * @private
+     * @memberof DotBinaryFieldComponent
+     */
     private setPreviewFile() {
         const variable = this.field.variable;
         const metaDataKey = variable + 'MetaData';
@@ -192,6 +252,12 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
         });
     }
 
+    /**
+     * Set field variables
+     *
+     * @private
+     * @memberof DotBinaryFieldComponent
+     */
     private setFieldVariables() {
         const { accept, maxFileSize = 0, helperText } = this.getFieldVariables();
         this.accept = accept ? accept.split(',') : [];
@@ -199,6 +265,13 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
         this.helperText = helperText;
     }
 
+    /**
+     * Get field variables
+     *
+     * @private
+     * @return {*}  {Record<string, string>}
+     * @memberof DotBinaryFieldComponent
+     */
     private getFieldVariables(): Record<string, string> {
         return this.field.fieldVariables.reduce(
             (prev, { key, value }) => ({
@@ -209,6 +282,13 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
         );
     }
 
+    /**
+     * Handle file drop error
+     *
+     * @private
+     * @param {DropZoneFileValidity} { errorsType }
+     * @memberof DotBinaryFieldComponent
+     */
     private handleFileDropError({ errorsType }: DropZoneFileValidity): void {
         const messageArgs = {
             [DropZoneErrorType.FILE_TYPE_MISMATCH]: this.accept.join(', '),

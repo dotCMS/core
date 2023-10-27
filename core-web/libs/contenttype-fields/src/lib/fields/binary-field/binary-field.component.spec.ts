@@ -284,7 +284,6 @@ describe('DotBinaryFieldComponent', () => {
             expect(editorElement).toBeTruthy();
             expect(isDialogOpen).toBeTruthy();
             expect(spySetMode).toHaveBeenCalledWith(BinaryFieldMode.EDITOR);
-            expect(spySetMode).toHaveBeenCalledWith(BinaryFieldMode.EDITOR);
         });
 
         it('should open dialog with url componet component when click on url button', async () => {
