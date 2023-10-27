@@ -43,10 +43,7 @@ export const getSingleSelectableFieldOptions = (
     }
 
     const result = lines?.map((line) => {
-        const [label, value] = line.split('|');
-        if (!value) {
-            return { label, value: castSingleSelectableValue(label, dataType) };
-        }
+        const [label, value = label] = line.split('|');
 
         return { label, value: castSingleSelectableValue(value, dataType) };
     });
