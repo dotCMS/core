@@ -13,8 +13,6 @@ import {
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
 
-import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
-
 export const TEXT_FIELD_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
     contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
@@ -332,6 +330,54 @@ export const TIME_FIELD_MOCK: DotCMSContentTypeField = {
     variable: 'time'
 };
 
+export const CHECKBOX_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableCheckboxField',
+    contentTypeId: '93ebaff75f3e3887bea73eca04588dc9',
+    dataType: 'TEXT',
+    fieldType: 'Checkbox',
+    fieldTypeLabel: 'Checkbox',
+    fieldVariables: [],
+    fixed: false,
+    hint: 'A hint text',
+    iDate: 1698291913000,
+    id: '96909fa20a00497ce3b766b52edac0ec',
+    indexed: false,
+    listed: false,
+    modDate: 1698291913000,
+    name: 'check',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 2,
+    unique: false,
+    values: 'one|one\r\ntwo|two',
+    variable: 'check'
+};
+
+export const MULTI_SELECT_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableMultiSelectField',
+    contentTypeId: '93ebaff75f3e3887bea73eca04588dc9',
+    dataType: 'LONG_TEXT',
+    fieldType: 'Multi-Select',
+    fieldTypeLabel: 'Multi Select',
+    fieldVariables: [],
+    fixed: false,
+    hint: 'A hint text',
+    iDate: 1698264695000,
+    id: '535a6de288e3fe91fad2679e8d7d966b',
+    indexed: false,
+    listed: false,
+    modDate: 1698291913000,
+    name: 'multiSelect',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 3,
+    unique: false,
+    values: 'one|one\r\ntwo|two',
+    variable: 'multiSelect'
+};
+
 export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     TEXT_FIELD_MOCK,
     TEXT_AREA_FIELD_MOCK,
@@ -345,12 +391,12 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     RADIO_FIELD_INTEGER_MOCK,
     DATE_FIELD_MOCK,
     DATE_AND_TIME_FIELD_MOCK,
-    TIME_FIELD_MOCK
+    TIME_FIELD_MOCK,
+    CHECKBOX_FIELD_MOCK,
+    MULTI_SELECT_FIELD_MOCK
 ];
 
 export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;
-
-export const CALENDAR_FIELD_TYPES = [FIELD_TYPES.DATE, FIELD_TYPES.DATE_AND_TIME, FIELD_TYPES.TIME];
 
 // This creates a mock FormGroup from an array of fielda
 export const createFormControlObjectMock = (fields = FIELDS_MOCK) => {

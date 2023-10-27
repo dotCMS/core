@@ -15,5 +15,7 @@ export enum FIELD_TYPES {
     RADIO = 'Radio',
     DATE = 'Date',
     DATE_AND_TIME = 'Date-and-Time',
-    TIME = 'Time'
+    TIME = 'Time',
+    CHECKBOX = 'Checkbox',
+    MULTI_SELECT = 'Multi-Select'
 }
