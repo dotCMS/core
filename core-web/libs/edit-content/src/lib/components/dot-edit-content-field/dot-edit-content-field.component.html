@@ -1,20 +1,44 @@
+<label
+    [attr.data-testId]="'label-' + field.variable"
+    [for]="field.variable"
+    [checkIsRequiredControl]="field.variable"
+    dotFieldRequired
+    >{{ field.name }}</label
+>
 <ng-container [ngSwitch]="field.fieldType">
-    <div class="field" *ngSwitchCase="'Text'">
-        <label
-            [attr.data-testId]="'label-' + field.variable"
-            [for]="field.variable"
-            [checkIsRequiredControl]="field.variable"
-            dotFieldRequired
-            >{{ field.name }}</label
-        >
-        <input
-            [id]="field.variable"
-            [formControlName]="field.variable"
-            [attr.data-testId]="'input-' + field.variable"
-            type="text"
-            pInputText />
-        <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{
-            field.hint
-        }}</small>
-    </div>
+    <dot-edit-content-select-field
+        *ngSwitchCase="fieldTypes.SELECT"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
+
+    <dot-edit-content-radio-field
+        *ngSwitchCase="fieldTypes.RADIO"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
+
+    <dot-edit-content-text-field
+        *ngSwitchCase="fieldTypes.TEXT"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
+    <dot-edit-content-text-area
+        *ngSwitchCase="fieldTypes.TEXTAREA"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
+
+    <dot-edit-content-checkbox-field
+        *ngSwitchCase="fieldTypes.CHECKBOX"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
+
+    <dot-edit-content-multi-select-field
+        *ngSwitchCase="fieldTypes.MULTI_SELECT"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
+
+    <dot-edit-content-calendar-field
+        *ngSwitchCase="calendarTypes.includes(field.fieldType) ? field.fieldType : ''"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable">
+    </dot-edit-content-calendar-field>
 </ng-container>
+<small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>

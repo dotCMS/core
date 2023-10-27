@@ -94,6 +94,7 @@ import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -220,7 +221,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     ORIGINAL_VARIANT, user));
         }
 
-        return savedExperiment.get();
+        final Experiment toReturn = savedExperiment.get();
+
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been saved by User" +
+                " ID '%s'", toReturn.name(), toReturn.id(), user.getUserId()));
+
+        return toReturn;
     }
 
     private void validatePermissionToEdit(Experiment experiment, User user, Contentlet pageAsContent)
@@ -441,12 +447,21 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 "You don't have permission to archive the Experiment. "
                         + "Experiment Id: " + persistedExperiment.get().id());
 
+        if(persistedExperiment.get().status()==ARCHIVED) {
+            return persistedExperiment.get();
+        }
+
         DotPreconditions.isTrue(persistedExperiment.get().status()==ENDED,
                 ()-> "Only ENDED experiments can be archived",
                 DotStateException.class);
 
         final Experiment archived = persistedExperiment.get().withStatus(ARCHIVED);
-        return save(archived, user);
+        final Experiment afterSave = save(archived, user);
+
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been archived by User" +
+                " ID '%s'", afterSave.name(), afterSave.id(), user.getUserId()));
+
+        return afterSave;
     }
 
     @Override
@@ -496,6 +511,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .forEach(variant -> deleteVariant(variant));
 
         factory.delete(persistedExperiment);
+
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been deleted by User" +
+                " ID '%s'", persistedExperiment.name(), persistedExperiment.id(), user.getUserId()));
     }
 
     private void deleteVariant(ExperimentVariant variant) {
@@ -826,10 +844,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 ? Experiment.builder().from(persistedExperiment).runningIds(getRunningIds(persistedExperiment)).build()
                 : persistedExperiment;
 
-        Experiment running = save(experimentToSave, user);
+        final Experiment running = save(experimentToSave, user);
         cacheRunningExperiments();
         publishExperimentPage(running, user);
         publishContentOnExperimentVariants(user, running);
+
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been started by User" +
+                " ID '%s'", running.name(), running.id(), user.getUserId()));
 
         return running;
     }
@@ -900,6 +921,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final Experiment saved = save(ended, user);
 
             cacheRunningExperiments();
+
+            SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been ended by User" +
+                    " ID '%s'", saved.name(), saved.id(), user.getUserId()));
 
             return saved;
         } catch (DotSecurityException e) {
@@ -1438,7 +1462,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .withStatus(DRAFT)
                 .withScheduling(Scheduling.builder().build());
 
-        return save(experimentCanceled, user);
+        final Experiment afterSave = save(experimentCanceled, user);
+
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been canceled by User" +
+                " ID '%s'", afterSave.name(), afterSave.id(), user.getUserId()));
+
+        return afterSave;
     }
 
     private static boolean canBeCanceled(final Experiment experimentFromFactory) {

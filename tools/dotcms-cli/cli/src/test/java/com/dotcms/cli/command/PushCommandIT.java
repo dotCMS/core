@@ -178,7 +178,7 @@ class PushCommandIT extends CommandTest {
             when(pushCommands.iterator()).
                     thenReturn(Arrays.asList(dotPush1, dotPush2, dotPush3).iterator());
 
-            when(pushCommand.pushCommands()).thenReturn(pushCommands);
+            pushCommand.pushCommands = pushCommands;
 
             doReturn(commandLine).
                     when(pushCommand).

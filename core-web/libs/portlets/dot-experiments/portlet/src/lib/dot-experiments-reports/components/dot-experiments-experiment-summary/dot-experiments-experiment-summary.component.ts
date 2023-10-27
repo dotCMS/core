@@ -3,12 +3,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 
 import { ButtonModule } from 'primeng/button';
 
-import {
-    Goals,
-    GOALS_METADATA_MAP,
-    RangeOfDateAndTime,
-    SummaryLegend
-} from '@dotcms/dotcms-models';
+import { Goals, RangeOfDateAndTime, SummaryLegend } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
@@ -20,8 +15,6 @@ import { DotMessagePipe } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsExperimentSummaryComponent {
-    goalTypeMap = GOALS_METADATA_MAP;
-
     @Input()
     goals: Goals;
 

@@ -1,13 +1,10 @@
 <dot-device-selector-seo
     #deviceSelector
-    [pTooltip]="pageState.viewAs.device?.name || ('editpage.viewas.default.device' | dm)"
     [apiLink]="apiLink"
     (selected)="changeDeviceHandler($event)"
     (changeSeoMedia)="changeSeoMedia($event)"
     (hideOverlayPanel)="tabButtons.resetDropdownById(dotPageMode.PREVIEW)"
     appendTo="body"
-    tooltipPosition="bottom"
-    tooltipStyleClass="dot-device-selector__dialog"
     data-testId="dot-device-selector"></dot-device-selector-seo>
 <p-menu
     #menu

@@ -191,17 +191,25 @@ describe('DotEditPageStateControllerComponent', () => {
                 expect(selectButton.options).toEqual([
                     {
                         label: 'Edit',
-                        value: { id: 'EDIT_MODE', showDropdownButton: false },
+                        value: { id: 'EDIT_MODE', showDropdownButton: false, shouldRefresh: false },
                         disabled: false
                     },
                     {
                         label: 'Preview',
-                        value: { id: 'PREVIEW_MODE', showDropdownButton: false },
+                        value: {
+                            id: 'PREVIEW_MODE',
+                            showDropdownButton: false,
+                            shouldRefresh: true
+                        },
                         disabled: false
                     },
                     {
                         label: 'Live',
-                        value: { id: 'ADMIN_MODE', showDropdownButton: false },
+                        value: {
+                            id: 'ADMIN_MODE',
+                            showDropdownButton: false,
+                            shouldRefresh: false
+                        },
                         disabled: false
                     }
                 ]);
@@ -250,7 +258,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 await expect(selectButton).toBeDefined();
                 expect(selectButton.options[1]).toEqual({
                     label: 'Preview',
-                    value: { id: 'PREVIEW_MODE', showDropdownButton: false },
+                    value: { id: 'PREVIEW_MODE', showDropdownButton: false, shouldRefresh: true },
                     disabled: true
                 });
                 expect(selectButton.value).toBe(DotPageMode.PREVIEW);
@@ -270,7 +278,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 expect(selectButton).toBeDefined();
                 expect(selectButton.options[0]).toEqual({
                     label: 'Edit',
-                    value: { id: 'EDIT_MODE', showDropdownButton: false },
+                    value: { id: 'EDIT_MODE', showDropdownButton: false, shouldRefresh: false },
                     disabled: true
                 });
                 expect(selectButton.value).toBe(DotPageMode.PREVIEW);
@@ -289,7 +297,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 expect(selectButton).toBeDefined();
                 expect(selectButton.options[2]).toEqual({
                     label: 'Live',
-                    value: { id: 'ADMIN_MODE', showDropdownButton: false },
+                    value: { id: 'ADMIN_MODE', showDropdownButton: false, shouldRefresh: false },
                     disabled: true
                 });
                 expect(selectButton.value).toBe(DotPageMode.PREVIEW);
@@ -584,6 +592,37 @@ describe('DotEditPageStateControllerComponent', () => {
 
             component.menu.onHide.emit();
             expect(resetMock).toHaveBeenCalledWith(DotPageMode.EDIT);
+        });
+
+        it('should have menuItems if the page goes from not having urlContentMap to having it', async () => {
+            let pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
+                { ...mockUser(), userId: '457' },
+                {
+                    ...mockDotRenderedPage()
+                }
+            );
+            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.detectChanges();
+
+            await fixtureHost.whenStable();
+            expect(component.menuItems.length).toBe(0);
+
+            pageRenderStateMocked = new DotPageRenderState(
+                { ...mockUser(), userId: '457' },
+                {
+                    ...mockDotRenderedPage(),
+                    urlContentMap: {
+                        title: 'Title',
+                        inode: '123',
+                        contentType: 'test'
+                    }
+                }
+            );
+            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.detectChanges();
+
+            await fixtureHost.whenStable();
+            expect(component.menuItems.length).toBe(2);
         });
     });
 });

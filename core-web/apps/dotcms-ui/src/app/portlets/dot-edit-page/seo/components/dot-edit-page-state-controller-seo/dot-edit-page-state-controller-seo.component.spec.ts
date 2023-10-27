@@ -208,12 +208,16 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 expect(dotTabButtons.options).toEqual([
                     {
                         label: 'Edit',
-                        value: { id: 'EDIT_MODE', showDropdownButton: false },
+                        value: { id: 'EDIT_MODE', showDropdownButton: false, shouldRefresh: false },
                         disabled: false
                     },
                     {
                         label: 'Preview',
-                        value: { id: 'PREVIEW_MODE', showDropdownButton: true },
+                        value: {
+                            id: 'PREVIEW_MODE',
+                            showDropdownButton: true,
+                            shouldRefresh: true
+                        },
                         disabled: false
                     }
                 ]);
@@ -239,7 +243,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                     'Page locked by Some One'
                 );
                 expect(lockerContainerDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
-                expect(locker.modelValue).toBe(false, 'checked');
+                expect(locker.modelValue).toBe(true, 'checked');
                 expect(locker.disabled).toBe(false, 'disabled');
             });
 
@@ -261,7 +265,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 await expect(dotTabButtons).toBeDefined();
                 expect(dotTabButtons.options[1]).toEqual({
                     label: 'Preview',
-                    value: { id: 'PREVIEW_MODE', showDropdownButton: true },
+                    value: { id: 'PREVIEW_MODE', showDropdownButton: true, shouldRefresh: true },
                     disabled: true
                 });
                 expect(dotTabButtons.activeId).toBe(DotPageMode.PREVIEW);
@@ -278,7 +282,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 expect(dotTabButtons).toBeDefined();
                 expect(dotTabButtons.options[0]).toEqual({
                     label: 'Edit',
-                    value: { id: 'EDIT_MODE', showDropdownButton: false },
+                    value: { id: 'EDIT_MODE', showDropdownButton: false, shouldRefresh: false },
                     disabled: true
                 });
                 expect(dotTabButtons.activeId).toBe(DotPageMode.PREVIEW);
@@ -553,7 +557,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         });
 
         it('should not have menuItems if page does not have URLContentMap', async () => {
-            expect(component.menuItems).toBe(undefined);
+            expect(component.menuItems.length).toBe(0);
         });
     });
 
@@ -616,6 +620,37 @@ describe('DotEditPageStateControllerSeoComponent', () => {
             component.deviceSelector.hideOverlayPanel.emit();
 
             expect(dotTabButtons.resetDropdownById).toHaveBeenCalledWith(DotPageMode.PREVIEW);
+        });
+
+        it('should have menuItems if the page goes from not having urlContentMap to having it', async () => {
+            let pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
+                { ...mockUser(), userId: '457' },
+                {
+                    ...mockDotRenderedPage()
+                }
+            );
+            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.detectChanges();
+
+            await fixtureHost.whenStable();
+            expect(component.menuItems.length).toBe(0);
+
+            pageRenderStateMocked = new DotPageRenderState(
+                { ...mockUser(), userId: '457' },
+                {
+                    ...mockDotRenderedPage(),
+                    urlContentMap: {
+                        title: 'Title',
+                        inode: '123',
+                        contentType: 'test'
+                    }
+                }
+            );
+            fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+            fixtureHost.detectChanges();
+
+            await fixtureHost.whenStable();
+            expect(component.menuItems.length).toBe(2);
         });
     });
 });
