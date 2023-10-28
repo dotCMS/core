@@ -19,10 +19,13 @@ import com.dotcms.rendering.js.viewtools.UserJsViewTool;
 import com.dotcms.rendering.js.viewtools.WorkflowJsViewTool;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ReflectionUtils;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
+import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
+import org.apache.commons.io.IOUtils;
 import org.apache.velocity.tools.view.context.ChainedContext;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.graalvm.polyglot.Context;
@@ -31,6 +34,7 @@ import org.graalvm.polyglot.Value;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -190,8 +194,38 @@ public class JsEngine implements ScriptEngine {
     private List<Source> getDotSources() throws IOException {
 
         final List<Source> sources = new ArrayList<>();
-        final Source fetchSource   = Source.newBuilder(ENGINE_JS, new StringReader(FETCH_FUNCTION), "fetch.js").build();
-        sources.add(fetchSource);
+        final JsCache cache = CacheLocator.getJavascriptCache();
+        final String relativeFunctionsPath = File.separator + "WEB-INF" + File.separator + "javascript" + File.separator + "functions" + File.separator;
+        final String absoluteFunctionsPath = Config.CONTEXT.getRealPath(relativeFunctionsPath);
+        FileUtil.walk(absoluteFunctionsPath,
+                path -> path.getFileName().toString().endsWith(".js"), path -> {
+
+                    final String absolutePath = path.toString();
+                    Logger.info(this, "Loading: " + absolutePath);
+                    Object sourceContent = cache.get(absolutePath);
+                    if (Objects.isNull(sourceContent)) {
+
+                        sourceContent = Try.of(()->FileUtil.read(path.toFile())).getOrNull();
+
+                        if (Objects.nonNull(sourceContent)) {
+
+                            cache.put(absolutePath, sourceContent);
+                        } else {
+
+                            Logger.warn(this, "Could not read the file: " + absolutePath);
+                        }
+                    }
+
+                    if (Objects.nonNull(sourceContent)) {
+
+                        final StringReader stringReader  = new StringReader(sourceContent.toString());
+                        final Source source = Try.of(() ->
+                                Source.newBuilder(ENGINE_JS, stringReader, absolutePath).build()).getOrElseThrow(e -> new RuntimeException(e));
+                        sources.add(source);
+                        Logger.info(this, "Loaded: " + absolutePath);
+                    }
+                });
+
         return sources;
     }
 
