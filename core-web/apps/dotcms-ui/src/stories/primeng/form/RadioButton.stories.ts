@@ -59,7 +59,7 @@ export default {
 } as Meta;
 
 const RadioButtonTemplate = `
-<div class="flex flex-column gap-3">
+<div class="flex flex-column gap-2">
 <p-radioButton *ngFor="let city of cities" name="city" [value]="city" [(ngModel)]="selectedCity" [inputId]="city.code" [label]="city.name" [disabled]="disabled" [class]="invalid ? 'ng-dirty ng-invalid' : ''"></p-radioButton>
 </div>
 `;
