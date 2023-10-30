@@ -90,6 +90,24 @@ describe('DotEditContentMultiselectFieldComponent', () => {
 
             const multiSelectItems = spectator.queryAll(MultiSelectItem);
             expect(multiSelectItems.length).toBe(2);
+            expect(multiSelectItems[0].label).toBe('one');
+        });
+
+        it('should set the key/value the same when bad formatting options passed', () => {
+            const MULTI_SELECT_FIELD_MOCK_WITHOUT_VALUE_AND_LABEL = {
+                ...MULTI_SELECT_FIELD_MOCK,
+                values: 'one'
+            };
+            spectator.setInput('field', MULTI_SELECT_FIELD_MOCK_WITHOUT_VALUE_AND_LABEL);
+            spectator.detectComponentChanges();
+
+            const expectedList = [
+                {
+                    label: 'one',
+                    value: 'one'
+                }
+            ];
+            expect(spectator.query(MultiSelect).options).toEqual(expectedList);
         });
     });
 });
