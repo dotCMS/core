@@ -74,8 +74,10 @@ export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         this.store.setMaxFileSize(this.maxFileSize);
         this.tempFileChanged$
-            .pipe(takeUntil(this.destroy$))
-            .pipe(filter((tempFile) => tempFile !== null))
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((tempFile) => tempFile !== null)
+            )
             .subscribe((tempFile) => {
                 this.tempFileUploaded.emit(tempFile);
             });

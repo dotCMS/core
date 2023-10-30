@@ -24,10 +24,6 @@ describe('DotContentThumbnailComponent', () => {
             await spectator.fixture.whenStable();
         });
 
-        it('should create', () => {
-            expect(spectator.component).toBeTruthy();
-        });
-
         it('should set thumbnailType to video when contentType is video/*', () => {
             const videoElement = spectator.query(byTestId('thumbail-video'));
 
@@ -65,7 +61,7 @@ describe('DotContentThumbnailComponent', () => {
         });
     });
 
-    describe('image', () => {
+    describe('icon', () => {
         beforeEach(async () => {
             spectator = createComponent({
                 props: {

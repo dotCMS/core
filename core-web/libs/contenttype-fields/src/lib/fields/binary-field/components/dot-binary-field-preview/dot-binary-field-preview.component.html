@@ -1,12 +1,10 @@
-<div class="preview_container" [ngClass]="{ 'preview_container--fade': file.content }">
-    <ng-container *ngIf="file.content; else contentThumnail">
-        <div class="preview-code_container">
-            <code *ngIf="file.content">{{ file.content }}</code>
-        </div>
-    </ng-container>
+<div class="preview-container" [ngClass]="{ 'preview-container--fade': file.content }">
+    <div class="preview-code_container" *ngIf="file.content; else contentThumnail">
+        <code>{{ file.content }}</code>
+    </div>
 
     <ng-template #contentThumnail>
-        <div class="preview-image_container">
+        <div class="preview-image__container">
             <dot-content-thumbnail
                 [tempUrl]="file.url"
                 [contentType]="file.mimeType"
@@ -15,7 +13,7 @@
                 [iconSize]="'48px'"></dot-content-thumbnail>
         </div>
 
-        <div class="preview-metadata_container">
+        <div class="preview-metadata__container">
             <div class="preview-metadata_info">
                 <h4 class="preview-metadata_header">{{ file.name }}</h4>
                 <div class="preview-metadata" *ngIf="file.width && file.height">
@@ -33,7 +31,7 @@
         </div>
     </ng-template>
 
-    <div class="preview-metadata_actions">
+    <div class="preview-metadata__actions">
         <p-button
             [label]="'dot.common.remove' | dm"
             (click)="removeFile.emit()"
@@ -50,7 +48,7 @@
             icon="pi pi-pencil"></p-button>
     </div>
 
-    <div class="preview-metadata_actions_responsive">
+    <div class="preview-metadata__action--responsive">
         <p-button
             *ngIf="isEditable"
             (click)="onEdit()"

@@ -47,10 +47,7 @@ export class DotContentThumbnailComponent implements OnInit {
     };
 
     ngOnInit(): void {
-        this.type = this.contentType.split('/')[0];
-        this.setSrc();
-        this.setThumbnailType();
-        this.setThumbnailIcon();
+        this.buildThumbnail();
     }
 
     /**
@@ -61,6 +58,13 @@ export class DotContentThumbnailComponent implements OnInit {
      */
     handleError() {
         this.thumbnailType = this.CONTENT_THUMBNAIL_TYPE.icon;
+    }
+
+    private buildThumbnail(): void {
+        this.type = this.contentType.split('/')[0];
+        this.setSrc();
+        this.setThumbnailType();
+        this.setThumbnailIcon();
     }
 
     /**

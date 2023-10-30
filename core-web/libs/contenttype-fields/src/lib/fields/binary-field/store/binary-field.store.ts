@@ -183,6 +183,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
      * @param bytes The max file size in bytes
      */
     setMaxFileSize(bytes: number): void {
+        // Convert bytes to MB
         this._maxFileSizeInMB = bytes / (1024 * 1024);
     }
 

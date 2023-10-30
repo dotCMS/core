@@ -15,13 +15,13 @@ import { DotContentThumbnailComponent, DotMessagePipe, DotSpinnerModule } from '
 
 import { BinaryFile } from '../../interfaces';
 
-export enum EDITABLE_CONTENT {
+export enum EDITABLE_FILE {
     image = 'image',
     text = 'text'
 }
 
-type EDITABLE_CONTENT_FUNTION_MAP = {
-    [key in EDITABLE_CONTENT]: () => boolean;
+type EDITABLE_FILE_FUNCTION_MAP = {
+    [key in EDITABLE_FILE]: () => boolean;
 };
 
 @Component({
@@ -47,13 +47,11 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
     @Output() editFile: EventEmitter<void> = new EventEmitter();
     @Output() removeFile: EventEmitter<void> = new EventEmitter();
 
-    private readonly editableFiles: EDITABLE_CONTENT_FUNTION_MAP = {
-        [EDITABLE_CONTENT.image]: () => this.editableImage,
-        [EDITABLE_CONTENT.text]: () => !!this.file?.content
+    private readonly EDITABLE_FILE_FUNCTION_MAP: EDITABLE_FILE_FUNCTION_MAP = {
+        [EDITABLE_FILE.image]: () => this.editableImage,
+        [EDITABLE_FILE.text]: () => !!this.file?.content
     };
-    private contenttype: EDITABLE_CONTENT;
-    readonly EDITABLE_CONTENT = EDITABLE_CONTENT;
-
+    private contenttype: EDITABLE_FILE;
     isEditable = true;
 
     ngOnChanges(): void {
@@ -67,7 +65,7 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
      * @memberof DotBinaryFieldPreviewComponent
      */
     onEdit(): void {
-        if (this.contenttype === EDITABLE_CONTENT.image) {
+        if (this.contenttype === EDITABLE_FILE.image) {
             this.editImage.emit();
 
             return;
@@ -78,7 +76,7 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
 
     private setIsEditable() {
         const type = this.file.mimeType?.split('/')[0];
-        this.contenttype = EDITABLE_CONTENT[type];
-        this.isEditable = this.editableFiles[this.contenttype]?.();
+        this.contenttype = EDITABLE_FILE[type];
+        this.isEditable = this.EDITABLE_FILE_FUNCTION_MAP[this.contenttype]?.();
     }
 }
