@@ -139,4 +139,4 @@ This maintenance release includes the following code fixes:
 112. https://github.com/dotCMS/core/issues/25193 : Unable to specify resample_opts - value not carried all the way down the method call #25193
 113. https://github.com/dotCMS/core/issues/25489 : Block Editor: Add Superscript and Subscript Mark #25489
 114. https://github.com/dotCMS/core/issues/23777 : LanguageKeys do not fall back to default language #23777
-115.
+115. https://github.com/dotCMS/core/issues/23903 : Delay response when user authentication invalid #23903
