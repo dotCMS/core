@@ -100,4 +100,38 @@ describe('DotBinaryFieldPreviewComponent', () => {
             });
         });
     });
+
+    describe('responsive', () => {
+        it('should emit removeFile event when remove button is clicked', () => {
+            const spy = jest.spyOn(spectator.component.removeFile, 'emit');
+            const removeButton = spectator.query(byTestId('remove-button-responsive'));
+            spectator.click(removeButton);
+            expect(spy).toHaveBeenCalled();
+        });
+
+        describe('onEdit', () => {
+            describe('when file is an image', () => {
+                it('should emit editImage event', () => {
+                    const spy = jest.spyOn(spectator.component.editImage, 'emit');
+                    const editButton = spectator.query(byTestId('edit-button-responsive'));
+                    spectator.click(editButton);
+                    expect(spy).toHaveBeenCalled();
+                });
+            });
+
+            describe('when file is a text file', () => {
+                beforeEach(() => {
+                    spectator.setInput('file', fileText);
+                    spectator.detectChanges();
+                });
+
+                it('should emit editFile event when edit button is clicked', () => {
+                    const spy = jest.spyOn(spectator.component.editFile, 'emit');
+                    const editButton = spectator.query(byTestId('edit-button-responsive'));
+                    spectator.click(editButton);
+                    expect(spy).toHaveBeenCalled();
+                });
+            });
+        });
+    });
 });

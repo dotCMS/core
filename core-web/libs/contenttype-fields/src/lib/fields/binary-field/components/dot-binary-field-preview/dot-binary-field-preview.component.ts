@@ -11,7 +11,12 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { DotContentThumbnailComponent, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
+import {
+    DotContentThumbnailComponent,
+    DotMessagePipe,
+    DotSpinnerModule,
+    DotThumbnailOptions
+} from '@dotcms/ui';
 
 import { BinaryFile } from '../../interfaces';
 
@@ -53,6 +58,17 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
     };
     private contenttype: EDITABLE_FILE;
     isEditable = true;
+
+    get dotThumbanilOptions(): DotThumbnailOptions {
+        return {
+            tempUrl: this.file.url,
+            inode: this.file.inode,
+            name: this.file.name,
+            contentType: this.file.mimeType,
+            iconSize: '48px',
+            titleImage: this.file.name
+        };
+    }
 
     ngOnChanges(): void {
         this.setIsEditable();

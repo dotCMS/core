@@ -17,6 +17,15 @@ export enum CONTENT_THUMBNAIL_TYPE {
     icon = 'icon'
 }
 
+export interface DotThumbnailOptions {
+    tempUrl?: string;
+    inode?: string;
+    name?: string;
+    contentType?: string;
+    iconSize?: string;
+    titleImage?: string;
+}
+
 @Component({
     selector: 'dot-content-thumbnail',
     standalone: true,
@@ -30,21 +39,31 @@ export class DotContentThumbnailComponent implements OnInit {
     thumbnailIcon: string;
     thumbnailType: CONTENT_THUMBNAIL_TYPE;
 
-    @Input() tempUrl: string;
-    @Input() inode: string;
-    @Input() name: string;
-    @Input() contentType: string;
-    @Input() iconSize: string;
-    @Input() titleImage: string;
+    @Input() dotThumbanilOptions: DotThumbnailOptions;
 
+    private _type: string;
+    private _tempUrl: string;
+    private _inode: string;
+    private _contentType: string;
+    private _titleImage: string;
+    private _name: string;
+    private _iconSize: string;
     readonly CONTENT_THUMBNAIL_TYPE = CONTENT_THUMBNAIL_TYPE;
+
     private readonly DEFAULT_ICON = 'pi-file';
-    private type = '';
-    private thumbnailUrlMap = {
+    private readonly thumbnailUrlMap = {
         image: this.getImageThumbnailUrl.bind(this),
         video: this.getVideoThumbnailUrl.bind(this),
         pdf: this.getPdfThumbnailUrl.bind(this)
     };
+
+    get iconSize(): string {
+        return this._iconSize || '1rem';
+    }
+
+    get name(): string {
+        return this._name || '';
+    }
 
     ngOnInit(): void {
         this.buildThumbnail();
@@ -60,8 +79,20 @@ export class DotContentThumbnailComponent implements OnInit {
         this.thumbnailType = this.CONTENT_THUMBNAIL_TYPE.icon;
     }
 
+    private setProperties(): void {
+        const { tempUrl, inode, name, contentType, titleImage, iconSize } =
+            this.dotThumbanilOptions;
+        this._tempUrl = tempUrl;
+        this._inode = inode;
+        this._name = name;
+        this._contentType = contentType;
+        this._titleImage = titleImage;
+        this._iconSize = iconSize;
+        this._type = this._contentType.split('/')[0];
+    }
+
     private buildThumbnail(): void {
-        this.type = this.contentType.split('/')[0];
+        this.setProperties();
         this.setSrc();
         this.setThumbnailType();
         this.setThumbnailIcon();
@@ -74,7 +105,7 @@ export class DotContentThumbnailComponent implements OnInit {
      * @memberof DotContentThumbnailComponent
      */
     private setThumbnailType(): void {
-        this.thumbnailType = CONTENT_THUMBNAIL_TYPE[this.type] || CONTENT_THUMBNAIL_TYPE.icon;
+        this.thumbnailType = CONTENT_THUMBNAIL_TYPE[this._type] || CONTENT_THUMBNAIL_TYPE.icon;
     }
 
     /**
@@ -84,7 +115,7 @@ export class DotContentThumbnailComponent implements OnInit {
      * @memberof DotContentThumbnailComponent
      */
     private setSrc(): void {
-        this.src = this.tempUrl || this.thumbnailUrlMap[this.type]?.();
+        this.src = this._tempUrl || this.thumbnailUrlMap[this._type]?.();
     }
 
     /**
@@ -94,7 +125,7 @@ export class DotContentThumbnailComponent implements OnInit {
      * @memberof DotContentThumbnailComponent
      */
     private setThumbnailIcon(): void {
-        const extension = this.name.split('.').pop();
+        const extension = this._name.split('.').pop();
         this.thumbnailIcon = ICON_MAP[extension] || this.DEFAULT_ICON;
     }
 
@@ -106,7 +137,7 @@ export class DotContentThumbnailComponent implements OnInit {
      * @memberof DotContentThumbnailComponent
      */
     private getPdfThumbnailUrl(): string {
-        return `/contentAsset/image/${this.inode}/${this.titleImage}/pdf_page/1/resize_w/250/quality_q/45`;
+        return `/contentAsset/image/${this._inode}/${this._titleImage}/pdf_page/1/resize_w/250/quality_q/45`;
     }
 
     /**
@@ -117,7 +148,7 @@ export class DotContentThumbnailComponent implements OnInit {
      * @memberof DotContentThumbnailComponent
      */
     private getImageThumbnailUrl(): string {
-        return `/dA/${this.inode}/500w/50q`;
+        return `/dA/${this._inode}/500w/50q`;
     }
 
     /**
@@ -128,6 +159,6 @@ export class DotContentThumbnailComponent implements OnInit {
      * @memberof DotContentThumbnailComponent
      */
     private getVideoThumbnailUrl(): string {
-        return `/dA/${this.inode}`;
+        return `/dA/${this._inode}`;
     }
 }

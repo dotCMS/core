@@ -1,4 +1,4 @@
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
@@ -15,8 +15,8 @@ export class DotBinaryFieldEditImageService {
     private subject: BehaviorSubject<DotCMSTempFile> = new BehaviorSubject(null);
     private variable: string;
 
-    editedImage(): BehaviorSubject<DotCMSTempFile> {
-        return this.subject;
+    editedImage(): Observable<DotCMSTempFile> {
+        return this.subject.asObservable();
     }
 
     /**

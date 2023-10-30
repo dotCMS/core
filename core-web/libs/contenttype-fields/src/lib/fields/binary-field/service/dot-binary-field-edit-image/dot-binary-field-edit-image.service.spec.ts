@@ -1,6 +1,8 @@
 import { expect } from '@jest/globals';
 import { SpectatorService, createServiceFactory } from '@ngneat/spectator';
 
+import { skip } from 'rxjs/operators';
+
 import { DotBinaryFieldEditImageService } from './dot-binary-field-edit-image.service';
 
 describe('DotBinaryFieldEditImageService', () => {
@@ -68,14 +70,21 @@ describe('DotBinaryFieldEditImageService', () => {
         expect(spyAddEventListener).toHaveBeenCalledWith(tempEventName, expect.any(Function));
     });
 
-    it('should emit edited image and remove listener', () => {
+    it('should emit edited image and remove listener', (done) => {
         const tempFile = { id: '123', url: 'http://example.com/image.jpg' };
-        const spy = jest.spyOn(spectator.service.editedImage(), 'next');
         const data = {
             variable: 'test',
             inode: '456',
             tempId: '789'
         };
+
+        spectator.service
+            .editedImage()
+            .pipe(skip(1))
+            .subscribe((file) => {
+                expect(file).toEqual(tempFile);
+                done();
+            });
 
         const tempEventName = `binaryField-tempfile-${data.variable}`;
         const closeEventName = `binaryField-close-image-editor-${data.variable}`;
@@ -83,7 +92,6 @@ describe('DotBinaryFieldEditImageService', () => {
         spectator.service.openImageEditor(data);
         document.dispatchEvent(new CustomEvent(tempEventName, { detail: { tempFile } }));
 
-        expect(spy).toHaveBeenCalledWith(tempFile);
         expect(spyRemoveEventListener.mock.calls[0]).toEqual([tempEventName, expect.any(Function)]);
         expect(spyRemoveEventListener.mock.calls[1]).toEqual([
             closeEventName,

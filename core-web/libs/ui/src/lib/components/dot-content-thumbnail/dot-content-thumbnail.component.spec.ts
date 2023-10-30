@@ -5,19 +5,24 @@ import {
     CONTENT_THUMBNAIL_TYPE
 } from './dot-content-thumbnail.component';
 
+const mockDotThumbnailOptions = {
+    tempUrl: '',
+    inode: '123-456',
+    name: 'name',
+    contentType: 'video/mp4',
+    iconSize: '74',
+    titleImage: ''
+};
+
 describe('DotContentThumbnailComponent', () => {
     let spectator: Spectator<DotContentThumbnailComponent>;
     const createComponent = createComponentFactory(DotContentThumbnailComponent);
 
-    describe('thumbnail', () => {
+    describe('video', () => {
         beforeEach(async () => {
             spectator = createComponent({
                 props: {
-                    inode: '123-456',
-                    name: 'name',
-                    contentType: 'video/mp4',
-                    iconSize: '74',
-                    titleImage: ''
+                    dotThumbanilOptions: mockDotThumbnailOptions
                 }
             });
             spectator.detectChanges();
@@ -40,11 +45,11 @@ describe('DotContentThumbnailComponent', () => {
         beforeEach(async () => {
             spectator = createComponent({
                 props: {
-                    inode: '123-456',
-                    name: 'image.png',
-                    contentType: 'image/png',
-                    iconSize: '74',
-                    titleImage: ''
+                    dotThumbanilOptions: {
+                        ...mockDotThumbnailOptions,
+                        name: 'image.png',
+                        contentType: 'image/png'
+                    }
                 }
             });
             spectator.detectChanges();
@@ -67,11 +72,11 @@ describe('DotContentThumbnailComponent', () => {
         beforeEach(async () => {
             spectator = createComponent({
                 props: {
-                    inode: '123-456',
-                    name: 'name',
-                    contentType: 'unknown',
-                    iconSize: '74',
-                    titleImage: ''
+                    dotThumbanilOptions: {
+                        ...mockDotThumbnailOptions,
+                        name: 'name',
+                        contentType: 'unknown'
+                    }
                 }
             });
             spectator.detectChanges();

@@ -4,6 +4,8 @@ import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { NgZone } from '@angular/core';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -53,6 +55,9 @@ describe('DotBinaryFieldComponent', () => {
     let spectator: Spectator<DotBinaryFieldComponent>;
     let store: DotBinaryFieldStore;
 
+    let dotBinaryFieldEditImageService: DotBinaryFieldEditImageService;
+    let ngZone: NgZone;
+
     const createComponent = createComponentFactory({
         component: DotBinaryFieldComponent,
         imports: [
@@ -100,6 +105,8 @@ describe('DotBinaryFieldComponent', () => {
             }
         });
         store = spectator.inject(DotBinaryFieldStore, true);
+        dotBinaryFieldEditImageService = spectator.inject(DotBinaryFieldEditImageService, true);
+        ngZone = spectator.inject(NgZone);
     });
 
     it('should emit temp file', () => {
@@ -223,6 +230,43 @@ describe('DotBinaryFieldComponent', () => {
 
             expect(dropZone).toBeTruthy();
             expect(spyRemoveFile).toHaveBeenCalled();
+        });
+
+        describe('Edit Image', () => {
+            it('should open edit image dialog when click on edit image button', () => {
+                const spy = jest.spyOn(dotBinaryFieldEditImageService, 'openImageEditor');
+                const dotBinaryFieldPreviewComponent = spectator.fixture.debugElement.query(
+                    By.css('dot-binary-field-preview')
+                );
+                dotBinaryFieldPreviewComponent.triggerEventHandler('editImage');
+                expect(spy).toHaveBeenCalled();
+            });
+
+            it('should emit the tempId of the edited image', () => {
+                // Needed because the openImageEditor method is using a DOM custom event
+                ngZone.run(
+                    fakeAsync(() => {
+                        const spy = jest.spyOn(dotBinaryFieldEditImageService, 'openImageEditor');
+                        const spyTempFile = jest.spyOn(store, 'setTempFile');
+                        const dotBinaryFieldPreviewComponent = spectator.fixture.debugElement.query(
+                            By.css('dot-binary-field-preview')
+                        );
+                        dotBinaryFieldPreviewComponent.triggerEventHandler('editImage');
+                        const customEvent = new CustomEvent(
+                            `binaryField-tempfile-${FIELD.variable}`,
+                            {
+                                detail: { tempFile: TEMP_FILE_MOCK }
+                            }
+                        );
+                        document.dispatchEvent(customEvent);
+
+                        tick(1000);
+
+                        expect(spy).toHaveBeenCalled();
+                        expect(spyTempFile).toHaveBeenCalledWith(TEMP_FILE_MOCK);
+                    })
+                );
+            });
         });
     });
 
