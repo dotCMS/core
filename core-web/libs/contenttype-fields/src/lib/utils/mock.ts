@@ -27,6 +27,7 @@ const MESSAGES_MOCK = {
     'dot.binary.field.file.dimension': 'Dimension',
     'dot.binary.field.file.size': 'File Size',
     'dot.common.cancel': 'Cancel',
+    'dot.common.edit': 'Edit',
     'dot.common.import': 'Import',
     'dot.common.remove': 'Remove',
     'dot.common.save': 'Save',

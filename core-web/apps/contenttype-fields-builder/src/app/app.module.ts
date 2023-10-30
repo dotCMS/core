@@ -8,7 +8,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotBinaryFieldComponent } from '@dotcms/contenttype-fields';
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
-import { CoreWebService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 
 import { AppComponent } from './app.component';
 
@@ -33,7 +32,7 @@ const CONTENTTYPE_FIELDS: ContenttypeFieldElement[] = [
         DotBinaryFieldComponent,
         MonacoEditorModule
     ],
-    providers: [DotMessageService, DotUploadService, CoreWebService, LoggerService, StringUtils]
+    providers: [DotMessageService, DotUploadService]
 })
 export class AppModule implements DoBootstrap {
     constructor(private readonly injector: Injector) {}
