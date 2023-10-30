@@ -68,6 +68,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() displayCountBar: boolean | string = true;
     @Input() charLimit: number;
     @Input() content: Content = '';
+    @Input() contentletIdentifier: string;
 
     @Input() set allowedBlocks(blocks: string) {
         const allowedBlocks = blocks ? blocks.replace(/ /g, '').split(',').filter(Boolean) : [];
@@ -239,7 +240,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotConfigExtension({
                 lang: this.lang,
                 allowedContentTypes: this.allowedContentTypes,
-                allowedBlocks: this._allowedBlocks
+                allowedBlocks: this._allowedBlocks,
+                contentletIdentifier: this.contentletIdentifier
             }),
             Subscript,
             Superscript,

@@ -163,6 +163,7 @@
             String allowedBlocks = "";
             String displayCountBar = "";
             String charLimit = "";
+            String contentletIdentifier = contentlet.getIdentifier();
 
             // By default this is an empty JSON `{}`.
             JSONObject JSONValue = new JSONObject();
@@ -203,7 +204,9 @@
                 custom-styles="<%=customStyles%>"
                 display-count-bar="<%=displayCountBar%>"
                 char-limit="<%=charLimit%>"
-                lang="<%=contentLanguage%>">
+                lang="<%=contentLanguage%>"
+                contentlet-identifier='<%=contentletIdentifier%>'
+                >
             </dotcms-block-editor>
             <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"/>
 

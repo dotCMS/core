@@ -211,12 +211,14 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
     }
 
     function setUpSuggestionComponent(editor: Editor, range: Range) {
-        const { allowedBlocks, allowedContentTypes, lang } = editor.storage.dotConfig;
+        const { allowedBlocks, allowedContentTypes, lang, contentletIdentifier } =
+            editor.storage.dotConfig;
         suggestionsComponent = viewContainerRef.createComponent(SuggestionsComponent);
 
         // Setting Inputs
         suggestionsComponent.instance.currentLanguage = lang;
         suggestionsComponent.instance.allowedContentTypes = allowedContentTypes;
+        suggestionsComponent.instance.contentletIdentifier = contentletIdentifier;
         suggestionsComponent.instance.allowedBlocks = allowedBlocks.length > 1 ? allowedBlocks : [];
         suggestionsComponent.instance.onSelection = (item) => {
             const suggestionQuery = suggestionKey.getState(editor.view.state).query?.length || 0;

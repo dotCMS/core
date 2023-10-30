@@ -51,6 +51,7 @@ export class SuggestionsComponent implements OnInit {
     @Input() currentLanguage = DEFAULT_LANG_ID;
     @Input() allowedContentTypes = '';
     @Input() allowedBlocks = [];
+    @Input() contentletIdentifier = '';
 
     @Output() clearFilter: EventEmitter<string> = new EventEmitter<string>();
 
@@ -224,7 +225,8 @@ export class SuggestionsComponent implements OnInit {
             .getContentlets({
                 contentType: contentType.variable,
                 filter,
-                currentLanguage: this.currentLanguage
+                currentLanguage: this.currentLanguage,
+                contentletIdentifier: this.contentletIdentifier
             })
             .pipe(take(1))
             .subscribe((contentlets) => {

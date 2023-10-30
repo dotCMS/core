@@ -141,3 +141,4 @@ This maintenance release includes the following code fixes:
 114. https://github.com/dotCMS/core/issues/23777 : LanguageKeys do not fall back to default language #23777
 115. https://github.com/dotCMS/core/issues/23903 : Delay response when user authentication invalid #23903
 116. https://github.com/dotCMS/core/issues/23955 : Allow user to easily preview URL Mapped Content #23955
+117. https://github.com/dotCMS/core/issues/24797 : Block Editor Crash when the Same Contentlet is Added #24797
