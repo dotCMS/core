@@ -28,7 +28,34 @@ describe('Utils Functions', () => {
                         'true',
                         DotEditContentFieldSingleSelectableDataType.BOOL
                     )
-                ).toBeTruthy();
+                ).toBe(true);
+            });
+
+            it('should return true if value is TRUE', () => {
+                expect(
+                    castSingleSelectableValue(
+                        'TRUE',
+                        DotEditContentFieldSingleSelectableDataType.BOOL
+                    )
+                ).toBe(true);
+            });
+
+            it('should return true if value is True', () => {
+                expect(
+                    castSingleSelectableValue(
+                        'True',
+                        DotEditContentFieldSingleSelectableDataType.BOOL
+                    )
+                ).toBe(true);
+            });
+
+            it('should return true if value is TrUE', () => {
+                expect(
+                    castSingleSelectableValue(
+                        'TrUE',
+                        DotEditContentFieldSingleSelectableDataType.BOOL
+                    )
+                ).toBe(true);
             });
 
             it('should return false if value is false', () => {
@@ -37,24 +64,46 @@ describe('Utils Functions', () => {
                         'false',
                         DotEditContentFieldSingleSelectableDataType.BOOL
                     )
-                ).toBeFalsy();
+                ).toBe(false);
+            });
+
+            it('should return false for any random string that is not "true"', () => {
+                expect(
+                    castSingleSelectableValue(
+                        (Math.random() * 10).toString(36), // This return some random stuff like 6.kuh34iuh12
+                        DotEditContentFieldSingleSelectableDataType.BOOL
+                    )
+                ).toBe(false);
+            });
+
+            it('should return false for any random number that is not "true"', () => {
+                expect(
+                    castSingleSelectableValue(
+                        (Math.random() * 10).toString(), // Random number from 0 to 10
+                        DotEditContentFieldSingleSelectableDataType.BOOL
+                    )
+                ).toBe(false);
             });
         });
 
         describe('Integer', () => {
             it('should return number if value is number', () => {
+                const number = Math.random() * 10;
+
                 expect(
                     castSingleSelectableValue(
-                        '1',
+                        number.toString(),
                         DotEditContentFieldSingleSelectableDataType.INTEGER
                     )
-                ).toBe(1);
+                ).toBe(number);
             });
 
             it('should return NaN if value is not a number', () => {
+                const randomString = (Math.random() * 10).toString(36);
+
                 expect(
                     castSingleSelectableValue(
-                        'a',
+                        randomString,
                         DotEditContentFieldSingleSelectableDataType.INTEGER
                     )
                 ).toBe(NaN);
@@ -63,18 +112,22 @@ describe('Utils Functions', () => {
 
         describe('Float', () => {
             it('should return number if value is number', () => {
+                const number = Math.random();
+
                 expect(
                     castSingleSelectableValue(
-                        '1.3234',
+                        number.toString(),
                         DotEditContentFieldSingleSelectableDataType.FLOAT
                     )
-                ).toBe(1.3234);
+                ).toBe(number);
             });
 
             it('should return NaN if value is not a number', () => {
+                const randomString = (Math.random() * 10).toString(36);
+
                 expect(
                     castSingleSelectableValue(
-                        'a',
+                        randomString,
                         DotEditContentFieldSingleSelectableDataType.FLOAT
                     )
                 ).toBe(NaN);
