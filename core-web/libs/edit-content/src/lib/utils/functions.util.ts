@@ -10,6 +10,7 @@ import {
 } from '../models/dot-edit-content-field.enum';
 import { DotEditContentFieldSingleSelectableDataTypes } from '../models/dot-edit-content-field.type';
 
+// This function is used to cast the value to a correct type for the Angular Form if the field is a single selectable field
 export const castSingleSelectableValue = (
     value: string,
     type: string
@@ -32,23 +33,18 @@ export const castSingleSelectableValue = (
     return value;
 };
 
+// This function creates the model for the Components that use the Single Selectable Field, like the Select, Radio Button and Checkbox
 export const getSingleSelectableFieldOptions = (
     options: string,
     dataType: string
 ): { label: string; value: DotEditContentFieldSingleSelectableDataTypes }[] => {
-    const lines = options?.split('\r\n');
+    const lines = (options?.split('\r\n') ?? []).filter((line) => line.trim() !== '');
 
-    if (lines.length === 0) {
-        return [];
-    }
-
-    const result = lines?.map((line) => {
-        const [label, value = label] = line.split('|');
+    return lines?.map((line) => {
+        const [label, value = label] = line.split('|').map((value) => value.trim());
 
         return { label, value: castSingleSelectableValue(value, dataType) };
     });
-
-    return result;
 };
 
 // This function is used to cast the value to a correct type for the Angular Form
