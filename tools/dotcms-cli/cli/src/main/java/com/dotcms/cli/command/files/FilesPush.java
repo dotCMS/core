@@ -59,8 +59,6 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
     public Integer call() throws Exception {
 
 
-        System.out.println(" PushContext :::  "+ pushContext);
-
         // When calling from the global push we should avoid the validation of the unmatched
         // arguments as we may send arguments meant for other push subcommands
         if (!pushMixin.noValidateUnmatchedArguments) {
@@ -203,12 +201,12 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                             "- @|bold,%s [%s]|@ Assets to delete " +
                             "- @|bold,%s [%s]|@ Folders to push " +
                             "- @|bold,%s [%s]|@ Folders to delete\n\n",
-                    COLOR_NEW,pushInfo.assetsToPushCount(),
+                    pushInfo.assetsToPushCount(),
                     COLOR_MODIFIED,pushInfo.assetsNewCount(),
                     COLOR_DELETED,pushInfo.assetsModifiedCount(),
                     COLOR_NEW,pushInfo.assetsToDeleteCount(),
-                    COLOR_DELETED,pushInfo.foldersToPushCount(),
-                    pushInfo.foldersToDeleteCount())
+                    COLOR_NEW,pushInfo.foldersToPushCount(),
+                    COLOR_DELETED,pushInfo.foldersToDeleteCount())
             );
         } else {
             outputBuilder.append(String.format(" Push Data: " +

@@ -114,7 +114,17 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
 
         // If the language does not exist we need to create it
         if (!params.localPaths().languageExists()) {
-            pusher.createLanguage(params.localPaths().language());
+           try {
+               pusher.createLanguage(params.localPaths().language());
+           } catch (Exception e) {
+               //If we failed to create the language we still continue with the push
+               // we simply the let the user know and move on
+               final String errorMessage = String.format(
+                       "Error creating language. Can not process this folder [%s] branch.",
+                       params.localPaths().language());
+               logger.error(errorMessage, e);
+               return List.of(e);
+           }
         }
 
         // ---

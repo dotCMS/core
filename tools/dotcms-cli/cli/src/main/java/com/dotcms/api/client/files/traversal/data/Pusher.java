@@ -1,5 +1,10 @@
 package com.dotcms.api.client.files.traversal.data;
 
+import static com.dotcms.common.AssetsUtils.buildRemoteAssetURL;
+import static com.dotcms.common.AssetsUtils.buildRemoteURL;
+import static com.dotcms.common.AssetsUtils.statusToBoolean;
+import static com.dotcms.common.LocationUtils.localPathFromAssetData;
+
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.FolderAPI;
 import com.dotcms.api.LanguageAPI;
@@ -13,21 +18,16 @@ import com.dotcms.model.asset.FileUploadDetail;
 import com.dotcms.model.language.Language;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.SiteView;
-import com.google.common.collect.ImmutableList;
-import java.io.Serializable;
-import org.jboss.logging.Logger;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
-
-import static com.dotcms.common.AssetsUtils.*;
-import static com.dotcms.common.LocationUtils.localPathFromAssetData;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
+import org.jboss.logging.Logger;
 
 @ApplicationScoped
 public class Pusher implements Serializable {
@@ -88,7 +88,7 @@ public class Pusher implements Serializable {
 
         // Execute the REST call to create the folder
         final ResponseEntityView<List<Map<String, Object>>> response = folderAPI.makeFolders(
-                ImmutableList.of(folderPath),
+                List.of(folderPath),
                 siteName);
 
         return response.entity();
