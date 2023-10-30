@@ -58,6 +58,15 @@ describe('Utils Functions', () => {
                 ).toBe(true);
             });
 
+            it('should return true if value has spaces on the sides', () => {
+                expect(
+                    castSingleSelectableValue(
+                        '        true      ',
+                        DotEditContentFieldSingleSelectableDataType.BOOL
+                    )
+                ).toBe(true);
+            });
+
             it('should return false if value is false', () => {
                 expect(
                     castSingleSelectableValue(
@@ -86,51 +95,39 @@ describe('Utils Functions', () => {
             });
         });
 
-        describe('Integer', () => {
-            it('should return number if value is number', () => {
-                const number = Math.random() * 10;
+        describe.each([
+            {
+                dataType: DotEditContentFieldSingleSelectableDataType.INTEGER
+            },
+            {
+                dataType: DotEditContentFieldSingleSelectableDataType.FLOAT
+            }
+        ])('Numeric DataTypes', ({ dataType }) => {
+            describe(dataType, () => {
+                let number = 0;
 
-                expect(
-                    castSingleSelectableValue(
-                        number.toString(),
-                        DotEditContentFieldSingleSelectableDataType.INTEGER
-                    )
-                ).toBe(number);
-            });
+                beforeEach(() => {
+                    number =
+                        dataType == DotEditContentFieldSingleSelectableDataType.INTEGER
+                            ? Math.random() * 10
+                            : Math.random(); // To generate a float or integer number
+                });
 
-            it('should return NaN if value is not a number', () => {
-                const randomString = (Math.random() * 10).toString(36);
+                it('should return number if value is number', () => {
+                    expect(castSingleSelectableValue(number.toString(), dataType)).toBe(number);
+                });
 
-                expect(
-                    castSingleSelectableValue(
-                        randomString,
-                        DotEditContentFieldSingleSelectableDataType.INTEGER
-                    )
-                ).toBe(NaN);
-            });
-        });
+                it('should return number if value is number and has spaces on the sides', () => {
+                    expect(
+                        castSingleSelectableValue(`      ${number.toString()}   `, dataType)
+                    ).toBe(number);
+                });
 
-        describe('Float', () => {
-            it('should return number if value is number', () => {
-                const number = Math.random();
+                it('should return NaN if value is not a number', () => {
+                    const randomString = number.toString(36);
 
-                expect(
-                    castSingleSelectableValue(
-                        number.toString(),
-                        DotEditContentFieldSingleSelectableDataType.FLOAT
-                    )
-                ).toBe(number);
-            });
-
-            it('should return NaN if value is not a number', () => {
-                const randomString = (Math.random() * 10).toString(36);
-
-                expect(
-                    castSingleSelectableValue(
-                        randomString,
-                        DotEditContentFieldSingleSelectableDataType.FLOAT
-                    )
-                ).toBe(NaN);
+                    expect(castSingleSelectableValue(randomString, dataType)).toBe(NaN);
+                });
             });
         });
     });
@@ -201,86 +198,84 @@ describe('Utils Functions', () => {
                 }
             ]);
         });
-    });
-
-    describe('should cast the values when a type is passed', () => {
-        it('should cast for integer', () => {
-            expect(
-                getSingleSelectableFieldOptions(
-                    'some label\r\n3\r\nsome label 3|i have value\r\nfour|4',
-                    DotEditContentFieldSingleSelectableDataType.INTEGER
-                )
-            ).toEqual([
-                {
-                    label: 'some label',
-                    value: NaN
-                },
-                {
-                    label: '3',
-                    value: 3
-                },
-                {
-                    label: 'some label 3',
-                    value: NaN
-                },
-                {
-                    label: 'four',
-                    value: 4
-                }
-            ]);
-        });
-
-        it('should cast for float', () => {
-            expect(
-                getSingleSelectableFieldOptions(
-                    'some label\r\n234.21\r\nsome label 3|i have value\r\nfour dot five|4.5',
-                    DotEditContentFieldSingleSelectableDataType.FLOAT
-                )
-            ).toEqual([
-                {
-                    label: 'some label',
-                    value: NaN
-                },
-                {
-                    label: '234.21',
-                    value: 234.21
-                },
-                {
-                    label: 'some label 3',
-                    value: NaN
-                },
-                {
-                    label: 'four dot five',
-                    value: 4.5
-                }
-            ]);
-        });
-
-        it('should cast for bool', () => {
-            expect(
-                getSingleSelectableFieldOptions(
-                    'some label\r\nfalse\r\nsome label 3|true\r\ntrue|true',
-                    DotEditContentFieldSingleSelectableDataType.BOOL
-                )
-            ).toEqual([
-                {
-                    label: 'some label',
-                    value: false
-                },
-                {
-                    label: 'false',
-                    value: false
-                },
-                {
-                    label: 'some label 3',
-                    value: true
-                },
-                {
-                    label: 'true',
-                    value: true
-                }
-            ]);
-        });
+        describe.each([
+            {
+                optionsString: 'some label\r\n3\r\nsome label 3|i have value\r\nfour|4',
+                dataType: DotEditContentFieldSingleSelectableDataType.INTEGER,
+                expected: [
+                    {
+                        label: 'some label',
+                        value: NaN
+                    },
+                    {
+                        label: '3',
+                        value: 3
+                    },
+                    {
+                        label: 'some label 3',
+                        value: NaN
+                    },
+                    {
+                        label: 'four',
+                        value: 4
+                    }
+                ]
+            },
+            {
+                optionsString:
+                    'some label\r\n3.14\r\nsome label 3|i have value\r\nfour dot five|4.5',
+                dataType: DotEditContentFieldSingleSelectableDataType.FLOAT,
+                expected: [
+                    {
+                        label: 'some label',
+                        value: NaN
+                    },
+                    {
+                        label: '3.14',
+                        value: 3.14
+                    },
+                    {
+                        label: 'some label 3',
+                        value: NaN
+                    },
+                    {
+                        label: 'four dot five',
+                        value: 4.5
+                    }
+                ]
+            },
+            {
+                optionsString: 'some label\r\nfalse\r\nsome label 3|true\r\ntrue|true',
+                dataType: DotEditContentFieldSingleSelectableDataType.BOOL,
+                expected: [
+                    {
+                        label: 'some label',
+                        value: false
+                    },
+                    {
+                        label: 'false',
+                        value: false
+                    },
+                    {
+                        label: 'some label 3',
+                        value: true
+                    },
+                    {
+                        label: 'true',
+                        value: true
+                    }
+                ]
+            }
+        ])(
+            'should cast the values when a type is passed',
+            ({ optionsString, dataType, expected }) => {
+                it(`should cast for ${dataType} `, () => {
+                    expect(getSingleSelectableFieldOptions(optionsString, dataType)).toEqual(
+                        expected
+                    );
+                });
+            }
+        );
     });
 
     describe('getFinalCastedValue', () => {

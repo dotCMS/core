@@ -20,7 +20,7 @@ export const castSingleSelectableValue = (
     }
 
     if (type === DotEditContentFieldSingleSelectableDataType.BOOL) {
-        return value.toLowerCase() === 'true';
+        return value.toLowerCase().trim() === 'true';
     }
 
     if (
