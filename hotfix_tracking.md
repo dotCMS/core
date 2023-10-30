@@ -142,3 +142,4 @@ This maintenance release includes the following code fixes:
 115. https://github.com/dotCMS/core/issues/23903 : Delay response when user authentication invalid #23903
 116. https://github.com/dotCMS/core/issues/23955 : Allow user to easily preview URL Mapped Content #23955
 117. https://github.com/dotCMS/core/issues/24797 : Block Editor Crash when the Same Contentlet is Added #24797
+118. https://github.com/dotCMS/core/issues/23181 : Modifying designer template removes content from pages #23181

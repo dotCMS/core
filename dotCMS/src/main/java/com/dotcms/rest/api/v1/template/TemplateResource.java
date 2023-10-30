@@ -23,6 +23,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
@@ -61,6 +62,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
@@ -371,7 +373,9 @@ public class TemplateResource {
         template.setTitle(templateForm.getTitle());
         template.setModUser(user.getUserId());
         template.setModDate(new Date());
+        TemplateLayoutView.ContainerUUIDChanges containerUUIDChanges = null;
         if (null != templateForm.getLayout()) {
+            containerUUIDChanges = templateForm.getLayout().updateUUIDOfContainers();
             template.setDrawedBody(this.templateHelper.toTemplateLayout(templateForm.getLayout()));
             template.setDrawed(true);
         } else {
@@ -403,10 +407,30 @@ public class TemplateResource {
             this.templateAPI.saveTemplate(template, host, user, pageMode.respectAnonPerms);
         }
 
+        if (UtilMethods.isSet(containerUUIDChanges) && UtilMethods.isSet(containerUUIDChanges.lostUUIDValues())){
+            updateMultiTree(template, containerUUIDChanges);
+
+        }
+
         ActivityLogger.logInfo(this.getClass(), "Saved Template", "User " + user.getPrimaryKey()
                 + "Template: " + template.getTitle(), host.getTitle() != null? host.getTitle():"default");
 
         return template;
+    }
+
+    private static void updateMultiTree(final Template template, final TemplateLayoutView.ContainerUUIDChanges containerUUIDChanges)
+            throws DotDataException, DotSecurityException {
+        final List<Contentlet> pagesByTemplate = APILocator.getHTMLPageAssetAPI()
+                .findPagesByTemplate(template, APILocator.systemUser(), false);
+
+        final List<String> pagesId = pagesByTemplate.stream()
+                .map(contentlet -> contentlet.getIdentifier())
+                .collect(Collectors.toList());
+
+        for (TemplateLayoutView.ContainerUUIDChanged lostUUIDValue : containerUUIDChanges.lostUUIDValues()) {
+            APILocator.getMultiTreeAPI().updateMultiTrees(pagesId, lostUUIDValue.containerId, lostUUIDValue.oldValue,
+                    lostUUIDValue.newValue);
+        }
     }
 
     /**
