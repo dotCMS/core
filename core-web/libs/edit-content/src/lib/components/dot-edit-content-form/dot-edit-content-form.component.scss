@@ -18,13 +18,14 @@
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
-    gap: $spacing-2;
+    gap: $spacing-4;
+    margin-bottom: $spacing-4;
 }
 
 .column {
     display: flex;
     flex-direction: column;
-    gap: $spacing-3;
+    gap: $spacing-4;
 }
 
 code {
