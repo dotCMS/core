@@ -232,52 +232,64 @@ describe('Utils Functions', () => {
 
     describe('getFinalCastedValue', () => {
         describe.each([...CALENDAR_FIELD_TYPES])('Calendar Fields', (fieldType) => {
-            it('should parse the date if the value is a valid date', () => {
-                const value = '2021-09-01T18:00:00.000Z';
-                const field = { fieldType } as DotCMSContentTypeField;
+            describe(fieldType, () => {
+                it('should parse the date if the value is a valid date', () => {
+                    const value = '2021-09-01T18:00:00.000Z';
+                    const field = { fieldType } as DotCMSContentTypeField;
 
-                expect(getFinalCastedValue(value, field)).toEqual(new Date(value));
-            });
+                    expect(getFinalCastedValue(value, field)).toEqual(new Date(value));
+                });
 
-            it("should return Date.now if the value is 'now'", () => {
-                const value = 'now';
-                const field = { fieldType } as DotCMSContentTypeField;
+                it("should return Date.now if the value is 'now'", () => {
+                    const value = 'now';
+                    const field = { fieldType } as DotCMSContentTypeField;
 
-                expect(getFinalCastedValue(value, field)).toEqual(new Date());
-            });
+                    expect(getFinalCastedValue(value, field)).toEqual(new Date());
+                });
 
-            it('should return undefined if the value is undefined', () => {
-                const value = undefined;
-                const field = { fieldType } as DotCMSContentTypeField;
+                it('should return undefined if the value is undefined', () => {
+                    const value = undefined;
+                    const field = { fieldType } as DotCMSContentTypeField;
 
-                expect(getFinalCastedValue(value, field)).toEqual(undefined);
+                    expect(getFinalCastedValue(value, field)).toEqual(undefined);
+                });
             });
         });
 
         describe.each([...FLATTENED_FIELD_TYPES])('Flattened Fields', (fieldType) => {
-            it('should return an array of the values', () => {
-                const value = 'value1,value2,value3';
-                const field = { fieldType } as DotCMSContentTypeField;
+            describe(fieldType, () => {
+                it('should return an array of the values', () => {
+                    const value = 'value1,value2,value3';
+                    const field = { fieldType } as DotCMSContentTypeField;
 
-                expect(getFinalCastedValue(value, field)).toEqual(['value1', 'value2', 'value3']);
-            });
+                    expect(getFinalCastedValue(value, field)).toEqual([
+                        'value1',
+                        'value2',
+                        'value3'
+                    ]);
+                });
 
-            it('should trim the values', () => {
-                const value = ' value1 , value2 , value3 ';
-                const field = { fieldType } as DotCMSContentTypeField;
+                it('should trim the values', () => {
+                    const value = ' value1 , value2 , value3 ';
+                    const field = { fieldType } as DotCMSContentTypeField;
 
-                expect(getFinalCastedValue(value, field)).toEqual(['value1', 'value2', 'value3']);
-            });
+                    expect(getFinalCastedValue(value, field)).toEqual([
+                        'value1',
+                        'value2',
+                        'value3'
+                    ]);
+                });
 
-            it('should return undefined if the value is undefined', () => {
-                const value = undefined;
-                const field = { fieldType } as DotCMSContentTypeField;
+                it('should return undefined if the value is undefined', () => {
+                    const value = undefined;
+                    const field = { fieldType } as DotCMSContentTypeField;
 
-                expect(getFinalCastedValue(value, field)).toEqual(undefined);
+                    expect(getFinalCastedValue(value, field)).toEqual(undefined);
+                });
             });
         });
 
-        describe('No special type', () => {
+        describe('No special field', () => {
             it('should call castSingleSelectableValue', () => {
                 const value = 'value1';
                 const field = {
