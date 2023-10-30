@@ -14,19 +14,17 @@
         </div>
 
         <div class="preview-metadata__container">
-            <div class="preview-metadata_info">
-                <h4 class="preview-metadata_header">{{ file.name }}</h4>
-                <div class="preview-metadata" *ngIf="file.width && file.height">
-                    <i class="pi pi-arrows-alt" style="font-size: 1rem"></i>
-                    <span>{{ file.width }}px, {{ file.height }}px</span>
-                </div>
-                <div class="preview-metadata">
-                    <i class="pi pi-file" style="font-size: 1rem"></i>
-                    <span
-                        >{{ file.fileSize | number : '1.0-2' }}
-                        {{ 'dot.binary.field.file.bytes' | dm }}</span
-                    >
-                </div>
+            <span class="preview-metadata_header">{{ file.name }}</span>
+            <div class="preview-metadata" *ngIf="file.width && file.height">
+                <i class="pi pi-arrows-alt"></i>
+                <span>{{ file.width }}px, {{ file.height }}px</span>
+            </div>
+            <div class="preview-metadata">
+                <i class="pi pi-file"></i>
+                <span
+                    >{{ file.fileSize | number : '1.0-2' }}
+                    {{ 'dot.binary.field.file.bytes' | dm }}</span
+                >
             </div>
         </div>
     </ng-template>
@@ -69,19 +67,15 @@
 </div>
 
 <p-overlayPanel #op>
-    <div class="preview-metadata_info">
-        <p>{{ file.name }}</p>
-        <ng-container *ngIf="file.width && file.height">
-            <p>
-                {{ 'dot.binary.field.file.dimension' | dm }}:
-                <span>{{ file.width }}px, {{ file.height }}px</span>
-            </p>
-        </ng-container>
-        <ng-container *ngIf="file.fileSize">
-            <p>
-                {{ 'dot.binary.field.file.size' | dm }}:
-                <span>{{ file.fileSize }} {{ 'dot.binary.field.file.bytes' | dm }}</span>
-            </p>
-        </ng-container>
+    <div class="preview-metadata__container">
+        <span class="preview-metadata_header">{{ file.name }}</span>
+        <div *ngIf="file.width && file.height">
+            {{ 'dot.binary.field.file.dimension' | dm }}:
+            <span>{{ file.width }}px, {{ file.height }}px</span>
+        </div>
+        <div *ngIf="file.fileSize">
+            {{ 'dot.binary.field.file.size' | dm }}:
+            <span>{{ file.fileSize }} Bytes</span>
+        </div>
     </div>
 </p-overlayPanel>

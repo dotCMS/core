@@ -26,9 +26,12 @@ describe('DotContentThumbnailComponent', () => {
 
         it('should set thumbnailType to video when contentType is video/*', () => {
             const videoElement = spectator.query(byTestId('thumbail-video'));
+            const sourceElement = videoElement.querySelector('source');
 
             expect(spectator.component.thumbnailType).toBe(CONTENT_THUMBNAIL_TYPE.video);
             expect(spectator.component.src).toBe('/dA/123-456');
+            expect(sourceElement.getAttribute('src')).toBe('/dA/123-456');
+            expect(sourceElement).toBeTruthy();
             expect(videoElement).toBeTruthy();
         });
     });
@@ -38,7 +41,7 @@ describe('DotContentThumbnailComponent', () => {
             spectator = createComponent({
                 props: {
                     inode: '123-456',
-                    name: 'name',
+                    name: 'image.png',
                     contentType: 'image/png',
                     iconSize: '74',
                     titleImage: ''
@@ -48,15 +51,14 @@ describe('DotContentThumbnailComponent', () => {
             await spectator.fixture.whenStable();
         });
 
-        it('should create', () => {
-            expect(spectator.component).toBeTruthy();
-        });
-
         it('should set thumbnailType to video when contentType is video/*', () => {
             const imageElement = spectator.query(byTestId('thumbail-image'));
 
             expect(spectator.component.thumbnailType).toBe(CONTENT_THUMBNAIL_TYPE.image);
             expect(spectator.component.src).toBe('/dA/123-456/500w/50q');
+            expect(imageElement.getAttribute('src')).toBe('/dA/123-456/500w/50q');
+            expect(imageElement.getAttribute('title')).toBe('image.png');
+            expect(imageElement.getAttribute('alt')).toBe('image.png');
             expect(imageElement).toBeTruthy();
         });
     });
@@ -76,15 +78,12 @@ describe('DotContentThumbnailComponent', () => {
             await spectator.fixture.whenStable();
         });
 
-        it('should create', () => {
-            expect(spectator.component).toBeTruthy();
-        });
-
         it('should set thumbnailType to video when contentType is video/*', () => {
             const iconElement = spectator.query(byTestId('thumbail-icon'));
 
             expect(spectator.component.thumbnailType).toBe(CONTENT_THUMBNAIL_TYPE.icon);
             expect(spectator.component.src).not.toBeDefined();
+            expect(iconElement.getAttribute('class')).toBe('pi pi-file');
             expect(iconElement).toBeTruthy();
         });
     });
