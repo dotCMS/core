@@ -10,14 +10,22 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { catchError, map, shareReplay, tap } from 'rxjs/operators';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSelectItemDirective } from '@dotcms/ui';
 
 import { JsonClassesService } from './services/json-classes.service';
 
 @Component({
     selector: 'dotcms-add-style-classes-dialog',
     standalone: true,
-    imports: [AutoCompleteModule, FormsModule, ButtonModule, DotMessagePipe, NgIf, AsyncPipe],
+    imports: [
+        AutoCompleteModule,
+        FormsModule,
+        ButtonModule,
+        DotMessagePipe,
+        NgIf,
+        AsyncPipe,
+        DotSelectItemDirective
+    ],
     templateUrl: './add-style-classes-dialog.component.html',
     styleUrls: ['./add-style-classes-dialog.component.scss'],
     providers: [JsonClassesService],
@@ -88,19 +96,5 @@ export class AddStyleClassesDialogComponent implements OnInit {
      */
     save() {
         this.ref.close(this.selectedClasses);
-    }
-
-    /**
-     * Remove a class from the selected classes
-     *
-     * @param {KeyboardEvent} event
-     * @memberof AddStyleClassesDialogComponent
-     */
-    onKeyUp(event: KeyboardEvent) {
-        const target: HTMLInputElement = event.target as unknown as HTMLInputElement;
-
-        if (event.key === 'Enter' && !!target.value) {
-            this.autoComplete.selectItem(target.value);
-        }
     }
 }

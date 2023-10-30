@@ -24,5 +24,26 @@
         *ngSwitchCase="fieldTypes.TEXTAREA"
         [field]="field"
         [attr.data-testId]="'field-' + field.variable" />
+
+    <dot-edit-content-checkbox-field
+        *ngSwitchCase="fieldTypes.CHECKBOX"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
+
+    <dot-edit-content-multi-select-field
+        *ngSwitchCase="fieldTypes.MULTI_SELECT"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
+
+    <dot-edit-content-calendar-field
+        *ngSwitchCase="calendarTypes.includes(field.fieldType) ? field.fieldType : ''"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable">
+    </dot-edit-content-calendar-field>
+
+    <dot-edit-content-tag-field
+        *ngSwitchCase="fieldTypes.TAG"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
 </ng-container>
 <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>

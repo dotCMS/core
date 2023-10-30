@@ -5,25 +5,13 @@ import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
-import { FIELD_TYPES } from './utils';
-
 import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields.module';
-import { DotEditContentRadioFieldComponent } from '../../fields/dot-edit-content-radio-field/dot-edit-content-radio-field.component';
-import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-content-select-field/dot-edit-content-select-field.component';
+import { CALENDAR_FIELD_TYPES } from '../../models/dot-edit-content-field.constant';
+import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 
 @Component({
     selector: 'dot-edit-content-field',
     standalone: true,
-    imports: [
-        NgSwitch,
-        NgSwitchCase,
-        NgIf,
-        ReactiveFormsModule,
-        DotEditContentFieldsModule,
-        DotFieldRequiredDirective,
-        DotEditContentSelectFieldComponent,
-        DotEditContentRadioFieldComponent
-    ],
     templateUrl: './dot-edit-content-field.component.html',
     styleUrls: ['./dot-edit-content-field.component.scss'],
     viewProviders: [
@@ -32,10 +20,19 @@ import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-conten
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
     ],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        NgSwitch,
+        NgSwitchCase,
+        NgIf,
+        ReactiveFormsModule,
+        DotEditContentFieldsModule,
+        DotFieldRequiredDirective
+    ]
 })
 export class DotEditContentFieldComponent {
     @HostBinding('class') class = 'field';
     @Input() field!: DotCMSContentTypeField;
     readonly fieldTypes = FIELD_TYPES;
+    readonly calendarTypes = CALENDAR_FIELD_TYPES as string[];
 }
