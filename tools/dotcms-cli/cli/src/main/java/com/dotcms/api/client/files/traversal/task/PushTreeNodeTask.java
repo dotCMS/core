@@ -81,7 +81,18 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
             }
         }
 
-        // Recursively build the file system tree for the children nodes
+        handleChildren(errors, rootNode);
+
+        return errors;
+    }
+
+    /**
+     * Recursively build the file system tree for the children nodes
+     * @param errors
+     * @param rootNode
+     */
+    private void handleChildren(ArrayList<Exception> errors, TreeNode rootNode) {
+
         if (rootNode.children() != null && !rootNode.children().isEmpty()) {
 
             List<PushTreeNodeTask> tasks = new ArrayList<>();
@@ -102,8 +113,6 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                 errors.addAll(taskErrors);
             }
         }
-
-        return errors;
     }
 
     /**
@@ -134,13 +143,13 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                 if (optional.isPresent()){
                    logger.debug(String.format("Site [%s] created", folder.host()));
                 } else {
-                   logger.debug(String.format("Site [%s] already exist", folder.host()));
+                   logger.debug(String.format("Site [%s] already pushed", folder.host()));
                 }
             } else {
 
                 // Creating the non-existing folder only if it hasn't been created already
                 final Optional<Map<String, Object>> optional = pushContext.execPush(
-                        String.format("%s:%s", folder.host(), folder.path()),
+                        String.format("%s/%s", folder.host(), folder.path()),
                         () -> {
                             final List<Map<String, Object>> created = pusher.createFolder(
                                     folder.host(), folder.path());
@@ -188,7 +197,7 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
 
     private void doDeleteFolder(FolderView folder, PushContext pushContext) {
         try {
-            final Optional<Boolean> delete = pushContext.execDelete(folder.path(),
+            final Optional<Boolean> delete = pushContext.execDelete(String.format("%s/%s",folder.host(),folder.path()),
                     () -> Optional.of(pusher.deleteFolder(folder.host(), folder.path())));
             if (delete.isPresent()) {
                 logger.debug(String.format("Folder [%s] deleted", folder.path()));
@@ -222,16 +231,30 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
         if (isMarkedForDelete(asset)) {
             doDeleteAsset(folder, asset, pushContext);
         } else if (isMarkedForPush(asset)) {
-            doPushAsset(folder, asset);
+            doPushAsset(folder, asset, pushContext);
         }
     }
 
-    private void doPushAsset(FolderView folder, AssetView asset) {
+    private void doPushAsset(FolderView folder, AssetView asset, PushContext pushContext) {
         try {
+            final Optional<AssetView> optional = pushContext.execPush(
+                    String.format("%s/%s/%s", folder.host(), folder.path(), asset.name()),
+                    () -> {
+                        // Pushing the asset (and creating the folder if needed
+                        final AssetView assetView = pusher.push(params.workspacePath(),
+                                params.localPaths().status(),
+                                params.localPaths().language(),
+                                params.localPaths().site(),
+                                folder.path(), asset.name()
+                        );
+                        return Optional.of(assetView);
+                    });
 
-            pusher.push(params.workspacePath(), params.localPaths().status(), params.localPaths().language(),
-                    params.localPaths().site(), folder.path(), asset.name());
-            logger.debug(String.format("Asset [%s%s] pushed", folder.path(), asset.name()));
+            if(optional.isPresent()){
+               logger.debug(String.format("Asset [%s%s] pushed", folder.path(), asset.name()));
+            } else {
+                logger.debug(String.format("Asset [%s%s] already pushed", folder.path(), asset.name()));
+            }
         } catch (Exception e) {
 
             // Using the exception to check if the asset already exist

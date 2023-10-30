@@ -20,7 +20,8 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @Dependent
 public class PushContextImpl implements PushContext {
 
-    @ConfigProperty(name = "push-context.strips",defaultValue = "100")
+    public static final String KEY_FORMAT = "%s::%s";
+    @ConfigProperty(name = "push-context.strips", defaultValue = "100")
     int stripes;
 
     private final Set<String> savedKeys = ConcurrentHashMap.newKeySet();
@@ -34,6 +35,9 @@ public class PushContextImpl implements PushContext {
         lockStriped = Striped.lazyWeakLock(stripes);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean contains(String key) {
         final String keyLowerCase = key.toLowerCase();
         return savedKeys.contains(keyLowerCase);
@@ -41,19 +45,19 @@ public class PushContextImpl implements PushContext {
 
     /**
      * Executes the delegate within a lock and if the operation carried out by the delegate is successful the key is saved
-     * But first a check is done to see if the key has already been saved if so no operation is carried out
+     * But first a check is done to see if the key has already been saved if so no operation is carried out returning an empty optional
      * @param key
      * @param delegate
      * @return
      * @throws LockExecException
      */
-    public  <T>  Optional <T> execWithinLock(String key, Delegate<T> delegate) throws LockExecException {
+      <T> Optional <T> execWithinLock(String key, Delegate<T> delegate) throws LockExecException {
         final String keyLowerCase = key.toLowerCase();
         if (savedKeys.contains(keyLowerCase)) {
             return Optional.empty();
         }
         @SuppressWarnings("UnstableApiUsage")
-        Lock lock = this.lockStriped.get(keyLowerCase);
+        final Lock lock = this.lockStriped.get(keyLowerCase);
         lock.lock();
         try {
             final Optional <T> result = delegate.execute();
@@ -67,29 +71,24 @@ public class PushContextImpl implements PushContext {
     }
 
     /**
-     * Executes the delegate within a lock and if the operation carried out by the delegate is successful the key is saved
-     * @param key
-     * @param delegate
-     * @return
-     * @throws LockExecException
+     * {@inheritDoc}
      */
-    public <T>  Optional <T> execDelete(String key, Delegate <T> delegate) throws LockExecException {
-        return execWithinLock(String.format("%s::%s", Operation.DELETE, key), delegate);
+    public <T> Optional <T> execDelete(String key, Delegate <T> delegate) throws LockExecException {
+        return execWithinLock(String.format(KEY_FORMAT, Operation.DELETE, key), delegate);
     }
 
     /**
-     * Executes the delegate within a lock and if the operation carried out by the delegate is successful the key is saved
-     * @param key
-     * @param delegate
-     * @return
-     * @throws LockExecException
+     * {@inheritDoc}
      */
-    public <T>  Optional <T> execPush(String key, Delegate <T> delegate) throws LockExecException {
-        return execWithinLock(String.format("%s::%s", Operation.PUSH, key), delegate);
+    public <T> Optional <T> execPush(String key, Delegate <T> delegate) throws LockExecException {
+        return execWithinLock(String.format(KEY_FORMAT, Operation.PUSH, key), delegate);
     }
 
-    public <T>  Optional <T> execArchive(String key, Delegate <T> delegate) throws LockExecException {
-        return execWithinLock(String.format("%s::%s", Operation.ARCHIVE, key), delegate);
+    /**
+     * {@inheritDoc}
+     */
+    public <T> Optional <T> execArchive(String key, Delegate <T> delegate) throws LockExecException {
+        return execWithinLock(String.format(KEY_FORMAT, Operation.ARCHIVE, key), delegate);
     }
 
 
