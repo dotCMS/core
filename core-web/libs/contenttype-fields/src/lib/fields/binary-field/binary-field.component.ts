@@ -10,6 +10,7 @@ import {
     ElementRef,
     EventEmitter,
     Input,
+    OnDestroy,
     OnInit,
     Output,
     ViewChild
@@ -65,7 +66,7 @@ import { getUiMessage } from '../../utils/binary-field-utils';
     styleUrls: ['./binary-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
+export class DotBinaryFieldComponent implements OnInit, AfterViewInit, OnDestroy {
     @Input() field: DotCMSContentTypeField;
     @Input() contentlet: DotCMSContentlet;
     @Output() tempFile = new EventEmitter<DotCMSTempFile>();
@@ -119,6 +120,10 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit {
         }
 
         this.cd.detectChanges();
+    }
+
+    ngOnDestroy() {
+        this.dotBinaryFieldEditImageService.removeListener();
     }
 
     /**
