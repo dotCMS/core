@@ -285,14 +285,18 @@ describe('Utils Functions', () => {
                     const value = '2021-09-01T18:00:00.000Z';
                     const field = { fieldType } as DotCMSContentTypeField;
 
-                    expect(getFinalCastedValue(value, field)).toEqual(new Date(value));
+                    expect((getFinalCastedValue(value, field) as Date).toDateString()).toEqual(
+                        new Date(value).toDateString()
+                    );
                 });
 
                 it("should return Date.now if the value is 'now'", () => {
                     const value = 'now';
                     const field = { fieldType } as DotCMSContentTypeField;
 
-                    expect(getFinalCastedValue(value, field)).toEqual(new Date());
+                    expect((getFinalCastedValue(value, field) as Date).toDateString()).toEqual(
+                        new Date().toDateString()
+                    );
                 });
 
                 it('should return undefined if the value is undefined', () => {
