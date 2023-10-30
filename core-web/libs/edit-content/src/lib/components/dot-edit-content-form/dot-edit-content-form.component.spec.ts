@@ -7,19 +7,12 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
-import { EditContentFormData } from '../../models/dot-edit-content-form.interface';
-import { JUST_FIELDS_MOCKS, LAYOUT_MOCK } from '../../utils/mocks';
+import {
+    CONTENT_FORM_DATA_MOCK,
+    JUST_FIELDS_MOCKS,
+    LAYOUT_FIELDS_VALUES_MOCK
+} from '../../utils/mocks';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
-
-export const VALUES_MOCK = {
-    name1: 'Name1',
-    text2: 'Text2'
-};
-
-export const CONTENT_FORM_DATA_MOCK: EditContentFormData = {
-    layout: LAYOUT_MOCK,
-    fields: JUST_FIELDS_MOCKS
-};
 
 describe('DotFormComponent', () => {
     let spectator: Spectator<DotEditContentFormComponent>;
@@ -48,7 +41,8 @@ describe('DotFormComponent', () => {
             expect(spectator.component.form.value).toEqual({
                 name1: 'Placeholder',
                 text2: null,
-                text3: null
+                text3: null,
+                someTag: ['some', 'tags', 'separated', 'by', 'comma']
             });
         });
 
@@ -74,7 +68,7 @@ describe('DotFormComponent', () => {
         it('should have 1 row, 2 columns and 3 fields', () => {
             expect(spectator.queryAll(byTestId('row'))).toHaveLength(1);
             expect(spectator.queryAll(byTestId('column'))).toHaveLength(2);
-            expect(spectator.queryAll(byTestId('field'))).toHaveLength(3);
+            expect(spectator.queryAll(byTestId('field'))).toHaveLength(4);
         });
 
         it('should pass field to attr to dot-edit-content-field', () => {
@@ -90,7 +84,7 @@ describe('DotFormComponent', () => {
             spectator.click(button);
 
             expect(spectator.component.formSubmit.emit).toHaveBeenCalledWith(
-                spectator.component.form.value
+                LAYOUT_FIELDS_VALUES_MOCK
             );
         });
     });

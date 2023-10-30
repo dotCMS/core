@@ -16,6 +16,7 @@ export enum FIELD_TYPES {
     DATE = 'Date',
     DATE_AND_TIME = 'Date-and-Time',
     TIME = 'Time',
+    TAG = 'Tag',
     CHECKBOX = 'Checkbox',
     MULTI_SELECT = 'Multi-Select'
 }
