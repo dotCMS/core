@@ -16,7 +16,6 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import org.quartz.JobExecutionContext;
@@ -65,11 +64,11 @@ public class StorageReplicationJob extends DotStatefulJob {
     public static void triggerReplicationStoragesJob(final StorageType fromStorageType,
                                                      final List<StorageType> storageTypes,
                                                      final User user) {
-        final Map<String, Serializable> nextExecutionData = ImmutableMap
-                .of("fromStorageType", fromStorageType,
-                        "toStorageTypes", storageTypes instanceof Serializable ?
+        final Map<String, Serializable> nextExecutionData = Map.of(
+                "fromStorageType", fromStorageType,
+                "toStorageTypes", storageTypes instanceof Serializable ?
                                 (Serializable) storageTypes : new ArrayList<>(storageTypes),
-                        "user", user);
+                "user", user);
         try {
             DotStatefulJob.enqueueTrigger(nextExecutionData, StorageReplicationJob.class);
             AdminLogger.log(StorageReplicationJob.class, "triggerJobImmediately",
@@ -136,50 +135,81 @@ public class StorageReplicationJob extends DotStatefulJob {
     public void replicate(final StorageType fromStorageType,
                           final List<StorageType> toStorageTypes) {
         try {
-            final StoragePersistenceAPI storagePersistenceAPI =
+            final StoragePersistenceAPI fromStoragePersistenceAPI =
                     StoragePersistenceProvider.INSTANCE.get().getStorage(fromStorageType);
             final List<StoragePersistenceAPI> toStoragePersistenceAPIs = toStorageTypes.stream()
                     .map(type -> StoragePersistenceProvider.INSTANCE.get().getStorage(type))
                     .filter(Objects::nonNull).collect(Collectors.toList());
-            if (null == storagePersistenceAPI) {
-                Logger.error(this, String.format("Source Storage Type '%s' was not found",
-                        fromStorageType));
-                return;
-            }
-            if (toStoragePersistenceAPIs.isEmpty()) {
-                Logger.error(this, String.format("None of the destination Storage Types '%s' were" +
-                        " found", toStorageTypes));
-                return;
-            }
-            if (toStoragePersistenceAPIs.size() != toStorageTypes.size()) {
-                Logger.warn(this, String.format("Only %d out of %d Storage Types were found: %s",
-                        toStoragePersistenceAPIs.size(), toStorageTypes.size(),
-                        toStoragePersistenceAPIs.stream().map(storage
-                                -> storage.getClass().getSimpleName()).collect(Collectors.joining(", "))));
+            if (!isInputDataValid(fromStorageType, toStorageTypes, fromStoragePersistenceAPI,
+                    toStoragePersistenceAPIs)) {
                 return;
             }
             final int batch = BATCH_SIZE.get();
-            if (UtilMethods.isSet(storagePersistenceAPI.listGroups())) {
-                for (final String group : storagePersistenceAPI.listGroups()) {
-                    forceGroupCreation(toStoragePersistenceAPIs, group);
-                    int count = 0;
-                    for (final ObjectPath objectPath : storagePersistenceAPI.toIterable(group)) {
-                        if (null != objectPath) {
-                            this.replicateToStorages(toStoragePersistenceAPIs, group, objectPath);
-                            if (count++ % batch == 0) {
-                                DateUtil.sleep(SLEEP_FOR.get());
-                            }
+            for (final String group : fromStoragePersistenceAPI.listGroups()) {
+                forceGroupCreation(toStoragePersistenceAPIs, group);
+                int count = 0;
+                for (final ObjectPath objectPath : fromStoragePersistenceAPI.toIterable(group)) {
+                    if (null != objectPath) {
+                        this.replicateToStorages(toStoragePersistenceAPIs, group, objectPath);
+                        if (count++ % batch == 0) {
+                            DateUtil.sleep(SLEEP_FOR.get());
                         }
                     }
                 }
-            } else {
-                Logger.warn(this, String.format("Group list for Storage Provider '%s' is empty",
-                        storagePersistenceAPI.getClass().getSimpleName()));
             }
         } catch (final Throwable e) {
             Logger.error(this, String.format("Failed to replicate Storage Type '%s': %s",
                     fromStorageType, ExceptionUtil.getErrorMessage(e)), e);
         }
+    }
+
+    /**
+     * Utility method used to validate that the required data is present before performing the
+     * metadata replication process.
+     *
+     * @param fromStorageType           The source {@link StorageType}.
+     * @param toStorageTypes            The list of destination {@link StorageType} instances.
+     * @param fromStoragePersistenceAPI The {@link StoragePersistenceAPI} instance for the source.
+     * @param toStoragePersistenceAPIs  The list of {@link StoragePersistenceAPI} instances for the
+     *                                  destination.
+     *
+     * @return If all required parameters are correct, returns {@code true}.
+     */
+    private boolean isInputDataValid(final StorageType fromStorageType,
+                                     final List<StorageType> toStorageTypes,
+                                     final StoragePersistenceAPI fromStoragePersistenceAPI,
+                                     final List<StoragePersistenceAPI> toStoragePersistenceAPIs) {
+        if (null == fromStoragePersistenceAPI) {
+            Logger.error(this, String.format("Source Storage Type '%s' was not found",
+                    fromStorageType));
+            return false;
+        }
+        if (toStoragePersistenceAPIs.isEmpty()) {
+            Logger.error(this, String.format("None of the destination Storage Types '%s' were" +
+                    " found", toStorageTypes));
+            return false;
+        }
+        if (toStoragePersistenceAPIs.size() != toStorageTypes.size()) {
+            Logger.error(this, String.format("Only %d out of %d Storage Types were found: %s",
+                    toStoragePersistenceAPIs.size(), toStorageTypes.size(),
+                    toStoragePersistenceAPIs.stream().map(storage
+                            -> storage.getClass().getSimpleName()).collect(Collectors.joining(", "
+                    ))));
+            return false;
+        }
+        try {
+            if (UtilMethods.isNotSet(fromStoragePersistenceAPI.listGroups())) {
+                Logger.error(this, String.format("Group list for Storage Provider '%s' is empty",
+                        fromStoragePersistenceAPI.getClass().getSimpleName()));
+                return false;
+            }
+        } catch (final DotDataException e) {
+            Logger.error(this, String.format("Failed to retrieve group list for Storage Provider " +
+                            "'%s': %s", fromStoragePersistenceAPI.getClass().getSimpleName(),
+                    ExceptionUtil.getErrorMessage(e)));
+            return false;
+        }
+        return true;
     }
 
     /**
