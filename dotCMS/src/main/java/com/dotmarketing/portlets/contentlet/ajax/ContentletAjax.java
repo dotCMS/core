@@ -206,6 +206,7 @@ public class ContentletAjax {
 			result.put("langName", languageName);
 			result.put("langId", language.getId()+"");
 			result.put("siblings", getContentSiblingsData(inode));
+			result.put("hasImageFields",String.valueOf(hasImageFields(inode)));
 
 		} catch (DotDataException e) {
 			Logger.error(this, "Error trying to obtain the contentlets from the relationship.", e);
