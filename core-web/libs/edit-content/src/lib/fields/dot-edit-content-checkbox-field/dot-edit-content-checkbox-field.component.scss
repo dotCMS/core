@@ -1,7 +1,12 @@
+
 @use "variables" as *;
 
 :host {
     display: flex;
     flex-direction: column;
     gap: $spacing-1;
+
+  p-checkbox:last-child {
+     margin-bottom: 0;
+  }
 }

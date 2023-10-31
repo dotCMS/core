@@ -4,4 +4,8 @@
     display: flex;
     flex-direction: column;
     gap: $spacing-1;
+
+  p-radiobutton:last-child {
+      margin-bottom: 0;
+  }
 }
