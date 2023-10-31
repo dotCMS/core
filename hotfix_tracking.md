@@ -148,3 +148,4 @@ This maintenance release includes the following code fixes:
 121. https://github.com/dotCMS/core/issues/25870 : Using showFields field variable replicates title to all items #25870
 122. https://github.com/dotCMS/core/issues/26374 : Use of Png filter on images results in a 404 #26374
 123. https://github.com/dotCMS/core/issues/24921 : Filtering does not put exact matches on the top of the site dropdown when searching #24921
+124. https://github.com/dotCMS/core/issues/24894 : There is no way to configure WYSIWYG to use the virtual path of an image when inserting one #24894
