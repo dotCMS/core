@@ -143,3 +143,4 @@ This maintenance release includes the following code fixes:
 116. https://github.com/dotCMS/core/issues/23955 : Allow user to easily preview URL Mapped Content #23955
 117. https://github.com/dotCMS/core/issues/24797 : Block Editor Crash when the Same Contentlet is Added #24797
 118. https://github.com/dotCMS/core/issues/23181 : Modifying designer template removes content from pages #23181
+119. https://github.com/dotCMS/core/issues/25411 : Showing a binary field to showFields in a Relationship Field shows path instead of thumbnail #25411

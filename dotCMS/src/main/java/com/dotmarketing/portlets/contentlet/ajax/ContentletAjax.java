@@ -380,6 +380,24 @@ public class ContentletAjax {
 		return result;
 	}
 
+	private boolean hasImageFields(String inode) throws DotDataException, DotSecurityException {
+
+		final HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+		final User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
+		final Contentlet firstContentlet = conAPI.find(inode, currentUser, true);
+		final Structure targetStructure = firstContentlet.getStructure();
+		final List<Field> targetFields = FieldsCache.getFieldsByStructureInode(targetStructure.getInode());
+
+		//use a for each to iterate targetFields and validate if fieldType contains image
+		for(final Field field : targetFields){
+			if(field.getFieldType().equals(FieldType.IMAGE.toString()) ){
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 
 	/**
 	 * This method is used by the backend to pull the content from the lucene
