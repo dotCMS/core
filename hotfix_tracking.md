@@ -145,3 +145,4 @@ This maintenance release includes the following code fixes:
 118. https://github.com/dotCMS/core/issues/23181 : Modifying designer template removes content from pages #23181
 119. https://github.com/dotCMS/core/issues/25411 : Showing a binary field to showFields in a Relationship Field shows path instead of thumbnail #25411
 120. https://github.com/dotCMS/core/issues/25827 : Recreating a field with same name diff type uses the same id #25827
+121. https://github.com/dotCMS/core/issues/25870 : Using showFields field variable replicates title to all items #25870
