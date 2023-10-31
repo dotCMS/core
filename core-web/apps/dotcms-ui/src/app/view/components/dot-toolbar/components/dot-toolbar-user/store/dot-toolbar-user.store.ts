@@ -127,7 +127,7 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
             },
             {
                 id: 'dot-toolbar-user-link-login-as',
-                label: this.dotMessageService.get('login-as'),
+                label: 'Sign In As',
                 icon: 'pi pi-users',
                 visible: !auth.isLoginAs,
                 command: () => this.showLoginAs(true)
@@ -135,7 +135,8 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
             { separator: true, visible: !auth.isLoginAs },
             {
                 id: 'dot-toolbar-user-link-logout',
-                label: this.dotMessageService.get('Logout'),
+                //label: this.dotMessageService.get('Logout'),
+                label: 'Sign Out',
                 icon: 'pi pi-sign-out',
                 visible: !auth.isLoginAs,
                 url: this.FINAL_LOGOUT_URL,
