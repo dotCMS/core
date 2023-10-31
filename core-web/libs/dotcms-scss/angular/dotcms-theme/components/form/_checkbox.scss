@@ -29,6 +29,11 @@ p-checkbox.p-element {
                 }
             }
         }
+
+        .p-checkbox-box {
+            height: 20px;
+            aspect-ratio: 1/1;
+        }
     }
 
     .p-checkbox-label {
