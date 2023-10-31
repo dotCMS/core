@@ -10,7 +10,7 @@
         position: relative;
 
         &:before {
-            $size: $radio-size - 8;
+            $size: $radio-size - 10;
             border-radius: calc($size / 2);
             background-color: $radio-checked-color;
             content: "";
@@ -22,6 +22,15 @@
             top: 50%;
             width: $size;
         }
+    }
+
+    &Hover:not(.dijitRadioDisabled) {
+        border-color: $color-palette-primary-400;
+        cursor: pointer;
+    }
+
+    &Focused:not(.dijitRadioDisabled) {
+        outline: $field-border-size solid $color-palette-primary-op-20;
     }
 
     &Disabled {

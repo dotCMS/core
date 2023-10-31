@@ -7,7 +7,16 @@
 
     &Checked {
         border: $check-checked-border;
-        background: $check-checked-bgcolor url($check-checked-icon) center center no-repeat;
+        background: url($check-checked-icon) center center no-repeat;
+    }
+
+    &Hover:not(.dijitCheckBoxDisabled) {
+        border-color: $color-palette-primary-400;
+        cursor: pointer;
+    }
+
+    &Focused:not(.dijitCheckBoxDisabled) {
+        outline: $field-border-size solid $color-palette-primary-op-20;
     }
 
     &Disabled {
