@@ -1,8 +1,6 @@
 @use "variables" as *;
 
 p-radiobutton.p-element {
-    display: flex;
-    align-items: center;
     gap: $spacing-1;
 
     &.ng-dirty.ng-invalid {
@@ -53,18 +51,21 @@ p-radiobutton.p-element {
 
     .p-radiobutton-label {
         font-size: $font-size-md;
-        cursor: inherit;
 
         &.p-disabled {
             color: $color-palette-gray-500;
         }
     }
 
-    &:hover {
+    &:hover:not(:has(.p-radiobutton-disabled)) {
         cursor: pointer;
 
-        .p-radiobutton:not(.p-radiobutton-disabled) {
+        .p-radiobutton {
             border-color: $color-palette-primary-400;
+        }
+
+        .p-radiobutton-label:hover {
+            cursor: pointer;
         }
     }
 
