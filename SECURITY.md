@@ -1,12 +1,12 @@
 # Security Policy
 
-For more information regarding dotCMS security polices and known security issues see our documentation site:
+For more information regarding dotCMS security policies and known security issues see our documentation site:
 https://dotcms.com/docs/latest/security-and-privacy
 
 
 ## Supported Versions
 
-dotCMS is commited to backporting security fixes to our LTS versions for up to 2 years.  These versions now include:
+dotCMS is committed to backporting security fixes to our LTS versions for up to 2 years.  These versions now include:
 
 | Version | Supported          |
 | ------- | ------------------ |
