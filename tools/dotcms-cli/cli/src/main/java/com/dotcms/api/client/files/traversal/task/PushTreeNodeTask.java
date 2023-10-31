@@ -237,8 +237,10 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
 
     private void doPushAsset(FolderView folder, AssetView asset, PushContext pushContext) {
         try {
+            final String pushAssetKey = String.format("%s/%s/%s/%s/%s", params.localPaths().status(),
+                    params.localPaths().language(), folder.host(), folder.path(), asset.name());
             final Optional<AssetView> optional = pushContext.execPush(
-                    String.format("%s/%s/%s", folder.host(), folder.path(), asset.name()),
+                    pushAssetKey,
                     () -> {
                         // Pushing the asset (and creating the folder if needed
                         final AssetView assetView = pusher.push(params.workspacePath(),
