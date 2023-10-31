@@ -46,17 +46,17 @@
         <p-button
             *ngIf="isEditable"
             (click)="onEdit()"
-            styleClass="p-button-rounded p-button-secondary p-button-text"
+            styleClass="p-button-rounded p-button-secondary p-button-text p-button-semi-transparent"
             data-testId="edit-button-responsive"
             icon="pi pi-pencil"></p-button>
         <p-button
             (click)="op.toggle($event)"
-            styleClass="p-button-rounded p-button-secondary p-button-text"
+            styleClass="p-button-rounded p-button-secondary p-button-text p-button-semi-transparent"
             data-testId="infor-button-responsive"
             icon="pi pi-info"></p-button>
         <p-button
             (click)="removeFile.emit()"
-            styleClass="p-button-rounded p-button-secondary p-button-text"
+            styleClass="p-button-rounded p-button-secondary p-button-text p-button-semi-transparent"
             data-testId="remove-button-responsive"
             icon="pi pi-trash"></p-button>
     </div>
