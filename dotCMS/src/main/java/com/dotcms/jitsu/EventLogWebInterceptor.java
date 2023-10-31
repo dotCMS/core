@@ -124,11 +124,7 @@ public class EventLogWebInterceptor implements WebInterceptor {
         //eventPayload.put("clusterId", ClusterFactory.getClusterId());
 
         for (final Map<String, String> experiment : experiments) {
-            eventPayload.addExperiment(
-                    experiment.get("experiment"),
-                    experiment.get("runningId"),
-                    experiment.get("variant"),
-                    experiment.get("lookBackWindow"));
+            eventPayload.addExperiment(experiment);
         }
 
         try {

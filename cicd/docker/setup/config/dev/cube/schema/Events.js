@@ -1,213 +1,160 @@
 cube(`Events`, {
-  sql: `SELECT * FROM clickhouse_test_db.events`,
-
+  sql: `SELECT experiment,
+               lookbackwindow,
+               variant,
+               runningid,
+               toDateTime(toStartOfDay(toTimeZone(toDateTime(utc_time), 'UTC'), 'UTC'), 'UTC') as day,
+               min(CASE WHEN (isexperimentpage = true AND event_type = 'pageview') THEN utc_time END) as firstExperimentPageVisit,
+               max(CASE WHEN (istargetpage = true AND event_type = 'pageview') THEN utc_time END) as lastTargetPageVisit,
+               firstExperimentPageVisit is not null as isSession,
+               COUNT(CASE WHEN event_type = 'pageview' THEN 1 ELSE 0 END) AS pageviews,
+               arrayElement(arraySlice(groupArray(isexperimentpage), -1), 1) = true AS experimentPageLastVisited
+        FROM clickhouse_test_db.events
+        WHERE event_type = 'pageview'
+        GROUP BY experiment, runningid, lookbackwindow, variant, day
+        having isSession = 1
+        order by day`,
   preAggregations: {
     // Pre-Aggregations definitions go here
-    // Learn more here: https://cube.dev/docs/caching/pre-aggregations/getting-started  
+    // Learn more here: https://cube.dev/docs/caching/pre-aggregations/getting-started
+    /*targetVisitedAfterAggregation: {
+      measures: [
+        Events.totalSessions,
+        Events.targetVisitedAfterSuccesses
+      ],
+      dimensions: [
+        Events.experiment,
+        Events.runningId,
+        Events.variant
+      ],
+      timeDimension: Events.day,
+      granularity: `day`,
+      indexes: {
+        totalSessions_targetVisitedAfter_index: {
+          columns: [experiment, variant]
+        }
+      }
+    },
+    bounceRateAggregation: {
+      measures: [Events.totalSessions, Events.bounceRateSuccesses],
+      dimensions: [Events.experiment, Events.variant],
+      timeDimension: Events.day,
+      granularity: `day`,
+      indexes: {
+        totalSessions_bounceRateSuccesses_index: {
+          columns: [totalSessions, bounceRateSuccesses]
+        }
+      }
+    },
+    exitRateAggregation: {
+      measures: [
+        Events.totalSessions,
+        Events.bounceRateSuccesses,
+        Events.exitRateSuccesses
+      ],
+      dimensions: [
+        Events.experiment,
+        Events.variant
+      ],
+      timeDimension: Events.day,
+      granularity: `day`,
+      indexes: {
+        totalSessions_exitRateSuccesses_index: {
+          columns: [totalSessions, exitRateSuccesses]
+        }
+      }
+    }*/
   },
-
-  joins: {
-
-  },
-
+  joins: {},
   measures: {
     count: {
+      type: `count`
+    },
+    totalSessions: {
+      type: `count_distinct`,
+      sql: `lookbackwindow`
+    },
+    targetVisitedAfterSuccesses: {
+      type: `count_distinct`,
+      sql: `lookbackwindow`,
+      filters: [{
+        sql: `firstExperimentPageVisit < lastTargetPageVisit`
+      }]
+    },
+    bounceRateSuccesses: {
       type: `count`,
-      drillMembers: [clusterId, customerId, eventnCtxEventId, idsAjsAnonymousId, pageTitle, userAnonymousId, userHashedAnonymousId]
-    }
+      sql: `lookbackwindow`,
+      filters: [{
+        sql: `pageviews = 1`
+      }]
+    },
+    exitRateSuccesses: {
+      type: `count`,
+      sql: `lookbackwindow`,
+      filters: [{
+        sql: `experimentPageLastVisited = 1`
+      }]
+    },
+    targetVisitedAfterConvertionRate: {
+      description: 'Convertion Rate',
+      format: `percent`,
+      type: 'number',
+      sql: `${targetVisitedAfterSuccesses} * 100 / ${totalSessions}`
+    },
+    bounceRateConvertionRate: {
+      description: 'Convertion Rate',
+      format: `percent`,
+      type: 'number',
+      sql: `${bounceRateSuccesses} * 100 / ${totalSessions}`
+    },
+    exitRateConvertionRate: {
+      description: 'Convertion Rate',
+      format: `percent`,
+      type: 'number',
+      sql: `${exitRateSuccesses} * 100 / ${totalSessions}`
+    },
   },
-
   dimensions: {
-    apiKey: {
-      sql: `api_key`,
-      type: `string`
-    },
-
-    clusterId: {
-      sql: `cluster_id`,
-      type: `string`
-    },
-
-    customerId: {
-      sql: `customer_id`,
-      type: `string`
-    },
-
-    eventnCtxEventId: {
-      sql: `eventn_ctx_event_id`,
-      type: `string`
-    },
-
-    sourceIp: {
-      sql: `source_ip`,
-      type: `string`
-    },
-
-    ip: {
-      sql: `ip`,
-      type: `string`
-    },
-
     experiment: {
       sql: `experiment`,
       type: `string`
     },
-
     runningId: {
       sql: `runningid`,
       type: `string`
     },
-
-    variant: {
-      sql: `variant`,
-      type: `string`
-    },
-
     lookBackWindow: {
       sql: `lookbackwindow`,
       type: `string`
     },
-
-    src: {
-      sql: `src`,
+    variant: {
+      sql: `variant`,
       type: `string`
     },
-
-    testStrField: {
-      sql: `test_str_field`,
-      type: `string`
+    isExperimentSession: {
+      type: 'boolean',
+      sql: 'isSession'
     },
-
-    docEncoding: {
-      sql: `doc_encoding`,
-      type: `string`
+    pageViewsTotal: {
+      type: 'number',
+      sql: 'pageviews'
     },
-
-    docHost: {
-      sql: `doc_host`,
-      type: `string`
+    lastUrlVisited: {
+      type: 'string',
+      sql: 'lastUrlVisited'
     },
-
-    docPath: {
-      sql: `doc_path`,
-      type: `string`
-    },
-
-    docSearch: {
-      sql: `doc_search`,
-      type: `string`
-    },
-
-    eventType: {
-      sql: `event_type`,
-      type: `string`
-    },
-
-    idsAjsAnonymousId: {
-      sql: `ids_ajs_anonymous_id`,
-      type: `string`
-    },
-
-    pageTitle: {
-      sql: `page_title`,
-      type: `string`
-    },
-
-    parsedUaDeviceBrand: {
-      sql: `parsed_ua_device_brand`,
-      type: `string`
-    },
-
-    parsedUaDeviceFamily: {
-      sql: `parsed_ua_device_family`,
-      type: `string`
-    },
-
-    parsedUaDeviceModel: {
-      sql: `parsed_ua_device_model`,
-      type: `string`
-    },
-
-    parsedUaOsFamily: {
-      sql: `parsed_ua_os_family`,
-      type: `string`
-    },
-
-    parsedUaOsVersion: {
-      sql: `parsed_ua_os_version`,
-      type: `string`
-    },
-
-    parsedUaUaFamily: {
-      sql: `parsed_ua_ua_family`,
-      type: `string`
-    },
-
-    parsedUaUaVersion: {
-      sql: `parsed_ua_ua_version`,
-      type: `string`
-    },
-
-    referer: {
-      sql: `referer`,
-      type: `string`
-    },
-
-    screenResolution: {
-      sql: `screen_resolution`,
-      type: `string`
-    },
-
-    url: {
-      sql: `url`,
-      type: `string`
-    },
-
-    userAgent: {
-      sql: `user_agent`,
-      type: `string`
-    },
-
-    userAnonymousId: {
-      sql: `user_anonymous_id`,
-      type: `string`
-    },
-
-    userHashedAnonymousId: {
-      sql: `user_hashed_anonymous_id`,
-      type: `string`
-    },
-
-    userLanguage: {
-      sql: `userlanguage`,
-      type: `string`
-    },
-
-    persona: {
-      sql: `persona`,
-      type: `string`
-    },
-
-    vpSize: {
-      sql: `vp_size`,
-      type: `string`
-    },
-
-    utcTime: {
-      sql: `utc_time`,
+    firstExperimentPageVisit: {
+      sql: `firstExperimentPageVisit`,
       type: `time`
     },
-
-    language: {
-      sql: `language`,
-      type: `string`
+    lastTargetPageVisit: {
+      sql: `lastTargetPageVisit`,
+      type: `time`
     },
-
-    original_url: {
-      sql: `original_url`,
-      type: `string`
-    },
+    day: {
+      sql: `day`,
+      type: `time`
+    }
   },
-
   dataSource: `default`
 });

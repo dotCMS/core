@@ -74,26 +74,8 @@ public class CubeJSClient {
      * }
      * </code>
      *
-     * This method use Pagination to get the Data from CubeJs Server.
-     *
      * @param query Query to be run in the CubeJS Server
      * @return
-     */
-    public CubeJSResultSet sendWithPagination(final CubeJSQuery query) {
-
-        DotPreconditions.notNull(query, "Query not must be NULL");
-
-        return new PaginationCubeJSResultSet(this, query, PAGE_SIZE);
-    }
-
-
-    /**
-     * It the same of the {@link #sendWithPagination(CubeJSQuery)} but it doesn't use pagination.
-     *
-     * @param query
-     * @return
-     *
-     * @see #sendWithPagination(CubeJSQuery)
      */
     public CubeJSResultSet send(final CubeJSQuery query) {
         DotPreconditions.notNull(query, "Query not must be NULL");

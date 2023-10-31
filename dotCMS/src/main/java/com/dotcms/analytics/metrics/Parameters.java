@@ -5,15 +5,9 @@ import com.dotcms.analytics.metrics.AbstractCondition.AbstractParameter.Type;
 public abstract class Parameters {
     static Parameter URL = Parameter.builder()
             .name("url")
-            .valueGetter(new EventAttributeParameterValuesGetter())
-            .type(Type.CASE_INSENSITIVE)
             .build();
 
-    static Parameter REFERER = Parameter.builder()
-            .name("referer")
-            .valueGetter(new EventAttributeParameterValuesGetter())
-            .type(Type.CASE_INSENSITIVE)
+    static Parameter QUERY_PARAMETER = Parameter.builder().name("queryParameter")
+            .type(AbstractCondition.AbstractParameter.Type.QUERY_PARAMETER)
             .build();
-
-    static Parameter VISIT_BEFORE = Parameter.builder().name("visitBefore").validate(false).build();
 }
