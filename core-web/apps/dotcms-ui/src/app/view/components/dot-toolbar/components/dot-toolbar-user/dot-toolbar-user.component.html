@@ -5,12 +5,10 @@
     <dot-my-account
         *ngIf="vm.showMyAccount"
         [visible]="vm.showMyAccount"
-        (shutdown)="store.showMyAccount(false)"
-    ></dot-my-account>
+        (shutdown)="store.showMyAccount(false)"></dot-my-account>
 
     <dot-login-as
         *ngIf="vm.showLoginAs"
         [visible]="vm.showLoginAs"
-        (cancel)="store.showLoginAs(false)"
-    ></dot-login-as>
+        (cancel)="store.showLoginAs(false)"></dot-login-as>
 </ng-container>

@@ -27,3 +27,25 @@ p-avatar {
         color: $black;
     }
 }
+
+::ng-deep {
+    .p-menu .p-menu-separator {
+        margin: 0.5rem;
+    }
+
+    .p-menu.p-menu-overlay {
+        min-width: 17rem;
+    }
+
+    .toolbar-user__logout .p-menuitem-link .p-menuitem-text {
+        color: $color-palette-gray-700;
+    }
+
+    .toolbar-user__logout .p-menuitem-link:not(.p-disabled):hover .p-menuitem-text {
+        color: $color-palette-gray-700;
+    }
+
+    .toolbar-user__logout .p-menuitem-link:not(.p-disabled):hover .p-menuitem-icon {
+        color: $color-palette-gray-700;
+    }
+}
