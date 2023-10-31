@@ -212,9 +212,9 @@ const generateProbabilityDensityData = (
     // Loop through the x values from 0 to 1.
     for (let i = 0; i <= 1; i += step) {
         // Set the x value to the current value of i.
-        const x = Number(i.toFixed(3));
+        const x = Number(i.toFixed(2));
         // Set the y value to the value of the pdf at the current value of i.
-        const y = Number(betaDist.pdf(x).toFixed(3));
+        const y = Number(betaDist.pdf(x).toFixed(2));
 
         if (!isFinite(y)) {
             continue;
