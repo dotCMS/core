@@ -59,7 +59,7 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
     private contenttype: EDITABLE_FILE;
     isEditable = true;
 
-    get dotThumbanilOptions(): DotThumbnailOptions {
+    get dotThumbnailOptions(): DotThumbnailOptions {
         return {
             tempUrl: this.file.url,
             inode: this.file.inode,
