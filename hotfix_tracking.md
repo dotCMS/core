@@ -147,3 +147,4 @@ This maintenance release includes the following code fixes:
 120. https://github.com/dotCMS/core/issues/25827 : Recreating a field with same name diff type uses the same id #25827
 121. https://github.com/dotCMS/core/issues/25870 : Using showFields field variable replicates title to all items #25870
 122. https://github.com/dotCMS/core/issues/26374 : Use of Png filter on images results in a 404 #26374
+123. https://github.com/dotCMS/core/issues/24921 : Filtering does not put exact matches on the top of the site dropdown when searching #24921
