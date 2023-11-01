@@ -10,12 +10,12 @@
         background: url($check-checked-icon) center center no-repeat;
     }
 
-    &Hover:not(.dijitCheckBoxDisabled) {
+    &Hover:not(.dijitCheckBoxDisabled, .dijitCheckBoxCheckedDisabled) {
         border-color: $color-palette-primary-400;
         cursor: pointer;
     }
 
-    &Focused:not(.dijitCheckBoxDisabled) {
+    &Focused:not(.dijitCheckBoxDisabled, .dijitCheckBoxCheckedDisabled) {
         outline: $field-border-size solid $color-palette-primary-op-20;
     }
 
