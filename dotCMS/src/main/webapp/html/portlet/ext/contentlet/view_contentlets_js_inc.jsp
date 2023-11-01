@@ -831,10 +831,17 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 		function updateSelectedStructAux(){
 			structureInode = dijit.byId('selectedStructAux').value;
 			addNewContentlet(structureInode);
+
+
 		}
 
         function dispatchCreateContentletEvent(url, contentType) {
             var customEvent = document.createEvent("CustomEvent");
+
+
+
+
+
             customEvent.initCustomEvent("ng-event", false, false,  {
                 name: "create-contentlet",
                 data: {
@@ -849,12 +856,32 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
 
         function addNewContentlet(structureInode, contentType){
-			if(structureInode == undefined || structureInode==""){
-                        // This gets the catchall and opens the dialog to select a contentType, and also retrieves the content type when is a custom portlet
+
+
+
+                if(!contentType){
+
+                        // This is the same way they get the current var name on downloadToExcel method
+
+                        let structureVelraw = dojo.byId("structureVelocityVarNames").value;
+
+                        let structInoderaw = dojo.byId("structureInodesList").value;
+
+                        let structureVelArray = structureVelraw.split(";");
+
+                        let structureInodeArray = structInoderaw.split(";");
+
+                        let contentTypeInode = dijit.byId('structure_inode').value;
+
+                        contentType = structureVelArray.find((varName, i) => structureInodeArray[i] === contentTypeInode)
+                }
+
+		if(structureInode == undefined || structureInode==""){
+                                // This gets the catchall and opens the dialog to select a contentType, and also retrieves the content type when is a custom portlet
         		structureInode = dijit.byId('structure_inode').value;
         	}
 			if(structureInode == undefined || structureInode=="" || structureInode == "catchall"){
-				dijit.byId("selectStructureDiv").show();
+                                dijit.byId("selectStructureDiv").show();
 				return;
 			}
           else if(structureInode == '<%=calendarEventInode %>'){
