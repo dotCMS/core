@@ -7,6 +7,18 @@
         min-width: 40rem;
         min-height: 40rem;
     }
+    p-dialog {
+        .p-dialog-mask.p-component-overlay {
+            background-color: transparent;
+            -webkit-backdrop-filter: blur($blur-md);
+            backdrop-filter: blur($blur-md);
+        }
+    }
+}
+
+dot-drop-zone {
+    height: 100%;
+    width: 100%;
 }
 
 .binary-field__container {
@@ -14,20 +26,16 @@
     justify-content: center;
     align-items: center;
     width: 100%;
-    gap: $spacing-3;
     border-radius: $border-radius-md;
     border: $field-border-size solid $color-palette-gray-300;
     padding: $spacing-1;
     margin-bottom: $spacing-1;
-    height: 10rem;
+    height: 12.5rem;
+    min-width: 17.5rem;
 }
 
 .binary-field__container--uploading {
     border: $field-border-size dashed $color-palette-gray-300;
-}
-
-.binary-field__helper-icon {
-    color: $color-palette-gray-600;
 }
 
 .binary-field__helper {
@@ -39,20 +47,24 @@
     font-weight: $font-size-sm;
 }
 
+.binary-field__helper-icon {
+    color: $color-palette-gray-600;
+}
+
 .binary-field__actions {
     display: flex;
     flex-direction: column;
     gap: $spacing-3;
     justify-content: center;
     align-items: flex-start;
+}
 
-    ::ng-deep .p-button {
-        display: inline-flex;
-        user-select: none;
-        align-items: center;
-        vertical-align: bottom;
-        text-align: center;
-    }
+.binary-field__actions .p-button {
+    display: inline-flex;
+    user-select: none;
+    align-items: center;
+    vertical-align: bottom;
+    text-align: center;
 }
 
 .binary-field__actions ::ng-deep {
@@ -82,20 +94,19 @@
     justify-content: center;
     align-items: center;
     border-radius: $border-radius-md;
-    user-select: none;
     cursor: default;
     flex-grow: 1;
     height: 100%;
+}
 
-    .binary-field__drop-zone-btn {
-        border: none;
-        background: none;
-        color: $color-palette-primary-500;
-        text-decoration: underline;
-        font-size: $font-size-md;
-        font-family: $font-default;
-        padding: revert;
-    }
+.binary-field__drop-zone-btn {
+    border: none;
+    background: none;
+    color: $color-palette-primary-500;
+    text-decoration: underline;
+    font-size: $font-size-md;
+    font-family: $font-default;
+    padding: revert;
 }
 
 .binary-field__drop-zone--active {
@@ -103,11 +114,6 @@
     border-color: $color-palette-secondary-500;
     background: $white;
     box-shadow: $md-shadow-6;
-}
-
-.binary-field__drop-zone dot-drop-zone {
-    height: 100%;
-    width: 100%;
 }
 
 .binary-field__input {
@@ -118,12 +124,4 @@
     border: 1px solid $input-border-color;
     display: block;
     height: 25rem;
-}
-
-p-dialog ::ng-deep {
-    .p-dialog-mask.p-component-overlay {
-        background-color: transparent;
-        -webkit-backdrop-filter: blur($blur-md);
-        backdrop-filter: blur($blur-md);
-    }
 }

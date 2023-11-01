@@ -98,10 +98,6 @@ describe('DotBinaryFieldEditorComponent', () => {
         spectator.detectChanges();
     });
 
-    it('should create', () => {
-        expect(component).toBeTruthy();
-    });
-
     describe('Editor', () => {
         it('should set editor language', fakeAsync(() => {
             component.form.setValue({
