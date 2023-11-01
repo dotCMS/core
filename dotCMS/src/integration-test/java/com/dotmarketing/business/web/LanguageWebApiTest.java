@@ -305,9 +305,9 @@ public class LanguageWebApiTest {
         when(mockRequest.getParameter(WebKeys.BACKEND_LANGUAGE_PARAMETER_NAME)).thenReturn("en");
         when(mockRequest.getSession(false)).thenReturn(session);
 
-        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale("en", "US"));
+        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale("en", "us"));
 
         final Language backendLanguage = lapi.getBackendLanguage(mockRequest);
-        assertEquals(backendLanguage, APILocator.getLanguageAPI().getLanguage(1));
+        assertEquals(backendLanguage.getId(), APILocator.getLanguageAPI().getLanguage(1).getId());
     }
 }
