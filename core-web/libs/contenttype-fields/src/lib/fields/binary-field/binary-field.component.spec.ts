@@ -4,8 +4,9 @@ import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { NgZone } from '@angular/core';
+import { Component, NgZone } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -349,5 +350,56 @@ describe('DotBinaryFieldComponent', () => {
 
     afterEach(() => {
         jest.resetAllMocks();
+    });
+});
+
+@Component({
+    selector: 'dot-app-mock-form',
+    imports: [
+        ButtonModule,
+        DialogModule,
+        MonacoEditorModule,
+        ReactiveFormsModule,
+        DotBinaryFieldComponent
+    ],
+    standalone: true,
+    template: `
+        <form [formGroup]="form">
+            <dot-binary-field [field]="field" formControlName="binaryField"></dot-binary-field>
+        </form>
+    `
+})
+class MockFormComponent {
+    field = FIELD;
+    form = new FormGroup({
+        binaryField: new FormControl('')
+    });
+}
+
+describe('DotBinaryFieldComponent - ControlValueAccesor', () => {
+    let spectator: Spectator<MockFormComponent>;
+    const createComponent = createComponentFactory({
+        component: MockFormComponent
+    });
+
+    beforeEach(() => {
+        spectator = createComponent();
+    });
+
+    it('should create', () => {
+        expect(spectator.component).toBeTruthy();
+    });
+
+    it('should set form value when binary file changes', () => {
+        const binaryFieldComponent = spectator.query(DotBinaryFieldComponent);
+
+        // Call the writeValue method from ControlValueAccesor
+        binaryFieldComponent.setTempFile(TEMP_FILE_MOCK);
+
+        // Get the form value
+        const formValue = spectator.component.form.get('binaryField').value;
+
+        // Check if the form value was set
+        expect(formValue).toBe(TEMP_FILE_MOCK.id);
     });
 });
