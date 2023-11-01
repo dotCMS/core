@@ -24,8 +24,10 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.util.FileUtil;
+import com.oracle.truffle.js.lang.JavaScriptLanguage;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.tools.view.context.ChainedContext;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.graalvm.polyglot.Context;
@@ -50,6 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class JsEngine implements ScriptEngine {
 
+    private static final JsFileSystem JS_FILE_SYSTEM = new JsFileSystem();
     private final Map<String, Class> jsRequestViewToolMap = new ConcurrentHashMap<>();
     private final Map<String, JsViewTool> jsAplicationViewToolMap = new ConcurrentHashMap<>();
 
@@ -72,7 +75,7 @@ public class JsEngine implements ScriptEngine {
         }
     }
 
-    private static final String ENGINE_JS = "js";
+    private static final String ENGINE_JS = JavaScriptLanguage.ID;
     private final static JsDotLogger JS_DOT_LOGGER = new JsDotLogger();
 
     /**
@@ -114,6 +117,21 @@ public class JsEngine implements ScriptEngine {
         this.jsRequestViewToolMap.remove(jsViewTool.getName());
     }
 
+    private Context buildContext () {
+
+        return Context.newBuilder(ENGINE_JS)
+                .allowIO(true)
+                .allowExperimentalOptions(true)
+                .option("js.esm-eval-returns-exports", "true")
+                .out(new ConsumerOutputStream((msg)->Logger.debug(JsEngine.class, msg)))
+                .err(new ConsumerOutputStream((msg)->Logger.debug(JsEngine.class, msg)))
+                .fileSystem(JS_FILE_SYSTEM)
+                //.allowHostAccess(HostAccess.ALL) // todo: ask if we want all access to the classpath
+                //allows access to all Java classes
+                //.allowHostClassLookup(className -> true)
+                .build();
+    }
+
     @Override
     public Object eval(final HttpServletRequest request,
                        final HttpServletResponse response,
@@ -121,29 +139,23 @@ public class JsEngine implements ScriptEngine {
                        final Map<String, Object> contextParams) {
 
         final DotJSON dotJSON = (DotJSON)contextParams.getOrDefault("dotJSON", new DotJSON());
-        try (Context context = Context.newBuilder(ENGINE_JS)
-                .out(new ConsumerOutputStream((msg)->Logger.debug(JsEngine.class, msg)))
-                .err(new ConsumerOutputStream((msg)->Logger.debug(JsEngine.class, msg)))
-                //.allowHostAccess(HostAccess.ALL) // todo: ask if we want all access to the classpath
-                //allows access to all Java classes
-                //.allowHostClassLookup(className -> true)
-                .build()) {
+        try (Context context = buildContext()) {
 
-            final Object fileName = contextParams.getOrDefault("dot:jsfilename", "sample.js");
-            final Source userSource   = Source.newBuilder(ENGINE_JS, scriptReader, fileName.toString()).build();
+            final Object fileName   = contextParams.getOrDefault("dot:jsfilename", "sample.js");
+            final Source userSource = Source.newBuilder(ENGINE_JS, scriptReader, fileName.toString()).build();
             final List<Source> dotSources = getDotSources();
-            final Value bindings  = context.getBindings(ENGINE_JS);
+            final Value bindings = context.getBindings(ENGINE_JS);
             contextParams.entrySet().forEach(entry -> bindings.putMember(entry.getKey(), entry.getValue()));
             this.addTools(request, response, bindings, contextParams);
 
-            final JsRequest jsRequest  = new JsRequest(request, contextParams);
+            final JsRequest jsRequest   = new JsRequest(request, contextParams);
             final JsResponse jsResponse = new JsResponse(response);
             bindings.putMember("dotJSON", dotJSON);
             bindings.putMember("request",  jsRequest);
             bindings.putMember("response", jsResponse);
 
             dotSources.stream().forEach(source -> context.eval(source));
-            Value eval   = context.eval(userSource);
+            Value eval = context.eval(userSource);
             if (eval.canExecute()) {
                 eval = contextParams.containsKey("dot:arguments")?
                         eval.execute(buildArgs(jsRequest, jsResponse, (Object[])contextParams.get("dot:arguments"))):
@@ -172,29 +184,34 @@ public class JsEngine implements ScriptEngine {
         }
     }
 
-    // todo: move to a file
-    private static final String FETCH_FUNCTION = "function fetch(resource, options) {\n" +
-            "\n" +
-            "        return  new Promise(function (myResolve, myReject) {\n" +
-            "\n" +
-            "            try {\n" +
-            "\n" +
-            "                const fetchResponse = options ? fetchtool.fetch(resource, options) : fetchtool.fetch(resource);\n" +
-            "                if (fetchResponse.ok()) {\n" +
-            "                    myResolve(fetchResponse);\n" +
-            "                } else {\n" +
-            "                    myReject(fetchResponse);\n" +
-            "                }\n" +
-            "            } catch (e) {\n" +
-            "                myReject(e);\n" +
-            "            }\n" +
-            "        });\n" +
-            "    }";
-
     private List<Source> getDotSources() throws IOException {
 
         final List<Source> sources = new ArrayList<>();
-        final JsCache cache = CacheLocator.getJavascriptCache();
+        addFunctions(sources);
+        addModules(sources);
+        return sources;
+    }
+
+    private void addModules(final List<Source> sources) throws IOException {
+
+        final String absoluteWebInfPath  = Config.CONTEXT.getRealPath(File.separator + "WEB-INF");
+        final String relativeModulesPath = File.separator + "WEB-INF" + File.separator + "javascript" + File.separator + "modules" + File.separator;
+        final String absoluteModulesPath = Config.CONTEXT.getRealPath(relativeModulesPath);
+        FileUtil.walk(absoluteModulesPath,
+                path -> path.getFileName().toString().endsWith(".mjs"), path -> {
+
+                    final String absolutePath = path.toString();
+                    Logger.info(this, "Loading: " + absolutePath);
+                    final Source source = toModuleSource(absolutePath,
+                            StringUtils.remove(absolutePath, absoluteWebInfPath), path.toFile());
+                    if (Objects.nonNull(source)) {
+                        sources.add(source);
+                        Logger.info(this, "Loaded: " + absolutePath);
+                    }
+                });
+    }
+
+    private void addFunctions(final List<Source> sources) throws IOException {
         final String relativeFunctionsPath = File.separator + "WEB-INF" + File.separator + "javascript" + File.separator + "functions" + File.separator;
         final String absoluteFunctionsPath = Config.CONTEXT.getRealPath(relativeFunctionsPath);
         FileUtil.walk(absoluteFunctionsPath,
@@ -202,31 +219,82 @@ public class JsEngine implements ScriptEngine {
 
                     final String absolutePath = path.toString();
                     Logger.info(this, "Loading: " + absolutePath);
-                    Object sourceContent = cache.get(absolutePath);
-                    if (Objects.isNull(sourceContent)) {
-
-                        sourceContent = Try.of(()->FileUtil.read(path.toFile())).getOrNull();
-
-                        if (Objects.nonNull(sourceContent)) {
-
-                            cache.put(absolutePath, sourceContent);
-                        } else {
-
-                            Logger.warn(this, "Could not read the file: " + absolutePath);
-                        }
-                    }
-
-                    if (Objects.nonNull(sourceContent)) {
-
-                        final StringReader stringReader  = new StringReader(sourceContent.toString());
-                        final Source source = Try.of(() ->
-                                Source.newBuilder(ENGINE_JS, stringReader, absolutePath).build()).getOrElseThrow(e -> new RuntimeException(e));
+                    final Source source = toSource(absolutePath, path.toFile());
+                    if (Objects.nonNull(source)) {
                         sources.add(source);
                         Logger.info(this, "Loaded: " + absolutePath);
                     }
                 });
+    }
 
-        return sources;
+    /**
+     * Convert a file to a String
+     * @param absolutePath key for looking for on the cache, this is usually the absolute path of the file
+     * @param file File to read
+     * @return String non null if ok
+     */
+    public static String toString (final String absolutePath, final File file) {
+
+        final JsCache cache = CacheLocator.getJavascriptCache();
+        Object sourceContent = cache.get(absolutePath);
+        if (Objects.isNull(sourceContent)) {
+
+            sourceContent = Try.of(()->FileUtil.read(file)).getOrNull();
+
+            if (Objects.nonNull(sourceContent)) {
+
+                cache.put(absolutePath, sourceContent);
+            } else {
+
+                Logger.warn(JsEngine.class, "Could not read the file: " + absolutePath);
+            }
+        }
+
+        return null != sourceContent? sourceContent.toString(): null;
+    }
+
+    /**
+     * Convert a file to a Source
+     * @param absolutePath key for looking for on the cache, this is usually the absolute path of the file
+     * @param file File to read
+     * @return Source non null if ok
+     */
+    public static Source toSource (final String absolutePath, final File file) {
+
+        Source source = null;
+        final String sourceContent = toString(absolutePath, file);
+
+        if (Objects.nonNull(sourceContent)) {
+
+            final StringReader stringReader  = new StringReader(sourceContent);
+            source = Try.of(() ->
+                    Source.newBuilder(ENGINE_JS, stringReader, absolutePath).build()).getOrElseThrow(e -> new RuntimeException(e));
+        }
+
+        return source;
+    }
+
+    /**
+     * Convert a file to a Source
+     * @param absolutePath key for looking for on the cache, this is usually the absolute path of the file
+     * @param file File to read
+     * @return Source non null if ok
+     */
+    public static Source toModuleSource (final String absolutePath, final String modulePath, final File file) {
+
+        Source source = null;
+        final String sourceContent = toString(absolutePath, file);
+
+        if (Objects.nonNull(sourceContent)) {
+
+            final StringReader stringReader  = new StringReader(sourceContent);
+            source = Try.of(() ->
+                    Source.newBuilder(ENGINE_JS, stringReader, modulePath)
+                            .mimeType("application/javascript+module")
+                            .build()).getOrElseThrow(e -> new RuntimeException(e));
+        }
+
+        return source;
     }
 
     private boolean isString(final Value eval) {

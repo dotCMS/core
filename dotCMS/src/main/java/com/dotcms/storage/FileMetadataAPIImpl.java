@@ -327,7 +327,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param generateIfAbsent  @boolean
      * @return
      */
-    private Metadata internalGetGenerateMetadata(final Contentlet contentlet, final String fieldVariableName, final boolean generateIfAbsent, final boolean checkVersion)
+        private Metadata internalGetGenerateMetadata(final Contentlet contentlet, final String fieldVariableName, final boolean generateIfAbsent, final boolean checkVersion)
             throws DotDataException {
 
         if(null != contentlet.get(fieldVariableName) && UtilMethods.isSet(contentlet.getInode())) {
