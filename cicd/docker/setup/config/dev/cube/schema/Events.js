@@ -18,15 +18,8 @@ cube(`Events`, {
     // Pre-Aggregations definitions go here
     // Learn more here: https://cube.dev/docs/caching/pre-aggregations/getting-started
     /*targetVisitedAfterAggregation: {
-      measures: [
-        Events.totalSessions,
-        Events.targetVisitedAfterSuccesses
-      ],
-      dimensions: [
-        Events.experiment,
-        Events.runningId,
-        Events.variant
-      ],
+      measures: [Events.totalSessions, Events.targetVisitedAfterSuccesses],
+      dimensions: [Events.experiment, Events.runningId, Events.variant],
       timeDimension: Events.day,
       granularity: `day`,
       indexes: {
@@ -47,15 +40,8 @@ cube(`Events`, {
       }
     },
     exitRateAggregation: {
-      measures: [
-        Events.totalSessions,
-        Events.bounceRateSuccesses,
-        Events.exitRateSuccesses
-      ],
-      dimensions: [
-        Events.experiment,
-        Events.variant
-      ],
+      measures: [Events.totalSessions, Events.exitRateSuccesses],
+      dimensions: [Events.experiment, Events.variant],
       timeDimension: Events.day,
       granularity: `day`,
       indexes: {
@@ -85,34 +71,34 @@ cube(`Events`, {
       type: `count`,
       sql: `lookbackwindow`,
       filters: [{
-        sql: `pageviews = 1`
+        sql: `pageviews > 1`
       }]
     },
     exitRateSuccesses: {
       type: `count`,
       sql: `lookbackwindow`,
       filters: [{
-        sql: `experimentPageLastVisited = 1`
+        sql: `experimentPageLastVisited != 1`
       }]
     },
     targetVisitedAfterConvertionRate: {
       description: 'Convertion Rate',
       format: `percent`,
       type: 'number',
-      sql: `${targetVisitedAfterSuccesses} * 100 / ${totalSessions}`
+      sql: `ROUND(${targetVisitedAfterSuccesses} * 100 / ${totalSessions}, 2)`
     },
     bounceRateConvertionRate: {
       description: 'Convertion Rate',
       format: `percent`,
       type: 'number',
-      sql: `${bounceRateSuccesses} * 100 / ${totalSessions}`
+      sql: `ROUND(${bounceRateSuccesses} * 100 / ${totalSessions}, 2)`
     },
     exitRateConvertionRate: {
       description: 'Convertion Rate',
       format: `percent`,
       type: 'number',
-      sql: `${exitRateSuccesses} * 100 / ${totalSessions}`
-    },
+      sql: `ROUND(${exitRateSuccesses} * 100 / ${totalSessions}, 2)`
+    }
   },
   dimensions: {
     experiment: {

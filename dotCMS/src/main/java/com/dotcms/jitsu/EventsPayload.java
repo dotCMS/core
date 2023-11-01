@@ -25,7 +25,7 @@ public class EventsPayload {
         jsonObject.put(key, value);
     }
 
-    public void addExperiment(final Map<String, String> experimentFromEvent){
+    public void addExperiment(final Map<String, Object> experimentFromEvent){
 
         shortExperiments.add(new LiteExperiment(experimentFromEvent));
     }
@@ -71,14 +71,14 @@ public class EventsPayload {
         final boolean isExperimentPage;
         final boolean isTargetPage;
 
-        public LiteExperiment(final Map<String, String> experimentFromEvent) {
+        public LiteExperiment(final Map<String, Object> experimentFromEvent) {
 
-            this.name = experimentFromEvent.get("experiment");
-            this.runningId = experimentFromEvent.get("runningId");
-            this.variant =  experimentFromEvent.get("variant");
-            this.lookBackWindow = experimentFromEvent.get("lookBackWindow");
-            this.isExperimentPage = Boolean.getBoolean(experimentFromEvent.get("isExperimentPage"));
-            this.isTargetPage = Boolean.getBoolean(experimentFromEvent.get("isTargetPage"));
+            this.name = experimentFromEvent.get("experiment").toString();
+            this.runningId = experimentFromEvent.get("runningId").toString();
+            this.variant =  experimentFromEvent.get("variant").toString();
+            this.lookBackWindow = experimentFromEvent.get("lookBackWindow").toString();
+            this.isExperimentPage = (Boolean) experimentFromEvent.get("isExperimentPage");
+            this.isTargetPage = (Boolean) experimentFromEvent.get("isTargetPage");
 
         }
     }

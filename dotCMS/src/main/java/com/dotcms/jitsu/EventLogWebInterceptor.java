@@ -104,7 +104,7 @@ public class EventLogWebInterceptor implements WebInterceptor {
         final String requestPayload = IOUtils.toString(request.getReader());
         final String realIp = request.getRemoteAddr();
         final Map<String, Object> requestJsonPayload = JsonUtil.getJsonFromString(requestPayload);
-        final List<Map<String, String>> experiments = (List<Map<String, String>>) requestJsonPayload.get("experiments");
+        final List<Map<String, Object>> experiments = (List<Map<String, Object>>) requestJsonPayload.get("experiments");
 
         if (!UtilMethods.isSet(experiments)) {
             return;
@@ -123,7 +123,7 @@ public class EventLogWebInterceptor implements WebInterceptor {
                 WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(request));
         //eventPayload.put("clusterId", ClusterFactory.getClusterId());
 
-        for (final Map<String, String> experiment : experiments) {
+        for (final Map<String, Object> experiment : experiments) {
             eventPayload.addExperiment(experiment);
         }
 
