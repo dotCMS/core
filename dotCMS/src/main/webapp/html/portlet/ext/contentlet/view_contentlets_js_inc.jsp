@@ -838,10 +838,6 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
         function dispatchCreateContentletEvent(url, contentType) {
             var customEvent = document.createEvent("CustomEvent");
 
-
-
-
-
             customEvent.initCustomEvent("ng-event", false, false,  {
                 name: "create-contentlet",
                 data: {
@@ -856,8 +852,6 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
 
         function addNewContentlet(structureInode, contentType){
-
-
 
                 if(!contentType){
 
