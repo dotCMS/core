@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
 import {
     defaultIfEmpty,
@@ -14,16 +15,15 @@ import {
     refCount
 } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotCMSResponse } from '@dotcms/dotcms-js';
 import { DotMenu, DotMenuItem } from '@models/navigation';
 
 @Injectable()
 export class DotMenuService {
     menu$: Observable<DotMenu[]>;
 
-    private urlMenus = 'v1/menu';
-
-    constructor(private coreWebService: CoreWebService) {}
+    private urlMenus = '/api/v1/menu';
+    private readonly http = inject(HttpClient);
 
     /**
      * Get the url for the iframe porlet from the menu object
@@ -71,10 +71,8 @@ export class DotMenuService {
      */
     loadMenu(force = false): Observable<DotMenu[]> {
         if (!this.menu$ || force) {
-            this.menu$ = this.coreWebService
-                .requestView({
-                    url: this.urlMenus
-                })
+            this.menu$ = this.http
+                .get<DotCMSResponse<DotMenu>>(this.urlMenus)
                 .pipe(publishLast(), refCount(), pluck('entity'));
         }
 
