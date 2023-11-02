@@ -7,7 +7,6 @@ import {
     defaultIfEmpty,
     filter,
     find,
-    first,
     map,
     mergeMap,
     pluck,
@@ -35,8 +34,8 @@ export class DotMenuService {
     getUrlById(id: string): Observable<string> {
         return this.getMenuItems().pipe(
             filter((res: DotMenuItem) => !res.angular && res.id === id),
-            first(),
-            pluck('url')
+            pluck('url'),
+            defaultIfEmpty('')
         );
     }
 
