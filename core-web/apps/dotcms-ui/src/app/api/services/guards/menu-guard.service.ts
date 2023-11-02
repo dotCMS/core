@@ -22,14 +22,14 @@ export class MenuGuardService implements CanActivate {
     ) {}
 
     canActivate(_route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
-        return this.canAccessPortlet(this.dotRouterService.getPortletId(state.url));
+        return this.canAccessPortlet(state.url);
     }
 
     canActivateChild(
         _route: ActivatedRouteSnapshot,
         state: RouterStateSnapshot
     ): Observable<boolean> {
-        return this.canAccessPortlet(this.dotRouterService.getPortletId(state.url));
+        return this.canAccessPortlet(state.url);
     }
 
     /**
@@ -39,7 +39,14 @@ export class MenuGuardService implements CanActivate {
      * @returns boolean
      */
     private canAccessPortlet(url: string): Observable<boolean> {
-        return this.dotMenuService.isPortletInMenu(url).pipe(
+        const id = this.dotRouterService.getPortletId(url);
+        const isJSPortlet = this.dotRouterService.isJSPPortletURL(url);
+
+        const obs$ = isJSPortlet
+            ? this.dotMenuService.isPortletInMenu(id)
+            : this.dotMenuService.isJSPPortletInMenu(id);
+
+        return obs$.pipe(
             map((isValidPortlet) => {
                 if (!isValidPortlet) {
                     this.dotNavigationService.goToFirstPortlet();

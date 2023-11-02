@@ -57,6 +57,21 @@ export class DotMenuService {
     }
 
     /**
+     * Check if the JSP Portlet is in the menu and hasn't been migrated to Angular
+     *
+     * @param {string} menuId
+     * @return {*}  {Observable<boolean>}
+     * @memberof DotMenuService
+     */
+    isJSPPortletInMenu(menuId: string): Observable<boolean> {
+        return this.getMenuItems().pipe(
+            map(({ id, angular }) => id === menuId && !angular),
+            filter((val) => !!val),
+            defaultIfEmpty(false)
+        );
+    }
+
+    /**
      * Load and set menu from endpoint
      * @param boolean force
      * @returns Observable<DotMenu[]>
