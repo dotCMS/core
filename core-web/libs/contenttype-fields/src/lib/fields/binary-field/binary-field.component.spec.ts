@@ -353,6 +353,11 @@ describe('DotBinaryFieldComponent', () => {
     });
 });
 
+/**
+ * TODO: Remove it and use `FormGroupMockDirective` when movving this component to `libs/edit-content` if needed.
+ *
+ * @class MockFormComponent
+ */
 @Component({
     selector: 'dot-app-mock-form',
     imports: [
@@ -384,10 +389,6 @@ describe('DotBinaryFieldComponent - ControlValueAccesor', () => {
 
     beforeEach(() => {
         spectator = createComponent();
-    });
-
-    it('should create', () => {
-        expect(spectator.component).toBeTruthy();
     });
 
     it('should set form value when binary file changes', () => {
