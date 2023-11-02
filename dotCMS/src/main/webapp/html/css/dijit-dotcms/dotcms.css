@@ -3356,6 +3356,8 @@
   font-family: Assistant, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   padding: 0.5rem;
   font-size: 1rem;
+  min-height: 9.375rem;
+  resize: vertical;
 }
 .dijitTextAreaHover {
   background-color: #ffffff;
