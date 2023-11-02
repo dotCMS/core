@@ -47,25 +47,17 @@ export class DotMenuService {
      * @returns Observable<boolean>
      * @memberof DotMenuService
      */
-    isPortletInMenu(menuId: string): Observable<boolean> {
+    isPortletInMenu(menuId: string, checkJSPPortlet: boolean = false): Observable<boolean> {
         return this.getMenuItems().pipe(
-            pluck('id'),
-            map((id: string) => menuId === id),
-            filter((val) => !!val),
-            defaultIfEmpty(false)
-        );
-    }
+            map(({ id, angular }) => {
+                const idMatch = id === menuId;
+                // Check if the JSP Portlet is in the menu and hasn't been migrated to Angular
+                if (checkJSPPortlet) {
+                    return idMatch && !angular;
+                }
 
-    /**
-     * Check if the JSP Portlet is in the menu and hasn't been migrated to Angular
-     *
-     * @param {string} menuId
-     * @return {*}  {Observable<boolean>}
-     * @memberof DotMenuService
-     */
-    isJSPPortletInMenu(menuId: string): Observable<boolean> {
-        return this.getMenuItems().pipe(
-            map(({ id, angular }) => id === menuId && !angular),
+                return idMatch;
+            }),
             filter((val) => !!val),
             defaultIfEmpty(false)
         );

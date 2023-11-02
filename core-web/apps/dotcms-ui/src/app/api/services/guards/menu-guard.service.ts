@@ -40,13 +40,9 @@ export class MenuGuardService implements CanActivate {
      */
     private canAccessPortlet(url: string): Observable<boolean> {
         const id = this.dotRouterService.getPortletId(url);
-        const isJSPortlet = this.dotRouterService.isJSPPortletURL(url);
+        const checkJSPPortlet = this.dotRouterService.isJSPPortletURL(url);
 
-        const obs$ = isJSPortlet
-            ? this.dotMenuService.isPortletInMenu(id)
-            : this.dotMenuService.isJSPPortletInMenu(id);
-
-        return obs$.pipe(
+        return this.dotMenuService.isPortletInMenu(id, checkJSPPortlet).pipe(
             map((isValidPortlet) => {
                 if (!isValidPortlet) {
                     this.dotNavigationService.goToFirstPortlet();
