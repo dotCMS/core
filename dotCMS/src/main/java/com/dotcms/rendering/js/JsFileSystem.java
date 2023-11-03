@@ -1,6 +1,19 @@
 package com.dotcms.rendering.js;
 
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.HostUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.oracle.truffle.js.lang.JavaScriptLanguage;
+import io.vavr.Tuple2;
 import org.apache.commons.compress.utils.SeekableInMemoryByteChannel;
 import org.graalvm.polyglot.io.FileSystem;
 
@@ -26,23 +39,62 @@ import java.util.Set;
  * it supports things such as:
  * /application/js/modules/mymodules.js
  * //demo.dotcms.com/application/js/modules/mymodules.js
- *
+ * /javascript/modules/systemmodule.js
  * dotCMS file system.
  * @author jsanca
  */
 public class JsFileSystem implements FileSystem {
 
+    private static final String APPLICATION_ROOT_PATH = "/application/";
+    private static final String JAVASCRIPT_ROOT_PATH = "/javascript/";
+
     public JsFileSystem() {
     }
 
     private Path checkAllowedPath(final Path path) {
-        // todo: throw exception if not allowed
+
+        if (null == path) {
+            throw new IllegalArgumentException("Path can not be null");
+        }
+
+        final String pathString = path.toString();
+
+        if (pathString.startsWith(HostUtil.HOST_INDICATOR)) {
+            checkHost(pathString);
+        }
+
+        if (pathString.contains(APILocator.getFileAssetAPI().getRelativeAssetsRootPath())) {
+            return path;
+        }
+
+        if (!pathString.startsWith(JAVASCRIPT_ROOT_PATH) && !pathString.startsWith(APPLICATION_ROOT_PATH)) {
+            throw new IllegalArgumentException("Path is only allowed on: (" + JAVASCRIPT_ROOT_PATH + " or " + APPLICATION_ROOT_PATH + ")");
+        }
+
         return path;
     }
 
+    private void checkHost(final String pathString) {
+
+        try {
+            final Tuple2<String, Host> pathHostTuple = HostUtil.splitPathHost(pathString, APILocator.systemUser(), APPLICATION_ROOT_PATH);
+            if (Objects.isNull(pathHostTuple._2())) {
+                throw new IllegalArgumentException("Host not found: " + pathString);
+            }
+
+            if (Objects.isNull(pathHostTuple._1())) {
+                throw new IllegalArgumentException("Path is only allowed on: (" + JAVASCRIPT_ROOT_PATH + " or " + APPLICATION_ROOT_PATH + ")");
+            }
+
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Path is only allowed on: (" + JAVASCRIPT_ROOT_PATH + " or " + APPLICATION_ROOT_PATH + ")");
+        }
+    }
+
+
     @Override
     public Path parsePath(final String path) {
-        return checkAllowedPath(Paths.get(path));
+        return Paths.get(path);
     }
 
     @Override
@@ -50,11 +102,19 @@ public class JsFileSystem implements FileSystem {
         if (path.isAbsolute()) {
             return path;
         }
-        return checkAllowedPath(path.toAbsolutePath());
+        return path.toAbsolutePath();
     }
 
     @Override
     public Path toRealPath(final Path path, final LinkOption... linkOptions) throws IOException {
+
+        checkAllowedPath(path);
+
+        if (path.toString().startsWith(APPLICATION_ROOT_PATH)) {
+
+            return applicationFolderToRealPath(path);
+        }
+
         Path root = Paths.get("/").toAbsolutePath().getRoot();  // todo: analyze this
         Path real = root;
         for (int i = 0; i < path.getNameCount(); i++) {
@@ -73,24 +133,65 @@ public class JsFileSystem implements FileSystem {
         return real;
     }
 
+    private Path applicationFolderToRealPath (final Path path) {
+
+        final String pathString = path.toString();
+        Host site = null;
+        String modulePath = pathString;
+
+        try {
+
+            if (pathString.startsWith(HostUtil.HOST_INDICATOR)) {
+                final Tuple2<String, Host> pathHostTuple = HostUtil.splitPathHost(pathString, APILocator.systemUser(), APPLICATION_ROOT_PATH);
+                site = pathHostTuple._2();
+                modulePath = pathHostTuple._1();
+            } else { // it is relative try current host or default
+                site = HostUtil.findCurrentHost();
+                if (null == site) {
+                    site = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+                }
+            }
+
+            if (!modulePath.startsWith(APPLICATION_ROOT_PATH)) {
+                throw new IllegalArgumentException("Path is only allowed on: (" + JAVASCRIPT_ROOT_PATH + " or " + APPLICATION_ROOT_PATH + ")");
+            }
+
+            final Identifier identifier = APILocator.getIdentifierAPI().find(site, pathString);
+            if (null != identifier && UtilMethods.isSet(identifier.getId())) {
+
+                final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(identifier.getId());
+                final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+
+                // it could be relative
+                return Path.of(fileAsset.getFileAsset().getPath());
+            }
+        } catch (DotContentletStateException | DotDataException | DotSecurityException e) {
+
+            throw new DoesNotExistException(e.getMessage(), e);
+        }
+
+        return path;
+    }
+
     @Override
     public SeekableByteChannel newByteChannel(final Path path,
                                               final Set<? extends OpenOption> options,
                                               final FileAttribute<?>... attrs) throws IOException {
 
-        checkAllowedPath(path);
-        // it could be relative
-        String source = JsEngine.toString(path.toAbsolutePath().toString(), path.toFile());
-        if (Objects.isNull(source)) {
+        try {
 
-            // or absolute
-            final String realPath = Config.CONTEXT.getRealPath(path.toAbsolutePath().toString());
-            source = JsEngine.toString(realPath, new File(realPath));
-        }
+            final File file = path.toFile();
+            if (file.exists() && file.canRead()) {
+                final String source = JsEngine.toString(path.toAbsolutePath().toString(), file);
 
-        if (Objects.nonNull(source)) {
+                if (Objects.nonNull(source)) {
 
-            return new SeekableInMemoryByteChannel(source.getBytes(StandardCharsets.UTF_8));
+                    return new SeekableInMemoryByteChannel(source.getBytes(StandardCharsets.UTF_8));
+                }
+            }
+        } catch (DotContentletStateException e) {
+
+            throw new DoesNotExistException(e.getMessage(), e);
         }
 
         throw new NoSuchFileException(path.toString());
@@ -99,7 +200,6 @@ public class JsFileSystem implements FileSystem {
     @Override
     public void checkAccess(final Path path, final Set<? extends AccessMode> modes, final LinkOption... linkOptions) throws IOException {
 
-        checkAllowedPath(path);
         if (!onlyRead(modes)) {
             throw new IOException("Only read access is allowed");
         }
@@ -118,7 +218,7 @@ public class JsFileSystem implements FileSystem {
 
     @Override
     public Path parsePath(final URI uri) {
-        return checkAllowedPath(Paths.get(uri));
+        return Paths.get(uri);
     }
 
     @Override
