@@ -47,6 +47,7 @@ public class JsFileSystem implements FileSystem {
 
     private static final String APPLICATION_ROOT_PATH = "/application/";
     private static final String JAVASCRIPT_ROOT_PATH = "/javascript/";
+    public static final String DOT_SITE_TOKEN = "/dot-site-token/";
 
     public JsFileSystem() {
     }
@@ -59,10 +60,13 @@ public class JsFileSystem implements FileSystem {
 
         final String pathString = path.toString();
 
-        if (pathString.startsWith(HostUtil.HOST_INDICATOR)) {
+        // it could be dot host indicator or a converter DOT_SITE_TOKEN
+        if (pathString.startsWith(HostUtil.HOST_INDICATOR) || pathString.startsWith(DOT_SITE_TOKEN)) {
             checkHost(pathString);
+            return path;
         }
 
+        // eventually the files are converted to a file asset full path
         if (pathString.contains(APILocator.getFileAssetAPI().getRelativeAssetsRootPath())) {
             return path;
         }
@@ -77,9 +81,11 @@ public class JsFileSystem implements FileSystem {
     private void checkHost(final String pathString) {
 
         try {
-            final Tuple2<String, Host> pathHostTuple = HostUtil.splitPathHost(pathString, APILocator.systemUser(), APPLICATION_ROOT_PATH);
+
+            final String unprefixPath = pathString.startsWith(DOT_SITE_TOKEN)?pathString.replace(DOT_SITE_TOKEN, HostUtil.HOST_INDICATOR): pathString;
+            final Tuple2<String, Host> pathHostTuple = HostUtil.splitPathHost(unprefixPath, APILocator.systemUser(), APPLICATION_ROOT_PATH);
             if (Objects.isNull(pathHostTuple._2())) {
-                throw new IllegalArgumentException("Host not found: " + pathString);
+                throw new IllegalArgumentException("Host not found: " + unprefixPath);
             }
 
             if (Objects.isNull(pathHostTuple._1())) {
@@ -94,7 +100,23 @@ public class JsFileSystem implements FileSystem {
 
     @Override
     public Path parsePath(final String path) {
+        if(path.startsWith(HostUtil.HOST_INDICATOR)) {
+
+            return prefixHostScheme(path);
+        }
+
         return Paths.get(path);
+    }
+
+    /*
+     * there is not file system to parse the dotcms sintax for sites, such as //site/path
+     * so we have to convert it to a valid path by replacing the // by a /dot-site-token/
+     * So later methods will know the path is for a site.
+     */
+    private Path prefixHostScheme(final String path) {
+
+        final String convertedPath = path.replace(HostUtil.HOST_INDICATOR, DOT_SITE_TOKEN);
+        return Paths.get(convertedPath);
     }
 
     @Override
@@ -110,7 +132,8 @@ public class JsFileSystem implements FileSystem {
 
         checkAllowedPath(path);
 
-        if (path.toString().startsWith(APPLICATION_ROOT_PATH)) {
+        if (path.toString().startsWith(APPLICATION_ROOT_PATH) || path.toString().startsWith(HostUtil.HOST_INDICATOR)
+            || path.toString().startsWith(DOT_SITE_TOKEN)) {
 
             return applicationFolderToRealPath(path);
         }
@@ -141,8 +164,10 @@ public class JsFileSystem implements FileSystem {
 
         try {
 
-            if (pathString.startsWith(HostUtil.HOST_INDICATOR)) {
-                final Tuple2<String, Host> pathHostTuple = HostUtil.splitPathHost(pathString, APILocator.systemUser(), APPLICATION_ROOT_PATH);
+            if (pathString.startsWith(HostUtil.HOST_INDICATOR) || pathString.startsWith(DOT_SITE_TOKEN)) {
+
+                final String unprefixPath = pathString.startsWith(DOT_SITE_TOKEN)?pathString.replace(DOT_SITE_TOKEN, HostUtil.HOST_INDICATOR): pathString;
+                final Tuple2<String, Host> pathHostTuple = HostUtil.splitPathHost(unprefixPath, APILocator.systemUser(), APPLICATION_ROOT_PATH);
                 site = pathHostTuple._2();
                 modulePath = pathHostTuple._1();
             } else { // it is relative try current host or default
@@ -156,7 +181,7 @@ public class JsFileSystem implements FileSystem {
                 throw new IllegalArgumentException("Path is only allowed on: (" + JAVASCRIPT_ROOT_PATH + " or " + APPLICATION_ROOT_PATH + ")");
             }
 
-            final Identifier identifier = APILocator.getIdentifierAPI().find(site, pathString);
+            final Identifier identifier = APILocator.getIdentifierAPI().find(site, modulePath);
             if (null != identifier && UtilMethods.isSet(identifier.getId())) {
 
                 final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(identifier.getId());
