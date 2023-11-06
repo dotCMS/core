@@ -10,7 +10,7 @@ import com.dotcms.model.site.SiteView;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.concurrent.ForkJoinPool;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
@@ -28,11 +28,11 @@ public class SiteFetcher implements ContentFetcher<SiteView> {
 
         final var siteAPI = clientFactory.getClient(SiteAPI.class);
 
-        final int pageSize = 10;
+        final int pageSize = 100;
         int page = 1;
 
         // Create a list to store all the retrieved sites
-        List<SiteView> allSites = new ArrayList<>();
+        List<Site> allSites = new ArrayList<>();
 
         while (true) {
 
@@ -50,10 +50,7 @@ public class SiteFetcher implements ContentFetcher<SiteView> {
             if (sitesResponse.entity() != null && !sitesResponse.entity().isEmpty()) {
 
                 // Add the sites from the current page to the list
-                List<SiteView> siteViews = sitesResponse.entity().stream()
-                        .map(this::toView)
-                        .collect(Collectors.toList());
-                allSites.addAll(siteViews);
+                allSites.addAll(sitesResponse.entity());
 
                 // Increment the page number
                 page++;
@@ -63,7 +60,13 @@ public class SiteFetcher implements ContentFetcher<SiteView> {
             }
         }
 
-        return allSites;
+        // Create a ForkJoinPool to process the sites in parallel
+        // We need this extra logic because the site API returns when calling all sites an object
+        // that is not equal to the one returned when calling by id or by name, it is a reduced and
+        // different version of a site, so we need to call the API for each site to get the full object.
+        var forkJoinPool = ForkJoinPool.commonPool();
+        var task = new HttpRequestTask(allSites, this);
+        return forkJoinPool.invoke(task);
     }
 
     @ActivateRequestContext
@@ -81,27 +84,6 @@ public class SiteFetcher implements ContentFetcher<SiteView> {
         final ResponseEntityView<SiteView> byId = siteAPI.findByName(
                 GetSiteByNameRequest.builder().siteName(siteNameOrId).build());
         return byId.entity();
-    }
-
-    /**
-     * Converts a Site object to a SiteView object.
-     *
-     * @param site the Site object to be converted
-     * @return the converted SiteView object
-     */
-    private SiteView toView(final Site site) {
-
-        return SiteView.builder()
-                .identifier(site.identifier())
-                .inode(site.inode())
-                .aliases(site.aliases())
-                .hostName(site.hostName())
-                .systemHost(site.systemHost())
-                .isDefault(site.isDefault())
-                .isArchived(site.isArchived())
-                .isLive(site.isLive())
-                .isWorking(site.isWorking())
-                .build();
     }
 
 }
