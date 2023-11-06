@@ -8,8 +8,8 @@
         [multiple]="true"
         [dropdown]="isJsonClasses$ | async"
         [autofocus]="true"
-        (onKeyUp)="onKeyUp($event)"
         (completeMethod)="filterClasses($event)"
+        dotSelectItem
         data-testId="autocomplete"
         inputId="auto-complete-input"
         appendTo="body">
