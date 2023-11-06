@@ -35,7 +35,11 @@ public class PullTask<T> extends RecursiveAction {
 
             // If the list is small enough, process sequentially
             for (var content : this.params.contents()) {
-                toDiskContent(content);
+                try {
+                    toDiskContent(content);
+                } finally {
+                    this.params.progressBar().incrementStep();
+                }
             }
 
         } else {
