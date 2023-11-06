@@ -1,3 +1,7 @@
-p-radiobutton:last-child {
-    margin-bottom: 0;
+@use "variables" as *;
+
+:host {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
 }
