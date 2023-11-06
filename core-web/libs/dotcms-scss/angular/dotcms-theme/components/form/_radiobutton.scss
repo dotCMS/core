@@ -10,18 +10,18 @@ p-radiobutton.p-element {
     }
 
     .p-radiobutton {
-        height: 24px;
+        height: 1.5rem;
         aspect-ratio: 1/1;
         border-radius: 50%;
         border: 2px solid $color-palette-gray-500;
 
         .p-radiobutton-box {
-            height: 20px;
+            height: 1.25rem;
             border-radius: inherit;
             aspect-ratio: inherit;
 
             .p-radiobutton-icon {
-                height: 14px;
+                height: 0.875rem;
                 aspect-ratio: inherit;
                 border-radius: inherit;
             }
