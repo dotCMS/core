@@ -89,7 +89,7 @@
         }
 
         .p-checkbox {
-            @extend #field-panel-item-checkbox;
+            margin-right: $spacing-1;
         }
 
         .p-multiselect-close {
@@ -137,10 +137,6 @@
             &.p-disabled,
             &.p-highlight.p-disabled {
                 @extend #field-panel-item-disabled;
-            }
-
-            .p-checkbox {
-                @extend #field-panel-item-checkbox;
             }
         }
 
