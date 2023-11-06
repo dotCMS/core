@@ -8,7 +8,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.Dependent;
+import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
 
 /**
  * This is a Push shared Context
@@ -23,6 +25,12 @@ public class PushContextImpl implements PushContext {
     public static final String KEY_FORMAT = "%s::%s";
     @ConfigProperty(name = "push-context.strips", defaultValue = "100")
     int stripes;
+
+    @ConfigProperty(name = "push-context.enabled", defaultValue = "true")
+    boolean enabled;
+
+    @Inject
+    Logger logger;
 
     private final Set<String> savedKeys = ConcurrentHashMap.newKeySet();
 
@@ -52,6 +60,10 @@ public class PushContextImpl implements PushContext {
      * @throws LockExecException
      */
       <T> Optional <T> execWithinLock(String key, Delegate<T> delegate) throws LockExecException {
+        if(!enabled) {
+            logger.warn("Push context is disabled");
+            return delegate.execute();
+        }
         final String keyLowerCase = key.toLowerCase();
         if (savedKeys.contains(keyLowerCase)) {
             return Optional.empty();
