@@ -283,7 +283,6 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
                 logger.debug(String.format("Folder [%s] already deleted, ignoring deletion of [%s] asset",
                         folder.path(), asset.name()));
             } else {
-                //TODO: Why is it we're only archiving the asset and not deleting it?
                 final Optional<Boolean> optional = pushContext.execArchive(
                         String.format("%s/%s/%s", folder.host(), folder.path(), asset.name()),
                         () -> {

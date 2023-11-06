@@ -363,16 +363,14 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
 
             for (var subFolder : remoteFolder.subFolders()) {
 
-                final boolean remove = !findLocalMatch(folderChildren, subFolder);
+                final boolean remove = !(findLocalFolderMatch(folderChildren, subFolder));
 
                 if (remove) {
 
                     // Folder exist on remote server, but not locally, so we need to remove it and also the assets
-                    // inside it, this is important because depending on the status (live/working), a delete of a
-                    // folder can be an "un-publish" of the assets inside it or a delete of the folder itself, we need
+                    // inside of it, this is important because depending on the status (live/working), a "delete" of a
+                    // folder can be an "un-publish" of the assets inside it or a "delete" of the folder itself, we need
                     // to have all the assets inside the folder to be able to handle all the cases.
-                    // TODO: This is not going to work because even if you have all the assets inside the folder locally.
-                    //  If we delete the remote folder and it has pages in it, the pages will be lost. We need some sort of merge folder mechanism.
                     var remoteSubFolder = retrieveFolder(subFolder.host(), subFolder.path());
                     if (remoteSubFolder != null) {
 
@@ -437,7 +435,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
      * @param remote
      * @return
      */
-    private boolean findLocalMatch(File[] folderChildren, FolderView remote) {
+    private boolean findLocalFolderMatch(File[] folderChildren, FolderView remote) {
 
         if (null == folderChildren) {
             return false;
