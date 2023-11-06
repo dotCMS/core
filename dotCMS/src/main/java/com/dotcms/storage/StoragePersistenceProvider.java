@@ -122,7 +122,6 @@ public final class StoragePersistenceProvider {
     public void addStorageInitializer(final StorageType storageType, final Supplier<StoragePersistenceAPI> initializer){
         initializers.put(storageType, initializer);
     }
-    
     /**
      * Returns the default Storage Type set in the current dotCMS instance.
      *
