@@ -42,7 +42,7 @@ export const orderVariants = (arrayToOrder: Array<string>): Array<string> => {
  * @return {number[]} - An array of conversion Rate values.
  */
 export const getParsedChartData = (data: Record<string, DotResultDate>): number[] => {
-    return [0, ...Object.values(data).map((day) => day.conversionRate)];
+    return [0, ...Object.values(data).map((day) => Math.round(day.conversionRate * 100) / 100)];
 };
 
 export const getPropertyColors = (index: number): LineChartColorsProperties => {
@@ -212,9 +212,9 @@ const generateProbabilityDensityData = (
     // Loop through the x values from 0 to 1.
     for (let i = 0; i <= 1; i += step) {
         // Set the x value to the current value of i.
-        const x = i;
+        const x = Number(i.toFixed(2));
         // Set the y value to the value of the pdf at the current value of i.
-        const y = betaDist.pdf(x);
+        const y = Number(betaDist.pdf(x).toFixed(2));
 
         if (!isFinite(y)) {
             continue;
