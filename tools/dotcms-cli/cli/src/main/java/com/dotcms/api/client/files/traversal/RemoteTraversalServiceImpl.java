@@ -118,7 +118,7 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
                pusher.createLanguage(params.localPaths().language());
            } catch (Exception e) {
                //If we failed to create the language we still continue with the push
-               // we simply the let the user know and move on
+               // we simply let the user know and move on
                final String errorMessage = String.format(
                        "Error creating language. Can not process this folder [%s] branch.",
                        params.localPaths().language());
