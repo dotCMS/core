@@ -1,10 +1,11 @@
 import { describe } from '@jest/globals';
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
-import { DotBlockEditorComponent } from 'libs/block-editor/src/lib/components/dot-block-editor/dot-block-editor.component';
 
 import { Type } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { DotBlockEditorComponent } from '@dotcms/block-editor';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
