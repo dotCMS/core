@@ -1217,7 +1217,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         for (final ResultSetItem totalSession : totalSessions) {
             final String variantName = totalSession.get("Events.variant").orElseThrow().toString();
             final long total = Long.parseLong(totalSession.get("Events.totalSessions").orElseThrow().toString());
-            final long convertionRate = getConvertionRate(totalSession);
+            final float convertionRate = getConvertionRate(totalSession);
             final long success = getSuccess(totalSession);
 
             builder.addTotalSession(variantName, total);
@@ -1232,7 +1232,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
             long totalSessionsByDate = Long.parseLong(attributes.get("Events.totalSessions").toString());
             long success = getSuccess(resultSetItem);
-            long convertionRate = getConvertionRate(resultSetItem);
+            float convertionRate = getConvertionRate(resultSetItem);
 
             final String day = resultSetItem.get("Events.day").orElseThrow().toString().replace("T00:00:00.000", "");
             final String variantName = resultSetItem.get("Events.variant").orElseThrow().toString();
@@ -1253,7 +1253,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return experimentResults;
     }
 
-    private static long getConvertionRate(final ResultSetItem resultSetItem) {
+    private static float getConvertionRate(final ResultSetItem resultSetItem) {
         final Map<String, Object> attributes = resultSetItem.getAll();
 
         final String convertionRateAttributeName = attributes.keySet().stream()
@@ -1261,7 +1261,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .limit(1)
                 .findFirst()
                 .orElseThrow();
-        return  Long.parseLong(resultSetItem.get(convertionRateAttributeName).orElseThrow().toString());
+        return  Float.parseFloat(resultSetItem.get(convertionRateAttributeName).orElseThrow().toString());
     }
 
     private static long getSuccess(final ResultSetItem resultSetItem) {
