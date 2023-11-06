@@ -3929,6 +3929,12 @@
   background-color: #ffffff;
   width: 24px;
   height: 24px;
+  cursor: pointer;
+}
+.dijitCheckBox .dijitCheckBoxInput {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
 }
 .dijitCheckBoxChecked {
   border: solid 2px var(--color-palette-primary-500);
@@ -3936,7 +3942,6 @@
 }
 .dijitCheckBoxHover:not(.dijitCheckBoxDisabled, .dijitCheckBoxCheckedDisabled) {
   border-color: var(--color-palette-primary-400);
-  cursor: pointer;
 }
 .dijitCheckBoxFocused:not(.dijitCheckBoxDisabled, .dijitCheckBoxCheckedDisabled) {
   outline: 1.5px solid var(--color-palette-primary-op-20);
@@ -3956,6 +3961,12 @@
   border: solid 2px #afb3c0;
   height: 24px;
   width: 24px;
+  cursor: pointer;
+}
+.dijitRadio .dijitCheckBoxInput {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
 }
 .dijitRadioChecked {
   border: solid 2px var(--color-palette-primary-500);
@@ -9873,12 +9884,9 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .content-search__result-item {
-  padding-left: 24px;
-  position: relative;
-}
-.content-search__result-item .dijitCheckBox {
-  position: absolute;
-  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .content-search__action-item {
@@ -10233,11 +10241,6 @@ a.category_higlighted, a.tag_higlighted {
 
 .portlet-sidebar .portlet-sidebar__input-spacer {
   height: 6px;
-}
-
-.portlet-sidebar .dijitCheckBox {
-  position: relative;
-  bottom: 2px;
 }
 
 .dijitContentPane .buttonRow {

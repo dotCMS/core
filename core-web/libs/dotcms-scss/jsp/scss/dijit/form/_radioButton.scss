@@ -4,6 +4,13 @@
     border: $radio-normal-border;
     height: $radio-size;
     width: $radio-size;
+    cursor: pointer;
+
+    .dijitCheckBoxInput {
+        width: $check-size;
+        height: $check-size;
+        cursor: pointer;
+    }
 
     &Checked {
         border: $radio-checked-border;

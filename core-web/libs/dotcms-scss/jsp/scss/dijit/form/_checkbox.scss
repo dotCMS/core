@@ -4,6 +4,13 @@
     background-color: $check-normal-bgcolor;
     width: $check-size;
     height: $check-size;
+    cursor: pointer;
+
+    .dijitCheckBoxInput {
+        width: $check-size;
+        height: $check-size;
+        cursor: pointer;
+    }
 
     &Checked {
         border: $check-checked-border;
@@ -12,7 +19,6 @@
 
     &Hover:not(.dijitCheckBoxDisabled, .dijitCheckBoxCheckedDisabled) {
         border-color: $color-palette-primary-400;
-        cursor: pointer;
     }
 
     &Focused:not(.dijitCheckBoxDisabled, .dijitCheckBoxCheckedDisabled) {
