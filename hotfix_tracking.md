@@ -151,3 +151,4 @@ This maintenance release includes the following code fixes:
 124. https://github.com/dotCMS/core/issues/24894 : There is no way to configure WYSIWYG to use the virtual path of an image when inserting one #24894
 125. https://github.com/dotCMS/core/issues/24816 : The site search index portlet doesn't render, which leads to errors from elasticsearch when there are many indices #24816
 126. https://github.com/dotCMS/core/issues/25127 : CMS Admin should be able to view all the bundles regardless of the user who create it #25127
+127. https://github.com/dotCMS/core/issues/25174 : Advance template is missing the Publish button added to the template designer #25174

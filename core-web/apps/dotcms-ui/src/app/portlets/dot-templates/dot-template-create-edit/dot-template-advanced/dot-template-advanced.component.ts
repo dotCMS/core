@@ -42,9 +42,14 @@ interface MonacoEditor {
 export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChanges {
     @Output() updateTemplate = new EventEmitter<DotTemplateItem>();
     @Output() save = new EventEmitter<DotTemplateItem>();
+    @Output() saveAndPublish = new EventEmitter<DotTemplateItem>();
     @Output() cancel = new EventEmitter();
 
+    @Input() title: string;
     @Input() body: string;
+    @Input() themeId: string;
+    @Input() image: string;
+    @Input() friendlyName: string;
     @Input() didTemplateChanged: boolean;
 
     // `any` because the type of the editor in the ngx-monaco-editor package is not typed
@@ -56,7 +61,13 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     constructor(private fb: UntypedFormBuilder, private dotMessageService: DotMessageService) {}
 
     ngOnInit(): void {
-        this.form = this.fb.group({ body: this.body });
+        this.form = this.fb.group({
+            title: this.title,
+            identifier: this.themeId,
+            body: this.body,
+            friendlyName: this.friendlyName,
+            image: this.image
+        });
 
         this.form.valueChanges
             .pipe(takeUntil(this.destroy$))
