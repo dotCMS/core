@@ -91,5 +91,11 @@ public class PushContextImpl implements PushContext {
         return execWithinLock(String.format(KEY_FORMAT, Operation.ARCHIVE, key), delegate);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public void clear() {
+        savedKeys.clear();
+    }
 
 }

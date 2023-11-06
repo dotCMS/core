@@ -204,6 +204,8 @@ public class PushServiceImpl implements PushService {
         do {
 
             if (retryAttempts > 0) {
+                //In order to retry we need to clear the context
+                params.pushContext().clear();
                 output.info(String.format("%n↺ Retrying push process [%d of %d]...", retryAttempts, params.maxRetryAttempts()));
             }
 

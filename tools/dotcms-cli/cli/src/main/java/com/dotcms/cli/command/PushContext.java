@@ -55,4 +55,6 @@ public interface PushContext {
         PUSH,ARCHIVE,DELETE
     }
 
+    void clear();
+
 }
