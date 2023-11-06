@@ -391,9 +391,7 @@ public class BrowserAPIImpl implements BrowserAPI {
     private String getBinaryAssetNameColumn(final String baseQuery){
         String sql = baseQuery;
         if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()) {
-            if (DbConnectionFactory.isPostgres()) {
-                sql = String.format(sql, POSTGRES_BINARY_ASSETNAME_COLUMN);
-            }
+            sql = String.format(sql, POSTGRES_BINARY_ASSETNAME_COLUMN);
         }
         return sql;
     }
