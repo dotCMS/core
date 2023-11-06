@@ -1,5 +1,6 @@
 import { describe } from '@jest/globals';
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { DotBlockEditorComponent } from 'libs/block-editor/src/lib/components/dot-block-editor/dot-block-editor.component';
 
 import { Type } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
@@ -31,7 +32,8 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown>> = {
     [FIELD_TYPES.TIME]: DotEditContentCalendarFieldComponent,
     [FIELD_TYPES.TAG]: DotEditContentTagFieldComponent,
     [FIELD_TYPES.CHECKBOX]: DotEditContentCheckboxFieldComponent,
-    [FIELD_TYPES.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent
+    [FIELD_TYPES.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent,
+    [FIELD_TYPES.BLOCK_EDITOR]: DotBlockEditorComponent
 };
 
 describe('FIELD_TYPES and FIELDS_MOCK', () => {

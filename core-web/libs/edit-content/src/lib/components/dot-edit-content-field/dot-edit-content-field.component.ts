@@ -5,6 +5,7 @@ import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
+import { BlockEditorModule } from '../../../../../block-editor/src/lib/block-editor.module';
 import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields.module';
 import { CALENDAR_FIELD_TYPES } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
@@ -27,6 +28,7 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
         NgIf,
         ReactiveFormsModule,
         DotEditContentFieldsModule,
+        BlockEditorModule,
         DotFieldRequiredDirective
     ]
 })

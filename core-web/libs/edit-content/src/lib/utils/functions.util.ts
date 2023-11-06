@@ -53,6 +53,10 @@ export const getSingleSelectableFieldOptions = (
 
 // This function is used to cast the value to a correct type for the Angular Form
 export const getFinalCastedValue = (value: string | undefined, field: DotCMSContentTypeField) => {
+    if (value === undefined) {
+        return value;
+    }
+
     if (CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
         const parseResult = new Date(value);
 
@@ -63,6 +67,10 @@ export const getFinalCastedValue = (value: string | undefined, field: DotCMSCont
 
     if (FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
         return value?.split(',').map((value) => value.trim());
+    }
+
+    if (field.fieldType === FIELD_TYPES.BLOCK_EDITOR) {
+        return JSON.parse(JSON.stringify(value));
     }
 
     return castSingleSelectableValue(value, field.dataType);
