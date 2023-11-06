@@ -1,20 +1,4 @@
-export enum UI_MESSAGE_KEYS {
-    DEFAULT = 'DEFAULT',
-    SERVER_ERROR = 'SERVER_ERROR',
-    FILE_TYPE_MISMATCH = 'FILE_TYPE_MISMATCH',
-    MAX_FILE_SIZE_EXCEEDED = 'MAX_FILE_SIZE_EXCEEDED'
-}
-
-export interface UiMessageI {
-    message: string;
-    severity: string;
-    icon: string;
-    args?: string[];
-}
-
-type UiMessageMap = {
-    [key in UI_MESSAGE_KEYS]: UiMessageI;
-};
+import { UiMessageI, UiMessageMap } from '../fields/binary-field/interfaces';
 
 const UiMessageMap: UiMessageMap = {
     DEFAULT: {
@@ -36,16 +20,17 @@ const UiMessageMap: UiMessageMap = {
         message: 'dot.binary.field.drag.and.drop.error.file.maxsize.exceeded.message',
         severity: 'error',
         icon: 'pi pi-exclamation-triangle'
+    },
+    MULTIPLE_FILES_DROPPED: {
+        message: 'dot.binary.field.drag.and.drop.error.multiple.files.dropped.message',
+        severity: 'error',
+        icon: 'pi pi-exclamation-triangle'
     }
 };
 
 export const getUiMessage = (messageKey: string, ...args: string[]): UiMessageI => {
-    const { message, severity, icon } = UiMessageMap[messageKey];
-
     return {
-        message,
-        severity,
-        icon,
+        ...UiMessageMap[messageKey],
         args
     };
 };
