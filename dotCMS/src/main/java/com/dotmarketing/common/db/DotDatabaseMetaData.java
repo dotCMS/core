@@ -598,6 +598,22 @@ public class DotDatabaseMetaData {
     }
 
     /**
+     * Returns the list of Indices for a given database table.
+     *
+     * @param conn              The current database {@link Connection} object, retrievable via the
+     *                          {@link DbConnectionFactory#getConnection()}.
+     * @param schema            The schema name for the database. If not necessary, it can be {@code null}.
+     * @param table             The table name.
+     * @param uniqueIndicesOnly Indicates if only unique indices should be returned.
+     * @return A {@link ResultSet} object containing the list of indices for the given table.
+     * @throws SQLException If an error occurs while retrieving the indices.
+     */
+    public ResultSet getIndices(final Connection conn, final String schema, final String table, final boolean uniqueIndicesOnly) throws SQLException {
+        final DatabaseMetaData dbMetadata = conn.getMetaData();
+        return dbMetadata.getIndexInfo(conn.getCatalog(), schema, table, uniqueIndicesOnly, false);
+    }
+
+    /**
      * Indicates if a column exists on a given table
      * @param tableName
      * @param columnName
