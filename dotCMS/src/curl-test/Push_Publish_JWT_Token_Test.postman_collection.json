@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "91e42c72-ec03-4bc3-b028-fa48bacb14a0",
+		"_postman_id": "1b8ca50c-6940-4a0f-bd10-dbbfdae16a63",
 		"name": "Push Publish JWT Token Test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -66,6 +66,42 @@
 								"api",
 								"v1",
 								"apitoken"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SwitchToDefaultSiteJustInCase Copy",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/switch/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"switch",
+								"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
 							]
 						}
 					},
@@ -149,7 +185,7 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+								"src": "resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 							}
 						},
 						"url": {
@@ -358,7 +394,7 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+								"src": "resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 							}
 						},
 						"url": {
@@ -430,7 +466,7 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+								"src": "resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 							}
 						},
 						"url": {
@@ -494,7 +530,7 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+								"src": "resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 							}
 						},
 						"url": {
@@ -727,7 +763,7 @@
 						"body": {
 							"mode": "file",
 							"file": {
-								"src": "/build/src/core/dotCMS/src/curl-test/resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+								"src": "resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 							}
 						},
 						"url": {
