@@ -1,6 +1,9 @@
 import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
 
 import { CommonModule } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotBinaryFieldUiMessageComponent } from './dot-binary-field-ui-message.component';
 
@@ -9,20 +12,22 @@ describe('DotBinaryFieldUiMessageComponent', () => {
 
     const createHost = createHostFactory({
         component: DotBinaryFieldUiMessageComponent,
-        imports: [CommonModule],
+        imports: [CommonModule, DotMessagePipe, HttpClientTestingModule],
         providers: []
     });
 
     beforeEach(async () => {
         spectator = createHost(
-            `<dot-binary-field-ui-message [message]="message" [icon]="icon" [severity]="severity">
+            `<dot-binary-field-ui-message [uiMessage]="uiMessage">
                 <button data-testId="choose-file-btn">Choose File</button>
             </dot-binary-field-ui-message>`,
             {
                 hostProps: {
-                    message: 'Drag and Drop File',
-                    icon: 'pi pi-upload',
-                    severity: 'info'
+                    uiMessage: {
+                        message: 'Drag and Drop File',
+                        icon: 'pi pi-upload',
+                        severity: 'info'
+                    }
                 }
             }
         );

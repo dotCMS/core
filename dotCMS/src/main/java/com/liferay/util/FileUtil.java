@@ -32,6 +32,13 @@ import org.apache.commons.io.filefilter.TrueFileFilter;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+
+import javax.servlet.ServletContext;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
@@ -58,16 +65,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
-import javax.servlet.ServletContext;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
 /**
  * <a href="FileUtil.java.html"><b><i>View Source</i></b></a>
@@ -78,11 +82,11 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
  */
 @SuppressWarnings("javasecurity:S2083")
 public class FileUtil {
-	//http://jira.dotmarketing.net/browse/DOTCMS-2178
-	static final long KILO_BYTE = 1024L;
-	static final long MEGA_BYTE = 1024L *1024;
-	static final long GIGA_BYTE = 1024L *1024*1024;
-	static final long TERA_BYTE = 1024L *1024*1024*1024;
+
+	public static final long KILO_BYTE = 1024L;
+	public static final long MEGA_BYTE = 1024L *1024;
+	public static final long GIGA_BYTE = 1024L *1024*1024;
+	public static final long TERA_BYTE = 1024L *1024*1024*1024;
 	private static final String CONTENT_VERSION_HARD_LINK = "CONTENT_VERSION_HARD_LINK";
 	private static final String CONTENT_ALLOW_ZERO_LENGTH_FILES = "CONTENT_ALLOW_ZERO_LENGTH_FILES";
 
@@ -103,9 +107,6 @@ public class FileUtil {
 
 		copyDirectory(new File(sourceDirName), new File(destinationDirName), true, filter);
 	}
-
-
-
 
 	public static void copyDirectory(File source, File destination, boolean hardLinks) throws IOException {
 		copyDirectory(source,destination,hardLinks,null);
@@ -1100,8 +1101,5 @@ public class FileUtil {
 		return PushUtils.tarGzipDirectory(directory);
 
 	}
-
-
-
 
 }

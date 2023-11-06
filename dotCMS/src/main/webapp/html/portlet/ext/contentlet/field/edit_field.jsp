@@ -18,6 +18,7 @@
 <%@page import="com.dotmarketing.portlets.structure.business.FieldAPI"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="com.dotmarketing.portlets.structure.model.FieldVariable"%>
+
 <%@ include file="/html/portlet/ext/contentlet/init.jsp"%>
 
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
@@ -38,6 +39,7 @@
 <%@ page import="com.dotmarketing.beans.Host" %>
 <%@ page import="com.dotcms.contenttype.model.field.JSONField" %>
 <%@ page import="org.apache.commons.lang.StringEscapeUtils" %>
+<%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
 
 <%
     long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -674,8 +676,24 @@
                 String accept="";
                 String maxFileLength="0";
                 String helperText="";
+                String binaryMetada = "";
+                String jsonField = "{}";
+
+                Contentlet contentletObj = APILocator.getContentletAPI().find(inode, user, false);
+                ObjectMapper mapper = new ObjectMapper(); // Create an ObjectMapper instance
+
+                try{
+                    java.io.File binaryFile = contentletObj.getBinary(field.getVelocityVarName());
+                    com.dotcms.storage.model.Metadata metadata = contentletObj.getBinaryMetadata(field);
+                    binaryMetada = mapper.writeValueAsString(metadata.getMap()); // Metadata
+                    jsonField = mapper.writeValueAsString(field); // Field
+                } catch(Exception e){
+                    Logger.error(this.getClass(), e.getMessage());
+                }
 
                 List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
+                String fieldVariablesContent = mapper.writeValueAsString(acceptTypes); // Field Variables
+
                 for(FieldVariable fv : acceptTypes){
                     if("accept".equalsIgnoreCase(fv.getKey())){
                         accept = fv.getValue();
@@ -688,8 +706,7 @@
                         helperText=fv.getValue();
                     }
                 }
-
-
+            
                 %>
 
             <div id="container-binary-field-<%=field.getVelocityVarName()%>"></div>
@@ -700,20 +717,28 @@
                 (function autoexecute() {
                     const binaryFieldContainer = document.getElementById("container-binary-field-<%=field.getVelocityVarName()%>");
                     const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
-                    const acceptArr = "<%= accept%>".split(',');
-                    const acceptTypes = acceptArr.map((type) => type.trim()).filter((type) => type !== "");
-                    const maxFileSize = Number("<%= maxFileLength%>");
+                    const variable = "<%=field.getVelocityVarName()%>";
+                    const metadataString = '<%=binaryMetada%>';
+                    const metaData = metadataString ? JSON.parse(metadataString) : null;
+                    const contentlet = metaData ? {
+                        inode: "<%=binInode%>",
+                        [variable]: `/dA/<%=contentlet.getIdentifier()%>/${variable}/${metaData.name}`,
+                        [variable+"MetaData"]: metaData
+                    } : null;
+                    const fielData = {
+                        ...(JSON.parse('<%=jsonField%>')),
+                        variable,
+                        fieldVariables: JSON.parse('<%=fieldVariablesContent%>')
+                    }
 
                     // Creating the binary field dynamically
                     // Help us to set inputs before the ngInit is executed.
                     const binaryField = document.createElement('dotcms-binary-field');
                     binaryField.id = "binary-field-<%=field.getVelocityVarName()%>";
-                    binaryField.setAttribute("fieldName", "<%=field.getVelocityVarName()%>")
+                    binaryField.setAttribute("fieldName", "<%=field.getVelocityVarName()%>");
 
-                    // Set the initial value.
-                    binaryField.maxFileSize = isNaN(maxFileSize) ? 0 : maxFileSize;
-                    binaryField.accept = acceptTypes;
-                    binaryField.helperText ="<%= helperText%>";
+                    binaryField.field = fielData;
+                    binaryField.contentlet = contentlet;
 
                     binaryField.addEventListener('tempFile', (event) => {
                         const tempFile = event.detail;
@@ -721,6 +746,21 @@
                     });
 
                     binaryFieldContainer.appendChild(binaryField);
+
+                    document.addEventListener(`binaryField-open-image-editor-${variable}`,({ detail }) => {
+                        const { inode, variable = '', tempId } = detail;
+
+                        const imageEditor = new dotcms.dijit.image.ImageEditor({
+                            inode,
+                            tempId,
+                            variable,
+                            fieldName: variable,
+                            binaryFieldId:  variable,
+                            focalPoint: "0.0,0.0",
+                        });
+
+                        imageEditor.execute();
+                    });
                 })();
 
             </script>
