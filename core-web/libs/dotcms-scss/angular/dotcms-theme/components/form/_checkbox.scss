@@ -10,7 +10,7 @@ p-checkbox.p-element {
     }
 
     .p-checkbox {
-        height: 24px;
+        height: 1.5rem;
         aspect-ratio: 1/1;
         border-radius: $border-radius-sm;
         border: 2px solid $color-palette-gray-400;
@@ -31,14 +31,12 @@ p-checkbox.p-element {
         }
 
         .p-checkbox-box {
-            height: 20px;
+            height: 1.25rem;
             aspect-ratio: 1/1;
         }
     }
 
     .p-checkbox-label {
-        font-size: $font-size-md;
-
         &.p-disabled {
             color: $color-palette-gray-500;
         }
