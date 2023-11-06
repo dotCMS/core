@@ -96,6 +96,7 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderIntegrityCheckerTest.class,
         HostFactoryImplTest.class,
         BundleFactoryImplTest.class,
+        com.dotcms.experiments.business.ExperimentUrlPatternCalculatorIntegrationTest.class
 })
 
 public class MainSuite1a {

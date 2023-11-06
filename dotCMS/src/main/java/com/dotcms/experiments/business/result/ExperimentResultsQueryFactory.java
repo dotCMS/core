@@ -110,6 +110,42 @@ public enum ExperimentResultsQueryFactory {
         return CubeJSQuery.Builder.merge(cubeJSQuery, rootCubeJSQuery);
     }
 
+    /**
+     * Create the CubeJS Query to get the results for an Experiment, this query has two parts:
+     *
+     * - The specific Experiment's Goal query: This Query is different for each Goal.
+     * - The Root Query: This is the same no matter the Goal of the Experiment, this is the follow:
+     *
+     * <code>
+     *     {
+     *         dimensions: ['Events.variant'],
+     *         "order": {
+     *              "Events.day": "asc",
+     *          },
+     *          "filters": [
+     *              {
+     *                  "member": "Events.experiment",
+     *                  "operator": "equals",
+     *                  "values": ["[experiment_id]"]
+     *              },
+     *              {
+     *                  "member": "Events.runningId",
+     *                  "operator": "equals",
+     *                  "values": ["[current_experiment_running_id]"]
+     *              }
+     *          ]
+     *     }
+     * </code>
+     *
+     * These two queries are merge to get the Experiment Query.
+     *
+     * @see BounceRateResultQuery
+     * @see ExitRateResultQuery
+     * @see ReachTargetAfterExperimentPageResultQuery
+     *
+     * @param experiment
+     * @return
+     */
     public CubeJSQuery create(final Experiment experiment){
         final CubeJSQuery cubeJSQuery = getMetricCubeJSQuery(experiment);
         final CubeJSQuery rootCubeJSQuery = createRootQuery(experiment, false);

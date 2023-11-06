@@ -20,6 +20,9 @@ import java.util.Optional;
 
 import static junit.framework.TestCase.*;
 
+/**
+ * test of {@link ExperimentUrlPatternCalculator}
+ */
 public class ExperimentUrlPatternCalculatorIntegrationTest {
 
 
