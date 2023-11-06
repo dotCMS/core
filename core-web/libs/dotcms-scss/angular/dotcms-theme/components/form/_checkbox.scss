@@ -1,4 +1,5 @@
 @use "variables" as *;
+@import "common";
 
 p-checkbox.p-element {
     gap: $spacing-1;
@@ -8,53 +9,50 @@ p-checkbox.p-element {
             border-color: $color-alert-red;
         }
     }
+}
 
-    .p-checkbox {
-        height: 1.5rem;
-        aspect-ratio: 1/1;
-        border-radius: $border-radius-sm;
-        border: 2px solid $color-palette-gray-400;
+.p-checkbox {
+    height: 1.5rem;
+    aspect-ratio: 1/1;
+    border-radius: $border-radius-sm;
+    border: $select-border-size solid $color-palette-gray-400;
 
-        &.p-checkbox-checked {
-            border-color: $color-palette-primary-500;
-        }
+    &.p-checkbox-checked,
+    &:has(.p-highlight) {
+        border-color: $color-palette-primary-500;
+    }
 
-        &.p-checkbox-disabled {
-            border-color: $color-palette-gray-400;
-            background-color: $color-palette-gray-200;
+    &.p-checkbox-disabled {
+        border-color: $color-palette-gray-400;
+        background-color: $color-palette-gray-200;
 
-            .p-checkbox-box.p-highlight {
-                .p-checkbox-icon {
-                    color: $color-palette-gray-400;
-                }
+        .p-checkbox-box.p-highlight {
+            .p-checkbox-icon {
+                color: $color-palette-gray-400;
             }
-        }
-
-        .p-checkbox-box {
-            height: 1.25rem;
-            aspect-ratio: 1/1;
         }
     }
 
-    .p-checkbox-label {
+    .p-checkbox-box {
+        height: 1.25rem;
+        aspect-ratio: 1/1;
+    }
+
+    & + .p-checkbox-label {
         &.p-disabled {
             color: $color-palette-gray-500;
+        }
+        &:hover {
+            cursor: pointer;
         }
     }
 
     &:hover:not(:has(.p-checkbox-disabled)) {
         cursor: pointer;
-
-        .p-checkbox {
-            border-color: $color-palette-primary-400;
-        }
-
-        .p-checkbox-label:hover {
-            cursor: pointer;
-        }
+        border-color: $color-palette-primary-400;
     }
 
-    .p-checkbox-focused {
+    &.p-checkbox-focused {
         outline: $field-border-size solid $color-palette-primary-op-20;
     }
 }
