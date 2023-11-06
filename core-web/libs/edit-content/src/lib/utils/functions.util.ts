@@ -1,13 +1,16 @@
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { CALENDAR_FIELD_TYPES } from './mocks';
-
+import {
+    CALENDAR_FIELD_TYPES,
+    FLATTENED_FIELD_TYPES
+} from '../models/dot-edit-content-field.constant';
 import {
     DotEditContentFieldSingleSelectableDataType,
     FIELD_TYPES
 } from '../models/dot-edit-content-field.enum';
 import { DotEditContentFieldSingleSelectableDataTypes } from '../models/dot-edit-content-field.type';
 
+// This function is used to cast the value to a correct type for the Angular Form if the field is a single selectable field
 export const castSingleSelectableValue = (
     value: string,
     type: string
@@ -17,7 +20,7 @@ export const castSingleSelectableValue = (
     }
 
     if (type === DotEditContentFieldSingleSelectableDataType.BOOL) {
-        return value === 'true';
+        return value.toLowerCase().trim() === 'true';
     }
 
     if (
@@ -30,30 +33,22 @@ export const castSingleSelectableValue = (
     return value;
 };
 
+// This function creates the model for the Components that use the Single Selectable Field, like the Select, Radio Button and Checkbox
 export const getSingleSelectableFieldOptions = (
     options: string,
     dataType: string
 ): { label: string; value: DotEditContentFieldSingleSelectableDataTypes }[] => {
-    const lines = options?.split('\r\n');
+    const lines = (options?.split('\r\n') ?? []).filter((line) => line.trim() !== '');
 
-    if (lines.length === 0) {
-        return [];
-    }
-
-    const result = lines?.map((line) => {
-        const [label, value] = line.split('|');
-        if (!value) {
-            return { label, value: castSingleSelectableValue(label, dataType) };
-        }
+    return lines?.map((line) => {
+        const [label, value = label] = line.split('|').map((value) => value.trim());
 
         return { label, value: castSingleSelectableValue(value, dataType) };
     });
-
-    return result;
 };
 
 // This function is used to cast the value to a correct type for the Angular Form
-export const getFinalCastedValue = (value: string | null, field: DotCMSContentTypeField) => {
+export const getFinalCastedValue = (value: string | undefined, field: DotCMSContentTypeField) => {
     if (CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
         const parseResult = new Date(value);
 
@@ -62,8 +57,9 @@ export const getFinalCastedValue = (value: string | null, field: DotCMSContentTy
         return isNaN(parseResult.getTime()) ? value && new Date() : parseResult;
     }
 
-    return (
-        castSingleSelectableValue(value, field.dataType) ??
-        castSingleSelectableValue(value, field.dataType)
-    );
+    if (FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
+        return value?.split(',').map((value) => value.trim());
+    }
+
+    return castSingleSelectableValue(value, field.dataType);
 };
