@@ -28,7 +28,7 @@ export default {
             control: { type: 'select' }
         },
         type: {
-            options: ['-', 'p-button-text', 'p-button-outlined'],
+            options: ['-', 'p-button-text', 'p-button-outlined', 'p-button-link'],
             control: { type: 'select' }
         },
         iconPos: {
