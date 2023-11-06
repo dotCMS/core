@@ -7,6 +7,7 @@ import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.annotation.ValueType;
 import java.io.File;
+import java.io.Serializable;
 import java.util.List;
 import org.immutables.value.Value;
 import org.jboss.logging.Logger;
@@ -16,7 +17,7 @@ import org.jboss.logging.Logger;
  */
 @ValueType
 @Value.Immutable
-public interface AbstractPullTaskParams<T> {
+public interface AbstractPullTaskParams<T> extends Serializable {
 
     File destination();
 

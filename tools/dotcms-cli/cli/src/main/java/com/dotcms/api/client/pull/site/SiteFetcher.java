@@ -7,6 +7,7 @@ import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.GetSiteByNameRequest;
 import com.dotcms.model.site.Site;
 import com.dotcms.model.site.SiteView;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +18,9 @@ import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 
 @Dependent
-public class SiteFetcher implements ContentFetcher<SiteView> {
+public class SiteFetcher implements ContentFetcher<SiteView>, Serializable {
+
+    private static final long serialVersionUID = 1082298802098576444L;
 
     @Inject
     protected RestClientFactory clientFactory;

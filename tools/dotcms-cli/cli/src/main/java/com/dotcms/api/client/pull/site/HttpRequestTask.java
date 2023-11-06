@@ -12,9 +12,9 @@ import java.util.concurrent.RecursiveTask;
  */
 public class HttpRequestTask extends RecursiveTask<List<SiteView>> {
 
-    private SiteFetcher siteFetcher;
+    private final SiteFetcher siteFetcher;
 
-    private List<Site> sites;
+    private final List<Site> sites;
 
     private static final int THRESHOLD = 10;
 
