@@ -10,9 +10,12 @@ import com.dotmarketing.util.Logger;
 import java.sql.SQLException;
 
 /**
- * This Upgrade Task adds the publish_date and unpublish_date columns to the contentlet_version_info table
+ * This Upgrade Task adds the publish_date column to the contentlet_version_info table
  */
 public class Task230922AddPublishDateToContentletVersionInfo implements StartupTask {
+
+    public static final String ADD_PUBLISH_DATE_COLUMN =
+            "ALTER TABLE contentlet_version_info ADD publish_date TIMESTAMPTZ NULL";
 
     @Override
     public boolean forceRun() {
@@ -24,8 +27,8 @@ public class Task230922AddPublishDateToContentletVersionInfo implements StartupT
         if (forceRun()) {
             final DotConnect dotConnect = new DotConnect();
             try {
-                Logger.info(this, "Adding the 'publish_date' and 'unpublish_date' columns to the 'contentlet_version_info' table");
-                dotConnect.executeStatement(addPublishAndUnpublishDateColumns());
+                Logger.info(this, "Adding the 'publish_date' column to the 'contentlet_version_info' table");
+                dotConnect.executeStatement(ADD_PUBLISH_DATE_COLUMN);
                 Logger.info(this, "Setting the 'publish_date' column to the current version timestamp for existing content");
                 dotConnect.executeStatement("UPDATE contentlet_version_info SET publish_date = version_ts WHERE live_inode IS NOT NULL");
             } catch (SQLException e) {
@@ -34,15 +37,7 @@ public class Task230922AddPublishDateToContentletVersionInfo implements StartupT
         }
     }
 
-        private String addPublishAndUnpublishDateColumns() {
-            final String dataBaseFieldType = DbConnectionFactory.isMsSql() ? "DATETIMEOFFSET(3)" : "TIMESTAMPTZ";
-
-            return String.format(
-                    "ALTER TABLE contentlet_version_info ADD publish_date %s NULL, ADD unpublish_date %s NULL",
-                    dataBaseFieldType, dataBaseFieldType);
-        }
-
-        private boolean hasPublishDateColumn() {
+    private boolean hasPublishDateColumn() {
         final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
 
         try {

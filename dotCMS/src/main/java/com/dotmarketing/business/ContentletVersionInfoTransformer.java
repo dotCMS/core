@@ -46,7 +46,6 @@ public class ContentletVersionInfoTransformer implements DBTransformer<Contentle
         versionInfo.setVersionTs((Date) map.get("version_ts"));
         versionInfo.setVariant(map.get("variant_id").toString());
         versionInfo.setPublishDate((Date) map.get("publish_date"));
-        versionInfo.setUnpublishDate((Date) map.get("unpublish_date"));
         return versionInfo;
     }
 }

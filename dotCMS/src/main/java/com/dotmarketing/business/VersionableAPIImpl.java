@@ -436,7 +436,6 @@ public class VersionableAPIImpl implements VersionableAPI {
         final ContentletVersionInfo newInfo = Sneaky.sneak(()-> (ContentletVersionInfo) BeanUtils.cloneBean(contentletVersionInfo.get())) ;
         newInfo.setLiveInode( null );
         newInfo.setPublishDate(null);
-        newInfo.setUnpublishDate(new Date());
         versionableFactory.saveContentletVersionInfo( newInfo, true );
     }
 
@@ -501,7 +500,6 @@ public class VersionableAPIImpl implements VersionableAPI {
             final ContentletVersionInfo newInfo = Sneaky.sneak(()-> (ContentletVersionInfo) BeanUtils.cloneBean(info.get())) ;
             newInfo.setLiveInode(versionable.getInode());
             newInfo.setPublishDate(new Date());
-            newInfo.setUnpublishDate(null);
             versionableFactory.saveContentletVersionInfo( newInfo, true );
         } else {
 
@@ -753,7 +751,6 @@ public class VersionableAPIImpl implements VersionableAPI {
             info.setLockedOn(contentletVersionInfo.getLockedOn());
             info.setWorkingInode(contentletVersionInfo.getWorkingInode());
             info.setPublishDate(contentletVersionInfo.getPublishDate());
-            info.setUnpublishDate(contentletVersionInfo.getUnpublishDate());
 			versionableFactory.saveContentletVersionInfo(info, true);
 		}
 	}

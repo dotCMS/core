@@ -374,17 +374,6 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             map.put("publishDate", versionPublishDate != null ? versionPublishDate :
                     Try.of(contentlet::getModDate).getOrNull());
         }
-
-        // If the contentlet is not live, get the unpublish date from the version info if it exists
-        // unless the contentlet has an unpublish date property already set
-        final Object contentUnpublishDate = contentlet.get("unpublishDate");
-        final Object versionUnpublishDate = versionInfo.map(ContentletVersionInfo::getUnpublishDate)
-                .orElse(null);
-        if (null != contentUnpublishDate) {
-            map.put("unpublishDate", contentUnpublishDate);
-        } else if (!contentlet.isLive() && null != versionUnpublishDate)  {
-            map.put("unpublishDate", versionUnpublishDate);
-        }
     }
 
 }

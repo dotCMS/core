@@ -15,8 +15,6 @@ public class ContentletVersionInfo extends VersionInfo implements Serializable {
 
     private Date publishDate;
 
-    private Date unpublishDate;
-
     public String getVariant() {
         return UtilMethods.isSet(variant) ? variant : VariantAPI.DEFAULT_VARIANT.name();
     }
@@ -38,14 +36,6 @@ public class ContentletVersionInfo extends VersionInfo implements Serializable {
 
     public void setPublishDate(Date publishDate) {
         this.publishDate = publishDate;
-    }
-
-    public Date getUnpublishDate() {
-        return unpublishDate;
-    }
-
-    public void setUnpublishDate(Date unpublishDate) {
-        this.unpublishDate = unpublishDate;
     }
 
     @Override

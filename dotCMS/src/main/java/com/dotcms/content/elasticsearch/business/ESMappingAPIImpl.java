@@ -420,8 +420,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			loadDateTimeFieldValue(contentletMap,
 					ESMappingConstants.SYS_PUBLISH_DATE, versionInfo.get().getPublishDate());
-			loadDateTimeFieldValue(contentletMap,
-					ESMappingConstants.SYS_UNPUBLISH_DATE, versionInfo.get().getUnpublishDate());
 
 			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(versionInfo.get().getVersionTs()));
 			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(versionInfo.get().getVersionTs()));

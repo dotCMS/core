@@ -3317,13 +3317,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Validations
         assertNotNull(isLive);
         assertFalse(isLive);
-
-        final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI()
-                .getContentletVersionInfo(contentlet.getIdentifier(),
-                        contentlet.getLanguageId(), contentlet.getVariantId());
-        final Date unpublishDate = versionInfo.map(ContentletVersionInfo::getUnpublishDate).orElse(null);
-        assertNotNull(unpublishDate);
-
     }
 
     /**
@@ -8348,8 +8341,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     /**
      * Method to test: {@link ESContentletAPIImpl#publish(Contentlet, User, boolean)}
      * When: You have live and not live contentlets
-     * Should: Update publish_date when contentlet is published,
-     * update unpublish_date when contentlet is unpublished
+     * Should: Update publish_date when contentlet is published
      */
     @Test
     public void getMostRecentPublishedContent() throws Exception {
@@ -8383,24 +8375,5 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         assertNotNull(mostRecentPublishedContent);
         assertEquals(contentInode, mostRecentPublishedContent.getInode());
-
-        // unpublish contentlet
-        ContentletDataGen.unpublish(publishedContentlet);
-
-        // query unpublished contentlet in the last half hour
-        final Date unpublishCurrentDate = new Date();
-        final String unpublishCurrentDateForQuery = datetimeFormat.format(unpublishCurrentDate);
-
-        final Contentlet mostRecentUnpublishedContent = contentletAPI.search(
-                String.format( "+contentType:%s +sysUnpublishDate:[%s TO %s]",
-                        contentTypeVarName, currentDateLessHalfHourForQuery, unpublishCurrentDateForQuery),
-                        -1, 0, "", user, false)
-                .stream()
-                .findFirst()
-                .orElse(null);
-
-        assertNotNull(mostRecentUnpublishedContent);
-        assertEquals(contentInode, mostRecentUnpublishedContent.getInode());
-
     }
 }
