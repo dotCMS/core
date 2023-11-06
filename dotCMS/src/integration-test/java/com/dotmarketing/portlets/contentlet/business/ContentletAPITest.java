@@ -3318,12 +3318,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertNotNull(isLive);
         assertFalse(isLive);
 
-        final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI()
-                .getContentletVersionInfo(contentlet.getIdentifier(),
-                        contentlet.getLanguageId(), contentlet.getVariantId());
-        final Date unpublishDate = versionInfo.map(ContentletVersionInfo::getUnpublishDate).orElse(null);
-        assertNotNull(unpublishDate);
-
     }
 
     /**
@@ -8348,12 +8342,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     /**
      * Method to test: {@link ESContentletAPIImpl#publish(Contentlet, User, boolean)}
      * When: You have live and not live contentlets
-<<<<<<< HEAD
      * Should: Update publish_date when contentlet is published
-=======
-     * Should: Update publish_date when contentlet is published,
-     * update unpublish_date when contentlet is unpublished
->>>>>>> dca2283c43 (fix: add publish and unpublish date (#25233))
      */
     @Test
     public void getMostRecentPublishedContent() throws Exception {
