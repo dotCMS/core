@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "ff201914-9e6d-46bb-be83-38d2370d5cd9",
+		"_postman_id": "cb1ffd8e-2d07-416c-a68c-75363b4e1058",
 		"name": "Push Publish from sender",
 		"description": "Verifies that the behavior of Push Publishing using both the old \"tokenless\" and the new token approach are working as expected.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "11174695"
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
@@ -20,7 +20,7 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											""
+											"postman.setNextRequest(\"4500400-a6465223-8324-450d-8204-34c11f0f3e0f\")"
 										],
 										"type": "text/javascript"
 									}
@@ -2428,6 +2428,10 @@
 		},
 		{
 			"key": "statusCheckTimeout",
+			"value": ""
+		},
+		{
+			"key": "sendingToAllEnvs",
 			"value": ""
 		}
 	]
