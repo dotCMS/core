@@ -4,5 +4,6 @@ export enum FIELD_TYPES {
     TEXTAREA = 'Textarea',
     SELECT = 'Select',
     RADIO = 'Radio',
-    CHECKBOX = 'Checkbox'
+    CHECKBOX = 'Checkbox',
+    BINARY = 'Binary'
 }

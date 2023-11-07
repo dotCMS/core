@@ -77,7 +77,6 @@ public class Config {
 
     //Object Config properties      n
     public static javax.servlet.ServletContext CONTEXT = null;
-    public static String CONTEXT_PATH = null;
 
 
     //Config internal properties
@@ -776,7 +775,6 @@ public class Config {
      */
     public static void setMyApp(javax.servlet.ServletContext myApp) {
         CONTEXT = myApp;
-        CONTEXT_PATH = myApp.getRealPath("/");
     }
 
 
