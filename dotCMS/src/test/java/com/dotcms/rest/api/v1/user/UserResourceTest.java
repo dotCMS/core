@@ -75,58 +75,60 @@ public class UserResourceTest extends UnitTestBase {
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
 
         Config.CONTEXT = context;
-
-        when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
-        when(webResource.init(null, request, response, true, null)).thenReturn(initDataObject);
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session);
-        when(request.getSession(false)).thenReturn(session);
-        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
-
-        String filter = "filter";
-        int page = 3;
-        int perPage = 4;
-        final List<User> users = new ArrayList<>();
-        Response responseExpected = Response.ok(new ResponseEntityView<>(users)).build();
-        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
-        when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
-
-        final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
-                                                                 .setUserAPI(userAPI)
-                                                                 .setHostAPI(siteAPI)
-                                                                 .setRoleAPI(roleAPI)
-                                                                 .setErrorHelper(errorHelper);
-        UserResource userResource =
-                new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
-
         try {
+            when(initDataObject.getUser()).thenReturn(user);
+            when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
+            when(webResource.init(null, request, response, true, null)).thenReturn(initDataObject);
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession()).thenReturn(session);
+            when(request.getSession(false)).thenReturn(session);
+            when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
 
-            UpdateUserForm updateUserForm = new UpdateUserForm.Builder()/*.userId("dotcms.org.1")*/.givenName("Admin").surname("User Admin").email("admin@dotcms.com").build();
-            userResource.update(request, response, updateUserForm);
-            fail ("Should throw a ValidationException");
-        } catch (Exception e) {
-            e.printStackTrace();
+            String filter = "filter";
+            int page = 3;
+            int perPage = 4;
+            final List<User> users = new ArrayList<>();
+            Response responseExpected = Response.ok(new ResponseEntityView<>(users)).build();
+            final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+            when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
+
+            final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
+                                                                     .setUserAPI(userAPI)
+                                                                     .setHostAPI(siteAPI)
+                                                                     .setRoleAPI(roleAPI)
+                                                                     .setErrorHelper(errorHelper);
+            UserResource userResource =
+                    new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
+
+            try {
+
+                UpdateUserForm updateUserForm = new UpdateUserForm.Builder()/*.userId("dotcms.org.1")*/.givenName("Admin").surname("User Admin").email("admin@dotcms.com").build();
+                userResource.update(request, response, updateUserForm);
+                fail ("Should throw a ValidationException");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            try {
+
+                UpdateUserForm updateUserForm = new UpdateUserForm.Builder().userId("dotcms.org.1")/*.givenName("Admin")*/.surname("User Admin").email("admin@dotcms.com").build();
+                userResource.update(request, response, updateUserForm);
+                fail ("Should throw a ValidationException");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            try {
+
+                UpdateUserForm updateUserForm = new UpdateUserForm.Builder()/*.userId("dotcms.org.1")*/.givenName("Admin")/*.surname("User Admin")*/.email("admin@dotcms.com").build();
+                userResource.update(request, response, updateUserForm);
+                fail ("Should throw a ValidationException");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } finally {
+            Config.CONTEXT = null;
         }
-
-        try {
-
-            UpdateUserForm updateUserForm = new UpdateUserForm.Builder().userId("dotcms.org.1")/*.givenName("Admin")*/.surname("User Admin").email("admin@dotcms.com").build();
-            userResource.update(request, response, updateUserForm);
-            fail ("Should throw a ValidationException");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        try {
-
-            UpdateUserForm updateUserForm = new UpdateUserForm.Builder()/*.userId("dotcms.org.1")*/.givenName("Admin")/*.surname("User Admin")*/.email("admin@dotcms.com").build();
-            userResource.update(request, response, updateUserForm);
-            fail ("Should throw a ValidationException");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
 
     }
 
@@ -149,76 +151,83 @@ public class UserResourceTest extends UnitTestBase {
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
         RestUtilTest.initMockContext();
+        try {
+            User user = Mockito.mock(User.class);
+            UserUtilTest.set(user);
+            user.setCompanyId(User.DEFAULT + "NO");
+            user.setUserId("dotcms.org.1");
 
-        User user = Mockito.mock(User.class);
-        UserUtilTest.set(user);
-        user.setCompanyId(User.DEFAULT + "NO");
-        user.setUserId("dotcms.org.1");
+            final User systemUser = new User();
 
-        final User systemUser = new User();
+            when(user.clone()).thenReturn(user);
+            when(user.getUserId()).thenReturn("dotcms.org.1");
+            when(initDataObject.getUser()).thenReturn(user);
+            when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
+            when(userAPI.getSystemUser()).thenReturn(systemUser);
+            when(userAPI
+                    .loadUserById(Mockito.anyString(), Mockito.any(User.class),
+                            Mockito.anyBoolean()))
+                    .thenReturn(user);
+            when(webResource.init(request, httpServletResponse, true)).thenReturn(initDataObject);
+            when(request.getSession()).thenReturn(session);
+            when(request.getSession(false)).thenReturn(session);
+            when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(
+                    new Locale.Builder().setLanguage("en").setRegion("US").build());
+            when(loginService.passwordMatch("password", user)).thenReturn(true);
 
-        when(user.clone()).thenReturn(user);
-        when(user.getUserId()).thenReturn("dotcms.org.1");
-        when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
-        when(userAPI.getSystemUser()).thenReturn(systemUser);
-        when(userAPI
-                .loadUserById(Mockito.anyString(), Mockito.any(User.class), Mockito.anyBoolean()))
-                .thenReturn(user);
-        when(webResource.init(request, httpServletResponse, true)).thenReturn(initDataObject);
-        when(request.getSession()).thenReturn(session);
-        when(request.getSession(false)).thenReturn(session);
-        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
-        when(loginService.passwordMatch("password", user)).thenReturn(true);
+            final DotRestInstanceProvider helperInstanceProvider = new DotRestInstanceProvider()
+                    .setRoleAPI(roleAPI)
+                    .setUserAPI(userAPI)
+                    .setLayoutAPI(layoutAPI)
+                    .setHostWebAPI(hostWebAPI)
+                    .setUserWebAPI(userWebAPI)
+                    .setPermissionAPI(permissionAPI)
+                    .setUserProxyAPI(userProxyAPI)
+                    .setLoginService(loginService);
+            final UserResourceHelper userHelper = new UserResourceHelper(helperInstanceProvider);
 
-        final DotRestInstanceProvider helperInstanceProvider = new DotRestInstanceProvider()
-                                                                       .setRoleAPI(roleAPI)
-                                                                       .setUserAPI(userAPI)
-                                                                       .setLayoutAPI(layoutAPI)
-                                                                       .setHostWebAPI(hostWebAPI)
-                                                                       .setUserWebAPI(userWebAPI)
-                                                                       .setPermissionAPI(permissionAPI)
-                                                                       .setUserProxyAPI(userProxyAPI)
-                                                                       .setLoginService(loginService);
-        final UserResourceHelper userHelper = new UserResourceHelper(helperInstanceProvider);
+            String filter = "filter";
+            int page = 3;
+            int perPage = 4;
+            final List<User> users = new ArrayList<>();
+            Response responseExpected = Response.ok(new ResponseEntityView<>(users)).build();
+            final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+            when(paginationUtil.getPage(request, user, filter, page, perPage)).thenReturn(
+                    responseExpected);
 
-        String filter = "filter";
-        int page = 3;
-        int perPage = 4;
-        final List<User> users = new ArrayList<>();
-        Response responseExpected = Response.ok(new ResponseEntityView<>(users)).build();
-        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
-        when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
+            final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
+                    .setUserAPI(userAPI)
+                    .setHostAPI(siteAPI)
+                    .setRoleAPI(roleAPI)
+                    .setErrorHelper(errorHelper);
+            UserResource userResource =
+                    new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
-        final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
-                                                                 .setUserAPI(userAPI)
-                                                                 .setHostAPI(siteAPI)
-                                                                 .setRoleAPI(roleAPI)
-                                                                 .setErrorHelper(errorHelper);
-        UserResource userResource =
-                new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
+            UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
+                    .userId("dotcms.org.1")
+                    .givenName("Admin")
+                    .surname("User Admin")
+                    .email("admin@dotcms.com")
+                    .currentPassword("password")
+                    .build();
 
-        UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
-                .userId("dotcms.org.1")
-                .givenName("Admin")
-                .surname("User Admin")
-                .email("admin@dotcms.com")
-                .currentPassword("password")
-                .build();
+            Response response = userResource.update(request, httpServletResponse, updateUserForm);
+            RestUtilTest.verifySuccessResponse(response);
 
-        Response response = userResource.update(request, httpServletResponse, updateUserForm);
-        RestUtilTest.verifySuccessResponse(response);
+            Map userMap = Map.class.cast(
+                    ResponseEntityView.class.cast(response.getEntity()).getEntity());
 
-        Map userMap = Map.class.cast(ResponseEntityView.class.cast(response.getEntity()).getEntity());
+            assertTrue(!userMap.isEmpty());
+            assertTrue(userMap.containsKey("reauthenticate"));
+            assertTrue(userMap.get("reauthenticate").equals(false));
+            assertTrue(userMap.containsKey("userID"));
+            assertTrue(userMap.get("userID").equals("dotcms.org.1"));
+            assertTrue(userMap.containsKey("user"));
 
-        assertTrue(!userMap.isEmpty());
-        assertTrue(userMap.containsKey("reauthenticate"));
-        assertTrue(userMap.get("reauthenticate").equals(false));
-        assertTrue(userMap.containsKey("userID"));
-        assertTrue(userMap.get("userID").equals("dotcms.org.1"));
-        assertTrue(userMap.containsKey("user"));
-
-        verify(userAPI).save(user, systemUser, false, false);
+            verify(userAPI).save(user, systemUser, false, false);
+        } finally {
+            RestUtilTest.cleanupContext();
+        }
     }
 
     @Test
@@ -240,72 +249,78 @@ public class UserResourceTest extends UnitTestBase {
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
         RestUtilTest.initMockContext();
+        try {
+            final User user = new User();
+            user.setCompanyId(User.DEFAULT + "NO");
+            user.setUserId("dotcms.org.1");
 
-        final User user = new User();
-        user.setCompanyId(User.DEFAULT + "NO");
-        user.setUserId("dotcms.org.1");
+            final User systemUser = new User();
 
-        final User systemUser = new User();
+            when(initDataObject.getUser()).thenReturn(user);
+            when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
+            when(userAPI.getSystemUser()).thenReturn(systemUser);
+            when(userAPI.loadUserById("dotcms.org.1", systemUser, false)).thenReturn(user);
+            when(webResource.init(request, httpServletResponse, true)).thenReturn(initDataObject);
+            when(request.getSession()).thenReturn(session);
+            when(request.getSession(false)).thenReturn(session);
+            when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(
+                    new Locale.Builder().setLanguage("en").setRegion("US").build());
+            when(loginService.passwordMatch("password", user)).thenReturn(true);
 
-        when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
-        when(userAPI.getSystemUser()).thenReturn(systemUser);
-        when(userAPI.loadUserById("dotcms.org.1", systemUser, false)).thenReturn(user);
-        when(webResource.init(request, httpServletResponse, true)).thenReturn(initDataObject);
-        when(request.getSession()).thenReturn(session);
-        when(request.getSession(false)).thenReturn(session);
-        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
-        when(loginService.passwordMatch("password", user)).thenReturn(true);
+            final DotRestInstanceProvider helperInstanceProvider = new DotRestInstanceProvider()
+                    .setRoleAPI(roleAPI)
+                    .setUserAPI(userAPI)
+                    .setLayoutAPI(layoutAPI)
+                    .setHostWebAPI(hostWebAPI)
+                    .setUserWebAPI(userWebAPI)
+                    .setPermissionAPI(permissionAPI)
+                    .setUserProxyAPI(userProxyAPI)
+                    .setLoginService(loginService);
+            final UserResourceHelper userHelper = new UserResourceHelper(helperInstanceProvider);
+            String filter = "filter";
+            int page = 3;
+            int perPage = 4;
+            final List<User> users = new ArrayList<>();
+            Response responseExpected = Response.ok(new ResponseEntityView<>(users)).build();
+            final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+            when(paginationUtil.getPage(request, user, filter, page, perPage)).thenReturn(
+                    responseExpected);
+            final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
+                    .setUserAPI(userAPI)
+                    .setHostAPI(siteAPI)
+                    .setRoleAPI(roleAPI)
+                    .setErrorHelper(errorHelper);
+            UserResource userResource =
+                    new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
-        final DotRestInstanceProvider helperInstanceProvider = new DotRestInstanceProvider()
-                                                                       .setRoleAPI(roleAPI)
-                                                                       .setUserAPI(userAPI)
-                                                                       .setLayoutAPI(layoutAPI)
-                                                                       .setHostWebAPI(hostWebAPI)
-                                                                       .setUserWebAPI(userWebAPI)
-                                                                       .setPermissionAPI(permissionAPI)
-                                                                       .setUserProxyAPI(userProxyAPI)
-                                                                       .setLoginService(loginService);
-        final UserResourceHelper userHelper  = new UserResourceHelper(helperInstanceProvider);
-        String filter = "filter";
-        int page = 3;
-        int perPage = 4;
-        final List<User> users = new ArrayList<>();
-        Response responseExpected = Response.ok(new ResponseEntityView<>(users)).build();
-        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
-        when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
-        final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
-                                                                 .setUserAPI(userAPI)
-                                                                 .setHostAPI(siteAPI)
-                                                                 .setRoleAPI(roleAPI)
-                                                                 .setErrorHelper(errorHelper);
-        UserResource userResource =
-                new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
+            UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
+                    .userId("dotcms.org.1")
+                    .givenName("Admin")
+                    .surname("User Admin")
+                    .email("admin@dotcms.com")
+                    .currentPassword("password")
+                    .newPassword("new password")
+                    .build();
 
-        UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
-                .userId("dotcms.org.1")
-                .givenName("Admin")
-                .surname("User Admin")
-                .email("admin@dotcms.com")
-                .currentPassword("password")
-                .newPassword("new password")
-                .build();
+            Response response = userResource.update(request, httpServletResponse, updateUserForm);
+            RestUtilTest.verifySuccessResponse(response);
 
-        Response response = userResource.update(request, httpServletResponse, updateUserForm);
-        RestUtilTest.verifySuccessResponse(response);
+            Map userMap = Map.class.cast(
+                    ResponseEntityView.class.cast(response.getEntity()).getEntity());
 
-        Map userMap = Map.class.cast(ResponseEntityView.class.cast(response.getEntity()).getEntity());
+            assertTrue(!userMap.isEmpty());
+            assertTrue(userMap.containsKey("reauthenticate"));
+            assertTrue(userMap.get("reauthenticate").equals(true));
+            assertTrue(userMap.containsKey("userID"));
+            assertTrue(userMap.get("userID").equals("dotcms.org.1"));
+            assertTrue(userMap.containsKey("user"));
+            assertTrue(userMap.containsKey("user"));
+            assertTrue(((Map) userMap.get("user")).isEmpty());
 
-        assertTrue(!userMap.isEmpty());
-        assertTrue(userMap.containsKey("reauthenticate"));
-        assertTrue(userMap.get("reauthenticate").equals(true));
-        assertTrue(userMap.containsKey("userID"));
-        assertTrue(userMap.get("userID").equals("dotcms.org.1"));
-        assertTrue(userMap.containsKey("user"));
-        assertTrue(userMap.containsKey("user"));
-        assertTrue(((Map) userMap.get("user")).isEmpty());
-
-        verify(userAPI).save(user, systemUser, true, false);
+            verify(userAPI).save(user, systemUser, true, false);
+        } finally {
+            RestUtilTest.cleanupContext();
+        }
     }
 
     @Test
@@ -327,64 +342,70 @@ public class UserResourceTest extends UnitTestBase {
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
         RestUtilTest.initMockContext();
+        try {
+            final User user = new User();
+            user.setCompanyId(User.DEFAULT + "NO");
+            user.setUserId("dotcms.org.1");
 
-        final User user = new User();
-        user.setCompanyId(User.DEFAULT + "NO");
-        user.setUserId("dotcms.org.1");
+            final User systemUser = new User();
+            final Locale enUsLocale = new Locale.Builder().setLanguage("en").setRegion("US")
+                    .build();
+            systemUser.setLocale(enUsLocale);
+            when(initDataObject.getUser()).thenReturn(user);
+            when(userAPI.getSystemUser()).thenReturn(systemUser);
+            when(userAPI.loadUserById("dotcms.org.1", systemUser, false)).thenReturn(user);
+            when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
+            when(request.getSession()).thenReturn(session);
+            when(request.getSession(false)).thenReturn(session);
+            when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(enUsLocale);
+            when(loginService.passwordMatch("password", user)).thenReturn(false);
+            when(errorHelper
+                    .getErrorResponse(Response.Status.BAD_REQUEST, enUsLocale,
+                            "current.usermanager.password.incorrect"))
+                    .thenReturn(Response.status(Response.Status.BAD_REQUEST).build());
 
-        final User systemUser = new User();
-        final Locale enUsLocale = new Locale.Builder().setLanguage("en").setRegion("US").build();
-        systemUser.setLocale(enUsLocale);
-        when(initDataObject.getUser()).thenReturn(user);
-        when(userAPI.getSystemUser()).thenReturn(systemUser);
-        when(userAPI.loadUserById("dotcms.org.1", systemUser, false)).thenReturn(user);
-        when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
-        when(request.getSession()).thenReturn(session);
-        when(request.getSession(false)).thenReturn(session);
-        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(enUsLocale);
-        when(loginService.passwordMatch("password", user)).thenReturn(false);
-        when(errorHelper
-                     .getErrorResponse(Response.Status.BAD_REQUEST, enUsLocale, "current.usermanager.password.incorrect"))
-                .thenReturn(Response.status(Response.Status.BAD_REQUEST).build());
+            final DotRestInstanceProvider helperInstanceProvider = new DotRestInstanceProvider()
+                    .setRoleAPI(roleAPI)
+                    .setUserAPI(userAPI)
+                    .setLayoutAPI(layoutAPI)
+                    .setHostWebAPI(hostWebAPI)
+                    .setUserWebAPI(userWebAPI)
+                    .setPermissionAPI(permissionAPI)
+                    .setUserProxyAPI(userProxyAPI)
+                    .setLoginService(loginService);
+            final UserResourceHelper userHelper = new UserResourceHelper(helperInstanceProvider);
 
-        final DotRestInstanceProvider helperInstanceProvider = new DotRestInstanceProvider()
-                                                                       .setRoleAPI(roleAPI)
-                                                                       .setUserAPI(userAPI)
-                                                                       .setLayoutAPI(layoutAPI)
-                                                                       .setHostWebAPI(hostWebAPI)
-                                                                       .setUserWebAPI(userWebAPI)
-                                                                       .setPermissionAPI(permissionAPI)
-                                                                       .setUserProxyAPI(userProxyAPI)
-                                                                       .setLoginService(loginService);
-        final UserResourceHelper userHelper  = new UserResourceHelper(helperInstanceProvider);
+            String filter = "filter";
+            int page = 3;
+            int perPage = 4;
+            final List<User> users = new ArrayList<>();
+            Response responseExpected = Response.ok(new ResponseEntityView<>(users)).build();
+            final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+            when(paginationUtil.getPage(request, user, filter, page, perPage)).thenReturn(
+                    responseExpected);
 
-        String filter = "filter";
-        int page = 3;
-        int perPage = 4;
-        final List<User> users = new ArrayList<>();
-        Response responseExpected = Response.ok(new ResponseEntityView<>(users)).build();
-        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
-        when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
+            final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
+                    .setUserAPI(userAPI)
+                    .setHostAPI(siteAPI)
+                    .setRoleAPI(roleAPI)
+                    .setErrorHelper(errorHelper);
+            UserResource userResource =
+                    new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
-        final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
-                                                                 .setUserAPI(userAPI)
-                                                                 .setHostAPI(siteAPI)
-                                                                 .setRoleAPI(roleAPI)
-                                                                 .setErrorHelper(errorHelper);
-        UserResource userResource =
-                new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
+            UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
+                    .userId("dotcms.org.1")
+                    .givenName("Admin")
+                    .surname("User Admin")
+                    .email("admin@dotcms.com")
+                    .currentPassword("password")
+                    .newPassword("new password")
+                    .build();
 
-        UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
-                .userId("dotcms.org.1")
-                .givenName("Admin")
-                .surname("User Admin")
-                .email("admin@dotcms.com")
-                .currentPassword("password")
-                .newPassword("new password")
-                .build();
-
-        Response response = userResource.update(request, httpServletResponse, updateUserForm);
-        assertEquals(response.getStatus(), 400);
+            Response response = userResource.update(request, httpServletResponse, updateUserForm);
+            assertEquals(response.getStatus(), 400);
+        } finally {
+            RestUtilTest.cleanupContext();
+        }
     }
 
     /**
