@@ -94,10 +94,7 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
 
     private setIsEditable() {
         const type = this.file.mimeType?.split('/')[0];
-        this.contenttype = EDITABLE_FILE[type];
-        // If the file an unknown type, we check if it has content
-        this.isEditable = this.contenttype
-            ? this.EDITABLE_FILE_FUNCTION_MAP[this.contenttype]()
-            : !!this.file?.content;
+        this.contenttype = EDITABLE_FILE[type] || EDITABLE_FILE.unknown;
+        this.isEditable = this.EDITABLE_FILE_FUNCTION_MAP[this.contenttype]();
     }
 }
