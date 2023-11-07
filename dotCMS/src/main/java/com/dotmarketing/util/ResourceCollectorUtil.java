@@ -186,7 +186,7 @@ public class ResourceCollectorUtil {
         boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
 
         //Getting the context path
-        String contextPath = Config.CONTEXT_PATH;
+        String contextPath = Config.CONTEXT.getRealPath("/");
         if ( !contextPath.endsWith( File.separator ) ) {
             contextPath += File.separator;
         }
