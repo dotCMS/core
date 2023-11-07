@@ -1,6 +1,7 @@
 import { describe } from '@jest/globals';
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Type } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -18,7 +19,11 @@ import { DotEditContentTagFieldComponent } from '../../fields/dot-edit-content-t
 import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-text-area/dot-edit-content-text-area.component';
 import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-text-field/dot-edit-content-text-field.component';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
-import { FIELDS_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
+import {
+    FIELDS_MOCK,
+    FIELDS_WITH_CONTENTLET_MOCK,
+    createFormGroupDirectiveMock
+} from '../../utils/mocks';
 
 // This holds the mapping between the field type and the component that should be used to render it.
 // We need to hold this record here, because for some reason the references just fall to undefined.
@@ -93,3 +98,41 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
         });
     });
 });
+
+describe.each([...FIELDS_WITH_CONTENTLET_MOCK])(
+    'DotEditContentFieldComponent all fields with contentlets',
+    ({ fieldMock, contentlet }) => {
+        let spectator: Spectator<DotEditContentFieldComponent>;
+        const createComponent = createComponentFactory({
+            component: DotEditContentFieldComponent,
+            imports: [HttpClientTestingModule],
+            componentViewProviders: [
+                {
+                    provide: ControlContainer,
+                    useValue: createFormGroupDirectiveMock()
+                }
+            ],
+            providers: [FormGroupDirective]
+        });
+
+        beforeEach(async () => {
+            spectator = createComponent({
+                props: {
+                    field: fieldMock,
+                    contentlet
+                }
+            });
+        });
+
+        describe(`${fieldMock.fieldType} - ${fieldMock.dataType}`, () => {
+            it('should have contentlet', () => {
+                spectator.detectChanges();
+                const field = spectator.debugElement.query(
+                    By.css(`[data-testId="field-${fieldMock.variable}"]`)
+                );
+
+                expect(field.componentInstance.contentlet).toEqual(contentlet);
+            });
+        });
+    }
+);

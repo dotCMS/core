@@ -143,10 +143,9 @@ export class DotBinaryFieldComponent
         this.cd.detectChanges();
     }
 
+    // We don't need to write value. We use the field and contentlet inputs
     writeValue(): void {
-        /*
-            We can set a value here but we use the fields and contentlet to set the value
-        */
+        /* */
     }
 
     registerOnChange(fn: (value: string) => void) {

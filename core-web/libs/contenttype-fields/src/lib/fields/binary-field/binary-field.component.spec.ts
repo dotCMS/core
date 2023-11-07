@@ -1,6 +1,12 @@
 import { expect, it } from '@jest/globals';
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+import {
+    byTestId,
+    createComponentFactory,
+    createHostFactory,
+    Spectator,
+    SpectatorHost
+} from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -359,20 +365,8 @@ describe('DotBinaryFieldComponent', () => {
  * @class MockFormComponent
  */
 @Component({
-    selector: 'dot-app-mock-form',
-    imports: [
-        ButtonModule,
-        DialogModule,
-        MonacoEditorModule,
-        ReactiveFormsModule,
-        DotBinaryFieldComponent
-    ],
-    standalone: true,
-    template: `
-        <form [formGroup]="form">
-            <dot-binary-field [field]="field" formControlName="binaryField"></dot-binary-field>
-        </form>
-    `
+    selector: 'dot-custom-host',
+    template: ''
 })
 class MockFormComponent {
     field = FIELD;
@@ -382,25 +376,29 @@ class MockFormComponent {
 }
 
 describe('DotBinaryFieldComponent - ControlValueAccesor', () => {
-    let spectator: Spectator<MockFormComponent>;
-    const createComponent = createComponentFactory({
-        component: MockFormComponent
+    let spectator: SpectatorHost<DotBinaryFieldComponent, MockFormComponent>;
+    const createHost = createHostFactory({
+        component: DotBinaryFieldComponent,
+        host: MockFormComponent,
+        imports: [
+            ButtonModule,
+            DialogModule,
+            MonacoEditorModule,
+            ReactiveFormsModule,
+            DotBinaryFieldComponent
+        ]
     });
 
     beforeEach(() => {
-        spectator = createComponent();
+        spectator = createHost(` <form [formGroup]="form">
+            <dot-binary-field [field]="field" formControlName="binaryField"></dot-binary-field>
+        </form>`);
     });
 
     it('should set form value when binary file changes', () => {
-        const binaryFieldComponent = spectator.query(DotBinaryFieldComponent);
-
-        // Call the writeValue method from ControlValueAccesor
-        binaryFieldComponent.setTempFile(TEMP_FILE_MOCK);
-
-        // Get the form value
-        const formValue = spectator.component.form.get('binaryField').value;
-
-        // Check if the form value was set
-        expect(formValue).toBe(TEMP_FILE_MOCK.id);
+        // Call the onChange method from ControlValueAccesor
+        spectator.component.setTempFile(TEMP_FILE_MOCK);
+        const formValue = spectator.hostComponent.form.get('binaryField').value; // Get the form value
+        expect(formValue).toBe(TEMP_FILE_MOCK.id); // Check if the form value was set
     });
 });
