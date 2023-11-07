@@ -198,33 +198,3 @@ jobs:
           databaseType: ${{ matrix.databaseType }}
           LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
         if: success() && env.jobRun == 'true'
-  slack-notification:
-    name: Notification
-    runs-on: ubuntu-latest
-    env:
-      DOT_CICD_TARGET: core
-      GITHUB_USER: victoralfaro-dotcms
-      GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
-      PULL_REQUEST: ${{ github.event.number }}
-    if: success() || failure()
-    needs: [run-unit-tests-job, run-curl-tests-job, run-integration-tests-job]
-    steps:
-      - name: GITHUB CONTEXT
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-        if: env.DEBUG == 'true'
-      - name: Set Common Vars
-        run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "BUILD_ID=${{ github.head_ref }}" >> $GITHUB_ENV
-          else
-            echo "BUILD_ID=$(basename ${{ github.ref }})" >> $GITHUB_ENV
-          fi
-      - name: Notify through CI/CD slack action
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: dotcms/cicd-slack-action@master
-        with:
-          github-user: ${{ github.actor }}
-          branch: ${{ env.BUILD_ID }}
