@@ -107,7 +107,7 @@ public class DwrUtil {
         }
         if (loggedInUser == null) {
             SecurityLogger.logInfo(DwrUtil.class,
-                    "unauthorized attempt to call getUserById by user " + userId + " from "
+                    "Unauthorized attempt to call getLoggedInUser by user " + userId + " from "
                             + remoteIp);
             throw new DotSecurityException("not authorized");
         }
