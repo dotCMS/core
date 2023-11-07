@@ -449,7 +449,7 @@ public class FileUtil {
 			return ret;
 		}
 
-		String base = Config.CONTEXT_PATH;
+		String base = Config.CONTEXT.getRealPath("/");
 		base = (base.lastIndexOf(File.separatorChar) == base.length()-1) ? base.substring(0, base.lastIndexOf(File.separatorChar)) : base;
 		relativePath = relativePath.replace('/', File.separatorChar);
 
