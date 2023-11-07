@@ -1,27 +1,17 @@
 package com.dotcms.storage;
 
-import static com.dotcms.storage.StoragePersistenceAPI.HASH_OBJECT;
-import static com.dotcms.storage.model.BasicMetadataFields.*;
-import static com.dotmarketing.util.UtilMethods.isSet;
-
 import com.dotcms.storage.model.BasicMetadataFields;
 import com.dotcms.storage.model.Metadata;
-import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.MetadataCache;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
-import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import java.awt.Dimension;
+
 import java.io.File;
 import java.io.Serializable;
 import java.util.Collections;
@@ -34,26 +24,26 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static com.dotcms.storage.StoragePersistenceAPI.HASH_OBJECT;
+import static com.dotcms.storage.model.BasicMetadataFields.CONTENT_TYPE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.LENGTH_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.SIZE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.VERSION_KEY;
+import static com.dotmarketing.util.UtilMethods.isSet;
+
 /**
- * Default implementation
+ * This is the default implementation of the {@link FileStorageAPI} class.
  *
  * @author jsanca
  */
 public class FileStorageAPIImpl implements FileStorageAPI {
 
-    private volatile ObjectReaderDelegate objectReaderDelegate;
-    private volatile ObjectWriterDelegate objectWriterDelegate;
-    private volatile MetadataGenerator metadataGenerator;
+    private final ObjectReaderDelegate objectReaderDelegate;
+    private final ObjectWriterDelegate objectWriterDelegate;
+    private final MetadataGenerator metadataGenerator;
     private final StoragePersistenceProvider persistenceProvider;
     private final MetadataCache metadataCache;
 
-    /**
-     * Testing constructor
-     * @param objectReaderDelegate
-     * @param objectWriterDelegate
-     * @param metadataGenerator
-     * @param persistenceProvider
-     */
     @VisibleForTesting
     FileStorageAPIImpl(final ObjectReaderDelegate objectReaderDelegate,
             final ObjectWriterDelegate objectWriterDelegate,
@@ -70,8 +60,9 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      * Default constructor
      */
     public FileStorageAPIImpl() {
-        this(new JsonReaderDelegate<>(Map.class), new JsonWriterDelegate(),
-                new MetadataGeneratorImpl(), StoragePersistenceProvider.INSTANCE.get(), CacheLocator.getMetadataCache());
+        this(DEFAULT_OBJECT_READER_DELEGATE, DEFAULT_OBJECT_WRITER_DELEGATE,
+                DEFAULT_METADATA_GENERATOR, StoragePersistenceProvider.INSTANCE.get(),
+                CacheLocator.getMetadataCache());
     }
 
     /**
@@ -81,7 +72,6 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      */
     @Override
     public Map<String, Serializable> generateRawBasicMetaData(final File binary) {
-
         return this.generateBasicMetaData(binary, s -> true); // raw = no filter
     }
 
@@ -93,7 +83,6 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      */
     @Override
     public Map<String, Serializable> generateRawFullMetaData(final File binary, long maxLength) {
-
         return this.generateFullMetaData(binary, s -> true, maxLength); // raw = no filter
     }
 
@@ -107,7 +96,6 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      */
     private Map<String, Serializable> generateBasicMetaData(final File binary,
             final Predicate<String> metaDataKeyFilter) {
-
         if (this.validBinary(binary)) {
 
             final TreeMap<String, Serializable> standAloneMetadata = metadataGenerator.standAloneMetadata(binary);
@@ -132,8 +120,6 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         return ImmutableMap.of();
     }
 
-
-
     /**
      * Gets the full metadata from the binary, this could involved a more expensive process such as Tika, this method does not any stores but could do a filter anything
      * @param binary  {@link File} file to get the information
@@ -144,7 +130,6 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     private Map<String, Serializable> generateFullMetaData(final File binary,
             final Predicate<String> metaDataKeyFilter,
             final long maxLength) {
-
         TreeMap<String, Serializable> metadataMap = new TreeMap<>(Comparator.naturalOrder());
 
         try {
@@ -178,7 +163,6 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      * @return
      */
     private TreeMap<String, Serializable> ensureTypes(TreeMap<String, Serializable> metadataMap){
-
         final Map<String, BasicMetadataFields> metadataFieldsMap = BasicMetadataFields.keyMap();
         final Iterator<Entry<String, Serializable>> iterator = metadataMap.entrySet().iterator();
         while(iterator.hasNext()){
@@ -210,7 +194,6 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     @Override
     public Map<String, Serializable> generateMetaData(final File binary,
             final GenerateMetadataConfig configuration) throws DotDataException {
-
         final StorageKey storageKey = configuration.getStorageKey();
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(storageKey.getStorage());
         if(configuration.isStore()) {
@@ -313,7 +296,6 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     @SuppressWarnings("unchecked")
     private Map<String, Serializable> retrieveMetadata(final StorageKey storageKey,
             final StoragePersistenceAPI storage) throws DotDataException {
-
         final Map<String, Serializable> objectMap = (Map<String, Serializable>) storage
                 .pullObject(storageKey.getGroup(), storageKey.getPath(), this.objectReaderDelegate);
         Logger.debug(this, "Metadata read from path: " + storageKey.getPath());
@@ -329,7 +311,6 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      */
     private void storeMetadata(final StorageKey storageKey, final StoragePersistenceAPI storage,
             final Map<String, Serializable> metadataMap) throws DotDataException {
-
         final Map<String, Serializable> paramsMap = new HashMap<>(metadataMap);
         paramsMap.put(HASH_OBJECT, true);
 
@@ -345,7 +326,6 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      * @return
      */
     private boolean validBinary(final File binary) {
-
         return null != binary && binary.exists() && binary.canRead();
     }
 
@@ -356,7 +336,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      */
     private void checkOverride(final StoragePersistenceAPI storage,
             final GenerateMetadataConfig generateMetaDataConfiguration) throws DotDataException {
-            checkOverride(storage, generateMetaDataConfiguration.getStorageKey(), generateMetaDataConfiguration.isOverride());
+        checkOverride(storage, generateMetaDataConfiguration.getStorageKey(), generateMetaDataConfiguration.isOverride());
     }
 
     /**
@@ -366,15 +346,10 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      * @param override
      */
     private void checkOverride(final StoragePersistenceAPI storage, final StorageKey storageKey, final boolean override) throws DotDataException {
-
-        if (override && storage
-                .existsObject(storageKey.getGroup(), storageKey.getPath())) {
-
+        if (override && storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
             try {
-
                 storage.deleteObjectAndReferences(storageKey.getGroup(), storageKey.getPath());
-            } catch (Exception e) {
-
+            } catch (final Exception e) {
                 Logger.error(this.getClass(),
                         String.format("Unable to delete existing metadata file [%s] [%s]",
                                 storageKey.getPath(), e.getMessage()), e);
@@ -390,7 +365,6 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     @Override
     public Map<String, Serializable> retrieveMetaData(final FetchMetadataParams requestMetaData)
             throws DotDataException {
-
         if (requestMetaData.isCache()) {
             final Map<String, Serializable> metadataMap = metadataCache
                     .getMetadataMap(requestMetaData.getCacheKeySupplier().get());
