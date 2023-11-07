@@ -568,18 +568,23 @@ public class WebAssetHelper {
      */
     Contentlet checkinOrPublish(final Contentlet checkout, User user, final boolean live) throws DotDataException, DotSecurityException {
         if(live){
+            //if the desired state is live, and we need to publish the contentlet
+            //But checkout forces creation of a new version, so we need to check in first
             if(isNotSet(checkout.getInode())){
               Contentlet checkin = contentletAPI.checkin(checkout, user, false);
               contentletAPI.publish(checkin, user, false);
               return checkin;
             }
+            //Live means publish, so we need to publish the contentlet
             contentletAPI.publish(checkout, user, false);
             return checkout;
         } else {
+            //if the desired state is working we need to unpublish the contentlet
             if(checkout.isLive()){
                 contentletAPI.unpublish(checkout, user, false);
             }
         }
+        //and finally checkin the contentlet to persist the changes
         return contentletAPI.checkin(checkout, user, false);
     }
 
