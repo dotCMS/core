@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "ff201914-9e6d-46bb-be83-38d2370d5cd9",
+		"_postman_id": "7cc18377-59d6-4401-8c99-277a7d5c43cf",
 		"name": "Push Publish from sender",
 		"description": "Verifies that the behavior of Push Publishing using both the old \"tokenless\" and the new token approach are working as expected.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "11174695"
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
@@ -569,7 +569,9 @@
 										"exec": [
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
-											"});"
+											"});",
+											"",
+											"postman.setNextRequest()"
 										],
 										"type": "text/javascript"
 									}
@@ -2428,6 +2430,10 @@
 		},
 		{
 			"key": "statusCheckTimeout",
+			"value": ""
+		},
+		{
+			"key": "sendingToAllEnvs",
 			"value": ""
 		}
 	]
