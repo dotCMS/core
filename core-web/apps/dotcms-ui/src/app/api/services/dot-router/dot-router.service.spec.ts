@@ -205,6 +205,14 @@ describe('DotRouterService', () => {
         expect(service.isJSPPortlet()).toBeTruthy();
     });
 
+    it('should return true if the URL is pointing to a portlet is jsp', () => {
+        expect(service.isJSPPortletURL('/c/test')).toBeTruthy();
+    });
+
+    it('should return false if the URL is not pointing to a portlet is jsp', () => {
+        expect(service.isJSPPortletURL('/test')).toBeFalsy();
+    });
+
     it('should return true if edit page url', () => {
         router.routerState.snapshot.url = 'edit-page';
         expect(service.isEditPage()).toBe(true);

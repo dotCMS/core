@@ -298,6 +298,15 @@ export class DotRouterService {
     }
 
     /**
+     * Check if a URL is pointing to a JSP/iframe page
+     * @returns boolean
+     * @memberof DotRouterService
+     */
+    isJSPPortletURL(url): boolean {
+        return url.startsWith('/c/');
+    }
+
+    /**
      * Check if the current route is an edit page
      *
      * @returns boolean
