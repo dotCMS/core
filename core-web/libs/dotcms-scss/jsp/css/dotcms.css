@@ -4345,10 +4345,10 @@
 
 .dijitCheckBox {
     border-radius: 2px;
-    border: solid 1px #14151a;
+    border: solid 2px #14151a;
     background-color: #ffffff;
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
 }
 .dijitCheckBoxChecked {
     border: solid 1px var(--color-palette-primary-500);
@@ -4357,42 +4357,49 @@
         center center no-repeat;
 }
 .dijitCheckBoxDisabled {
-    border: solid 1px transparent;
+    border: solid 2px transparent;
     background: #afb3c0;
 }
 .dijitCheckBoxCheckedDisabled {
-    border: solid 1px transparent;
+    border: solid 2px transparent;
     background: #afb3c0
         url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSIxMHB4IiBoZWlnaHQ9IjhweCIgdmlld0JveD0iMCAwIDEwIDgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+ICAgICAgICA8dGl0bGU+U2hhcGU8L3RpdGxlPiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4gICAgPGRlZnM+PC9kZWZzPiAgICA8ZyBpZD0iU3ltYm9scyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+ICAgICAgICA8ZyBpZD0iY2hlY2tib3gtYWN0aXZlIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNC4wMDAwMDAsIC01LjAwMDAwMCkiIGZpbGw9IiNGRkZGRkYiPiAgICAgICAgICAgIDxwb2x5Z29uIGlkPSJTaGFwZSIgcG9pbnRzPSI3LjMxMDcyMDMyIDExLjQyMjQ0NDkgNC45ODYxOTU2MyA5LjA5NzkyMDE5IDQuMTk0NjMwODcgOS44ODM5MTA1NSA3LjMxMDcyMDMyIDEzIDE0IDYuMzEwNzIwMzIgMTMuMjE0MDA5NiA1LjUyNDcyOTk2Ij48L3BvbHlnb24+ICAgICAgICA8L2c+ICAgIDwvZz48L3N2Zz4=')
         center center no-repeat;
 }
 
 .dijitRadio {
-    border-radius: 9px;
+    border-radius: 12px;
     background-color: #ffffff;
-    border: solid 1px #14151a;
-    height: 18px;
-    width: 18px;
+    border: solid 2px #afb3c0;
+    height: 24px;
+    width: 24px;
 }
 .dijitRadioChecked {
-    border: solid 1px var(--color-palette-primary-500);
+    border: solid 2px var(--color-palette-primary-500);
     position: relative;
 }
 .dijitRadioChecked:before {
-    border-radius: 5px;
+    border-radius: 7px;
     background-color: var(--color-palette-primary-500);
     content: '';
-    height: 10px;
+    height: 14px;
     left: 50%;
-    margin-left: -5px;
-    margin-top: -5px;
+    margin-left: -7px;
+    margin-top: -7px;
     position: absolute;
     top: 50%;
-    width: 10px;
+    width: 14px;
+}
+.dijitRadioHover {
+    border-color: var(--color-palette-primary-400);
+    cursor: pointer;
+}
+.dijitRadioFocused {
+    outline: 1.5px solid var(--color-palette-primary-op-20);
 }
 .dijitRadioDisabled {
     background-color: transparent;
-    border: solid 1px #d1d4db;
+    border: solid 2px #d1d4db;
     position: relative;
 }
 .dijitRadioDisabled:before {
@@ -9463,7 +9470,7 @@ dl.vertical dt label {
 #checkbox-radio > .dijit,
 .radio > .dijit,
 .checkbox > .dijit {
-    margin-right: 0.25rem;
+    margin-right: 0.5rem;
 }
 
 .required::after {
