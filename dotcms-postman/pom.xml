@@ -73,6 +73,7 @@
                             <ignorePullFailures>true</ignorePullFailures>
                             <detachedMode>true</detachedMode>
                             <verbose>false</verbose>
+                            <followLogs>true</followLogs>
                             <services>
                                 <service>db-test</service>
                                 <service>elasticsearch-test</service>
