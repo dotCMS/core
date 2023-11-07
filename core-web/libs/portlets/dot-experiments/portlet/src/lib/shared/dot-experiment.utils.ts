@@ -20,7 +20,7 @@ import {
     PROP_NOT_FOUND,
     ReportSummaryLegendByBayesianStatus,
     SummaryLegend,
-    TIME_14_DAYS,
+    TIME_7_DAYS,
     TIME_90_DAYS
 } from '@dotcms/dotcms-models';
 
@@ -63,7 +63,7 @@ export const processExperimentConfigProps = (
 
     config['EXPERIMENTS_MIN_DURATION'] =
         configProps['EXPERIMENTS_MIN_DURATION'] === PROP_NOT_FOUND
-            ? TIME_14_DAYS
+            ? TIME_7_DAYS
             : daysToMilliseconds(+configProps['EXPERIMENTS_MIN_DURATION']);
     config['EXPERIMENTS_MAX_DURATION'] =
         configProps['EXPERIMENTS_MAX_DURATION'] === PROP_NOT_FOUND
