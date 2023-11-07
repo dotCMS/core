@@ -88,8 +88,8 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
 
     /**
      * Recursively build the file system tree for the children nodes
-     * @param errors
-     * @param rootNode
+     * @param errors the list of errors to add to
+     * @param rootNode the root node to process
      */
     private void handleChildren(ArrayList<Exception> errors, TreeNode rootNode) {
 
@@ -130,6 +130,11 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
 
     }
 
+    /**
+     * Processes the asset associated with the specified AssetView.
+     * @param folder the folder associated with the asset
+     * @param pushContext the push context
+     */
     private void doPushFolder(FolderView folder,  PushContext pushContext) {
         var isSite = Objects.equals(folder.path(), "/") && Objects.equals(folder.name(), "/");
         try {
@@ -195,6 +200,11 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
         }
     }
 
+    /**
+     * Performs the deletion of the specified folder.
+     * @param folder the folder to check
+     * @param pushContext the push context
+     */
     private void doDeleteFolder(FolderView folder, PushContext pushContext) {
         try {
             final Optional<Boolean> delete = pushContext.execDelete(String.format("%s/%s",folder.host(),folder.path()),
@@ -235,6 +245,12 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
         }
     }
 
+    /**
+     * Performs a push operation on the specified asset.
+     * @param folder the folder containing the asset
+     * @param asset the asset to push
+     * @param pushContext the push context
+     */
     private void doPushAsset(FolderView folder, AssetView asset, PushContext pushContext) {
         try {
             final String pushAssetKey = String.format("%s/%s/%s/%s/%s", params.localPaths().status(),
@@ -275,6 +291,12 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
         }
     }
 
+    /**
+     * Performs a delete operation on the specified asset.
+     * @param folder the folder containing the asset
+     * @param asset the asset to delete
+     * @param pushContext the push context
+     */
     private void doDeleteAsset(final FolderView folder, final AssetView asset, final PushContext pushContext) {
         try {
             // Check if we already deleted the folder

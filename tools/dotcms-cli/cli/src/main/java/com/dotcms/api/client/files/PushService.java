@@ -35,13 +35,12 @@ public interface PushService {
      * push operation asynchronously, displays a progress bar, and waits for the completion of the
      * push process.
      *
-     * @param output           the output option mixin
-     * @param maxRetryAttempts the maximum number of retry attempts in case of error
-     * @param treeNodePushInfo
-     * @param params
+     * @param output           the output option mixin*
+     * @param pushInfo  the tree node push info
+     * @param traverseParams All the parameters needed to traverse the tree
      * @throws RuntimeException if an error occurs during the push process
      */
     void processTreeNodes(OutputOptionMixin output,
-            TreeNodePushInfo treeNodePushInfo, PushTraverseParams params);
+            TreeNodePushInfo pushInfo, PushTraverseParams traverseParams);
 
 }

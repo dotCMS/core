@@ -42,8 +42,9 @@ public interface RemoteTraversalService {
      * performed asynchronously using a ForkJoinPool, and the progress is tracked and displayed
      * using the provided console progress bar.
      *
-     * @param params@return A list of exceptions encountered during the push process.
+     * @param traverseParams All the parameters needed to traverse the tree
+     * @return A list of exceptions encountered during the push process.
      */
-    List<Exception> pushTreeNode(PushTraverseParams params);
+    List<Exception> pushTreeNode(PushTraverseParams traverseParams);
 
 }

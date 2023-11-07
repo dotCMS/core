@@ -190,13 +190,13 @@ public class PushServiceImpl implements PushService {
      * push process.
      *
      * @param output   the output option mixin
-     * @param pushInfo
-     * @param params
+     * @param pushInfo the push info
+     * @param traverseParams the push traverse parameters
      * @throws RuntimeException if an error occurs during the push process
      */
     @ActivateRequestContext
     public void processTreeNodes(OutputOptionMixin output,
-            TreeNodePushInfo pushInfo, PushTraverseParams params) {
+            TreeNodePushInfo pushInfo, PushTraverseParams traverseParams) {
 
         var retryAttempts = 0;
         var failed = false;
@@ -205,8 +205,8 @@ public class PushServiceImpl implements PushService {
 
             if (retryAttempts > 0) {
                 //In order to retry we need to clear the context
-                params.pushContext().clear();
-                output.info(String.format("%n↺ Retrying push process [%d of %d]...", retryAttempts, params.maxRetryAttempts()));
+                traverseParams.pushContext().clear();
+                output.info(String.format("%n↺ Retrying push process [%d of %d]...", retryAttempts, traverseParams.maxRetryAttempts()));
             }
 
             // ConsoleProgressBar instance to handle the push progress bar
@@ -222,7 +222,7 @@ public class PushServiceImpl implements PushService {
             var isRetry = retryAttempts > 0;
             CompletableFuture<List<Exception>> pushTreeFuture = CompletableFuture.supplyAsync(
                     () -> remoteTraversalService.pushTreeNode(
-                            PushTraverseParams.builder().from(params)
+                            PushTraverseParams.builder().from(traverseParams)
                                     .progressBar(progressBar)
                                     .logger(logger)
                                     .isRetry(isRetry).build()
@@ -268,14 +268,14 @@ public class PushServiceImpl implements PushService {
             } catch (Exception e) {// Fail fast
 
                 failed = true;
-                if (retryAttempts + 1 <= params.maxRetryAttempts()) {
+                if (retryAttempts + 1 <= traverseParams.maxRetryAttempts()) {
                     output.info("\n\nFound errors during the push process:");
                     output.error(e.getMessage());
                 } else {
                     throw e;
                 }
             }
-        } while (failed && retryAttempts++ < params.maxRetryAttempts());
+        } while (failed && retryAttempts++ < traverseParams.maxRetryAttempts());
 
     }
 
