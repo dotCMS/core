@@ -22,7 +22,8 @@ import { BinaryFile } from '../../interfaces';
 
 export enum EDITABLE_FILE {
     image = 'image',
-    text = 'text'
+    text = 'text',
+    unknown = 'unknown'
 }
 
 type EDITABLE_FILE_FUNCTION_MAP = {
@@ -54,10 +55,11 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
 
     private readonly EDITABLE_FILE_FUNCTION_MAP: EDITABLE_FILE_FUNCTION_MAP = {
         [EDITABLE_FILE.image]: () => this.editableImage,
-        [EDITABLE_FILE.text]: () => !!this.file?.content
+        [EDITABLE_FILE.text]: () => !!this.file?.content,
+        [EDITABLE_FILE.unknown]: () => !!this.file?.content
     };
     private contenttype: EDITABLE_FILE;
-    isEditable = true;
+    isEditable = false;
 
     get dotThumbnailOptions(): DotThumbnailOptions {
         return {
@@ -93,6 +95,9 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
     private setIsEditable() {
         const type = this.file.mimeType?.split('/')[0];
         this.contenttype = EDITABLE_FILE[type];
-        this.isEditable = this.EDITABLE_FILE_FUNCTION_MAP[this.contenttype]?.();
+        // If the file an unknown type, we check if it has content
+        this.isEditable = this.contenttype
+            ? this.EDITABLE_FILE_FUNCTION_MAP[this.contenttype]()
+            : !!this.file?.content;
     }
 }
