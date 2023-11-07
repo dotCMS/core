@@ -1,19 +1,26 @@
 cube(`Events`, {
-  sql: `SELECT experiment,
-               lookbackwindow,
-               variant,
-               runningid,
-               toDateTime(toStartOfDay(toTimeZone(toDateTime(utc_time), 'UTC'), 'UTC'), 'UTC') as day,
-               min(CASE WHEN (isexperimentpage = true AND event_type = 'pageview') THEN utc_time END) as firstExperimentPageVisit,
-               max(CASE WHEN (istargetpage = true AND event_type = 'pageview') THEN utc_time END) as lastTargetPageVisit,
-               firstExperimentPageVisit is not null as isSession,
-               COUNT(CASE WHEN event_type = 'pageview' THEN 1 ELSE 0 END) AS pageviews,
-               arrayElement(arraySlice(groupArray(isexperimentpage), -1), 1) = true AS experimentPageLastVisited
-        FROM clickhouse_test_db.events
-        WHERE event_type = 'pageview'
-        GROUP BY experiment, runningid, lookbackwindow, variant, day
-        having isSession = 1
-        order by day`,
+  sql: `
+    WITH CountsAndLastURL AS (SELECT lookbackwindow, MAX(utc_time) AS maxDate
+                              FROM events
+                              GROUP BY lookbackwindow
+    )
+    SELECT
+      E.experiment,
+      E.lookbackwindow,
+      E.variant,
+      E.runningid,
+      toDateTime(toStartOfDay(toTimeZone(toDateTime(utc_time), 'UTC'), 'UTC'), 'UTC') as day,
+    min(CASE WHEN (isexperimentpage = true AND event_type = 'pageview') THEN utc_time END) as firstExperimentPageVisit,
+    max(CASE WHEN (istargetpage = true AND event_type = 'pageview') THEN utc_time END) as lastTargetPageVisit,
+    firstExperimentPageVisit is not null as isSession,
+    COUNT(CASE WHEN event_type = 'pageview' THEN 1 ELSE 0 END) AS pageviews,
+    SUM(CASE WHEN (E.isexperimentpage = true AND C.maxDate = E.utc_time AND event_type = 'pageview') THEN 1 ELSE 0 END) as experimentPageLastVisited
+    FROM events E JOIN CountsAndLastURL C ON C.lookbackwindow = E.lookbackwindow
+    WHERE event_type = 'pageview'
+    GROUP BY experiment, runningid, lookbackwindow, variant, day
+    having isSession = 1
+    order by day
+  `,
   preAggregations: {
     // Pre-Aggregations definitions go here
     // Learn more here: https://cube.dev/docs/caching/pre-aggregations/getting-started
@@ -78,7 +85,7 @@ cube(`Events`, {
       type: `count`,
       sql: `lookbackwindow`,
       filters: [{
-        sql: `experimentPageLastVisited != 1`
+        sql: `experimentPageLastVisited == 0`
       }]
     },
     targetVisitedAfterConvertionRate: {
