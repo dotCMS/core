@@ -1,6 +1,8 @@
 package com.dotcms.storage;
 
+import com.dotcms.enterprise.achecker.parsing.EmptyIterable;
 import com.dotmarketing.exception.DotDataException;
+
 import java.io.File;
 import java.io.Serializable;
 import java.util.List;
@@ -166,5 +168,19 @@ public interface StoragePersistenceAPI {
      * @return Future File, the future will return the file when done
      */
     Future<Object> pullObjectAsync (final String groupName, final String path, final ObjectReaderDelegate readerDelegate);
+
+    /**
+     * Returns an iterable object with all the paths and objects from the specified group. This is
+     * completely specific to the implementation of the Storage Provider, so it needs to be
+     * developed as required. If your Provider doesn't implement it, an empty Iterable will be
+     * returned.
+     *
+     * @param group The group name.
+     *
+     * @return The {@link Iterable} with the group objects.
+     */
+    default Iterable<? extends ObjectPath> toIterable(String group) {
+        return new EmptyIterable<>();
+    }
 
 }

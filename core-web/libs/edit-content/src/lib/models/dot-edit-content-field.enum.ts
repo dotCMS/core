@@ -18,5 +18,6 @@ export enum FIELD_TYPES {
     TIME = 'Time',
     TAG = 'Tag',
     CHECKBOX = 'Checkbox',
-    MULTI_SELECT = 'Multi-Select'
+    MULTI_SELECT = 'Multi-Select',
+    BINARY = 'Binary'
 }
