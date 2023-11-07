@@ -196,3 +196,4 @@ This maintenance release includes the following code fixes:
 164. https://github.com/dotCMS/core/issues/25789 : Tighten up MultiPartSecurityRequestWrapper #25789
 
 **Release-22.03.11**
+165. https://github.com/dotCMS/core/issues/23181 : Modifying designer template removes content from pages #23181

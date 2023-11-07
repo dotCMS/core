@@ -2,15 +2,11 @@ package com.dotmarketing.factories;
 
 
 import java.sql.SQLException;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import org.apache.commons.lang.StringUtils;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -1016,5 +1012,40 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         } else {
             return false;
         }
+    }
+
+    @Override
+    @WrapInTransaction
+    public void updateMultiTrees(final Collection<String> pagesId, final String containerId,
+                                 final String oldValue, final String newValue) throws DotDataException {
+
+        final String innerContainerId = FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)
+                ? getFileContainerId(containerId) : containerId;
+
+        final String updateQuery = String.format("UPDATE multi_tree set relation_type = ? WHERE parent1 in (%s) AND parent2 = ? AND relation_type = ?",
+                pagesId.stream().map(value -> "'" + value + "'").collect(Collectors.joining(",")));
+
+        new DotConnect().setSQL(updateQuery)
+                .addParam(newValue)
+                .addParam(innerContainerId)
+                .addParam(oldValue)
+                .loadResult();
+
+        pagesId.stream().forEach(pageId -> {
+            CacheLocator.getMultiTreeCache().removePageMultiTrees(pageId);
+            CacheLocator.getHTMLPageCache().remove(pageId);
+        });
+    }
+
+    private String getFileContainerId(final String containerId) {
+        try {
+            return APILocator.getContainerAPI()
+                    .findContainer(containerId, APILocator.systemUser(), false, false)
+                    .map(container -> container.getIdentifier())
+                    .orElseThrow(() -> new DotRuntimeException("Invalid container ID: " + containerId));
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 }

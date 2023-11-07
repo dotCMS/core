@@ -8,6 +8,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.google.common.collect.Table;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -392,5 +393,16 @@ public interface MultiTreeAPI {
      */
     void updatePersonalization(String currentPersonalization, String newPersonalization) throws DotDataException;
 
-
+    /**
+     * Update the UUID of a set of MultiTree to a new UUID value
+     *
+     * @param pagesId Set of page's id to be updated
+     * @param containerId Container's id to be updated
+     * @param oldValue old UUID value to be updated
+     * @param newValue new value to set
+     *
+     * @throws DotDataException
+     */
+    void updateMultiTrees(final Collection<String> pagesId, final String containerId,
+                          final String oldValue, final String newValue) throws DotDataException;
 }
