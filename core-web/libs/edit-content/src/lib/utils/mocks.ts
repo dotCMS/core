@@ -409,6 +409,37 @@ export const MULTI_SELECT_FIELD_MOCK: DotCMSContentTypeField = {
     variable: 'multiSelect'
 };
 
+export const BLOCK_EDITOR_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+    contentTypeId: '799f176a-d32e-4844-a07c-1b5fcd107578',
+    dataType: 'LONG_TEXT',
+    fieldType: 'Story-Block',
+    fieldTypeLabel: 'Block Editor',
+    fieldVariables: [
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+            fieldId: '71fe962eb681c5ffd6cd1623e5fc575a',
+            id: 'b19e1d5d-47ad-40d7-b2bf-ccd0a5a86590',
+            key: 'contentTypes',
+            value: 'Activity,CallToAction,calendarEvent,Product,Destination'
+        }
+    ],
+    fixed: false,
+    iDate: 1649791703000,
+    id: '71fe962eb681c5ffd6cd1623e5fc575a',
+    indexed: false,
+    listed: false,
+    hint: 'A helper text',
+    modDate: 1699364930000,
+    name: 'Blog Content',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 13,
+    unique: false,
+    variable: 'blogContent'
+};
+
 export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     TEXT_FIELD_MOCK,
     TEXT_AREA_FIELD_MOCK,
@@ -425,7 +456,8 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     TIME_FIELD_MOCK,
     TAG_FIELD_MOCK,
     CHECKBOX_FIELD_MOCK,
-    MULTI_SELECT_FIELD_MOCK
+    MULTI_SELECT_FIELD_MOCK,
+    BLOCK_EDITOR_FIELD_MOCK
 ];
 
 export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;
