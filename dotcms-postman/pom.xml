@@ -56,6 +56,7 @@
                     <skip>${skipDockerEnv}</skip>
                     <composeFile>${project.basedir}/docker-compose.yml</composeFile>
                     <detachedMode>false</detachedMode>
+                    <followLogs>true</followLogs>
                     <removeVolumes>true</removeVolumes>
                 </configuration>
                 <executions>
