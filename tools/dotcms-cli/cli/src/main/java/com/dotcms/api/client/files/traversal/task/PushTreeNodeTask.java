@@ -35,13 +35,13 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
 
     /**
      * Constructs a new PushTreeNodeTask with the specified parameters.
-     * @param params
+     * @param traverseParams  the parameters for the task
      */
-    public PushTreeNodeTask(final PushTraverseParams params) {
-        this.params = params;
-        this.pusher = params.pusher();
-        this.logger = params.logger();
-        this.progressBar = params.progressBar();
+    public PushTreeNodeTask(final PushTraverseParams traverseParams) {
+        this.params = traverseParams;
+        this.pusher = traverseParams.pusher();
+        this.logger = traverseParams.logger();
+        this.progressBar = traverseParams.progressBar();
     }
 
     @Override
