@@ -139,6 +139,7 @@ describe('DotToolbarUserComponent', () => {
 
         const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout'));
         expect(logoutLink.attributes.href).toBe('/dotAdmin/logout?r=1466424490000');
+        expect(logoutLink.parent.classes).toContain('toolbar-user__logout');
     });
     it('should have correct target in logout link', () => {
         fixture.detectChanges();

@@ -28,7 +28,7 @@ p-avatar {
     }
 }
 
-::ng-deep {
+:host::ng-deep {
     .p-menu .p-menu-separator {
         margin: $spacing-1;
     }
