@@ -43,6 +43,9 @@ import java.util.Set;
  * dotCMS file system.
  * @author jsanca
  */
+
+// todo:, node: this is working but i do not like the implementation, probably we should do the transformation on the parse (cross site o current site) to file asset path
+    // and remove the hacks to allow by pass as a path the sites ones
 public class JsFileSystem implements FileSystem {
 
     private static final String APPLICATION_ROOT_PATH = "/application/";
