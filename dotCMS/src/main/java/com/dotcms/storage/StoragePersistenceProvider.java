@@ -41,7 +41,8 @@ public final class StoragePersistenceProvider {
                 fileSystemStorage.addGroupMapping(metadataGroupName, assetsDir);
                 return fileSystemStorage;
             },
-            StorageType.DB, DataBaseStoragePersistenceAPIImpl::new
+            StorageType.DB, DataBaseStoragePersistenceAPIImpl::new,
+            StorageType.MEMORY, RedisStoragePersistenceAPI::new
     ));
 
     /**
@@ -122,8 +123,9 @@ public final class StoragePersistenceProvider {
         initializers.put(storageType, initializer);
     }
     /**
-     * default storage type
-     * @return
+     * Returns the default Storage Type set in the current dotCMS instance.
+     *
+     * @return The specified {@link StorageType}.
      */
     public static StorageType getStorageType(){
         final String storageType = Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.DEFAULT_CHAIN.name());
@@ -131,9 +133,10 @@ public final class StoragePersistenceProvider {
     }
 
     /**
-     * param based storage type getter
-     * @param storageType
-     * @return
+     * Returns the appropriate Storage API based on the specified type.
+     *
+     * @param storageType The {@link StorageType} containing the expected API instance.
+     * @return The {@link StoragePersistenceAPI} instance for the specified type.
      */
     public StoragePersistenceAPI getStorage (StorageType storageType) {
         if(null == storageType){
@@ -152,27 +155,30 @@ public final class StoragePersistenceProvider {
     }
 
     /**
-     * default storage getter
-     * @return
+     * Returns the Storage API for the default Storage Type.
+     *
+     * @return The {@link StoragePersistenceAPI} instance.
      */
     public StoragePersistenceAPI getStorage(){
         return getStorage(null);
     }
 
     /**
-     *
+     * Flushes the map containing the Storage API instances that are groped by Storage Type.
      */
     public void forceInitialize(){
        storagePersistenceInstances.clear();
     }
 
     public enum INSTANCE {
+
         INSTANCE;
         private final StoragePersistenceProvider provider = new StoragePersistenceProvider();
 
         public static StoragePersistenceProvider get() {
             return INSTANCE.provider;
         }
+
     }
 
 }

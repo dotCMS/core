@@ -8,7 +8,8 @@ import {
     Input,
     OnDestroy,
     OnInit,
-    Output
+    Output,
+    inject
 } from '@angular/core';
 import {
     FormGroup,
@@ -21,7 +22,7 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { takeUntil, tap } from 'rxjs/operators';
+import { filter, takeUntil, tap } from 'rxjs/operators';
 
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
@@ -52,29 +53,34 @@ export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
     @Output() tempFileUploaded: EventEmitter<DotCMSTempFile> = new EventEmitter<DotCMSTempFile>();
     @Output() cancel: EventEmitter<void> = new EventEmitter<void>();
 
-    private readonly destroy$ = new Subject<void>();
+    private readonly store = inject(DotBinaryFieldUrlModeStore);
+
+    // Form
     private readonly validators = [
         Validators.required,
         Validators.pattern(/^(ftp|http|https):\/\/[^ "]+$/)
     ];
-
-    readonly invalidError = 'dot.binary.field.action.import.from.url.error.message';
-    readonly vm$ = this.store.vm$.pipe(tap(({ isLoading }) => this.toggleForm(isLoading)));
-    readonly tempFileChanged$ = this.store.tempFile$;
     readonly form = new FormGroup({
         url: new FormControl('', this.validators)
     });
 
-    private abortController: AbortController;
+    // Observables
+    readonly vm$ = this.store.vm$.pipe(tap(({ isLoading }) => this.toggleForm(isLoading)));
+    readonly tempFileChanged$ = this.store.tempFile$;
 
-    constructor(private readonly store: DotBinaryFieldUrlModeStore) {
-        this.tempFileChanged$.pipe(takeUntil(this.destroy$)).subscribe((tempFile) => {
-            this.tempFileUploaded.emit(tempFile);
-        });
-    }
+    private readonly destroy$ = new Subject<void>();
+    private abortController: AbortController;
 
     ngOnInit(): void {
         this.store.setMaxFileSize(this.maxFileSize);
+        this.tempFileChanged$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((tempFile) => tempFile !== null)
+            )
+            .subscribe((tempFile) => {
+                this.tempFileUploaded.emit(tempFile);
+            });
     }
 
     ngOnDestroy(): void {
@@ -83,29 +89,41 @@ export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
         this.abortController?.abort(); // Abort fetch request if component is destroyed
     }
 
+    /**
+     * Submit form
+     *
+     * @return {*}  {void}
+     * @memberof DotBinaryFieldUrlModeComponent
+     */
     onSubmit(): void {
-        const control = this.form.get('url');
-
         if (this.form.invalid) {
             return;
         }
 
-        const url = control.value;
+        const url = this.form.get('url').value;
         this.abortController = new AbortController();
 
         this.store.uploadFileByUrl({ url, signal: this.abortController.signal });
         this.form.reset({ url }); // Reset form to initial state
     }
 
+    /**
+     * Cancel upload
+     *
+     * @memberof DotBinaryFieldUrlModeComponent
+     */
     cancelUpload(): void {
         this.abortController?.abort();
         this.cancel.emit();
     }
 
-    resetError(isError: boolean): void {
-        if (isError) {
-            this.store.setError('');
-        }
+    /**
+     * Handle focus event and clear server error message
+     *
+     * @memberof DotBinaryFieldUrlModeComponent
+     */
+    handleFocus(): void {
+        this.store.setError(''); // Clear server  error message when user focus on input
     }
 
     private toggleForm(isLoading: boolean): void {
