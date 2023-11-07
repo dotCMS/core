@@ -6,20 +6,12 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields.module';
+import { CALENDAR_FIELD_TYPES } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
-import { CALENDAR_FIELD_TYPES } from '../../utils/mocks';
 
 @Component({
     selector: 'dot-edit-content-field',
     standalone: true,
-    imports: [
-        NgSwitch,
-        NgSwitchCase,
-        NgIf,
-        ReactiveFormsModule,
-        DotEditContentFieldsModule,
-        DotFieldRequiredDirective
-    ],
     templateUrl: './dot-edit-content-field.component.html',
     styleUrls: ['./dot-edit-content-field.component.scss'],
     viewProviders: [
@@ -28,7 +20,15 @@ import { CALENDAR_FIELD_TYPES } from '../../utils/mocks';
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
     ],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        NgSwitch,
+        NgSwitchCase,
+        NgIf,
+        ReactiveFormsModule,
+        DotEditContentFieldsModule,
+        DotFieldRequiredDirective
+    ]
 })
 export class DotEditContentFieldComponent {
     @HostBinding('class') class = 'field';

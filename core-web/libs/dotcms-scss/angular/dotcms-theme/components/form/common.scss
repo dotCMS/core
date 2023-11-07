@@ -1,6 +1,8 @@
 @use "variables" as *;
 @import "mixins";
 
+$select-border-size: 2px;
+
 #form-field-base {
     background-color: $white;
     height: $field-height-md;
@@ -119,6 +121,7 @@
     padding: 0 $spacing-2;
     color: $black;
     height: $field-height-md;
+    gap: $spacing-1;
 }
 
 #field-panel-item-highlight {
@@ -132,15 +135,6 @@
 #field-panel-item-disabled {
     @extend #form-field-disabled;
     cursor: initial;
-}
-
-#field-panel-item-checkbox {
-    margin-right: $spacing-1;
-
-    .p-checkbox-box {
-        border-radius: $border-radius-sm;
-        border: 2px solid $color-palette-gray-400;
-    }
 }
 
 #field-chip {
