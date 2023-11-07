@@ -7,6 +7,15 @@ import { DotFormatDateService } from '@dotcms/ui';
 const INVALID_DATE_MSG = 'Invalid date';
 const VALID_TIMESTAMP = 1701189800000;
 const WRONG_TIMESTAMP = 1651337877000000;
+const DateFormatOptions: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'UTC'
+};
 
 describe('DotFormatDateService', () => {
     let spectator: SpectatorService<DotFormatDateService>;
@@ -35,15 +44,19 @@ describe('DotFormatDateService', () => {
         });
 
         it('should return a string date using timestamp using `currentUserLanguageId`with us-US', () => {
-            const EXPECTED_DATE = '11/28/2023, 11:43 AM';
-            expect(spectator.service.getDateFromTimestamp(VALID_TIMESTAMP)).toBe(EXPECTED_DATE);
+            const EXPECTED_DATE = '11/28/2023, 04:43 PM';
+            expect(spectator.service.getDateFromTimestamp(VALID_TIMESTAMP, DateFormatOptions)).toBe(
+                EXPECTED_DATE
+            );
         });
 
         it('should return a string with correct date format using timestamp using `currentUserLanguageId` with es-ES', () => {
-            const EXPECTED_DATE = '28/11/2023, 11:43 a. m.';
+            const EXPECTED_DATE = '28/11/2023, 04:43 p. m.';
 
             loginService.currentUserLanguageId = 'es-ES';
-            expect(spectator.service.getDateFromTimestamp(VALID_TIMESTAMP)).toBe(EXPECTED_DATE);
+            expect(spectator.service.getDateFromTimestamp(VALID_TIMESTAMP, DateFormatOptions)).toBe(
+                EXPECTED_DATE
+            );
         });
     });
 });
