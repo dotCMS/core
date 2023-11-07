@@ -136,7 +136,7 @@ function execCommand({
                     ],
                     { customClass: 'dotTableForm' }
                 )
-                .pipe(
+                ?.pipe(
                     take(1),
                     filter((value) => !!value)
                 )
