@@ -12,4 +12,5 @@ export interface DotCMSTempFile {
     mimeType: string;
     referenceUrl: string;
     thumbnailUrl: string;
+    content?: string;
 }

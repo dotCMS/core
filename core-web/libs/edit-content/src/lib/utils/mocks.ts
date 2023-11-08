@@ -409,6 +409,30 @@ export const MULTI_SELECT_FIELD_MOCK: DotCMSContentTypeField = {
     variable: 'multiSelect'
 };
 
+export const BINARY_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
+    contentTypeId: '93ebaff75f3e3887bea73eca04588dc9',
+    dataType: 'BINARY',
+    fieldType: 'Binary',
+    fieldTypeLabel: 'Binary Field',
+    fieldVariables: [],
+    fixed: false,
+    hint: 'A hint text',
+    iDate: 1698264695000,
+    id: '535a6de288e3fe91fad2679e8d7d966b',
+    indexed: false,
+    listed: false,
+    modDate: 1698291913000,
+    name: 'Binary',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 3,
+    unique: false,
+    values: '/test.png',
+    variable: 'Binary'
+};
+
 export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     TEXT_FIELD_MOCK,
     TEXT_AREA_FIELD_MOCK,
@@ -425,7 +449,8 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     TIME_FIELD_MOCK,
     TAG_FIELD_MOCK,
     CHECKBOX_FIELD_MOCK,
-    MULTI_SELECT_FIELD_MOCK
+    MULTI_SELECT_FIELD_MOCK,
+    BINARY_FIELD_MOCK
 ];
 
 export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;
