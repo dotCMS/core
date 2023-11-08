@@ -24,13 +24,10 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * This class provides access to the system configuration parameters that are set through the
@@ -80,7 +77,6 @@ public class Config {
 
     //Object Config properties      n
     public static javax.servlet.ServletContext CONTEXT = null;
-    public static String CONTEXT_PATH = null;
 
 
     //Config internal properties
@@ -357,14 +353,45 @@ public class Config {
     }
 
 
-    private static String envKey(final String theKey) {
+    public static String envKey(final String theKey) {
 
-        String envKey = ENV_PREFIX + theKey.toUpperCase().replace(".", "_");
-        while (envKey.contains("__")) {
-            envKey = envKey.replace("__", "_");
+        if(!theKey.startsWith(ENV_PREFIX)) {
+            String envKey = ENV_PREFIX + theKey.toUpperCase().replace(".", "_").replace("-","_");
+            while (envKey.contains("__")) {
+                envKey = envKey.replace("__", "_");
+            }
+            return envKey.endsWith("_") ? envKey.substring(0, envKey.length() - 1) : envKey;
         }
-        return envKey.endsWith("_") ? envKey.substring(0, envKey.length() - 1) : envKey;
+        return theKey;
 
+    }
+
+    /**
+     * Returns a list of properties that contains the given String.
+     * Also gives priority to the System Env over the ones in the properties file.
+     * @param containsString
+     * @return list of properties
+     */
+    public static List<String> subsetContainsAsList(final String containsString){
+        final List<String> fullListProps = new ArrayList<String>();
+        props.getKeys().forEachRemaining(fullListProps::add);
+
+        //List with all system env props that contains the pattern
+        final String envContainsString = envKey(containsString);
+        final List<String> propList = fullListProps.stream().filter(prop -> prop.contains(envContainsString)).collect(Collectors.toList());
+
+        //List with all props with . (dotmarketing.properties) that contains the pattern
+        final List<String> configList = fullListProps.stream().filter(prop -> prop.contains(containsString)).collect(Collectors.toList());
+
+        //Final list union of the env list + configList which aren't set by envList
+        for(final String prop : configList){
+            final String keyRefactor = envKey(prop);
+            if(!propList.contains(keyRefactor)){
+                propList.add(prop);
+            }
+        }
+
+        return propList;
     }
 
     private static String getSystemTableValue(final String ...names) {
@@ -748,7 +775,6 @@ public class Config {
      */
     public static void setMyApp(javax.servlet.ServletContext myApp) {
         CONTEXT = myApp;
-        CONTEXT_PATH = myApp.getRealPath("/");
     }
 
 
