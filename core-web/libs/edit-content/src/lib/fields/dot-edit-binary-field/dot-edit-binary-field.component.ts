@@ -98,7 +98,6 @@ export class DotEditBinaryFieldComponent
     dialogOpen = false;
     accept: string[] = [];
     maxFileSize: number;
-    helperText: string;
 
     constructor(
         private readonly dotBinaryFieldStore: DotBinaryFieldStore,
@@ -298,10 +297,9 @@ export class DotEditBinaryFieldComponent
      * @memberof DotBinaryFieldComponent
      */
     private setFieldVariables() {
-        const { accept, maxFileSize = 0, helperText } = this.getFieldVariables();
+        const { accept, maxFileSize = 0 } = this.getFieldVariables();
         this.accept = accept ? accept.split(',') : [];
         this.maxFileSize = Number(maxFileSize);
-        this.helperText = helperText;
     }
 
     /**

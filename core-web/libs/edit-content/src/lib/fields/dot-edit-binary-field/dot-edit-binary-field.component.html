@@ -93,7 +93,7 @@
         </ng-container>
     </p-dialog>
 </div>
-<div class="binary-field__helper" *ngIf="helperText">
+<div class="binary-field__helper" *ngIf="field.hint">
     <i class="pi pi-info-circle binary-field__helper-icon"></i>
-    <span data-testId="helper-text">{{ helperText }}</span>
+    <span data-testId="field-hint">{{ field.hint }}</span>
 </div>

@@ -139,15 +139,9 @@ export const FIELD = {
             id: '1ff1ff05-b9fb-4239-ad3d-b2cfaa9a8406',
             key: 'maxFileSize',
             value: '50000'
-        },
-        {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
-            fieldId: '5df3f8fc49177c195740bcdc02ec2db7',
-            id: '1ff1ff05-b9fb-4239-ad3d-b2cfaa9a8406',
-            key: 'helperText',
-            value: 'Helper label to be displayed below the field'
         }
     ],
+    hint: 'Helper label to be displayed below the field',
     fixed: false,
     forceIncludeInApi: false,
     iDate: 1698153564000,

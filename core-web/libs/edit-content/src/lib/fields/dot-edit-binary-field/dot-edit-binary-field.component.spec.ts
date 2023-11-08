@@ -305,8 +305,8 @@ describe('DotEditBinaryFieldComponent', () => {
             expect(spectator.query(byTestId('preview'))).toBeTruthy();
         });
 
-        it('should show helper text', () => {
-            expect(spectator.query(byTestId('helper-text')).innerHTML).toBe(
+        it('should show hint', () => {
+            expect(spectator.query(byTestId('field-hint')).innerHTML).toBe(
                 'Helper label to be displayed below the field'
             );
         });
