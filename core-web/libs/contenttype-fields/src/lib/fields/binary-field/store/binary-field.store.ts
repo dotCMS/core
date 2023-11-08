@@ -1,51 +1,52 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import { Observable, from } from 'rxjs';
+import { from, Observable, of } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
-import { DotUploadService } from '@dotcms/data-access';
+import { DotLicenseService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
-import { UI_MESSAGE_KEYS, UiMessageI, getUiMessage } from '../../../utils/binary-field-utils';
+import { getUiMessage } from '../../../utils/binary-field-utils';
+import {
+    BinaryFieldMode,
+    BinaryFieldStatus,
+    BinaryFile,
+    UI_MESSAGE_KEYS,
+    UiMessageI
+} from '../interfaces/index';
 
 export interface BinaryFieldState {
-    file: File;
+    file?: BinaryFile;
     tempFile: DotCMSTempFile;
-    mode: BINARY_FIELD_MODE;
-    status: BINARY_FIELD_STATUS;
-    UiMessage: UiMessageI;
+    mode: BinaryFieldMode;
+    status: BinaryFieldStatus;
+    uiMessage: UiMessageI;
     dropZoneActive: boolean;
+    isEnterprise: boolean;
 }
 
-export enum BINARY_FIELD_MODE {
-    DROPZONE = 'DROPZONE',
-    URL = 'URL',
-    EDITOR = 'EDITOR'
-}
-
-export enum BINARY_FIELD_STATUS {
-    INIT = 'INIT',
-    UPLOADING = 'UPLOADING',
-    PREVIEW = 'PREVIEW',
-    ERROR = 'ERROR'
-}
+const initialState: BinaryFieldState = {
+    file: null,
+    tempFile: null,
+    mode: BinaryFieldMode.DROPZONE,
+    status: BinaryFieldStatus.INIT,
+    dropZoneActive: false,
+    uiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT),
+    isEnterprise: false
+};
 
 @Injectable()
 export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
-    private _maxFileSizeInMB: number;
+    private _maxFileSizeInMB = 0;
 
     // Selectors
-    readonly vm$ = this.select((state) => {
-        return {
-            ...state,
-            isLoading: state.status === BINARY_FIELD_STATUS.UPLOADING
-        };
-    });
-
-    // File state
-    readonly file$ = this.select((state) => state.file);
+    readonly vm$ = this.select((state) => ({
+        ...state,
+        isLoading: state.status === BinaryFieldStatus.UPLOADING
+    }));
 
     // Temp file state
     readonly tempFile$ = this.select((state) => state.tempFile);
@@ -53,15 +54,16 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     // Mode state
     readonly mode$ = this.select((state) => state.mode);
 
-    constructor(private readonly dotUploadService: DotUploadService) {
-        super();
+    constructor(
+        private readonly dotUploadService: DotUploadService,
+        private readonly dotLicenseService: DotLicenseService,
+        private readonly http: HttpClient
+    ) {
+        super(initialState);
+        this.dotLicenseService.isEnterprise().subscribe((isEnterprise) => {
+            this.setIsEnterprise(isEnterprise);
+        });
     }
-
-    // Updaters
-    readonly setFile = this.updater<File>((state, file) => ({
-        ...state,
-        file
-    }));
 
     readonly setDropZoneActive = this.updater<boolean>((state, dropZoneActive) => ({
         ...state,
@@ -70,88 +72,155 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
 
     readonly setTempFile = this.updater<DotCMSTempFile>((state, tempFile) => ({
         ...state,
-        status: BINARY_FIELD_STATUS.PREVIEW,
+        status: BinaryFieldStatus.PREVIEW,
+        file: this.fileFromTempFile(tempFile),
         tempFile
     }));
 
-    readonly setUiMessage = this.updater<UiMessageI>((state, UiMessage) => ({
+    readonly setFile = this.updater<BinaryFile>((state, file) => ({
         ...state,
-        UiMessage
+        status: BinaryFieldStatus.PREVIEW,
+        file
     }));
 
-    readonly setMode = this.updater<BINARY_FIELD_MODE>((state, mode) => ({
+    readonly setUiMessage = this.updater<UiMessageI>((state, uiMessage) => ({
+        ...state,
+        uiMessage
+    }));
+
+    readonly setMode = this.updater<BinaryFieldMode>((state, mode) => ({
         ...state,
         mode
     }));
 
-    readonly setStatus = this.updater<BINARY_FIELD_STATUS>((state, status) => ({
+    readonly setStatus = this.updater<BinaryFieldStatus>((state, status) => ({
         ...state,
         status
+    }));
+
+    readonly setIsEnterprise = this.updater<boolean>((state, isEnterprise) => ({
+        ...state,
+        isEnterprise
     }));
 
     readonly setUploading = this.updater((state) => ({
         ...state,
         dropZoneActive: false,
         uiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT),
-        status: BINARY_FIELD_STATUS.UPLOADING
+        status: BinaryFieldStatus.UPLOADING
     }));
 
-    readonly setError = this.updater<UiMessageI>((state, UiMessage) => ({
+    readonly setError = this.updater<UiMessageI>((state, uiMessage) => ({
         ...state,
-        UiMessage,
-        status: BINARY_FIELD_STATUS.ERROR,
+        uiMessage,
+        status: BinaryFieldStatus.INIT,
         tempFile: null
     }));
 
-    readonly invalidFile = this.updater<UiMessageI>((state, UiMessage) => ({
+    readonly invalidFile = this.updater<UiMessageI>((state, uiMessage) => ({
         ...state,
         dropZoneActive: false,
-        UiMessage,
-        status: BINARY_FIELD_STATUS.ERROR
+        uiMessage,
+        status: BinaryFieldStatus.INIT
     }));
 
     readonly removeFile = this.updater((state) => ({
         ...state,
         file: null,
         tempFile: null,
-        status: BINARY_FIELD_STATUS.INIT
+        status: BinaryFieldStatus.INIT
     }));
 
-    //  Effects
-    readonly handleUploadFile = this.effect<File>((event$) => {
-        return event$.pipe(
+    // Effects
+    readonly handleUploadFile = this.effect<File>((file$: Observable<File>) =>
+        file$.pipe(
             tap(() => this.setUploading()),
-            switchMap((file) => this.uploadTempFile(file))
-        );
-    });
+            switchMap((file) =>
+                from(
+                    this.dotUploadService.uploadFile({
+                        file,
+                        maxSize: this._maxFileSizeInMB ? `${this._maxFileSizeInMB}MB` : '',
+                        signal: null
+                    })
+                ).pipe(
+                    tapResponse(
+                        (tempFile) => this.setTempFile(tempFile),
+                        () => this.setError(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR))
+                    )
+                )
+            )
+        )
+    );
 
-    readonly handleCreateFile = this.effect<{ name: string; code: string }>((fileDetails$) => {
-        /* To be implemented */
-        return fileDetails$.pipe();
+    /**
+     * Set the file and the content
+     *
+     * @memberof DotBinaryFieldStore
+     */
+    readonly setFileAndContent = this.effect<BinaryFile>((file$: Observable<BinaryFile>) => {
+        return file$.pipe(
+            tap(() => this.setUploading()),
+            switchMap((file) => {
+                const { url, mimeType } = file;
+                // TODO: This should be done in the serverside
+                const obs$ = mimeType.includes('text') ? this.getFileContent(url) : of('');
+
+                return obs$.pipe(
+                    tap((content) => {
+                        this.setFile({
+                            ...file,
+                            content
+                        });
+                    })
+                );
+            })
+        );
     });
 
     /**
-     * Set the max file size in Bytes
+     * Set the max file size in bytes
      *
-     * @param {number} bytes
-     * @memberof DotBinaryFieldStore
+     * @param bytes The max file size in bytes
      */
-    setMaxFileSize(bytes: number) {
+    setMaxFileSize(bytes: number): void {
+        // Convert bytes to MB
         this._maxFileSizeInMB = bytes / (1024 * 1024);
     }
 
-    private uploadTempFile(file: File): Observable<DotCMSTempFile> {
-        return from(
-            this.dotUploadService.uploadFile({
-                file,
-                maxSize: this._maxFileSizeInMB ? `${this._maxFileSizeInMB}MB` : '',
-                signal: null
-            })
-        ).pipe(
-            tapResponse(
-                (tempFile) => this.setTempFile(tempFile),
-                () => this.setError(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR))
-            )
-        );
+    /**
+     * Get the file content
+     *
+     * @private
+     * @param {string} url
+     * @return {*}  {Observable<string>}
+     * @memberof DotBinaryFieldStore
+     */
+    private getFileContent(url: string): Observable<string> {
+        return this.http.get(url, { responseType: 'text' });
+    }
+
+    /**
+     * Create a BinaryFile from a DotCMSTempFile
+     *
+     * @private
+     * @param {DotCMSTempFile} tempFile
+     * @return {*}  {BinaryFile}
+     * @memberof DotBinaryFieldStore
+     */
+    private fileFromTempFile({
+        length,
+        thumbnailUrl,
+        referenceUrl,
+        fileName,
+        mimeType,
+        content = ''
+    }: DotCMSTempFile): BinaryFile {
+        return {
+            url: thumbnailUrl || referenceUrl,
+            fileSize: length,
+            mimeType,
+            name: fileName,
+            content
+        };
     }
 }

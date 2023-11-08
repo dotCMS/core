@@ -5,6 +5,7 @@
                 <dot-edit-content-field
                     *ngFor="let field of column.fields"
                     [field]="field"
+                    [contentlet]="formData.contentlet"
                     data-testId="field" />
             </div>
         </div>

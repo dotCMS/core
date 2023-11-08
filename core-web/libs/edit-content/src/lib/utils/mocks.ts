@@ -13,6 +13,11 @@ import {
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
 
+import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
+import { EditContentFormData } from '../models/dot-edit-content-form.interface';
+
+/* FIELDS MOCK BY TYPE */
+
 export const TEXT_FIELD_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
     contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
@@ -330,6 +335,31 @@ export const TIME_FIELD_MOCK: DotCMSContentTypeField = {
     variable: 'time'
 };
 
+export const TAG_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableTagField',
+    contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
+    dataType: 'SYSTEM',
+    defaultValue: 'some, tags, separated, by, comma',
+    fieldType: 'Tag',
+    fieldTypeLabel: 'Tag',
+    fieldVariables: [],
+    fixed: false,
+    hint: 'Some hint',
+    iDate: 1698346136000,
+    id: '1ba4927b83aae5b17921679053b0b5fe',
+    indexed: true,
+    listed: false,
+    modDate: 1698346136000,
+    name: 'Some tag',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 3,
+    unique: false,
+
+    variable: 'someTag'
+};
+
 export const CHECKBOX_FIELD_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableCheckboxField',
     contentTypeId: '93ebaff75f3e3887bea73eca04588dc9',
@@ -369,6 +399,7 @@ export const MULTI_SELECT_FIELD_MOCK: DotCMSContentTypeField = {
     listed: false,
     modDate: 1698291913000,
     name: 'multiSelect',
+
     readOnly: false,
     required: false,
     searchable: false,
@@ -376,6 +407,30 @@ export const MULTI_SELECT_FIELD_MOCK: DotCMSContentTypeField = {
     unique: false,
     values: 'one|one\r\ntwo|two',
     variable: 'multiSelect'
+};
+
+export const BINARY_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
+    contentTypeId: '93ebaff75f3e3887bea73eca04588dc9',
+    dataType: 'BINARY',
+    fieldType: 'Binary',
+    fieldTypeLabel: 'Binary Field',
+    fieldVariables: [],
+    fixed: false,
+    hint: 'A hint text',
+    iDate: 1698264695000,
+    id: '535a6de288e3fe91fad2679e8d7d966b',
+    indexed: false,
+    listed: false,
+    modDate: 1698291913000,
+    name: 'Binary',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 3,
+    unique: false,
+    values: '/test.png',
+    variable: 'Binary'
 };
 
 export const FIELDS_MOCK: DotCMSContentTypeField[] = [
@@ -392,11 +447,15 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     DATE_FIELD_MOCK,
     DATE_AND_TIME_FIELD_MOCK,
     TIME_FIELD_MOCK,
+    TAG_FIELD_MOCK,
     CHECKBOX_FIELD_MOCK,
-    MULTI_SELECT_FIELD_MOCK
+    MULTI_SELECT_FIELD_MOCK,
+    BINARY_FIELD_MOCK
 ];
 
 export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;
+
+/* HELPER FUNCTIONS */
 
 // This creates a mock FormGroup from an array of fielda
 export const createFormControlObjectMock = (fields = FIELDS_MOCK) => {
@@ -406,8 +465,6 @@ export const createFormControlObjectMock = (fields = FIELDS_MOCK) => {
         return acc;
     }, {});
 };
-
-export const FORM_GROUP_MOCK = new FormGroup(createFormControlObjectMock());
 
 // Create a mock FormGroupDirective
 export const createFormGroupDirectiveMock = (
@@ -421,6 +478,27 @@ export const createFormGroupDirectiveMock = (
 
     return formGroupDirectiveMock;
 };
+
+function getAllFields(data: DotCMSContentTypeLayoutRow[]) {
+    let fields = [];
+
+    data.forEach((row) => {
+        row.columns.forEach((column) => {
+            fields = [...fields, ...column.fields];
+        });
+    });
+
+    return fields;
+}
+
+/* CONSTANTS */
+
+export const CALENDAR_FIELD_TYPES = [FIELD_TYPES.DATE, FIELD_TYPES.DATE_AND_TIME, FIELD_TYPES.TIME];
+
+/* LAYOUT/FORM MOCKS */
+
+// This creates a mock FormGroup from an array of fielda
+export const FORM_GROUP_MOCK = new FormGroup(createFormControlObjectMock());
 
 export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
     {
@@ -561,7 +639,8 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
                         sortOrder: 5,
                         unique: false,
                         variable: 'text3'
-                    }
+                    },
+                    TAG_FIELD_MOCK
                 ]
             }
         ]
@@ -570,17 +649,19 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
 
 export const JUST_FIELDS_MOCKS = getAllFields(LAYOUT_MOCK);
 
-function getAllFields(data: DotCMSContentTypeLayoutRow[]) {
-    let fields = [];
+export const LAYOUT_FIELDS_VALUES_MOCK = {
+    name1: 'Placeholder', // This is the default value of the name1 field
+    text2: null,
+    text3: null,
+    someTag: 'some,tags,separated,by,comma' // This is the default value of the tag field
+};
 
-    data.forEach((row) => {
-        row.columns.forEach((column) => {
-            fields = [...fields, ...column.fields];
-        });
-    });
+export const CONTENT_FORM_DATA_MOCK: EditContentFormData = {
+    layout: LAYOUT_MOCK,
+    fields: JUST_FIELDS_MOCKS
+};
 
-    return fields;
-}
+/* CONTENT TYPE MOCKS */
 
 export const CONTENT_TYPE_MOCK: DotCMSContentType = {
     baseType: 'CONTENT',

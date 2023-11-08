@@ -3,9 +3,6 @@ import { of } from 'rxjs';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed, getTestBed } from '@angular/core/testing';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-
 import { DotLicenseService } from './dot-license.service';
 
 describe('DotLicenseService', () => {
@@ -16,10 +13,7 @@ describe('DotLicenseService', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotLicenseService
-            ]
+            providers: [DotLicenseService]
         });
         injector = getTestBed();
         dotLicenseService = injector.get(DotLicenseService);
@@ -29,7 +23,7 @@ describe('DotLicenseService', () => {
     it('should call the BE with correct endpoint url and method', () => {
         dotLicenseService.isEnterprise().subscribe();
 
-        const req = httpMock.expectOne('v1/appconfiguration');
+        const req = httpMock.expectOne('/api/v1/appconfiguration');
         expect(req.request.method).toBe('GET');
         req.flush({
             entity: {
@@ -47,7 +41,7 @@ describe('DotLicenseService', () => {
             expect(result).toBe(false);
         });
 
-        const req = httpMock.expectOne('v1/appconfiguration');
+        const req = httpMock.expectOne('/api/v1/appconfiguration');
         expect(req.request.method).toBe('GET');
         req.flush({
             entity: {
@@ -65,7 +59,7 @@ describe('DotLicenseService', () => {
             expect(result).toBe(true);
         });
 
-        const req = httpMock.expectOne('v1/appconfiguration');
+        const req = httpMock.expectOne('/api/v1/appconfiguration');
         expect(req.request.method).toBe('GET');
         req.flush({
             entity: {
@@ -83,7 +77,7 @@ describe('DotLicenseService', () => {
             expect(result).toBe(true);
         });
 
-        const req = httpMock.expectOne('v1/appconfiguration');
+        const req = httpMock.expectOne('/api/v1/appconfiguration');
         expect(req.request.method).toBe('GET');
         req.flush({
             entity: {
@@ -147,13 +141,13 @@ describe('DotLicenseService', () => {
             expect(result).toBe(true);
         });
 
-        httpMock.expectNone('v1/appconfiguration');
+        httpMock.expectNone('/api/v1/appconfiguration');
     });
 
     it('should fetch the license when calling updateLicense', () => {
         dotLicenseService.updateLicense();
 
-        const req = httpMock.expectOne('v1/appconfiguration');
+        const req = httpMock.expectOne('/api/v1/appconfiguration');
         expect(req.request.method).toBe('GET');
         req.flush({
             entity: {

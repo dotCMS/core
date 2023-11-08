@@ -55,14 +55,15 @@
 .p-button.p-fileupload-choose {
     @extend #main-primary-severity;
 
-    &.p-button-secondary {
-        @extend #main-secondary-severity;
-    }
-
     // Button Links
     &.p-button-link {
         color: $color-palette-primary;
         background: transparent;
+        border: transparent;
+    }
+
+    &.p-button-link.p-button-secondary {
+        @extend #outlined-secondary-severity;
         border: transparent;
     }
 }
