@@ -12,8 +12,8 @@ import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotBinaryFieldEditorComponent } from './dot-binary-field-editor.component';
 
-import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../../../utils/mock';
 import { TEMP_FILE_MOCK } from '../../store/binary-field.store.spec';
+import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../utils/mock';
 
 const EDITOR_MOCK = {
     updateOptions: (_options) => {

@@ -12,8 +12,8 @@ import { DropZoneErrorType } from '@dotcms/ui';
 
 import { BinaryFieldState, DotBinaryFieldStore } from './binary-field.store';
 
-import { getUiMessage } from '../../../utils/binary-field-utils';
 import { BinaryFieldMode, BinaryFieldStatus, UI_MESSAGE_KEYS } from '../interfaces';
+import { getUiMessage } from '../utils/binary-field-utils';
 
 const INITIAL_STATE: BinaryFieldState = {
     file: null,

@@ -1,4 +1,4 @@
-import { UiMessageI, UiMessageMap } from '../fields/binary-field/interfaces';
+import { UiMessageI, UiMessageMap } from '../interfaces';
 
 const UiMessageMap: UiMessageMap = {
     DEFAULT: {

@@ -9,7 +9,6 @@ import { switchMap, tap } from 'rxjs/operators';
 import { DotLicenseService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
-import { getUiMessage } from '../../../utils/binary-field-utils';
 import {
     BinaryFieldMode,
     BinaryFieldStatus,
@@ -17,6 +16,7 @@ import {
     UI_MESSAGE_KEYS,
     UiMessageI
 } from '../interfaces/index';
+import { getUiMessage } from '../utils/binary-field-utils';
 
 export interface BinaryFieldState {
     file?: BinaryFile;

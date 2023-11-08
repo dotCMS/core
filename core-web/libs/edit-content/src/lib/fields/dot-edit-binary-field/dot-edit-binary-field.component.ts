@@ -42,11 +42,10 @@ import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-ur
 import { BinaryFieldMode, BinaryFieldStatus } from './interfaces';
 import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
 import { DotBinaryFieldStore } from './store/binary-field.store';
-
-import { getUiMessage } from '../../utils/binary-field-utils';
+import { getUiMessage } from './utils/binary-field-utils';
 
 @Component({
-    selector: 'dot-binary-field',
+    selector: 'dot-edit-binary-field',
     standalone: true,
     imports: [
         CommonModule,
@@ -70,14 +69,14 @@ import { getUiMessage } from '../../utils/binary-field-utils';
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotBinaryFieldComponent)
+            useExisting: forwardRef(() => DotEditBinaryFieldComponent)
         }
     ],
-    templateUrl: './binary-field.component.html',
-    styleUrls: ['./binary-field.component.scss'],
+    templateUrl: './dot-edit-binary-field.component.html',
+    styleUrls: ['./dot-edit-binary-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotBinaryFieldComponent
+export class DotEditBinaryFieldComponent
     implements OnInit, AfterViewInit, OnDestroy, ControlValueAccessor
 {
     @Input() field: DotCMSContentTypeField;
