@@ -56,6 +56,7 @@
                     <skip>${skipDockerEnv}</skip>
                     <composeFile>${project.basedir}/docker-compose.yml</composeFile>
                     <detachedMode>false</detachedMode>
+                    <followLogs>true</followLogs>
                     <removeVolumes>true</removeVolumes>
                 </configuration>
                 <executions>
@@ -72,6 +73,7 @@
                             <ignorePullFailures>true</ignorePullFailures>
                             <detachedMode>true</detachedMode>
                             <verbose>false</verbose>
+                            <followLogs>true</followLogs>
                             <services>
                                 <service>db-test</service>
                                 <service>elasticsearch-test</service>
