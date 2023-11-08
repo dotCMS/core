@@ -1,7 +1,8 @@
 import { fromEvent, Observable, of, Subject, Subscription } from 'rxjs';
 
+import { DOCUMENT } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ElementRef, Injectable, NgZone } from '@angular/core';
+import { ElementRef, Inject, Injectable, NgZone } from '@angular/core';
 
 import { catchError, filter, finalize, map, switchMap, take, tap } from 'rxjs/operators';
 
@@ -99,7 +100,7 @@ export class DotEditContentHtmlService {
     private remoteRendered: boolean;
     private askToCopy = true;
 
-    private readonly origin = window.location.origin;
+    private readonly origin: string = '';
     private readonly docClickHandlers;
 
     get pagePersonalization() {
@@ -127,7 +128,8 @@ export class DotEditContentHtmlService {
         private dotCopyContentService: DotCopyContentService,
         private dotLoadingIndicatorService: DotLoadingIndicatorService,
         private dotSeoMetaTagsService: DotSeoMetaTagsService,
-        private dotSeoMetaTagsUtilService: DotSeoMetaTagsUtilService
+        private dotSeoMetaTagsUtilService: DotSeoMetaTagsUtilService,
+        @Inject(DOCUMENT) private document: Document
     ) {
         this.contentletEvents$.subscribe(
             (
@@ -146,6 +148,8 @@ export class DotEditContentHtmlService {
             this.docClickHandlers = {};
             this.setGlobalClickHandlers();
         }
+
+        this.origin = this.document.location.origin;
     }
 
     /**
@@ -952,7 +956,7 @@ export class DotEditContentHtmlService {
     private setEditContentletStyles(): void {
         const timeStampId = `iframeId_${Math.floor(Date.now() / 100).toString()}`;
         const style = this.dotDOMHtmlUtilService.createStyleElement(
-            getEditPageCss(`#${timeStampId}`)
+            getEditPageCss(`#${timeStampId}`, this.origin)
         );
 
         const doc = this.getEditPageDocument();
