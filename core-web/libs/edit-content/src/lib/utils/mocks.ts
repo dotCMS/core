@@ -10,7 +10,8 @@ import {
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
-    DotCMSContentTypeLayoutRow
+    DotCMSContentTypeLayoutRow,
+    DotCMSContentlet
 } from '@dotcms/dotcms-models';
 
 import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
@@ -279,6 +280,7 @@ export const DATE_FIELD_MOCK: DotCMSContentTypeField = {
     iDate: 1698250833000,
     id: '55b4fdcf51eddf01b0f462384e8b3439',
     indexed: false,
+    hint: 'A hint text',
     listed: false,
     modDate: 1698250833000,
     name: 'date',
@@ -303,6 +305,7 @@ export const DATE_AND_TIME_FIELD_MOCK: DotCMSContentTypeField = {
     id: '9e669bacc84ce6530bba5f295becc76c',
     indexed: false,
     listed: false,
+    hint: 'A hint text',
     modDate: 1698250840000,
     name: 'date and time',
     readOnly: false,
@@ -321,6 +324,7 @@ export const TIME_FIELD_MOCK: DotCMSContentTypeField = {
     fieldTypeLabel: 'Time',
     fieldVariables: [],
     fixed: false,
+    hint: 'A hint text',
     iDate: 1698250847000,
     id: '1005cde03b962dd0ce7bb4c4ec97f89c',
     indexed: false,
@@ -356,7 +360,6 @@ export const TAG_FIELD_MOCK: DotCMSContentTypeField = {
     searchable: false,
     sortOrder: 3,
     unique: false,
-
     variable: 'someTag'
 };
 
@@ -399,7 +402,6 @@ export const MULTI_SELECT_FIELD_MOCK: DotCMSContentTypeField = {
     listed: false,
     modDate: 1698291913000,
     name: 'multiSelect',
-
     readOnly: false,
     required: false,
     searchable: false,
@@ -486,6 +488,64 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
 ];
 
 export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;
+
+export const BINARY_FIELD_CONTENTLET: DotCMSContentlet = {
+    binaryField:
+        '/dA/39de8193694d96c2a6bab783ba9c85b5/binaryField/Screenshot 2023-11-03 at 11.53.40â\u0080¯AM.png',
+    publishDate: '2023-11-07 16:49:24.787',
+    inode: 'd135b73a-8c8f-42ce-bd4e-deb3c067cedd',
+    BinaryContentAsset: '39de8193694d96c2a6bab783ba9c85b5/binaryField',
+    host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+    locked: false,
+    stInode: 'd1901a41d38b6686dd5ed8f910346d7a',
+    contentType: 'Binary',
+    BinaryMetaData: {
+        modDate: 1699375764242,
+        sha256: '7b4e1c307518ea00e503469e690e4abe42fe1b13aef43cbcbf6eafd9aa532057',
+        length: 136168,
+        title: 'Screenshot 2023-11-03 at 11.53.40â\u0080¯AM.png',
+        version: 20220201,
+        isImage: true,
+        fileSize: 136168,
+        name: 'Screenshot 2023-11-03 at 11.53.40â\u0080¯AM.png',
+        width: 645,
+        contentType: 'image/png',
+        height: 547
+    },
+    identifier: '39de8193694d96c2a6bab783ba9c85b5',
+    folder: 'SYSTEM_FOLDER',
+    hasTitleImage: true,
+    sortOrder: 0,
+    hostName: 'demo.dotcms.com',
+    modDate: '2023-11-07 16:49:24.787',
+    title: '39de8193694d96c2a6bab783ba9c85b5',
+    baseType: 'CONTENT',
+    archived: false,
+    working: true,
+    live: true,
+    owner: 'dotcms.org.1',
+    languageId: 1,
+    url: '/content.d135b73a-8c8f-42ce-bd4e-deb3c067cedd',
+    titleImage: 'binaryField',
+    modUserName: 'Admin User',
+    hasLiveVersion: true,
+    modUser: 'dotcms.org.1',
+    binaryFieldVersion:
+        '/dA/d135b73a-8c8f-42ce-bd4e-deb3c067cedd/binaryField/Screenshot 2023-11-03 at 11.53.40â\u0080¯AM.png',
+    __icon__: 'contentIcon',
+    contentTypeIcon: 'event_note',
+    variant: 'DEFAULT'
+};
+
+export const FIELDS_WITH_CONTENTLET_MOCK: {
+    fieldMock: DotCMSContentTypeField;
+    contentlet: DotCMSContentlet;
+}[] = [
+    {
+        fieldMock: BINARY_FIELD_MOCK,
+        contentlet: BINARY_FIELD_CONTENTLET
+    }
+];
 
 /* HELPER FUNCTIONS */
 
