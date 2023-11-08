@@ -20,7 +20,7 @@ import {
     PROP_NOT_FOUND,
     ReportSummaryLegendByBayesianStatus,
     SummaryLegend,
-    TIME_14_DAYS,
+    TIME_7_DAYS,
     TIME_90_DAYS
 } from '@dotcms/dotcms-models';
 
@@ -42,7 +42,7 @@ export const orderVariants = (arrayToOrder: Array<string>): Array<string> => {
  * @return {number[]} - An array of conversion Rate values.
  */
 export const getParsedChartData = (data: Record<string, DotResultDate>): number[] => {
-    return [0, ...Object.values(data).map((day) => day.conversionRate)];
+    return [0, ...Object.values(data).map((day) => Math.round(day.conversionRate * 100) / 100)];
 };
 
 export const getPropertyColors = (index: number): LineChartColorsProperties => {
@@ -63,7 +63,7 @@ export const processExperimentConfigProps = (
 
     config['EXPERIMENTS_MIN_DURATION'] =
         configProps['EXPERIMENTS_MIN_DURATION'] === PROP_NOT_FOUND
-            ? TIME_14_DAYS
+            ? TIME_7_DAYS
             : daysToMilliseconds(+configProps['EXPERIMENTS_MIN_DURATION']);
     config['EXPERIMENTS_MAX_DURATION'] =
         configProps['EXPERIMENTS_MAX_DURATION'] === PROP_NOT_FOUND
@@ -86,20 +86,17 @@ export const checkIfExperimentDescriptionIsSaving = (stepStatusSidebar) =>
  *  To put together the summary table in the experiment results screen  */
 export const getConversionRateRage = (
     data: DotCreditabilityInterval,
-    noDataLabel: string
+    noDataLabel: string,
+    separatorLabel: string
 ): string => {
     return data
-        ? `${formatPercent(data.lower, 'en-US', '1.0-2')} to ${formatPercent(
-              data.upper,
-              'en-US',
-              '1.0-2'
-          )}`
+        ? `${getPercentageFormat(data.lower)} ${separatorLabel} ${getPercentageFormat(data.upper)}`
         : noDataLabel;
 };
 
 export const getConversionRate = (uniqueBySession: number, sessions: number): string => {
     if (uniqueBySession !== 0 && sessions !== 0) {
-        return formatPercent(uniqueBySession / sessions, 'en-US', '1.0-2');
+        return getPercentageFormat(uniqueBySession / sessions);
     }
 
     return '0%';
@@ -113,7 +110,7 @@ export const getBayesianVariantResult = (
 };
 
 export const getProbabilityToBeBest = (probability: number, noDataLabel: string): string => {
-    return probability ? formatPercent(probability, 'en-US', '1.0-2') : noDataLabel;
+    return probability ? getPercentageFormat(probability) : noDataLabel;
 };
 
 export const isPromotedVariant = (experiment: DotExperiment, variantName: string): boolean => {
@@ -215,9 +212,9 @@ const generateProbabilityDensityData = (
     // Loop through the x values from 0 to 1.
     for (let i = 0; i <= 1; i += step) {
         // Set the x value to the current value of i.
-        const x = i;
+        const x = Number(i.toFixed(2));
         // Set the y value to the value of the pdf at the current value of i.
-        const y = betaDist.pdf(x);
+        const y = Number(betaDist.pdf(x).toFixed(2));
 
         if (!isFinite(y)) {
             continue;
@@ -251,4 +248,13 @@ const arePointsALine = (points: { x: number; y: number }[]): boolean => {
     }
 
     return true;
+};
+
+/**
+ * Given a number, identify if is lower that 10% round 2 decimals if is higher than 10 round to 1 decimal
+ */
+const getPercentageFormat = (value: number): string => {
+    return value < 0.1
+        ? formatPercent(value, 'en-US', '1.0-2')
+        : formatPercent(value, 'en-US', '1.0-1');
 };

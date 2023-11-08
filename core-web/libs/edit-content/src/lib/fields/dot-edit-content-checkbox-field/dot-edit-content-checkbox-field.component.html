@@ -1,0 +1,7 @@
+<p-checkbox
+    *ngFor="let option of options; let i = index"
+    [formControl]="formControl"
+    [value]="option.value"
+    [inputId]="field.variable + i"
+    [label]="option.label"
+    [name]="field.variable"></p-checkbox>
