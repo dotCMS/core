@@ -5,20 +5,19 @@ import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentl
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.LanguageDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
+import com.dotcms.repackage.org.directwebremoting.WebContext;
+import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -39,21 +38,21 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
+import com.liferay.util.servlet.SessionMessages;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 /**
  *
@@ -362,6 +361,56 @@ public class ContentletAjaxTest {
 		assertTrue(UtilMethods.isSet(results));
 		assertEquals(1L, ((HashMap) results.get(0)).get("total"));
 		assertEquals(event.getInode(), ((HashMap) results.get(3)).get("inode"));
+	}
+
+	private static void setUpContext() {
+		final HttpSession session = mock(HttpSession.class);
+		Mockito.when(session.getAttribute(SessionMessages.KEY)).thenReturn(new LinkedHashMap());
+
+		final HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
+		Mockito.when(httpServletRequest.getSession()).thenReturn(session);
+		Mockito.when(httpServletRequest.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+
+		final WebContext webContext = mock(WebContext.class);
+		Mockito.when(webContext.getHttpServletRequest()).thenReturn(httpServletRequest);
+
+		final WebContextFactory.WebContextBuilder webContextBuilderMock =
+				mock(WebContextFactory.WebContextBuilder.class);
+		Mockito.when(webContextBuilderMock.get()).thenReturn(webContext);
+
+		final com.dotcms.repackage.org.directwebremoting.Container containerMock =
+				mock(com.dotcms.repackage.org.directwebremoting.Container.class);
+		Mockito.when(containerMock.getBean(WebContextFactory.WebContextBuilder.class)).thenReturn(webContextBuilderMock);
+
+		WebContextFactory.attach(containerMock);
+	}
+
+
+	/**
+	 * <b>Method to Test:</b> {@link ContentletAjax#getContentletData(String)}<p>
+	 * <b>When:</b> getting the data of the contentlet <p>
+	 * <b>Should:</b> Return if the field contains an image field
+	 */
+	@Test
+	public void test_getContentletData_addingHasImageField(){
+		setUpContext();
+
+		final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+		ContentTypeDataGen.addField(new FieldDataGen()
+				.velocityVarName("title")
+				.contentTypeId(contentType.id())
+				.type(TextField.class)
+				.nextPersisted());
+		ContentTypeDataGen.addField(new FieldDataGen()
+				.velocityVarName("constImage")
+				.contentTypeId(contentType.id())
+				.type(ImageField.class)
+				.nextPersisted());
+		final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+		final ContentletAjax contentletAjax = new ContentletAjax();
+		final Map<String, Object> contentletData = contentletAjax.getContentletData(contentlet.getInode());
+		assertNotNull(contentletData);
+		assertTrue(contentletData.get("hasImageFields").equals("true"));
 	}
 
 }

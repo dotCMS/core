@@ -683,13 +683,14 @@
                     var fieldValue = '';
                     if (fieldName === 'languageId') {
 						createLangTd(row, item, '<%= relationJsName %>');
-                    } else if (fieldName === 'titleImage') {
-                        createImageCell(row, item);
-                    } else {
-                        var fieldCell = row.insertCell(row.cells.length);
-                        fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
-                            item,
-                            <%= relationJsName %>_specialFields[fieldName] || item[fieldName] || "");
+					} else if ((item[fieldName] && (fieldName === 'titleImage' || item[fieldName].includes("assets")))
+							|| (!item[fieldName] && item['hasImageFields'] === 'true') ) {
+						createImageCell(row, item);
+					} else{
+						var fieldCell = row.insertCell(row.cells.length);
+						fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
+								item,
+								item[fieldName] || "");
                     }
                 });
             }

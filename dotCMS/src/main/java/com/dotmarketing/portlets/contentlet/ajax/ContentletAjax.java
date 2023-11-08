@@ -203,6 +203,7 @@ public class ContentletAjax {
 			result.put("langName", languageName);
 			result.put("langId", language.getId()+"");
 			result.put("siblings", getContentSiblingsData(inode));
+			result.put("hasImageFields",String.valueOf(hasImageFields(inode)));
 
 		} catch (DotDataException e) {
 			Logger.error(this, "Error trying to obtain the contentlets from the relationship.", e);
@@ -240,6 +241,24 @@ public class ContentletAjax {
                 result.put(field.variable(), fieldValue);
             }
         }
+	}
+
+	private boolean hasImageFields(String inode) throws DotDataException, DotSecurityException {
+
+		final HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+		final User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
+		final Contentlet firstContentlet = conAPI.find(inode, currentUser, true);
+		final Structure targetStructure = firstContentlet.getStructure();
+		final List<Field> targetFields = FieldsCache.getFieldsByStructureInode(targetStructure.getInode());
+
+		//use a for each to iterate targetFields and validate if fieldType contains image
+		for(final Field field : targetFields){
+			if(field.getFieldType().equals(FieldType.IMAGE.toString()) ){
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private List<Map<String, String>> getContentSiblingsData(String inode) {//GIT-1057

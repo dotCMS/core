@@ -203,3 +203,4 @@ This maintenance release includes the following code fixes:
 169. https://github.com/dotCMS/core/issues/24894 : There is no way to configure WYSIWYG to use the virtual path of an image when inserting one #24894
 170. https://github.com/dotCMS/core/issues/25127 : CMS Admin should be able to view all the bundles regardless of the user who create it #25127
 171. https://github.com/dotCMS/core/issues/25193 : Unable to specify resample_opts - value not carried all the way down the method call #25193
+172. https://github.com/dotCMS/core/issues/25411 : Showing a binary field to showFields in a Relationship Field shows path instead of thumbnail #25411
