@@ -17,6 +17,7 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotExperimentsListTableComponent } from './dot-experiments-list-table.component';
+import { LoginService } from '@dotcms/dotcms-js';
 
 const MOCK_MENU_ITEMS: MenuItem[] = [
     // Delete Action
@@ -86,7 +87,11 @@ describe('DotExperimentsListTableComponent', () => {
             },
             MessageService,
             ConfirmationService,
-            { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
+            { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
+            {
+                provide: LoginService,
+                useValue: { currentUserLanguageId: 'en-US' }
+            }
         ],
         schemas: [NO_ERRORS_SCHEMA]
     });
