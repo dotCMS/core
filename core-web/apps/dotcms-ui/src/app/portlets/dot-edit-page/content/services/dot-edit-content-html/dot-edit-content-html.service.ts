@@ -99,6 +99,7 @@ export class DotEditContentHtmlService {
     private remoteRendered: boolean;
     private askToCopy = true;
 
+    private readonly origin = globalThis.location.origin;
     private readonly docClickHandlers;
 
     get pagePersonalization() {
@@ -449,7 +450,9 @@ export class DotEditContentHtmlService {
 
     private setMaterialIcons(): void {
         const doc = this.getEditPageDocument();
-        const link = this.dotDOMHtmlUtilService.createLinkElement(MATERIAL_ICONS_PATH);
+        const link = this.dotDOMHtmlUtilService.createLinkElement(
+            this.origin + MATERIAL_ICONS_PATH
+        );
         doc.head.appendChild(link);
     }
 
@@ -598,7 +601,7 @@ export class DotEditContentHtmlService {
         const editModeNodes = doc.querySelectorAll('[data-mode]');
 
         if (editModeNodes.length) {
-            const TINYMCE = `/html/js/tinymce/js/tinymce/tinymce.min.js`;
+            const TINYMCE = `${this.origin}/html/js/tinymce/js/tinymce/tinymce.min.js`;
             const tinyMceScript = this.dotDOMHtmlUtilService.creatExternalScriptElement(TINYMCE);
             const tinyMceInitScript: HTMLScriptElement =
                 this.dotDOMHtmlUtilService.createInlineScriptElement(INLINE_TINYMCE_SCRIPTS);
@@ -933,7 +936,7 @@ export class DotEditContentHtmlService {
         const href = url.split('/');
         href.pop();
 
-        base.href = href.join('/') + '/';
+        base.href = this.origin + href.join('/') + '/';
 
         return base;
     }
