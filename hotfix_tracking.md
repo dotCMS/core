@@ -205,3 +205,4 @@ This maintenance release includes the following code fixes:
 171. https://github.com/dotCMS/core/issues/25193 : Unable to specify resample_opts - value not carried all the way down the method call #25193
 172. https://github.com/dotCMS/core/issues/25411 : Showing a binary field to showFields in a Relationship Field shows path instead of thumbnail #25411
 173. https://github.com/dotCMS/core/issues/25827 : Recreating a field with same name diff type uses the same id #25827
+174. https://github.com/dotCMS/core/issues/25870 : Using showFields field variable replicates title to all items #25870
