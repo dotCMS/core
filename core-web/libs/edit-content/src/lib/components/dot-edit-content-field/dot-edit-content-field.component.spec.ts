@@ -41,7 +41,7 @@ declare module '@tiptap/core' {
 
 // This holds the mapping between the field type and the component that should be used to render it.
 // We need to hold this record here, because for some reason the references just fall to undefined.
-const FIELD_TYPES_COMPONENTS: Partial<Record<FIELD_TYPES, Type<unknown>>> = {
+const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown>> = {
     // We had to use unknown because components have different types.
     [FIELD_TYPES.TEXT]: DotEditContentTextFieldComponent,
     [FIELD_TYPES.TEXTAREA]: DotEditContentTextAreaComponent,
