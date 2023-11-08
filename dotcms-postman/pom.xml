@@ -56,7 +56,6 @@
                     <skip>${skipDockerEnv}</skip>
                     <composeFile>${project.basedir}/docker-compose.yml</composeFile>
                     <detachedMode>false</detachedMode>
-                    <followLogs>true</followLogs>
                     <removeVolumes>true</removeVolumes>
                 </configuration>
                 <executions>
@@ -73,7 +72,6 @@
                             <ignorePullFailures>true</ignorePullFailures>
                             <detachedMode>true</detachedMode>
                             <verbose>false</verbose>
-                            <followLogs>true</followLogs>
                             <services>
                                 <service>db-test</service>
                                 <service>elasticsearch-test</service>
@@ -104,6 +102,20 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>${version.exec.plugin}</version>
                 <executions>
+                    <execution>
+                        <id>docker-logs</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipITs}</skip>
+                            <executable>docker-compose</executable>
+                            <commandlineArgs>logs -f dotcms-test</commandlineArgs>
+                            <async>true</async>
+                            <asyncDestroyOnShutdown>true</asyncDestroyOnShutdown>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>integration-tests</id>
                         <phase>integration-test</phase>
