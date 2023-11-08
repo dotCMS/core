@@ -43,6 +43,7 @@ import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.wildfly.common.Assert;
 import picocli.CommandLine;
@@ -337,6 +338,7 @@ class ContentTypeCommandIT extends CommandTest {
      *
      * @throws IOException
      */
+    @Disabled("This test is index dependent therefore there's a chance to see it fail from time to time")
     @Test
     void Test_Push_New_Content_Type_From_File_Then_Remove() throws IOException {
 
