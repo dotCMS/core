@@ -1,9 +1,10 @@
-name: UX Requirement Submission
+name: UX Requirement
 description: Provide details for a UX improvement or issue.
 labels: ["Type : UX Design", "Triage"]
+projects: ["dotCMS/7"]
 
-title: "[UX REQUIREMENT]: "
 body:
+
   - type: markdown
     attributes:
       value: |
@@ -17,7 +18,6 @@ body:
       label: Define the Problem
       description: Describe the problem that needs to be addressed in words.
       placeholder: "e.g., Users are unable to find the search functionality easily due to its placement on the page..."
-      value: ""
     validations:
       required: true
 
@@ -27,7 +27,6 @@ body:
       label: Who's Facing the Problem?
       description: Identify the user groups that are impacted by this problem.
       placeholder: "e.g., New users are facing difficulties..., Regular visitors are frustrated by..., etc."
-      value: ""
     validations:
       required: true
 
@@ -42,7 +41,6 @@ body:
       label: Screenshot or Video
       description: Upload a screenshot or video demonstrating the issue and describe the issue.
       placeholder: "e.g., In the attached screenshot, the search bar is obscured by the banner ad, making it hard to notice..."
-      value: ""
     validations:
       required: false
 
@@ -58,7 +56,6 @@ body:
       label: Relevant Links and Resources
       description: Provide any links to relevant resources such as portlets, Slack channels, documents, etc.
       placeholder: "e.g., Slack channel discussion about the issue: https://slack..., Link to the user feedback document: https://docs..., etc."
-      value: ""
     validations:
       required: false
 
@@ -68,6 +65,5 @@ body:
       label: Assumptions & Initiation Needs
       description: Describe any assumptions and what's needed to initiate this UX project.
       placeholder: "Assumption: Users prefer a minimalistic design. Needs: Access to user surveys, Current site analytics, etc."
-      value: ""
     validations:
       required: false
