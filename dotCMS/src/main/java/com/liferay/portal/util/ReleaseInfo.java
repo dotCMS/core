@@ -42,7 +42,7 @@ public final class ReleaseInfo {
 
 
 
-    private volatile Map<String, String> values = ImmutableMap.of("name", "dotCMS Platform", "version", "UNVERSIONED", "revision", "0", "timestamp", "March 6 2009");
+    private volatile Map<String, String> values = ImmutableMap.of("name", "dotCMS Platform", "version", "UNVERSIONED", "revision", "0", "timestamp", "1699480662");
 
     protected ReleaseInfo() {
         load();
