@@ -18,7 +18,7 @@ public class Task231030DropReleaseTable implements StartupTask {
 
         //remove Release_ table
         try {
-            new DotConnect().executeStatement("drop table Release_");
+            new DotConnect().executeStatement("drop table release_");
         } catch (SQLException e) {
             throw new DotRuntimeException(e);
         }
@@ -28,7 +28,7 @@ public class Task231030DropReleaseTable implements StartupTask {
     public boolean forceRun() {
         try {
             return new DotDatabaseMetaData().tableExists(
-                    DbConnectionFactory.getConnection(), "Release_");
+                    DbConnectionFactory.getConnection(), "release_");
         } catch (SQLException e) {
             return Boolean.FALSE;
         }
