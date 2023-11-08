@@ -110,8 +110,7 @@
                         </goals>
                         <configuration>
                             <skip>${skipITs}</skip>
-                            <executable>docker-compose</executable>
-                            <commandlineArgs>logs -f dotcms-test</commandlineArgs>
+                            <executable>./showlogs.sh</executable>
                             <async>true</async>
                             <asyncDestroyOnShutdown>true</asyncDestroyOnShutdown>
                         </configuration>
