@@ -8,7 +8,7 @@ const grayLight = '#c5c5c5';
 
 export const getEditPageCss = (
     timestampId: string,
-    origin: string = globalThis.location.origin
+    origin: string = window.location.origin
 ): string => {
     return `
     // GOOGLE FONTS
