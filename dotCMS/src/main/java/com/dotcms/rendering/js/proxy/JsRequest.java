@@ -114,9 +114,9 @@ public class JsRequest implements Serializable, JsProxyObject<HttpServletRequest
     }
 
     @HostAccess.Export
-    public Collection<JsBlob> getBlob() { // todo: this should be the ProxyArray
+    public Object getBlob() {
 
-        return Try.of(()->this.request.getParts().stream().map(JsBlob::new).collect(Collectors.toList())).getOrNull();
+        return Try.of(()->JsProxyFactory.createProxy(this.request.getParts())).getOrNull();
     }
 
     @HostAccess.Export

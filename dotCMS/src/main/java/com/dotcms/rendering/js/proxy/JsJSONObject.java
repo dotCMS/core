@@ -94,9 +94,9 @@ public class JsJSONObject implements Serializable, JsProxyObject<JSONObject> {
      * @return      A JSONArray which is the value.
      * @throws   JSONException if the key is not found or
      *  if the value is not a JSONArray.
-     */ // todo: proxy the array
-    public JSONArray getJSONArray(final String key)  {
-        return this.jsonObject.getJSONArray(key);
+     */
+    public Object getJSONArray(final String key)  {
+        return JsProxyFactory.createProxy(this.jsonObject.getJSONArray(key));
     }
 
     @HostAccess.Export

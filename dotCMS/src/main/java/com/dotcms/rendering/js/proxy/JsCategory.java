@@ -2,9 +2,12 @@ package com.dotcms.rendering.js.proxy;
 
 import com.dotmarketing.portlets.categories.model.Category;
 import org.graalvm.polyglot.HostAccess;
+import org.graalvm.polyglot.proxy.ProxyDate;
 import org.graalvm.polyglot.proxy.ProxyHashMap;
 
 import java.io.Serializable;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.Map;
 
@@ -93,8 +96,8 @@ public class JsCategory implements Serializable, JsProxyObject<Category> {
     }
 
     @HostAccess.Export
-    public Date getModDate() {
-        return this.category.getModDate();
+    public Object getModDate() {
+        return JsProxyFactory.createProxy(this.category.getModDate());
     }
 
     @HostAccess.Export

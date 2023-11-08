@@ -70,9 +70,9 @@ public class JsSite implements Serializable, JsProxyObject<Host> {
 		return this.site.getHostname();
 	}
 
-	@HostAccess.Export // todo: non sure it will proxy jdk object
-	public File getHostThumbnail() {
-		return this.site.getHostThumbnail();
+	@HostAccess.Export
+	public Object getHostThumbnail() {
+		return JsProxyFactory.createProxy(this.site.getHostThumbnail());
 	}
 
 	@HostAccess.Export

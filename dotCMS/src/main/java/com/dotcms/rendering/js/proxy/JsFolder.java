@@ -36,8 +36,8 @@ public class JsFolder implements Serializable, JsProxyObject<Folder> {
     }
 
     @HostAccess.Export
-    public Date getIDate() {
-        return this.folder.getIDate();
+    public Object getIDate() {
+        return JsProxyFactory.createProxy(this.folder.getIDate());
     }
 
     @HostAccess.Export
@@ -56,8 +56,8 @@ public class JsFolder implements Serializable, JsProxyObject<Folder> {
     }
 
     @HostAccess.Export
-    public Host getHost() { // todo: port the Host per JsSite
-        return this.folder.getHost();
+    public Object getHost() {
+        return JsProxyFactory.createProxy(this.folder.getHost());
     }
 
     @HostAccess.Export
@@ -88,12 +88,13 @@ public class JsFolder implements Serializable, JsProxyObject<Folder> {
         return this.folder.isParent();
     }
 
-    @HostAccess.Export // todo: proxy this
-    public List<Treeable> getChildren(final User user, final boolean live,
+    @HostAccess.Export
+    public Object getChildren(final User user, final boolean live,
                                       final boolean working,
                                       final boolean archived,
                                       final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
-        return this.folder.getChildren(user, live, working, archived, respectFrontEndPermissions);
+
+        return JsProxyFactory.createProxy(this.folder.getChildren(user, live, working, archived, respectFrontEndPermissions));
     }
 
     @HostAccess.Export
@@ -151,8 +152,8 @@ public class JsFolder implements Serializable, JsProxyObject<Folder> {
     }
 
     @HostAccess.Export
-    public Date getModDate() {
-        return this.folder.getModDate();
+    public Object getModDate() {
+        return JsProxyFactory.createProxy(this.folder.getModDate());
     }
 
     @HostAccess.Export

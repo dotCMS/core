@@ -30,7 +30,7 @@ public class JsBlob implements Serializable, JsProxyObject<Part> {
         return Try.of(() -> this.part.getInputStream()).getOrNull();
     }
 
-    @HostAccess.Export
+    @HostAccess.Export // todo: test if this works
     public /*InputStream*/Object getArrayBuffer() {
         return JsProxyFactory.createProxy(this.getArrayBufferInternal());
     }

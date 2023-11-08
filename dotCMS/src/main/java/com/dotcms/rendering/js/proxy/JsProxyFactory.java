@@ -1,5 +1,8 @@
 package com.dotcms.rendering.js.proxy;
 
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.rendering.velocity.viewtools.content.LazyLoaderContentMap;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMap;
@@ -16,20 +19,25 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import org.graalvm.polyglot.Value;
 import org.graalvm.polyglot.proxy.ProxyArray;
+import org.graalvm.polyglot.proxy.ProxyDate;
 import org.graalvm.polyglot.proxy.ProxyHashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
+import java.io.File;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-// todo: register a mapper for JsonObject, Content Type, ProxyHashMap and others also for the JsProxyObject (the other direction)
 /**
  * This class has all the knowledge to create a proxy object or wrapper for the javascript graal.
  * @author jsanca
@@ -58,6 +66,12 @@ public class JsProxyFactory {
         registerMapper(new JsSiteProxyMapperStrategyImpl());
         registerMapper(new JsContainerUUIDProxyMapperStrategyImpl());
         registerMapper(new JsTreeableProxyMapperStrategyImpl());
+        registerMapper(new JsDateProxyMapperStrategyImpl());
+        registerMapper(new JsLocaleProxyMapperStrategyImpl());
+        registerMapper(new JsFileProxyMapperStrategyImpl());
+        registerMapper(new JsFileProxyMapperStrategyImpl());
+        registerMapper(new JsFieldMapperStrategyImpl());
+        registerMapper(new JsFieldVariableMapperStrategyImpl());
     }
     /**
      * Register a custom mapper
@@ -379,7 +393,84 @@ public class JsProxyFactory {
         }
     }
 
+    private static final class JsDateProxyMapperStrategyImpl implements JsProxyMapperStrategy {
+        @Override
+        public boolean test(final Object obj) {
+            return null != obj && obj instanceof Date;
+        }
 
+        @Override
+        public Object apply(final Object obj) {
 
+            return ProxyDate.from(Instant.ofEpochMilli(Date.class.cast(obj).getTime())
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate());
+        }
+    }
+
+    private static final class JsLocaleProxyMapperStrategyImpl implements JsProxyMapperStrategy {
+        @Override
+        public boolean test(final Object obj) {
+            return null != obj && obj instanceof Locale;
+        }
+
+        @Override
+        public Object apply(final Object obj) {
+
+            return new JsLocale((Locale)obj);
+        }
+    }
+
+    private static final class JsFileProxyMapperStrategyImpl implements JsProxyMapperStrategy {
+        @Override
+        public boolean test(final Object obj) {
+            return null != obj && obj instanceof File;
+        }
+
+        @Override
+        public Object apply(final Object obj) {
+
+            return new JsFile((File)obj);
+        }
+    }
+
+    private static final class JsContentTypeMapperStrategyImpl implements JsProxyMapperStrategy {
+        @Override
+        public boolean test(final Object obj) {
+            return null != obj && obj instanceof ContentType;
+        }
+
+        @Override
+        public Object apply(final Object obj) {
+
+            return new JsContentType((ContentType)obj);
+        }
+    }
+
+    private static final class JsFieldMapperStrategyImpl implements JsProxyMapperStrategy {
+        @Override
+        public boolean test(final Object obj) {
+            return null != obj && obj instanceof Field;
+        }
+
+        @Override
+        public Object apply(final Object obj) {
+
+            return new JsField((Field)obj);
+        }
+    }
+
+    private static final class JsFieldVariableMapperStrategyImpl implements JsProxyMapperStrategy {
+        @Override
+        public boolean test(final Object obj) {
+            return null != obj && obj instanceof FieldVariable;
+        }
+
+        @Override
+        public Object apply(final Object obj) {
+
+            return new JsFieldVariable((FieldVariable)obj);
+        }
+    }
 
 }

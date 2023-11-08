@@ -159,7 +159,7 @@ public class JsContentMap implements Serializable, JsProxyObject<ContentMap> {
     }
 
     /**
-     * This is not accessible on js contxt.
+     * This is not accessible on js context.
      * @return ContentMap
      */
     public ContentMap getContentMapObject() {
