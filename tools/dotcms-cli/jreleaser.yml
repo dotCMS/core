@@ -5,6 +5,7 @@ project:
   longDescription: app -- DotCMS Quarkus CLI application
   versionPattern: 'CUSTOM'
   java:
+    mainClass: com.dotcms.cli.command.EntryCommand
     multiProject: true
   copyright: |
     <p>© 2021 dotCMS Inc. All rights reserved.</p>
@@ -60,3 +61,8 @@ upload:
           active: RELEASE
           fileTypes:
             - JAR
+packagers:
+  jbang:
+    alias: dotcli
+    active: ALWAYS
+    continueOnError: false
