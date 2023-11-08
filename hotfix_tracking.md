@@ -202,3 +202,4 @@ This maintenance release includes the following code fixes:
 168. https://github.com/dotCMS/core/issues/24816 : The site search index portlet doesn't render, which leads to errors from elasticsearch when there are many indices #24816
 169. https://github.com/dotCMS/core/issues/24894 : There is no way to configure WYSIWYG to use the virtual path of an image when inserting one #24894
 170. https://github.com/dotCMS/core/issues/25127 : CMS Admin should be able to view all the bundles regardless of the user who create it #25127
+171. https://github.com/dotCMS/core/issues/25193 : Unable to specify resample_opts - value not carried all the way down the method call #25193
