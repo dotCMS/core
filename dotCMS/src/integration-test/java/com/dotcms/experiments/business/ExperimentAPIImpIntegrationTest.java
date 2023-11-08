@@ -1528,6 +1528,52 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
 
+    private static String getExpectedExitRateQuery(Experiment experiment) {
+        try {
+            final Experiment experimentFromDB = APILocator.getExperimentsAPI()
+                    .find(experiment.getIdentifier(), APILocator.systemUser())
+                    .orElseThrow();
+
+            final String cubeJSQueryExpected = "{" +
+                    "\"measures\": [" +
+                        "\"Events.totalSessions\"," +
+                        "\"Events.exitRateSuccesses\"," +
+                        "\"Events.exitRateConvertionRate\"" +
+                    "]," +
+                    "\"dimensions\": [" +
+                        "\"Events.variant\"" +
+                    "]," +
+                    "\"filters\": [" +
+                        "{\n" +
+                            "\"member\": \"Events.experiment\"," +
+                            "\"operator\": \"equals\"," +
+                            "\"values\": [" +
+                                 "\"" + experimentFromDB.getIdentifier() + "\"" +
+                            "]" +
+                        "}," +
+                        "{" +
+                            "\"member\": \"Events.runningId\"," +
+                            "\"operator\": \"equals\"," +
+                            "\"values\": [" +
+                                "\"" + experimentFromDB.runningIds().getCurrent().get().id() + "\"" +
+                            "]" +
+                        "}" +
+                    "]," +
+                    "\"timeDimensions\": [" +
+                            "{" +
+                                "\"dimension\": \"Events.day\"," +
+                                "\"granularity\": \"day\"" +
+                            "}" +
+                        "]," +
+                        "\"order\":{\"Events.day\":\"asc\"}" +
+                    "}";
+
+            return cubeJSQueryExpected;
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static String getExpectedBounceRateTotalSesionsQuery(Experiment experiment) {
         try {
             final Experiment experimentFromDB = APILocator.getExperimentsAPI()
@@ -1653,156 +1699,48 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             throw new RuntimeException(e);
         }
     }
-    private static String getExpectedPageReachQuery(final Experiment experiment, final long limit,
-            final long offset) {
+
+
+    private static String getExpectedExitRateTotalSesionsQuery(Experiment experiment) {
         try {
             final Experiment experimentFromDB = APILocator.getExperimentsAPI()
                     .find(experiment.getIdentifier(), APILocator.systemUser())
                     .orElseThrow();
 
-            final String cubeJSQueryExpected ="{"
-                    +   "\"filters\":["
-                    +       "{"
-                    +           "\"values\":["
-                    +               "\"pageview\""
-                    +           "],"
-                    +           "\"member\":\"Events.eventType\","
-                    +           "\"operator\":\"equals\""
-                    +       "},"
-                    +       "{"
-                    +           "\"values\":["
-                    +               "\"" + experiment.getIdentifier() + "\""
-                    +           "],"
-                    +           "\"member\":\"Events.experiment\","
-                    +           "\"operator\":\"equals\""
-                    +       "},"
-                    +       "{"
-                    +           "\"values\":["
-                    +               "\"" + experimentFromDB.runningIds().getCurrent().get().id() + "\""
-                    +           "],"
-                    +           "\"member\":\"Events.runningId\","
-                    +           "\"operator\":\"equals\""
-                    +       "}"
-                    +   "],"
-                    +   "\"dimensions\":["
-                    +       "\"Events.referer\","
-                    +       "\"Events.experiment\","
-                    +       "\"Events.variant\","
-                    +       "\"Events.utcTime\","
-                    +       "\"Events.url\","
-                    +       "\"Events.lookBackWindow\","
-                    +       "\"Events.eventType\","
-                    +       "\"Events.runningId\""
-                    +   "],"
-                    +   "\"order\":{"
-                    +       "\"Events.lookBackWindow\":\"asc\","
-                    +       "\"Events.utcTime\":\"asc\""
-                    +   "},"
-                    +   "\"limit\":" + limit + ","
-                    +   "\"offset\":" + offset
-                    + "}";
+            final String cubeJSQueryExpected = "{" +
+                    "\"measures\": [" +
+                        "\"Events.totalSessions\"," +
+                        "\"Events.exitRateSuccesses\"," +
+                        "\"Events.exitRateConvertionRate\"" +
+                    "]," +
+                    "\"dimensions\": [" +
+                        "\"Events.variant\"" +
+                    "]," +
+                    "\"filters\": [" +
+                        "{\n" +
+                            "\"member\": \"Events.experiment\"," +
+                            "\"operator\": \"equals\"," +
+                            "\"values\": [" +
+                                "\"" + experimentFromDB.getIdentifier() + "\"" +
+                            "]" +
+                        "}," +
+                        "{" +
+                            "\"member\": \"Events.runningId\"," +
+                            "\"operator\": \"equals\"," +
+                            "\"values\": [" +
+                                "\"" + experimentFromDB.runningIds().getCurrent().get().id() + "\"" +
+                            "]" +
+                        "}" +
+                    "]," +
+                    "\"order\":{\"Events.day\":\"asc\"}" +
+            "}";
+
             return cubeJSQueryExpected;
         } catch (DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static String getCountExpectedPageReachQuery(final Experiment experiment) {
-
-        try {
-            final Experiment experimentFromDB = APILocator.getExperimentsAPI()
-                    .find(experiment.getIdentifier(), APILocator.systemUser())
-                    .orElseThrow();
-
-            final String cubeJSQueryExpected ="{"
-                    +   "\"filters\":["
-                    +       "{"
-                    +           "\"values\":["
-                    +               "\"pageview\""
-                    +           "],"
-                    +           "\"member\":\"Events.eventType\","
-                    +           "\"operator\":\"equals\""
-                    +       "},"
-                    +       "{"
-                    +           "\"values\":["
-                    +               "\"" + experimentFromDB.getIdentifier() + "\""
-                    +           "],"
-                    +           "\"member\":\"Events.experiment\","
-                    +           "\"operator\":\"equals\""
-                    +       "},"
-                    +       "{"
-                    +           "\"values\":["
-                    +               "\"" + experimentFromDB.runningIds().getCurrent().get().id() + "\""
-                    +           "],"
-                    +           "\"member\":\"Events.runningId\","
-                    +           "\"operator\":\"equals\""
-                    +       "}"
-                    +   "],"
-                    +   "\"measures\":["
-                    +       "\"Events.count\""
-                    +   "],"
-                    +   "\"order\":{"
-                    +       "\"Events.lookBackWindow\":\"asc\","
-                    +       "\"Events.utcTime\":\"asc\""
-                    +   "}"
-                    + "}";
-            return cubeJSQueryExpected;
-        } catch (DotDataException | DotSecurityException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static String getExpecteExitANdBounceRateQuery(Experiment experiment) {
-        try {
-            final Experiment experimentFromDB = APILocator.getExperimentsAPI()
-                    .find(experiment.getIdentifier(), APILocator.systemUser())
-                    .orElseThrow();
-
-            final String cubeJSQueryExpected ="{"
-                    +   "\"offset\":0,"
-                    +   "\"limit\":1000,"
-                    +   "\"filters\":["
-                    +       "{"
-                    +           "\"values\":["
-                    +               "\"pageview\""
-                    +           "],"
-                    +           "\"member\":\"Events.eventType\","
-                    +           "\"operator\":\"equals\""
-                    +       "},"
-                    +       "{"
-                    +           "\"values\":["
-                    +               "\"" + experiment.getIdentifier() + "\""
-                    +           "],"
-                    +           "\"member\":\"Events.experiment\","
-                    +           "\"operator\":\"equals\""
-                    +       "},"
-                    +       "{"
-                    +           "\"values\":["
-                    +               "\"" + experimentFromDB.runningIds().getCurrent().get().id() + "\""
-                    +           "],"
-                    +           "\"member\":\"Events.runningId\","
-                    +           "\"operator\":\"equals\""
-                    +       "}"
-                    +   "],"
-                    +   "\"dimensions\":["
-                    +       "\"Events.experiment\","
-                    +       "\"Events.variant\","
-                    +       "\"Events.utcTime\","
-                    +       "\"Events.url\","
-                    +       "\"Events.lookBackWindow\","
-                    +       "\"Events.eventType\","
-                    +       "\"Events.runningId\""
-                    +   "],"
-                    +   "\"order\":{"
-                    +       "\"Events.lookBackWindow\":\"asc\","
-                    +       "\"Events.utcTime\":\"asc\""
-                    +   "}"
-                    + "}";
-            return cubeJSQueryExpected;
-        } catch (DotDataException | DotSecurityException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     private static void addContext(final MockHttpServer mockHttpServer,
             final String expectedQuery, final String responseBody) {
@@ -1897,7 +1835,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     @Test(expected = IllegalArgumentException.class)
     public void tryToGetResultFromExperimentNotSaved()
             throws DotDataException, DotSecurityException {
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();reachPageGoalResults();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
 
         final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
@@ -1971,29 +1909,55 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 .limit(1)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
-        final List<Map<String, String>> data = createPageViewEvents(50, experiment, variantName, 2, pageA, pageC);
-        data.addAll(createPageViewEvents(10, experiment, variantName, 2, pageA, pageB));
-        data.addAll(createPageViewEvents(16, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageC));
-        data.addAll(createPageViewEvents(44, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageB));
-        final Map<String, List<Map<String, String>>> cubeJsQueryResult = map("data", data);
 
         APILocator.getExperimentsAPI().start(experiment.getIdentifier(), APILocator.systemUser());
 
         IPUtils.disabledIpPrivateSubnet(true);
-        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
 
         final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
 
-        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
-
-        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
-
-        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
-                map("Events.variant", variantName, "Events.count", "20")
+        final List<Map<String, String>> data = list(
+                map(
+                        "Events.variant", variantName,
+                        "Events.day.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.totalSessions", "60",
+                        "Events.targetVisitedAfterSuccesses", "50",
+                        "Events.targetVisitedAfterConvertionRate", "83.33"
+                ),
+                map(
+                        "Events.variant", "DEFAULT",
+                        "Events.day.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.totalSessions", "60",
+                        "Events.targetVisitedAfterSuccesses", "16",
+                        "Events.targetVisitedAfterConvertionRate", "26.66"
+                )
         );
 
-        addContext(mockhttpServer, queryTotalPageViews,
-                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult = map("data", data);
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final List<Map<String, String>> totalSessionsQueryData = list(
+                map(
+                        "Events.variant", variantName,
+                        "Events.totalSessions", "60",
+                        "Events.targetVisitedAfterSuccesses", "50",
+                        "Events.targetVisitedAfterConvertionRate", "83.33"
+                ),
+                map(
+                        "Events.variant", "DEFAULT",
+                        "Events.totalSessions", "60",
+                        "Events.targetVisitedAfterSuccesses", "16",
+                        "Events.targetVisitedAfterConvertionRate", "26.66"
+                )
+        );
+
+        final String totalSessionsQuery = getExpectedReachPageTotalSesionsQuery(experiment);
+        addContext(mockhttpServer, totalSessionsQuery, JsonUtil.getJsonStringFromObject(map("data", totalSessionsQueryData)));
+
 
         mockhttpServer.start();
 
@@ -2045,39 +2009,54 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final Experiment experiment = createExperiment(pageA, metric, RandomString.make(15));
         final String variantName = getNotDefaultVariantName(experiment);
 
-        final List<Map<String, String>> pageViewEvents_1 = createPageViewEvents(Instant.now(),
-                experiment, variantName, pageA);
-
-        final List<Map<String, String>> pageViewEvents_2 = createPageViewEvents(Instant.now(),
-                experiment, variantName, pageA, pageB);
-
-        final List<Map<String, String>> pageViewEvents_3 = createPageViewEvents(Instant.now(),
-                experiment, "DEFAULT", pageA, pageB);
-
-        final List<Map<String, String>> data = new ArrayList<>(pageViewEvents_1);
-        data.addAll(pageViewEvents_2);
-        data.addAll(pageViewEvents_3);
-
-        final Map<String, List<Map<String, String>>> cubeJsQueryResult = map("data", data);
 
         APILocator.getExperimentsAPI().start(experiment.getIdentifier(), APILocator.systemUser());
 
         IPUtils.disabledIpPrivateSubnet(true);
 
-        final String cubeJSQueryExpected = getExpecteExitANdBounceRateQuery(experiment);
-
         final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+        final List<Map<String, String>> data = list(
+                map(
+                        "Events.variant", variantName,
+                        "Events.day.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.totalSessions", "2",
+                        "Events.targetVisitedAfterSuccesses", "1",
+                        "Events.targetVisitedAfterConvertionRate", "50"
+                ),
+                map(
+                        "Events.variant", "DEFAULT",
+                        "Events.day.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.totalSessions", "1",
+                        "Events.targetVisitedAfterSuccesses", "1",
+                        "Events.targetVisitedAfterConvertionRate", "100"
+                )
+        );
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult = map("data", data);
+        final String cubeJSQueryExpected = getExpectedExitRateQuery(experiment);
 
         addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
 
-        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
-
-        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
-                map("Events.variant", variantName, "Events.count", "3")
+        final List<Map<String, String>> totalSessionsQueryData = list(
+                map(
+                        "Events.variant", variantName,
+                        "Events.totalSessions", "2",
+                        "Events.targetVisitedAfterSuccesses", "1",
+                        "Events.targetVisitedAfterConvertionRate", "50.0"
+                ),
+                map(
+                        "Events.variant", "DEFAULT",
+                        "Events.totalSessions", "1",
+                        "Events.targetVisitedAfterSuccesses", "1",
+                        "Events.targetVisitedAfterConvertionRate", "100"
+                )
         );
 
-        addContext(mockhttpServer, queryTotalPageViews,
-                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+        final String totalSessionsQuery = getExpectedExitRateTotalSesionsQuery(experiment);
+        addContext(mockhttpServer, totalSessionsQuery, JsonUtil.getJsonStringFromObject(map("data", totalSessionsQueryData)));
 
         mockhttpServer.start();
 
@@ -2124,29 +2103,53 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 .limit(1)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
-        final List<Map<String, String>> data = createPageViewEvents(35, experiment, variantName, 2, pageA, pageC);
-        data.addAll(createPageViewEvents(25, experiment, variantName, 2, pageA, pageB));
-        data.addAll(createPageViewEvents(45, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageC));
-        data.addAll(createPageViewEvents(15, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageB));
-        final Map<String, List<Map<String, String>>> cubeJsQueryResult = map("data", data);
 
         APILocator.getExperimentsAPI().start(experiment.getIdentifier(), APILocator.systemUser());
 
         IPUtils.disabledIpPrivateSubnet(true);
-        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
 
         final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
 
-        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
-
-        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
-
-        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
-                map("Events.variant", variantName, "Events.count", "50")
+        final List<Map<String, String>> data = list(
+                map(
+                        "Events.variant", variantName,
+                        "Events.day.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.totalSessions", "60",
+                        "Events.targetVisitedAfterSuccesses", "35",
+                        "Events.targetVisitedAfterConvertionRate", "58.33"
+                ),
+                map(
+                        "Events.variant", "DEFAULT",
+                        "Events.day.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.totalSessions", "60",
+                        "Events.targetVisitedAfterSuccesses", "45",
+                        "Events.targetVisitedAfterConvertionRate", "75"
+                )
         );
 
-        addContext(mockhttpServer, queryTotalPageViews,
-                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult = map("data", data);
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final List<Map<String, String>> totalSessionsQueryData = list(
+                map(
+                        "Events.variant", variantName,
+                        "Events.totalSessions", "60",
+                        "Events.targetVisitedAfterSuccesses", "35",
+                        "Events.targetVisitedAfterConvertionRate", "0.0"
+                ),
+                map(
+                        "Events.variant", "DEFAULT",
+                        "Events.totalSessions", "60",
+                        "Events.targetVisitedAfterSuccesses", "45",
+                        "Events.targetVisitedAfterConvertionRate", "75"
+                )
+        );
+
+        final String totalSessionsQuery = getExpectedReachPageTotalSesionsQuery(experiment);
+        addContext(mockhttpServer, totalSessionsQuery, JsonUtil.getJsonStringFromObject(map("data", totalSessionsQueryData)));
 
         mockhttpServer.start();
 
@@ -2195,29 +2198,54 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 .limit(1)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
-        final List<Map<String, String>> data = createPageViewEvents(35, experiment, variantName, 2, pageA, pageC);
-        data.addAll(createPageViewEvents(25, experiment, variantName, 2, pageA, pageB));
-        data.addAll(createPageViewEvents(45, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageC));
-        data.addAll(createPageViewEvents(15, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageB));
-        final Map<String, List<Map<String, String>>> cubeJsQueryResult = map("data", data);
+
 
         APILocator.getExperimentsAPI().start(experiment.getIdentifier(), APILocator.systemUser());
 
-        IPUtils.disabledIpPrivateSubnet(true);
-        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
-
         final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
 
-        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
-
-        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
-
-        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
-                map("Events.variant", variantName, "Events.count", "50")
+        final List<Map<String, String>> data = list(
+                map(
+                        "Events.variant", variantName,
+                        "Events.day.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.totalSessions", "60",
+                        "Events.targetVisitedAfterSuccesses", "35",
+                        "Events.targetVisitedAfterConvertionRate", "58.33"
+                ),
+                map(
+                        "Events.variant", "DEFAULT",
+                        "Events.day.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.totalSessions", "60",
+                        "Events.targetVisitedAfterSuccesses", "45",
+                        "Events.targetVisitedAfterConvertionRate", "75"
+                )
         );
 
-        addContext(mockhttpServer, queryTotalPageViews,
-                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult = map("data", data);
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final List<Map<String, String>> totalSessionsQueryData = list(
+                map(
+                        "Events.variant", variantName,
+                        "Events.totalSessions", "60",
+                        "Events.targetVisitedAfterSuccesses", "35",
+                        "Events.targetVisitedAfterConvertionRate", "0.0"
+                ),
+                map(
+                        "Events.variant", "DEFAULT",
+                        "Events.totalSessions", "60",
+                        "Events.targetVisitedAfterSuccesses", "45",
+                        "Events.targetVisitedAfterConvertionRate", "75"
+                )
+        );
+
+        final String totalSessionsQuery = getExpectedReachPageTotalSesionsQuery(experiment);
+        addContext(mockhttpServer, totalSessionsQuery, JsonUtil.getJsonStringFromObject(map("data", totalSessionsQueryData)));
+
+        IPUtils.disabledIpPrivateSubnet(true);
 
         mockhttpServer.start();
 
@@ -2278,34 +2306,61 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
 
-        final List<Map<String, String>> data = createPageViewEvents(50, experiment, variantBName, 2, pageA, pageC);
-        data.addAll(createPageViewEvents(10, experiment, variantBName, 2, pageA, pageB));
-        data.addAll(createPageViewEvents(16, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageC));
-        data.addAll(createPageViewEvents(44, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageB));
-        data.addAll(createPageViewEvents(55, experiment, variantCName, 2, pageA, pageC));
-        data.addAll(createPageViewEvents(5, experiment, variantCName, 2, pageA, pageB));
+        final List<Map<String, String>> data = list(
+                map(
+                        "Events.variant", variantBName,
+                        "Events.day.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.totalSessions", "60",
+                        "Events.targetVisitedAfterSuccesses", "50",
+                        "Events.targetVisitedAfterConvertionRate", "83.33"
+                ),
+                map(
+                        "Events.variant", "DEFAULT",
+                        "Events.day.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.totalSessions", "60",
+                        "Events.targetVisitedAfterSuccesses", "16",
+                        "Events.targetVisitedAfterConvertionRate", "26.66"
+                ),
+                map(
+                        "Events.variant", variantCName,
+                        "Events.day.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.day", EVENTS_FORMATTER.format(Instant.now()),
+                        "Events.totalSessions", "60",
+                        "Events.targetVisitedAfterSuccesses", "55",
+                        "Events.targetVisitedAfterConvertionRate", "91.66"
+                )
+        );
+
         final Map<String, List<Map<String, String>>> cubeJsQueryResult = map("data", data);
 
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
         addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
 
-        /*final List<Map<String, String>> totalSessionsQueryData = list(
+        final List<Map<String, String>> totalSessionsQueryData = list(
                 map(
-                        "Events.variant", experimentNoDefaultVariantName,
-                        "Events.totalSessions", "4",
-                        "Events.targetVisitedAfterSuccesses", "2",
-                        "Events.targetVisitedAfterConvertionRate", "50"
+                        "Events.variant", variantBName,
+                        "Events.totalSessions", "60",
+                        "Events.targetVisitedAfterSuccesses", "16",
+                        "Events.targetVisitedAfterConvertionRate", "83.33"
                 ),
                 map(
                         "Events.variant", "DEFAULT",
-                        "Events.totalSessions", "3",
-                        "Events.targetVisitedAfterSuccesses", "1",
-                        "Events.targetVisitedAfterConvertionRate", "33"
+                        "Events.totalSessions", "60",
+                        "Events.targetVisitedAfterSuccesses", "16",
+                        "Events.targetVisitedAfterConvertionRate", "26.66"
+                ),
+                map(
+                        "Events.variant", variantCName,
+                        "Events.totalSessions", "60",
+                        "Events.targetVisitedAfterSuccesses", "55",
+                        "Events.targetVisitedAfterConvertionRate", "91.66"
                 )
         );
 
         final String totalSessionsQuery = getExpectedReachPageTotalSesionsQuery(experiment);
-        addContext(mockhttpServer, totalSessionsQuery, JsonUtil.getJsonStringFromObject(map("data", totalSessionsQueryData)));*/
+        addContext(mockhttpServer, totalSessionsQuery, JsonUtil.getJsonStringFromObject(map("data", totalSessionsQueryData)));
 
         mockhttpServer.start();
 

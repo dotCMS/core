@@ -1197,7 +1197,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             "The Experiment must be RUNNING or ENDED to get results");
 
         final CubeJSResultSet totalSessions = getTotalSessions(experimentFromDataBase, user);
-        final CubeJSResultSet summarize = getSummarize(experimentFromDataBase, user);
+        final CubeJSResultSet summarize = getSummary(experimentFromDataBase, user);
         return getResults(experimentFromDataBase, totalSessions, summarize);
     }
 
@@ -1304,7 +1304,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return bayesianAPI.doBayesian(bayesianInput);
     }
 
-    public CubeJSResultSet getSummarize(final Experiment experiment,
+    public CubeJSResultSet getSummary(final Experiment experiment,
                                              final User user) throws DotDataException, DotSecurityException {
         final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
         final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE.createWithDayGranularity(experiment);

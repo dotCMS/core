@@ -2,7 +2,10 @@ package com.dotcms.analytics.metrics;
 
 import com.dotcms.analytics.metrics.AbstractCondition.AbstractParameter.Type;
 
-public abstract class Parameters {
+public final class Parameters {
+
+    private Parameters(){}
+
     static Parameter URL = Parameter.builder()
             .name("url")
             .build();

@@ -22,8 +22,6 @@ cube(`Events`, {
     order by day
   `,
   preAggregations: {
-    // Pre-Aggregations definitions go here
-    // Learn more here: https://cube.dev/docs/caching/pre-aggregations/getting-started
     /*targetVisitedAfterAggregation: {
       measures: [Events.totalSessions, Events.targetVisitedAfterSuccesses],
       dimensions: [Events.experiment, Events.runningId, Events.variant],
