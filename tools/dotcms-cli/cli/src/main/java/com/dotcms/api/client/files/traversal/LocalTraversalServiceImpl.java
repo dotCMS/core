@@ -49,7 +49,7 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
      */
     @ActivateRequestContext
     @Override
-    public TraverseResult traverseLocalFolder(final TraverseParams params) {
+    public TraverseResult traverseLocalFolder(final LocalTraverseParams params) {
         final String source = params.sourcePath();
         final File workspace = params.workspace();
 
@@ -83,7 +83,7 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
 
         var forkJoinPool = ForkJoinPool.commonPool();
 
-        var task = new LocalFolderTraversalTask(TraverseParams.builder()
+        var task = new LocalFolderTraversalTask(LocalTraverseParams.builder()
                 .from(params)
                 .logger(logger)
                 .retriever(retriever)
