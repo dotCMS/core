@@ -1,6 +1,7 @@
 package com.dotcms.publisher.bundle.business;
 
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -9,6 +10,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
@@ -20,9 +22,7 @@ import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 
 public class BundleFactoryTest {
@@ -257,5 +257,30 @@ public class BundleFactoryTest {
 
         bundle = APILocator.getBundleAPI().getBundleById(uuid);
         assertTrue(bundle.getFilterKey().isEmpty());
+    }
+
+    /**
+     * Method to test: {@link BundleFactoryImpl#findUnsendBundles(String, int, int)}
+     * Given Scenario: Admin should be able to view all the bundles regardless of the user who create it
+     * ExpectedResult: Admin Role should be able to view/edit all the bundles.
+     *
+     */
+    @Test
+    public void test_findUnsendBundles_adminShouldBeAbleToSeeAllBundles() throws DotDataException, DotSecurityException {
+
+        //create an admin user and a user with limited permissions
+        final User AdminUser = APILocator.systemUser();
+        final User limitedUser = TestUserUtils.getChrisPublisherUser();
+
+        //create the unsend bundle
+        final String bundleIdAdmin = insertPublishingBundle(limitedUser.getUserId(),null);
+
+        //Call the method to test
+        //The admin user should be able to see all bundles
+        final List<Bundle> data = APILocator.getBundleAPI().getUnsendBundles(AdminUser.getUserId(), 100, 0);
+
+        //Assert that the bundle is returned
+        assertNotNull(data);
+        assertTrue(data.stream().anyMatch(bundle -> bundle.getId().equals(bundleIdAdmin)));
     }
 }
