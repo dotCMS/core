@@ -571,7 +571,7 @@
 											"    pm.response.to.have.status(200);",
 											"});",
 											"",
-											"postman.setNextRequest()"
+											"postman.setNextRequest(\"Deleting Bundle History\")"
 										],
 										"type": "text/javascript"
 									}

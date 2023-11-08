@@ -2359,7 +2359,7 @@
 									"});",
 									"",
 									"// ignoring following test for now",
-									"postman.setNextRequest()"
+									"postman.setNextRequest(\"pre_ImportBundleWithMexicoPageAndRule\")"
 								],
 								"type": "text/javascript"
 							}

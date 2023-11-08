@@ -5280,7 +5280,7 @@
 									"});",
 									"",
 									"// ignoring following test for now",
-									"postman.setNextRequest()"
+									"postman.setNextRequest(\"Put Create Page With CacheTTL 100\")"
 								],
 								"type": "text/javascript"
 							}
