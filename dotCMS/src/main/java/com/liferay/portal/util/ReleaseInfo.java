@@ -58,14 +58,11 @@ public final class ReleaseInfo {
             //we include a validation in case the file does not exist
             if (null != url){
                 props.load(url.openStream());
-            } else {
-                return values;
-            }
+                values = Maps.fromProperties(props);
+            } 
         } catch (IOException e) {
             Logger.error(ReleaseInfo.class, "IOException: " + e.getMessage(), e);
         }
-
-        values = Maps.fromProperties(props);
     }
 
     private final static ReleaseInfo instance = new ReleaseInfo();
