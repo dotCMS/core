@@ -22,9 +22,10 @@ import { FIELDS_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
 
 /* We need this declare to dont have import errors from CommandType of Tiptap */
 declare module '@tiptap/core' {
-    interface Commands<ReturnType> {
+    interface Commands {
         [key: string]: {
-            [key: string]: (...args) => ReturnType;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            [key: string]: (...args) => any;
         };
     }
 }
