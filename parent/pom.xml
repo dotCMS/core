@@ -782,6 +782,7 @@
                     <!--make it available for jar/war classpath resource -->
                     <addOutputDirectoryToResources>true</addOutputDirectoryToResources>
                     <scmBranchPropertyName>scmBranch</scmBranchPropertyName>
+                    <shortRevisionLength>7</shortRevisionLength>
                 </configuration>
                 <executions>
                     <execution>
