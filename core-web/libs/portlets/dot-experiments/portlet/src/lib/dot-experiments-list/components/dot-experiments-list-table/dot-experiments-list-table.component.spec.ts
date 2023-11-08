@@ -22,6 +22,7 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotExperimentsListTableComponent } from './dot-experiments-list-table.component';
+import { LoginService } from '@dotcms/dotcms-js';
 
 const MOCK_MENU_ITEMS: MenuItem[] = [
     // Delete Action
