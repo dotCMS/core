@@ -59,6 +59,10 @@ public class EntryCommand  {
     @Inject
     AuthenticationParam authenticationParam;
 
+    public static void main(String[] args) {
+        int exitCode = new CommandLine(new EntryCommand()).execute(args);
+        System.exit(exitCode);
+    }
 }
 
 @ApplicationScoped
