@@ -197,3 +197,4 @@ This maintenance release includes the following code fixes:
 
 **Release-22.03.11**
 165. https://github.com/dotCMS/core/issues/23181 : Modifying designer template removes content from pages #23181
+166. https://github.com/dotCMS/core/issues/23777 : LanguageKeys do not fall back to default language #23777
