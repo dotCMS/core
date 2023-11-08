@@ -19,5 +19,6 @@ export enum FIELD_TYPES {
     TAG = 'Tag',
     CHECKBOX = 'Checkbox',
     MULTI_SELECT = 'Multi-Select',
-    BLOCK_EDITOR = 'Story-Block'
+    BLOCK_EDITOR = 'Story-Block',
+    BINARY = 'Binary'
 }

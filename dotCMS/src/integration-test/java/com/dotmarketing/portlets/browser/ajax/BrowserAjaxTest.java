@@ -15,6 +15,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ThreadUtils;
+import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.servlet.SessionMessages;
 import org.junit.BeforeClass;
@@ -28,10 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -284,4 +282,35 @@ public class BrowserAjaxTest {
         assertTrue(folderContent.get(2).get("identifier").equals(link.getIdentifier()));
     }
 
+    //crete the test for the method public List<Map<String, Object>> getFolderSubfolders(final String parentFolderId)
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAjax#getFolderSubfolders(String)}</li>
+     *     <li><b>Given Scenario: The folder is sorted by Title not Name,
+     *     subfolders in content search are not sorted alphabetically if the folder Name is changed</b> </li>
+     *     <li><b>Expected Result:The subfolder list should be sorted alphabetically </b> </li>
+     * </ul>
+     * @throws Exception
+     */
+    @Test
+    public void test_getFolderSubfolders() throws Exception {
+        final User adminUser = TestUserUtils.getAdminUser();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder mainFolder = new FolderDataGen().site(host).nextPersisted();
+        final Folder subFolderC = new FolderDataGen().name("c"+System.currentTimeMillis()).parent(mainFolder).nextPersisted();
+        final Folder subFolderB = new FolderDataGen().name("b"+System.currentTimeMillis()).parent(mainFolder).nextPersisted();
+        final Folder subFolderA = new FolderDataGen().name("a"+System.currentTimeMillis()).parent(mainFolder).nextPersisted();
+        final BrowserAjax browserAjax = new BrowserAjax();
+        //method to test
+        List<Map<String, Object>> folderContent = browserAjax.getFolderSubfolders(mainFolder.getIdentifier());
+        //assert all the subfolders are alphabetical sorted by name
+        assertEquals(folderContent.get(0).get("name"),subFolderA.getName());
+        //rename the subfolderA to z...
+        APILocator.getFolderAPI().renameFolder(subFolderA, "z"+System.currentTimeMillis(), adminUser , false);
+        //method to test
+        folderContent = browserAjax.getFolderSubfolders(mainFolder.getIdentifier());
+        //now to subFolderA should be the last one
+        assertNotEquals(folderContent.get(0).get("name"), subFolderA.getName());
+        assertEquals(folderContent.get(folderContent.size()-1).get("name"),subFolderA.getName());
+    }
 }

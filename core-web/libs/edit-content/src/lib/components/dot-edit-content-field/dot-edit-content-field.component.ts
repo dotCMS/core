@@ -3,7 +3,8 @@ import { ChangeDetectionStrategy, Component, HostBinding, Input, inject } from '
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotBinaryFieldComponent } from '@dotcms/contenttype-fields';
+import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields.module';
@@ -29,12 +30,14 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
         ReactiveFormsModule,
         DotEditContentFieldsModule,
         BlockEditorModule,
-        DotFieldRequiredDirective
+        DotFieldRequiredDirective,
+        DotBinaryFieldComponent
     ]
 })
 export class DotEditContentFieldComponent {
     @HostBinding('class') class = 'field';
     @Input() field!: DotCMSContentTypeField;
+    @Input() contentlet!: DotCMSContentlet;
     readonly fieldTypes = FIELD_TYPES;
     readonly calendarTypes = CALENDAR_FIELD_TYPES as string[];
 }

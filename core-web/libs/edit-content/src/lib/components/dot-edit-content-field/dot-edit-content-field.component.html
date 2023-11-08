@@ -20,6 +20,7 @@
         *ngSwitchCase="fieldTypes.TEXT"
         [field]="field"
         [attr.data-testId]="'field-' + field.variable" />
+
     <dot-edit-content-text-area
         *ngSwitchCase="fieldTypes.TEXTAREA"
         [field]="field"
@@ -50,5 +51,12 @@
         *ngSwitchCase="fieldTypes.BLOCK_EDITOR"
         [formControlName]="field.variable"
         [attr.data-testId]="'field-' + field.variable"></dot-block-editor>
+
+    <dot-binary-field
+        *ngSwitchCase="fieldTypes.BINARY"
+        [formControlName]="field.variable"
+        [contentlet]="contentlet"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
 </ng-container>
 <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>

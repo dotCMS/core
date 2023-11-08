@@ -6,6 +6,7 @@ import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { DotBlockEditorComponent } from '@dotcms/block-editor';
+import { DotBinaryFieldComponent } from '@dotcms/contenttype-fields';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
@@ -44,7 +45,8 @@ const FIELD_TYPES_COMPONENTS: Partial<Record<FIELD_TYPES, Type<unknown>>> = {
     [FIELD_TYPES.TAG]: DotEditContentTagFieldComponent,
     [FIELD_TYPES.CHECKBOX]: DotEditContentCheckboxFieldComponent,
     [FIELD_TYPES.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent,
-    [FIELD_TYPES.BLOCK_EDITOR]: DotBlockEditorComponent
+    [FIELD_TYPES.BLOCK_EDITOR]: DotBlockEditorComponent,
+    [FIELD_TYPES.BINARY]: DotBinaryFieldComponent
 };
 
 describe('FIELD_TYPES and FIELDS_MOCK', () => {
