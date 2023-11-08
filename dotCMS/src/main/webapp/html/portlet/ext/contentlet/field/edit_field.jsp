@@ -676,16 +676,24 @@
                 String accept="";
                 String maxFileLength="0";
                 String helperText="";
-                String binaryMetada = "";
+                String binaryMetadata = "";
                 String jsonField = "{}";
+                String mimeType="";
 
                 Contentlet contentletObj = APILocator.getContentletAPI().find(inode, user, false);
                 ObjectMapper mapper = new ObjectMapper(); // Create an ObjectMapper instance
 
+                try {
+                    java.io.File fileValue = (java.io.File)value;
+                    mimeType = com.dotcms.util.MimeTypeUtils.getMimeType(fileValue);
+                } catch(Exception e){
+                    Logger.error(this.getClass(), e.getMessage());
+                }
+
                 try{
                     java.io.File binaryFile = contentletObj.getBinary(field.getVelocityVarName());
                     com.dotcms.storage.model.Metadata metadata = contentletObj.getBinaryMetadata(field);
-                    binaryMetada = mapper.writeValueAsString(metadata.getMap()); // Metadata
+                    binaryMetadata = mapper.writeValueAsString(metadata); // Metadata
                     jsonField = mapper.writeValueAsString(field); // Field
                 } catch(Exception e){
                     Logger.error(this.getClass(), e.getMessage());
@@ -718,15 +726,17 @@
                     const binaryFieldContainer = document.getElementById("container-binary-field-<%=field.getVelocityVarName()%>");
                     const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
                     const variable = "<%=field.getVelocityVarName()%>";
-                    const metadataString = '<%=binaryMetada%>';
-                    const metaData = metadataString ? JSON.parse(metadataString) : null;
+                    const metaData = (<%=binaryMetadata%>);
                     const contentlet = metaData ? {
                         inode: "<%=binInode%>",
                         [variable]: `/dA/<%=contentlet.getIdentifier()%>/${variable}/${metaData.name}`,
-                        [variable+"MetaData"]: metaData
+                        [variable+"MetaData"]: {
+                            ...metaData,
+                            contentType: "<%=mimeType%>"
+                        }
                     } : null;
                     const fielData = {
-                        ...(JSON.parse('<%=jsonField%>')),
+                        ...(<%=jsonField%>),
                         variable,
                         fieldVariables: JSON.parse('<%=fieldVariablesContent%>')
                     }
