@@ -103,19 +103,6 @@
                 <version>${version.exec.plugin}</version>
                 <executions>
                     <execution>
-                        <id>docker-logs</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skipITs}</skip>
-                            <executable>./showlogs.sh</executable>
-                            <async>true</async>
-                            <asyncDestroyOnShutdown>true</asyncDestroyOnShutdown>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>integration-tests</id>
                         <phase>integration-test</phase>
                         <goals>
