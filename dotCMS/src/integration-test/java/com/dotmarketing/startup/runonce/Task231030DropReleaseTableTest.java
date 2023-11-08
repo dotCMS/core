@@ -13,7 +13,7 @@ import org.junit.Test;
 
 public class Task231030DropReleaseTableTest {
 
-    private static final String RELEASE_TABLE_CREATE_SCRIPT = "CREATE TABLE IF NOT EXISTS Release_ (\n"
+    private static final String RELEASE_TABLE_CREATE_SCRIPT = "CREATE TABLE IF NOT EXISTS release_ (\n"
             + "   releaseId varchar(100) not null primary key,\n"
             + "   createDate timestamptz null,\n"
             + "   modifiedDate timestamptz null,\n"
