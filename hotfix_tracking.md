@@ -199,3 +199,4 @@ This maintenance release includes the following code fixes:
 165. https://github.com/dotCMS/core/issues/23181 : Modifying designer template removes content from pages #23181
 166. https://github.com/dotCMS/core/issues/23777 : LanguageKeys do not fall back to default language #23777
 167. https://github.com/dotCMS/core/issues/23903 : Delay response when user authentication invalid #23903
+168. https://github.com/dotCMS/core/issues/24816 : The site search index portlet doesn't render, which leads to errors from elasticsearch when there are many indices #24816

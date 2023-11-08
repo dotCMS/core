@@ -131,4 +131,29 @@ public class ESSiteSearchAPITest {
         }
     }
 
+    /**
+     * Method to test: {@link SiteSearchAPI#createSiteSearchIndex(String, String, int)}
+     * Given Scenario: Create many (100+) site search indexes, Attempt to load the list.
+     * ExpectedResult: List should load without errors.
+     *
+     */
+    @Test
+    public void test_createSiteSearchIndex_shouldBePossibleToAddMoreThan100() throws IOException, DotDataException {
+        String timeStamp, indexName, aliasName;
+        String lastCreatedIndex = "";
+
+        final int indicesAmount = 115;
+        for (int i = 0; i < indicesAmount; i++) {
+            timeStamp = String.valueOf(new Date().getTime());
+            indexName = ES_SITE_SEARCH_NAME + "_" + timeStamp;
+            aliasName = "indexAlias" + "_" + timeStamp;
+
+            siteSearchAPI.createSiteSearchIndex(indexName, aliasName, 1);
+
+            lastCreatedIndex = indexName;
+        }
+
+        assertTrue(indexAPI.listIndices().contains(lastCreatedIndex));
+    }
+
 }
