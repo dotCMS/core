@@ -8,6 +8,7 @@ import { Menu, MenuItemContent } from 'primeng/menu';
 import { Table } from 'primeng/table';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import { DotExperimentStatus, GroupedExperimentByStatus } from '@dotcms/dotcms-models';
 import { DotEmptyContainerComponent, DotFormatDateService } from '@dotcms/ui';
 import {
@@ -17,7 +18,6 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotExperimentsListTableComponent } from './dot-experiments-list-table.component';
-import { LoginService } from '@dotcms/dotcms-js';
 
 const MOCK_MENU_ITEMS: MenuItem[] = [
     // Delete Action
