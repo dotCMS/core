@@ -55,7 +55,12 @@ public final class ReleaseInfo {
 
         try {
             final URL url = this.getClass().getClassLoader().getResource("build.properties");
-            props.load(url.openStream());
+            //we include a validation in case the file does not exist
+            if (null != url){
+                props.load(url.openStream());
+            } else {
+                return values;
+            }
         } catch (IOException e) {
             Logger.error(ReleaseInfo.class, "IOException: " + e.getMessage(), e);
         }
