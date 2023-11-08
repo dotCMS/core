@@ -503,9 +503,7 @@ jobs:
       - id: fetch-core
         name: Fetch Core Repo
         uses: actions/checkout@v3
-      - run: |
-          sudo apt-get install -y tree
-          sudo npm install --location=global newman@5.3.2
+      - run: sudo npm install --location=global newman@5.3.2
       - id: docker-login
         name: Login to GHCR
         uses: docker/login-action@v3.0.0
@@ -541,7 +539,6 @@ jobs:
         run: |
           find . -name '*-reports' -type d
           tree ./dotcms-postman
-          
           find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
       - name: Upload failure Archive (if maven failed)
         uses: actions/upload-artifact@v3
