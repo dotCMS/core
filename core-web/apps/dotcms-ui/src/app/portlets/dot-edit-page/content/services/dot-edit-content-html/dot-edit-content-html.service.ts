@@ -99,7 +99,7 @@ export class DotEditContentHtmlService {
     private remoteRendered: boolean;
     private askToCopy = true;
 
-    private readonly origin = globalThis.location.origin;
+    private readonly origin = window.location.origin;
     private readonly docClickHandlers;
 
     get pagePersonalization() {
