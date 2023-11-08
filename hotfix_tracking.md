@@ -200,3 +200,4 @@ This maintenance release includes the following code fixes:
 166. https://github.com/dotCMS/core/issues/23777 : LanguageKeys do not fall back to default language #23777
 167. https://github.com/dotCMS/core/issues/23903 : Delay response when user authentication invalid #23903
 168. https://github.com/dotCMS/core/issues/24816 : The site search index portlet doesn't render, which leads to errors from elasticsearch when there are many indices #24816
+169. https://github.com/dotCMS/core/issues/24894 : There is no way to configure WYSIWYG to use the virtual path of an image when inserting one #24894
