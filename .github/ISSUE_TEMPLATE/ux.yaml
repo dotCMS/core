@@ -1,7 +1,7 @@
 name: UX Requirement Submission
 description: Provide details for a UX improvement or issue.
 title: "[UX REQUIREMENT]: "
-labels: ["ux", "triage"]
+labels: ["Team : UX", "triage"]
 body:
   - type: markdown
     attributes:
