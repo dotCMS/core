@@ -1,8 +1,7 @@
 name: Feature
-
 description: I need to change the way something works, or create new functionality. 
-
-labels: ['Type : New Functionality',Triage]
+labels: ['Type : New Functionality', Triage]
+projects: ["dotCMS/7"]
 
 body:
 
