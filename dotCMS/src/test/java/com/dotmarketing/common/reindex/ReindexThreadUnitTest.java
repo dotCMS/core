@@ -82,36 +82,39 @@ public class ReindexThreadUnitTest extends UnitTestBase {
 
         this.initMessages();
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter(WebKeys.COMPANY_ID)).thenReturn(RestUtilTest.DEFAULT_COMPANY);
 
-        when(context.getInitParameter(WebKeys.COMPANY_ID)).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            doAnswer(new Answer<Void>() { // if this method is called, should fail
 
-        doAnswer(new Answer<Void>() { // if this method is called, should fail
+                @Override
+                public Void answer(InvocationOnMock invocation) throws Throwable {
 
-            @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
+                    testGenerateNotification = true;
+                    return null;
+                }
+            }).when(notificationAPI).generateNotification(
+                    new I18NMessage("notification.reindex.error.title"),
+                    new I18NMessage("notification.reindexing.error.processrecord", msg, identToIndex),
+                    null,
+                    NotificationLevel.INFO,
+                    NotificationType.GENERIC,
+                    Visibility.ROLE,
+                    cmsAdminRoleId,
+                    user.getUserId(),
+                    locale
+            );
 
-                testGenerateNotification = true;
-                return null;
-            }
-        }).when(notificationAPI).generateNotification(
-                new I18NMessage("notification.reindex.error.title"),
-                new I18NMessage("notification.reindexing.error.processrecord", msg, identToIndex),
-                null,
-                NotificationLevel.INFO,
-                NotificationType.GENERIC,
-                Visibility.ROLE,
-                cmsAdminRoleId,
-                user.getUserId(),
-                locale
-        );
+            //Execute the notification call
+            reindexThread.sendNotification
+                    ("notification.reindexing.error.processrecord",
+                            new Object[] {identToIndex}, msg, false);
 
-        //Execute the notification call
-        reindexThread.sendNotification
-                ("notification.reindexing.error.processrecord",
-                        new Object[] {identToIndex}, msg, false);
-
-        //Validate
-        assertTrue(this.testGenerateNotification);
+            //Validate
+            assertTrue(this.testGenerateNotification);
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
     @After

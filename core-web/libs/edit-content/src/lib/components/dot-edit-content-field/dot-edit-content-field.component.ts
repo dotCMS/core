@@ -2,7 +2,8 @@ import { NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
 import { ChangeDetectionStrategy, Component, HostBinding, Input, inject } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotBinaryFieldComponent } from '@dotcms/contenttype-fields';
+import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields.module';
@@ -27,12 +28,14 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
         NgIf,
         ReactiveFormsModule,
         DotEditContentFieldsModule,
-        DotFieldRequiredDirective
+        DotFieldRequiredDirective,
+        DotBinaryFieldComponent
     ]
 })
 export class DotEditContentFieldComponent {
     @HostBinding('class') class = 'field';
     @Input() field!: DotCMSContentTypeField;
+    @Input() contentlet!: DotCMSContentlet;
     readonly fieldTypes = FIELD_TYPES;
     readonly calendarTypes = CALENDAR_FIELD_TYPES as string[];
 }
