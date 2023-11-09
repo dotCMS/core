@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.asset;
 
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+
 import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.BrowserQuery.Builder;
@@ -12,6 +14,7 @@ import com.dotcms.rest.api.v1.asset.view.WebAssetView;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
@@ -483,10 +486,7 @@ public class WebAssetHelper {
                 // We trust that the asset we're getting here is working and or live which is the inode we need to do the checkout
                 final AssetView asset = versions.get(0);
 
-                if(versionsView.archived()){
-                    contentletAPI.findLiveOrWorkingVersions(Set.of(asset.identifier()), user, false)
-                            .forEach(contentlet -> handleArchivedContent(contentlet, user));
-                }
+                handleArchivedVersions(user, asset, lang.get());
 
                 //now checkout and create a new version of the asset in the given language
                 final Contentlet checkout = contentletAPI.checkout(asset.inode(), user, false);
@@ -504,6 +504,22 @@ public class WebAssetHelper {
         } finally {
             disposeTempFile(tempFile);
         }
+    }
+
+    /**
+     * If we want to be successful publishing content that has been archived we need to get rid of any archived version
+     * @param user the user performing the action
+     * @param asset the asset to check
+     * @param language the language to check
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private void handleArchivedVersions(User user, AssetView asset, Language language)
+            throws DotSecurityException, DotDataException {
+        //Always verify if any prior version remains archived for the give language, if so get rid of the problem
+        contentletAPI.findAllVersions( new Identifier(asset.identifier()), user, false)
+                .stream().filter(contentlet -> language.getId() == contentlet.getLanguageId())
+                .forEach(contentlet -> handleArchivedContent(contentlet, user));
     }
 
     /**
@@ -552,13 +568,23 @@ public class WebAssetHelper {
      */
     Contentlet checkinOrPublish(final Contentlet checkout, User user, final boolean live) throws DotDataException, DotSecurityException {
         if(live){
+            //if the desired state is live, and we need to publish the contentlet
+            //But checkout forces creation of a new version, so we need to check in first
+            if(isNotSet(checkout.getInode())){
+              Contentlet checkin = contentletAPI.checkin(checkout, user, false);
+              contentletAPI.publish(checkin, user, false);
+              return checkin;
+            }
+            //Live means publish, so we need to publish the contentlet
             contentletAPI.publish(checkout, user, false);
             return checkout;
         } else {
+            //if the desired state is working we need to unpublish the contentlet
             if(checkout.isLive()){
                 contentletAPI.unpublish(checkout, user, false);
             }
         }
+        //and finally checkin the contentlet to persist the changes
         return contentletAPI.checkin(checkout, user, false);
     }
 
