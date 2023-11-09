@@ -69,14 +69,14 @@ import { getUiMessage } from './utils/binary-field-utils';
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotEditBinaryFieldComponent)
+            useExisting: forwardRef(() => DotEditContentBinaryFieldComponent)
         }
     ],
-    templateUrl: './dot-edit-binary-field.component.html',
-    styleUrls: ['./dot-edit-binary-field.component.scss'],
+    templateUrl: './dot-edit-content-binary-field.component.html',
+    styleUrls: ['./dot-edit-content-binary-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditBinaryFieldComponent
+export class DotEditContentBinaryFieldComponent
     implements OnInit, AfterViewInit, OnDestroy, ControlValueAccessor
 {
     @Input() field: DotCMSContentTypeField;

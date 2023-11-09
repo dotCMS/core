@@ -7,7 +7,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
-import { DotEditBinaryFieldComponent } from '@dotcms/edit-content';
+import { DotEditContentBinaryFieldComponent } from '@dotcms/edit-content';
 
 import { AppComponent } from './app.component';
 
@@ -19,7 +19,7 @@ interface ContenttypeFieldElement {
 const CONTENTTYPE_FIELDS: ContenttypeFieldElement[] = [
     {
         tag: 'dotcms-binary-field',
-        component: DotEditBinaryFieldComponent
+        component: DotEditContentBinaryFieldComponent
     }
 ];
 
@@ -29,7 +29,7 @@ const CONTENTTYPE_FIELDS: ContenttypeFieldElement[] = [
         BrowserModule,
         BrowserAnimationsModule,
         HttpClientModule,
-        DotEditBinaryFieldComponent,
+        DotEditContentBinaryFieldComponent,
         MonacoEditorModule
     ],
     providers: [DotMessageService, DotUploadService]

@@ -7,7 +7,7 @@ import { By } from '@angular/platform-browser';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
-import { DotEditBinaryFieldComponent } from '../../fields/dot-edit-binary-field/dot-edit-binary-field.component';
+import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCheckboxFieldComponent } from '../../fields/dot-edit-content-checkbox-field/dot-edit-content-checkbox-field.component';
 import { DotEditContentMultiSelectFieldComponent } from '../../fields/dot-edit-content-multi-select-field/dot-edit-content-multi-select-field.component';
@@ -21,7 +21,7 @@ import { FIELDS_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
 
 // This holds the mapping between the field type and the component that should be used to render it.
 // We need to hold this record here, because for some reason the references just fall to undefined.
-const FIELD_TYPES_COMPONENTS: Partial<Record<FIELD_TYPES, Type<unknown>>> = {
+const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown>> = {
     // We had to use unknown because components have different types.
     [FIELD_TYPES.TEXT]: DotEditContentTextFieldComponent,
     [FIELD_TYPES.TEXTAREA]: DotEditContentTextAreaComponent,
@@ -33,7 +33,7 @@ const FIELD_TYPES_COMPONENTS: Partial<Record<FIELD_TYPES, Type<unknown>>> = {
     [FIELD_TYPES.TAG]: DotEditContentTagFieldComponent,
     [FIELD_TYPES.CHECKBOX]: DotEditContentCheckboxFieldComponent,
     [FIELD_TYPES.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent,
-    [FIELD_TYPES.BINARY]: DotEditBinaryFieldComponent
+    [FIELD_TYPES.BINARY]: DotEditContentBinaryFieldComponent
 };
 
 describe('FIELD_TYPES and FIELDS_MOCK', () => {

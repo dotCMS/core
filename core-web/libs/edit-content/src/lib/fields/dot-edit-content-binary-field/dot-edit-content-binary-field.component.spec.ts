@@ -24,7 +24,7 @@ import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
 
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
-import { DotEditBinaryFieldComponent } from './dot-edit-binary-field.component';
+import { DotEditContentBinaryFieldComponent } from './dot-edit-content-binary-field.component';
 import { BinaryFieldMode, BinaryFieldStatus } from './interfaces';
 import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
 import { DotBinaryFieldStore } from './store/binary-field.store';
@@ -57,15 +57,15 @@ const DROP_ZONE_FILE_EVENT: DropZoneFileEvent = {
     validity
 };
 
-describe('DotEditBinaryFieldComponent', () => {
-    let spectator: Spectator<DotEditBinaryFieldComponent>;
+describe('DotEditContentBinaryFieldComponent', () => {
+    let spectator: Spectator<DotEditContentBinaryFieldComponent>;
     let store: DotBinaryFieldStore;
 
     let dotBinaryFieldEditImageService: DotBinaryFieldEditImageService;
     let ngZone: NgZone;
 
     const createComponent = createComponentFactory({
-        component: DotEditBinaryFieldComponent,
+        component: DotEditContentBinaryFieldComponent,
         imports: [
             NoopAnimationsModule,
             ButtonModule,
@@ -373,17 +373,17 @@ class MockFormComponent {
     });
 }
 
-describe('DotEditBinaryFieldComponent - ControlValueAccesor', () => {
-    let spectator: SpectatorHost<DotEditBinaryFieldComponent, MockFormComponent>;
+describe('DotEditContentBinaryFieldComponent - ControlValueAccesor', () => {
+    let spectator: SpectatorHost<DotEditContentBinaryFieldComponent, MockFormComponent>;
     const createHost = createHostFactory({
-        component: DotEditBinaryFieldComponent,
+        component: DotEditContentBinaryFieldComponent,
         host: MockFormComponent,
         imports: [
             ButtonModule,
             DialogModule,
             MonacoEditorModule,
             ReactiveFormsModule,
-            DotEditBinaryFieldComponent
+            DotEditContentBinaryFieldComponent
         ]
     });
 
