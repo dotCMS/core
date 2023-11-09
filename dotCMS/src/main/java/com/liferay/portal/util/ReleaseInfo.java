@@ -38,9 +38,7 @@ import java.util.*;
 
 public final class ReleaseInfo {
 
-
-
-    private volatile Map<String, String> values = Map.of("name", "dotCMS Platform", "version", "UNVERSIONED", "revision", "0", "timestamp", "1699480662");
+    private Map<String, String> values = Map.of("name", "dotCMS Platform", "version", "UNVERSIONED", "revision", "0", "timestamp", "1699480662");
 
     protected ReleaseInfo() {
         load();
@@ -63,7 +61,7 @@ public final class ReleaseInfo {
         }
     }
 
-    private final static ReleaseInfo instance = new ReleaseInfo();
+    private static final ReleaseInfo instance = new ReleaseInfo();
 
     public static String getName() {
 
