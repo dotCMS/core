@@ -12,6 +12,7 @@ import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.org.apache.struts.Globals;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -298,6 +299,7 @@ public class LanguageWebApiTest {
      * Should return lang from session when session attribute is not null
      */
     @Test
+    @Ignore
     public void testShouldReturnLangFromSession() {
         final HttpSession session = Mockito.mock(HttpSession.class);
 

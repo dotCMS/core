@@ -206,3 +206,4 @@ This maintenance release includes the following code fixes:
 172. https://github.com/dotCMS/core/issues/25411 : Showing a binary field to showFields in a Relationship Field shows path instead of thumbnail #25411
 173. https://github.com/dotCMS/core/issues/25827 : Recreating a field with same name diff type uses the same id #25827
 174. https://github.com/dotCMS/core/issues/25870 : Using showFields field variable replicates title to all items #25870
+175. https://github.com/dotCMS/core/issues/26374 : Use of Png filter on images results in a 404 #26374
