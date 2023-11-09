@@ -5,6 +5,8 @@ import { Type } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
+import { DotBinaryFieldComponent } from '@dotcms/contenttype-fields';
+
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
@@ -31,7 +33,8 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown>> = {
     [FIELD_TYPES.TIME]: DotEditContentCalendarFieldComponent,
     [FIELD_TYPES.TAG]: DotEditContentTagFieldComponent,
     [FIELD_TYPES.CHECKBOX]: DotEditContentCheckboxFieldComponent,
-    [FIELD_TYPES.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent
+    [FIELD_TYPES.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent,
+    [FIELD_TYPES.BINARY]: DotBinaryFieldComponent
 };
 
 describe('FIELD_TYPES and FIELDS_MOCK', () => {

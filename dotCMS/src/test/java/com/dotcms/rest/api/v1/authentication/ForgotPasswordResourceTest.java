@@ -33,6 +33,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -48,6 +49,11 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
     @Before
     public void initTest(){
         RestUtilTest.initMockContext();
+    }
+
+    @After
+    public void cleanupTest(){
+        RestUtilTest.cleanupContext();
     }
 
     @Test
@@ -87,46 +93,49 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
                 new ForgotPasswordForm.Builder().userId(userId).build();
 
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession(false)).thenReturn(session); //
+            when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
+            when(companyAPI.getCompany(request)).thenReturn(company);
+            when(userLocalManager.getUserById(anyString()))
+                    .thenAnswer(new Answer<User>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession(false)).thenReturn(session); //
-        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
-        when(companyAPI.getCompany(request)).thenReturn(company);
-        when(userLocalManager.getUserById(anyString()))
-                .thenAnswer(new Answer<User>() { // if this method is called, should fail
+                        @Override
+                        public User answer(InvocationOnMock invocation) throws Throwable {
 
-                    @Override
-                    public User answer(InvocationOnMock invocation) throws Throwable {
+                            throw new NoSuchUserException();
+                        }
+                    });
 
-                        throw new NoSuchUserException();
-                    }
-                });
+            /*
+            Set the CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD property to FALSE in order to
+            hide from the user that the email is not an existing user email. For security reasons.
+             */
+            boolean displayNotSuchUserError = Config
+                    .getBooleanProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, false);
+            if (displayNotSuchUserError) {
+                Config.setProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, false);
+            }
 
-        /*
-        Set the CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD property to FALSE in order to
-        hide from the user that the email is not an existing user email. For security reasons.
-         */
-        boolean displayNotSuchUserError = Config
-                .getBooleanProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, false);
-        if (displayNotSuchUserError) {
-            Config.setProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, false);
+            final ForgotPasswordResource authenticationResource =
+                    new ForgotPasswordResource(userLocalManager, userService,
+                            companyAPI, responseUtil);
+
+
+            final Response response1 = authenticationResource.forgotPassword(request, response, forgotPasswordForm);
+
+            System.out.println(response1);
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), Response.Status.OK.getStatusCode());
+            assertNotNull(response1.getEntity());
+            System.out.println(response1.getEntity());
+            assertTrue(response1.getEntity() instanceof ResponseEntityView);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+            assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().isEmpty());
+        } finally {
+            Config.CONTEXT = null;
         }
-
-        final ForgotPasswordResource authenticationResource =
-                new ForgotPasswordResource(userLocalManager, userService,
-                        companyAPI, responseUtil);
-
-
-        final Response response1 = authenticationResource.forgotPassword(request, response, forgotPasswordForm);
-
-        System.out.println(response1);
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), Response.Status.OK.getStatusCode());
-        assertNotNull(response1.getEntity());
-        System.out.println(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().isEmpty());
     }
 
     @Test
@@ -153,49 +162,52 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
                 new ForgotPasswordForm.Builder().userId(userId).build();
 
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession(false)).thenReturn(session); //
+            when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
+            when(companyAPI.getCompany(request)).thenReturn(company);
+            when(userLocalManager.getUserById(anyString()))
+                    .thenAnswer(new Answer<User>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession(false)).thenReturn(session); //
-        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
-        when(companyAPI.getCompany(request)).thenReturn(company);
-        when(userLocalManager.getUserById(anyString()))
-                .thenAnswer(new Answer<User>() { // if this method is called, should fail
+                        @Override
+                        public User answer(InvocationOnMock invocation) throws Throwable {
 
-                    @Override
-                    public User answer(InvocationOnMock invocation) throws Throwable {
+                            throw new NoSuchUserException();
+                        }
+                    });
 
-                        throw new NoSuchUserException();
-                    }
-                });
+            /*
+            Set the CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD property to TRUE in order to
+            send a response informing the user the email is an non existing user email.
+             */
+            boolean displayNotSuchUserError = Config
+                    .getBooleanProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, false);
+            if (!displayNotSuchUserError) {
+                Config.setProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, true);
+            }
 
-        /*
-        Set the CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD property to TRUE in order to
-        send a response informing the user the email is an non existing user email.
-         */
-        boolean displayNotSuchUserError = Config
-                .getBooleanProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, false);
-        if (!displayNotSuchUserError) {
-            Config.setProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, true);
+            final ForgotPasswordResource authenticationResource =
+                    new ForgotPasswordResource(userLocalManager, userService,
+                            companyAPI, responseUtil);
+
+
+            final Response response1 = authenticationResource.forgotPassword(request, response, forgotPasswordForm);
+
+            System.out.println(response1);
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), Status.BAD_REQUEST.getStatusCode());
+            assertNotNull(response1.getEntity());
+            System.out.println(response1.getEntity());
+            assertTrue(response1.getEntity() instanceof ResponseEntityView);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+            assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals
+                    ("the-email-address-you-requested-is-not-registered-in-our-database"));
+        } finally {
+            Config.CONTEXT = null;
         }
-
-        final ForgotPasswordResource authenticationResource =
-                new ForgotPasswordResource(userLocalManager, userService,
-                        companyAPI, responseUtil);
-
-
-        final Response response1 = authenticationResource.forgotPassword(request, response, forgotPasswordForm);
-
-        System.out.println(response1);
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), Status.BAD_REQUEST.getStatusCode());
-        assertNotNull(response1.getEntity());
-        System.out.println(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals
-                ("the-email-address-you-requested-is-not-registered-in-our-database"));
     }
 
     @Test
@@ -222,41 +234,44 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
                 new ForgotPasswordForm.Builder().userId(userId).build();
 
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession(false)).thenReturn(session); //
+            when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
+            when(companyAPI.getCompany(request)).thenReturn(company);
+            when(userLocalManager.getUserById(anyString()))
+                    .thenAnswer(new Answer<User>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession(false)).thenReturn(session); //
-        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
-        when(companyAPI.getCompany(request)).thenReturn(company);
-        when(userLocalManager.getUserById(anyString()))
-                .thenAnswer(new Answer<User>() { // if this method is called, should fail
+                        @Override
+                        public User answer(InvocationOnMock invocation) throws Throwable {
 
-                    @Override
-                    public User answer(InvocationOnMock invocation) throws Throwable {
-
-                        throw new SendPasswordException();
-                    }
-                });
-
-
-
-        final ForgotPasswordResource authenticationResource =
-                new ForgotPasswordResource(userLocalManager, userService,
-                        companyAPI, authenticationHelper);
+                            throw new SendPasswordException();
+                        }
+                    });
 
 
-        final Response response1 = authenticationResource.forgotPassword(request, response, forgotPasswordForm);
 
-        System.out.println(response1);
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
-        assertNotNull(response1.getEntity());
-        System.out.println(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals
-                ("a-new-password-can-only-be-sent-to-an-external-email-address"));
+            final ForgotPasswordResource authenticationResource =
+                    new ForgotPasswordResource(userLocalManager, userService,
+                            companyAPI, authenticationHelper);
+
+
+            final Response response1 = authenticationResource.forgotPassword(request, response, forgotPasswordForm);
+
+            System.out.println(response1);
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
+            assertNotNull(response1.getEntity());
+            System.out.println(response1.getEntity());
+            assertTrue(response1.getEntity() instanceof ResponseEntityView);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+            assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals
+                    ("a-new-password-can-only-be-sent-to-an-external-email-address"));
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
     @Test
@@ -283,41 +298,44 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
                 new ForgotPasswordForm.Builder().userId(userId).build();
 
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            when(request.getSession(false)).thenReturn(session); //
+            when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
+            when(companyAPI.getCompany(request)).thenReturn(company);
+            when(userLocalManager.getUserById(anyString()))
+                    .thenAnswer(new Answer<User>() { // if this method is called, should fail
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession(false)).thenReturn(session); //
-        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(Locale.getDefault()); //
-        when(companyAPI.getCompany(request)).thenReturn(company);
-        when(userLocalManager.getUserById(anyString()))
-                .thenAnswer(new Answer<User>() { // if this method is called, should fail
+                        @Override
+                        public User answer(InvocationOnMock invocation) throws Throwable {
 
-                    @Override
-                    public User answer(InvocationOnMock invocation) throws Throwable {
+                            throw new UserEmailAddressException();
+                        }
+                    });
 
-                        throw new UserEmailAddressException();
-                    }
-                });
+            final UserService userService = mock(UserService.class);
 
-        final UserService userService = mock(UserService.class);
-
-        final ForgotPasswordResource authenticationResource =
-                new ForgotPasswordResource(userLocalManager, userService,
-                        companyAPI, authenticationHelper);
+            final ForgotPasswordResource authenticationResource =
+                    new ForgotPasswordResource(userLocalManager, userService,
+                            companyAPI, authenticationHelper);
 
 
-        final Response response1 = authenticationResource.forgotPassword(request, response, forgotPasswordForm);
+            final Response response1 = authenticationResource.forgotPassword(request, response, forgotPasswordForm);
 
-        System.out.println(response1);
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
-        assertNotNull(response1.getEntity());
-        System.out.println(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
-        assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals
-                ("please-enter-a-valid-email-address"));
+            System.out.println(response1);
+            assertNotNull(response1);
+            assertEquals(response1.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
+            assertNotNull(response1.getEntity());
+            System.out.println(response1.getEntity());
+            assertTrue(response1.getEntity() instanceof ResponseEntityView);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
+            assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() > 0);
+            assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0));
+            assertTrue(ErrorEntity.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getErrors().get(0)).getErrorCode().equals
+                    ("please-enter-a-valid-email-address"));
+        } finally {
+            Config.CONTEXT = null;
+        }
     }
 
 }

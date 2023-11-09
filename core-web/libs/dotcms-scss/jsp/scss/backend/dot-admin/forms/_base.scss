@@ -19,7 +19,7 @@
     white-space: nowrap;
 
     & > .dijit {
-        margin-right: calc($spacing-1 / 2);
+        margin-right: $spacing-1;
     }
 }
 
