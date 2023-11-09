@@ -45,7 +45,7 @@ import { DotBinaryFieldStore } from './store/binary-field.store';
 import { getUiMessage } from './utils/binary-field-utils';
 
 @Component({
-    selector: 'dot-edit-binary-field',
+    selector: 'dot-edit-content-binary-field',
     standalone: true,
     imports: [
         CommonModule,

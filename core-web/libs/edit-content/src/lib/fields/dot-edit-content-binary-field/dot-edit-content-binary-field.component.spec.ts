@@ -389,7 +389,7 @@ describe('DotEditContentBinaryFieldComponent - ControlValueAccesor', () => {
 
     beforeEach(() => {
         spectator = createHost(` <form [formGroup]="form">
-            <dot-edit-binary-field [field]="field" formControlName="binaryField"></dot-edit-binary-field>
+            <dot-edit-content-binary-field [field]="field" formControlName="binaryField"></dot-edit-content-binary-field>
         </form>`);
     });
 

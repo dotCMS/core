@@ -47,7 +47,7 @@
         [field]="field"
         [attr.data-testId]="'field-' + field.variable" />
 
-    <dot-edit-binary-field
+    <dot-edit-content-binary-field
         *ngSwitchCase="fieldTypes.BINARY"
         [formControlName]="field.variable"
         [contentlet]="contentlet"
