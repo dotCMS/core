@@ -3,9 +3,7 @@ package com.dotcms.cli.command;
 import com.dotcms.cli.common.AuthenticationMixin;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
-import com.dotcms.cli.common.PushMixin;
-import com.dotcms.common.WorkspaceManager;
-import java.nio.file.Path;
+import com.dotcms.cli.common.PullMixin;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
@@ -14,21 +12,21 @@ import javax.inject.Inject;
 import picocli.CommandLine;
 
 /**
- * Represents a push command that is used to push Sites, Content Types, Languages, and Files to the
+ * Represents a pull command that is used to pull Sites, Content Types, Languages, and Files to the
  * server.
  */
 @ActivateRequestContext
 @CommandLine.Command(
-        name = PushCommand.NAME,
-        header = "@|bold,blue dotCMS global push|@",
+        name = PullCommand.NAME,
+        header = "@|bold,blue dotCMS global pull|@",
         description = {
-                " This command push Sites, Content Types, Languages and Files to the server.",
+                " This command pull Sites, Content Types, Languages and Files to the server.",
                 "" // empty string here so we can have a new line
         }
 )
-public class PushCommand implements Callable<Integer>, DotCommand {
+public class PullCommand implements Callable<Integer>, DotCommand {
 
-    static final String NAME = "push";
+    static final String NAME = "pull";
 
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;
@@ -37,7 +35,7 @@ public class PushCommand implements Callable<Integer>, DotCommand {
     HelpOptionMixin helpOption;
 
     @CommandLine.Mixin
-    PushMixin pushMixin;
+    PullMixin pullMixin;
 
     @CommandLine.Mixin
     AuthenticationMixin authenticationMixin;
@@ -46,21 +44,14 @@ public class PushCommand implements Callable<Integer>, DotCommand {
     CommandLine.Model.CommandSpec spec;
 
     @Inject
-    protected WorkspaceManager workspaceManager;
-
-    @Inject
-    Instance<DotPush> pushCommands;
+    Instance<DotPull> pullCommands;
 
 
     @Override
     public Integer call() throws Exception {
-        // Find the instances of all push subcommands
 
         // Checking for unmatched arguments
         output.throwIfUnmatchedArguments(spec.commandLine());
-
-        // Validate we have a workspace at the specified path
-        checkValidWorkspace(pushMixin.path());
 
         // Preparing the list of arguments to be passed to the subcommands
         var expandedArgs = new ArrayList<>(spec.commandLine().getParseResult().expandedArgs());
@@ -68,7 +59,7 @@ public class PushCommand implements Callable<Integer>, DotCommand {
         var args = expandedArgs.toArray(new String[0]);
 
         // Process each subcommand
-        for (var subCommand : pushCommands) {
+        for (var subCommand : pullCommands) {
 
             var cmdLine = createCommandLine(subCommand);
 
@@ -83,13 +74,13 @@ public class PushCommand implements Callable<Integer>, DotCommand {
     }
 
     /**
-     * Creates a command line object for the given DotPush command and applies to the command a
+     * Creates a command line object for the given DotPull command and applies to the command a
      * custom configuration.
      *
-     * @param command the DotPush command
+     * @param command the DotPull command
      * @return the created CommandLine object
      */
-    CommandLine createCommandLine(DotPush command) {
+    CommandLine createCommandLine(DotPull command) {
 
         var cmdLine = new CommandLine(command);
         CustomConfigurationUtil.getInstance().customize(cmdLine);
@@ -98,22 +89,6 @@ public class PushCommand implements Callable<Integer>, DotCommand {
         cmdLine.setUnmatchedArgumentsAllowed(true);
 
         return cmdLine;
-    }
-
-    /**
-     * Checks if the provided file is a valid workspace.
-     *
-     * @param path represents the workspace directory.
-     * @throws IllegalArgumentException if no valid workspace is found at the specified path.
-     */
-    void checkValidWorkspace(final Path path) {
-
-        final var workspace = workspaceManager.findWorkspace(path);
-
-        if (workspace.isEmpty()) {
-            throw new IllegalArgumentException(
-                    String.format("No valid workspace found at path: [%s]", path.toAbsolutePath()));
-        }
     }
 
     @Override

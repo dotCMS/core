@@ -1,7 +1,7 @@
 package com.dotcms.cli.command.language;
 
 import com.dotcms.api.LanguageAPI;
-import com.dotcms.api.client.push.MapperService;
+import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.push.PushService;
 import com.dotcms.api.client.push.language.LanguageComparator;
 import com.dotcms.api.client.push.language.LanguageFetcher;

@@ -2,44 +2,31 @@
 // tag::picocli-generated-man-section-header[]
 :doctype: manpage
 :revnumber: 
-:manmanual: Site Manual
+:manmanual: Pull Manual
 :mansource: 
 :man-linkstyle: pass:[blue R < >]
-= site-pull(1)
+= pull(1)
 
 // end::picocli-generated-man-section-header[]
 
 // tag::picocli-generated-man-section-name[]
 == Name
 
-site-pull - *Retrieves sites descriptors*
+pull - *dotCMS global pull*
 
 // end::picocli-generated-man-section-name[]
 
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*site pull* [*-h*] [*-fmt*=_<inputOutputFormat>_] [*--workspace*=_<file>_] [_idOrName_]
+*pull* [*-h*] [*-fmt*=_<inputOutputFormat>_] [*--token*=_<token>_] [*--workspace*=_<file>_]
 
 // end::picocli-generated-man-section-synopsis[]
 
 // tag::picocli-generated-man-section-description[]
 == Description
 
-  This command fetches and saves the descriptor information
-  for sites within the dotCMS instance. By default, it 
-  retrieves descriptors for all sites, unless a specific site's
-  name or ID is provided as an argument. The descriptors are
-  saved into files named after each site's hostname.
-
-  When a site is pulled more than once, the existing descriptor file
-  is overwritten. All descriptor files are saved within the 'sites'
-  folder located in the dotCMS workspace, which is created in the
-  current directory by default, unless an alternative workspace is specified.
-
-  The output format for the descriptor files is JSON by default. However,
-  you can specify the YAML format using the --format option
-  if YAML is preferred.
+ This command pull Sites, Content Types, Languages and Files to the server.
 
 
 // end::picocli-generated-man-section-description[]
@@ -53,6 +40,9 @@ site-pull - *Retrieves sites descriptors*
 *-h*, *--help*::
   Display this help message.
 
+*--token*=_<token>_::
+  A dot CMS token to use for authentication. 
+
 *--workspace*=_<file>_::
   The workspace directory.
 +
@@ -61,11 +51,6 @@ Current directory is used if not specified
 // end::picocli-generated-man-section-options[]
 
 // tag::picocli-generated-man-section-arguments[]
-== Arguments
-
-[_idOrName_]::
-  Site name or Id.
-
 // end::picocli-generated-man-section-arguments[]
 
 // tag::picocli-generated-man-section-commands[]
