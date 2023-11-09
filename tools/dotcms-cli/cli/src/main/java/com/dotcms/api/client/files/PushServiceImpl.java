@@ -3,32 +3,30 @@ package com.dotcms.api.client.files;
 import static java.util.stream.Collectors.groupingBy;
 
 import com.dotcms.api.client.files.traversal.LocalTraversalService;
+import com.dotcms.api.client.files.traversal.LocalTraverseParams;
+import com.dotcms.api.client.files.traversal.PushTraverseParams;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
-import com.dotcms.api.client.files.traversal.AbstractTraverseResult;
 import com.dotcms.api.client.files.traversal.TraverseResult;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
-import com.dotcms.api.client.files.traversal.TraverseParams;
 import com.dotcms.api.client.push.exception.PushException;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.AssetsUtils;
-import com.dotcms.common.AssetsUtils.LocalPathStructure;
 import io.quarkus.arc.DefaultBean;
+import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-import org.jboss.logging.Logger;
-
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import org.jboss.logging.Logger;
 
 @DefaultBean
 @Dependent
@@ -79,7 +77,7 @@ public class PushServiceImpl implements PushService {
         var roots = AssetsUtils.parseRootPaths(workspace, source);
         for (var root : roots) {
 
-            final TraverseParams params = TraverseParams.builder()
+            final LocalTraverseParams params = LocalTraverseParams.builder()
                     .output(output)
                     .workspace(workspace)
                     .sourcePath(root)
@@ -128,7 +126,7 @@ public class PushServiceImpl implements PushService {
      │       │               │       ├── subFolder1-1
 
      the folder must be gone in both branches
-     The Folder must be removed from working branch but aldo from live one, so it becomes clear that we intend to remove the folder
+     The Folder must be removed from working branch but also from live one, so it becomes clear that we intend to remove the folder
      If we leave folders hanging all around we're not being explicitly clear about our intention to remove the folder
      This method resolves these discrepancies.
      It is only when the folder exists remotely and all occurrences of that folder has been removed locally that we consider the folder properly marked for delete
@@ -183,29 +181,22 @@ public class PushServiceImpl implements PushService {
      * @return
      */
     boolean isAllFoldersMarkedForDelete(List<TreeNode> nodes) {
-        return nodes.stream().map(TreeNode::folder).allMatch(folderView -> folderView.markForDelete().isPresent() && folderView.markForDelete().get());
+        return nodes.stream().map(TreeNode::folder).allMatch(folderView -> folderView.sync().isPresent() && folderView.sync().get().markedForDelete());
     }
 
     /**
-     * Processes the tree nodes by pushing their contents to the remote server. It initiates the push operation
-     * asynchronously, displays a progress bar, and waits for the completion of the push process.
+     * Processes the tree nodes by pushing their contents to the remote server. It initiates the
+     * push operation asynchronously, displays a progress bar, and waits for the completion of the
+     * push process.
      *
-     * @param output             the output option mixin
-     * @param workspace          the workspace path
-     * @param localPathStructure the local path structure of the folder being pushed
-     * @param treeNode           the tree node representing the folder and its contents with all the push information
-     *                           for each file and folder
-     * @param treeNodePushInfo   the push information summary associated with the tree node
-     * @param failFast           true to fail fast, false to continue on error
-     * @param maxRetryAttempts   the maximum number of retry attempts in case of error
+     * @param output   the output option mixin
+     * @param pushInfo the push info
+     * @param traverseParams the push traverse parameters
      * @throws RuntimeException if an error occurs during the push process
      */
     @ActivateRequestContext
-    @Override
-    public void processTreeNodes(OutputOptionMixin output, final String workspace,
-                                 final LocalPathStructure localPathStructure, final TreeNode treeNode,
-                                 final TreeNodePushInfo treeNodePushInfo, final boolean failFast,
-                                 final int maxRetryAttempts) {
+    public void processTreeNodes(OutputOptionMixin output,
+            TreeNodePushInfo pushInfo, PushTraverseParams traverseParams) {
 
         var retryAttempts = 0;
         var failed = false;
@@ -213,24 +204,30 @@ public class PushServiceImpl implements PushService {
         do {
 
             if (retryAttempts > 0) {
-                output.info(String.format("%n↺ Retrying push process [%d of %d]...", retryAttempts, maxRetryAttempts));
+                //In order to retry we need to clear the context
+                traverseParams.pushContext().clear();
+                output.info(String.format("%n↺ Retrying push process [%d of %d]...", retryAttempts, traverseParams.maxRetryAttempts()));
             }
 
             // ConsoleProgressBar instance to handle the push progress bar
             ConsoleProgressBar progressBar = new ConsoleProgressBar(output);
             // Calculating the total number of steps
             progressBar.setTotalSteps(
-                    treeNodePushInfo.assetsToPushCount() +
-                            treeNodePushInfo.assetsToDeleteCount() +
-                            treeNodePushInfo.foldersToPushCount() +
-                            treeNodePushInfo.foldersToDeleteCount()
+                    pushInfo.assetsToPushCount() +
+                            pushInfo.assetsToDeleteCount() +
+                            pushInfo.foldersToPushCount() +
+                            pushInfo.foldersToDeleteCount()
             );
 
             var isRetry = retryAttempts > 0;
             CompletableFuture<List<Exception>> pushTreeFuture = CompletableFuture.supplyAsync(
                     () -> remoteTraversalService.pushTreeNode(
-                            workspace, localPathStructure, treeNode, failFast, isRetry, progressBar
-                    ));
+                            PushTraverseParams.builder().from(traverseParams)
+                                    .progressBar(progressBar)
+                                    .logger(logger)
+                                    .isRetry(isRetry).build()
+                    )
+            );
             progressBar.setFuture(pushTreeFuture);
 
             CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
@@ -271,14 +268,14 @@ public class PushServiceImpl implements PushService {
             } catch (Exception e) {// Fail fast
 
                 failed = true;
-                if (retryAttempts + 1 <= maxRetryAttempts) {
+                if (retryAttempts + 1 <= traverseParams.maxRetryAttempts()) {
                     output.info("\n\nFound errors during the push process:");
                     output.error(e.getMessage());
                 } else {
                     throw e;
                 }
             }
-        } while (failed && retryAttempts++ < maxRetryAttempts);
+        } while (failed && retryAttempts++ < traverseParams.maxRetryAttempts());
 
     }
 

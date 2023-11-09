@@ -208,12 +208,16 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 expect(dotTabButtons.options).toEqual([
                     {
                         label: 'Edit',
-                        value: { id: 'EDIT_MODE', showDropdownButton: false },
+                        value: { id: 'EDIT_MODE', showDropdownButton: false, shouldRefresh: false },
                         disabled: false
                     },
                     {
                         label: 'Preview',
-                        value: { id: 'PREVIEW_MODE', showDropdownButton: true },
+                        value: {
+                            id: 'PREVIEW_MODE',
+                            showDropdownButton: true,
+                            shouldRefresh: true
+                        },
                         disabled: false
                     }
                 ]);
@@ -239,8 +243,44 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                     'Page locked by Some One'
                 );
                 expect(lockerContainerDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
-                expect(locker.modelValue).toBe(false, 'checked');
+                expect(locker.modelValue).toBe(true, 'checked');
                 expect(locker.disabled).toBe(false, 'disabled');
+            });
+
+            it('should have the lock switch in the "on" state', async () => {
+                const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
+                    { ...mockUser(), userId: '456' },
+                    new DotPageRender(mockDotRenderedPage())
+                );
+                fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+                componentHost.variant = null;
+                componentHost.pageState.page.locked = true;
+                fixtureHost.detectChanges();
+                const lockerDe = de.query(By.css('[data-testId="lock-switch"]'));
+
+                const locker = lockerDe.componentInstance;
+
+                await fixtureHost.whenRenderingDone();
+
+                expect(locker.modelValue).toBeTruthy();
+            });
+
+            it('should have the lock switch in the "off" state', async () => {
+                const pageRenderStateMocked: DotPageRenderState = new DotPageRenderState(
+                    { ...mockUser(), userId: '456' },
+                    new DotPageRender(mockDotRenderedPage())
+                );
+                fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
+                componentHost.variant = null;
+                componentHost.pageState.state.locked = false;
+                fixtureHost.detectChanges();
+                const lockerDe = de.query(By.css('[data-testId="lock-switch"]'));
+
+                const locker = lockerDe.componentInstance;
+
+                await fixtureHost.whenRenderingDone();
+
+                expect(locker.modelValue).toBeFalsy();
             });
 
             it('should have lock info', () => {
@@ -261,7 +301,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 await expect(dotTabButtons).toBeDefined();
                 expect(dotTabButtons.options[1]).toEqual({
                     label: 'Preview',
-                    value: { id: 'PREVIEW_MODE', showDropdownButton: true },
+                    value: { id: 'PREVIEW_MODE', showDropdownButton: true, shouldRefresh: true },
                     disabled: true
                 });
                 expect(dotTabButtons.activeId).toBe(DotPageMode.PREVIEW);
@@ -278,7 +318,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 expect(dotTabButtons).toBeDefined();
                 expect(dotTabButtons.options[0]).toEqual({
                     label: 'Edit',
-                    value: { id: 'EDIT_MODE', showDropdownButton: false },
+                    value: { id: 'EDIT_MODE', showDropdownButton: false, shouldRefresh: false },
                     disabled: true
                 });
                 expect(dotTabButtons.activeId).toBe(DotPageMode.PREVIEW);
@@ -338,7 +378,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
                 expect(dotTabButtons.activeId).toBe(DotPageMode.PREVIEW);
             });
-            it('should show only the preview tab when the page si blocked by another user', async () => {
+            it('should show only the preview tab when the page is blocked by another user', async () => {
                 componentHost.variant = {
                     ...dotVariantDataMock
                 };

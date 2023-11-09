@@ -8,7 +8,7 @@
         <label for="url-input">{{ 'dot.binary.field.action.import.from.url' | dm }}</label>
         <input
             id="url-input"
-            (focus)="resetError(!!vm.error)"
+            (focus)="handleFocus()"
             type="text"
             autocomplete="off"
             formControlName="url"
@@ -19,7 +19,7 @@
         <div class="error-messsage__container">
             <dot-field-validation-message
                 *ngIf="!vm.error; else serverError"
-                [message]="invalidError | dm"
+                [message]="'dot.binary.field.action.import.from.url.error.message' | dm"
                 [field]="form.get('url')"
                 data-testId="error-message"></dot-field-validation-message>
             <ng-template #serverError>

@@ -1,6 +1,7 @@
 package com.dotcms.storage;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.enterprise.achecker.parsing.EmptyIterable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -8,25 +9,35 @@ import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.FileUtil;
-import java.nio.file.Paths;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
-import org.apache.commons.lang3.mutable.MutableInt;
+import java.util.stream.Stream;
 
 /**
- * Represents a Storage on the file system The groups here are folder previously registered, you can
- * subscribe more by using {@link #addGroupMapping(String, File)}
- * By default the API loads up and maps a root folder. Which can be override by a property.
- * Any new group created will result in a new folder under that root folder.
+ * Represents a Storage Provider base on the File System. The groups used by this implementation are
+ * folders that have been previously created. You can add more of them via the
+ * {@link #addGroupMapping(String, File)}.
+ * <p>By default, the API loads up and maps a root folder, which can be overridden by a
+ * configuration property named {@code ROOT_GROUP_FOLDER_PATH}. Any new group created will result in
+ * a new folder under such a root folder.</p>
+ *
  * @author jsanca
  */
 public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAPI {
@@ -36,6 +47,8 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     private static final String STORAGE_POOL = "StoragePool";
 
     private final Map<String, File> groups = new ConcurrentHashMap<>();
+
+    private final Lazy<String> contentMetadataCompressor = Lazy.of(()->Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none"));
 
     /**
      * default constructor
@@ -119,11 +132,16 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         final String groupNameLC = groupName.toLowerCase();
         final File rootGroup = groups.get(getRootGroupKey());
         final File destBucketFile = new File(rootGroup, groupNameLC);
-        final boolean mkdirs = destBucketFile.mkdirs();
-        if(mkdirs) {
-           groups.put(groupNameLC, destBucketFile);
+        if (!destBucketFile.exists()) {
+            final boolean bucketCreated = destBucketFile.mkdirs();
+            if (bucketCreated) {
+               groups.put(groupNameLC, destBucketFile);
+            }
+            return bucketCreated;
         }
-        return mkdirs;
+
+        groups.put(groupNameLC, destBucketFile);
+        return true; // the bucket already exist
     }
 
     /**
@@ -237,18 +255,21 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
             try {
                 final File destBucketFile = Paths.get(groupDir.getCanonicalPath(),path.toLowerCase()).toFile();
                 this.prepareParent(destBucketFile);
-
-                final String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
-                try (OutputStream outputStream = FileUtil.createOutputStream(destBucketFile.toPath(), compressor)) {
+                final boolean bucketCreated = destBucketFile.createNewFile();   // we create the file if it does not exist and then write on it.
+                if (!bucketCreated) {
+                    Logger.debug(this, String.format("Destination bucket '%s' could not be created", destBucketFile));
+                }
+                final String compressor = contentMetadataCompressor.get();
+                try (final OutputStream outputStream = FileUtil.createOutputStream(destBucketFile.toPath(), compressor)) {
                     writerDelegate.write(outputStream, object);
                     outputStream.flush();
                 }
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
                 throw new  DotDataException(e.getMessage(),e);
             }
         } else {
-            throw new IllegalArgumentException("The bucket: " + groupName + " could not write");
+            throw new IllegalArgumentException(String.format("Bucket '%s' could not be created", groupName));
         }
 
         return true;
@@ -459,4 +480,96 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
             }
         }
     }
+
+    @Override
+    public Iterable<? extends ObjectPath> toIterable(final String group) {
+
+        final File destBucketFile = this.groups.get(group.toLowerCase());
+        if (destBucketFile.exists() && destBucketFile.isDirectory()) {
+
+            final Iterable<? extends ObjectPath> ite = Try.of(()->new FilesIterable(destBucketFile, group)).getOrNull();
+            return ite != null ? ite : new EmptyIterable<>();
+        }
+
+        return new EmptyIterable<>();
+    }
+
+    public class FilesIterable implements Iterable<ObjectPath> {
+
+        private final Stream<Path> stream;
+        private final File destBucketFile;
+
+        private final String groupName;
+
+        public FilesIterable(final File destBucketFile, final String groupName) throws IOException {
+            this.groupName      = groupName;
+            this.destBucketFile = destBucketFile;
+            this.stream = Files.walk(destBucketFile.toPath());
+        }
+
+        @NotNull
+        @Override
+        public Iterator<ObjectPath> iterator() {
+
+            return new ObjectPathIterator(stream.iterator(), destBucketFile, groupName);
+        }
+    } // FilesIterable.
+
+    class ObjectPathIterator implements Iterator<ObjectPath> {
+
+        private final File destBucketFile;
+        private final String groupName;
+        private Path currentElement = null;
+        private final Iterator<Path> iterator;
+
+        public ObjectPathIterator(final Iterator<Path> iterator, final File destBucketFile, final String groupName) {
+            this.groupName      = groupName;
+            this.destBucketFile = destBucketFile;
+            this.iterator       = iterator;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return null != nextFile();
+}
+
+        @Override
+        public ObjectPath next() {
+
+            ObjectPath objectPath = null;
+
+            if (null == currentElement) {
+                nextFile();
+            }
+
+            if (null != currentElement) {
+
+                final Path path = this.currentElement;
+                final String absolutePath = path.toFile().getAbsolutePath();
+                final String relativePath = absolutePath.substring(this.destBucketFile.getAbsolutePath().length() + 1);
+                objectPath = Try.of(()->new ObjectPath(relativePath,
+                        FileSystemStoragePersistenceAPIImpl.this.pullFile(groupName, relativePath))).getOrNull();
+            }
+
+            return objectPath;
+        }
+
+        private Path nextFile() {
+            if (this.iterator.hasNext()) {
+
+                Path path = iterator.next();
+                // if we have to find the fist file
+                while(path.toFile().isDirectory() && this.iterator.hasNext()) {
+                    path = iterator.next();
+                }
+                currentElement = path.toFile().isFile()?path: null;
+                return currentElement;
+            }
+
+            currentElement = null;
+            return null;
+        }
+
+    } // ObjectPathIterator.
+
 }

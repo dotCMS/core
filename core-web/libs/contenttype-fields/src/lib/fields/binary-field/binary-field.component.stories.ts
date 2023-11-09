@@ -1,5 +1,6 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
+import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
@@ -9,8 +10,9 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotMessageService, DotUploadService } from '@dotcms/data-access';
+import { DotLicenseService, DotMessageService, DotUploadService } from '@dotcms/data-access';
 import {
+    DotContentThumbnailComponent,
     DotDropZoneComponent,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
@@ -18,11 +20,17 @@ import {
 } from '@dotcms/ui';
 
 import { DotBinaryFieldComponent } from './binary-field.component';
+import { DotBinaryFieldPreviewComponent } from './components/dot-binary-field-preview/dot-binary-field-preview.component';
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
 import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
 import { DotBinaryFieldStore } from './store/binary-field.store';
 
-import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../utils/mock';
+import {
+    CONTENTLET,
+    CONTENTTYPE_FIELDS_MESSAGE_MOCK,
+    FIELD,
+    TEMP_FILES_MOCK
+} from '../../utils/mock';
 
 export default {
     title: 'Library / Contenttype Fields / DotBinaryFieldComponent',
@@ -42,27 +50,28 @@ export default {
                 DotSpinnerModule,
                 InputTextModule,
                 DotBinaryFieldUrlModeComponent,
-                DotFieldValidationMessageComponent
+                DotBinaryFieldPreviewComponent,
+                DotFieldValidationMessageComponent,
+                DotContentThumbnailComponent
             ],
             providers: [
                 DotBinaryFieldStore,
+                {
+                    provide: DotLicenseService,
+                    useValue: {
+                        isEnterprise: () => of(true)
+                    }
+                },
                 {
                     provide: DotUploadService,
                     useValue: {
                         uploadFile: () => {
                             return new Promise((resolve, _reject) => {
                                 setTimeout(() => {
-                                    resolve({
-                                        fileName: 'Image.jpg',
-                                        folder: 'folder',
-                                        id: 'tempFileId',
-                                        image: true,
-                                        length: 10000,
-                                        mimeType: 'mimeType',
-                                        referenceUrl: 'referenceUrl',
-                                        thumbnailUrl: 'thumbnailUrl'
-                                    });
-                                }, 4000);
+                                    const index = Math.floor(Math.random() * 3);
+                                    const TEMP_FILE = TEMP_FILES_MOCK[index];
+                                    resolve(TEMP_FILE); // TEMP_FILES_MOCK is imported from utils/mock.ts
+                                }, 2000);
                             });
                         }
                     }
@@ -75,25 +84,19 @@ export default {
         })
     ],
     args: {
-        accept: ['image/*', '.ts'],
-        maxFileSize: 1000000,
-        helperText: 'This field accepts only images with a maximum size of 1MB.'
+        contentlet: CONTENTLET,
+        field: FIELD
     },
     argTypes: {
-        accept: {
-            defaultValue: ['image/*'],
+        contentlet: {
+            defaultValue: CONTENTLET,
             control: 'object',
-            description: 'Accepted file types'
+            description: 'Contentlet Object'
         },
-        maxFileSize: {
-            defaultValue: 1000000,
-            control: 'number',
-            description: 'Maximum file size in bytes'
-        },
-        helperText: {
-            defaultValue: 'This field accepts only images with a maximum size of 1MB.',
-            control: 'text',
-            description: 'Helper label to be displayed below the field'
+        field: {
+            defaultValue: FIELD,
+            control: 'Object',
+            description: 'Content Type Field Object'
         }
     }
 } as Meta<DotBinaryFieldComponent>;
@@ -101,9 +104,8 @@ export default {
 const Template: Story<DotBinaryFieldComponent> = (args: DotBinaryFieldComponent) => ({
     props: args,
     template: `<dot-binary-field
-        [accept]="accept"
-        [maxFileSize]="maxFileSize"
-        [helperText]="helperText"
+        [contentlet]="contentlet"
+        [field]="field"
     ></dot-binary-field>`
 });
 

@@ -1,0 +1,23 @@
+/**
+ * Represents the selectable data types (Dropdown, Radio button) for a DotCMS content field.
+ */
+export enum DotEditContentFieldSingleSelectableDataType {
+    BOOL = 'BOOL',
+    INTEGER = 'INTEGER',
+    FLOAT = 'FLOAT'
+}
+
+// Map to match the field type to component selector
+export enum FIELD_TYPES {
+    TEXT = 'Text',
+    TEXTAREA = 'Textarea',
+    SELECT = 'Select',
+    RADIO = 'Radio',
+    DATE = 'Date',
+    DATE_AND_TIME = 'Date-and-Time',
+    TIME = 'Time',
+    TAG = 'Tag',
+    CHECKBOX = 'Checkbox',
+    MULTI_SELECT = 'Multi-Select',
+    BINARY = 'Binary'
+}

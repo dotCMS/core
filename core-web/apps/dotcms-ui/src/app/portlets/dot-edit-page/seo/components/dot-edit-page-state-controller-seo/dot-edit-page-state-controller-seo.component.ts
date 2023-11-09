@@ -159,9 +159,13 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
      */
     lockPageHandler(): void {
         if (this.shouldAskToLock()) {
-            this.showLockConfirmDialog().then(() => {
-                this.setLockerState();
-            });
+            this.showLockConfirmDialog()
+                .then(() => {
+                    this.setLockerState();
+                })
+                .catch(() => {
+                    this.lock = this.pageState.state.locked;
+                });
         } else {
             this.setLockerState();
         }
@@ -298,10 +302,6 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
         ];
     }
 
-    private canTakeLock(pageState: DotPageRenderState): boolean {
-        return pageState.page.canLock && pageState.state.lockedByAnotherUser;
-    }
-
     private getModeOption(mode: string, pageState: DotPageRenderState): SelectItem {
         const disabled = {
             edit: !pageState.page.canEdit || !pageState.page.canLock,
@@ -315,7 +315,8 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
             label: this.dotMessageService.get(`editpage.toolbar.${mode}.page`),
             value: {
                 id: enumMode,
-                showDropdownButton: this.shouldShowDropdownButton(enumMode, pageState)
+                showDropdownButton: this.shouldShowDropdownButton(enumMode, pageState),
+                shouldRefresh: enumMode === DotPageMode.PREVIEW
             },
             disabled: disabled[mode]
         };
@@ -358,7 +359,7 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
     }
 
     private isLocked(pageState: DotPageRenderState): boolean {
-        return pageState.state.locked && !this.canTakeLock(pageState);
+        return pageState.state.locked;
     }
 
     private isPersonalized(): boolean {

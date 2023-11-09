@@ -3,10 +3,19 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map, pluck } from 'rxjs/operators';
 
 import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
-import { DotCMSContentType, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentType,
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow
+} from '@dotcms/dotcms-models';
+
+interface EditContentFormData {
+    layout: DotCMSContentTypeLayoutRow[];
+    fields: DotCMSContentTypeField[];
+}
 
 @Injectable()
 export class DotEditContentService {
@@ -28,8 +37,13 @@ export class DotEditContentService {
      * @param idOrVar - The identifier or variable name of the content type to retrieve form data for.
      * @returns An Observable of an array of DotCMSContentTypeLayoutRow objects representing the form data for the given content type.
      */
-    getContentTypeFormData(idOrVar: string): Observable<DotCMSContentTypeLayoutRow[]> {
-        return this.dotContentTypeService.getContentType(idOrVar).pipe(pluck('layout'));
+    getContentTypeFormData(idOrVar: string): Observable<EditContentFormData> {
+        return this.dotContentTypeService.getContentType(idOrVar).pipe(
+            map(({ layout, fields }: EditContentFormData) => ({
+                layout,
+                fields
+            }))
+        );
     }
 
     /**

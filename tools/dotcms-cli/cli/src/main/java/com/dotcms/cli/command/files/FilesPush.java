@@ -5,7 +5,8 @@ import static com.dotcms.cli.command.files.TreePrinter.COLOR_MODIFIED;
 import static com.dotcms.cli.command.files.TreePrinter.COLOR_NEW;
 
 import com.dotcms.api.client.files.PushService;
-import com.dotcms.api.client.files.traversal.AbstractTraverseResult;
+import com.dotcms.api.client.files.traversal.PushTraverseParams;
+import com.dotcms.cli.command.PushContext;
 import com.dotcms.api.client.files.traversal.TraverseResult;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodePushInfo;
@@ -15,7 +16,7 @@ import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.AssetsUtils;
-import com.dotcms.common.AssetsUtils.LocalPathStructure;
+import com.dotcms.common.LocalPathStructure;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -51,8 +52,12 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
+    @Inject
+    PushContext pushContext;
+
     @Override
     public Integer call() throws Exception {
+
 
         // When calling from the global push we should avoid the validation of the unmatched
         // arguments as we may send arguments meant for other push subcommands
@@ -116,7 +121,7 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
 
                 header(count++, localPaths, outputBuilder);
 
-                var treeNodePushInfo = treeNode.collectTreeNodePushInfo();
+                var treeNodePushInfo = treeNode.collectPushInfo();
 
                 if (treeNodePushInfo.hasChanges()) {
 
@@ -132,10 +137,16 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                     // Pushing the tree
                     if (!pushMixin.dryRun) {
 
-                         pushService.processTreeNodes(output, workspace.getAbsolutePath(),
-                                localPaths, treeNode, treeNodePushInfo, pushMixin.failFast,
-                                pushMixin.retryAttempts);
-
+                         pushService.processTreeNodes(output, treeNodePushInfo,
+                                 PushTraverseParams.builder()
+                                         .workspacePath(workspace.getAbsolutePath())
+                                         .rootNode(treeNode)
+                                         .localPaths(localPaths)
+                                         .failFast(pushMixin.failFast)
+                                         .maxRetryAttempts(pushMixin.retryAttempts)
+                                         .pushContext(pushContext)
+                                         .build()
+                         );
                     }
 
                 } else {
@@ -190,12 +201,12 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                             "- @|bold,%s [%s]|@ Assets to delete " +
                             "- @|bold,%s [%s]|@ Folders to push " +
                             "- @|bold,%s [%s]|@ Folders to delete\n\n",
-                    COLOR_NEW,pushInfo.assetsToPushCount(),
+                    pushInfo.assetsToPushCount(),
                     COLOR_MODIFIED,pushInfo.assetsNewCount(),
                     COLOR_DELETED,pushInfo.assetsModifiedCount(),
                     COLOR_NEW,pushInfo.assetsToDeleteCount(),
-                    COLOR_DELETED,pushInfo.foldersToPushCount(),
-                    pushInfo.foldersToDeleteCount())
+                    COLOR_NEW,pushInfo.foldersToPushCount(),
+                    COLOR_DELETED,pushInfo.foldersToDeleteCount())
             );
         } else {
             outputBuilder.append(String.format(" Push Data: " +
