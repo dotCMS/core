@@ -1,11 +1,19 @@
 package com.dotcms.metrics;
 
-import com.dotcms.http.request.StringPayloadHttpRequest;
+import com.dotcms.analytics.metrics.MetricsPayloadRequest;
 
+/**
+ * Metrics sender interface.
+ *
+ * @author vico
+ */
 public interface MetricsSender {
 
-    String TOKEN_QUERY_PARAM_NAME = "token";
-
-    void sendMetrics(StringPayloadHttpRequest httpRequest);
+    /**
+     * Sends metrics to analytics.
+     *
+     * @param metricsPayloadRequest {@link MetricsPayloadRequest} instance with metrics data
+     */
+    void sendMetrics(MetricsPayloadRequest metricsPayloadRequest);
 
 }

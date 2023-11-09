@@ -2,8 +2,8 @@ package com.dotcms.metrics;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.metrics.MetricsPayloadRequest;
 import com.dotcms.analytics.model.AnalyticsProperties;
-import com.dotcms.http.request.StringPayloadHttpRequest;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,46 +24,46 @@ public class MetricsAPIImplTest extends UnitTestBase {
     }
 
     /**
-     * Test method for {@link MetricsAPIImpl#sendMetrics(StringPayloadHttpRequest)}.
+     * Test method for {@link MetricsAPIImpl#sendMetrics(MetricsPayloadRequest)}.
      */
     @Test
     public void testSendMetrics() {
         metricsAPI.subscribeToMetrics("sender", metricsSender);
-        final StringPayloadHttpRequest request = buildRequest();
+        final MetricsPayloadRequest request = buildRequest();
 
         metricsAPI.sendMetrics(request);
         verify(metricsSender).sendMetrics(request);
     }
 
     /**
-     * Test method for {@link MetricsAPIImpl#sendMetrics(StringPayloadHttpRequest)} from a {@link AnalyticsApp} instance.
+     * Test method for {@link MetricsAPIImpl#sendMetrics(MetricsPayloadRequest)} from a {@link AnalyticsApp} instance.
      */
     @Test
     public void testSendMetrics_fromApp() {
         metricsAPI.subscribeToMetrics("sender", metricsSender);
-        final StringPayloadHttpRequest request = buildRequestFromApp();
+        final MetricsPayloadRequest request = buildRequestFromApp();
 
         metricsAPI.sendMetrics(request);
         verify(metricsSender).sendMetrics(request);
     }
 
     /**
-     * Test method for {@link MetricsAPIImpl#sendMetrics(StringPayloadHttpRequest)} without senders subscribed.
+     * Test method for {@link MetricsAPIImpl#sendMetrics(MetricsPayloadRequest)} without senders subscribed.
      */
     @Test
     public void testSendMetrics_unsubscribe() {
         metricsAPI.unsubscribeFromMetrics("sender");
-        final StringPayloadHttpRequest request = buildRequest();
+        final MetricsPayloadRequest request = buildRequest();
 
         metricsAPI.sendMetrics(request);
         verify(metricsSender, never()).sendMetrics(request);
     }
 
-    private static StringPayloadHttpRequest buildRequest() {
+    private static MetricsPayloadRequest buildRequest() {
         return MetricsAPI.createMetricsRequest("www.some-url.io", "{}", "some-token");
     }
 
-    private static StringPayloadHttpRequest buildRequestFromApp() {
+    private static MetricsPayloadRequest buildRequestFromApp() {
         AnalyticsApp app = mock(AnalyticsApp.class);
         final String url = "www.some-url.io";
         final AnalyticsProperties properties = AnalyticsProperties.builder()

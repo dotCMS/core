@@ -1,7 +1,7 @@
 package com.dotcms.metrics;
 
 import com.dotcms.analytics.app.AnalyticsApp;
-import com.dotcms.http.request.StringPayloadHttpRequest;
+import com.dotcms.analytics.metrics.MetricsPayloadRequest;
 
 import java.util.Map;
 
@@ -11,6 +11,8 @@ import java.util.Map;
  * @author vico
  */
 public interface MetricsAPI {
+
+    String TOKEN_QUERY_PARAM_NAME = "token";
 
     /**
      * Subscribes to metrics to be sent to analytics.
@@ -30,34 +32,34 @@ public interface MetricsAPI {
     /**
      * Sends metrics to analytics.
      *
-     * @param httpRequest {@link StringPayloadHttpRequest} instance with metrics data
+     * @param metricsPayloadRequest {@link MetricsPayloadRequest} instance with metrics data
      */
-    void sendMetrics(final StringPayloadHttpRequest httpRequest);
+    void sendMetrics(final MetricsPayloadRequest metricsPayloadRequest);
 
     /**
-     * Creates a {@link StringPayloadHttpRequest} instance to be used when sending metrics data.
+     * Creates a {@link MetricsPayloadRequest} instance to be used when sending metrics data.
      *
      * @param url metrics endpoint url
      * @param payload metrics data
      * @param token token
      * @return {@link StringPayloadHttpRequest} instance
      */
-    static StringPayloadHttpRequest createMetricsRequest(final String url, final String payload, final String token) {
-        return StringPayloadHttpRequest.builder()
+    static MetricsPayloadRequest createMetricsRequest(final String url, final String payload, final String token) {
+        return MetricsPayloadRequest.builder()
             .url(url)
             .payload(payload)
-            .queryParams(Map.of(MetricsSender.TOKEN_QUERY_PARAM_NAME, token))
+            .queryParams(Map.of(TOKEN_QUERY_PARAM_NAME, token))
             .build();
     }
 
     /**
-     * Creates a {@link StringPayloadHttpRequest} instance to be used when sending metrics data.
+     * Creates a {@link MetricsPayloadRequest} instance to be used when sending metrics data.
      *
      * @param analyticsApp {@link AnalyticsApp} instance
      * @param payload metrics data
-     * @return {@link StringPayloadHttpRequest} instance
+     * @return {@link MetricsPayloadRequest} instance
      */
-    static StringPayloadHttpRequest createMetricsRequest(final AnalyticsApp analyticsApp, final String payload) {
+    static MetricsPayloadRequest createMetricsRequest(final AnalyticsApp analyticsApp, final String payload) {
         return createMetricsRequest(
             analyticsApp.getAnalyticsProperties().analyticsWriteUrl(),
             payload,

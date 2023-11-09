@@ -1,6 +1,6 @@
 package com.dotcms.metrics;
 
-import com.dotcms.http.request.StringPayloadHttpRequest;
+import com.dotcms.analytics.metrics.MetricsPayloadRequest;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,8 +34,8 @@ public class MetricsAPIImpl implements MetricsAPI {
      * {@inheritDoc}
      */
     @Override
-    public void sendMetrics(final StringPayloadHttpRequest httpRequest) {
-        metricsSender.values().forEach(metricsSender -> metricsSender.sendMetrics(httpRequest));
+    public void sendMetrics(final MetricsPayloadRequest metricsPayloadRequest) {
+        metricsSender.values().forEach(metricsSender -> metricsSender.sendMetrics(metricsPayloadRequest));
     }
 
 }
