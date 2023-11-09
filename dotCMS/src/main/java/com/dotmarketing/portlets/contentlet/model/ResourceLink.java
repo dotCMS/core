@@ -215,7 +215,7 @@ public class ResourceLink {
          */
         String replaceUrlPattern(final String pattern, final Contentlet contentlet, final Identifier identifier, final Metadata metadata, final Host site) {
             final String fileName  = contentlet.isFileAsset() ? identifier.getAssetName() : metadata.getName();
-            final String path = pattern.equals("{path}{name}") ? getPath(identifier) : getPath(contentlet);
+            final String path = pattern.contains("{path}") ? getPath(identifier) : getPath(contentlet);
             final String extension = UtilMethods.getFileExtension(fileName);
             final ShortyIdAPI shortyAPI = APILocator.getShortyAPI();
             String shortyId = contentlet.getIdentifier();
