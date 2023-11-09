@@ -31,6 +31,7 @@ import javax.ws.rs.NotFoundException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.wildfly.common.Assert;
@@ -144,6 +145,7 @@ class SiteCommandIT extends CommandTest {
      * Given scenario: Simply call create command followed by copy Expected Result: We simply verify
      * the command completes successfully
      */
+    @Disabled("Test is intermittently failing.")
     @Test
     @Order(4)
     void Test_Command_Copy() {

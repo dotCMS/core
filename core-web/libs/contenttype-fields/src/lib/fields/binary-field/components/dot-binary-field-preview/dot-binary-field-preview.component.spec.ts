@@ -27,6 +27,15 @@ const fileText: BinaryFile = {
     inode: '123'
 };
 
+const fileUnknown: BinaryFile = {
+    mimeType: 'unknown',
+    name: 'test.txt',
+    fileSize: 1234,
+    content: 'This is a text file but the mime type is unknown',
+    url: 'http://example.com/test.txt',
+    inode: '123'
+};
+
 describe('DotBinaryFieldPreviewComponent', () => {
     let spectator: Spectator<DotBinaryFieldPreviewComponent>;
     const createComponent = createComponentFactory({
@@ -75,6 +84,35 @@ describe('DotBinaryFieldPreviewComponent', () => {
                 const editButton = spectator.query(byTestId('edit-button'));
                 spectator.click(editButton);
                 expect(spy).toHaveBeenCalled();
+            });
+        });
+
+        describe('when file is a unknown file', () => {
+            beforeEach(() => {
+                spectator.setInput('file', fileUnknown);
+                spectator.detectChanges();
+            });
+
+            it('should emit editFile event when edit button is clicked', () => {
+                const spy = jest.spyOn(spectator.component.editFile, 'emit');
+                const editButton = spectator.query(byTestId('edit-button'));
+                spectator.click(editButton);
+                expect(spy).toHaveBeenCalled();
+            });
+
+            it('should have edit button if it has content', () => {
+                const editButton = spectator.query(byTestId('edit-button'));
+                expect(editButton).toBeTruthy();
+            });
+
+            it('should not have edit button if it does not have content', () => {
+                spectator.setInput('file', {
+                    ...fileUnknown,
+                    content: ''
+                });
+                spectator.detectChanges();
+                const editButton = spectator.query(byTestId('edit-button'));
+                expect(editButton).not.toBeTruthy();
             });
         });
     });
