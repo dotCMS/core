@@ -70,6 +70,7 @@ public class JsProxyFactory {
         registerMapper(new JsLocaleProxyMapperStrategyImpl());
         registerMapper(new JsFileProxyMapperStrategyImpl());
         registerMapper(new JsFileProxyMapperStrategyImpl());
+        registerMapper(new JsContentTypeMapperStrategyImpl());
         registerMapper(new JsFieldMapperStrategyImpl());
         registerMapper(new JsFieldVariableMapperStrategyImpl());
     }

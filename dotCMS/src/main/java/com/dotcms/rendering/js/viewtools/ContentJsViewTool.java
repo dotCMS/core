@@ -3,6 +3,7 @@ package com.dotcms.rendering.js.viewtools;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rendering.js.JsHttpServletRequestAware;
 import com.dotcms.rendering.js.JsViewContextAware;
 import com.dotcms.rendering.js.JsViewTool;
 import com.dotcms.rendering.js.proxy.JsProxyFactory;
@@ -13,6 +14,7 @@ import com.dotcms.rendering.velocity.viewtools.content.PaginatedContentList;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
@@ -25,10 +27,13 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.graalvm.polyglot.HostAccess;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +44,10 @@ import java.util.Optional;
  *
  * @author jsanca
  */
-public class ContentJsViewTool implements JsViewTool, JsViewContextAware {
+public class ContentJsViewTool implements JsViewTool, JsViewContextAware, JsHttpServletRequestAware {
 
     private final ContentTool contentTool = new ContentTool();
+    private HttpServletRequest request;
 
     @Override
     public void setViewContext(final ViewContext viewContext) {
@@ -91,6 +97,19 @@ public class ContentJsViewTool implements JsViewTool, JsViewContextAware {
     public Object find(final String inodeOrIdentifier) {
 
         return JsProxyFactory.createProxy(this.findInternal(inodeOrIdentifier));
+    }
+
+    @HostAccess.Export
+    /**
+     * Will retrieve the content type by inode or variable name
+     * @param inodeOrVariable Can be either an Inode or variable name of type.
+     * @return NULL if not found
+     */
+    public Object loadType (final String inodeOrVariable) {
+
+        final User user = WebAPILocator.getUserWebAPI().getLoggedInUser(this.request);
+        return JsProxyFactory.createProxy(
+                Try.of(()->APILocator.getContentTypeAPI(user).find(inodeOrVariable)).getOrNull());
     }
 
     @HostAccess.Export
@@ -529,5 +548,10 @@ public class ContentJsViewTool implements JsViewTool, JsViewContextAware {
                                                                   final String startDate,
                                                                   final String endDate) {
         return this.contentTool.getMostViewedContent( structureVariableName,  startDate,  endDate);
+    }
+
+    @Override
+    public void setRequest(final HttpServletRequest request) {
+        this.request = request;
     }
 }
