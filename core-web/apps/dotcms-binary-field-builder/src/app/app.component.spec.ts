@@ -15,9 +15,9 @@ describe('AppComponent', () => {
         expect(app).toBeTruthy();
     });
 
-    it(`should have as title 'contenttype-fields-builder'`, () => {
+    it(`should have as title 'dotcms-binary-field-builder'`, () => {
         const fixture = TestBed.createComponent(AppComponent);
         const app = fixture.componentInstance;
-        expect(app.title).toEqual('contenttype-fields-builder');
+        expect(app.title).toEqual('dotcms-binary-field-builder');
     });
 });

@@ -1,6 +1,6 @@
 /* eslint-disable */
 export default {
-    displayName: 'contenttype-fields-builder',
+    displayName: 'dotcms-binary-field-builder',
     preset: '../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {
@@ -9,7 +9,7 @@ export default {
             stringifyContentPathRegex: '\\.(html|svg)$'
         }
     },
-    coverageDirectory: '../../coverage/apps/contenttype-fields-builder',
+    coverageDirectory: '../../coverage/apps/dotcms-binary-field-builder',
     transform: {
         '^.+\\.(ts|mjs|js|html)$': 'jest-preset-angular'
     },

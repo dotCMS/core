@@ -5,5 +5,5 @@ import { Component } from '@angular/core';
     templateUrl: './app.component.html'
 })
 export class AppComponent {
-    title = 'contenttype-fields-builder';
+    title = 'dotcms-binary-field-builder';
 }
