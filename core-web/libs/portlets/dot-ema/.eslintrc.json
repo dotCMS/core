@@ -9,7 +9,7 @@
                     "error",
                     {
                         "type": "attribute",
-                        "prefix": "dotcms",
+                        "prefix": "dot",
                         "style": "camelCase"
                     }
                 ],
