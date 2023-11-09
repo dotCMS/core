@@ -213,7 +213,7 @@ import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByCo
 import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentletIntegrationTest;
 import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
 import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSizeTest;
-import com.dotmarketing.startup.runonce.Task230922AddPublishDateToContentletVersionInfoTest;
+import com.dotmarketing.startup.runonce.Task231109AddPublishDateToContentletVersionInfoTest;
 import com.dotmarketing.startup.runonce.Task231030DropReleaseTableTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.ITConfigTest;
@@ -663,8 +663,8 @@ import org.junit.runners.Suite.SuiteClasses;
         DropOldContentVersionsJobTest.class,
         ITConfigTest.class,
         DotConnectTest.class,
-        Task230922AddPublishDateToContentletVersionInfoTest.class,
-        Task231030DropReleaseTableTest.class
+        Task231030DropReleaseTableTest.class,
+        Task231109AddPublishDateToContentletVersionInfoTest.class
 })
 
 public class MainSuite {

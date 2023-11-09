@@ -13,12 +13,12 @@ import java.sql.SQLException;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class Task230922AddPublishDateToContentletVersionInfoTest {
+public class Task231109AddPublishDateToContentletVersionInfoTest {
 
     @BeforeClass
     public static void publishDateColumnExists() throws Exception {
         IntegrationTestInitService.getInstance().init();
-        LocalTransaction.wrap(Task230922AddPublishDateToContentletVersionInfoTest::dropPublishDateColumnIfExists);
+        LocalTransaction.wrap(Task231109AddPublishDateToContentletVersionInfoTest::dropPublishDateColumnIfExists);
     }
 
     private static void dropPublishDateColumnIfExists() {
@@ -39,8 +39,8 @@ public class Task230922AddPublishDateToContentletVersionInfoTest {
     @Test
     public void testExecuteUpgrade() throws Exception {
 
-        final Task230922AddPublishDateToContentletVersionInfo task230922AddPublishDateToContentletVersionInfo =
-                new Task230922AddPublishDateToContentletVersionInfo();
+        final Task231109AddPublishDateToContentletVersionInfo task231109AddPublishDateToContentletVersionInfo =
+                new Task231109AddPublishDateToContentletVersionInfo();
         final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
 
         // check that the column doesn't exist before the upgrade
@@ -49,9 +49,9 @@ public class Task230922AddPublishDateToContentletVersionInfoTest {
         assertFalse(columnExists);
 
         // execute upgrade and check if the column exists after the upgrade
-        assertTrue(task230922AddPublishDateToContentletVersionInfo.forceRun());
+        assertTrue(task231109AddPublishDateToContentletVersionInfo.forceRun());
 
-        LocalTransaction.wrap(task230922AddPublishDateToContentletVersionInfo::executeUpgrade);
+        LocalTransaction.wrap(task231109AddPublishDateToContentletVersionInfo::executeUpgrade);
 
         final boolean columnExistsAfterUpgrade = databaseMetaData.hasColumn(
                 "contentlet_version_info", "publish_date");

@@ -11,7 +11,7 @@ import java.sql.SQLException;
 /**
  * This Upgrade Task adds the publish_date column to the contentlet_version_info table
  */
-public class Task230922AddPublishDateToContentletVersionInfo implements StartupTask {
+public class Task231109AddPublishDateToContentletVersionInfo implements StartupTask {
 
     private static final String ADD_PUBLISH_DATE_COLUMN =
             "ALTER TABLE contentlet_version_info ADD publish_date TIMESTAMPTZ NULL";
