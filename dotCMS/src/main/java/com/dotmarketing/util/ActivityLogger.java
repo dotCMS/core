@@ -9,6 +9,7 @@ import com.dotmarketing.logConsole.model.LogMapper;
 public class ActivityLogger {
 
 	private static String filename = "dotcms-userActivity.log";
+	private static String logType = "[Activity] ";
 
 	public static synchronized void logInfo(Class cl, String action, String msg) {
 		logInfo(cl, action, msg, null);
@@ -17,7 +18,7 @@ public class ActivityLogger {
 	public static synchronized void logInfo(Class cl, String action,
 			String msg, String hostNameOrId) {
 		if (LogMapper.getInstance().isLogEnabled(filename)) {
-			Logger.info(ActivityLogger.class, cl.toString() + ": " + getHostName(hostNameOrId)
+			Logger.info(ActivityLogger.class, logType + cl.toString() + ": " + getHostName(hostNameOrId)
 					+ " : " + action + " , " + msg);
 		}
 	}
@@ -25,7 +26,7 @@ public class ActivityLogger {
 	public static void logDebug(Class cl, String action, String msg, String hostNameOrId) {
 
 		if (LogMapper.getInstance().isLogEnabled(filename)) {
-			Logger.debug(ActivityLogger.class, cl.toString() + ": " + getHostName(hostNameOrId)
+			Logger.debug(ActivityLogger.class, logType + cl.toString() + ": " + getHostName(hostNameOrId)
 					+ " :" + action + " , " + msg);
 		}
 	}

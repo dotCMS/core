@@ -10,12 +10,13 @@ import com.liferay.portal.model.User;
 public class AdminLogger {
 
     private static String filename = "dotcms-adminaudit.log";
+    private static String logType = "[Admin Audit] ";
 
     public static void log ( Class cl, String methodName, String msg ) {
 
         if ( LogMapper.getInstance().isLogEnabled( filename ) ) {
-            Logger.info( cl, methodName + " : " + msg );
-            Logger.info( AdminLogger.class, cl.toString() + " : " + methodName + " : " + msg );
+            Logger.info( cl, logType + methodName + " : " + msg );
+            Logger.info( AdminLogger.class, logType + cl.toString() + " : " + methodName + " : " + msg );
         }
     }
 
@@ -25,8 +26,8 @@ public class AdminLogger {
             log( cl, methodName, msg );
         } else {
             if ( LogMapper.getInstance().isLogEnabled( filename ) ) {
-                Logger.info( cl, "UserId : " + user.getUserId() + " : " + methodName + " : " + msg );
-                Logger.info( AdminLogger.class, "UserId : " + user.getUserId() + " : " + cl.toString() + " : " + methodName + " : " + msg );
+                Logger.info( cl, logType + "UserId : " + user.getUserId() + " : " + methodName + " : " + msg );
+                Logger.info( AdminLogger.class, logType + "UserId : " + user.getUserId() + " : " + cl.toString() + " : " + methodName + " : " + msg );
             }
         }
     }

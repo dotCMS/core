@@ -22,6 +22,7 @@ public class Logger{
 		Log4jUtil.configureDefaultSystemProperties();
 	}
 	private static WeakHashMap<Class, org.apache.logging.log4j.Logger> map = new WeakHashMap<>();
+	private static String velocityLogType = "[Velocity] ";
 
 	public static void clearLoggers(){
 		map.clear();
@@ -307,7 +308,7 @@ public class Logger{
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
-		logger.error(message + " @ " +  Thread.currentThread().getName(), thr);
+		logger.error(velocityLogType + message + " @ " +  Thread.currentThread().getName(), thr);
     }
     
     public static void velocityWarn(Class cl, String message, Throwable thr){
@@ -315,7 +316,7 @@ public class Logger{
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
-		logger.warn(message + " @ " +  Thread.currentThread().getName(), thr);
+		logger.warn(velocityLogType + message + " @ " +  Thread.currentThread().getName(), thr);
     }
     
     public static void velocityInfo(Class cl, String message, Throwable thr){
@@ -323,21 +324,21 @@ public class Logger{
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
-		logger.info(message + " @ " +  Thread.currentThread().getName(), thr);
+		logger.info(velocityLogType + message + " @ " +  Thread.currentThread().getName(), thr);
     }
     public static void velocityFatal(Class cl, String message, Throwable thr){
     	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
-		logger.fatal(message + " @ " +  Thread.currentThread().getName(), thr);
+		logger.fatal(velocityLogType + message + " @ " +  Thread.currentThread().getName(), thr);
 	}
     public static void velocityDebug(Class cl, String message, Throwable thr){
     	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
-		logger.debug(message + " @ " +   Thread.currentThread().getName(), thr);
+		logger.debug(velocityLogType + message + " @ " +   Thread.currentThread().getName(), thr);
 	}
 
     public static void velocityError(Class cl, String message){
@@ -345,7 +346,7 @@ public class Logger{
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
-		logger.error(message + " @ " +  Thread.currentThread().getName());
+		logger.error(velocityLogType + message + " @ " +  Thread.currentThread().getName());
 	}
 	
 	public static void velocityWarn(Class cl, String message){
@@ -353,7 +354,7 @@ public class Logger{
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
-		logger.warn(message + " @ " +  Thread.currentThread().getName());
+		logger.warn(velocityLogType + message + " @ " +  Thread.currentThread().getName());
 	}
 	
 	public static void velocityInfo(Class cl, String message){
@@ -361,21 +362,21 @@ public class Logger{
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
-		logger.info(message + " @ " +  Thread.currentThread().getName());
+		logger.info(velocityLogType + message + " @ " +  Thread.currentThread().getName());
 	}
 	public static void velocityFatal(Class cl, String message){
     	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
-		logger.fatal(message + " @ " +  Thread.currentThread().getName());
+		logger.fatal(velocityLogType + message + " @ " +  Thread.currentThread().getName());
 	}
 	public static void velocityDebug(Class cl, String message){
     	org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
-		logger.debug(message + " @ " +  Thread.currentThread().getName());
+		logger.debug(velocityLogType + message + " @ " +  Thread.currentThread().getName());
 	}
     
     

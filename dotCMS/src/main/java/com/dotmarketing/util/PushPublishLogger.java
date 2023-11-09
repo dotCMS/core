@@ -8,6 +8,7 @@ import com.liferay.util.StringUtil;
 public class PushPublishLogger {
 
     private static String filename = "dotcms-pushpublish.log";
+    private static String logType = "[PushPublish] ";
 
     public enum PushPublishHandler {
         CATEGORY("Category"),
@@ -62,7 +63,7 @@ public class PushPublishLogger {
 	public static void log ( Class cl, String msg ) {
 
         if ( LogMapper.getInstance().isLogEnabled( filename ) ) {
-            Logger.info( PushPublishLogger.class, cl.toString() + " : " + msg );
+            Logger.info( PushPublishLogger.class, logType + cl.toString() + " : " + msg );
         }
     }
 
@@ -70,7 +71,7 @@ public class PushPublishLogger {
 	public static void log ( Class cl, String msg, String bundleId ) {
 
         if ( LogMapper.getInstance().isLogEnabled( filename ) ) {
-            Logger.info( PushPublishLogger.class, cl.toString() + " : [BundleID: "+bundleId+"] " + msg );
+            Logger.info( PushPublishLogger.class, logType + cl.toString() + " : [BundleID: "+bundleId+"] " + msg );
         }
     }
 
@@ -81,7 +82,7 @@ public class PushPublishLogger {
             log( cl, msg , bundleId);
         } else {
             if ( LogMapper.getInstance().isLogEnabled( filename ) ) {
-                Logger.info( PushPublishLogger.class, cl.toString() + " : [BundleID: "+bundleId+"] " + msg + ", User: " + user.getUserId());
+                Logger.info( PushPublishLogger.class, logType + cl.toString() + " : [BundleID: "+bundleId+"] " + msg + ", User: " + user.getUserId());
             }
         }
     }
@@ -89,7 +90,7 @@ public class PushPublishLogger {
     public static void error ( final Class cl, final String msg, final String bundleId ) {
 
         if ( LogMapper.getInstance().isLogEnabled( filename ) ) {
-            Logger.error( PushPublishLogger.class, cl.toString() + " : [BundleID: "+bundleId+"] " + msg );
+            Logger.error( PushPublishLogger.class, logType + cl.toString() + " : [BundleID: "+bundleId+"] " + msg );
         }
     }
 
