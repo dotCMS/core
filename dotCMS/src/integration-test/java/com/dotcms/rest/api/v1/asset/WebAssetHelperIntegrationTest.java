@@ -20,6 +20,7 @@ import com.dotcms.rest.api.v1.asset.view.WebAssetView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -37,6 +38,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -335,9 +337,10 @@ public class WebAssetHelperIntegrationTest {
         final Language secondLang = new LanguageDataGen().nextPersisted();
         final File newTestFile = FileUtil.createTemporaryFile("multi-lang-example", ".txt", RandomStringUtils.random(1000));
         final String path = rootFolderPath() + newTestFile.getName();
+        final boolean live = true;
 
-        pushFileForLanguageThenValidate(newTestFile, path, language.toString());
-        pushFileForLanguageThenValidate(newTestFile, path, secondLang.toString());
+        pushFileForLanguageThenValidate(newTestFile, path, language.toString(), live);
+        pushFileForLanguageThenValidate(newTestFile, path, secondLang.toString(), live);
     }
 
     /**
@@ -353,8 +356,9 @@ public class WebAssetHelperIntegrationTest {
 
         final File newTestFile = FileUtil.createTemporaryFile("archive-me", ".txt", RandomStringUtils.random(1000));
         final String path = rootFolderPath() + newTestFile.getName();
+        final boolean live = true;
 
-        pushFileForLanguageThenValidate(newTestFile, path, language.toString());
+        pushFileForLanguageThenValidate(newTestFile, path, language.toString(), live);
 
         final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
         final WebAssetView assetInfo = webAssetHelper.getAssetInfo(path, APILocator.systemUser());
@@ -369,13 +373,60 @@ public class WebAssetHelperIntegrationTest {
         contentletAPI.archive(fileAsset, APILocator.systemUser(), false);
 
         //Pushing again should unarchive
-        pushFileForLanguageThenValidate(newTestFile, path, language.toString());
+        pushFileForLanguageThenValidate(newTestFile, path, language.toString(), live);
 
         final Contentlet unarchived = contentletAPI.findContentletByIdentifierAnyLanguage(
                 assetView.identifier());
         Assert.assertFalse(unarchived.isArchived());
 
     }
+
+    /**
+     * Method to test : {@link WebAssetHelper#saveUpdateAsset(HttpServletRequest, FileUploadData, User)}
+     * Given Scenario: This should emulate the scenario where a file is uploaded and then published several times
+     * What we intend to create is several versions of the same asset and then archive it then publish it again
+     * Expected Result: We get the asset info back as proof of success and the asset should be unarchived. No version should remain archived
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test
+    public void Test_Upload_File_Archive_Then_Publish_Several_Times() throws DotDataException, DotSecurityException, IOException {
+
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final File newTestFile = FileUtil.createTemporaryFile("also-archive-me", ".txt", RandomStringUtils.random(1000));
+        final String path = rootFolderPath() + newTestFile.getName();
+
+        final Contentlet contentlet = new FileAssetDataGen(newTestFile).title("lol")
+                .languageId(language.getId()).host(host).nextPersisted();
+
+        final WebAssetView assetInfo = webAssetHelper.getAssetInfo(path, APILocator.systemUser());
+        Assert.assertTrue(assetInfo instanceof AssetVersionsView);
+        final AssetVersionsView assetVersionsView = (AssetVersionsView) assetInfo;
+        AssetView assetView = assetVersionsView.versions().get(0);
+        Assert.assertEquals(contentlet.getIdentifier(), assetView.identifier());
+
+        pushFileForLanguageThenValidate(newTestFile, path, language.toString(), false);
+        pushFileForLanguageThenValidate(newTestFile, path, language.toString(), true);
+
+        contentletAPI.archive(contentlet, APILocator.systemUser(), false);
+
+        final List<Contentlet> allVersions = contentletAPI.findAllVersions(
+                new Identifier(contentlet.getIdentifier()), APILocator.systemUser(), false);
+
+        //Not all versions here are live or working old versions are neither live nor working, but they all should be archived
+        Assert.assertTrue(allVersions.stream().allMatch(c-> Try.of(c::isArchived).getOrElse(false)));
+        //Test at least one version is neither live nor working. This is an obvious scenario since we have several version of the same asset
+        Assert.assertTrue(allVersions.stream().anyMatch(c-> Try.of(()->!c.isWorking() && !c.isLive()).getOrElse(false)));
+        //Now this should generate a new version (obviously unarchived) and should succeed
+        pushFileForLanguageThenValidate(newTestFile, path, language.toString(), true);
+        //Test nothing remains archived
+        //We can still use the same collection of versions since the archive method is calculated on the fly
+        Assert.assertTrue(allVersions.stream().noneMatch(c-> Try.of(c::isArchived).getOrElse(false)));
+    }
+
+
 
     /**
      * Helper method to Send a file in a given language and validate the result
@@ -386,7 +437,7 @@ public class WebAssetHelperIntegrationTest {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    private static void pushFileForLanguageThenValidate(final File newTestFile, final String path, final String langString) throws IOException, DotDataException, DotSecurityException {
+    private static void pushFileForLanguageThenValidate(final File newTestFile, final String path, final String langString, final boolean live) throws IOException, DotDataException, DotSecurityException {
         final FormDataContentDisposition formDataContentDisposition = getFormDataContentDisposition(newTestFile);
         try(final InputStream inputStream = Files.newInputStream(newTestFile.toPath())){
             final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
@@ -395,13 +446,13 @@ public class WebAssetHelperIntegrationTest {
             form.setFileInputStream(inputStream);
             form.setContentDisposition(formDataContentDisposition);
             form.setAssetPath(path);
-            form.setDetail(new FileUploadDetail(path, langString, true));
+            form.setDetail(new FileUploadDetail(path, langString, live));
 
             final WebAssetView assetInfo = webAssetHelper.saveUpdateAsset(request, form, APILocator.systemUser());
             Assert.assertNotNull(assetInfo);
             Assert.assertTrue(assetInfo instanceof AssetView);
             AssetView assetView = (AssetView) assetInfo;
-            Assert.assertTrue(assetView.live());
+            Assert.assertEquals(live, assetView.live());
         }
     }
 
