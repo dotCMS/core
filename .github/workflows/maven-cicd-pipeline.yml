@@ -503,9 +503,7 @@ jobs:
       - id: fetch-core
         name: Fetch Core Repo
         uses: actions/checkout@v3
-
       - run: npm install --location=global newman
-
       - id: docker-login
         name: Login to GHCR
         uses: docker/login-action@v3.0.0
@@ -513,19 +511,16 @@ jobs:
           registry: ghcr.io
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.GHCR_TOKEN }}
-
       - id: resolve-postman-collections
         uses: ./.github/actions/resolve-postman-collections
         with:
           current: ${{ matrix.collection_group }}
-
       - name: Prepare license
         run: |
           mkdir -p dotcms-postman/license
           touch dotcms-postman/license/license.dat
           echo "${{ secrets.DOTCMS_LICENSE }}" > dotcms-postman/license/license.dat
           chmod 777 dotcms-postman/license/license.dat
-
       - id: run-postman-tests
         name: Run Postman Tests
         timeout-minutes: 90
@@ -539,19 +534,16 @@ jobs:
           eval $cmd
         env:
           JVM_TEST_MAVEN_OPTS: "-e -B"
-
       - name: Prepare reports archive (if maven failed)
         if: failure()
         shell: bash
         run: find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
-
       - name: Upload failure Archive (if maven failed)
         uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: test-reports-postman-${{ matrix.collection_group }}
           path: 'test-reports.tgz'
-
       - name: failsafe-postman-tests  # Uploads will be merged with same name
         uses: actions/upload-artifact@v3
         if: always()
