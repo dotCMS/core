@@ -1,4 +1,4 @@
-package com.dotcms.api.client.push.exception;
+package com.dotcms.api.client.exception;
 
 /**
  * {@code MappingException} is a specialized {@code RuntimeException} that is thrown when there is a

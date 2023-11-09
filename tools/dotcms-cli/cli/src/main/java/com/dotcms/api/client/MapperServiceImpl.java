@@ -1,6 +1,6 @@
-package com.dotcms.api.client.push;
+package com.dotcms.api.client;
 
-import com.dotcms.api.client.push.exception.MappingException;
+import com.dotcms.api.client.exception.MappingException;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.cli.common.InputOutputFormat;
