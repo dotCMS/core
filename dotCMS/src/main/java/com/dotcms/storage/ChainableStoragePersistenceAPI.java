@@ -67,13 +67,14 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
 
     @Override
     public boolean existsObject(final String groupName, final String objectPath) {
-
         if (this.cache.is404(groupName, objectPath)) {
-
             return false;
         }
-
-        return this.storagePersistenceAPIList.stream().anyMatch(storage -> Try.of(()->storage.existsObject(groupName, objectPath)).getOrElse(false));
+        final boolean anyMatch = this.storagePersistenceAPIList.stream().anyMatch(storage -> Try.of(()->storage.existsObject(groupName, objectPath)).getOrElse(false));
+        if (!anyMatch) {
+            this.cache.put404(groupName, objectPath);
+        }
+        return anyMatch;
     }
 
     @Override

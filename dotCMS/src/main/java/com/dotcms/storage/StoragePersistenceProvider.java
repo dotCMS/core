@@ -1,5 +1,8 @@
 package com.dotcms.storage;
 
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -14,6 +17,9 @@ import java.util.function.Supplier;
  * Singleton that serves as entry point to the Storage API. This class initializes and provides all
  * the different Storage Providers and the different provider chains that can be used in a dotCMS
  * instance.
+ * <p>It's very important to note that the {@link RedisStoragePersistenceAPI} and the
+ * {@link AmazonS3StoragePersistenceAPIImpl} providers are only available with an Enterprise
+ * License.</p>
  */
 public final class StoragePersistenceProvider {
 
@@ -23,6 +29,8 @@ public final class StoragePersistenceProvider {
     public static final String CHAIN1_PROVIDERS = "storage.file-metadata.chain1";
     public static final String CHAIN2_PROVIDERS = "storage.file-metadata.chain2";
     public static final String CHAIN3_PROVIDERS = "storage.file-metadata.chain3";
+
+    private boolean isLicenseInitialized = false;
 
     private final Map<StorageType, StoragePersistenceAPI> storagePersistenceInstances = new ConcurrentHashMap<>();
     
@@ -42,7 +50,8 @@ public final class StoragePersistenceProvider {
                 return fileSystemStorage;
             },
             StorageType.DB, DataBaseStoragePersistenceAPIImpl::new,
-            StorageType.MEMORY, RedisStoragePersistenceAPI::new
+            StorageType.MEMORY, RedisStoragePersistenceAPI::new,
+            StorageType.S3, AmazonS3StoragePersistenceAPIImpl::new
     ));
 
     /**
@@ -54,16 +63,18 @@ public final class StoragePersistenceProvider {
 
     /**
      * Initializes the Storage Chain used by the current dotCMS instance. It can be composed of one
-     * or more Storage Providers and, for flexibility purposes, system administrators can use the
+     * or more Storage Providers and, for flexibility purposes, System Administrators can use the
      * following properties to set it up:
      * <ul>
-     *     <li>{@link #DEFAULT_CHAIN_PROVIDERS}: Contains the most commonly used providers in
-     *     dotCMS.</li>
+     *     <li>{@link #DEFAULT_CHAIN_PROVIDERS}: Contains the default Storage Providers. You can
+     *     update this property with the providers you want. If not specified, the File System
+     *     provider will be used by default.</li>
      *     <li>{@link #CHAIN1_PROVIDERS}, {@link #CHAIN2_PROVIDERS}, and
      *     {@link #CHAIN3_PROVIDERS}: These are simply three Storage Provider chains that can be
      *     personalized by customers in case different combinations need to be available.</li>
      *     <li>{@link #DEFAULT_STORAGE_TYPE}: Allows you to specify what chain is going to be active
-     *     for the current dotCMS instance.</li>
+     *     for the current dotCMS instance: The {@link #DEFAULT_CHAIN_PROVIDERS} chain, or any of
+     *     the previously specified three Chains.</li>
      * </ul>
      * It's worth noting that, in case the configuration property for the selected storage chain is
      * not present, the File System Provider will be the default value as it has always been the
@@ -86,7 +97,7 @@ public final class StoragePersistenceProvider {
                 initializeStorageChain(CHAIN3_PROVIDERS, defaultProvider);
                 break;
             default:
-                throw new IllegalArgumentException(String.format("Storage type '%s' not supported", storageType));
+                throw new IllegalArgumentException(String.format("Storage Type '%s' not supported", storageType));
         }
     }
 
@@ -99,15 +110,22 @@ public final class StoragePersistenceProvider {
      *                            property has not been set.
      */
     private void initializeStorageChain(final String chainName, final String[] defaultStorageTypes) {
-
         final String[] storageTypes = Config.getStringArrayProperty(chainName, defaultStorageTypes);
         final ChainableStoragePersistenceAPIBuilder builder = new ChainableStoragePersistenceAPIBuilder();
-
         Arrays.stream(storageTypes).iterator().forEachRemaining(storageTypeName -> {
-            final StorageType defaultStorageType = StorageType.valueOf(storageTypeName);
-            builder.add(this.getStorage(defaultStorageType));
+            final StorageType storageType = StorageType.valueOf(storageTypeName);
+            if (isValidLicense()) {
+                builder.add(this.getStorage(storageType));
+            } else {
+                if (storageType.equals(StorageType.FILE_SYSTEM) || storageType.equals(StorageType.DB)) {
+                    builder.add(this.getStorage(storageType));
+                }
+            }
         });
-
+        if (builder.list().isEmpty()) {
+            builder.add(this.getStorage(StorageType.FILE_SYSTEM));
+        }
+        Logger.info(this, String.format("Initializing Metadata Storage Chain with '%s'", builder.list()));
         addStorageInitializer(StorageType.DEFAULT_CHAIN, builder);
     }
 
@@ -168,6 +186,28 @@ public final class StoragePersistenceProvider {
      */
     public void forceInitialize(){
        storagePersistenceInstances.clear();
+    }
+
+    /**
+     * Utility method that verifies if the current dotCMS instance has an Enterprise License or
+     * not.
+     *
+     * @return If the license level is at least {@link LicenseLevel#PROFESSIONAL}, returns
+     * {@code true}.
+     */
+    private Boolean isValidLicense() {
+        if (!isLicenseInitialized) {
+            final String serverId = APILocator.getServerAPI().readServerId();
+            if (serverId == null) {
+                // We can continue, probably a first start
+                Logger.warn(this, "Unable to get License level. Server id is null.");
+                return false;
+            }
+            //We can finally call directly the LicenseUtil.getLevel() method, the cluster_server
+            // was finally created!
+            isLicenseInitialized = true;
+        }
+        return LicenseUtil.getLevel() >= LicenseLevel.PROFESSIONAL.level;
     }
 
     public enum INSTANCE {

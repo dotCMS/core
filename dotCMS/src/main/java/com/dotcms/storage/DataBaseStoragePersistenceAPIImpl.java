@@ -916,4 +916,9 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     }
 
+    @Override
+    public String toString() {
+        return "DataBaseStoragePersistenceAPIImpl{}";
+    }
+
 }

@@ -44,6 +44,16 @@ public class FileStorageAPIImpl implements FileStorageAPI {
     private final StoragePersistenceProvider persistenceProvider;
     private final MetadataCache metadataCache;
 
+    /**
+     * Constructor used by Integration Tests.
+     *
+     * @param objectReaderDelegate The {@link ObjectReaderDelegate} that reads an object.
+     * @param objectWriterDelegate The {@link ObjectWriterDelegate} that writes an object.
+     * @param metadataGenerator    The {@link MetadataGenerator} that generates the metadata.
+     * @param persistenceProvider  The {@link StoragePersistenceProvider} that persists the file's
+     *                             metadata in a specific destination: File System, Redis, AWS S3,
+     *                             etc.
+     */
     @VisibleForTesting
     FileStorageAPIImpl(final ObjectReaderDelegate objectReaderDelegate,
             final ObjectWriterDelegate objectWriterDelegate,
@@ -203,13 +213,13 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         }
         final boolean objectExists = storage.existsObject(storageKey.getGroup(), storageKey.getPath());
 
-        Map<String, Serializable> metadataMap = objectExists ? retrieveMetadata(storageKey, storage) : ImmutableMap.of();
+        Map<String, Serializable> metadataMap = objectExists ? retrieveMetadata(storageKey, storage) : Map.of();
         final Map<String, Serializable> onlyHasCustomMetadataMap = configuration.getIfOnlyHasCustomMetadata().apply(metadataMap);
 
         // here we test quite a few things
         // if the metadata did not exist at all we need to generate it for sure .
-        //But if there was any metadata already and it only contained custom metadata attributes we need to generate it.
-        if (!objectExists || !onlyHasCustomMetadataMap.isEmpty()) {
+        // But if there was any metadata already, and it only contained custom metadata attributes, we need to generate it.
+        if (!objectExists || (null != onlyHasCustomMetadataMap && !onlyHasCustomMetadataMap.isEmpty())) {
             if (validBinary(binary)) {
 
                 Logger.debug(FileStorageAPIImpl.class, ()->String.format(
@@ -349,9 +359,10 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         if (override && storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
             try {
                 storage.deleteObjectAndReferences(storageKey.getGroup(), storageKey.getPath());
-            } catch (final Exception e) {
+            } catch (Exception e) {
+
                 Logger.error(this.getClass(),
-                        String.format("Unable to delete existing metadata file [%s] [%s]",
+                        String.format("Unable to delete existing metadata file '%s': %s",
                                 storageKey.getPath(), e.getMessage()), e);
             }
         }
