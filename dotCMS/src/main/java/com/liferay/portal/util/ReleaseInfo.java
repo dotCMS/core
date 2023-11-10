@@ -42,7 +42,7 @@ public final class ReleaseInfo {
 
 
 
-    private volatile Map<String, String> values = ImmutableMap.of("name", "dotCMS Platform", "version", "UNVERSIONED", "codename",
+    private volatile Map<String, String> values = ImmutableMap.of("commit", "N/A", "version", "UNVERSIONED", "codename",
             "UNVERSIONED", "build", "0", "date", "March 6 2009");
 
     protected ReleaseInfo() {
@@ -75,9 +75,10 @@ public final class ReleaseInfo {
 
     private final static ReleaseInfo instance = new ReleaseInfo();
 
+    //Using Name to store the commit hash
     public static final String getName() {
 
-        return instance.values.get("name");
+        return instance.values.get("commit");
     }
 
     public static final String getVersion() {

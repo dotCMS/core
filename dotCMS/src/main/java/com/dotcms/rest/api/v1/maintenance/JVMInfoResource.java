@@ -155,12 +155,7 @@ public class JVMInfoResource implements Serializable {
         final Map<String,Object> resultMap=new LinkedHashMap<>();
         resultMap.put("version",ReleaseInfo.getVersion());
         resultMap.put("buildDate",UtilMethods.dateToHTMLDate (ReleaseInfo.getBuildDate()));
-
-        resultMap.put("name",ReleaseInfo.getName());
-        resultMap.put("codeName",ReleaseInfo.getCodeName());
-        resultMap.put("buildNumber",ReleaseInfo.getBuildNumber());
-        resultMap.put("serverInfo",ReleaseInfo.getServerInfo());
-        resultMap.put("releaseInfo",ReleaseInfo.getReleaseInfo());
+        resultMap.put("commit",ReleaseInfo.getName());//Using Name to store the commit hash
 
         return resultMap;
         
