@@ -10,6 +10,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Configuration;
 import com.dotcms.enterprise.publishing.storage.AWSS3Storage;
 import com.dotcms.enterprise.publishing.storage.Storage;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.storage.repository.FileRepositoryManager;
 import com.dotcms.storage.repository.HashedLocalFileRepositoryManager;
 import com.dotcms.storage.repository.LocalFileRepositoryManager;
@@ -18,7 +19,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.Encryptor;
 import io.vavr.control.Try;
@@ -80,19 +80,22 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     private static final String S3_BASE_STORAGE_FILE_REPO_TYPE = Config.getStringProperty(
             "S3_STORAGE_FILE_REPO_TYPE", FileRepositoryManager.TEMP_REPO).toUpperCase();
 
-    private final String METADATA_GROUP_NAME = Config
+    private static final String METADATA_GROUP_NAME = Config
             .getStringProperty(StoragePersistenceProvider.METADATA_GROUP_NAME, FileMetadataAPI.DOT_METADATA);
 
+    /**
+     * Returns the file repository manager based on the configuration.
+     *
+     * @return The selected {@link FileRepositoryManager}.
+     */
     private FileRepositoryManager getFileRepository() {
-        switch (S3_BASE_STORAGE_FILE_REPO_TYPE) {
-
-            case FileRepositoryManager.HASH_LOCAL_REPO:
-                return new HashedLocalFileRepositoryManager();
-            case FileRepositoryManager.LOCAL_REPO:
-                return new LocalFileRepositoryManager();
+        if (S3_BASE_STORAGE_FILE_REPO_TYPE.equals(FileRepositoryManager.HASH_LOCAL_REPO)) {
+            return new HashedLocalFileRepositoryManager();
+        } else if (S3_BASE_STORAGE_FILE_REPO_TYPE.equals(FileRepositoryManager.LOCAL_REPO)) {
+            return new LocalFileRepositoryManager();
+        } else {
+            return new TempFileRepositoryManager();
         }
-
-        return new TempFileRepositoryManager();
     }
 
     public AmazonS3StoragePersistenceAPIImpl() {
@@ -151,7 +154,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     @Override
     public int deleteGroup(final String groupName) throws DotDataException {
         this.storage.deleteFolder(this.bucketName, groupName);
-        return 0; // todo: check if there is a way to determine the number of deleted objects
+        return 0;
     }
 
     @Override
@@ -162,8 +165,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     @Override
     public boolean deleteObjectReference(final String groupName, final String path) throws DotDataException {
-        this.storage.deleteFile(groupName, path);
-        return true;
+        return this.deleteObjectAndReferences(groupName, path);
     }
 
     @Override
@@ -235,12 +237,14 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     public Future<Object> pullObjectAsync(final String groupName, final String path, final ObjectReaderDelegate readerDelegate) {
         final File file = fileRepositoryManager.getOrCreateFile(path);
         final Download download = this.storage.downloadFile(groupName, path, file);
-        final Function<File, Object> toObjectFunction = (aFile) -> {
-            try (InputStream inputStream = Files.newInputStream(aFile.toPath())) {
+        final Function<File, Object> toObjectFunction = aFile -> {
 
+            try (final InputStream inputStream = Files.newInputStream(aFile.toPath())) {
                 return readerDelegate.read(inputStream);
             } catch (final Exception e) {
-                throw new DotRuntimeException(e.getMessage(), e);
+                throw new DotRuntimeException(String.format("Failed to async pull object '%s' " +
+                        "from group '%s': %s", path, groupName, ExceptionUtil.getErrorMessage(e))
+                        , e);
             }
         };
 

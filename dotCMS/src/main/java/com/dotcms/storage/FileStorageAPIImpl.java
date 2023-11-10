@@ -207,68 +207,87 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         final StorageKey storageKey = configuration.getStorageKey();
         final StoragePersistenceAPI storage = persistenceProvider.getStorage(storageKey.getStorage());
         if(configuration.isStore()) {
-            this.checkBucket(storageKey, storage);  //if the group/bucket doesn't exist create it.
-            this.checkOverride(storage,
-                    configuration); //if config states we need to remove and force regen
+            //if the group/bucket doesn't exist create it.
+            this.checkBucket(storageKey, storage);
+            //if config states we need to remove and force regeneration of the metadata
+            this.checkOverride(storage, configuration);
         }
         final boolean objectExists = storage.existsObject(storageKey.getGroup(), storageKey.getPath());
 
         Map<String, Serializable> metadataMap = objectExists ? retrieveMetadata(storageKey, storage) : Map.of();
         final Map<String, Serializable> onlyHasCustomMetadataMap = configuration.getIfOnlyHasCustomMetadata().apply(metadataMap);
 
-        // here we test quite a few things
+        // here we test quite a few things:
         // if the metadata did not exist at all we need to generate it for sure .
         // But if there was any metadata already, and it only contained custom metadata attributes, we need to generate it.
         if (!objectExists || (null != onlyHasCustomMetadataMap && !onlyHasCustomMetadataMap.isEmpty())) {
-            if (validBinary(binary)) {
-
-                Logger.debug(FileStorageAPIImpl.class, ()->String.format(
-                        "Object identified by `/%s/%s` didn't exist in storage %s will be generated.",
-                        storageKey.getGroup(), storageKey,
-                        configuration.isFull() ? "full-metadata" : "basic-metadata"));
-                final long maxLength = configuration.getMaxLength();
-                metadataMap = configuration.isFull() ?
-                        generateFullMetaData(binary,
-                                configuration.getMetaDataKeyFilter(), maxLength) :
-                        generateBasicMetaData(binary,
-                                configuration.getMetaDataKeyFilter());
-
-                if (configuration.isStore()) {
-
-                    if(null != configuration.getMergeWithMetadata()){
-
-                        final Map<String, Serializable> patchMap = configuration.getMergeWithMetadata().getCustomMetaWithPrefix();
-                        //we need to include the prefix since we're saving it directly into persistence
-                        if(!patchMap.isEmpty()){
-                            //This is necessary since metadataMap is immutable.
-                            metadataMap = new HashMap<>(metadataMap);
-                            patchMap.forEach(metadataMap::putIfAbsent);
-                        }
-
-                    } else {
-                        //Carry the custom metadata
-                        if(!onlyHasCustomMetadataMap.isEmpty()){
-                            //This metadata is expected to have prefix that's fine.
-                            //This is necessary since metadataMap is immutable.
-                            metadataMap = new HashMap<>(metadataMap);
-                            onlyHasCustomMetadataMap.forEach(metadataMap::putIfAbsent);
-                        }
-                    }
-
-                    storeMetadata(storageKey, storage, metadataMap);
-                }
-
-            } else {
-               throw new IllegalArgumentException(String.format("the binary `%s` isn't accessible ", binary != null ? binary : "unknown"));
-            }
+            metadataMap = generateMetadataFromFile(binary, configuration, storageKey, onlyHasCustomMetadataMap, storage);
         }
 
         if (configuration.isCache()) {
-
-            this.putIntoCache(configuration.getCacheKeySupplier().get(),
-                    metadataMap);
+            this.putIntoCache(configuration.getCacheKeySupplier().get(), metadataMap);
         }
 
+        return metadataMap;
+    }
+
+    /**
+     * Generates the metadata for the specified binary file.
+     *
+     * @param binary                   The binary {@link File} whose metadata is being generated.
+     * @param configuration            The {@link GenerateMetadataConfig} that specifies the
+     *                                 constraints and how the metadata will be generated
+     * @param storageKey               The {@link StorageKey} that identifies the binary file and
+     *                                 how it will be stored.
+     * @param onlyHasCustomMetadataMap The {@link Map} that contains the custom metadata
+     *                                 attributes.
+     * @param storage                  The {@link StoragePersistenceAPI} that will be used to
+     *                                 persist the metadata.
+     *
+     * @return The {@link Map} that contains the generated metadata.
+     *
+     * @throws DotDataException An error occurred when persisting the generated metadata.
+     */
+    private Map<String, Serializable> generateMetadataFromFile(final File binary,
+                                                               final GenerateMetadataConfig configuration, final StorageKey storageKey, final Map<String, Serializable> onlyHasCustomMetadataMap, final StoragePersistenceAPI storage) throws DotDataException {
+        Map<String, Serializable> metadataMap;
+        if (!validBinary(binary)) {
+            throw new IllegalArgumentException(String.format("the binary `%s` isn't accessible ",
+                    binary != null ? binary : "unknown"));
+        }
+
+        Logger.debug(FileStorageAPIImpl.class, () -> String.format(
+                "Object identified by `/%s/%s` didn't exist in storage %s. It will be generated",
+                storageKey.getGroup(), storageKey,
+                configuration.isFull() ? "full-metadata" : "basic-metadata"));
+        final long maxLength = configuration.getMaxLength();
+        metadataMap = configuration.isFull() ?
+                generateFullMetaData(binary,
+                        configuration.getMetaDataKeyFilter(), maxLength) :
+                generateBasicMetaData(binary,
+                        configuration.getMetaDataKeyFilter());
+
+        if (configuration.isStore()) {
+            if (null != configuration.getMergeWithMetadata()) {
+                final Map<String, Serializable> patchMap =
+                        configuration.getMergeWithMetadata().getCustomMetaWithPrefix();
+                //we need to include the prefix since we're saving it directly into persistence
+                if (!patchMap.isEmpty()) {
+                    //This is necessary since metadataMap is immutable.
+                    metadataMap = new HashMap<>(metadataMap);
+                    patchMap.forEach(metadataMap::putIfAbsent);
+                }
+            } else {
+                //Carry the custom metadata
+                if (!onlyHasCustomMetadataMap.isEmpty()) {
+                    //This metadata is expected to have prefix that's fine.
+                    //This is necessary since metadataMap is immutable.
+                    metadataMap = new HashMap<>(metadataMap);
+                    onlyHasCustomMetadataMap.forEach(metadataMap::putIfAbsent);
+                }
+            }
+            storeMetadata(storageKey, storage, metadataMap);
+        }
         return metadataMap;
     }
 

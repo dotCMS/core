@@ -195,7 +195,7 @@ public final class StoragePersistenceProvider {
      * @return If the license level is at least {@link LicenseLevel#PROFESSIONAL}, returns
      * {@code true}.
      */
-    private Boolean isValidLicense() {
+    private boolean isValidLicense() {
         if (!isLicenseInitialized) {
             final String serverId = APILocator.getServerAPI().readServerId();
             if (serverId == null) {
