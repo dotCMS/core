@@ -741,6 +741,9 @@
                         fieldVariables: JSON.parse('<%=fieldVariablesContent%>')
                     }
 
+                    // Setting the value of the field
+                    field.value = "<%=binInode%>"
+å
                     // Creating the binary field dynamically
                     // Help us to set inputs before the ngInit is executed.
                     const binaryField = document.createElement('dotcms-binary-field');

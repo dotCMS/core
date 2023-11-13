@@ -16,6 +16,7 @@ import { DialogModule } from 'primeng/dialog';
 import { DotLicenseService, DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
+import { dotcmsContentletMock } from '@dotcms/utils-testing';
 
 import { DotBinaryFieldComponent } from './binary-field.component';
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
@@ -346,6 +347,59 @@ describe('DotBinaryFieldComponent', () => {
             expect(urlElement).toBeTruthy();
             expect(isDialogOpen).toBeTruthy();
             expect(spySetMode).toHaveBeenCalledWith(BinaryFieldMode.URL);
+        });
+    });
+
+    describe('Set File', () => {
+        describe('Contentlet - BaseTyp FILEASSET', () => {
+            it('should set the correct file asset', () => {
+                const spy = jest
+                    .spyOn(store, 'setFileAndContent')
+                    .mockReturnValue(of(null).subscribe());
+                const mockFileAsset = {
+                    ...dotcmsContentletMock,
+                    baseType: 'FILEASSET',
+                    metaData: {
+                        mimeType: 'text/html'
+                    }
+                };
+                const { inode, titleImage, contentType: mimeType } = mockFileAsset;
+                spectator.setInput('contentlet', mockFileAsset);
+                spectator.detectChanges();
+                expect(spy).toHaveBeenCalledWith({
+                    inode,
+                    titleImage,
+                    mimeType,
+                    url: mockFileAsset[FIELD.variable],
+                    ...mockFileAsset.metaData
+                });
+            });
+        });
+
+        describe('Contentlet - BaseTyp CONTENT', () => {
+            it('should set the correct file asset', () => {
+                const spy = jest
+                    .spyOn(store, 'setFileAndContent')
+                    .mockReturnValue(of(null).subscribe());
+                const metaDataKey = `${FIELD.variable}MetaData`;
+                const mockFileAsset = {
+                    ...dotcmsContentletMock,
+                    baseType: 'CONTENT',
+                    [metaDataKey]: {
+                        mimeType: 'text/html'
+                    }
+                };
+                const { inode, titleImage, contentType: mimeType } = mockFileAsset;
+                spectator.setInput('contentlet', mockFileAsset);
+                spectator.detectChanges();
+                expect(spy).toHaveBeenCalledWith({
+                    inode,
+                    titleImage,
+                    mimeType,
+                    url: mockFileAsset[FIELD.variable],
+                    ...mockFileAsset[metaDataKey]
+                });
+            });
         });
     });
 
