@@ -4,6 +4,7 @@ import static com.dotcms.cli.command.files.TreePrinter.COLOR_DELETED;
 import static com.dotcms.cli.command.files.TreePrinter.COLOR_MODIFIED;
 import static com.dotcms.cli.command.files.TreePrinter.COLOR_NEW;
 
+import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.push.exception.PushException;
 import com.dotcms.api.client.push.task.PushTask;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
