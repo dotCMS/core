@@ -146,6 +146,7 @@ import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableB
 import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest;
 import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByColTest;
 import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentletIntegrationTest;
+import com.dotmarketing.startup.runonce.Task231109AddPublishDateToContentletVersionInfoTest;
 import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
 import com.dotmarketing.startup.runonce.Task230707CreateSystemTableTest;
 import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSizeTest;
@@ -321,7 +322,8 @@ import org.junit.runners.Suite.SuiteClasses;
         SiteViewPaginatorIntegrationTest.class,
         Task230523CreateVariantFieldInContentletIntegrationTest.class,
         DropOldContentVersionsJobTest.class,
-        Task231030DropReleaseTableTest.class
+        Task231030DropReleaseTableTest.class,
+        Task231109AddPublishDateToContentletVersionInfoTest.class
 })
 
 public class MainSuite2b {
