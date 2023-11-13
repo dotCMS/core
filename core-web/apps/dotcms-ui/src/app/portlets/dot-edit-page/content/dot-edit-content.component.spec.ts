@@ -333,7 +333,8 @@ describe('DotEditContentComponent', () => {
                                 mode: DotPageMode.PREVIEW
                             }
                         },
-                        data: of({})
+                        data: of({}),
+                        queryParams: of({ language_id: '1' })
                     }
                 },
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
