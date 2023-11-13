@@ -732,6 +732,10 @@ class ContentTypeAPIIT {
         final Relationships relationships1 = parentRel1.relationships();
         Assertions.assertNotNull(relationships1);
         Assertions.assertEquals(0,relationships1.cardinality());
+        // For some reason the server side is not setting the isParentField flag from the Content Type definition
+        //Apparently there some extra logic that takes place when relationships are created from the UI
+        //Relationship creations is triggered by the fields API
+        //So this could be an issue
         //Assertions.assertTrue(relationships1.isParentField());
         Assertions.assertEquals("MyBlogComment"+timeMark, relationships1.velocityVar());
 
@@ -745,7 +749,11 @@ class ContentTypeAPIIT {
         Assertions.assertNotNull(relationships2);
 
         Assertions.assertEquals(1,relationships2.cardinality());
-
+        // For some reason the server side is not setting the isParentField flag from the Content Type definition
+        //Apparently there some extra logic that takes place when relationships are created from the UI
+        //Relationship creations is triggered by the fields API
+        //So this could be an issue
+        //Assertions.assertTrue(relationships2.isParentField());
         Assertions.assertEquals("MyBlog.myBlogComment"+timeMark, relationships2.velocityVar());
 
     }
