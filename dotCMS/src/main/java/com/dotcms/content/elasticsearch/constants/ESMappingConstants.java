@@ -80,6 +80,7 @@ public final class ESMappingConstants {
     public static final String PUBLISH_DATE = "pubdate";
     public static final String EXPIRE_DATE = "expdate";
     public static final String VERSION_TS = "versionTs";
+    public static final String SYS_PUBLISH_DATE = "sysPublishDate";
     public static final String URL_MAP = "urlMap";
     public static final String VANITY_URL = "vanityUrl";
     public static final String CATEGORIES = "categories";

@@ -82,7 +82,6 @@ public class ConfigTestHelper extends Config {
 
 
             Config.CONTEXT = context;
-            Config.CONTEXT_PATH = context.getRealPath("/");
 
         }
 
