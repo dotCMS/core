@@ -153,3 +153,5 @@ This maintenance release includes the following code fixes:
 126. https://github.com/dotCMS/core/issues/25127 : CMS Admin should be able to view all the bundles regardless of the user who create it #25127
 127. https://github.com/dotCMS/core/issues/25174 : Advance template is missing the Publish button added to the template designer #25174
 128. https://github.com/dotCMS/core/issues/24086 : Add indexes on workflow tables #24086
+
+**Release-23.01.9**
