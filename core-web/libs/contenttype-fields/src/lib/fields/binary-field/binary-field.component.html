@@ -28,7 +28,6 @@
                 </dot-binary-field-ui-message>
             </dot-drop-zone>
             <input
-                class="binary-field__input"
                 #inputFile
                 [accept]="accept.join(',')"
                 (change)="handleFileSelection($event)"
@@ -41,20 +40,20 @@
                 [label]="'dot.binary.field.action.import.from.url' | dm"
                 (click)="openDialog(BinaryFieldMode.URL)"
                 data-testId="action-url-btn"
-                styleClass="p-button-link"
+                styleClass="p-button-link p-button-secondary"
                 icon="pi pi-link"></p-button>
             <p-button
                 [label]="'dot.binary.field.action.create.new.file' | dm"
                 (click)="openDialog(BinaryFieldMode.EDITOR)"
                 data-testId="action-editor-btn"
-                styleClass="p-button-link"
+                styleClass="p-button-link p-button-secondary"
                 icon="pi pi-code"></p-button>
         </div>
     </div>
 
-    <dot-spinner
-        *ngIf="vm.status === BinaryFieldStatus.UPLOADING"
-        data-testId="loading"></dot-spinner>
+    <div class="binary-field__loading" *ngIf="vm.status === BinaryFieldStatus.UPLOADING">
+        <dot-spinner data-testId="loading"></dot-spinner>
+    </div>
 
     <dot-binary-field-preview
         *ngIf="vm.status === BinaryFieldStatus.PREVIEW"
@@ -74,7 +73,7 @@
         [resizable]="false"
         [closeOnEscape]="false"
         [styleClass]="vm.mode === BinaryFieldMode.EDITOR ? 'screen-cover' : ''">
-        <ng-container *ngIf="dialogOpen" [ngSwitch]="vm.mode">
+        <ng-container [ngSwitch]="vm.mode">
             <dot-dot-binary-field-url-mode
                 *ngSwitchCase="BinaryFieldMode.URL"
                 [accept]="accept"

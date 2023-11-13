@@ -179,6 +179,7 @@ export class DotBinaryFieldComponent
      */
     closeDialog() {
         this.dialogOpen = false;
+        this.dotBinaryFieldStore.setMode(BinaryFieldMode.DROPZONE);
     }
 
     /**
