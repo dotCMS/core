@@ -812,7 +812,7 @@ describe('DotEditContentComponent', () => {
                     );
                     const classList = contentPaletteWrapper.nativeElement.classList;
 
-                    expect(parseInt(contentPalette.languageId)).toEqual(
+                    expect(contentPalette.languageId).toEqual(
                         mockDotRenderedPage().page.languageId
                     );
                     expect(classList.contains('editMode')).toEqual(true);
