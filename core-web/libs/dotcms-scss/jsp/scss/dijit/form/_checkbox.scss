@@ -3,6 +3,7 @@
     border: $check-normal-border;
     background-color: $check-normal-bgcolor;
     width: $check-size;
+    min-width: $check-size;
     height: $check-size;
     cursor: pointer;
 
