@@ -35,7 +35,7 @@ services:
         links:
             - elasticsearch-test
     db-test:
-        image: ghcr.io/dotcms/postgres:13-alpine
+        image: postgres:15
         command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
         environment:
             POSTGRES_USER: ${DB_USER:-postgres}
