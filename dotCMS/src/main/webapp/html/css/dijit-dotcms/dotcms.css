@@ -3930,6 +3930,7 @@
   border: solid 2px #afb3c0;
   background-color: #ffffff;
   width: 24px;
+  min-width: 24px;
   height: 24px;
   cursor: pointer;
 }
