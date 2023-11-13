@@ -1,0 +1,65 @@
+// tag::picocli-generated-full-manpage[]
+// tag::picocli-generated-man-section-header[]
+:doctype: manpage
+:revnumber: 
+:manmanual: Pull Manual
+:mansource: 
+:man-linkstyle: pass:[blue R < >]
+= pull(1)
+
+// end::picocli-generated-man-section-header[]
+
+// tag::picocli-generated-man-section-name[]
+== Name
+
+pull - *dotCMS global pull*
+
+// end::picocli-generated-man-section-name[]
+
+// tag::picocli-generated-man-section-synopsis[]
+== Synopsis
+
+*pull* [*-h*] [*-fmt*=_<inputOutputFormat>_] [*--token*=_<token>_] [*--workspace*=_<file>_]
+
+// end::picocli-generated-man-section-synopsis[]
+
+// tag::picocli-generated-man-section-description[]
+== Description
+
+ This command pull Sites, Content Types, Languages and Files to the server.
+
+
+// end::picocli-generated-man-section-description[]
+
+// tag::picocli-generated-man-section-options[]
+== Options
+
+*-fmt, --format*=_<inputOutputFormat>_::
+  Enum values: JSON, YAML, YML
+
+*-h*, *--help*::
+  Display this help message.
+
+*--token*=_<token>_::
+  A dot CMS token to use for authentication. 
+
+*--workspace*=_<file>_::
+  The workspace directory.
++
+Current directory is used if not specified
+
+// end::picocli-generated-man-section-options[]
+
+// tag::picocli-generated-man-section-arguments[]
+// end::picocli-generated-man-section-arguments[]
+
+// tag::picocli-generated-man-section-commands[]
+// end::picocli-generated-man-section-commands[]
+
+// tag::picocli-generated-man-section-exit-status[]
+// end::picocli-generated-man-section-exit-status[]
+
+// tag::picocli-generated-man-section-footer[]
+// end::picocli-generated-man-section-footer[]
+
+// end::picocli-generated-full-manpage[]

@@ -19,8 +19,6 @@
 
 package com.liferay.portal.util;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
-
 import com.dotmarketing.util.Logger;
 
 import com.google.common.collect.Maps;
@@ -40,9 +38,7 @@ import java.util.*;
 
 public final class ReleaseInfo {
 
-
-
-    private volatile Map<String, String> values = ImmutableMap.of("name", "dotCMS Platform", "version", "UNVERSIONED", "revision", "0", "timestamp", "March 6 2009");
+    private Map<String, String> values = Map.of("name", "dotCMS Platform", "version", "UNVERSIONED", "revision", "0", "timestamp", "1699480662");
 
     protected ReleaseInfo() {
         load();
@@ -65,7 +61,7 @@ public final class ReleaseInfo {
         }
     }
 
-    private final static ReleaseInfo instance = new ReleaseInfo();
+    private static final ReleaseInfo instance = new ReleaseInfo();
 
     public static String getName() {
 

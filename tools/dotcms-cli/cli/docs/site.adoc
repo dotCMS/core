@@ -50,7 +50,7 @@ xref:site-find.adoc[*find*]::
   *Use this command to Search / Find Sites.*
 
 xref:site-pull.adoc[*pull*]::
-  *Retrieves a site descriptor from a name or Id.*
+  *Retrieves sites descriptors*
 
 xref:site-push.adoc[*push*]::
   *Push sites*

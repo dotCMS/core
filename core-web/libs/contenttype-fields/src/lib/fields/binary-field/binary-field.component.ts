@@ -281,7 +281,7 @@ export class DotBinaryFieldComponent
         const variable = this.field.variable;
         const metaDataKey = variable + 'MetaData';
         const { titleImage, inode, [metaDataKey]: metadata } = this.contentlet;
-        const { contentType: mimeType } = metadata;
+        const { contentType: mimeType } = metadata || {};
 
         this.dotBinaryFieldStore.setFileAndContent({
             inode,
