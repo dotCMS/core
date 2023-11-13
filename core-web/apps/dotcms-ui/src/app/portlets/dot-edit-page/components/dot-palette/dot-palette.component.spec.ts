@@ -237,7 +237,7 @@ describe('DotPaletteComponent', () => {
     });
 
     it('should switch language', async () => {
-        comp.languageId = 2;
+        comp.languageId = '2';
 
         fixture.detectChanges();
         await fixture.whenStable();

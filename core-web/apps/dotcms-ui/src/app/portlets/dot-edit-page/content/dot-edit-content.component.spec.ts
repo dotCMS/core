@@ -333,7 +333,8 @@ describe('DotEditContentComponent', () => {
                                 mode: DotPageMode.PREVIEW
                             }
                         },
-                        data: of({})
+                        data: of({}),
+                        queryParams: of({ language_id: '1' })
                     }
                 },
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
@@ -812,7 +813,7 @@ describe('DotEditContentComponent', () => {
                     );
                     const classList = contentPaletteWrapper.nativeElement.classList;
 
-                    expect(contentPalette.languageId).toEqual(
+                    expect(parseInt(contentPalette.languageId)).toEqual(
                         mockDotRenderedPage().page.languageId
                     );
                     expect(classList.contains('editMode')).toEqual(true);

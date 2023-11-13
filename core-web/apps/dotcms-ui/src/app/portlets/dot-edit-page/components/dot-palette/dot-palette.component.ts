@@ -36,8 +36,8 @@ export class DotPaletteComponent {
     @Input() set allowedContent(items: string[]) {
         this.store.setAllowedContent(items);
     }
-    @Input() set languageId(languageId: number) {
-        this.store.switchLanguage(languageId.toString());
+    @Input() set languageId(languageId: string) {
+        this.store.switchLanguage(languageId);
     }
     vm$: Observable<DotPaletteState> = this.store.vm$;
 
