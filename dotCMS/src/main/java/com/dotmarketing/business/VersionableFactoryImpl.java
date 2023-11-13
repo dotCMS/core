@@ -5,7 +5,6 @@ import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.transform.TransformerLocator;
-import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -53,8 +52,8 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	TemplateAPI templateApi = null;
 
 	private static final String CREATE_CONTENTLET_VERSION_INFO_SQL = "INSERT INTO contentlet_version_info (identifier, lang, working_inode, deleted, locked_by, locked_on, version_ts, variant_id) VALUES (?,?,?,?,?,?,?, ?)";
-	private static final String INSERT_CONTENTLET_VERSION_INFO_SQL = "INSERT INTO contentlet_version_info (identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts, variant_id) VALUES (?,?,?,?,?,?,?,?,?)";
-	private static final String UPDATE_CONTENTLET_VERSION_INFO_SQL = "UPDATE contentlet_version_info SET working_inode=?, live_inode=?, deleted=?, locked_by=?, locked_on=?, version_ts=? WHERE identifier=? AND lang=? AND variant_id = ?";
+	private static final String INSERT_CONTENTLET_VERSION_INFO_SQL = "INSERT INTO contentlet_version_info (identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts, variant_id, publish_date) VALUES (?,?,?,?,?,?,?,?,?,?)";
+	private static final String UPDATE_CONTENTLET_VERSION_INFO_SQL = "UPDATE contentlet_version_info SET working_inode=?, live_inode=?, deleted=?, locked_by=?, locked_on=?, version_ts=?, publish_date=? WHERE identifier=? AND lang=? AND variant_id = ?";
 
 	/**
 	 * Default class constructor.
@@ -535,6 +534,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			dotConnect.addParam(cvInfo.getLockedOn());
 			dotConnect.addParam(cvInfo.getVersionTs());
 			dotConnect.addParam(cvInfo.getVariant());
+			dotConnect.addParam(cvInfo.getPublishDate());
 			dotConnect.loadResult();
         } else {
 			dotConnect.setSQL(UPDATE_CONTENTLET_VERSION_INFO_SQL);
@@ -544,6 +544,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			dotConnect.addParam(cvInfo.getLockedBy());
 			dotConnect.addParam(cvInfo.getLockedOn());
 			dotConnect.addParam(cvInfo.getVersionTs());
+			dotConnect.addParam(cvInfo.getPublishDate());
 			dotConnect.addParam(cvInfo.getIdentifier());
 			dotConnect.addParam(cvInfo.getLang());
 			dotConnect.addParam(cvInfo.getVariant());

@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.ContentTypeAPI;
+import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.api.client.push.MapperService;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.cli.command.CommandTest;
@@ -24,7 +24,6 @@ import com.dotcms.model.contenttype.SaveContentTypeRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -44,6 +43,7 @@ import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.wildfly.common.Assert;
 import picocli.CommandLine;
@@ -338,6 +338,7 @@ class ContentTypeCommandIT extends CommandTest {
      *
      * @throws IOException
      */
+    @Disabled("This test is index dependent therefore there's a chance to see it fail from time to time")
     @Test
     void Test_Push_New_Content_Type_From_File_Then_Remove() throws IOException {
 

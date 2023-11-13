@@ -99,9 +99,7 @@
             *ngIf="(isEnterpriseLicense$ | async) && isEditMode && allowedContent"
             [class.collapsed]="paletteCollapsed"
             [class.editMode]="isEditMode">
-            <dot-palette
-                [allowedContent]="allowedContent"
-                [languageId]="pageStateInternal.page?.languageId">
+            <dot-palette [allowedContent]="allowedContent" [languageId]="pageLanguageId">
             </dot-palette>
             <div
                 class="dot-edit-content__palette-visibility"

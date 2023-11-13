@@ -1,6 +1,6 @@
 package com.dotcms.api.client.push.task;
 
-import com.dotcms.api.client.push.MapperService;
+import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.push.PushHandler;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.model.push.PushAnalysisResult;

@@ -1,14 +1,9 @@
 package com.dotcms.browser;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.LanguageDataGen;
-import com.dotcms.datagen.LinkDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Treeable;
@@ -43,11 +38,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -610,6 +601,75 @@ public class BrowserAPITest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link BrowserAPIImpl#getFolderContent(BrowserQuery)}
+     * When: A Contentlet has Version in DEFAULT Variant and also in a specific Variant
+     * Should: Return just the DEFAULT Version
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test
+    public void getJustDEFAULTVariantVersion() throws DotDataException, DotSecurityException, IOException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+       final  Contentlet file = new FileAssetDataGen(folder, "This is a File")
+               .folder(folder)
+               .host(host)
+               .nextPersisted();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+        ContentletDataGen.createNewVersion(file, variant, Collections.EMPTY_MAP);
+
+        final Map<String, Object> files = browserAPI.getFolderContent(BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .build());
+
+        assertEquals(1, Integer.parseInt(files.get("total").toString()));
+
+        final List list = (List) files.get("list");
+        assertEquals(1, list.size());
+        assertEquals(file.getIdentifier(), ((Contentlet.ContentletHashMap) list.get(0)).get("identifier"));
+        assertEquals(file.getInode(), ((Contentlet.ContentletHashMap) list.get(0)).get("inode"));
+
+    }
+
+    /**
+     * Method to test: {@link BrowserAPIImpl#getFolderContent(BrowserQuery)}
+     * When: A Contentlet has Version  in a specific Variant
+     * Should: Not return this Contentlet
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test
+    public void notGetSpecificVariantVersion() throws DotDataException, DotSecurityException, IOException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final  Contentlet file = new FileAssetDataGen(folder, "This is a File")
+                .folder(folder)
+                .host(host)
+                .variant(variant)
+                .nextPersisted();
+
+
+        final Map<String, Object> files = browserAPI.getFolderContent(BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .build());
+
+        assertEquals(0, Integer.parseInt(files.get("total").toString()));
+
+        final List list = (List) files.get("list");
+        assertTrue(list.isEmpty());
+
+    }
+
+    /**
      * <ul>
      *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getAssetNameColumn(String)}</li>
      *     <li><b>Given Scenario:</b> Check that the asset name value is queried against the {@code json_as_content}
@@ -677,6 +737,50 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         assertNotNull(contentletList);
         assertNotNull(result);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> Searching for a DotAsset content must return a valid result and expected result
+     *     .</li>
+     *     <li><b>Expected Result:</b> The {@code test.jpg} DotAsset must be returned.</li>
+     * </ul>
+     */
+    @Test
+    public void getContentUnderParentFromDB_searchDotAssetWithFilter_shouldReturnTheAsset() {
+        final String filterText = "test.jpg";
+        final User user = APILocator.systemUser();
+        final List<String> mimeTypes = List.of("image");
+
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withUser(user)
+                .withHostOrFolderId(testFolder.getIdentifier())
+                .offset(0)
+                .maxResults(20)
+                .withFilter(filterText)
+                .showMimeTypes(mimeTypes)
+                .showImages(mimeTypes.contains(mimeTypes.get(0)))
+                .showExtensions(List.of())
+                .showWorking(true)
+                .showArchived(false)
+                .showFolders(false)
+                .showFiles(true)
+                .showShorties(false)
+                .showContent(true)
+                .sortBy("modDate")
+                .sortByDesc(true)
+                .showLinks(false)
+                .withLanguageId(1)
+                .showDotAssets(true)
+                .build();
+
+        final List<Contentlet> contentletList = this.browserAPI.getContentUnderParentFromDB(browserQuery);
+
+        assertTrue("No contents found",contentletList.size() > 0);
+        for (final Contentlet contentlet : contentletList) {
+            assertEquals(contentlet.getIdentifier(), testDotAsset.getIdentifier());
+        }
     }
 
 

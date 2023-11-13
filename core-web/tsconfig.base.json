@@ -31,6 +31,7 @@
             "@dotcms/dotcms-webcomponents": ["libs/dotcms-webcomponents/src/index.ts"],
             "@dotcms/dotcms-webcomponents/loader": ["dist/libs/dotcms-webcomponents/loader"],
             "@dotcms/edit-content": ["libs/edit-content/src/index.ts"],
+            "@dotcms/portlets/dot-ema": ["libs/portlets/dot-ema/src/index.ts"],
             "@dotcms/portlets/dot-experiments/data-access": [
                 "libs/portlets/dot-experiments/data-access/src/index.ts"
             ],
