@@ -18,7 +18,7 @@ jobs:
       release_name: ${{ steps.set-common-vars.outputs.release_name }}
       release_label: ${{ steps.set-common-vars.outputs.release_label }}
     env:
-      DOT_CICD_BRANCH: master
+      DOT_CICD_BRANCH: release-23.10.24
       GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
       REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
       REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
@@ -160,29 +160,29 @@ jobs:
     env:
       FETCH_VALUE: 'Next Release'
     steps:
-      - name: Checkout core
-        uses: actions/checkout@v3
-      - name: Fetch `Next Release` issues
-        id: fetch-next-release-issues
-        uses: ./.github/actions/issue-fetcher
-        with:
-          fetch_operation: 'WITH_LABELS'
-          fetch_value: ${{ env.FETCH_VALUE }}
-          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-      - name: Clear next release issues
-        uses: ./.github/actions/issue-labeler
-        with:
-          issues_json: ${{ steps.fetch-next-release-issues.outputs.issues }}
-          labels: ${{ env.FETCH_VALUE }}
-          operation: 'REMOVE'
-          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-      - name: Label current release issues
-        uses: ./.github/actions/issue-labeler
-        with:
-          issues_json: ${{ steps.fetch-next-release-issues.outputs.issues }}
-          labels: 'Release ${{ needs.release-process.outputs.release_version }}'
-          operation: 'ADD'
-          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+#      - name: Checkout core
+#        uses: actions/checkout@v3
+#      - name: Fetch `Next Release` issues
+#        id: fetch-next-release-issues
+#        uses: ./.github/actions/issue-fetcher
+#        with:
+#          fetch_operation: 'WITH_LABELS'
+#          fetch_value: ${{ env.FETCH_VALUE }}
+#          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+#      - name: Clear next release issues
+#        uses: ./.github/actions/issue-labeler
+#        with:
+#          issues_json: ${{ steps.fetch-next-release-issues.outputs.issues }}
+#          labels: ${{ env.FETCH_VALUE }}
+#          operation: 'REMOVE'
+#          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+#      - name: Label current release issues
+#        uses: ./.github/actions/issue-labeler
+#        with:
+#          issues_json: ${{ steps.fetch-next-release-issues.outputs.issues }}
+#          labels: 'Release ${{ needs.release-process.outputs.release_version }}'
+#          operation: 'ADD'
+#          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
         env:
