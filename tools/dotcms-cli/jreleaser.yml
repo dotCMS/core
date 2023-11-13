@@ -19,6 +19,11 @@ project:
     homepage: https://dotcms.com
     documentation: https://dotcms.com/docs/latest
 
+  snapshot:
+    pattern: .*-SNAPSHOT
+    label: 'dotcms-cli{{projectVersion}}-SNAPSHOT'
+    fullChangelog: true
+
 release:
   github:
     tagName: 'dotcms-cli{{projectVersion}}'
