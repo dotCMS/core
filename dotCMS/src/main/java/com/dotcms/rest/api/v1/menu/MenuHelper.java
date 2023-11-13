@@ -60,7 +60,8 @@ public class MenuHelper implements Serializable {
         return menuItems;
     }
 
-    private static String normalizeLinkName(String linkName) {
+
+    String normalizeLinkName(String linkName) {
         if(UtilMethods.isEmpty(linkName)){
             return "ukn";
         }
