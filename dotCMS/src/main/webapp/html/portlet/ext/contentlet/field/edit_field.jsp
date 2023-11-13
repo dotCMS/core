@@ -676,7 +676,7 @@
                 String accept="";
                 String maxFileLength="0";
                 String helperText="";
-                String binaryMetadata = "";
+                String binaryMetadata = "''"; // Empty String by default
                 String jsonField = "{}";
                 String mimeType="";
 
@@ -726,7 +726,7 @@
                     const binaryFieldContainer = document.getElementById("container-binary-field-<%=field.getVelocityVarName()%>");
                     const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
                     const variable = "<%=field.getVelocityVarName()%>";
-                    const metaData = (<%=binaryMetadata%>);
+                    const metaData = <%=binaryMetadata%>;
                     const contentlet = metaData ? {
                         inode: "<%=binInode%>",
                         [variable]: `/dA/<%=contentlet.getIdentifier()%>/${variable}/${metaData.name}`,
@@ -740,6 +740,9 @@
                         variable,
                         fieldVariables: JSON.parse('<%=fieldVariablesContent%>')
                     }
+
+                    // Setting the value of the field
+                    field.value = "<%=binInode%>"
 
                     // Creating the binary field dynamically
                     // Help us to set inputs before the ngInit is executed.
