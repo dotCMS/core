@@ -50,7 +50,7 @@ xref:content-type-find.adoc[*find*]::
   *Use this command to find Content-types.*
 
 xref:content-type-pull.adoc[*pull*]::
-  *Retrieves a Content-type descriptor from a given name or Id.*
+  *Retrieves Content-types descriptors*
 
 xref:content-type-push.adoc[*push*]::
   *Push content types*
