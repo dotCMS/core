@@ -117,7 +117,7 @@ public final class StoragePersistenceProvider {
             if (isValidLicense()) {
                 builder.add(this.getStorage(storageType));
             } else {
-                if (storageType.equals(StorageType.FILE_SYSTEM) || storageType.equals(StorageType.DB)) {
+                if (StorageType.FILE_SYSTEM.equals(storageType) || StorageType.DB.equals(storageType)) {
                     builder.add(this.getStorage(storageType));
                 }
             }
