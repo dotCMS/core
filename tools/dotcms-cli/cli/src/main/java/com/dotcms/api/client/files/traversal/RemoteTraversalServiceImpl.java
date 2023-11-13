@@ -6,14 +6,11 @@ import com.dotcms.api.client.files.traversal.task.PushTreeNodeTask;
 import com.dotcms.api.client.files.traversal.task.RemoteFolderTraversalTask;
 import com.dotcms.api.traversal.Filter;
 import com.dotcms.api.traversal.TreeNode;
-import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.common.AssetsUtils;
-import com.dotcms.common.LocalPathStructure;
 import com.dotcms.model.asset.FolderView;
 import io.quarkus.arc.DefaultBean;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jboss.logging.Logger;
-
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
@@ -107,39 +104,35 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
     }
 
     /**
-     * Pushes the contents of the specified tree node to the remote server. The push operation is performed
-     * asynchronously using a ForkJoinPool, and the progress is tracked and displayed using the provided
-     * console progress bar.
+     * Pushes the contents of the specified tree node to the remote server. The push operation is
+     * performed asynchronously using a ForkJoinPool, and the progress is tracked and displayed
+     * using the provided console progress bar.
      *
-     * @param workspace          the local workspace path
-     * @param localPathStructure the local path structure of the folder being pushed
-     * @param treeNode           the tree node representing the folder and its contents with all the push
-     *                           information for each file and folder
-     * @param failFast           true to fail fast, false to continue on error
-     * @param isRetry            true if this is a retry attempt, false otherwise
-     * @param progressBar        the console progress bar to track and display the push progress
-     * @return A list of exceptions encountered during the push process.
+     * @param traverseParams@return A list of exceptions encountered during the push process.
      */
-    public List<Exception> pushTreeNode(final String workspace, final LocalPathStructure localPathStructure,
-                                        final TreeNode treeNode, final boolean failFast, final boolean isRetry,
-                                        ConsoleProgressBar progressBar) {
+    public List<Exception> pushTreeNode(PushTraverseParams traverseParams) {
 
         // If the language does not exist we need to create it
-        if (!localPathStructure.languageExists()) {
-            pusher.createLanguage(localPathStructure.language());
+        if (!traverseParams.localPaths().languageExists()) {
+           try {
+               pusher.createLanguage(traverseParams.localPaths().language());
+           } catch (Exception e) {
+               //If we failed to create the language we still continue with the push
+               // we simply let the user know and move on
+               final String errorMessage = String.format(
+                       "Error creating language. Can not process this folder [%s] branch.",
+                       traverseParams.localPaths().language());
+               logger.error(errorMessage, e);
+               return List.of(e);
+           }
         }
 
         // ---
         var forkJoinPool = ForkJoinPool.commonPool();
-        var task = new PushTreeNodeTask(
-                workspace,
-                localPathStructure,
-                treeNode,
-                failFast,
-                isRetry,
-                logger,
-                pusher,
-                progressBar);
+        var task = new PushTreeNodeTask(PushTraverseParams.builder()
+                .from(traverseParams)
+                .pusher(pusher)
+                .build());
         return forkJoinPool.invoke(task);
     }
 

@@ -91,7 +91,7 @@ public class EventLogRunnable implements Runnable {
             .setThrowWhenNot2xx(false);
     }
 
-    public Optional<Response> sendEvent(final CircuitBreakerUrlBuilder builder, final EventPayload payload) {
+    public Optional<Response<String>> sendEvent(final CircuitBreakerUrlBuilder builder, final EventPayload payload) {
         final CircuitBreakerUrl postLog = builder
                 .setRawData(payload.toString())
                 .build();
@@ -102,7 +102,7 @@ public class EventLogRunnable implements Runnable {
                                 .getOrElse(CircuitBreakerUrl.EMPTY_RESPONSE));
     }
 
-    public Optional<Response> sendTestEvent() {
+    public Optional<Response<String>> sendTestEvent() {
         final String url = analyticsApp.getAnalyticsProperties().analyticsWriteUrl();
         final CircuitBreakerUrlBuilder builder = getCircuitBreakerUrlBuilder(url);
 

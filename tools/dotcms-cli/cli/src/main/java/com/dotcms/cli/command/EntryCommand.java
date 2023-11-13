@@ -37,6 +37,7 @@ import picocli.CommandLine.ParameterException;
                 InstanceCommand.class,
                 LoginCommand.class,
                 PushCommand.class,
+                PullCommand.class,
 
                 //---- ContentType Related stuff
                 ContentTypeCommand.class,
@@ -79,6 +80,8 @@ class CustomConfiguration {
 
         // Injecting custom push mixins to the global push command
         configurationUtil.injectPushMixins(cmdLine);
+        // Injecting custom pull mixins to the global pull command
+        configurationUtil.injectPullMixins(cmdLine);
         // Customizing the CommandLine object
         configurationUtil.customize(cmdLine);
 
@@ -167,6 +170,37 @@ class CustomConfigurationUtil {
                     Iterable<OptionSpec> options = commandSpec.mixins().get(mixinName).options();
                     for (OptionSpec option : options) {
                         pushCommandSpec.add(option);
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * Injects custom pull mixins into the global pull command.
+     *
+     * @param cmdLine the main entry command
+     */
+    public void injectPullMixins(CommandLine cmdLine) {
+
+        // Looking for the global pull command
+        CommandSpec pullCommandSpec = cmdLine.getSubcommands().get(PullCommand.NAME)
+                .getCommandSpec();
+
+        // Get all instances that implement DotPull
+        Instance<DotPull> dotPullCommands = CDI.current().select(DotPull.class);
+
+        // Iterate over each DotPull instance and add their options to the PullCommand's spec
+        for (var pullSubCommand : dotPullCommands) {
+            CommandSpec commandSpec = CommandSpec.forAnnotatedObject(
+                    pullSubCommand);
+
+            var mixin = pullSubCommand.getCustomMixinName();
+            mixin.ifPresent(mixinName -> {
+                if (commandSpec.mixins().containsKey(mixinName)) {
+                    Iterable<OptionSpec> options = commandSpec.mixins().get(mixinName).options();
+                    for (OptionSpec option : options) {
+                        pullCommandSpec.add(option);
                     }
                 }
             });
