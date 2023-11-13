@@ -2,12 +2,10 @@
     class="binary-field__container"
     *ngIf="vm$ | async as vm"
     [ngClass]="{
-        'binary-field__container--uploading': vm.status === BinaryFieldStatus.UPLOADING
+        'binary-field__container--uploading': vm.status === BinaryFieldStatus.UPLOADING,
+        'binary-field__container--empty': vm.status === BinaryFieldStatus.INIT
     }">
-    <div
-        class="binary-field__drop-zone-container"
-        *ngIf="vm.status === BinaryFieldStatus.INIT"
-        data-testId="binary-field__drop-zone-container">
+    <ng-container *ngIf="vm.status === BinaryFieldStatus.INIT">
         <div
             class="binary-field__drop-zone"
             [ngClass]="{ 'binary-field__drop-zone--active': vm.dropZoneActive }">
@@ -49,11 +47,11 @@
                 styleClass="p-button-link p-button-secondary"
                 icon="pi pi-code"></p-button>
         </div>
-    </div>
+    </ng-container>
 
-    <div class="binary-field__loading" *ngIf="vm.status === BinaryFieldStatus.UPLOADING">
-        <dot-spinner data-testId="loading"></dot-spinner>
-    </div>
+    <dot-spinner
+        *ngIf="vm.status === BinaryFieldStatus.UPLOADING"
+        data-testId="loading"></dot-spinner>
 
     <dot-binary-field-preview
         *ngIf="vm.status === BinaryFieldStatus.PREVIEW"

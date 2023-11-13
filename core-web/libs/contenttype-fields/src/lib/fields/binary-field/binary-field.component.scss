@@ -28,29 +28,12 @@
     border: $field-border-size solid $color-palette-gray-400;
     padding: $spacing-1;
     margin-bottom: $spacing-1;
+    height: 12.5rem;
     min-width: 12.5rem;
-
-    > * {
-        height: 11.5rem;
-    }
 }
 
 .binary-field__container--uploading {
     border: $field-border-size dashed $color-palette-gray-400;
-}
-
-.binary-field__drop-zone-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    flex: 1;
-}
-
-.binary-field__loading {
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
 .binary-field__helper {
@@ -86,8 +69,8 @@
     border: $field-border-size dashed $input-border-color;
     border-radius: $border-radius-md;
     margin-right: $spacing-1;
-    flex: 1;
     height: 100%;
+    flex: 1;
 }
 
 .binary-field__drop-zone-btn {
@@ -112,16 +95,17 @@ input[type="file"] {
     display: none;
 }
 
-@container binaryField (max-width: 29rem) {
-    .binary-field__container {
-        .binary-field__drop-zone {
-            width: 100%;
-        }
+@container binaryField (max-width: 358px) {
+    .binary-field__container--empty {
+        height: auto;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+    }
 
-        .binary-field__drop-zone-container {
-            flex-direction: column;
-            align-items: flex-start;
-            height: auto;
-        }
+    .binary-field__drop-zone {
+        width: 100%;
+        margin: 0;
+        margin-bottom: $spacing-1;
     }
 }
