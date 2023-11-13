@@ -18,7 +18,13 @@ import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { CoreWebService, DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
+import {
+    CoreWebService,
+    DotcmsConfigService,
+    LoggerService,
+    LoginService,
+    StringUtils
+} from '@dotcms/dotcms-js';
 import {
     DotIconModule,
     DotMessagePipe,
@@ -167,6 +173,10 @@ describe('DotListingDataTableComponent', () => {
                                 offset: -21600000
                             })
                     }
+                },
+                {
+                    provide: LoginService,
+                    useValue: { currentUserLanguageId: 'en-US' }
                 }
             ]
         });
