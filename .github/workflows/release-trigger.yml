@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: 'Release Version (yy.mm.dd)'
+        description: 'Release Version (yy.mm.dd[_lts])'
         required: true
       commit_hash:
         description: 'Commit Hash'
