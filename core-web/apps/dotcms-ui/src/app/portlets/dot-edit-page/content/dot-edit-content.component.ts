@@ -131,7 +131,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 This is the events that gets emitted from the backend when the user
 browse from the page internal links
 */
-
                     const dotRenderedPageState = new DotPageRenderState(
                         this.pageStateInternal.user,
                         pageRendered
@@ -184,7 +183,6 @@ browse from the page internal links
         this.subscribeOverlayService();
         this.subscribeDraggedContentType();
         this.getExperimentResolverData();
-
         /*This is needed when the user is in the edit mode in an experiment variant
         and navigate to another page with the page menu and want to go back with the
          browser back button */
