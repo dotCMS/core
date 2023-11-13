@@ -72,8 +72,6 @@ const PORTLETS_ANGULAR = [
             import('@portlets/dot-rules/dot-rules.module').then((m) => m.DotRulesModule)
     },
     {
-        // canActivate: [MenuGuardService],
-        // canActivateChild: [MenuGuardService],
         path: 'starter',
         loadChildren: () =>
             import('@portlets/dot-starter/dot-starter.module').then((m) => m.DotStarterModule)
@@ -94,6 +92,10 @@ const PORTLETS_ANGULAR = [
         path: 'edit-page',
         loadChildren: () =>
             import('@portlets/dot-edit-page/dot-edit-page.module').then((m) => m.DotEditPageModule)
+    },
+    {
+        path: 'edit-ema',
+        loadChildren: () => import('@dotcms/portlets/dot-ema').then((m) => m.DotEmaRoutes)
     },
     {
         canActivate: [editContentGuard],

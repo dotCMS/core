@@ -68,6 +68,8 @@ const EDITOR_CONFIG: MonacoEditorConstructionOptions = {
 })
 export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
     @Input() accept: string[];
+    @Input() fileName = '';
+    @Input() fileContent = '';
 
     @Output() readonly tempFileUploaded = new EventEmitter<DotCMSTempFile>();
     @Output() readonly cancel = new EventEmitter<void>();
@@ -98,6 +100,7 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
     }
 
     ngOnInit(): void {
+        this.setFormValues();
         this.name.valueChanges
             .pipe(debounceTime(350))
             .subscribe((name) => this.setEditorLanguage(name));
@@ -109,13 +112,14 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
 
     ngAfterViewInit(): void {
         this.editor = this.editorRef.editor;
+        if (this.fileName) {
+            this.setEditorLanguage(this.fileName);
+        }
     }
 
     onSubmit(): void {
-        if (this.form.invalid) {
-            if (!this.name.dirty) {
-                this.markControlInvalid(this.name);
-            }
+        if (this.name.invalid) {
+            this.markControlInvalid(this.name);
 
             return;
         }
@@ -124,6 +128,11 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
             type: this.mimeType
         });
         this.uploadFile(file);
+    }
+
+    private setFormValues(): void {
+        this.name.setValue(this.fileName);
+        this.content.setValue(this.fileContent);
     }
 
     private markControlInvalid(control: FormControl): void {
@@ -137,7 +146,10 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
         this.disableEditor();
         obs$.subscribe((tempFile) => {
             this.enableEditor();
-            this.tempFileUploaded.emit(tempFile);
+            this.tempFileUploaded.emit({
+                ...tempFile,
+                content: this.content.value
+            });
         });
     }
 
