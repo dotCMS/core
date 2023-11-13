@@ -3515,6 +3515,10 @@
 .dijitToggleButton .dijitButtonNode {
   padding: 0 1rem;
   margin: none;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .dijitButton .dijitButtonNode .dijitIcon,
 .dijitToggleButton .dijitButtonNode .dijitIcon {
@@ -3560,11 +3564,19 @@
   box-shadow: 0;
   outline: 2.8px solid var(--color-palette-primary-op-20);
 }
-.dijitButtonDisabled {
+.dijitButtonDisabledFocused {
   background-color: #f3f3f4;
   border: solid 1.5px #ebecef;
   color: #afb3c0;
   box-shadow: 0;
+  outline: none;
+}
+.dijitButtonDisabled.dijitDisabled {
+  background-color: #f3f3f4;
+  border: solid 1.5px #ebecef;
+  color: #afb3c0;
+  box-shadow: 0;
+  outline: none;
 }
 .dijitDropDownButton {
   background-color: #ffffff;
