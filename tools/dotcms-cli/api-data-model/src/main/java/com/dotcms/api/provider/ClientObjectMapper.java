@@ -82,6 +82,7 @@ public class ClientObjectMapper implements ContextResolver<ObjectMapper> {
                 .registerModule(new JavaTimeModule())
                 .registerModule(new VersioningModule())
                 .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+                .setSerializationInclusion(Include.NON_EMPTY)
                 //.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 ;
 

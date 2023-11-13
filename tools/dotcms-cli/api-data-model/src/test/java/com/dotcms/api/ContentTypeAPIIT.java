@@ -5,11 +5,16 @@ import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldLayoutRow;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableColumnField;
+import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
+import com.dotcms.contenttype.model.field.ImmutableRelationships;
 import com.dotcms.contenttype.model.field.ImmutableRowField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.Relationships;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
@@ -35,6 +40,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import javax.inject.Inject;
+import javax.management.relation.Relation;
 import javax.ws.rs.NotFoundException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
@@ -661,6 +667,87 @@ class ContentTypeAPIIT {
         Assertions.assertEquals(1, fieldLayoutRow1.columns().size());
         Assertions.assertEquals("column-3", fieldLayoutRow1.columns().get(0).columnDivider().name());
         Assertions.assertEquals(1, fieldLayoutRow1.columns().get(0).fields().size());
+    }
+
+
+    /**
+     * Given scenario: We have a content type with a relationship field
+     * Expected result: The relationship field should be created and the relationship definition should be sent as part of the field definition
+     * @throws IOException
+     */
+    @Test
+    void Simple_Relationship_Support_Test() throws IOException {
+
+        final long timeMark = System.nanoTime();
+
+        final ImmutableSimpleContentType blog = ImmutableSimpleContentType.builder()
+                .baseType(BaseContentType.CONTENT)
+                .description("Parent Content Type")
+                .name("MyBlog")
+                .variable("MyBlog"+timeMark)
+                .modDate(new Date())
+                .fixed(false)
+                .iDate(new Date())
+                .host(ContentType.SYSTEM_HOST)
+                .folder(ContentType.SYSTEM_FOLDER)
+                .addFields(
+                        ImmutableRelationshipField.builder().name("Blog Comment").variable("myBlogComment"+timeMark).indexed(true)
+                                .relationships(ImmutableRelationships.builder()
+                                .cardinality(0)
+                                .isParentField(true)
+                                .velocityVar("MyBlogComment"+timeMark)
+                                .build()
+                        ).build()
+                ).build();
+
+        final ImmutableSimpleContentType blogComment = ImmutableSimpleContentType.builder()
+                .baseType(BaseContentType.CONTENT)
+                .description("Child Content Type")
+                .name("MyBlogComment")
+                .variable("MyBlogComment"+timeMark)
+                .modDate(new Date())
+                .fixed(false)
+                .iDate(new Date())
+                .host(ContentType.SYSTEM_HOST)
+                .folder(ContentType.SYSTEM_FOLDER)
+                .addFields(
+                        ImmutableRelationshipField.builder().name("Blog").variable("myBlog"+timeMark).indexed(true)
+                                .relationships(ImmutableRelationships.builder()
+                                .cardinality(1)
+                                .velocityVar("MyBlog.myBlogComment"+timeMark)
+                                .isParentField(false)
+                                .build()
+                        ).build()
+                ).build();
+
+        final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
+
+        final SaveContentTypeRequest saveBlogRequest = AbstractSaveContentTypeRequest.builder().of(blog).build();
+        final ResponseEntityView<List<ContentType>> contentTypeResponse1 = client.createContentTypes(List.of(saveBlogRequest));
+        final List<ContentType> contentTypes1 = contentTypeResponse1.entity();
+        ContentType savedContentType1 = contentTypes1.get(0);
+        Assertions.assertNotNull(savedContentType1.id());
+
+        final RelationshipField parentRel1 = (RelationshipField)savedContentType1.fields().get(0);
+        final Relationships relationships1 = parentRel1.relationships();
+        Assertions.assertNotNull(relationships1);
+        Assertions.assertEquals(0,relationships1.cardinality());
+        //Assertions.assertTrue(relationships1.isParentField());
+        Assertions.assertEquals("MyBlogComment"+timeMark, relationships1.velocityVar());
+
+        final SaveContentTypeRequest saveBlogCommentRequest = AbstractSaveContentTypeRequest.builder().of(blogComment).build();
+        final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(List.of(saveBlogCommentRequest));
+        final List<ContentType> contentTypes2 = contentTypeResponse2.entity();
+        ContentType savedContentType2 = contentTypes2.get(0);
+        Assertions.assertNotNull(savedContentType2.id());
+        final RelationshipField parentRel2 = (RelationshipField)savedContentType2.fields().get(0);
+        final Relationships relationships2 = parentRel2.relationships();
+        Assertions.assertNotNull(relationships2);
+
+        Assertions.assertEquals(1,relationships2.cardinality());
+
+        Assertions.assertEquals("MyBlog.myBlogComment"+timeMark, relationships2.velocityVar());
+
     }
 
 }
