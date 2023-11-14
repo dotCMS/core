@@ -636,6 +636,10 @@ class ContentTypeAPIIT {
                 //.addLayout()   <-- Even though We have an addLayOuts method the server side only takes into account the layout fields sent as fields
                 .build();
 
+        final String value = new ClientObjectMapper().getContext(null)
+                .writeValueAsString(contentType);
+        System.out.println(value);
+
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
         final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()

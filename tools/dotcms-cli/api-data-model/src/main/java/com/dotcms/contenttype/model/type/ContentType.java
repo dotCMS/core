@@ -7,6 +7,8 @@ import com.dotcms.contenttype.model.type.ContentType.ClassNameAliasResolver;
 import com.dotcms.contenttype.model.workflow.Workflow;
 import com.dotcms.model.views.CommonViews;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
@@ -48,6 +50,8 @@ import org.immutables.value.Value.Default;
     "multilingualable",
     "pagination"
 })
+//@JsonInclude(Include.NON_DEFAULT)
+//@Value.Style(passAnnotations = {JsonInclude.class})
 public abstract class ContentType {
 
     public static final String SYSTEM_HOST = "SYSTEM_HOST";
@@ -169,6 +173,7 @@ public abstract class ContentType {
     //if it's coming from an endpoint that returns only one CT then we get a full representation
     //Again a different form of this attribute is used when sending the request to create or update the CT
     //Therefore it's best if we keep a Generic high level representation of the field through JsonNode
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Nullable
     public abstract JsonNode systemActionMappings();
 

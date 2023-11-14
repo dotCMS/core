@@ -538,7 +538,7 @@ class ContentTypeCommandIT extends CommandTest {
                 long count = walk.filter(Files::isRegularFile).count();
                 Assertions.assertEquals(4 + pullCount, count);
             }
-
+           writer.getBuffer().setLength(0);
             // ╔═══════════════════════╗
             // ║  Pushing the changes  ║
             // ╚═══════════════════════╝
