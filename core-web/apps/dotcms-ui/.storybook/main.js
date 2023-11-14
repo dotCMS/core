@@ -34,5 +34,6 @@ module.exports = {
         });
 
         return config;
-    }
+    },
+    middleware: './middleware.js'
 };

@@ -181,6 +181,7 @@ describe('DotBinaryFieldComponent', () => {
             const spyInputFile = jest.spyOn(spectator.component.inputFile.nativeElement, 'click');
             const chooseFile = spectator.query(byTestId('choose-file-btn')) as HTMLButtonElement;
             chooseFile.click();
+            expect(chooseFile.getAttribute('type')).toBe('button');
             expect(spyOpenFilePicker).toHaveBeenCalled();
             expect(spyInputFile).toHaveBeenCalled();
         });

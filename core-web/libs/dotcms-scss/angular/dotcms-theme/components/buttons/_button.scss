@@ -104,11 +104,13 @@ a.p-button.p-button-text {
 .p-button-icon-only:not(.p-splitbutton-menubutton) {
     height: $field-height-md;
     width: $field-height-md;
+    min-width: $field-height-md;
     border: none;
 
     &.p-button-sm {
         height: $field-height-sm;
         width: $field-height-sm;
+        min-width: $field-height-sm;
     }
 }
 

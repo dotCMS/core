@@ -2,6 +2,7 @@ import { Subject, from } from 'rxjs';
 import { assert, object, string, array, optional } from 'superstruct';
 
 import {
+    ChangeDetectorRef,
     Component,
     EventEmitter,
     Injector,
@@ -9,8 +10,11 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    ViewContainerRef
+    ViewContainerRef,
+    forwardRef,
+    inject
 } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
@@ -67,9 +71,16 @@ import {
 @Component({
     selector: 'dot-block-editor',
     templateUrl: './dot-block-editor.component.html',
-    styleUrls: ['./dot-block-editor.component.scss']
+    styleUrls: ['./dot-block-editor.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotBlockEditorComponent),
+            multi: true
+        }
+    ]
 })
-export class DotBlockEditorComponent implements OnInit, OnDestroy {
+export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
     @Input() lang = DEFAULT_LANG_ID;
     @Input() allowedContentTypes: string;
     @Input() customStyles: string;
@@ -137,11 +148,34 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         return Math.ceil(this.characterCount.words() / 265);
     }
 
+    private cd = inject(ChangeDetectorRef);
+
     constructor(
         private injector: Injector,
         public viewContainerRef: ViewContainerRef,
         private dotMarketingConfigService: DotMarketingConfigService
     ) {}
+
+    private onChange: (value: string) => void;
+    private onTouched: () => void;
+
+    registerOnChange(fn: (value: string) => void) {
+        this.onChange = fn;
+    }
+
+    registerOnTouched(fn: () => void) {
+        this.onTouched = fn;
+    }
+
+    writeValue(content: JSONContent): void {
+        if (typeof content === 'string') {
+            this.content = formatHTML(content);
+
+            return;
+        }
+
+        this.setEditorJSONContent(content);
+    }
 
     async loadCustomBlocks(urls: string[]): Promise<PromiseSettledResult<AnyExtension>[]> {
         return Promise.allSettled(urls.map(async (url) => import(/* webpackIgnore: true */ url)));
@@ -159,7 +193,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                         ...extensions
                     ]
                 });
-
                 this.editor.on('create', () => this.updateCharCount());
                 this.subject
                     .pipe(takeUntil(this.destroy$), debounceTime(250))
@@ -168,6 +201,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 this.editor.on('transaction', ({ editor }) => {
                     this.freezeScroll = FREEZE_SCROLL_KEY.getState(editor.view.state)?.freezeScroll;
                 });
+
+                this.cd.detectChanges();
             });
     }
 
@@ -176,8 +211,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         this.destroy$.complete();
     }
 
-    onChange(value: JSONContent) {
+    onBlockEditorChange(value: JSONContent) {
         this.valueChange.emit(value);
+        this.onChange?.(JSON.stringify(value));
+        this.onTouched?.();
     }
 
     private updateCharCount(): void {
