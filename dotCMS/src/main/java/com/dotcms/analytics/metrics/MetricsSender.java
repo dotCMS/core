@@ -1,6 +1,4 @@
-package com.dotcms.metrics;
-
-import com.dotcms.analytics.metrics.MetricsPayloadRequest;
+package com.dotcms.analytics.metrics;
 
 /**
  * Metrics sender interface.

@@ -1,7 +1,6 @@
-package com.dotcms.metrics;
+package com.dotcms.analytics.metrics;
 
 import com.dotcms.analytics.app.AnalyticsApp;
-import com.dotcms.analytics.metrics.MetricsPayloadRequest;
 
 import java.util.Map;
 

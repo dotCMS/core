@@ -1,8 +1,11 @@
-package com.dotcms.metrics;
+package com.dotcms.analytics.metrics;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.metrics.MetricsAPI;
+import com.dotcms.analytics.metrics.MetricsAPIImpl;
 import com.dotcms.analytics.metrics.MetricsPayloadRequest;
+import com.dotcms.analytics.metrics.MetricsSender;
 import com.dotcms.analytics.model.AnalyticsProperties;
 import org.junit.Before;
 import org.junit.Test;
