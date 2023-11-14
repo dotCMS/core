@@ -51,21 +51,21 @@ distributions:
       - path: tools/dotcms-cli/cli/target/dotcms-cli-{{projectVersion}}-runner.jar
         transform: tools/dotcms-cli/cli/target/dotcms-cli-{{projectVersion}}.jar
 
-upload:
-  artifactory:
-    dotcms-cli:
-      active: ALWAYS
-      authorization: BASIC
-      host: 'https://repo.dotcms.com/artifactory'
-      repositories:
-        - path: 'libs-snapshot-local/com/dotcms/{{projectName}}/{{projectVersion}}/{{artifactFile}}'
-          active: SNAPSHOT
-          fileTypes:
-            - JAR
-        - path: 'libs-release-local/com/dotcms/{{projectName}}/{{projectVersion}}/{{artifactFile}}'
-          active: RELEASE
-          fileTypes:
-            - JAR
+#upload:
+#  artifactory:
+#    dotcms-cli:
+#      active: ALWAYS
+#      authorization: BASIC
+#      host: 'https://repo.dotcms.com/artifactory'
+#      repositories:
+#        - path: 'libs-snapshot-local/com/dotcms/{{projectName}}/{{projectVersion}}/{{artifactFile}}'
+#          active: SNAPSHOT
+#          fileTypes:
+#            - JAR
+#        - path: 'libs-release-local/com/dotcms/{{projectName}}/{{projectVersion}}/{{artifactFile}}'
+#          active: RELEASE
+#          fileTypes:
+#            - JAR
 packagers:
   jbang:
     alias: dotcli
