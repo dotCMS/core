@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { DotContentCompareStore } from '@components/dot-content-compare/store/dot-content-compare.store';
 import { DotContentletService, DotContentTypeService } from '@dotcms/data-access';
-import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotFormatDateService } from '@dotcms/ui';
 
 const getContentTypeMOCKResponse = {
@@ -649,6 +649,10 @@ describe('DotContentCompareStore', () => {
                                 offset: -21600000
                             })
                     }
+                },
+                {
+                    provide: LoginService,
+                    useValue: { currentUserLanguageId: 'en-US' }
                 }
             ]
         });

@@ -20,6 +20,7 @@
         *ngSwitchCase="fieldTypes.TEXT"
         [field]="field"
         [attr.data-testId]="'field-' + field.variable" />
+
     <dot-edit-content-text-area
         *ngSwitchCase="fieldTypes.TEXTAREA"
         [field]="field"
@@ -43,6 +44,18 @@
 
     <dot-edit-content-tag-field
         *ngSwitchCase="fieldTypes.TAG"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
+
+    <dot-block-editor
+        *ngSwitchCase="fieldTypes.BLOCK_EDITOR"
+        [formControlName]="field.variable"
+        [attr.data-testId]="'field-' + field.variable"></dot-block-editor>
+
+    <dot-binary-field
+        *ngSwitchCase="fieldTypes.BINARY"
+        [formControlName]="field.variable"
+        [contentlet]="contentlet"
         [field]="field"
         [attr.data-testId]="'field-' + field.variable" />
 </ng-container>

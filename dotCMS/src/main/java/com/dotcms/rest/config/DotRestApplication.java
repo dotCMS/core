@@ -79,6 +79,7 @@ import com.dotcms.rest.api.v1.system.permission.PermissionResource;
 import com.dotcms.rest.api.v1.system.role.RoleResource;
 import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
+import com.dotcms.rest.api.v1.system.storage.StorageResource;
 import com.dotcms.rest.api.v1.taillog.TailLogResource;
 import com.dotcms.rest.api.v1.temp.TempFileResource;
 import com.dotcms.rest.api.v1.template.TemplateResource;
@@ -111,7 +112,6 @@ import com.dotcms.rest.personas.PersonasResourcePortlet;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
-import com.dotmarketing.portlets.templates.model.SystemTemplate;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.google.common.collect.ImmutableSet;
@@ -121,11 +121,12 @@ import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
+
+import javax.ws.rs.core.Application;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.ws.rs.core.Application;
-import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
@@ -154,7 +155,6 @@ import org.glassfish.jersey.media.multipart.MultiPartFeature;
 				@Tag(name = "Experiment")
 		}
 )
-
 public class DotRestApplication extends Application {
 
 	/**
@@ -256,6 +256,7 @@ public class DotRestApplication extends Application {
 			.add(VariantResource.class)
 			.add(WebAssetResource.class)
 			.add(SystemTableResource.class)
+			.add(StorageResource.class)
 			.build();
 
 	private static final Set<Class<?>> PROVIDER_CLASSES = ImmutableSet.<Class<?>>builder()
@@ -289,7 +290,6 @@ public class DotRestApplication extends Application {
 			.add(NotAllowedExceptionMapper.class)
 			.add(RuntimeExceptionMapper.class)
 			.build();
-
 
 	/**
 	 * This is the cheap way to create a concurrent set of user provided classes

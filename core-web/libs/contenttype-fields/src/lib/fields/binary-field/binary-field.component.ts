@@ -13,8 +13,10 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    forwardRef
 } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -61,16 +63,30 @@ import { getUiMessage } from '../../utils/binary-field-utils';
         DotBinaryFieldUrlModeComponent,
         DotBinaryFieldPreviewComponent
     ],
-    providers: [DotBinaryFieldStore, DotLicenseService, DotBinaryFieldEditImageService],
+    providers: [
+        DotBinaryFieldStore,
+        DotLicenseService,
+        DotBinaryFieldEditImageService,
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotBinaryFieldComponent)
+        }
+    ],
     templateUrl: './binary-field.component.html',
     styleUrls: ['./binary-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotBinaryFieldComponent implements OnInit, AfterViewInit, OnDestroy {
+export class DotBinaryFieldComponent
+    implements OnInit, AfterViewInit, OnDestroy, ControlValueAccessor
+{
     @Input() field: DotCMSContentTypeField;
     @Input() contentlet: DotCMSContentlet;
     @Output() tempFile = new EventEmitter<DotCMSTempFile>();
     @ViewChild('inputFile') inputFile: ElementRef;
+
+    private onChange: (value: string) => void;
+    private onTouched: () => void;
 
     readonly dialogHeaderMap = {
         [BinaryFieldMode.URL]: 'dot.binary.field.dialog.import.from.url.header',
@@ -79,7 +95,6 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit, OnDestroy
     readonly BinaryFieldStatus = BinaryFieldStatus;
     readonly BinaryFieldMode = BinaryFieldMode;
     readonly vm$ = this.dotBinaryFieldStore.vm$;
-
     private tempId = '';
     dialogOpen = false;
     accept: string[] = [];
@@ -97,8 +112,14 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit, OnDestroy
 
     ngOnInit() {
         this.dotBinaryFieldStore.tempFile$.pipe(skip(1)).subscribe((tempFile) => {
-            this.tempId = tempFile?.id;
-            this.tempFile.emit(tempFile);
+            this.tempId = tempFile?.id || '';
+            this.tempFile.emit(tempFile); // We change value here
+
+            if (this.onChange) {
+                // If we have a change function we call it
+                this.onChange(this.tempId);
+                this.onTouched();
+            }
         });
 
         this.dotBinaryFieldEditImageService
@@ -120,6 +141,20 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit, OnDestroy
         }
 
         this.cd.detectChanges();
+    }
+
+    writeValue(): void {
+        /*
+            We can set a value here but we use the fields and contentlet to set the value
+        */
+    }
+
+    registerOnChange(fn: (value: string) => void) {
+        this.onChange = fn;
+    }
+
+    registerOnTouched(fn: () => void) {
+        this.onTouched = fn;
     }
 
     ngOnDestroy() {
@@ -246,7 +281,7 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit, OnDestroy
         const variable = this.field.variable;
         const metaDataKey = variable + 'MetaData';
         const { titleImage, inode, [metaDataKey]: metadata } = this.contentlet;
-        const { contentType: mimeType } = metadata;
+        const { contentType: mimeType } = metadata || {};
 
         this.dotBinaryFieldStore.setFileAndContent({
             inode,
@@ -278,7 +313,7 @@ export class DotBinaryFieldComponent implements OnInit, AfterViewInit, OnDestroy
      * @memberof DotBinaryFieldComponent
      */
     private getFieldVariables(): Record<string, string> {
-        return this.field.fieldVariables.reduce(
+        return this.field?.fieldVariables.reduce(
             (prev, { key, value }) => ({
                 ...prev,
                 [key]: value

@@ -1,8 +1,7 @@
 name: Defect
-
 description: I need to report a bug or issue with dotCMS.
-
 labels: ['Type : Defect',Triage]
+projects: ["dotCMS/7"]
 
 body:
   - type: markdown
