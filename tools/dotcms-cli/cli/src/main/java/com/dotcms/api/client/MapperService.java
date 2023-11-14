@@ -1,6 +1,6 @@
-package com.dotcms.api.client.push;
+package com.dotcms.api.client;
 
-import com.dotcms.api.client.push.exception.MappingException;
+import com.dotcms.api.client.exception.MappingException;
 import com.dotcms.cli.common.InputOutputFormat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
