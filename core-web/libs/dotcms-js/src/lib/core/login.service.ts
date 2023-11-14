@@ -25,8 +25,11 @@ export const LOGOUT_URL = '/dotAdmin/logout';
  * This Service get the server configuration to display in the login component
  * and execute the login and forgot password routines
  */
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class LoginService {
+    currentUserLanguageId: string = '';
     private country = '';
     private lang = '';
     private urls: Record<string, string>;
@@ -326,6 +329,8 @@ export class LoginService {
     setAuth(auth: Auth): void {
         this._auth = this.getFullAuth(auth);
         this._auth$.next(this.getFullAuth(auth));
+
+        this.currentUserLanguageId = auth.user.languageId;
 
         // When not logged user we need to fire the observable chain
         if (!auth.user) {

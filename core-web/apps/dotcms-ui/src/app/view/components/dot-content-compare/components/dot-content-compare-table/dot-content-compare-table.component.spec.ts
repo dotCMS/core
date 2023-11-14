@@ -14,7 +14,7 @@ import { TableModule } from 'primeng/table';
 import { DotContentComparePreviewFieldComponent } from '@components/dot-content-compare/components/fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component';
 import { DotContentCompareTableData } from '@components/dot-content-compare/store/dot-content-compare.store';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotFormatDateService, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotDiffPipeModule } from '@pipes/dot-diff/dot-diff.pipe.module';
@@ -309,6 +309,10 @@ describe('DotContentCompareTableComponent', () => {
                                 offset: -21600000
                             })
                     }
+                },
+                {
+                    provide: LoginService,
+                    useValue: { currentUserLanguageId: 'en-US' }
                 }
             ]
         });

@@ -12,14 +12,12 @@ jobs:
   report:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion != 'skipped'
-    outputs:
-      workflow-json: ${{ steps.workflow-data.outputs.json }}
     steps:
       - name: Log GitHub context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
-      - name: Download Worlfkow Data
+      - name: Download Workflow Data
         id: data-download
         uses: dawidd6/action-download-artifact@v2
         with:
