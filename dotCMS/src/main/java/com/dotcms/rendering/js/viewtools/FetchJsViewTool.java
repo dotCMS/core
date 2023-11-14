@@ -19,7 +19,7 @@ public class FetchJsViewTool implements JsViewTool {
 
    // private final Context context;
     private final Supplier<CircuitBreakerUrlBuilder> circuitBreakerUrlSupplier;
-    private Map<String, CircuitBreakerUrl.Method> methodMapMapping = Map.of(
+    private final Map<String, CircuitBreakerUrl.Method> methodMapMapping = Map.of(
             "GET", CircuitBreakerUrl.Method.GET,
             "POST", CircuitBreakerUrl.Method.POST,
             "PUT", CircuitBreakerUrl.Method.PUT,

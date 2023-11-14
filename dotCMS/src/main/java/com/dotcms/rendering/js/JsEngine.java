@@ -26,7 +26,6 @@ import com.dotmarketing.util.VelocityUtil;
 import com.liferay.util.FileUtil;
 import com.oracle.truffle.js.lang.JavaScriptLanguage;
 import io.vavr.control.Try;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.tools.view.context.ChainedContext;
 import org.apache.velocity.tools.view.context.ViewContext;
@@ -52,7 +51,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class JsEngine implements ScriptEngine {
 
-    private static final JsFileSystem JS_FILE_SYSTEM = new JsFileSystem();
+    private static final String ENGINE_JS = JavaScriptLanguage.ID;
+    private final JsFileSystem jsFileSystem = new JsFileSystem();
+    private final JsDotLogger jsDotLogger = new JsDotLogger();
     private final Map<String, Class> jsRequestViewToolMap = new ConcurrentHashMap<>();
     private final Map<String, JsViewTool> jsAplicationViewToolMap = new ConcurrentHashMap<>();
 
@@ -70,13 +71,11 @@ public class JsEngine implements ScriptEngine {
             this.addJsViewTool(ContainerJsViewTool.class);
             this.addJsViewTool(CacheJsViewTool.class);
             this.addJsViewTool(FetchJsViewTool.class);
-        }catch (Throwable e) {
+        } catch (Throwable e) {
             Logger.error(JsEngine.class, "Could not start the js view tools", e);
         }
     }
 
-    private static final String ENGINE_JS = JavaScriptLanguage.ID;
-    private final static JsDotLogger JS_DOT_LOGGER = new JsDotLogger();
 
     /**
      * Add a JsViewTool to the engine
@@ -125,7 +124,7 @@ public class JsEngine implements ScriptEngine {
                 .option("js.esm-eval-returns-exports", "true")
                 .out(new ConsumerOutputStream((msg)->Logger.debug(JsEngine.class, msg)))
                 .err(new ConsumerOutputStream((msg)->Logger.debug(JsEngine.class, msg)))
-                .fileSystem(JS_FILE_SYSTEM)
+                .fileSystem(jsFileSystem)
                 //.allowHostAccess(HostAccess.ALL) // todo: ask if we want all access to the classpath
                 //allows access to all Java classes
                 //.allowHostClassLookup(className -> true)
@@ -306,7 +305,7 @@ public class JsEngine implements ScriptEngine {
                                final Object[] objects) {
 
         final Object [] defaultArgsArray = new Object[]{
-                JsProxyFactory.createProxy(new JsContext.Builder().request(request).response(response).logger(JS_DOT_LOGGER).build()) };
+                JsProxyFactory.createProxy(new JsContext.Builder().request(request).response(response).logger(jsDotLogger).build()) };
 
         return null != objects && objects.length > 0?
                 CollectionsUtils.concat(defaultArgsArray, objects): defaultArgsArray;
