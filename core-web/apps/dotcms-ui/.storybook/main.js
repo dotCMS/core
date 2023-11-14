@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 const rootMain = require('../../../.storybook/main');
 
 module.exports = {
@@ -30,8 +31,14 @@ module.exports = {
             test: /\.css$/,
             use: ['style-loader', 'css-loader'],
             include: path.resolve(__dirname, '../../../libs/dotcms-scss/shared')
-            // include: path.resolve(__dirname, '../'),
         });
+
+        // add USE_MIDDLEWARE environment variable to the storybook build
+        config.plugins.push(
+            new webpack.DefinePlugin({
+                'process.env.USE_MIDDLEWARE': JSON.stringify(process.env.USE_MIDDLEWARE)
+            })
+        );
 
         return config;
     },

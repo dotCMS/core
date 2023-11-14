@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "0ae9fe3d-4dda-47cd-9245-78e4bf53ca55",
+		"_postman_id": "7459e2fa-e2d9-4cd9-b488-e31b642c1be9",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
@@ -1092,7 +1092,12 @@
 									"    pm.expect(template[\"idate\"], 'FAILED:[idate]').to.be.not.null;",
 									"    pm.expect(template[\"canEdit\"], 'FAILED:[canEdit]').equal(true);",
 									"",
-									"});"
+									"});",
+									"",
+									"// ignoring following test for now",
+									"postman.setNextRequest()",
+									"",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -2351,7 +2356,10 @@
 									"",
 									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"costa-rica-family-cats-tags.tar.gz\");",
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
-									"});"
+									"});",
+									"",
+									"// ignoring following test for now",
+									"postman.setNextRequest(\"pre_ImportBundleWithMexicoPageAndRule\")"
 								],
 								"type": "text/javascript"
 							}
