@@ -21,7 +21,7 @@ project:
 
   snapshot:
     pattern: .*-SNAPSHOT
-    label: 'dotcms-cli{{projectVersion}}-SNAPSHOT'
+    label: 'dotcms-cli{{projectVersion}}'
     fullChangelog: true
 
 release:
