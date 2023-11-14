@@ -95,7 +95,7 @@ class ContentTypeCommandIT extends CommandTest {
 
             // Reading the resulting JSON file
             final var contentTypeFilePath = Path.of(workspace.contentTypes().toString(),
-                    "fileAsset.json");
+                    "FileAsset.json");
             Assertions.assertTrue(Files.exists(contentTypeFilePath));
 
             // Validating it is a valid content type descriptor
