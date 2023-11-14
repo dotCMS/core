@@ -157,3 +157,4 @@ This maintenance release includes the following code fixes:
 **Release-23.01.9**
 
 129. https://github.com/dotCMS/core/issues/18575 : DotCMS uses incorrect language when adding new content #18575
+130. https://github.com/dotCMS/core/issues/21529 : The JSON viewtool does not support valid JSON types, only strings #21529
