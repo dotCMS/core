@@ -71,6 +71,7 @@
     margin-right: $spacing-1;
     height: 100%;
     flex: 1;
+    overflow: auto;
 }
 
 .binary-field__drop-zone-btn {
@@ -95,7 +96,7 @@ input[type="file"] {
     display: none;
 }
 
-@container binaryField (max-width: 358px) {
+@container binaryField (max-width: 415px) {
     .binary-field__container--empty {
         height: auto;
         flex-direction: column;
