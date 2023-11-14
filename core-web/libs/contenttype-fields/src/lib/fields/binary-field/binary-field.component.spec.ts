@@ -22,6 +22,7 @@ import { DotBinaryFieldComponent } from './binary-field.component';
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
 import { BinaryFieldMode, BinaryFieldStatus } from './interfaces';
 import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
+import { DotBinaryFieldValidatorService } from './service/dot-binary-field-validator/dot-binary-field-validator.service';
 import { DotBinaryFieldStore } from './store/binary-field.store';
 
 import { getUiMessage } from '../../utils/binary-field-utils';
@@ -73,6 +74,7 @@ describe('DotBinaryFieldComponent', () => {
         componentProviders: [DotBinaryFieldStore],
         providers: [
             DotBinaryFieldEditImageService,
+            DotBinaryFieldValidatorService,
             {
                 provide: DotLicenseService,
                 useValue: {

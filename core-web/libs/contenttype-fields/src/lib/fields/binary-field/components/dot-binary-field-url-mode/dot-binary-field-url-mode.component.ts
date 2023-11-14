@@ -5,7 +5,6 @@ import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
-    Input,
     OnDestroy,
     OnInit,
     Output,
@@ -29,6 +28,8 @@ import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotBinaryFieldUrlModeStore } from './store/dot-binary-field-url-mode.store';
 
+import { DotBinaryFieldValidatorService } from '../../service/dot-binary-field-validator/dot-binary-field-validator.service';
+
 @Component({
     selector: 'dot-dot-binary-field-url-mode',
     standalone: true,
@@ -47,13 +48,11 @@ import { DotBinaryFieldUrlModeStore } from './store/dot-binary-field-url-mode.st
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
-    @Input() maxFileSize: number;
-    @Input() accept: string[];
-
     @Output() tempFileUploaded: EventEmitter<DotCMSTempFile> = new EventEmitter<DotCMSTempFile>();
     @Output() cancel: EventEmitter<void> = new EventEmitter<void>();
 
     private readonly store = inject(DotBinaryFieldUrlModeStore);
+    private readonly dotBinaryFieldValidatorService = inject(DotBinaryFieldValidatorService);
 
     // Form
     private readonly validators = [
@@ -71,8 +70,11 @@ export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
     private readonly destroy$ = new Subject<void>();
     private abortController: AbortController;
 
+    get acceptTypes(): string {
+        return this.dotBinaryFieldValidatorService.accept.join(',');
+    }
+
     ngOnInit(): void {
-        this.store.setMaxFileSize(this.maxFileSize);
         this.tempFileChanged$
             .pipe(
                 takeUntil(this.destroy$),

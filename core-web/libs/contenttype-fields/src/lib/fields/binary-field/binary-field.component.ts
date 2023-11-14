@@ -46,6 +46,7 @@ import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-
 import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
 import { BinaryFieldMode, BinaryFieldStatus } from './interfaces';
 import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
+import { DotBinaryFieldValidatorService } from './service/dot-binary-field-validator/dot-binary-field-validator.service';
 import { DotBinaryFieldStore } from './store/binary-field.store';
 
 import { getUiMessage } from '../../utils/binary-field-utils';
@@ -72,6 +73,7 @@ import { getUiMessage } from '../../utils/binary-field-utils';
         DotBinaryFieldStore,
         DotLicenseService,
         DotBinaryFieldEditImageService,
+        DotBinaryFieldValidatorService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -110,6 +112,7 @@ export class DotBinaryFieldComponent
         private readonly dotBinaryFieldStore: DotBinaryFieldStore,
         private readonly dotMessageService: DotMessageService,
         private readonly dotBinaryFieldEditImageService: DotBinaryFieldEditImageService,
+        private readonly DotBinaryFieldValidatorService: DotBinaryFieldValidatorService,
         private readonly cd: ChangeDetectorRef
     ) {
         this.dotMessageService.init();
@@ -308,6 +311,9 @@ export class DotBinaryFieldComponent
         this.accept = accept ? accept.split(',') : [];
         this.maxFileSize = Number(maxFileSize);
         this.helperText = helperText;
+
+        this.DotBinaryFieldValidatorService.setAccept(this.accept);
+        this.DotBinaryFieldValidatorService.setMaxFileSize(this.maxFileSize);
     }
 
     /**

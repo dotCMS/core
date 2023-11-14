@@ -11,6 +11,8 @@ import {
     DotBinaryFieldUrlModeStore
 } from './dot-binary-field-url-mode.store';
 
+import { DotBinaryFieldValidatorService } from '../../../service/dot-binary-field-validator/dot-binary-field-validator.service';
+
 const INITIAL_STATE: DotBinaryFieldUrlModeState = {
     tempFile: null,
     isLoading: false,
@@ -31,6 +33,7 @@ export const TEMP_FILE_MOCK: DotCMSTempFile = {
 describe('DotBinaryFieldUrlModeStore', () => {
     let spectator: SpectatorService<DotBinaryFieldUrlModeStore>;
     let store: DotBinaryFieldUrlModeStore;
+    let dotBinaryFieldValidatorService: DotBinaryFieldValidatorService;
 
     let dotUploadService: DotUploadService;
     let initialState;
@@ -38,6 +41,7 @@ describe('DotBinaryFieldUrlModeStore', () => {
     const createStoreService = createServiceFactory({
         service: DotBinaryFieldUrlModeStore,
         providers: [
+            DotBinaryFieldValidatorService,
             {
                 provide: DotUploadService,
                 useValue: {
@@ -55,8 +59,11 @@ describe('DotBinaryFieldUrlModeStore', () => {
 
     beforeEach(() => {
         spectator = createStoreService();
-        store = spectator.inject(DotBinaryFieldUrlModeStore);
+        dotBinaryFieldValidatorService = spectator.inject(DotBinaryFieldValidatorService);
+        dotBinaryFieldValidatorService.setMaxFileSize(1048576);
+
         dotUploadService = spectator.inject(DotUploadService);
+        store = spectator.inject(DotBinaryFieldUrlModeStore);
 
         store.setState(INITIAL_STATE);
         store.state$.subscribe((state) => {
