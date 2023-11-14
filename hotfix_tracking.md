@@ -155,3 +155,5 @@ This maintenance release includes the following code fixes:
 128. https://github.com/dotCMS/core/issues/24086 : Add indexes on workflow tables #24086
 
 **Release-23.01.9**
+
+129. https://github.com/dotCMS/core/issues/18575 : DotCMS uses incorrect language when adding new content #18575
