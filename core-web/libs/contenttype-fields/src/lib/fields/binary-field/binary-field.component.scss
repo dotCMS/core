@@ -6,19 +6,6 @@
     container-name: binaryField;
 }
 
-::ng-deep {
-    .screen-cover {
-        width: 90vw;
-        height: 90vh;
-    }
-
-    .p-dialog-mask.p-component-overlay {
-        background-color: transparent;
-        -webkit-backdrop-filter: blur($blur-md);
-        backdrop-filter: blur($blur-md);
-    }
-}
-
 .binary-field__container {
     display: flex;
     justify-content: center;

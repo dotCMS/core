@@ -71,7 +71,9 @@
         [draggable]="false"
         [resizable]="false"
         [closeOnEscape]="false"
-        [styleClass]="vm.mode === BinaryFieldMode.EDITOR ? 'screen-cover' : ''">
+        [appendTo]="'body'"
+        [maskStyleClass]="'p-dialog-mask-transparent'"
+        [style]="vm.mode === BinaryFieldMode.EDITOR ? dialogFullScreenStyles : {}">
         <ng-container [ngSwitch]="vm.mode">
             <dot-dot-binary-field-url-mode
                 *ngSwitchCase="BinaryFieldMode.URL"
