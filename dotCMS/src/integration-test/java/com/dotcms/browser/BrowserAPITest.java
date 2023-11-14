@@ -1,14 +1,9 @@
 package com.dotcms.browser;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.LanguageDataGen;
-import com.dotcms.datagen.LinkDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Treeable;
@@ -43,11 +38,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -606,6 +597,75 @@ public class BrowserAPITest extends IntegrationTestBase {
         List<Map<String, Object>> results = (List<Map<String, Object>>)parentFolderContent.get("list");
         assertEquals(childFolder1.getIdentifier(),results.get(0).get("identifier"));
         assertEquals(childFolder2.getIdentifier(),results.get(1).get("identifier"));
+
+    }
+
+    /**
+     * Method to test: {@link BrowserAPIImpl#getFolderContent(BrowserQuery)}
+     * When: A Contentlet has Version in DEFAULT Variant and also in a specific Variant
+     * Should: Return just the DEFAULT Version
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test
+    public void getJustDEFAULTVariantVersion() throws DotDataException, DotSecurityException, IOException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+       final  Contentlet file = new FileAssetDataGen(folder, "This is a File")
+               .folder(folder)
+               .host(host)
+               .nextPersisted();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+        ContentletDataGen.createNewVersion(file, variant, Collections.EMPTY_MAP);
+
+        final Map<String, Object> files = browserAPI.getFolderContent(BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .build());
+
+        assertEquals(1, Integer.parseInt(files.get("total").toString()));
+
+        final List list = (List) files.get("list");
+        assertEquals(1, list.size());
+        assertEquals(file.getIdentifier(), ((Contentlet.ContentletHashMap) list.get(0)).get("identifier"));
+        assertEquals(file.getInode(), ((Contentlet.ContentletHashMap) list.get(0)).get("inode"));
+
+    }
+
+    /**
+     * Method to test: {@link BrowserAPIImpl#getFolderContent(BrowserQuery)}
+     * When: A Contentlet has Version  in a specific Variant
+     * Should: Not return this Contentlet
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test
+    public void notGetSpecificVariantVersion() throws DotDataException, DotSecurityException, IOException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final  Contentlet file = new FileAssetDataGen(folder, "This is a File")
+                .folder(folder)
+                .host(host)
+                .variant(variant)
+                .nextPersisted();
+
+
+        final Map<String, Object> files = browserAPI.getFolderContent(BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .build());
+
+        assertEquals(0, Integer.parseInt(files.get("total").toString()));
+
+        final List list = (List) files.get("list");
+        assertTrue(list.isEmpty());
 
     }
 
