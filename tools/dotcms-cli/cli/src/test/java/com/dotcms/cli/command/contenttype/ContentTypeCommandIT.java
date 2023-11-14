@@ -80,7 +80,11 @@ class ContentTypeCommandIT extends CommandTest {
      */
     @Test
     void Test_Command_Content_Type_Pull_Option() throws IOException {
-        final Workspace workspace = workspaceManager.getOrCreate();
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
@@ -93,7 +97,7 @@ class ContentTypeCommandIT extends CommandTest {
             final var contentTypeFilePath = Path.of(workspace.contentTypes().toString(),
                     "fileAsset.json");
             Assertions.assertTrue(Files.exists(contentTypeFilePath));
-            
+
             // Validating it is a valid content type descriptor
             var json = Files.readString(contentTypeFilePath);
             final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
