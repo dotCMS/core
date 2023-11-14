@@ -359,5 +359,31 @@ describe('Utils Functions', () => {
                 expect(castSingleSelectableValueMock).toHaveBeenCalledWith(value, field.dataType);
             });
         });
+
+        it('should return undefined value', () => {
+            const value = undefined;
+            const field = {
+                fieldType: 'something',
+                dataType: 'something'
+            } as DotCMSContentTypeField;
+
+            const res = getFinalCastedValue(value, field);
+            expect(res).toBeUndefined();
+        });
+
+        it('should return a JSON value', () => {
+            const value = {
+                attrs: {},
+                content: [],
+                type: 'doc'
+            };
+            const field = {
+                fieldType: 'Story-Block',
+                dataType: 'something'
+            } as DotCMSContentTypeField;
+
+            const res = getFinalCastedValue(value, field);
+            expect(res).toEqual(value);
+        });
     });
 });

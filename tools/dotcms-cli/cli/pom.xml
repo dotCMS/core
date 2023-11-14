@@ -194,6 +194,7 @@
                         <argument>com.dotcms.cli.command.InstanceCommand</argument>
                         <argument>com.dotcms.cli.command.LoginCommand</argument>
                         <argument>com.dotcms.cli.command.PushCommand</argument>
+                        <argument>com.dotcms.cli.command.PullCommand</argument>
                         <argument>com.dotcms.cli.command.StatusCommand</argument>
                         <argument>com.dotcms.cli.command.contenttype.ContentTypeCommand</argument>
                         <argument>com.dotcms.cli.command.files.FilesCommand</argument>
