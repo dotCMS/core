@@ -212,19 +212,8 @@ public class PageLoader implements DotLoader {
     private HTMLPageAsset getPage(VelocityResourceKey key)
             throws DotDataException, DotSecurityException {
 
-        try {
-            return APILocator.getHTMLPageAssetAPI()
-                    .fromContentlet(APILocator.getContentletAPI()
-                            .findContentletByIdentifier(key.id1, key.mode.showLive,
-                                    ConversionUtils.toLong(key.language),
-                                    key.variant, sysUser(), true));
-        } catch (DotStateException e) {
-            return APILocator.getHTMLPageAssetAPI()
-                    .fromContentlet(APILocator.getContentletAPI()
-                            .findContentletByIdentifier(key.id1, key.mode.showLive,
-                                    ConversionUtils.toLong(key.language),
-                                    VariantAPI.DEFAULT_VARIANT.name(), sysUser(), true));
-        }
+        return (HTMLPageAsset) APILocator.getHTMLPageAssetAPI()
+                .findByIdLanguageVariantFallback(key.id1, ConversionUtils.toLong(key.language), key.variant, key.mode.showLive, sysUser(), true);
     }
 
 

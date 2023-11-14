@@ -158,3 +158,4 @@ This maintenance release includes the following code fixes:
 
 129. https://github.com/dotCMS/core/issues/18575 : DotCMS uses incorrect language when adding new content #18575
 130. https://github.com/dotCMS/core/issues/21529 : The JSON viewtool does not support valid JSON types, only strings #21529
+131. https://github.com/dotCMS/core/issues/22534 : Caching empty containers in the Velocity2 cache when accessing in a language where the content doesn't exist #22534
