@@ -2,12 +2,10 @@
     class="binary-field__container"
     *ngIf="vm$ | async as vm"
     [ngClass]="{
-        'binary-field__container--uploading': vm.status === BinaryFieldStatus.UPLOADING
+        'binary-field__container--uploading': vm.status === BinaryFieldStatus.UPLOADING,
+        'binary-field__container--empty': vm.status === BinaryFieldStatus.INIT
     }">
-    <div
-        class="binary-field__drop-zone-container"
-        *ngIf="vm.status === BinaryFieldStatus.INIT"
-        data-testId="binary-field__drop-zone-container">
+    <ng-container *ngIf="vm.status === BinaryFieldStatus.INIT">
         <div
             class="binary-field__drop-zone"
             [ngClass]="{ 'binary-field__drop-zone--active': vm.dropZoneActive }">
@@ -29,7 +27,6 @@
                 </dot-binary-field-ui-message>
             </dot-drop-zone>
             <input
-                class="binary-field__input"
                 #inputFile
                 [accept]="accept.join(',')"
                 (change)="handleFileSelection($event)"
@@ -42,16 +39,16 @@
                 [label]="'dot.binary.field.action.import.from.url' | dm"
                 (click)="openDialog(BinaryFieldMode.URL)"
                 data-testId="action-url-btn"
-                styleClass="p-button-link"
+                styleClass="p-button-link p-button-secondary"
                 icon="pi pi-link"></p-button>
             <p-button
                 [label]="'dot.binary.field.action.create.new.file' | dm"
                 (click)="openDialog(BinaryFieldMode.EDITOR)"
                 data-testId="action-editor-btn"
-                styleClass="p-button-link"
+                styleClass="p-button-link p-button-secondary"
                 icon="pi pi-code"></p-button>
         </div>
-    </div>
+    </ng-container>
 
     <dot-spinner
         *ngIf="vm.status === BinaryFieldStatus.UPLOADING"
@@ -74,8 +71,10 @@
         [draggable]="false"
         [resizable]="false"
         [closeOnEscape]="false"
-        [styleClass]="vm.mode === BinaryFieldMode.EDITOR ? 'screen-cover' : ''">
-        <ng-container *ngIf="dialogOpen" [ngSwitch]="vm.mode">
+        [appendTo]="'body'"
+        [maskStyleClass]="'p-dialog-mask-transparent'"
+        [style]="vm.mode === BinaryFieldMode.EDITOR ? dialogFullScreenStyles : {}">
+        <ng-container [ngSwitch]="vm.mode">
             <dot-dot-binary-field-url-mode
                 *ngSwitchCase="BinaryFieldMode.URL"
                 [accept]="accept"
