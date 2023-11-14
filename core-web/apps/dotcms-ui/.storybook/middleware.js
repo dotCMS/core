@@ -8,24 +8,24 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 module.exports = function expressMiddleware(router) {
     // Proxy to the backend to generate text using OpenAI
     router.use(
-        '/api/ai/text/generate',
+        '/api/v1/ai/text/generate',
         createProxyMiddleware({
             target: 'http://localhost:8080',
             changeOrigin: true,
             pathRewrite: {
-                '^/api/ai/text/generate': '/api/ai/text/generate'
+                '^/api/v1/ai/text/generate': '/api/v1/ai/text/generate'
             }
         })
     );
 
     // Proxy to the backend to generate an image using OpenAI
     router.use(
-        '/api/ai/image/generate',
+        '/api/v1/ai/image/generate',
         createProxyMiddleware({
             target: 'http://localhost:8080',
             changeOrigin: true,
             pathRewrite: {
-                '^/api/ai/image/generate': '/api/ai/image/generate'
+                '^/api/v1/ai/image/generate': '/api/v1/ai/image/generate'
             }
         })
     );
