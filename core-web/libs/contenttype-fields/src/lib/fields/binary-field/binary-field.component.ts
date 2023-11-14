@@ -104,9 +104,15 @@ export class DotBinaryFieldComponent
     readonly vm$ = this.dotBinaryFieldStore.vm$;
     private tempId = '';
     dialogOpen = false;
-    accept: string[] = [];
-    maxFileSize: number;
     helperText: string;
+
+    get maxFileSize(): number {
+        return this.DotBinaryFieldValidatorService.maxFileSize;
+    }
+
+    get accept(): string[] {
+        return this.DotBinaryFieldValidatorService.accept;
+    }
 
     constructor(
         private readonly dotBinaryFieldStore: DotBinaryFieldStore,
@@ -308,12 +314,9 @@ export class DotBinaryFieldComponent
      */
     private setFieldVariables() {
         const { accept, maxFileSize = 0, helperText } = this.getFieldVariables();
-        this.accept = accept ? accept.split(',') : [];
-        this.maxFileSize = Number(maxFileSize);
+        this.DotBinaryFieldValidatorService.setAccept(accept ? accept.split(',') : []);
+        this.DotBinaryFieldValidatorService.setMaxFileSize(Number(maxFileSize));
         this.helperText = helperText;
-
-        this.DotBinaryFieldValidatorService.setAccept(this.accept);
-        this.DotBinaryFieldValidatorService.setMaxFileSize(this.maxFileSize);
     }
 
     /**

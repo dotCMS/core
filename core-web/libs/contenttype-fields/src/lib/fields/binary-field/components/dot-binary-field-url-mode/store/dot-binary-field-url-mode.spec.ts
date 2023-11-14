@@ -59,11 +59,10 @@ describe('DotBinaryFieldUrlModeStore', () => {
 
     beforeEach(() => {
         spectator = createStoreService();
-        dotBinaryFieldValidatorService = spectator.inject(DotBinaryFieldValidatorService);
-        dotBinaryFieldValidatorService.setMaxFileSize(1048576);
-
         dotUploadService = spectator.inject(DotUploadService);
         store = spectator.inject(DotBinaryFieldUrlModeStore);
+        dotBinaryFieldValidatorService = spectator.inject(DotBinaryFieldValidatorService);
+        dotBinaryFieldValidatorService.setMaxFileSize(1048576);
 
         store.setState(INITIAL_STATE);
         store.state$.subscribe((state) => {
