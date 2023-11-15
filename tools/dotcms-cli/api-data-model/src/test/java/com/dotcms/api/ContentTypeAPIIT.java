@@ -769,8 +769,10 @@ class ContentTypeAPIIT {
             Assertions.assertEquals("MyBlog.myBlogComment" + timeMark,
                     relationships2.velocityVar());
         } finally {
-           // Clean up
-           if (null != savedContentType1){
+           // For some reason the modDate on the layout fields on these CT changes with every request
+           // Therefore This CTs can generate noise in other tests, when comparing a copy against a local copy
+           // So we delete them here
+            if (null != savedContentType1){
              client.delete(savedContentType1.variable());
            }
            if(null != savedContentType2) {
