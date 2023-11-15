@@ -236,7 +236,9 @@ public class VariantWebAPIImpl implements VariantWebAPI{
         final Contentlet contentlet = APILocator.getContentletAPI().find(inode, user, pageMode.respectAnonPerms);
         final ContentType type = contentlet.getContentType();
 
-        if (type.baseType() == BaseContentType.FORM || type.baseType() == BaseContentType.PERSONA
+        if (contentlet.isHTMLPage()) {
+            return true;
+        } else if (type.baseType() == BaseContentType.FORM || type.baseType() == BaseContentType.PERSONA
                 || "Host".equalsIgnoreCase(type.variable())) {
             return true;
         } else if (type.baseType() == BaseContentType.CONTENT
