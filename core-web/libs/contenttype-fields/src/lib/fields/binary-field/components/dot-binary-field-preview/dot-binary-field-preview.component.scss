@@ -120,7 +120,7 @@ code {
     overflow: hidden;
 }
 
-@container preview (min-width: 22rem) {
+@container preview (min-width: 376px) {
     .preview-metadata__container,
     .preview-metadata__actions {
         display: flex;
