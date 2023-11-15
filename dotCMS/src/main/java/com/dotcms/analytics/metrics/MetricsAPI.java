@@ -2,7 +2,7 @@ package com.dotcms.analytics.metrics;
 
 import com.dotcms.analytics.app.AnalyticsApp;
 
-import java.util.Map;
+import java.io.Serializable;
 
 /**
  * Metrics API to send metrics to analytics.
@@ -10,8 +10,6 @@ import java.util.Map;
  * @author vico
  */
 public interface MetricsAPI {
-
-    String TOKEN_QUERY_PARAM_NAME = "token";
 
     /**
      * Subscribes to metrics to be sent to analytics.
@@ -31,38 +29,24 @@ public interface MetricsAPI {
     /**
      * Sends metrics to analytics.
      *
-     * @param metricsPayloadRequest {@link MetricsPayloadRequest} instance with metrics data
+     * @param analyticsApp app to be used to resolve analytics url
+     * @param payload payload to send
      */
-    void sendMetrics(final MetricsPayloadRequest metricsPayloadRequest);
+    void sendMetrics(final AnalyticsApp analyticsApp, final String payload);
 
     /**
-     * Creates a {@link MetricsPayloadRequest} instance to be used when sending metrics data.
+     * Creates an {@link AnalyticsAppPayload} instance based on the given parameters.
      *
-     * @param url metrics endpoint url
-     * @param payload metrics data
-     * @param token token
-     * @return {@link StringPayloadHttpRequest} instance
+     * @param analyticsApp analytics app
+     * @param payload payload to send
+     * @return an {@link AnalyticsAppPayload} instance
      */
-    static MetricsPayloadRequest createMetricsRequest(final String url, final String payload, final String token) {
-        return MetricsPayloadRequest.builder()
-            .url(url)
-            .payload(payload)
-            .queryParams(Map.of(TOKEN_QUERY_PARAM_NAME, token))
-            .build();
-    }
-
-    /**
-     * Creates a {@link MetricsPayloadRequest} instance to be used when sending metrics data.
-     *
-     * @param analyticsApp {@link AnalyticsApp} instance
-     * @param payload metrics data
-     * @return {@link MetricsPayloadRequest} instance
-     */
-    static MetricsPayloadRequest createMetricsRequest(final AnalyticsApp analyticsApp, final String payload) {
-        return createMetricsRequest(
-            analyticsApp.getAnalyticsProperties().analyticsWriteUrl(),
-            payload,
-            analyticsApp.getAnalyticsProperties().analyticsKey());
+    static <P extends Serializable> AnalyticsAppPayload<P> createAnalyticsAppPayload(final AnalyticsApp analyticsApp,
+                                                                                     final P payload) {
+        return AnalyticsAppPayload.<P>builder()
+                .analyticsApp(analyticsApp)
+                .payload(payload)
+                .build();
     }
 
 }

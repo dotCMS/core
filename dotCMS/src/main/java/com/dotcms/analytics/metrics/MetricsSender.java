@@ -10,8 +10,8 @@ public interface MetricsSender {
     /**
      * Sends metrics to analytics.
      *
-     * @param metricsPayloadRequest {@link MetricsPayloadRequest} instance with metrics data
+     * @param analyticsAppPayload app to be used to resolve analytics url plus the payload
      */
-    void sendMetrics(MetricsPayloadRequest metricsPayloadRequest);
+    void sendMetrics(final AnalyticsAppPayload<String> analyticsAppPayload);
 
 }

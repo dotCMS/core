@@ -3,9 +3,11 @@ package com.dotcms.jitsu;
 import static javax.ws.rs.core.HttpHeaders.CONTENT_LENGTH;
 import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 
-import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.analytics.helper.AnalyticsHelper;
+import com.dotcms.analytics.metrics.MetricsAPI;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotcms.metrics.MetricsSenderSubmitter;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -38,7 +40,7 @@ import javax.servlet.http.HttpServletResponse;
  * <p>
  * For GET requests to "/s/lib.js", it responds with the lib.js file
  * <p>
- * For POST requests to "/api/v1/event", it sends the event in JSON via {@link EventLogSubmitter}
+ * For POST requests to "/api/v1/event", it sends the event in JSON via {@link MetricsSenderSubmitter}
  */
 public class EventLogWebInterceptor implements WebInterceptor {
 
@@ -48,11 +50,11 @@ public class EventLogWebInterceptor implements WebInterceptor {
         "/api/v1/event"
     };
 
-    private final EventLogSubmitter submitter;
+    private final MetricsSenderSubmitter submitter;
     private final Lazy<String> jitsuLib;
 
     public EventLogWebInterceptor() {
-        submitter = new EventLogSubmitter();
+        submitter = new MetricsSenderSubmitter();
         jitsuLib = Lazy.of(() -> {
             try (final InputStream in = this.getClass().getResourceAsStream("/jitsu/lib.js")) {
                 return new BufferedReader(
@@ -133,7 +135,10 @@ public class EventLogWebInterceptor implements WebInterceptor {
 
         try {
             final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-            this.submitter.logEvent(host, eventPayload);
+            this.submitter.logEvent(
+                    MetricsAPI.createAnalyticsAppPayload(
+                            AnalyticsHelper.get().appFromHost(host),
+                            eventPayload));
         } catch (DotDataException | DotSecurityException | PortalException | SystemException e) {
             Logger.error(this, "Error resolving current host", e);
         } catch(Exception e) {

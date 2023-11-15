@@ -1,15 +1,10 @@
 package com.dotcms.analytics.metrics;
 
 import com.dotcms.experiments.business.result.Event;
-import com.dotcms.util.DotPreconditions;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.liferay.util.StringPool;
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
 /**
