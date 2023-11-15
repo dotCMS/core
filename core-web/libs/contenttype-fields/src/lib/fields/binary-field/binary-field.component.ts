@@ -88,6 +88,7 @@ export class DotBinaryFieldComponent
     private onChange: (value: string) => void;
     private onTouched: () => void;
 
+    readonly dialogFullScreenStyles = { height: '90%', width: '90%' };
     readonly dialogHeaderMap = {
         [BinaryFieldMode.URL]: 'dot.binary.field.dialog.import.from.url.header',
         [BinaryFieldMode.EDITOR]: 'dot.binary.field.dialog.create.new.file.header'
@@ -179,6 +180,7 @@ export class DotBinaryFieldComponent
      */
     closeDialog() {
         this.dialogOpen = false;
+        this.dotBinaryFieldStore.setMode(BinaryFieldMode.DROPZONE);
     }
 
     /**
