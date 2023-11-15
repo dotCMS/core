@@ -728,37 +728,55 @@ class ContentTypeAPIIT {
 
         final SaveContentTypeRequest saveBlogRequest = AbstractSaveContentTypeRequest.builder().of(blog).build();
         final ResponseEntityView<List<ContentType>> contentTypeResponse1 = client.createContentTypes(List.of(saveBlogRequest));
-        final List<ContentType> contentTypes1 = contentTypeResponse1.entity();
-        ContentType savedContentType1 = contentTypes1.get(0);
-        Assertions.assertNotNull(savedContentType1.id());
+        ContentType savedContentType1 = null;
+        ContentType savedContentType2 = null;
+        try {
+            final List<ContentType> contentTypes1 = contentTypeResponse1.entity();
 
-        final RelationshipField parentRel1 = (RelationshipField)savedContentType1.fields().get(0);
-        final Relationships relationships1 = parentRel1.relationships();
-        Assertions.assertNotNull(relationships1);
-        Assertions.assertEquals(0,relationships1.cardinality());
-        // For some reason the server side is not setting the isParentField flag from the Content Type definition
-        //Apparently there some extra logic that takes place when relationships are created from the UI
-        //Relationship creations is triggered by the fields API
-        //So this could be an issue
-        //Assertions.assertTrue(relationships1.isParentField());
-        Assertions.assertEquals("MyBlogComment"+timeMark, relationships1.velocityVar());
+            savedContentType1 = contentTypes1.get(0);
+            Assertions.assertNotNull(savedContentType1.id());
 
-        final SaveContentTypeRequest saveBlogCommentRequest = AbstractSaveContentTypeRequest.builder().of(blogComment).build();
-        final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(List.of(saveBlogCommentRequest));
-        final List<ContentType> contentTypes2 = contentTypeResponse2.entity();
-        ContentType savedContentType2 = contentTypes2.get(0);
-        Assertions.assertNotNull(savedContentType2.id());
-        final RelationshipField parentRel2 = (RelationshipField)savedContentType2.fields().get(0);
-        final Relationships relationships2 = parentRel2.relationships();
-        Assertions.assertNotNull(relationships2);
+            final RelationshipField parentRel1 = (RelationshipField) savedContentType1.fields()
+                    .get(0);
+            final Relationships relationships1 = parentRel1.relationships();
+            Assertions.assertNotNull(relationships1);
+            Assertions.assertEquals(0, relationships1.cardinality());
+            // For some reason the server side is not setting the isParentField flag from the Content Type definition
+            //Apparently there some extra logic that takes place when relationships are created from the UI
+            //Relationship creations is triggered by the fields API
+            //So this could be an issue
+            //Assertions.assertTrue(relationships1.isParentField());
+            Assertions.assertEquals("MyBlogComment" + timeMark, relationships1.velocityVar());
 
-        Assertions.assertEquals(1,relationships2.cardinality());
-        // For some reason the server side is not setting the isParentField flag from the Content Type definition
-        //Apparently there some extra logic that takes place when relationships are created from the UI
-        //Relationship creations is triggered by the fields API
-        //So this could be an issue
-        //Assertions.assertTrue(relationships2.isParentField());
-        Assertions.assertEquals("MyBlog.myBlogComment"+timeMark, relationships2.velocityVar());
+            final SaveContentTypeRequest saveBlogCommentRequest = AbstractSaveContentTypeRequest.builder()
+                    .of(blogComment).build();
+            final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(
+                    List.of(saveBlogCommentRequest));
+            final List<ContentType> contentTypes2 = contentTypeResponse2.entity();
+            savedContentType2 = contentTypes2.get(0);
+            Assertions.assertNotNull(savedContentType2.id());
+            final RelationshipField parentRel2 = (RelationshipField) savedContentType2.fields()
+                    .get(0);
+            final Relationships relationships2 = parentRel2.relationships();
+            Assertions.assertNotNull(relationships2);
+
+            Assertions.assertEquals(1, relationships2.cardinality());
+            // For some reason the server side is not setting the isParentField flag from the Content Type definition
+            //Apparently there some extra logic that takes place when relationships are created from the UI
+            //Relationship creations is triggered by the fields API
+            //So this could be an issue
+            //Assertions.assertTrue(relationships2.isParentField());
+            Assertions.assertEquals("MyBlog.myBlogComment" + timeMark,
+                    relationships2.velocityVar());
+        } finally {
+           // Clean up
+           if (null != savedContentType1){
+             client.delete(savedContentType1.variable());
+           }
+           if(null != savedContentType2) {
+               client.delete(savedContentType2.variable());
+           }
+        }
 
     }
 

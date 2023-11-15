@@ -50,8 +50,8 @@ import org.immutables.value.Value.Default;
     "multilingualable",
     "pagination"
 })
-//@JsonInclude(Include.NON_DEFAULT)
-//@Value.Style(passAnnotations = {JsonInclude.class})
+@JsonInclude(Include.NON_DEFAULT)
+@Value.Style(passAnnotations = {JsonInclude.class})
 public abstract class ContentType {
 
     public static final String SYSTEM_HOST = "SYSTEM_HOST";
@@ -142,7 +142,7 @@ public abstract class ContentType {
     }
 
     @Value.Default
-    public BaseContentType baseType() { return BaseContentType.CONTENT; };
+    public BaseContentType baseType() { return BaseContentType.CONTENT; }
 
     @Value.Default
     public Boolean system() {
@@ -173,7 +173,7 @@ public abstract class ContentType {
     //if it's coming from an endpoint that returns only one CT then we get a full representation
     //Again a different form of this attribute is used when sending the request to create or update the CT
     //Therefore it's best if we keep a Generic high level representation of the field through JsonNode
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(Include.NON_NULL)
     @Nullable
     public abstract JsonNode systemActionMappings();
 
