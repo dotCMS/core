@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
+import { AfterViewInit, Component, Inject } from '@angular/core';
 
 @Component({
     selector: 'dot-ema',
@@ -8,4 +8,14 @@ import { Component } from '@angular/core';
     templateUrl: './dot-ema.component.html',
     styleUrls: ['./dot-ema.component.scss']
 })
-export class DotEmaComponent {}
+export class DotEmaComponent implements AfterViewInit {
+    constructor(@Inject(DOCUMENT) private document: Document) {}
+    ngAfterViewInit(): void {
+        this.document.defaultView?.addEventListener('message', (event: MessageEvent) => {
+            // This should be the host the user uses for nextjs, because this can trigger react dev tools messages
+            if ((event as { origin: string }).origin !== 'http://localhost:3000') {
+                return;
+            }
+        });
+    }
+}
