@@ -14,6 +14,10 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableRelationships.class)
 public interface Relationships {
 
+      //This field isn't getting returned by the ContentTypeResource
+      //Apparently some additional logic needs to happen to get this field populated
+      //Unfortunately, relationships are usually built using fields API in a separate call
+      //This might be problematic in the future but for now it escapes the scope of the CLI
       @Nullable
       Boolean isParentField();
 
