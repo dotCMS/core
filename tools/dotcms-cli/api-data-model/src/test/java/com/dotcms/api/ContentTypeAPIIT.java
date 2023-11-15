@@ -636,10 +636,6 @@ class ContentTypeAPIIT {
                 //.addLayout()   <-- Even though We have an addLayOuts method the server side only takes into account the layout fields sent as fields
                 .build();
 
-        final String value = new ClientObjectMapper().getContext(null)
-                .writeValueAsString(contentType);
-        System.out.println(value);
-
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
         final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
@@ -773,7 +769,7 @@ class ContentTypeAPIIT {
            // Therefore This CTs can generate noise in other tests, when comparing a copy against a local copy
            // So we delete them here
             if (null != savedContentType1){
-             client.delete(savedContentType1.variable());
+               client.delete(savedContentType1.variable());
            }
            if(null != savedContentType2) {
                client.delete(savedContentType2.variable());
