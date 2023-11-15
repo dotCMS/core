@@ -466,11 +466,36 @@ class DeployWarTomcatTask extends DefaultTask{
         }
 
         project.copy{
-            from '../libs/buildlibs'
+            from project.file("../libs/buildlibs")
             into buildLibLocation + '/lib'
             include 'mail.jar'
             include 'javax.activation-1.2.0.jar'
         }
+
+
+        project.copy {
+            from "$project.buildDir/resources/main"
+            into buildLibLocation + '/log4j2/conf'
+            include "log4j2-tomcat*.xml"
+        }
+
+        project.copy{
+            from project.configurations.compileClasspath
+            into buildLibLocation + '/log4j2/lib'
+            include 'commons-logging-*.jar'
+            include 'log4j-*.jar'
+            include 'disruptor-*.jar'
+            include 'slf4j-api-*.jar'
+            exclude 'log4j-web-*.jar'
+        }
+
+        project.copy{
+            from project.file("../bin")
+            into buildLibLocation + '/bin'
+            include 'setclasspath.sh'
+            include 'setclasspath.bat'
+        }
+
 
     }
 }
@@ -861,6 +886,12 @@ task createDistPrep(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) {
             into "$distLocation$confDistLocation"
             from sourceSets.main.resources
             exclude "com", "org", "release.properties"
+        }
+
+        copy {
+            from "$rootDir/../conf/log4j"
+            into "$distLocation$log4j2ConfDistLocation"
+            include "log4j*.xml"
         }
 
         copy {
