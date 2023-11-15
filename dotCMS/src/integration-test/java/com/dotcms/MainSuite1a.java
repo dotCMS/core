@@ -8,6 +8,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.RuleBundlerTest;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.experiments.business.ExperimentAPIImpIntegrationTest;
+import com.dotcms.experiments.business.ExperimentUrlPatternCalculatorIntegrationTest;
 import com.dotcms.experiments.business.web.ExperimentWebAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
@@ -96,6 +97,7 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderIntegrityCheckerTest.class,
         HostFactoryImplTest.class,
         BundleFactoryImplTest.class,
+        ExperimentUrlPatternCalculatorIntegrationTest.class
 })
 
 public class MainSuite1a {
