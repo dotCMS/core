@@ -87,6 +87,7 @@ export class DotEditContentBinaryFieldComponent
     private onChange: (value: string) => void;
     private onTouched: () => void;
 
+    readonly dialogFullScreenStyles = { height: '90%', width: '90%' };
     readonly dialogHeaderMap = {
         [BinaryFieldMode.URL]: 'dot.binary.field.dialog.import.from.url.header',
         [BinaryFieldMode.EDITOR]: 'dot.binary.field.dialog.create.new.file.header'
@@ -177,6 +178,7 @@ export class DotEditContentBinaryFieldComponent
      */
     closeDialog() {
         this.dialogOpen = false;
+        this.dotBinaryFieldStore.setMode(BinaryFieldMode.DROPZONE);
     }
 
     /**
@@ -279,7 +281,7 @@ export class DotEditContentBinaryFieldComponent
         const variable = this.field.variable;
         const metaDataKey = variable + 'MetaData';
         const { titleImage, inode, [metaDataKey]: metadata } = this.contentlet;
-        const { contentType: mimeType } = metadata;
+        const { contentType: mimeType } = metadata || {};
 
         this.dotBinaryFieldStore.setFileAndContent({
             inode,

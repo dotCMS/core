@@ -2,9 +2,11 @@ import { NgIf, NgSwitch, NgSwitchCase } from '@angular/common';
 import { ChangeDetectionStrategy, Component, HostBinding, Input, inject } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
+import { BlockEditorModule } from '@dotcms/block-editor';
 import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
+import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
 import { DotEditContentFieldsModule } from '../../fields/dot-edit-content-fields.module';
 import { CALENDAR_FIELD_TYPES } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
@@ -27,7 +29,9 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
         NgIf,
         ReactiveFormsModule,
         DotEditContentFieldsModule,
-        DotFieldRequiredDirective
+        DotFieldRequiredDirective,
+        BlockEditorModule,
+        DotEditContentBinaryFieldComponent
     ]
 })
 export class DotEditContentFieldComponent {

@@ -186,6 +186,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
             const spyInputFile = jest.spyOn(spectator.component.inputFile.nativeElement, 'click');
             const chooseFile = spectator.query(byTestId('choose-file-btn')) as HTMLButtonElement;
             chooseFile.click();
+            expect(chooseFile.getAttribute('type')).toBe('button');
             expect(spyOpenFilePicker).toHaveBeenCalled();
             expect(spyInputFile).toHaveBeenCalled();
         });
@@ -328,7 +329,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
             spectator.detectChanges();
             await spectator.fixture.whenStable();
 
-            const editorElement = spectator.query(byTestId('editor-mode'));
+            const editorElement = document.querySelector('[data-testid="editor-mode"]'); // This element is added to the body by the dialog
             const isDialogOpen = spectator.fixture.componentInstance.openDialog;
 
             expect(editorElement).toBeTruthy();
@@ -344,7 +345,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
             spectator.detectChanges();
             await spectator.fixture.whenStable();
 
-            const urlElement = spectator.query(byTestId('url-mode'));
+            const urlElement = document.querySelector('[data-testid="url-mode"]'); // This element is added to the body by the dialog
             const isDialogOpen = spectator.fixture.componentInstance.openDialog;
 
             expect(urlElement).toBeTruthy();
