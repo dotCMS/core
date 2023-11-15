@@ -77,8 +77,6 @@
         <ng-container [ngSwitch]="vm.mode">
             <dot-dot-binary-field-url-mode
                 *ngSwitchCase="BinaryFieldMode.URL"
-                [accept]="accept"
-                [maxFileSize]="maxFileSize"
                 (tempFileUploaded)="setTempFile($event)"
                 (cancel)="closeDialog()"
                 data-testId="url-mode"></dot-dot-binary-field-url-mode>
@@ -86,7 +84,6 @@
                 *ngSwitchCase="BinaryFieldMode.EDITOR"
                 [fileName]="vm.file?.name"
                 [fileContent]="vm.file?.content"
-                [accept]="accept"
                 (tempFileUploaded)="setTempFile($event)"
                 (cancel)="closeDialog()"
                 data-testId="editor-mode"></dot-dot-binary-field-editor>
