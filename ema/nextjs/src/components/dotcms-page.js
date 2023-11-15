@@ -84,6 +84,18 @@ const Container = ({ containerRef }) => {
                         data-dot-content-type-id={dotContentTypeId}
                         data-dot-has-page-lang-version="true">
                         <div className="p-4 border border-gray-300">
+                            <button
+                                onClick={() => {
+                                    window.parent.postMessage(
+                                        {
+                                            action: 'edit-contentlet',
+                                            data: contentlet
+                                        },
+                                        '*'
+                                    );
+                                }}>
+                                edit
+                            </button>
                             <Component {...contentlet} />
                         </div>
                     </div>
