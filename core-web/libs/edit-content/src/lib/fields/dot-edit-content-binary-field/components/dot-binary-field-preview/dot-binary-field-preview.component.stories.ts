@@ -66,7 +66,7 @@ const previewFile = {
 };
 
 export default {
-    title: 'Library / Contenttype Fields / Component / DotBinaryFieldPreviewComponent',
+    title: 'Library / Edit Content / Binary Field / Components / Preview',
     component: DotBinaryFieldPreviewComponent,
     decorators: [
         moduleMetadata({
@@ -121,7 +121,7 @@ const Template: Story<DotBinaryFieldPreviewComponent> = (args: DotBinaryFieldPre
             border-radius: 4px;
             padding: 0.5rem;
         }
-    `
+`
     ],
     template: `
         <div class="container">

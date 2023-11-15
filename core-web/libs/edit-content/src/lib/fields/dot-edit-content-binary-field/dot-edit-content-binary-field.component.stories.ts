@@ -19,22 +19,16 @@ import {
     DotSpinnerModule
 } from '@dotcms/ui';
 
-import { DotBinaryFieldComponent } from './binary-field.component';
 import { DotBinaryFieldPreviewComponent } from './components/dot-binary-field-preview/dot-binary-field-preview.component';
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
 import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
+import { DotEditContentBinaryFieldComponent } from './dot-edit-content-binary-field.component';
 import { DotBinaryFieldStore } from './store/binary-field.store';
-
-import {
-    CONTENTLET,
-    CONTENTTYPE_FIELDS_MESSAGE_MOCK,
-    FIELD,
-    TEMP_FILES_MOCK
-} from '../../utils/mock';
+import { CONTENTLET, CONTENTTYPE_FIELDS_MESSAGE_MOCK, FIELD, TEMP_FILES_MOCK } from './utils/mock';
 
 export default {
-    title: 'Library / Contenttype Fields / DotBinaryFieldComponent',
-    component: DotBinaryFieldComponent,
+    title: 'Library / Edit Content / Binary Field',
+    component: DotEditContentBinaryFieldComponent,
     decorators: [
         moduleMetadata({
             imports: [
@@ -99,14 +93,16 @@ export default {
             description: 'Content Type Field Object'
         }
     }
-} as Meta<DotBinaryFieldComponent>;
+} as Meta<DotEditContentBinaryFieldComponent>;
 
-const Template: Story<DotBinaryFieldComponent> = (args: DotBinaryFieldComponent) => ({
+const Template: Story<DotEditContentBinaryFieldComponent> = (
+    args: DotEditContentBinaryFieldComponent
+) => ({
     props: args,
-    template: `<dot-binary-field
+    template: `<dot-edit-content-binary-field
         [contentlet]="contentlet"
         [field]="field"
-    ></dot-binary-field>`
+    ></dot-edit-content-binary-field>`
 });
 
 export const Primary = Template.bind({});
