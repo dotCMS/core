@@ -4,6 +4,7 @@ import GlobalProvider from '@/providers/global';
 import { DotcmsPage } from '@/components/dotcms-page';
 
 async function getPage({ url, language_id }) {
+    // TODO: Check why /json is not getting the page correctly
     const requestUrl = `${
         process.env.NEXT_PUBLIC_DOTCMS_HOST
     }/api/v1/page/render/${url}?language_id=${language_id || '1'}`;
