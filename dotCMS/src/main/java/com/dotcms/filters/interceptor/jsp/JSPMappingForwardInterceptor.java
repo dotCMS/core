@@ -2,6 +2,7 @@ package com.dotcms.filters.interceptor.forward;
 
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
 
 import javax.servlet.http.HttpServletRequest;
@@ -25,8 +26,14 @@ public class JSPMappingForwardInterceptor implements WebInterceptor {
         try {
             if (mappings.containsKey(path)) {
 
-                final String newPath = "/WEB-INF"+mappings.get(path);
-                request.getRequestDispatcher(newPath).forward(request, response);
+                if (WebAPILocator.getUserWebAPI().isLoggedToBackend(request)) {
+                    final String newPath = "/WEB-INF" + mappings.get(path);
+                    request.getRequestDispatcher(newPath).forward(request, response);
+
+                } else {
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                }
+
                 return Result.SKIP;
             }
         } catch (Exception e) {
