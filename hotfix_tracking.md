@@ -161,3 +161,4 @@ This maintenance release includes the following code fixes:
 131. https://github.com/dotCMS/core/issues/22534 : Caching empty containers in the Velocity2 cache when accessing in a language where the content doesn't exist #22534
 132. https://github.com/dotCMS/core/issues/24167 : Relationship fields couldn't update with workflow apis #24167
 133. https://github.com/dotCMS/core/issues/24227 : [SASS] : Minify CSS output by default #24227
+134. https://github.com/dotCMS/core/issues/24266 : Content Type publish and expire date are set to empty #24266

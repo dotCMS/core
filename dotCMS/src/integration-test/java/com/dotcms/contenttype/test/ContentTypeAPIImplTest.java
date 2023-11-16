@@ -65,6 +65,7 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.PermissionableProxy;
@@ -2410,6 +2411,63 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(savedContentType);
 			}
 		}
+	}
+
+	/**
+	 * Method to test: {@link com.dotcms.enterprise.publishing.PublishDateUpdater#getContentTypeVariableWithPublishField()}  }  }}
+	 * Given Scenario: Add empty validation on publish and Expire date of the content type
+	 * ExpectedResult: return only content types with publish date != of null o empty
+	 *
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 *
+	 */
+
+	@Test
+	public void test_getContentTypeVariableWithPublishField_ShouldReturnNonNullOrEmpty() throws Exception {
+		long time = System.currentTimeMillis();
+		int base = BaseContentType.CONTENT.ordinal();
+		//create a new content type with publish date
+		ContentType contentType = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
+				.description("ContentTypeWithPublishField " + time).folder(FolderAPI.SYSTEM_FOLDER)
+				.host(Host.SYSTEM_HOST).name("ContentTypeWithPublishField " + time)
+				.owner(APILocator.systemUser().toString()).variable("testContentVar"+time).publishDateVar("publishDate").build();
+
+		contentType = contentTypeApi.save(contentType);
+
+		//validate if the content exist
+		assertThat("Content was not created correctly", contentTypeApi.find(contentType.inode()) != null);
+
+		//create the publishing date field
+		List<Field> newFieldsList = new ArrayList<>();
+		Field fieldToSave = FieldBuilder.builder(DateTimeField.class).name("Publish Date").variable("publishDate")
+				.contentTypeId(contentType.id()).dataType(DataTypes.DATE).indexed(true).build();
+
+		newFieldsList.add(fieldToSave);
+
+		contentType = contentTypeApi.save(contentType, newFieldsList);
+
+		//get all the objects in the structure != null or empty
+		List<String> structureList = PublishDateUpdater.getContentTypeVariableWithPublishField();
+
+		//validate if the content type name appears in the retrieved data
+		assertTrue("The publish date of the content is empty or null", structureList.contains(contentType.variable()));
+
+		//remove the published dates
+		contentType = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
+				.description("ContentTypeWithPublishExpireFields " + time).folder(FolderAPI.SYSTEM_FOLDER)
+				.host(Host.SYSTEM_HOST).name("ContentTypeWithPublishExpireFields " + time)
+				.id(contentType.inode())
+				.owner(APILocator.systemUser().toString()).variable(contentType.variable()).publishDateVar("")
+				.expireDateVar("").build();
+
+		contentType = contentTypeApi.save(contentType);
+
+		structureList = PublishDateUpdater.getContentTypeVariableWithPublishField();
+
+		//validate that the content type name didn't appear in the retrieved data
+		assertFalse("Publish date wasn't deleted", structureList.contains(contentType.variable()));
+
 	}
 
 	@DataProvider
