@@ -1,22 +1,19 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer } from '@angular/platform-browser';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
-import { map } from 'rxjs/operators';
+import { EditEmaStore } from './store/dot-ema.store';
 
 @Component({
     selector: 'dot-ema',
     standalone: true,
     imports: [CommonModule, FormsModule],
+    providers: [EditEmaStore],
     templateUrl: './dot-ema.component.html',
     styleUrls: ['./dot-ema.component.scss']
 })
-export class DotEmaComponent {
-    language_id = '';
-    url = '';
-
+export class DotEmaComponent implements OnInit {
     languages = [
         {
             name: 'English',
@@ -39,41 +36,36 @@ export class DotEmaComponent {
         }
     ];
 
+    store = inject(EditEmaStore);
     route = inject(ActivatedRoute);
     router = inject(Router);
-    sanitizer = inject(DomSanitizer);
-    path$ = this.route.queryParams.pipe(
-        map((params: Params) => {
-            let path;
 
-            const queryParams = Object.keys(params)
-                .map((key) => {
-                    if (key === 'url') {
-                        path = `${decodeURIComponent(params[key])}`;
+    iframeUrl$ = this.store.iframeUrl$;
+    url$ = this.store.url$;
+    language_id$ = this.store.language_id$;
 
-                        this.url = `${decodeURIComponent(params[key])}`;
-
-                        return null;
-                    }
-
-                    if (key === 'language_id') {
-                        this.language_id = `${decodeURIComponent(params[key])}`;
-                    }
-
-                    return `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`;
-                })
-                .filter(Boolean)
-                .join('&');
-
-            return this.sanitizer.bypassSecurityTrustResourceUrl(
-                `http://localhost:3000/${path}?${queryParams}`
-            );
-        })
-    );
+    ngOnInit(): void {
+        this.route.queryParams.subscribe(({ language_id, url }: Params) => {
+            this.store.load({
+                language_id,
+                url
+            });
+        });
+    }
 
     onChange(e: Event) {
         const name = (e.target as HTMLSelectElement).name;
         const value = (e.target as HTMLSelectElement).value;
+
+        switch (name) {
+            case 'language_id':
+                this.store.setLanguage(value);
+                break;
+
+            case 'url':
+                this.store.setUrl(value);
+                break;
+        }
 
         this.router.navigate([], {
             queryParams: {
