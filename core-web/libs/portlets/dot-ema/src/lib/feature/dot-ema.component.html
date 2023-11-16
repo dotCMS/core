@@ -1,12 +1,11 @@
 <div class="flex gap-3 toolbar align-items-center">
     <h4>{{ title$ | async }}</h4>
 
-    <dot-edit-ema-toolbar />
-
     <select
         id="language_id"
         [ngModel]="language_id$ | async"
         (change)="onChange($event)"
+        data-testId="language_id"
         aria-label="language_id"
         name="language_id">
         <option *ngFor="let language of languages" value="{{ language.value }}">
@@ -14,6 +13,7 @@
         </option>
     </select>
 
+    <!-- This is for demo purpose, going away -->
     <select
         id="url"
         [ngModel]="url$ | async"
@@ -29,6 +29,7 @@
     <!-- <span>{{ iframeUrl$ | async }}</span> -->
     <iframe
         [src]="iframeUrl$ | async | safeUrl"
+        data-testId="iframe"
         frameborder="0"
         width="100%"
         height="100%"

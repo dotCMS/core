@@ -7,13 +7,12 @@ import { SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaStore } from './store/dot-ema.store';
 
-import { EditEmaToolbarComponent } from '../components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 
 @Component({
     selector: 'dot-ema',
     standalone: true,
-    imports: [CommonModule, FormsModule, SafeUrlPipe, EditEmaToolbarComponent],
+    imports: [CommonModule, FormsModule, SafeUrlPipe],
     providers: [EditEmaStore, DotPageApiService],
     templateUrl: './dot-ema.component.html',
     styleUrls: ['./dot-ema.component.scss']
@@ -41,14 +40,14 @@ export class DotEmaComponent implements OnInit {
         }
     ];
 
-    store = inject(EditEmaStore);
     route = inject(ActivatedRoute);
     router = inject(Router);
+    store = inject(EditEmaStore);
 
     iframeUrl$ = this.store.iframeUrl$;
-    url$ = this.store.url$;
     language_id$ = this.store.language_id$;
     title$ = this.store.pageTitle$;
+    url$ = this.store.url$;
 
     ngOnInit(): void {
         this.route.queryParams.subscribe(({ language_id, url }: Params) => {
