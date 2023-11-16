@@ -6295,7 +6295,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     !(
                             property.getValue() instanceof Set   || property.getValue() instanceof Map        || property.getValue() instanceof String || property.getValue() instanceof Boolean || property.getValue() instanceof File ||
                                     property.getValue() instanceof Float || property.getValue() instanceof Integer    || property.getValue() instanceof Date   || property.getValue() instanceof Long    ||
-                                    property.getValue() instanceof List  || property.getValue() instanceof BigDecimal || property.getValue() instanceof Short  || property.getValue() instanceof Double
+                                    property.getValue() instanceof List  || property.getValue() instanceof BigDecimal || property.getValue() instanceof Short  || property.getValue() instanceof Double || property.getValue() instanceof ContentletRelationships
                     )
             ){
                 throw new DotContentletStateException("The map contains an invalid value: " + property.getValue().getClass());
