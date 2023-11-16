@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
-import { DotPageApiService } from '../../services/dot-page-api.service';
+import { DotPageApiParams, DotPageApiService } from '../../services/dot-page-api.service';
 
 export interface EditEmaState {
     language_id: string;
@@ -38,7 +38,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly url$: Observable<string> = this.select((state) => state.url);
     readonly pageTitle$: Observable<string> = this.select((state) => state.editor.page.title);
 
-    readonly load = this.effect((params$: Observable<{ language_id: string; url: string }>) => {
+    readonly load = this.effect((params$: Observable<DotPageApiParams>) => {
         return params$.pipe(
             switchMap(({ language_id, url }) =>
                 this.dotPageApiService.get({ language_id, url }).pipe(
