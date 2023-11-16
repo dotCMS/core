@@ -28,7 +28,7 @@ public class LanguagePullHandler implements PullHandler<Language> {
         return String.format(
                 "language: [@|bold,underline,blue %s|@] id: [@|bold,underline,cyan %s|@] code: [@|bold,underline,green %s|@] country:[@|bold,yellow %s|@] countryCode: [@|bold,yellow %s|@] isoCode: [@|bold,yellow %s|@]",
                 language.language().orElse(""),
-                language.id().isPresent() ? language.id() : "",
+                language.id().isPresent() ? language.id().get() : "",
                 language.languageCode().orElse(""),
                 language.country().orElse(""),
                 language.countryCode().orElse(""),
