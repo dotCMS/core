@@ -4,7 +4,7 @@ import GlobalProvider from '@/providers/global';
 import { DotcmsPage } from '@/components/dotcms-page';
 
 async function getPage({ url, language_id }) {
-    const requestUrl = `${process.env.DOTCMS_HOST}/api/v1/page/json/${url || 'index'}?language_id=${
+    const requestUrl = `${process.env.DOTCMS_HOST}/api/v1/page/json/${url}?language_id=${
         language_id || '1'
     }`;
 
@@ -23,8 +23,9 @@ async function getPage({ url, language_id }) {
 }
 
 export default async function Home({ searchParams, params }) {
+    console.log(params.slug);
     const data = await getPage({
-        url: params.slug.join('/'),
+        url: params?.slug ? params.slug.join('/') : 'index',
         language_id: searchParams.language_id
     });
 

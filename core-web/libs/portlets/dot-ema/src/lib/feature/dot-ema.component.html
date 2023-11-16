@@ -1,6 +1,8 @@
 <div class="flex gap-3 toolbar align-items-center">
     <h4>{{ title$ | async }}</h4>
 
+    <dot-edit-ema-toolbar />
+
     <select
         id="language_id"
         [ngModel]="language_id$ | async"

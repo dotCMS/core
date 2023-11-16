@@ -7,12 +7,13 @@ import { SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaStore } from './store/dot-ema.store';
 
+import { EditEmaToolbarComponent } from '../components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 
 @Component({
     selector: 'dot-ema',
     standalone: true,
-    imports: [CommonModule, FormsModule, SafeUrlPipe],
+    imports: [CommonModule, FormsModule, SafeUrlPipe, EditEmaToolbarComponent],
     providers: [EditEmaStore, DotPageApiService],
     templateUrl: './dot-ema.component.html',
     styleUrls: ['./dot-ema.component.scss']
