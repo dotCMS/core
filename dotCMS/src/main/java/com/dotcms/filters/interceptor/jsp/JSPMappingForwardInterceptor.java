@@ -1,4 +1,4 @@
-package com.dotcms.filters.interceptor.forward;
+package com.dotcms.filters.interceptor.jsp;
 
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
@@ -11,6 +11,8 @@ import java.util.Map;
 
 /**
  * This class maps an url to a jsp file into the WEB-INF folder
+ * pre: the user has to be a BE already logged in
+ * @author jsanca
  */
 public class JSPMappingForwardInterceptor implements WebInterceptor {
 
@@ -32,6 +34,7 @@ public class JSPMappingForwardInterceptor implements WebInterceptor {
 
                 } else {
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                    return Result.SKIP_NO_CHAIN;
                 }
 
                 return Result.SKIP;
