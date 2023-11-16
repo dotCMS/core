@@ -19,6 +19,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
+
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import org.xbill.DNS.Address;
 import org.xbill.DNS.ExtendedResolver;
 import org.xbill.DNS.Resolver;
@@ -248,8 +250,11 @@ public class TempFileAPI {
               urlGetter.doOut(out);
       }
 
-      return dotTempFile;
+      if (FileAsset.UNKNOWN_MIME_TYPE.equals(dotTempFile.mimeType) && dotTempFile.file.exists()) {
 
+        return new DotTempFile(dotTempFile.id, dotTempFile.file);
+      }
+      return dotTempFile;
   }
 
   /**
@@ -278,7 +283,7 @@ public class TempFileAPI {
   }
 
   private String resolveFileName(final String desiredName, final URL url) {
-    final String path=(url!=null)? url.getPath() : UUIDGenerator.shorty();
+    final String path=(url!=null &&   url.getPath().contains(StringPool.PERIOD))? url.getPath() : UUIDGenerator.shorty();
     final String tryFileName = (desiredName!=null) 
         ? desiredName 
             : path.indexOf(StringPool.FORWARD_SLASH) > -1

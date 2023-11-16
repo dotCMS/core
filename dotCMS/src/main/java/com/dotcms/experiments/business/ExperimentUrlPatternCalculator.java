@@ -4,13 +4,12 @@ package com.dotcms.experiments.business;
 import static com.dotcms.util.CollectionsUtils.list;
 
 
-import com.dotmarketing.business.APILocator;
+import com.dotcms.analytics.metrics.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.structure.StructureUtil;
-import com.dotmarketing.util.UtilMethods;
-import java.util.ArrayList;
+
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Util class to calculate the regex pattern for a given {@link HTMLPageAsset}
@@ -44,7 +43,7 @@ public enum ExperimentUrlPatternCalculator {
      * @param htmlPageAsset
      * @return
      */
-    public String calculateUrlRegexPattern(final HTMLPageAsset htmlPageAsset) {
+    public String calculatePageUrlRegexPattern(final HTMLPageAsset htmlPageAsset) {
         try {
             return URL_REGEX_PATTERN_STRATEGIES.stream()
                 .filter(strategy -> strategy.isMatch(htmlPageAsset))
@@ -57,6 +56,28 @@ public enum ExperimentUrlPatternCalculator {
                     htmlPageAsset.getInode()), e);
         }
     }
+
+    public Optional<String> calculateTargetPageUrlPattern(final HTMLPageAsset htmlPageAsset, final Metric metric) {
+        final MetricType type = metric.type();
+        Optional<String> regexParameterName = type.getRegexParameterName();
+
+        if (!regexParameterName.isPresent()) {
+            return Optional.empty();
+        }
+
+        final Condition regexCondition = metric.conditions().stream()
+                .filter(condition -> condition.parameter().equals(regexParameterName.get()))
+                .findFirst()
+                .orElseThrow();
+
+        final AbstractCondition.Operator operator = regexCondition.operator();
+        final String regexOperator = operator.regex();
+
+        final Parameter parameter = metric.type().getParameter(regexCondition.parameter()).orElseThrow();
+        final String regex = parameter.type().regex(regexCondition.value(), regexOperator);
+        return Optional.of(regex);
+    }
+
 
     private static String getUriForRegex(final String uri) throws DotDataException {
         return uri.replaceAll("/", "\\\\/");

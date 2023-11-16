@@ -13,6 +13,7 @@ import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 import { DotBinaryFieldEditorComponent } from './dot-binary-field-editor.component';
 
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../../../utils/mock';
+import { DotBinaryFieldValidatorService } from '../../service/dot-binary-field-validator/dot-binary-field-validator.service';
 import { TEMP_FILE_MOCK } from '../../store/binary-field.store.spec';
 
 const EDITOR_MOCK = {
@@ -51,6 +52,8 @@ describe('DotBinaryFieldEditorComponent', () => {
     let component: DotBinaryFieldEditorComponent;
     let spectator: Spectator<DotBinaryFieldEditorComponent>;
 
+    let dotBinaryFieldValidatorService: DotBinaryFieldValidatorService;
+
     let dotUploadService: DotUploadService;
 
     const createComponent = createComponentFactory({
@@ -64,6 +67,7 @@ describe('DotBinaryFieldEditorComponent', () => {
             DotFieldValidationMessageComponent
         ],
         providers: [
+            DotBinaryFieldValidatorService,
             {
                 provide: DotUploadService,
                 useValue: {
@@ -85,15 +89,14 @@ describe('DotBinaryFieldEditorComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
-            detectChanges: false,
-            props: {
-                accept: ['image/*', '.ts']
-            }
+            detectChanges: false
         });
 
         component = spectator.component;
         component.editorRef.editor = EDITOR_MOCK as monaco.editor.IStandaloneCodeEditor;
         dotUploadService = spectator.inject(DotUploadService, true);
+        dotBinaryFieldValidatorService = spectator.inject(DotBinaryFieldValidatorService);
+        dotBinaryFieldValidatorService.setAccept(['image/*', '.ts']);
 
         spectator.detectChanges();
     });

@@ -16,11 +16,13 @@ import { DialogModule } from 'primeng/dialog';
 import { DotLicenseService, DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
+import { dotcmsContentletMock } from '@dotcms/utils-testing';
 
 import { DotBinaryFieldComponent } from './binary-field.component';
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
 import { BinaryFieldMode, BinaryFieldStatus } from './interfaces';
 import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
+import { DotBinaryFieldValidatorService } from './service/dot-binary-field-validator/dot-binary-field-validator.service';
 import { DotBinaryFieldStore } from './store/binary-field.store';
 
 import { getUiMessage } from '../../utils/binary-field-utils';
@@ -72,6 +74,7 @@ describe('DotBinaryFieldComponent', () => {
         componentProviders: [DotBinaryFieldStore],
         providers: [
             DotBinaryFieldEditImageService,
+            DotBinaryFieldValidatorService,
             {
                 provide: DotLicenseService,
                 useValue: {
@@ -346,6 +349,59 @@ describe('DotBinaryFieldComponent', () => {
             expect(urlElement).toBeTruthy();
             expect(isDialogOpen).toBeTruthy();
             expect(spySetMode).toHaveBeenCalledWith(BinaryFieldMode.URL);
+        });
+    });
+
+    describe('Set File', () => {
+        describe('Contentlet - BaseTyp FILEASSET', () => {
+            it('should set the correct file asset', () => {
+                const spy = jest
+                    .spyOn(store, 'setFileAndContent')
+                    .mockReturnValue(of(null).subscribe());
+                const mockFileAsset = {
+                    ...dotcmsContentletMock,
+                    baseType: 'FILEASSET',
+                    metaData: {
+                        mimeType: 'text/html'
+                    }
+                };
+                const { inode, titleImage, contentType: mimeType } = mockFileAsset;
+                spectator.setInput('contentlet', mockFileAsset);
+                spectator.detectChanges();
+                expect(spy).toHaveBeenCalledWith({
+                    inode,
+                    titleImage,
+                    mimeType,
+                    url: mockFileAsset[FIELD.variable],
+                    ...mockFileAsset.metaData
+                });
+            });
+        });
+
+        describe('Contentlet - BaseTyp CONTENT', () => {
+            it('should set the correct file asset', () => {
+                const spy = jest
+                    .spyOn(store, 'setFileAndContent')
+                    .mockReturnValue(of(null).subscribe());
+                const metaDataKey = `${FIELD.variable}MetaData`;
+                const mockFileAsset = {
+                    ...dotcmsContentletMock,
+                    baseType: 'CONTENT',
+                    [metaDataKey]: {
+                        mimeType: 'text/html'
+                    }
+                };
+                const { inode, titleImage, contentType: mimeType } = mockFileAsset;
+                spectator.setInput('contentlet', mockFileAsset);
+                spectator.detectChanges();
+                expect(spy).toHaveBeenCalledWith({
+                    inode,
+                    titleImage,
+                    mimeType,
+                    url: mockFileAsset[FIELD.variable],
+                    ...mockFileAsset[metaDataKey]
+                });
+            });
         });
     });
 

@@ -25,7 +25,12 @@ import { InputTextModule } from 'primeng/inputtext';
 import { delay, filter, skip, tap } from 'rxjs/operators';
 
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField, DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentTypeField,
+    DotCMSContentlet,
+    DotCMSTempFile
+} from '@dotcms/dotcms-models';
 import {
     DotDropZoneComponent,
     DotMessagePipe,
@@ -41,6 +46,7 @@ import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-
 import { DotBinaryFieldUrlModeComponent } from './components/dot-binary-field-url-mode/dot-binary-field-url-mode.component';
 import { BinaryFieldMode, BinaryFieldStatus } from './interfaces';
 import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
+import { DotBinaryFieldValidatorService } from './service/dot-binary-field-validator/dot-binary-field-validator.service';
 import { DotBinaryFieldStore } from './store/binary-field.store';
 
 import { getUiMessage } from '../../utils/binary-field-utils';
@@ -67,6 +73,7 @@ import { getUiMessage } from '../../utils/binary-field-utils';
         DotBinaryFieldStore,
         DotLicenseService,
         DotBinaryFieldEditImageService,
+        DotBinaryFieldValidatorService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -98,14 +105,21 @@ export class DotBinaryFieldComponent
     readonly vm$ = this.dotBinaryFieldStore.vm$;
     private tempId = '';
     dialogOpen = false;
-    accept: string[] = [];
-    maxFileSize: number;
     helperText: string;
+
+    get maxFileSize(): number {
+        return this.DotBinaryFieldValidatorService.maxFileSize;
+    }
+
+    get accept(): string[] {
+        return this.DotBinaryFieldValidatorService.accept;
+    }
 
     constructor(
         private readonly dotBinaryFieldStore: DotBinaryFieldStore,
         private readonly dotMessageService: DotMessageService,
         private readonly dotBinaryFieldEditImageService: DotBinaryFieldEditImageService,
+        private readonly DotBinaryFieldValidatorService: DotBinaryFieldValidatorService,
         private readonly cd: ChangeDetectorRef
     ) {
         this.dotMessageService.init();
@@ -280,10 +294,10 @@ export class DotBinaryFieldComponent
      * @memberof DotBinaryFieldComponent
      */
     private setPreviewFile() {
-        const variable = this.field.variable;
-        const metaDataKey = variable + 'MetaData';
+        const metaDataKey = this.getMetaDataKey();
+        const { variable } = this.field;
         const { titleImage, inode, [metaDataKey]: metadata } = this.contentlet;
-        const { contentType: mimeType } = metadata || {};
+        const { contentType: mimeType } = metadata;
 
         this.dotBinaryFieldStore.setFileAndContent({
             inode,
@@ -302,8 +316,8 @@ export class DotBinaryFieldComponent
      */
     private setFieldVariables() {
         const { accept, maxFileSize = 0, helperText } = this.getFieldVariables();
-        this.accept = accept ? accept.split(',') : [];
-        this.maxFileSize = Number(maxFileSize);
+        this.DotBinaryFieldValidatorService.setAccept(accept ? accept.split(',') : []);
+        this.DotBinaryFieldValidatorService.setMaxFileSize(Number(maxFileSize));
         this.helperText = helperText;
     }
 
@@ -340,5 +354,20 @@ export class DotBinaryFieldComponent
         const uiMessage = getUiMessage(errorType, messageArgs[errorType]);
 
         this.dotBinaryFieldStore.invalidFile(uiMessage);
+    }
+
+    /**
+     * Get meta data key
+     *
+     * @private
+     * @return {*}  {string}
+     * @memberof DotBinaryFieldComponent
+     */
+    private getMetaDataKey(): string {
+        const variable = this.field.variable;
+        const baseType = this.contentlet.baseType;
+        const isFileAsset = baseType === DotCMSBaseTypesContentTypes.FILEASSET;
+
+        return isFileAsset ? 'metaData' : variable + 'MetaData';
     }
 }

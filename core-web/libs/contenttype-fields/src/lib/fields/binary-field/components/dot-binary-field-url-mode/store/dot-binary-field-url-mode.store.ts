@@ -8,6 +8,8 @@ import { switchMap, tap } from 'rxjs/operators';
 import { DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile, DotHttpErrorResponse } from '@dotcms/dotcms-models';
 
+import { DotBinaryFieldValidatorService } from '../../../service/dot-binary-field-validator/dot-binary-field-validator.service';
+
 export interface DotBinaryFieldUrlModeState {
     tempFile: DotCMSTempFile;
     isLoading: boolean;
@@ -17,6 +19,7 @@ export interface DotBinaryFieldUrlModeState {
 @Injectable()
 export class DotBinaryFieldUrlModeStore extends ComponentStore<DotBinaryFieldUrlModeState> {
     private _maxFileSize: number;
+    private _accept: string[];
 
     readonly vm$ = this.select((state) => state);
 
@@ -24,12 +27,17 @@ export class DotBinaryFieldUrlModeStore extends ComponentStore<DotBinaryFieldUrl
 
     readonly error$ = this.select(({ error }) => error);
 
-    constructor(private readonly dotUploadService: DotUploadService) {
+    constructor(
+        private readonly dotUploadService: DotUploadService,
+        private readonly dotBinaryFieldValidatorService: DotBinaryFieldValidatorService
+    ) {
         super({
             tempFile: null,
             isLoading: false,
             error: ''
         });
+
+        this.setMaxFileSize(this.dotBinaryFieldValidatorService.maxFileSize);
     }
 
     // Update state
@@ -72,10 +80,6 @@ export class DotBinaryFieldUrlModeStore extends ComponentStore<DotBinaryFieldUrl
         }
     );
 
-    setMaxFileSize(bytes: number) {
-        this._maxFileSize = bytes / (1024 * 1024);
-    }
-
     private uploadTempFile(file: File | string, signal: AbortSignal): Observable<DotCMSTempFile> {
         return from(
             this.dotUploadService.uploadFile({
@@ -85,7 +89,17 @@ export class DotBinaryFieldUrlModeStore extends ComponentStore<DotBinaryFieldUrl
             })
         ).pipe(
             tapResponse(
-                (tempFile: DotCMSTempFile) => this.setTempFile(tempFile),
+                (tempFile: DotCMSTempFile) => {
+                    if (!this.isValidType(tempFile)) {
+                        this.setError(
+                            'dot.binary.field.import.from.url.error.file.not.supported.message'
+                        );
+
+                        return;
+                    }
+
+                    this.setTempFile(tempFile);
+                },
                 (error: DotHttpErrorResponse) => {
                     if (signal.aborted) {
                         this.setIsLoading(false);
@@ -97,5 +111,26 @@ export class DotBinaryFieldUrlModeStore extends ComponentStore<DotBinaryFieldUrl
                 }
             )
         );
+    }
+
+    setMaxFileSize(bytes: number) {
+        this._maxFileSize = this._maxFileSize = bytes / (1024 * 1024);
+    }
+
+    /**
+     * Validate file type
+     *
+     * @private
+     * @return {*}  {boolean}
+     * @memberof DotBinaryFieldUrlModeStore
+     */
+    private isValidType(tempFile: DotCMSTempFile): boolean {
+        const { fileName, mimeType } = tempFile;
+        const extension = fileName.split('.').pop();
+
+        return this.dotBinaryFieldValidatorService.isValidType({
+            extension,
+            mimeType
+        });
     }
 }
