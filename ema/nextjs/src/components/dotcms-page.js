@@ -1,9 +1,21 @@
 'use client';
 
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { GlobalContext } from '../providers/global';
 
+function reloadWindow(event) {
+    if (event.data !== 'reload') return;
+
+    window.location.reload();
+}
+
 function WebPageContent({ title, body }) {
+    useEffect(() => {
+        window.removeEventListener('message', reloadWindow);
+
+        window.addEventListener('message', reloadWindow);
+    }, []);
+
     return (
         <>
             <h1 className="text-xl font-bold">{title}</h1>
@@ -89,7 +101,7 @@ const Container = ({ containerRef }) => {
                                     window.parent.postMessage(
                                         {
                                             action: 'edit-contentlet',
-                                            data: contentlet
+                                            payload: contentlet
                                         },
                                         '*'
                                     );
