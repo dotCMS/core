@@ -14,26 +14,12 @@
     border-radius: $border-radius-md;
     border: $field-border-size solid $color-palette-gray-400;
     padding: $spacing-1;
-    margin-bottom: $spacing-1;
     height: 12.5rem;
     min-width: 12.5rem;
 }
 
 .binary-field__container--uploading {
     border: $field-border-size dashed $color-palette-gray-400;
-}
-
-.binary-field__helper {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    gap: $spacing-1;
-    color: $color-palette-gray-700;
-    font-weight: $font-size-sm;
-}
-
-.binary-field__helper-icon {
-    color: $color-palette-gray-600;
 }
 
 .binary-field__actions {

@@ -308,12 +308,6 @@ describe('DotEditContentBinaryFieldComponent', () => {
 
             expect(spectator.query(byTestId('preview'))).toBeTruthy();
         });
-
-        it('should show hint', () => {
-            expect(spectator.query(byTestId('field-hint')).innerHTML).toBe(
-                'Helper label to be displayed below the field'
-            );
-        });
     });
 
     describe('Dialog', () => {
