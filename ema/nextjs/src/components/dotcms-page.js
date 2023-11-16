@@ -152,12 +152,13 @@ const Row = ({ row }) => {
 // Main layout component
 export const DotcmsPage = () => {
     // Get the page layout from the global context
-    const { layout } = useContext(GlobalContext);
+    const { layout, page } = useContext(GlobalContext);
 
     return (
         <div className="flex flex-col min-h-screen">
             {layout.header && <Header />}
             <main className="flex-grow">
+                <h1 className="text-xl font-bold">{page.title}</h1>
                 {layout.body.rows.map((row, index) => (
                     <Row key={index} row={row} />
                 ))}

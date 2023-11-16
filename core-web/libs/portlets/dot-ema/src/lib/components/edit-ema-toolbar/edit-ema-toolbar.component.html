@@ -1,0 +1,9 @@
+<p-menu #menu [model]="items" [popup]="true"></p-menu>
+<button
+    class="p-button-sm p-button-text"
+    [aria-label]="label"
+    [label]="label"
+    (click)="menu.toggle($event)"
+    pButton
+    type="button"
+    icon="pi pi-globe"></button>
