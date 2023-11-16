@@ -47,16 +47,16 @@
         [field]="field"
         [attr.data-testId]="'field-' + field.variable" />
 
-    <dot-block-editor
-        *ngSwitchCase="fieldTypes.BLOCK_EDITOR"
-        [formControlName]="field.variable"
-        [attr.data-testId]="'field-' + field.variable"></dot-block-editor>
-
-    <dot-binary-field
+    <dot-edit-content-binary-field
         *ngSwitchCase="fieldTypes.BINARY"
         [formControlName]="field.variable"
         [contentlet]="contentlet"
         [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
+
+    <dot-block-editor
+        *ngSwitchCase="fieldTypes.BLOCK_EDITOR"
+        [formControlName]="field.variable"
         [attr.data-testId]="'field-' + field.variable" />
 </ng-container>
 <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>

@@ -61,7 +61,7 @@ jobs:
 
       - name: Create workspace if not exists
         id: dot-workspace
-        run: |          
+        run: |
           if [ ${{ env.DOT_CREATE_WORKSPACE }} = true ]; then
             echo "Creating workspace ::: "             
             chmod +x ./.github/workflows/scripts/workspace.sh
@@ -102,6 +102,7 @@ jobs:
           PUSH_OPTIONS["removeFolders"] = os.getenv("DOT_CLI_REMOVE_FOLDERS")
           PUSH_OPTIONS["removeLanguages"] = os.getenv("DOT_CLI_REMOVE_LANGUAGES")
           PUSH_OPTIONS["removeSites"] = os.getenv("DOT_CLI_REMOVE_SITES")
+          PUSH_OPTIONS["errors"] = os.getenv("DOT_CLI_ERRORS")
 
           COMMAND_PUSH_OPTS = "";
 
@@ -110,8 +111,8 @@ jobs:
                   if value.lower() == "true":
                       COMMAND_PUSH_OPTS=f"{COMMAND_PUSH_OPTS} --{key}"
                   elif value.lower() != "false":
-                      COMMAND_PUSH_OPTS=f"{COMMAND_PUSH_OPTS} --{key}={value}"
-
+                      COMMAND_PUSH_OPTS=f"{COMMAND_PUSH_OPTS} --{key} {value}"
+          
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
               print(f 'COMMAND_PUSH_OPTS={COMMAND_PUSH_OPTS}', file=f)
 
@@ -124,7 +125,7 @@ jobs:
             chmod +x ./.github/workflows/scripts/run-push.sh
             source ./.github/workflows/scripts/run-push.sh
             install_cli "${{env.DOT_CLI_JAR_DOWNLOAD_URL}}" "${{env.DOT_FORCE_DOWNLOAD}}" "${{env.DOT_API_URL}}"
-            run_cli_push "${{github.workspace}}${{env.DOT_REPO_BASE_PATH}}" "${{ steps.options.outputs.COMMAND_PUSH_OPTS }}" "${{ secrets.DOT_TOKEN }}"
+            run_cli_push "${{github.workspace}}${{env.DOT_REPO_BASE_PATH}}" "${{ secrets.DOT_TOKEN }}" "${{ steps.options.outputs.command_opts }}"
             echo "exit-code=$exit_code" >> "$GITHUB_OUTPUT"
             print_log
             if [ $exit_code -ne 0 ]; then

@@ -85,8 +85,8 @@ print_log(){
 
 _run_cli_push(){
       workspace_path=$1
-      push_opts=$2
-      token=$3
+      token=$2
+      push_opts=$3
 
       #These environment vars are expected by the start-up script
       export JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
@@ -96,7 +96,7 @@ _run_cli_push(){
       export JAVA_APP_NAME="dotcms-cli"
       # Log file
       export QUARKUS_LOG_FILE_PATH="$DOT_CLI_HOME"dotcms-cli.log
-      bash /tmp/dot-cli/run-java.sh "push" "$workspace_path" "$push_opts" "--token" "$token" "--errors"
+      bash /tmp/dot-cli/run-java.sh push "$workspace_path" --token="$token" $push_opts
       export exit_code=$?
       echo $exit_code
 }
@@ -114,8 +114,8 @@ install_cli(){
 
 run_cli_push(){
     workspace_path=$1
-    opts=$2
-    token=$3
-    return_code=$(_run_cli_push "$workspace_path" "$opts" "$token")
+    token=$2
+    push_opts=$3
+    return_code=$(_run_cli_push "$workspace_path" "$token" "$push_opts")
     echo "$return_code"
 }

@@ -3,15 +3,16 @@ import React from 'react';
 import GlobalProvider from '@/providers/global';
 import { DotcmsPage } from '@/components/dotcms-page';
 
-async function getPage(url) {
-    const res = await fetch(
-        `${process.env.NEXT_PUBLIC_DOTCMS_HOST}/api/v1/page/render/${url || 'index'}?language_id=1`,
-        {
-            headers: {
-                Authorization: `Bearer ${process.env.DOTCMS_AUTH_TOKEN}`
-            }
+async function getPage({ url, language_id }) {
+    const requestUrl = `${
+        process.env.NEXT_PUBLIC_DOTCMS_HOST
+    }/api/v1/page/json/${url}?language_id=${language_id || '1'}`;
+
+    const res = await fetch(requestUrl, {
+        headers: {
+            Authorization: `Bearer ${process.env.DOTCMS_AUTH_TOKEN}`
         }
-    );
+    });
 
     if (!res.ok) {
         const message = await res.text();
@@ -21,8 +22,11 @@ async function getPage(url) {
     return res.json();
 }
 
-export default async function Home({ params }) {
-    const data = await getPage(params.slug);
+export default async function Home({ searchParams, params }) {
+    const data = await getPage({
+        url: params?.slug ? params.slug.join('/') : 'index',
+        language_id: searchParams.language_id
+    });
 
     return (
         // Provide the page data globally
