@@ -23,7 +23,6 @@ async function getPage({ url, language_id }) {
 }
 
 export default async function Home({ searchParams, params }) {
-    console.log(params.slug);
     const data = await getPage({
         url: params?.slug ? params.slug.join('/') : 'index',
         language_id: searchParams.language_id
