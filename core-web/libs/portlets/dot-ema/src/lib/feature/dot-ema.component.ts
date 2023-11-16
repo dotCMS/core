@@ -59,6 +59,12 @@ export class DotEmaComponent implements OnInit {
         });
     }
 
+    /**
+     * Updates store value and navigates with updated query parameters on select element change event.
+     *
+     * @param {Event} e
+     * @memberof DotEmaComponent
+     */
     onChange(e: Event) {
         const name = (e.target as HTMLSelectElement).name;
         const value = (e.target as HTMLSelectElement).value;
