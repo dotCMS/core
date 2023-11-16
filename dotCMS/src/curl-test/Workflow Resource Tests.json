@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "bab9b51b-731a-448a-ab05-c4511e518799",
+		"_postman_id": "6e9d6ed0-2b78-461b-90c8-8a2d4a3171f9",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "10041132"
+		"_exporter_id": "6484944"
 	},
 	"item": [
 		{
@@ -15898,6 +15898,16 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
+									"pm.test(\"Check relationship not empty\", function () {",
+									"    pm.expect(jsonData.entity.jsonObjectView.contentlets[0].regions).to.not.empty;",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Check relationship item 0 set\", function () {",
+									"",
+									"    pm.expect(jsonData.entity.jsonObjectView.contentlets[0].regions[0]).to.not.be.null;",
+									"});",
+									"",
 									"pm.test(\"Check relationships\", function () {",
 									"",
 									"    pm.expect(jsonData.entity.jsonObjectView.contentlets[0].regions[0].title).to.eql('Asia');",
@@ -16070,6 +16080,14 @@
 		},
 		{
 			"key": "identifier22756",
+			"value": ""
+		},
+		{
+			"key": "contentletMovieIdentifier",
+			"value": ""
+		},
+		{
+			"key": "contentRelIdentifier",
 			"value": ""
 		}
 	]
