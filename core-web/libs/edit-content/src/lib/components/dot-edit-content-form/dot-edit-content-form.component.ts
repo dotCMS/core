@@ -21,7 +21,10 @@ import { ButtonModule } from 'primeng/button';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { FLATTENED_FIELD_TYPES } from '../../models/dot-edit-content-field.constant';
+import {
+    CALENDAR_FIELD_TYPES,
+    FLATTENED_FIELD_TYPES
+} from '../../models/dot-edit-content-field.constant';
 import { FILTERED_TYPES } from '../../models/dot-edit-content-form.enum';
 import { EditContentFormData } from '../../models/dot-edit-content-form.interface';
 import { getFinalCastedValue } from '../../utils/functions.util';
@@ -112,11 +115,15 @@ export class DotEditContentFormComponent implements OnInit {
     saveContenlet() {
         const formValue = this.form.getRawValue();
         this.formData.fields.forEach((field) => {
-            if (!FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
-                return;
-            }
+            // Shorthand for conditional assignment
 
-            formValue[field.variable] = formValue[field.variable]?.join(',');
+            FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES) &&
+                (formValue[field.variable] = formValue[field.variable]?.join(','));
+
+            CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES) &&
+                (formValue[field.variable] = formValue[field.variable]
+                    ?.toISOString()
+                    .replace(/T|\.\d{3}Z/g, (match: string) => (match === 'T' ? ' ' : ''))); // To remove the T and .000Z from the date)
         });
 
         this.formSubmit.emit(formValue);

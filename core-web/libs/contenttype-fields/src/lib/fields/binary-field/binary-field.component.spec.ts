@@ -16,11 +16,13 @@ import { DialogModule } from 'primeng/dialog';
 import { DotLicenseService, DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
+import { dotcmsContentletMock } from '@dotcms/utils-testing';
 
 import { DotBinaryFieldComponent } from './binary-field.component';
 import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
 import { BinaryFieldMode, BinaryFieldStatus } from './interfaces';
 import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
+import { DotBinaryFieldValidatorService } from './service/dot-binary-field-validator/dot-binary-field-validator.service';
 import { DotBinaryFieldStore } from './store/binary-field.store';
 
 import { getUiMessage } from '../../utils/binary-field-utils';
@@ -72,6 +74,7 @@ describe('DotBinaryFieldComponent', () => {
         componentProviders: [DotBinaryFieldStore],
         providers: [
             DotBinaryFieldEditImageService,
+            DotBinaryFieldValidatorService,
             {
                 provide: DotLicenseService,
                 useValue: {
@@ -181,6 +184,7 @@ describe('DotBinaryFieldComponent', () => {
             const spyInputFile = jest.spyOn(spectator.component.inputFile.nativeElement, 'click');
             const chooseFile = spectator.query(byTestId('choose-file-btn')) as HTMLButtonElement;
             chooseFile.click();
+            expect(chooseFile.getAttribute('type')).toBe('button');
             expect(spyOpenFilePicker).toHaveBeenCalled();
             expect(spyInputFile).toHaveBeenCalled();
         });
@@ -323,7 +327,7 @@ describe('DotBinaryFieldComponent', () => {
             spectator.detectChanges();
             await spectator.fixture.whenStable();
 
-            const editorElement = spectator.query(byTestId('editor-mode'));
+            const editorElement = document.querySelector('[data-testid="editor-mode"]'); // This element is added to the body by the dialog
             const isDialogOpen = spectator.fixture.componentInstance.openDialog;
 
             expect(editorElement).toBeTruthy();
@@ -339,12 +343,65 @@ describe('DotBinaryFieldComponent', () => {
             spectator.detectChanges();
             await spectator.fixture.whenStable();
 
-            const urlElement = spectator.query(byTestId('url-mode'));
+            const urlElement = document.querySelector('[data-testid="url-mode"]'); // This element is added to the body by the dialog
             const isDialogOpen = spectator.fixture.componentInstance.openDialog;
 
             expect(urlElement).toBeTruthy();
             expect(isDialogOpen).toBeTruthy();
             expect(spySetMode).toHaveBeenCalledWith(BinaryFieldMode.URL);
+        });
+    });
+
+    describe('Set File', () => {
+        describe('Contentlet - BaseTyp FILEASSET', () => {
+            it('should set the correct file asset', () => {
+                const spy = jest
+                    .spyOn(store, 'setFileAndContent')
+                    .mockReturnValue(of(null).subscribe());
+                const mockFileAsset = {
+                    ...dotcmsContentletMock,
+                    baseType: 'FILEASSET',
+                    metaData: {
+                        mimeType: 'text/html'
+                    }
+                };
+                const { inode, titleImage, contentType: mimeType } = mockFileAsset;
+                spectator.setInput('contentlet', mockFileAsset);
+                spectator.detectChanges();
+                expect(spy).toHaveBeenCalledWith({
+                    inode,
+                    titleImage,
+                    mimeType,
+                    url: mockFileAsset[FIELD.variable],
+                    ...mockFileAsset.metaData
+                });
+            });
+        });
+
+        describe('Contentlet - BaseTyp CONTENT', () => {
+            it('should set the correct file asset', () => {
+                const spy = jest
+                    .spyOn(store, 'setFileAndContent')
+                    .mockReturnValue(of(null).subscribe());
+                const metaDataKey = `${FIELD.variable}MetaData`;
+                const mockFileAsset = {
+                    ...dotcmsContentletMock,
+                    baseType: 'CONTENT',
+                    [metaDataKey]: {
+                        mimeType: 'text/html'
+                    }
+                };
+                const { inode, titleImage, contentType: mimeType } = mockFileAsset;
+                spectator.setInput('contentlet', mockFileAsset);
+                spectator.detectChanges();
+                expect(spy).toHaveBeenCalledWith({
+                    inode,
+                    titleImage,
+                    mimeType,
+                    url: mockFileAsset[FIELD.variable],
+                    ...mockFileAsset[metaDataKey]
+                });
+            });
         });
     });
 

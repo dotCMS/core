@@ -8,12 +8,15 @@ import com.dotcms.experiments.model.Experiment;
 
 /**
  * Use to create the dynamic part of a {@link Experiment}'s {@link CubeJSQuery} when the {@link Experiment}
- * has a BOUNCE_RATE goal.
+ * has a PAGE_REACH goal.
  *
  * The syntax of this part of the {@link CubeJSQuery} is:
  *
  * <code>
  *     {
+ *         "dimensions": [
+ *              ""Events.referer""
+ *         ],
  *         "filters": [
  *              {
  *                  "member": "Events.eventType",
@@ -29,14 +32,13 @@ import com.dotcms.experiments.model.Experiment;
  * @see ExperimentResultsQueryFactory
  * @see MetricExperimentResultsQuery
  */
+public class ReachTargetAfterExperimentPageResultQuery implements MetricExperimentResultsQuery {
 
-public class PageViewExperimentResultQuery implements  MetricExperimentResultsQuery {
     @Override
     public CubeJSQuery getCubeJSQuery(final Experiment experiment) {
 
         return new CubeJSQuery.Builder()
-                .filter("Events.eventType", Operator.EQUALS, PAGE_VIEW.getName())
+                .measures("Events.totalSessions", "Events.targetVisitedAfterSuccesses", "Events.targetVisitedAfterConvertionRate")
                 .build();
     }
-
 }

@@ -1,6 +1,6 @@
 name: UX Requirement
 description: Provide details for a UX improvement or issue.
-labels: ["Type : UX Design", "Triage"]
+labels: ["Team : UX"]
 projects: ["dotCMS/7"]
 
 body:

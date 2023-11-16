@@ -38,7 +38,7 @@ export class AIImagePromptComponent {
 
         if (prompt) {
             this.aiContentService
-                .getAIImage(combinedPrompt)
+                .generateImage(combinedPrompt)
                 .pipe(
                     catchError(() => of(null)),
                     switchMap((imageId) => {
