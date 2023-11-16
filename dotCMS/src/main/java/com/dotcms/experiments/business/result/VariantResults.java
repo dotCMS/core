@@ -1,5 +1,8 @@
 package com.dotcms.experiments.business.result;
 
+import com.dotcms.experiments.model.ExperimentVariant;
+
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -18,24 +21,18 @@ import java.util.Map;
 public class VariantResults {
 
     private final float weight;
-    ;
+
     private String variantName;
     private String variantDescription;
-    private long multiBySession;
     private UniqueBySessionResume uniqueBySession;
     private Map<String, ResultResumeItem> details;
-    private long totalPageViews;
 
-    public VariantResults(final String variantName, final String description, final long multiBySession,
-            final UniqueBySessionResume uniqueBySession, final Map<String, ResultResumeItem> details,
-            final long totalPageViews, float weight) {
-        this.variantName = variantName;
-        this.multiBySession = multiBySession;
-        this.uniqueBySession = uniqueBySession;
-        this.details = details;
-        this.variantDescription = description;
-        this.totalPageViews = totalPageViews;
-        this.weight = weight;
+    public VariantResults(final Builder builder) {
+        this.variantName = builder.experimentVariant.id();
+        this.uniqueBySession = builder.uniqueBySession;
+        this.details = builder.details;
+        this.variantDescription = builder.experimentVariant.description();
+        this.weight = builder.experimentVariant.weight();
     }
 
     public String getVariantDescription() {
@@ -46,20 +43,12 @@ public class VariantResults {
         return variantName;
     }
 
-    public long getMultiBySession() {
-        return multiBySession;
-    }
-
     public UniqueBySessionResume getUniqueBySession() {
         return uniqueBySession;
     }
 
     public Map<String, ResultResumeItem> getDetails() {
         return details;
-    }
-
-    public long getTotalPageViews() {
-        return totalPageViews;
     }
 
     public float weight() {
@@ -75,9 +64,9 @@ public class VariantResults {
         private final long count;
         private final float conversionRate;
 
-        public UniqueBySessionResume(final int count, final long totalVariantSession) {
+        public UniqueBySessionResume(final long count, final float conversionRate) {
             this.count = count;
-            this.conversionRate = totalVariantSession > 0 ? (float) (count * 100) / totalVariantSession : 0;
+            this.conversionRate = conversionRate;
         }
 
         public long getCount() {
@@ -90,23 +79,15 @@ public class VariantResults {
     }
 
     public static class ResultResumeItem {
-        final long multiBySession;
         final long uniqueBySession;
-        final float totalSessions;
+        final long totalSessions;
+        final float convertionRate;
 
-        public ResultResumeItem(final long multiBySession, final long uniqueBySession) {
-            this(multiBySession, uniqueBySession, 0);
-        }
 
-        public ResultResumeItem(final long multiBySession, final long uniqueBySession,
-                final float totalSessions) {
-            this.multiBySession = multiBySession;
+        public ResultResumeItem(final long uniqueBySession, final long totalSessions, final float convertionRate) {
+            this.convertionRate = convertionRate;
             this.uniqueBySession = uniqueBySession;
             this.totalSessions = totalSessions;
-        }
-
-        public long getMultiBySession() {
-            return multiBySession;
         }
 
         public long getUniqueBySession() {
@@ -114,11 +95,44 @@ public class VariantResults {
         }
 
         public float getConversionRate() {
-            return totalSessions > 0 ? (float) (uniqueBySession * 100) / totalSessions : 0;
+            return convertionRate;
         }
 
-        public float getTotalSessions() {
+        public long getTotalSessions() {
             return totalSessions;
+        }
+    }
+
+    static class Builder {
+
+        ExperimentVariant experimentVariant;
+        UniqueBySessionResume uniqueBySession;
+        Map<String, ResultResumeItem> details = new HashMap<>();
+
+        Builder(final ExperimentVariant experimentVariant) {
+            this.experimentVariant = experimentVariant;
+        }
+
+
+        public void uniqueBySession(UniqueBySessionResume uniqueBySession) {
+            this.uniqueBySession = uniqueBySession;
+        }
+
+
+        public void add(final String day, final ResultResumeItem resultResumeItem) {
+            details.put(day, resultResumeItem);
+        }
+
+        public VariantResults build() {
+            return new VariantResults(this);
+        }
+
+        public void addIfNotExists(final String day, final ResultResumeItem resultResumeItemToAdd) {
+            final ResultResumeItem resultResumeItem = details.get(day);
+
+            if (resultResumeItem == null) {
+                details.put(day, resultResumeItemToAdd);
+            }
         }
     }
 }
