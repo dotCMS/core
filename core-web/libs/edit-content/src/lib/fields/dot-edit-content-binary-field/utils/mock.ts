@@ -26,6 +26,8 @@ const MESSAGES_MOCK = {
     'dot.binary.field.file.bytes': 'Bytes',
     'dot.binary.field.file.dimension': 'Dimension',
     'dot.binary.field.file.size': 'File Size',
+    'dot.binary.field.import.from.url.error.file.not.supported.message':
+        'This type of file is not supported, Please import a {0} file.',
     'dot.common.cancel': 'Cancel',
     'dot.common.edit': 'Edit',
     'dot.common.import': 'Import',

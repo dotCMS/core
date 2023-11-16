@@ -35,6 +35,8 @@ import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
+import { DotBinaryFieldValidatorService } from '../../service/dot-binary-field-validator/dot-binary-field-validator.service';
+
 const EDITOR_CONFIG: MonacoEditorConstructionOptions = {
     theme: 'vs',
     minimap: {
@@ -67,7 +69,6 @@ const EDITOR_CONFIG: MonacoEditorConstructionOptions = {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
-    @Input() accept: string[];
     @Input() fileName = '';
     @Input() fileContent = '';
 
@@ -79,6 +80,9 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
     private readonly cd: ChangeDetectorRef = inject(ChangeDetectorRef);
     private readonly dotUploadService: DotUploadService = inject(DotUploadService);
     private readonly dotMessageService: DotMessageService = inject(DotMessageService);
+    private readonly dotBinaryFieldValidatorService: DotBinaryFieldValidatorService = inject(
+        DotBinaryFieldValidatorService
+    );
 
     private extension = '';
     private invalidFileMessage = '';
@@ -106,7 +110,7 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
             .subscribe((name) => this.setEditorLanguage(name));
         this.invalidFileMessage = this.dotMessageService.get(
             'dot.binary.field.error.type.file.not.supported.message',
-            this.accept.join(', ')
+            this.dotBinaryFieldValidatorService.accept.join(', ')
         );
     }
 
@@ -159,7 +163,12 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
         this.mimeType = mimetypes?.[0];
         this.extension = extensions?.[0];
 
-        if (fileExtension && !this.isValidType()) {
+        const isValidType = this.dotBinaryFieldValidatorService.isValidType({
+            extension: this.extension,
+            mimeType: this.mimeType
+        });
+
+        if (fileExtension && !isValidType) {
             this.name.setErrors({ invalidExtension: this.invalidFileMessage });
         }
 
@@ -193,13 +202,5 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
         this.editor.updateOptions({
             readOnly: false
         });
-    }
-
-    private isValidType(): boolean {
-        if (this.accept?.length === 0) {
-            return true;
-        }
-
-        return this.accept?.includes(this.extension) || this.accept?.includes(this.mimeType);
     }
 }

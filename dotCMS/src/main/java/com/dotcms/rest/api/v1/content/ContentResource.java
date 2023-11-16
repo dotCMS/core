@@ -251,10 +251,13 @@ public class ContentResource {
     }
 
     /**
-     * Retrieve a contentlet if exists, 404 otherwise
-     * @param request
-     * @param response
-     * @return Retrieve single contentlet
+     * Retrieves a Contentlet based on either its Inode or Identifier. If it doesn't exist, a 404
+     * will be returned.
+     *
+     * @param request  The current {@link HttpServletRequest} instance.
+     * @param response The current {@link HttpServletResponse} instance.
+     *
+     * @return The {@link Contentlet} matching the Inode or Identifier.
      */
     @GET
     @Path("/{inodeOrIdentifier}")
@@ -285,8 +288,8 @@ public class ContentResource {
             ContentUtils.addRelationships(contentlet, initDataObject.getUser(), mode,
                     languageId, depth, request, response);
         }
-
-        return Response.ok(new ResponseEntityView(
+        contentlet = new DotTransformerBuilder().contentResourceOptions(false).content(contentlet).build().hydrate().get(0);
+        return Response.ok(new ResponseEntityView<>(
                 WorkflowHelper.getInstance().contentletToMap(contentlet))).build();
     }
 
