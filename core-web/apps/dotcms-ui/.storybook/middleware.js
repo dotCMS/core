@@ -21,7 +21,7 @@ module.exports = function expressMiddleware(router) {
 
         // Proxy to the backend to generate an image using OpenAI
         router.use(
-            '/api/ai/image/generate',
+            '/api/v1/ai/image/generate',
             createProxyMiddleware({
                 target: 'http://localhost:8080',
                 changeOrigin: true,

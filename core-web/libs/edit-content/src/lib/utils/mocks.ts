@@ -732,12 +732,15 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
                         unique: false,
                         variable: 'text3'
                     },
-                    TAG_FIELD_MOCK
+                    TAG_FIELD_MOCK,
+                    DATE_FIELD_MOCK
                 ]
             }
         ]
     }
 ];
+
+export const MOCK_DATE = 1699990073562;
 
 export const JUST_FIELDS_MOCKS = getAllFields(LAYOUT_MOCK);
 
@@ -745,12 +748,46 @@ export const LAYOUT_FIELDS_VALUES_MOCK = {
     name1: 'Placeholder', // This is the default value of the name1 field
     text2: null,
     text3: null,
-    someTag: 'some,tags,separated,by,comma' // This is the default value of the tag field
+    someTag: 'some,tags,separated,by,comma', // This is the default value of the tag field
+    date: '2023-11-14 19:27:53'
 };
 
 export const CONTENT_FORM_DATA_MOCK: EditContentFormData = {
     layout: LAYOUT_MOCK,
-    fields: JUST_FIELDS_MOCKS
+    fields: JUST_FIELDS_MOCKS,
+    contentlet: {
+        // This contentlet is some random mock, if you need you can change the properties
+        date: MOCK_DATE, // To add the value to the date field, defaultValue is string and I don't think we should change the whole type just for this
+        publishDate: '2023-11-07 16:49:24.787',
+        inode: 'd135b73a-8c8f-42ce-bd4e-deb3c067cedd',
+        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+        locked: false,
+        stInode: 'd1901a41d38b6686dd5ed8f910346d7a',
+        contentType: 'Binary',
+        identifier: '39de8193694d96c2a6bab783ba9c85b5',
+        folder: 'SYSTEM_FOLDER',
+        hasTitleImage: true,
+        sortOrder: 0,
+        hostName: 'demo.dotcms.com',
+        modDate: '2023-11-07 16:49:24.787',
+        title: '39de8193694d96c2a6bab783ba9c85b5',
+        baseType: 'CONTENT',
+        archived: false,
+        working: true,
+        live: true,
+        owner: 'dotcms.org.1',
+        languageId: 1,
+        url: '/content.d135b73a-8c8f-42ce-bd4e-deb3c067cedd',
+        titleImage: 'binaryField',
+        modUserName: 'Admin User',
+        hasLiveVersion: true,
+        modUser: 'dotcms.org.1',
+        binaryFieldVersion:
+            '/dA/d135b73a-8c8f-42ce-bd4e-deb3c067cedd/binaryField/Screenshot 2023-11-03 at 11.53.40â\u0080¯AM.png',
+        __icon__: 'contentIcon',
+        contentTypeIcon: 'event_note',
+        variant: 'DEFAULT'
+    }
 };
 
 /* CONTENT TYPE MOCKS */
