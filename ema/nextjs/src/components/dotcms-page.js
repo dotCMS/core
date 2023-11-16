@@ -14,6 +14,10 @@ function WebPageContent({ title, body }) {
     );
 }
 
+function Activity() {
+    return 'Activity';
+}
+
 function Banner({ title, image, caption, buttonText, link }) {
     return (
         <div className="relative w-full p-4 bg-gray-200 h-96">
@@ -26,7 +30,9 @@ function Banner({ title, image, caption, buttonText, link }) {
             <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-white">
                 <h2 className="mb-2 text-6xl font-bold text-shadow">{title}</h2>
                 <p className="mb-4 text-xl text-shadow">{caption}</p>
-                <Link className="p-4 text-xl bg-blue-500 rounded" href={link}>
+                <Link
+                    className="p-4 text-xl transition duration-300 bg-blue-500 rounded hover:bg-blue-600"
+                    href={link}>
                     {buttonText}
                 </Link>
             </div>
@@ -41,7 +47,8 @@ function NoContent({ contentType }) {
 // Provide a component for each content type
 const contentComponents = {
     webPageContent: WebPageContent,
-    Banner: Banner
+    Banner: Banner,
+    Activity: Activity
 };
 
 // Header component
