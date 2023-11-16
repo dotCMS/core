@@ -22,7 +22,7 @@ export class DotEmaComponent implements AfterViewInit {
     visible = false;
     header = '';
 
-    private host = 'http://localhost:3000';
+    readonly host = 'http://localhost:3000';
 
     constructor(@Inject(DOCUMENT) private document: Document) {}
 

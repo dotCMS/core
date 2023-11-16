@@ -1,4 +1,10 @@
-<iframe #iframe [title]="host" [src]="host + '/test'" height="100%" width="100%"></iframe>
+<iframe
+    #iframe
+    [title]="host"
+    src="http://localhost:3000/test"
+    height="100%"
+    width="100%"
+    style="border: none"></iframe>
 <p-dialog
     #dialog
     [(visible)]="visible"
@@ -13,5 +19,5 @@
         title="dialog"
         width="100%"
         height="100%"
-        frameBorder="0"></iframe>
+        style="border: none"></iframe>
 </p-dialog>
