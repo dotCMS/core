@@ -22,12 +22,14 @@ export class DotEmaComponent implements AfterViewInit {
     visible = false;
     header = '';
 
+    private host = 'http://localhost:3000';
+
     constructor(@Inject(DOCUMENT) private document: Document) {}
 
     ngAfterViewInit(): void {
         this.document.defaultView?.addEventListener('message', (event: MessageEvent) => {
             // This should be the host the user uses for nextjs, because this can trigger react dev tools messages
-            if (event.origin !== 'http://localhost:3000') {
+            if (event.origin !== this.host) {
                 return;
             }
 
@@ -80,7 +82,7 @@ export class DotEmaComponent implements AfterViewInit {
         if (detail.name === CUSTOM_EVENTS.EDIT_CONTENTLET_LOADED) return;
 
         // This forces a reload in the iframe
-        this.iframe.nativeElement.contentWindow?.postMessage('reload', '*');
+        this.iframe.nativeElement.contentWindow?.postMessage('reload', this.host);
     }
 
     /**
