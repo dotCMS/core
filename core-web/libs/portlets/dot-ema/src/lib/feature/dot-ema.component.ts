@@ -31,6 +31,10 @@ export class DotEmaComponent implements OnInit {
 
     pages = [
         {
+            name: 'Home',
+            value: 'index'
+        },
+        {
             name: 'Page One',
             value: 'page-one'
         },

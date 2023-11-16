@@ -6,7 +6,7 @@ import { DotcmsPage } from '@/components/dotcms-page';
 async function getPage({ url, language_id }) {
     const requestUrl = `${
         process.env.NEXT_PUBLIC_DOTCMS_HOST
-    }/api/v1/page/json/${url}?language_id=${language_id || '1'}`;
+    }/api/v1/page/render/${url}?language_id=${language_id || '1'}`;
 
     const res = await fetch(requestUrl, {
         headers: {
