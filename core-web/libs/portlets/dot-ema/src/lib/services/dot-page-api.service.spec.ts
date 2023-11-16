@@ -11,12 +11,8 @@ describe('DotPageApiService', () => {
     });
 
     it('should send a GET request to retrieve page data', () => {
-        // const mockResponse: DotPageApiResponse = { page: { title: 'Test Title' } };
-
         spectator.service.get({ url: 'test-url', language_id: 'en' }).subscribe();
 
         spectator.expectOne('/api/v1/page/json/test-url?language_id=en', HttpMethod.GET);
     });
-
-    // Add more tests as needed
 });

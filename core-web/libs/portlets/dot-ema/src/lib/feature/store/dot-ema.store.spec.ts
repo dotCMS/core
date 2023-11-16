@@ -95,14 +95,4 @@ describe('EditEmaStore', () => {
             });
         });
     });
-
-    // it('should handle API errors gracefully', () => {
-    //     const dotPageApiService = spectator.inject(DotPageApiService);
-    //     dotPageApiService.get.andReturn(throwError('API Error'));
-
-    //     spectator.service.load({ language_id: 'en', url: 'test-url' });
-
-    //     // The state should not change on API error
-    //     expect(spectator.service.state.editor.page.title).toEqual('');
-    // });
 });
