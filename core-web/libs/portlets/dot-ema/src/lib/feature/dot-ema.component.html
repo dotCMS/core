@@ -1,1 +1,28 @@
-<p>dot-ema works!</p>
+<div class="flex gap-3 toolbar align-items-center">
+    <select
+        id="language_id"
+        [(ngModel)]="language_id"
+        (change)="onChange($event)"
+        aria-label="language_id"
+        name="language_id">
+        <option *ngFor="let language of languages" value="{{ language.value }}">
+            {{ language.name }}
+        </option>
+    </select>
+
+    <select id="url" [(ngModel)]="url" (change)="onChange($event)" aria-label="url" name="url">
+        <option *ngFor="let page of pages" value="{{ page.value }}">
+            {{ page.name }}
+        </option>
+    </select>
+
+    <span>{{ path$ | async }}</span>
+</div>
+<div class="iframe-wrapper">
+    <iframe
+        [src]="path$ | async"
+        frameborder="0"
+        width="100%"
+        height="100%"
+        title="Editor Page"></iframe>
+</div>
