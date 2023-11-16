@@ -1099,9 +1099,22 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final TrafficProportion weightedTraffic = persistedExperiment.trafficProportion()
                 .withVariants(weightedVariants);
         final Experiment withUpdatedTraffic = persistedExperiment.withTrafficProportion(weightedTraffic);
-        final Experiment fromDB = save(withUpdatedTraffic, user);
+        Experiment fromDB = save(withUpdatedTraffic, user);
         variantAPI.archive(toDelete.name());
         variantAPI.delete(toDelete.name());
+
+        if(withUpdatedTraffic.trafficProportion().variants().size()==1
+                && VariantAPI.DEFAULT_VARIANT.name()
+                .equals(withUpdatedTraffic.trafficProportion().variants().first().id())) {
+            final TrafficProportion currentTrafficProportion = withUpdatedTraffic.trafficProportion();
+            final TrafficProportion splitEvenlyTrafficProportion = TrafficProportion.builder()
+                    .from(currentTrafficProportion).type(Type.SPLIT_EVENLY).build();
+
+            fromDB = save(withUpdatedTraffic.withTrafficProportion(splitEvenlyTrafficProportion),
+                    user);
+        }
+
+
         return fromDB;
 
     }
