@@ -28,3 +28,4 @@ export * from './lib/pipes/dot-relative-date/dot-relative-date.pipe';
 export * from './lib/dot-message/dot-message.pipe';
 export * from './lib/pipes/dot-string-format/dot-string-format.pipe';
 export * from './lib/pipes/dot-timestamp-to-date/dot-timestamp-to-date.pipe';
+export * from './lib/pipes/safe-url/safe-url.pipe';

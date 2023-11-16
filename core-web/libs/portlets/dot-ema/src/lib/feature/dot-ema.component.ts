@@ -3,13 +3,17 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
+import { SafeUrlPipe } from '@dotcms/ui';
+
 import { EditEmaStore } from './store/dot-ema.store';
+
+import { DotPageApiService } from '../services/dot-page-api.service';
 
 @Component({
     selector: 'dot-ema',
     standalone: true,
-    imports: [CommonModule, FormsModule],
-    providers: [EditEmaStore],
+    imports: [CommonModule, FormsModule, SafeUrlPipe],
+    providers: [EditEmaStore, DotPageApiService],
     templateUrl: './dot-ema.component.html',
     styleUrls: ['./dot-ema.component.scss']
 })
@@ -43,6 +47,7 @@ export class DotEmaComponent implements OnInit {
     iframeUrl$ = this.store.iframeUrl$;
     url$ = this.store.url$;
     language_id$ = this.store.language_id$;
+    title$ = this.store.pageTitle$;
 
     ngOnInit(): void {
         this.route.queryParams.subscribe(({ language_id, url }: Params) => {
