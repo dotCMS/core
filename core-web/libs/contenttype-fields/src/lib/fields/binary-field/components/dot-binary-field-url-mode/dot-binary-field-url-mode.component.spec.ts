@@ -11,6 +11,7 @@ import { DotBinaryFieldUrlModeComponent } from './dot-binary-field-url-mode.comp
 import { DotBinaryFieldUrlModeStore } from './store/dot-binary-field-url-mode.store';
 
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../../../utils/mock';
+import { DotBinaryFieldValidatorService } from '../../service/dot-binary-field-validator/dot-binary-field-validator.service';
 import { TEMP_FILE_MOCK } from '../../store/binary-field.store.spec';
 
 describe('DotBinaryFieldUrlModeComponent', () => {
@@ -24,6 +25,7 @@ describe('DotBinaryFieldUrlModeComponent', () => {
         imports: [ButtonModule],
         componentProviders: [DotBinaryFieldUrlModeStore],
         providers: [
+            DotBinaryFieldValidatorService,
             {
                 provide: DotUploadService,
                 useValue: {
