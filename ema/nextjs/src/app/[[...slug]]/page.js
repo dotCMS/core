@@ -5,7 +5,7 @@ import { DotcmsPage } from '@/components/dotcms-page';
 
 async function getPage(url) {
     const res = await fetch(
-        `${process.env.DOTCMS_HOST}/api/v1/page/render/${url || 'index'}?language_id=1`,
+        `${process.env.NEXT_PUBLIC_DOTCMS_HOST}/api/v1/page/render/${url || 'index'}?language_id=1`,
         {
             headers: {
                 Authorization: `Bearer ${process.env.DOTCMS_AUTH_TOKEN}`

@@ -2,6 +2,8 @@
 
 import { useContext } from 'react';
 import { GlobalContext } from '../providers/global';
+import Image from 'next/image';
+import Link from 'next/link';
 
 function WebPageContent({ title, body }) {
     return (
@@ -12,13 +14,32 @@ function WebPageContent({ title, body }) {
     );
 }
 
-function NoContent() {
-    return <h1>No Content</h1>;
+function Banner({ title, image, caption, buttonText, link }) {
+    return (
+        <div className="relative w-full h-96">
+            <Image
+                src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}`}
+                fill={true}
+                className="object-cover"
+                alt={title}
+            />
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white">
+                <h2 className="text-6xl font-bold text-shadow">{title}</h2>
+                <p className="text-xl text-shadow">{caption}</p>
+                <Link href={link}>{buttonText}</Link>
+            </div>
+        </div>
+    );
+}
+
+function NoContent({ contentType }) {
+    return <h1>No Content for {contentType}</h1>;
 }
 
 // Provide a component for each content type
 const contentComponents = {
-    webPageContent: WebPageContent
+    webPageContent: WebPageContent,
+    Banner: Banner
 };
 
 // Header component
