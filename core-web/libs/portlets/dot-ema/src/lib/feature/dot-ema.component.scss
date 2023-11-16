@@ -1,0 +1,14 @@
+:host {
+    ::ng-deep {
+        .p-dialog {
+            .p-dialog-header {
+                padding: 1.5rem 2.5rem;
+            }
+
+            .p-dialog-content {
+                padding: 0;
+                overflow: hidden;
+            }
+        }
+    }
+}
