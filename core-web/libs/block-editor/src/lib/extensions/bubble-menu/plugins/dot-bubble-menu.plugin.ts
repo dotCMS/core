@@ -531,13 +531,19 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     }
 
     toggleChangeTo() {
-        const { changeToIsOpen } = this.editor?.storage.bubbleMenu || {};
-        changeToIsOpen ? this.tippyChangeTo?.hide() : this.tippyChangeTo?.show();
+        this.tippyChangeTo?.state.isVisible
+            ? this.tippyChangeTo?.hide()
+            : this.tippyChangeTo?.show();
     }
 
-    hanlderScroll() {
-        if (this.tippyChangeTo?.state.isVisible) {
-            this.tippyChangeTo?.hide();
+    private hanlderScroll(e: Event) {
+        const element = e.target as HTMLElement;
+        const suggestionElement = this.changeTo.instance.listElement?.nativeElement;
+
+        if (!this.tippy?.state.isMounted || element === suggestionElement) {
+            return;
         }
+
+        this.tippyChangeTo?.hide();
     }
 }
