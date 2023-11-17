@@ -9,11 +9,11 @@ import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { DotBlockEditorComponent } from '@dotcms/block-editor';
+import { DotBinaryFieldComponent } from '@dotcms/contenttype-fields';
 import { DotLicenseService } from '@dotcms/data-access';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
-import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCheckboxFieldComponent } from '../../fields/dot-edit-content-checkbox-field/dot-edit-content-checkbox-field.component';
 import { DotEditContentMultiSelectFieldComponent } from '../../fields/dot-edit-content-multi-select-field/dot-edit-content-multi-select-field.component';
@@ -53,8 +53,8 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown>> = {
     [FIELD_TYPES.TAG]: DotEditContentTagFieldComponent,
     [FIELD_TYPES.CHECKBOX]: DotEditContentCheckboxFieldComponent,
     [FIELD_TYPES.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent,
-    [FIELD_TYPES.BINARY]: DotEditContentBinaryFieldComponent,
-    [FIELD_TYPES.BLOCK_EDITOR]: DotBlockEditorComponent
+    [FIELD_TYPES.BLOCK_EDITOR]: DotBlockEditorComponent,
+    [FIELD_TYPES.BINARY]: DotBinaryFieldComponent
 };
 
 describe('FIELD_TYPES and FIELDS_MOCK', () => {

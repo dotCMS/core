@@ -1,0 +1,96 @@
+<div
+    class="binary-field__container"
+    *ngIf="vm$ | async as vm"
+    [ngClass]="{
+        'binary-field__container--uploading': vm.status === BinaryFieldStatus.UPLOADING,
+        'binary-field__container--empty': vm.status === BinaryFieldStatus.INIT
+    }">
+    <ng-container *ngIf="vm.status === BinaryFieldStatus.INIT">
+        <div
+            class="binary-field__drop-zone"
+            [ngClass]="{ 'binary-field__drop-zone--active': vm.dropZoneActive }">
+            <dot-drop-zone
+                [accept]="accept"
+                [maxFileSize]="maxFileSize"
+                (fileDragOver)="setDropZoneActiveState(true)"
+                (fileDragLeave)="setDropZoneActiveState(false)"
+                (fileDropped)="handleFileDrop($event)"
+                data-testId="dropzone">
+                <dot-binary-field-ui-message [uiMessage]="vm.uiMessage">
+                    <button
+                        class="binary-field__drop-zone-btn"
+                        (click)="openFilePicker()"
+                        type="button"
+                        data-testId="choose-file-btn">
+                        {{ 'dot.binary.field.action.choose.file' | dm }}
+                    </button>
+                </dot-binary-field-ui-message>
+            </dot-drop-zone>
+            <input
+                #inputFile
+                [accept]="accept.join(',')"
+                (change)="handleFileSelection($event)"
+                type="file"
+                data-testId="binary-field__file-input" />
+        </div>
+
+        <div class="binary-field__actions">
+            <p-button
+                [label]="'dot.binary.field.action.import.from.url' | dm"
+                (click)="openDialog(BinaryFieldMode.URL)"
+                data-testId="action-url-btn"
+                styleClass="p-button-link p-button-secondary"
+                icon="pi pi-link"></p-button>
+            <p-button
+                [label]="'dot.binary.field.action.create.new.file' | dm"
+                (click)="openDialog(BinaryFieldMode.EDITOR)"
+                data-testId="action-editor-btn"
+                styleClass="p-button-link p-button-secondary"
+                icon="pi pi-code"></p-button>
+        </div>
+    </ng-container>
+
+    <dot-spinner
+        *ngIf="vm.status === BinaryFieldStatus.UPLOADING"
+        data-testId="loading"></dot-spinner>
+
+    <dot-binary-field-preview
+        *ngIf="vm.status === BinaryFieldStatus.PREVIEW"
+        [file]="vm.file"
+        [editableImage]="vm.isEnterprise"
+        (removeFile)="removeFile()"
+        (editFile)="onEditFile()"
+        (editImage)="onEditImage()"
+        data-testId="preview"></dot-binary-field-preview>
+
+    <p-dialog
+        [(visible)]="dialogOpen"
+        [keepInViewport]="false"
+        [modal]="true"
+        [header]="dialogHeaderMap[vm.mode] | dm"
+        [draggable]="false"
+        [resizable]="false"
+        [closeOnEscape]="false"
+        [appendTo]="'body'"
+        [maskStyleClass]="'p-dialog-mask-transparent'"
+        [style]="vm.mode === BinaryFieldMode.EDITOR ? dialogFullScreenStyles : {}">
+        <ng-container [ngSwitch]="vm.mode">
+            <dot-dot-binary-field-url-mode
+                *ngSwitchCase="BinaryFieldMode.URL"
+                (tempFileUploaded)="setTempFile($event)"
+                (cancel)="closeDialog()"
+                data-testId="url-mode"></dot-dot-binary-field-url-mode>
+            <dot-dot-binary-field-editor
+                *ngSwitchCase="BinaryFieldMode.EDITOR"
+                [fileName]="vm.file?.name"
+                [fileContent]="vm.file?.content"
+                (tempFileUploaded)="setTempFile($event)"
+                (cancel)="closeDialog()"
+                data-testId="editor-mode"></dot-dot-binary-field-editor>
+        </ng-container>
+    </p-dialog>
+</div>
+<div class="binary-field__helper" *ngIf="helperText">
+    <i class="pi pi-info-circle binary-field__helper-icon"></i>
+    <span data-testId="helper-text">{{ helperText }}</span>
+</div>

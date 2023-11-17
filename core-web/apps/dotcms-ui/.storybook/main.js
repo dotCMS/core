@@ -13,7 +13,7 @@ module.exports = {
         '../src/**/*.stories.@(js|jsx|ts|tsx)',
         '../../../libs/template-builder/**/*.stories.@(js|jsx|ts|tsx|mdx)',
         '../../../libs/block-editor/**/*.stories.@(js|jsx|ts|tsx|mdx)',
-        '../../../libs/edit-content/**/*.stories.@(js|jsx|ts|tsx|mdx)',
+        '../../../libs/contenttype-fields/**/*.stories.@(js|jsx|ts|tsx|mdx)',
         '../../../libs/ui/**/*.stories.@(js|jsx|ts|tsx|mdx)',
         '../../../libs/portlets/**/*.stories.@(js|jsx|ts|tsx|mdx)'
     ],
