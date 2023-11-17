@@ -318,10 +318,9 @@ function Navigation({ nav, className }) {
 export const DotcmsPage = () => {
     // Get the page layout from the global context
     const { layout, page } = useContext(GlobalContext);
-    const { postMessage } = usePostMessage();
 
     return (
-        <PostMessageProvider postMessage={{ postMessage }}>
+        <PostMessageProvider>
             <div className="flex flex-col min-h-screen gap-6">
                 {layout.header && <Header />}
                 <main className="container flex flex-col gap-8 m-auto">

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext } from 'react';
+import usePostMessage from '@/hooks/usePostMessage';
 
 export const PostMessageContext = createContext({});
 
@@ -8,11 +9,15 @@ export const PostMessageContext = createContext({});
  * Provider to handle postMessage, this way we centralize the messages and have access to the same method in all components
  *
  * @export
- * @param {*} { children, postMessage }
+ * @param {*} { children }
  * @return {*}
  */
-export default function PostMessageProvider({ children, postMessage }) {
+export default function PostMessageProvider({ children }) {
+    const { postMessage } = usePostMessage();
+
     return (
-        <PostMessageContext.Provider value={postMessage}>{children}</PostMessageContext.Provider>
+        <PostMessageContext.Provider value={{ postMessage }}>
+            {children}
+        </PostMessageContext.Provider>
     );
 }

@@ -214,10 +214,6 @@ export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
             case 'language_id':
                 this.store.setLanguage(value);
                 break;
-
-            case 'url':
-                this.store.setUrl(value);
-                break;
         }
 
         this.router.navigate([], {

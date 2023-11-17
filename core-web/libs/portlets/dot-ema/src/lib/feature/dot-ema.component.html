@@ -12,18 +12,6 @@
             {{ language.name }}
         </option>
     </select>
-
-    <!-- This is for demo purpose, going away -->
-    <select
-        id="url"
-        [ngModel]="url$ | async"
-        (change)="onChange($event)"
-        aria-label="url"
-        name="url">
-        <option *ngFor="let page of pages" value="{{ page.value }}">
-            {{ page.name }}
-        </option>
-    </select>
 </div>
 <div class="iframe-wrapper">
     <iframe
