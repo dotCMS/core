@@ -54,7 +54,7 @@ function Activity({ title, description, image, urlTitle }) {
             />
             <div className="px-6 py-4">
                 <p className="mb-2 text-xl font-bold">{title}</p>
-                <p className="text-base">{description}</p>
+                <p className="text-base line-clamp-3">{description}</p>
             </div>
             <div className="px-6 pt-4 pb-2">
                 <Link
