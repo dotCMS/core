@@ -742,7 +742,7 @@
                     }
 
                     // Setting the value of the field
-                    field.value = "<%=binInode%>"
+                    field.value = "<%=value%>"
 
                     // Creating the binary field dynamically
                     // Help us to set inputs before the ngInit is executed.
