@@ -1,3 +1,5 @@
+import { Subject, fromEvent } from 'rxjs';
+
 import { AsyncPipe, DOCUMENT, NgFor } from '@angular/common';
 import {
     AfterViewInit,
@@ -14,6 +16,8 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
 import { DialogModule } from 'primeng/dialog';
+
+import { takeUntil } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { SafeUrlPipe } from '@dotcms/ui';
@@ -34,6 +38,8 @@ import { CUSTOM_EVENTS, MESSAGE_ACTIONS } from '../shared/models';
 export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
+
+    readonly destroy$ = new Subject<boolean>();
 
     languages = [
         {
@@ -82,15 +88,16 @@ export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     ngAfterViewInit(): void {
-        this.document.defaultView?.addEventListener('message', (event) =>
-            this.handlePostMessage(event)()
-        );
+        fromEvent(this.document.defaultView, 'message')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((event: MessageEvent) => {
+                this.handlePostMessage(event)();
+            });
     }
 
     ngOnDestroy(): void {
-        this.document.defaultView?.removeEventListener('message', (event) =>
-            this.handlePostMessage(event)()
-        );
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
     /**
      * Create the url to edit a contentlet
@@ -112,15 +119,16 @@ export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     onIframeLoad(_: Event) {
-        this.dialogIframe.nativeElement.contentWindow?.removeEventListener(
-            'ng-event',
-            this.handleNgEvent.bind(this)
-        );
-
-        this.dialogIframe.nativeElement.contentWindow?.addEventListener(
-            'ng-event',
-            this.handleNgEvent.bind(this)
-        );
+        // This event is destroyed when you close the dialog
+        fromEvent(
+            // The events are getting sended to the document
+            this.dialogIframe.nativeElement.contentWindow.document,
+            'ng-event'
+        )
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((event: CustomEvent) => {
+                this.handleNgEvent(event);
+            });
     }
 
     /**
@@ -130,8 +138,8 @@ export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
      * @param {Event} event
      * @memberof DotEmaComponent
      */
-    private handleNgEvent(event: Event) {
-        const { detail } = event as CustomEvent;
+    private handleNgEvent(event: CustomEvent) {
+        const { detail } = event;
 
         // Skip the loaded event
         if (detail.name === CUSTOM_EVENTS.EDIT_CONTENTLET_LOADED) return;

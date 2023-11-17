@@ -1,4 +1,4 @@
-import React, { useLayoutEffect } from 'react';
+import { useLayoutEffect } from 'react';
 
 function reloadWindow(event) {
     if (event.data !== 'reload') return;
@@ -23,8 +23,6 @@ const usePostMessage = () => {
     return {
         postMessage: (message) => {
             window.parent.postMessage(message, '*');
-
-            console.log('message sent', message);
         }
     };
 };
