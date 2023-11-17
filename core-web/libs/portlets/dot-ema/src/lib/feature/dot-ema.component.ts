@@ -31,6 +31,10 @@ export class DotEmaComponent implements OnInit {
 
     pages = [
         {
+            name: 'Home',
+            value: 'index'
+        },
+        {
             name: 'Page One',
             value: 'page-one'
         },
@@ -51,9 +55,26 @@ export class DotEmaComponent implements OnInit {
 
     ngOnInit(): void {
         this.route.queryParams.subscribe(({ language_id, url }: Params) => {
+            const queryParams = {};
+
+            if (!language_id) {
+                queryParams['language_id'] = '1';
+            }
+
+            if (!url) {
+                queryParams['url'] = 'index';
+            }
+
+            if (Object.keys(queryParams).length > 0) {
+                this.router.navigate([], {
+                    queryParams,
+                    queryParamsHandling: 'merge'
+                });
+            }
+
             this.store.load({
-                language_id,
-                url
+                language_id: language_id || '1',
+                url: url || 'index'
             });
         });
     }
