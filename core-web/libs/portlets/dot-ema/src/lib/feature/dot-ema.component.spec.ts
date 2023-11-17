@@ -34,45 +34,68 @@ describe('DotEmaComponent', () => {
         ]
     });
 
-    beforeEach(
-        () =>
-            (spectator = createComponent({
-                queryParams: { language_id: '1', url: 'page-one' }
-            }))
-    );
+    describe('with queryParams', () => {
+        beforeEach(
+            () =>
+                (spectator = createComponent({
+                    queryParams: { language_id: '1', url: 'page-one' }
+                }))
+        );
 
-    it('should initialize with route query parameters', () => {
-        const mockQueryParams = { language_id: '1', url: 'page-one' };
+        it('should initialize with route query parameters', () => {
+            const mockQueryParams = { language_id: '1', url: 'page-one' };
 
-        const store = spectator.inject(EditEmaStore, true);
+            const store = spectator.inject(EditEmaStore, true);
 
-        jest.spyOn(store, 'load');
+            jest.spyOn(store, 'load');
 
-        spectator.detectChanges();
+            spectator.detectChanges();
 
-        expect(store.load).toHaveBeenCalledWith(mockQueryParams);
+            expect(store.load).toHaveBeenCalledWith(mockQueryParams);
+        });
+
+        it('should update store and update the route on page change', () => {
+            const store = spectator.inject(EditEmaStore, true);
+            const router = spectator.inject(Router);
+
+            jest.spyOn(store, 'setLanguage');
+            jest.spyOn(router, 'navigate');
+
+            spectator.detectChanges();
+
+            spectator.triggerEventHandler('select[data-testId="language_id"]', 'change', {
+                target: { name: 'language_id', value: '2' }
+            });
+
+            expect(store.setLanguage).toHaveBeenCalledWith('2');
+            expect(router.navigate).toHaveBeenCalledWith([], {
+                queryParams: { language_id: '2' },
+                queryParamsHandling: 'merge'
+            });
+
+            const iframe = spectator.query(byTestId('iframe'));
+            expect(iframe).toHaveAttribute('src', 'http://localhost:3000/page-one?language_id=2');
+        });
     });
 
-    it('should update store and update the route on page change', () => {
-        const store = spectator.inject(EditEmaStore, true);
-        const router = spectator.inject(Router);
+    describe('no queryParams', () => {
+        beforeEach(
+            () =>
+                (spectator = createComponent({
+                    queryParams: { language_id: undefined, url: undefined }
+                }))
+        );
 
-        jest.spyOn(store, 'setLanguage');
-        jest.spyOn(router, 'navigate');
+        it('should initialize with default value', () => {
+            const mockQueryParams = { language_id: '1', url: 'index' };
 
-        spectator.detectChanges();
+            const store = spectator.inject(EditEmaStore, true);
 
-        spectator.triggerEventHandler('select[data-testId="language_id"]', 'change', {
-            target: { name: 'language_id', value: '2' }
+            jest.spyOn(store, 'load');
+
+            spectator.detectChanges();
+
+            expect(store.load).toHaveBeenCalledWith(mockQueryParams);
         });
-
-        expect(store.setLanguage).toHaveBeenCalledWith('2');
-        expect(router.navigate).toHaveBeenCalledWith([], {
-            queryParams: { language_id: '2' },
-            queryParamsHandling: 'merge'
-        });
-
-        const iframe = spectator.query(byTestId('iframe'));
-        expect(iframe).toHaveAttribute('src', 'http://localhost:3000/page-one?language_id=2');
     });
 });
