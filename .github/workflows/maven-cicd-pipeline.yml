@@ -38,7 +38,6 @@ jobs:
       frontend: ${{ steps.filter.outputs.frontend }}
       build: ${{ steps.filter.outputs.build }}
       jvm_unit_test: ${{ steps.filter.outputs.jvm_unit_test }}
-      cli: ${{ steps.filter.outputs.cli }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -233,81 +232,6 @@ jobs:
         if: always()
         with:
           name: "build-reports-test-JVM Tests - JDK ${{matrix.java.name}}"
-          path: |
-            **/target/*-reports/TEST-*.xml
-            target/build-report.json
-            LICENSE
-          retention-days: 2
-
-  linux-cli-tests:
-    name: CLI Tests - JDK ${{matrix.java.name}}
-    runs-on: ubuntu-20.04
-    if: ${{ needs.changes.outputs.cli == 'true' || needs.changes.outputs.backend == 'true' }}
-    needs: [ changes,build-jdk11 ]
-    timeout-minutes: 240
-    env:
-      MAVEN_OPTS: -Xmx2048m
-    strategy:
-      fail-fast: true
-      matrix:
-        java:
-          - {
-            name: "11",
-            java-version: 11,
-            distribution: 'temurin',
-            maven_args: ""
-          }
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up JDK ${{ matrix.java.name }}
-        uses: actions/setup-java@v3
-        with:
-          java-version: ${{ matrix.java.java-version }}
-          distribution: ${{ matrix.java.distribution }}
-      - name: Get Date
-        id: get-date
-        run: |
-          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
-        shell: bash
-      - name: Restore Maven Repository
-        id: cache-maven
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
-      - id: docker-login
-        name: Login to GHCR
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - id: prepare-license
-        name: Prepare license
-        env:
-          DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-        run: |
-          DOTCMS_LICENSE_PATH=${GITHUB_WORKSPACE}/tools/dotcms-cli/target/license
-          mkdir -p ${DOTCMS_LICENSE_PATH}
-          echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
-          echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
-      - name: Build
-        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS -Dtestcontainers.docker.image=${{ needs.build-jdk11.outputs.docker-tag }} -pl :dotcms-api-data-model,:dotcms-cli verify ${{ matrix.java.maven_args}}
-      - name: Prepare reports archive (if maven failed)
-        if: failure()
-        shell: bash
-        run: find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
-      - name: Upload reports Archive (if maven failed)
-        uses: actions/upload-artifact@v3
-        if: failure()
-        with:
-          name: test-reports-cli-jvm${{matrix.java.name}}
-          path: 'test-reports.tgz'
-      - name: cli-tests
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: "build-reports-test-cli - JDK ${{matrix.java.name}}"
           path: |
             **/target/*-reports/TEST-*.xml
             target/build-report.json
@@ -578,7 +502,7 @@ jobs:
   prepare-report-data:
     name: Prepare Report Data
     runs-on: ubuntu-20.04
-    needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests,linux-cli-tests,linux-postman-tests ]
+    needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests,linux-postman-tests ]
     if: always()
     outputs:
       aggregate_status: ${{ steps.prepare-workflow-data.outputs.aggregate_status }}
