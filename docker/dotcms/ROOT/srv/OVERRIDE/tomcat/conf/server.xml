@@ -28,6 +28,7 @@
         compression="${CMS_COMPRESSION}"
         compressibleMimeType="${CMS_COMPRESSIBLEMIMETYPE}"
         noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG}"
+        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE}"
         compressionMinSize="128"
         useSendfile="false"
     />
@@ -49,6 +50,7 @@
         compression="${CMS_COMPRESSION}"
         compressibleMimeType="${CMS_COMPRESSIBLEMIMETYPE}"
         noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG}"
+        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE}"
         compressionMinSize="128"
         useSendfile="false"
     />
@@ -71,6 +73,7 @@
         compression="${CMS_COMPRESSION}"
         compressibleMimeType="${CMS_COMPRESSIBLEMIMETYPE}"
         noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG}"
+        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE}"
         compressionMinSize="128"
         useSendfile="false"
     />
@@ -96,6 +99,7 @@
         compression="${CMS_COMPRESSION}"
         compressibleMimeType="${CMS_COMPRESSIBLEMIMETYPE}"
         noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG}"
+        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE}"
         compressionMinSize="128"
         useSendfile="false"
         SSLEnabled="true"

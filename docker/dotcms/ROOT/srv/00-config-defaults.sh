@@ -2,7 +2,7 @@
 
 ###
 ##   Configuration defaults for Docker container configuration
-##   Please do not alter this file, but set these as environment 
+##   Please do not alter this file, but set these as environment
 ##   variables on the container launch if needed.
 ###
 
@@ -19,7 +19,6 @@ export JAVA_OPTS_MEMORY=${JAVA_OPTS_MEMORY:-"-Xmx1G"}
 
 # $CMS_JAVA_OPTS is last so it trumps them all
 export JAVA_OPTS=${JAVA_OPTS:-"$JAVA_OPTS_BASE $JAVA_OPTS_AGENT $JAVA_OPTS_MEMORY $CMS_JAVA_OPTS"}
-
 
 # Maximum number of Tomcat Connector threadpool threads (shared across Connectors)
 export CMS_CONNECTOR_THREADS=${CMS_CONNECTOR_THREADS:-"600"}
@@ -60,18 +59,30 @@ export CMS_ACCESSLOG_PATTERN=${CMS_ACCESSLOG_PATTERN:-'%{Host}i %{org.apache.cat
 export CMS_ACCESSLOG_FILEDATEFORMAT=${CMS_ACCESSLOG_FILEDATEFORMAT:-".yyyy-MM-dd"}
 export CMS_ACCESSLOG_MAXDAYS=${CMS_ACCESSLOG_MAXDAYS:-"-1"}
 export CMS_ACCESSLOG_DIRECTORY=${CMS_ACCESSLOG_DIRECTORY:-"logs"}
-export CMS_ACCESSLOG_RENAMEONROTATE=${CMS_ACCESSLOG_RENAMEONROTATE="false"}
-export CMS_ACCESSLOG_ROTATABLE=${CMS_ACCESSLOG_ROTATABLE="true"}
+export CMS_ACCESSLOG_RENAMEONROTATE=${CMS_ACCESSLOG_RENAMEONROTATE:-"false"}
+export CMS_ACCESSLOG_ROTATABLE=${CMS_ACCESSLOG_ROTATABLE:-"true"}
 export CMS_REMOTEIP_REMOTEIPHEADER=${CMS_REMOTEIP_REMOTEIPHEADER:-"x-forwarded-for"}
 export CMS_REMOTEIP_INTERNALPROXIES=${CMS_REMOTEIP_INTERNALPROXIES:-"10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|169\.254\.\d{1,3}\.\d{1,3}|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.1[6-9]{1}\.\d{1,3}\.\d{1,3}|172\.2[0-9]{1}\.\d{1,3}\.\d{1,3}|172\.3[0-1]{1}\.\d{1,3}\.\d{1,3}|0:0:0:0:0:0:0:1"}
 
+export CMS_MAX_HTTP_HEADER_SIZE=${CMS_MAX_HTTP_HEADER_SIZE:-"16384"}
+
+# Tomcat HTTP Header Security Filter
+# https://tomcat.apache.org/tomcat-9.0-doc/config/filter.html
+export CMS_ANTI_CLICK_JACKING_ENABLED=${CMS_ANTI_CLICK_JACKING_ENABLED:-"true"}
+export CMS_ANTI_CLICK_JACKING_OPTION=${CMS_ANTI_CLICK_JACKING_OPTION:-"SAMEORIGIN"} # SAMEORIGIN|DENY
+export CMS_HSTS_ENABLED=${CMS_HSTS_ENABLED:-"true"}
+export CMS_HSTS_MAX_AGE_SECONDS=${CMS_HSTS_MAX_AGE_SECONDS:-"31536000"}
+export CMS_HSTS_INCLUDE_SUB_DOMAINS=${CMS_HSTS_INCLUDE_SUB_DOMAINS:-"true"}
+
+# backend session timeout (minutes)
+export CMS_SESSION_TIMEOUT=${CMS_SESSION_TIMEOUT:-"30"}
 
 # ASSET/INTERNAL PATHS (SHOULD NOT CHANGE)
 export DOT_ASSET_REAL_PATH=${DOT_ASSET_REAL_PATH:-"/data/shared/assets"}
 export DOT_DYNAMIC_CONTENT_PATH=${DOT_DYNAMIC_CONTENT_PATH:-"/data/local/dotsecure"}
 export DOT_TAIL_LOG_LOG_FOLDER=${DOT_TAIL_LOG_LOG_FOLDER:-"$TOMCAT_HOME/logs"}
 
-# OSGi felix install directory 
+# OSGi felix install directory
 export DOT_FELIX_FELIX_UNDEPLOYED_DIR=${DOT_FELIX_FELIX_UNDEPLOYED_DIR:-"/data/shared/felix/undeployed"}
 export DOT_FELIX_FELIX_FILEINSTALL_DIR=${DOT_FELIX_FELIX_FILEINSTALL_DIR:-"/data/shared/felix/load"}
 export DOT_FELIX_FELIX_UPLOAD_DIR=${DOT_FELIX_FELIX_UPLOAD_DIR:-"/data/shared/felix/upload"}
@@ -106,5 +117,3 @@ export CUSTOM_STARTER_URL=${CUSTOM_STARTER_URL:-""}
 
 ## This needs to be set in order for catalina to read environmental properties
 export CATALINA_OPTS="$CATALINA_OPTS -Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
-
-

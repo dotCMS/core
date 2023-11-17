@@ -1,0 +1,613 @@
+<?xml version="1.0"?>
+<web-app xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+                      http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+		 version="3.0" metadata-complete="true">
+    <display-name>dotCMS</display-name>
+
+	<!-- Don't ever delete the following comment tags, it will break the build -->
+	<!-- BEGIN JSPS --> <!-- END JSPS -->
+	<context-param>
+		<param-name>company_id</param-name>
+		<param-value>dotcms.org</param-value>
+	</context-param>
+	<context-param>
+		<param-name>isLog4jAutoInitializationDisabled</param-name>
+		<param-value>true</param-value>
+	</context-param>
+	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
+	<!-- BEGIN CONTEXT-PARAMS -->
+    <!-- END CONTEXT-PARAMS -->
+	<!-- DOTMARKETING FILTERS -->
+	<filter>
+		<filter-name>NormalizationFilter</filter-name>
+		<filter-class>com.dotcms.filters.NormalizationFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter>
+		<filter-name>InterceptorFilter</filter-name>
+		<filter-class>com.dotmarketing.filters.InterceptorFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+    <filter>
+        <filter-name>HttpHeaderSecurityFilter</filter-name>
+        <filter-class>org.apache.catalina.filters.HttpHeaderSecurityFilter</filter-class>
+        <async-supported>true</async-supported>
+        <init-param>
+            <param-name>hstsEnabled</param-name>
+            <param-value>${CMS_HSTS_ENABLED}</param-value>
+        </init-param>
+        <init-param>
+            <param-name>hstsMaxAgeSeconds</param-name>
+            <param-value>${CMS_HSTS_MAX_AGE_SECONDS}</param-value>
+        </init-param>
+        <init-param>
+            <param-name>hstsIncludeSubDomains</param-name>
+            <param-value>${CMS_HSTS_INCLUDE_SUB_DOMAINS}</param-value>
+        </init-param>
+        <init-param>
+            <param-name>antiClickJackingEnabled</param-name>
+            <param-value>${CMS_ANTI_CLICK_JACKING_ENABLED}</param-value>
+        </init-param>
+        <init-param>
+            <param-name>antiClickJackingOption</param-name>
+            <param-value>${CMS_ANTI_CLICK_JACKING_OPTION}</param-value>
+        </init-param>
+    </filter>
+	<filter>
+		<filter-name>CookiesFilter</filter-name>
+		<filter-class>com.dotmarketing.filters.CookiesFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	
+	<filter>
+		<filter-name>ThreadNameFilter</filter-name>
+		<filter-class>com.dotmarketing.filters.ThreadNameFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	
+	<filter>
+		<filter-name>CharsetEncodingFilter</filter-name>
+		<filter-class>com.dotmarketing.filters.CharsetEncodingFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	
+	<filter>
+	    <filter-name>TimeMachineFilter</filter-name>
+		<filter-class>com.dotmarketing.filters.TimeMachineFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter>
+		<filter-name>VanityURLFilter</filter-name>
+		<filter-class>com.dotcms.vanityurl.filters.VanityURLFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter>
+		<filter-name>CMSFilter</filter-name>
+		<filter-class>com.dotmarketing.filters.CMSFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+    <filter>
+        <filter-name>VisitorFilter</filter-name>
+        <filter-class>com.dotcms.visitor.filter.servlet.VisitorFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+	<filter>
+		<filter-name>AutoLoginFilter</filter-name>
+		<filter-class>com.dotmarketing.filters.AutoLoginFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	
+	<filter>
+		<filter-name>LoginRequiredFilter</filter-name>
+		<filter-class>com.dotmarketing.filters.LoginRequiredFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter>
+		<filter-name>Secure MainServlet Filter</filter-name>
+		<filter-class>com.dotcms.repackage.com.liferay.filters.secure.SecureFilter</filter-class>
+		<init-param>
+			<param-name>portal_property_prefix</param-name>
+			<param-value>main.servlet.</param-value>
+		</init-param>
+	</filter>
+	
+    <filter>
+        <filter-name>UrlRewriteFilter</filter-name>
+        <filter-class>com.dotmarketing.filters.DotUrlRewriteFilter</filter-class>
+		<async-supported>true</async-supported>
+    </filter>
+	<!--END DOTMARKETING FILTERS-->
+	
+	
+	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
+	<!-- BEGIN FILTERS -->
+ 	<!-- END FILTERS -->
+	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
+	<!-- BEGIN FILTER-MAPPINGS -->
+ 	<!-- END FILTER-MAPPINGS -->
+ 	
+	<!--DOTMARKETING FILTER-MAPPINGS-->
+	<filter-mapping>
+		<filter-name>NormalizationFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+    <filter-mapping>
+        <filter-name>HttpHeaderSecurityFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+	<filter-mapping>
+		<filter-name>InterceptorFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+    
+	<filter-mapping>
+		<filter-name>CharsetEncodingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+	<filter-mapping>
+		<filter-name>CookiesFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+	<filter-mapping>
+		<filter-name>ThreadNameFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+	<filter-mapping>
+		<filter-name>TimeMachineFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+    <filter-mapping>
+        <filter-name>UrlRewriteFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    
+    <filter-mapping>
+        <filter-name>VanityURLFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>VisitorFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+	<filter-mapping>
+		<filter-name>AutoLoginFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>LoginRequiredFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>CMSFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>Secure MainServlet Filter</filter-name>
+		<url-pattern>/c/*</url-pattern>
+	</filter-mapping>
+	<!--END DOTMARKETING FILTER-MAPPINGS-->
+	
+	
+	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
+	<!-- BEGIN LISTENERS -->
+    <!-- END LISTENERS -->
+    
+    
+	<!-- DOTMARKETING LISTENERS -->
+	<listener>
+		<listener-class>com.dotmarketing.listeners.ContextLifecycleListener</listener-class>
+	</listener>
+	<listener>
+	    <listener-class>com.dotmarketing.listeners.ClickstreamListener</listener-class>
+	</listener>
+    <listener>
+        <listener-class>org.apache.felix.http.proxy.impl.ProxyServletContextListener</listener-class>
+    </listener>
+    <listener>
+    	<listener-class>com.dotcms.listeners.SessionMonitor</listener-class>
+    </listener>
+     <listener>
+        <display-name>ImageIO service provider loader/unloader</display-name>
+        <listener-class>com.twelvemonkeys.servlet.image.IIOProviderContextListener</listener-class>
+    </listener>
+	<listener>
+		<listener-class>com.dotcms.listeners.RegisterMBeansListener</listener-class>
+	</listener>
+	<listener>
+		<listener-class>com.dotcms.listeners.SwitchSiteListener</listener-class>
+	</listener>
+    <listener>
+      <listener-class>com.dotcms.api.web.RequestThreadLocalListener</listener-class>
+    </listener>
+	<!-- this must be the last listener -->
+	<listener>
+	  <listener-class>com.dotmarketing.listeners.HibernateSessionsListener</listener-class>
+	</listener>
+	<!-- END DOTMARKETING LISTENERS -->
+	
+	
+	<!-- DOTMARKETING SERVLETS -->
+	<servlet>
+		<servlet-name>
+			UpdateQuartzCronJobs
+		</servlet-name>
+		<servlet-class>
+			com.dotmarketing.servlets.UpdateQuartzCronJobsServlet
+		</servlet-class>
+		<load-on-startup>
+			98
+		</load-on-startup>
+	</servlet>
+	
+	<servlet>
+		<servlet-name>Init</servlet-name>
+		<servlet-class>com.dotmarketing.servlets.InitServlet</servlet-class>
+		<load-on-startup>8</load-on-startup>
+	</servlet>
+	
+	<servlet>
+		<servlet-name>VelocityServlet</servlet-name>
+		<servlet-class>com.dotcms.rendering.velocity.servlet.VelocityServlet</servlet-class>
+	</servlet>
+	<servlet>
+		<servlet-name>SpeedyAssetServlet</servlet-name>
+		<servlet-class>com.dotmarketing.servlets.SpeedyAssetServlet</servlet-class>
+	</servlet>
+	<servlet>
+		<servlet-name>ShortyServlet</servlet-name>
+		<servlet-class>com.dotmarketing.servlets.ShortyServlet</servlet-class>
+	</servlet>    
+	<servlet>
+		<servlet-name>CategoriesServlet</servlet-name>
+		<servlet-class>com.dotmarketing.servlets.JSONCategoriesServlet</servlet-class>
+	</servlet>
+    
+    <servlet>
+        <servlet-name>login_edit_mode</servlet-name>
+        <servlet-class>com.dotmarketing.servlets.LoginEditModeServlet</servlet-class>
+    </servlet>
+	
+	<servlet>
+	  <servlet-name>dwr-invoker</servlet-name>
+	  <servlet-class>com.dotmarketing.servlets.DwrWrapperServlet</servlet-class>
+      <init-param>
+	      <param-name>debug</param-name>
+    	  <param-value>false</param-value>
+	  </init-param>
+		<init-param>
+			<param-name>accessLogLevel</param-name>
+			<param-value>EXCEPTION</param-value>
+		</init-param>
+	  <init-param>
+	      <param-name>compressor</param-name>
+    	  <param-value>none</param-value>
+	  </init-param>
+	   <init-param>
+	      <param-name>crossDomainSessionSecurity</param-name>
+	      <param-value>false</param-value>
+	   </init-param>
+	</servlet>
+	
+	<servlet>
+		<servlet-name>InitServlet</servlet-name>
+		<servlet-class>com.liferay.portal.servlet.InitServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet>
+		<servlet-name>MainServlet</servlet-name>
+		<servlet-class>com.liferay.portal.servlet.MainServlet</servlet-class>
+		<init-param>
+			<param-name>ctx_path</param-name>
+			<param-value>/</param-value>
+		</init-param>
+		<init-param>
+			<param-name>config</param-name>
+			<param-value>/WEB-INF/struts-config.xml,/WEB-INF/struts-config-ext.xml</param-value>
+		</init-param>
+		<init-param>
+			<param-name>debug</param-name>
+			<param-value>0</param-value>
+		</init-param>
+		<init-param>
+			<param-name>detail</param-name>
+			<param-value>0</param-value>
+		</init-param>
+		<init-param>
+			<param-name>stxxInit</param-name>
+			<param-value>/stxx.properties</param-value>
+		</init-param>
+		<load-on-startup>2</load-on-startup>
+	</servlet>
+    <servlet>
+           <servlet-name>ImageServlet</servlet-name>
+           <servlet-class>com.liferay.portal.servlet.ImageServlet</servlet-class>
+           <load-on-startup>400</load-on-startup>
+    </servlet>
+	<servlet>
+		<servlet-name>WebDav</servlet-name>
+		<servlet-class>com.bradmcevoy.http.MiltonServlet</servlet-class>
+		<init-param>
+				<param-name>resource.factory.class</param-name>
+				<param-value>com.dotmarketing.webdav.ResourceFactoryImpl</param-value>
+		</init-param>
+	</servlet>
+	
+	<servlet>
+		<servlet-name>BinaryExporterServlet</servlet-name>
+		<servlet-class>com.dotmarketing.servlets.BinaryExporterServlet</servlet-class>
+	    <load-on-startup>100</load-on-startup>
+	</servlet>
+	
+	<servlet>
+		<servlet-name>AjaxDirector</servlet-name>
+		<servlet-class>com.dotmarketing.servlets.ajax.AjaxDirectorServlet</servlet-class>
+	</servlet>
+	
+	 <servlet>
+		<servlet-name>JSONTagsServlet</servlet-name>
+		<servlet-class>com.dotmarketing.servlets.JSONTagsServlet</servlet-class>
+	</servlet>
+    
+    <servlet>
+    	<servlet-name>CSSPreProcessServlet</servlet-name>
+    	<servlet-class>com.dotcms.csspreproc.CSSPreProcessServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>SassPreProcessServlet</servlet-name>
+        <servlet-class>com.dotcms.csspreproc.SassPreProcessServlet</servlet-class>
+    </servlet>
+    <!-- REST -->
+    <servlet>
+		<servlet-name>RESTAPI</servlet-name>
+		<servlet-class>
+		  com.dotcms.rest.servlet.ReloadableServletContainer
+		</servlet-class>
+		<init-param>
+			<param-name>jersey.config.server.mediaTypeMappings</param-name>
+			<param-value>txt : text/plain, xml : application/xml, json : application/json, js : application/javascript</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+		<async-supported>true</async-supported>
+	</servlet>
+	
+	<servlet>
+		<servlet-name>DotGraphQLHttpServlet</servlet-name>
+		<servlet-class>com.dotcms.graphql.DotGraphQLHttpServlet</servlet-class>
+	</servlet>
+    
+	<!--END DOTMARKETING SERVLETS-->
+	
+	
+	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
+	<!-- BEGIN SERVLETS -->
+ 	<!-- END SERVLETS -->
+ 	
+ 	
+    <!-- TEST FRAMEWORK SERVLETS
+       <servlet>
+         <servlet-name>ServletTestRunner</servlet-name>
+         <servlet-class>com.dotmarketing.servlets.test.ServletTestRunner</servlet-class>
+       </servlet>
+       
+       <servlet-mapping>
+         <servlet-name>ServletTestRunner</servlet-name>
+         <url-pattern>/dotTest</url-pattern>
+      </servlet-mapping>
+	END OF TEST FRAMEWORK SERVLETS -->
+	
+    <!-- DOTCMS SERVLET-MAPPINGS -->
+
+    <servlet-mapping>
+      <servlet-name>CSSPreProcessServlet</servlet-name>
+      <url-pattern>/DOTLESS/*</url-pattern>
+    </servlet-mapping>
+    
+    <servlet-mapping>
+      <servlet-name>SassPreProcessServlet</servlet-name>
+      <url-pattern>*.dotsass</url-pattern>
+    </servlet-mapping>
+    
+    <servlet-mapping>
+      <servlet-name>CSSPreProcessServlet</servlet-name>
+      <url-pattern>/DOTSASS/*</url-pattern>
+    </servlet-mapping>
+    
+    <servlet-mapping>
+        <servlet-name>AjaxDirector</servlet-name>
+        <url-pattern>/DotAjaxDirector/*</url-pattern>
+    </servlet-mapping>
+	<servlet-mapping>
+        <servlet-name>login_edit_mode</servlet-name>
+        <url-pattern>/edit/*</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>ImageServlet</servlet-name>
+        <url-pattern>/image/company_logo</url-pattern>
+    </servlet-mapping>
+	<servlet-mapping>
+        <servlet-name>login_edit_mode</servlet-name>
+        <url-pattern>/admin/*</url-pattern>
+    </servlet-mapping>
+    
+    <servlet-mapping>
+        <servlet-name>login_edit_mode</servlet-name>
+        <url-pattern>/edit</url-pattern>
+    </servlet-mapping>
+    
+	<servlet-mapping>
+        <servlet-name>login_edit_mode</servlet-name>
+        <url-pattern>/admin</url-pattern>
+    </servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>WebDav</servlet-name>
+		<url-pattern>/webdav/autopub/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>WebDav</servlet-name>
+		<url-pattern>/webdav/nonpub/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>WebDav</servlet-name>
+		<url-pattern>/webdav/live/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>WebDav</servlet-name>
+		<url-pattern>/webdav/working/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>VelocityServlet</servlet-name>
+		<url-pattern>/servlets/VelocityServlet</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>SpeedyAssetServlet</servlet-name>
+		<url-pattern>/dotAsset/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>ShortyServlet</servlet-name>
+		<url-pattern>/dA/*</url-pattern>
+	</servlet-mapping>
+	
+	<servlet-mapping>
+	  <servlet-name>dwr-invoker</servlet-name>
+	  <url-pattern>/dwr/*</url-pattern>
+	</servlet-mapping>
+	
+	<servlet-mapping>
+		<servlet-name>MainServlet</servlet-name>
+		<url-pattern>/c/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>MainServlet</servlet-name>
+		<url-pattern>/dotAdmin/c/*</url-pattern>
+	</servlet-mapping>
+
+    <servlet-mapping>
+	    <servlet-name>BinaryExporterServlet</servlet-name>
+	    <url-pattern>/contentAsset/*</url-pattern>
+	</servlet-mapping>
+	
+	<servlet-mapping>
+		<servlet-name>CategoriesServlet</servlet-name>
+		<url-pattern>/categoriesServlet</url-pattern>
+	</servlet-mapping>
+	
+	<servlet-mapping>
+		<servlet-name>JSONTagsServlet</servlet-name>
+		<url-pattern>/JSONTags/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>DotGraphQLHttpServlet</servlet-name>
+		<url-pattern>/api/v1/graphql</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>RESTAPI</servlet-name>
+		<url-pattern>/api/*</url-pattern>
+	</servlet-mapping>
+	
+	<!--END DOTMARKETING SERVLET-MAPPING-->
+	
+	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
+	<!-- BEGIN SERVLET-MAPPINGS -->
+ 	<!-- END SERVLET-MAPPINGS -->
+	
+	<session-config>
+		<session-timeout>${CMS_SESSION_TIMEOUT}</session-timeout>
+	</session-config>
+	
+	<mime-mapping>
+		<extension>vtl</extension>
+		<mime-type>text/velocity</mime-type>
+	</mime-mapping>
+	
+	<mime-mapping>
+		<extension>xsl</extension>
+		<mime-type>application/xml</mime-type>
+	</mime-mapping>
+	<mime-mapping>
+		<extension>dotsass</extension>
+		<mime-type>text/css</mime-type>
+	</mime-mapping>
+	
+	<mime-mapping>
+		<extension>sass</extension>
+		<mime-type>text/css</mime-type>
+	</mime-mapping>
+	
+	<mime-mapping>
+        <extension>scss</extension>
+        <mime-type>text/css</mime-type>
+    </mime-mapping>
+    
+	<mime-mapping>
+		<extension>less</extension>
+		<mime-type>text/css</mime-type>
+	</mime-mapping>
+	
+	<welcome-file-list>
+		<welcome-file>index.jsp</welcome-file>
+		<welcome-file>index.html</welcome-file>
+	</welcome-file-list>
+	
+	<error-page>
+	   <error-code>404</error-code>
+	   <location>/html/error/custom-error-page.jsp</location>
+	</error-page>
+	
+	<error-page>
+	   <error-code>401</error-code>
+	   <location>/html/error/custom-error-page.jsp</location>
+	</error-page>
+	
+	<error-page>
+	   <error-code>403</error-code>
+	   <location>/html/error/custom-error-page.jsp</location>
+	</error-page>
+	
+	<error-page>
+	   <error-code>500</error-code>
+	   <location>/html/error/custom-error-page.jsp</location>
+	</error-page>
+	
+	<error-page>
+	   <error-code>503</error-code>
+	   <location>/html/error/custom-error-page.jsp</location>
+	</error-page>
+	
+	<jsp-config>
+		<jsp-property-group>
+			<url-pattern>*.jsp</url-pattern>
+			<el-ignored>true</el-ignored>
+		</jsp-property-group>
+	</jsp-config>
+	
+	<!-- Prevent access to /dot_secure area.  Here we place files that are too numerous to be stored in WEB-INF, since Tomcat will scan all files in WEB-INF at startup -->
+	<security-constraint>
+		<display-name>Secure area</display-name>
+		<web-resource-collection>
+			<web-resource-name>/dotsecure/*</web-resource-name>
+			<url-pattern>/dotsecure/*</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+		</auth-constraint>
+	</security-constraint>
+	<security-constraint>
+		<display-name>Secure area</display-name>
+		<web-resource-collection>
+			<web-resource-name>assets</web-resource-name>
+			<url-pattern>/assets/*</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+		</auth-constraint>
+	</security-constraint>
+	
+	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
+	<!-- BEGIN SECURITY-CONSTRAINTS -->
+    <!-- END SECURITY-CONSTRAINTS -->
+    
+</web-app>
