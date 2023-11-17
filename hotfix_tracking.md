@@ -162,3 +162,4 @@ This maintenance release includes the following code fixes:
 132. https://github.com/dotCMS/core/issues/24167 : Relationship fields couldn't update with workflow apis #24167
 133. https://github.com/dotCMS/core/issues/24227 : [SASS] : Minify CSS output by default #24227
 134. https://github.com/dotCMS/core/issues/24266 : Content Type publish and expire date are set to empty #24266
+135. https://github.com/dotCMS/core/issues/24291 : Ensure that sessions can be serialized and replicated across servers #24291
