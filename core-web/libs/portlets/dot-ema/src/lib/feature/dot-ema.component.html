@@ -32,11 +32,13 @@
     [header]="header"
     [draggable]="false"
     [resizable]="false"
-    [maximizable]="true">
+    [maximizable]="true"
+    data-testId="dialog">
     <iframe
         #dialogIframe
         (load)="onIframeLoad($event)"
         title="dialog"
+        data-testId="dialog-iframe"
         width="100%"
         height="100%"
         style="border: none"></iframe>

@@ -3,7 +3,6 @@ import { Subject, fromEvent } from 'rxjs';
 import { AsyncPipe, DOCUMENT, NgFor } from '@angular/common';
 import {
     AfterViewInit,
-    ChangeDetectorRef,
     Component,
     ElementRef,
     Inject,
@@ -80,7 +79,7 @@ export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
     visible = false;
     header = '';
 
-    constructor(@Inject(DOCUMENT) private document: Document, private cd: ChangeDetectorRef) {}
+    constructor(@Inject(DOCUMENT) private document: Document) {}
 
     ngOnInit(): void {
         this.route.queryParams.subscribe(({ language_id, url }: Params) => {
@@ -121,21 +120,8 @@ export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
         this.destroy$.complete();
     }
     /**
-     * Create the url to edit a contentlet
-     *
-     * @private
-     * @param {string} inode
-     * @return {*}
-     * @memberof DotEmaComponent
-     */
-    private createEditContentletUrl(inode: string): string {
-        return `/c/portal/layout?p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&inode=${inode}`;
-    }
-
-    /**
      * Handle the iframe load event
      *
-     * @private
      * @param {CustomEvent} event
      * @memberof DotEmaComponent
      */
@@ -150,6 +136,42 @@ export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
             .subscribe((event: CustomEvent) => {
                 this.handleNgEvent(event);
             });
+    }
+
+    /**
+     * Updates store value and navigates with updated query parameters on select element change event.
+     *
+     * @param {Event} e
+     * @memberof DotEmaComponent
+     */
+    onChange(e: Event) {
+        const name = (e.target as HTMLSelectElement).name;
+        const value = (e.target as HTMLSelectElement).value;
+
+        switch (name) {
+            case 'language_id':
+                this.store.setLanguage(value);
+                break;
+        }
+
+        this.router.navigate([], {
+            queryParams: {
+                [name]: value
+            },
+            queryParamsHandling: 'merge'
+        });
+    }
+
+    /**
+     * Create the url to edit a contentlet
+     *
+     * @private
+     * @param {string} inode
+     * @return {*}
+     * @memberof DotEmaComponent
+     */
+    private createEditContentletUrl(inode: string): string {
+        return `/c/portal/layout?p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&inode=${inode}`;
     }
 
     /**
@@ -178,7 +200,7 @@ export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     private handlePostMessage({
-        origin,
+        origin = this.host,
         data
     }: {
         origin: string;
@@ -198,29 +220,5 @@ export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
                 /* Do Nothing because is not the origin we are expecting */
             }
         }[action];
-    }
-
-    /*
-     * Updates store value and navigates with updated query parameters on select element change event.
-     *
-     * @param {Event} e
-     * @memberof DotEmaComponent
-     */
-    onChange(e: Event) {
-        const name = (e.target as HTMLSelectElement).name;
-        const value = (e.target as HTMLSelectElement).value;
-
-        switch (name) {
-            case 'language_id':
-                this.store.setLanguage(value);
-                break;
-        }
-
-        this.router.navigate([], {
-            queryParams: {
-                [name]: value
-            },
-            queryParamsHandling: 'merge'
-        });
     }
 }

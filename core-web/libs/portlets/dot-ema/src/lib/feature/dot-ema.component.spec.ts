@@ -1,7 +1,9 @@
+import { describe } from '@jest/globals';
 import { Spectator, byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
@@ -12,6 +14,7 @@ import { DotPageApiService } from '../services/dot-page-api.service';
 
 describe('DotEmaComponent', () => {
     let spectator: Spectator<DotEmaComponent>;
+    let store: EditEmaStore;
 
     const createComponent = createRoutingFactory({
         component: DotEmaComponent,
@@ -35,17 +38,16 @@ describe('DotEmaComponent', () => {
     });
 
     describe('with queryParams', () => {
-        beforeEach(
-            () =>
-                (spectator = createComponent({
-                    queryParams: { language_id: '1', url: 'page-one' }
-                }))
-        );
+        beforeEach(() => {
+            spectator = createComponent({
+                queryParams: { language_id: '1', url: 'page-one' }
+            });
+
+            store = spectator.inject(EditEmaStore, true);
+        });
 
         it('should initialize with route query parameters', () => {
             const mockQueryParams = { language_id: '1', url: 'page-one' };
-
-            const store = spectator.inject(EditEmaStore, true);
 
             jest.spyOn(store, 'load');
 
@@ -55,7 +57,6 @@ describe('DotEmaComponent', () => {
         });
 
         it('should update store and update the route on page change', () => {
-            const store = spectator.inject(EditEmaStore, true);
             const router = spectator.inject(Router);
 
             jest.spyOn(store, 'setLanguage');
@@ -76,20 +77,95 @@ describe('DotEmaComponent', () => {
             const iframe = spectator.query(byTestId('iframe'));
             expect(iframe).toHaveAttribute('src', 'http://localhost:3000/page-one?language_id=2');
         });
+
+        it('should open a dialog when the iframe sends a postmessage with the edit-contenlet action', () => {
+            spectator.triggerEventHandler('select[data-testId="language_id"]', 'change', {
+                target: { name: 'language_id', value: '2' }
+            });
+
+            const dialog = spectator.query(byTestId('dialog'));
+
+            window.dispatchEvent(
+                new MessageEvent('message', {
+                    origin: 'http://localhost:3000',
+                    data: {
+                        action: 'edit-contentlet',
+                        payload: {
+                            inode: '123'
+                        }
+                    }
+                })
+            );
+
+            spectator.detectChanges();
+
+            expect(dialog.getAttribute('ng-reflect-visible')).toBe('true');
+        });
+
+        it('should not open a dialog when the iframe sends a postmessage with a different origin', () => {
+            spectator.triggerEventHandler('select[data-testId="language_id"]', 'change', {
+                target: { name: 'language_id', value: '2' }
+            });
+
+            const dialog = spectator.query(byTestId('dialog'));
+
+            window.dispatchEvent(
+                new MessageEvent('message', {
+                    origin: 'my.super.cool.website.xyz',
+                    data: {
+                        action: 'edit-contentlet',
+                        payload: {
+                            inode: '123'
+                        }
+                    }
+                })
+            );
+
+            spectator.detectChanges();
+
+            expect(dialog.getAttribute('ng-reflect-visible')).toBe('false');
+        });
+
+        it('should trigger onIframeLoad when the dialog is opened', () => {
+            jest.spyOn(spectator.component, 'onIframeLoad');
+            spectator.triggerEventHandler('select[data-testId="language_id"]', 'change', {
+                target: { name: 'language_id', value: '2' }
+            });
+
+            window.dispatchEvent(
+                new MessageEvent('message', {
+                    origin: 'http://localhost:3000',
+                    data: {
+                        action: 'edit-contentlet',
+                        payload: {
+                            inode: '123'
+                        }
+                    }
+                })
+            );
+
+            spectator.detectChanges();
+
+            const dialogIframe = spectator.debugElement.query(
+                By.css("[data-testId='dialog-iframe']")
+            );
+            spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
+
+            expect(spectator.component.onIframeLoad).toHaveBeenCalled();
+        });
     });
 
     describe('no queryParams', () => {
-        beforeEach(
-            () =>
-                (spectator = createComponent({
-                    queryParams: { language_id: undefined, url: undefined }
-                }))
-        );
+        beforeEach(() => {
+            spectator = createComponent({
+                queryParams: { language_id: undefined, url: undefined }
+            });
+
+            store = spectator.inject(EditEmaStore, true);
+        });
 
         it('should initialize with default value', () => {
             const mockQueryParams = { language_id: '1', url: 'index' };
-
-            const store = spectator.inject(EditEmaStore, true);
 
             jest.spyOn(store, 'load');
 
