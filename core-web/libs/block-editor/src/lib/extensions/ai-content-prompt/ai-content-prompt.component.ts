@@ -1,11 +1,9 @@
-import { of } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
-import { Component, ElementRef, EventEmitter, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 
-import { catchError } from 'rxjs/operators';
-
-import { AiContentService } from '../../shared/services/ai-content/ai-content.service';
+import { AiContentPromptState, AiContentPromptStore } from './store/ai-content-prompt.store';
 
 interface AIContentForm {
     textPrompt: FormControl<string>;
@@ -16,32 +14,32 @@ interface AIContentForm {
     templateUrl: './ai-content-prompt.component.html',
     styleUrls: ['./ai-content-prompt.component.scss']
 })
-export class AIContentPromptComponent {
-    isFormSubmitting = false;
+export class AIContentPromptComponent implements OnDestroy {
+    vm$: Observable<AiContentPromptState> = this.aiContentPromptStore.vm$;
 
     @ViewChild('input') private input: ElementRef;
-    @Output() formSubmission = new EventEmitter<boolean>();
-    @Output() aiResponse = new EventEmitter<string>();
+
+    private destroy$ = new Subject<boolean>();
 
     form: FormGroup<AIContentForm> = new FormGroup<AIContentForm>({
         textPrompt: new FormControl('', Validators.required)
     });
 
-    constructor(private aiContentService: AiContentService) {}
+    constructor(private readonly aiContentPromptStore: AiContentPromptStore) {}
+
+    ngOnDestroy() {
+        this.destroy$.next(true);
+    }
+
+    get store() {
+        return this.aiContentPromptStore;
+    }
 
     onSubmit() {
-        this.isFormSubmitting = true;
         const textPrompt = this.form.value.textPrompt;
 
         if (textPrompt) {
-            this.aiContentService
-                .generateContent(textPrompt)
-                .pipe(catchError(() => of(null)))
-                .subscribe((response) => {
-                    this.isFormSubmitting = false;
-                    this.formSubmission.emit(true);
-                    this.aiResponse.emit(response);
-                });
+            this.aiContentPromptStore.generateContent(textPrompt);
         }
     }
 

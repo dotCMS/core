@@ -6,12 +6,13 @@ import tippy, { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
 
-import { takeUntil } from 'rxjs/operators';
+import { filter, takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
 import { AIContentPromptComponent } from '../ai-content-prompt.component';
 import { AI_CONTENT_PROMPT_PLUGIN_KEY } from '../ai-content-prompt.extension';
+import { AiContentPromptStore } from '../store/ai-content-prompt.store';
 import { TIPPY_OPTIONS } from '../utils';
 
 interface AIContentPromptProps {
@@ -48,6 +49,8 @@ export class AIContentPromptView {
 
     public component: ComponentRef<AIContentPromptComponent>;
 
+    private componentStore: AiContentPromptStore;
+
     private destroy$ = new Subject<boolean>();
 
     constructor(props: AIContentPromptViewProps) {
@@ -62,15 +65,31 @@ export class AIContentPromptView {
         this.element.remove();
         this.pluginKey = pluginKey;
         this.component = component;
+        this.componentStore = this.component.instance.store;
 
-        this.component.instance.formSubmission.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.editor.commands.closeAIPrompt();
-        });
+        // this.component.instance.formSubmission.pipe(takeUntil(this.destroy$)).subscribe(() => {
+        //     this.editor.commands.closeAIPrompt();
+        // });
+        //
+        // this.component.instance.aiResponse.pipe(takeUntil(this.destroy$)).subscribe((content) => {
+        //     this.editor.commands.insertAINode(content);
+        //     this.editor.commands.openAIContentActions();
+        // });
 
-        this.component.instance.aiResponse.pipe(takeUntil(this.destroy$)).subscribe((content) => {
-            this.editor.commands.insertAINode(content);
-            this.editor.commands.openAIContentActions();
-        });
+        this.componentStore.content$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((content) => !!content)
+            )
+            .subscribe((content) => {
+                this.editor.commands.closeAIPrompt();
+                this.editor.commands.insertAINode(content);
+                this.editor.commands.openAIContentActions();
+            });
+
+        // this.component.instance.getPromptState.pipe(takeUntil(this.destroy$)).subscribe((state) => {
+        //     console.log('state - content$', state);
+        // });
     }
 
     update(view: EditorView, prevState?: EditorState) {
