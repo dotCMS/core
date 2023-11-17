@@ -86,7 +86,7 @@
         <test.working.dir>${project.build.directory}/testdata</test.working.dir>
         <test.temp.dir>${test.working.dir}/temp</test.temp.dir>
 
-        <starter.version>empty_20230525</starter.version>
+        <starter.version>empty_20231117</starter.version>
         <!--<starter.version>empty_20230509</starter.version>-->
 
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
