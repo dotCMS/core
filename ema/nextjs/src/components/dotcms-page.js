@@ -322,9 +322,9 @@ export const DotcmsPage = () => {
 
     return (
         <PostMessageProvider postMessage={{ postMessage }}>
-            <div className="flex flex-col min-h-screen">
+            <div className="flex flex-col min-h-screen gap-6">
                 {layout.header && <Header />}
-                <main className="flex-grow">
+                <main className="container flex flex-col gap-8 m-auto">
                     <h1 className="text-xl font-bold">{page.title}</h1>
                     {layout.body.rows.map((row, index) => (
                         <Row key={index} row={row} />
