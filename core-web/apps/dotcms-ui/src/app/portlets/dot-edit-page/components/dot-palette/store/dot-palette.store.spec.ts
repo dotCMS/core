@@ -181,7 +181,9 @@ describe('DotPaletteStore', () => {
     it('should load inly widgets to store if allowedContent is empty', (done) => {
         const sortedDataMock = contentTypeDataMock.sort((a, b) => a.name.localeCompare(b.name));
         spyOn(dotContentTypeService, 'filterContentTypes').and.returnValues(of([]));
-        spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(of(sortedDataMock as DotCMSContentType[]));
+        spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(
+            of(sortedDataMock as DotCMSContentType[])
+        );
         dotPaletteStore.loadContentTypes([]);
         dotPaletteStore.vm$.subscribe((data) => {
             expect(data.contentTypes).toEqual(sortedDataMock as DotCMSContentType[]);
@@ -231,7 +233,7 @@ describe('DotPaletteStore', () => {
                 lang: '1',
                 filter: '',
                 offset: '0',
-                query: '+contentType: product'
+                query: '+contentType: product +deleted: false'
             });
             expect(data.contentlets).toEqual([
                 contentletProductDataMock
