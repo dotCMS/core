@@ -398,10 +398,7 @@ public class LanguagesResource {
             long langId = language1.getId();
             final Map mapLanguageVariables = Try.of(()->APILocator.getLanguageVariableAPI().getAllLanguageVariablesKeyStartsWith("", langId,
                     user, -1)).getOrElse(ArrayList::new).stream().collect(Collectors.toMap(
-                    KeyValue::getKey,KeyValue::getValue, (key1,key2) ->{
-                        Logger.warn(this.getClass(),"duplicate language key found:" + key1);
-                        return key1;
-                    }));
+                    KeyValue::getKey,KeyValue::getValue));
 
             result.putAll(mapLanguageVariables);
 
