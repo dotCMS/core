@@ -162,6 +162,7 @@ const Container = ({ containerRef }) => {
 
     return (
         <div
+            className="flex flex-col gap-4"
             data-dot-accept-types={acceptTypes}
             data-dot-object="container"
             data-dot-inode={inode}
@@ -196,9 +197,7 @@ const Container = ({ containerRef }) => {
                         data-dot-can-edit={true}
                         data-dot-content-type-id={dotContentTypeId}
                         data-dot-has-page-lang-version="true">
-                        <div className="p-4 border border-gray-300">
-                            <Component {...contentlet} />
-                        </div>
+                        <Component {...contentlet} />
                     </div>
                 );
             })}
@@ -268,10 +267,9 @@ export const DotcmsPage = () => {
     const { layout, page } = useContext(GlobalContext);
 
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col min-h-screen gap-6">
             {layout.header && <Header />}
-            <main className="flex-grow">
-                <h1 className="text-xl font-bold">{page.title}</h1>
+            <main className="container flex flex-col gap-8 m-auto">
                 {layout.body.rows.map((row, index) => (
                     <Row key={index} row={row} />
                 ))}
