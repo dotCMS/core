@@ -12,7 +12,8 @@ async function getPage({ url, language_id }) {
     const res = await fetch(requestUrl, {
         headers: {
             Authorization: `Bearer ${process.env.DOTCMS_AUTH_TOKEN}`
-        }
+        },
+        cache: 'no-store'
     });
 
     if (!res.ok) {
@@ -30,7 +31,8 @@ async function getNav() {
     const res = await fetch(requestUrl, {
         headers: {
             Authorization: `Bearer ${process.env.DOTCMS_AUTH_TOKEN}`
-        }
+        },
+        cache: 'no-store'
     });
 
     if (!res.ok) {
