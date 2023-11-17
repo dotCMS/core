@@ -1,5 +1,7 @@
 import React from 'react';
 
+import Head from 'next/head';
+
 import GlobalProvider from '@/providers/global';
 import { DotcmsPage } from '@/components/dotcms-page';
 
@@ -41,6 +43,17 @@ async function getNav() {
     return res.json();
 }
 
+export async function generateMetadata({ params, searchParams }) {
+    const data = await getPage({
+        url: params?.slug ? params.slug.join('/') : 'index',
+        language_id: searchParams.language_id
+    });
+
+    return {
+        title: data.entity.page.friendlyName || data.entity.page.title
+    };
+}
+
 export default async function Home({ searchParams, params }) {
     const data = await getPage({
         url: params?.slug ? params.slug.join('/') : 'index',
@@ -56,6 +69,9 @@ export default async function Home({ searchParams, params }) {
                 ...data.entity,
                 nav: nav.entity.children
             }}>
+            <Head>
+                <title>My page title</title>
+            </Head>
             <DotcmsPage />
         </GlobalProvider>
     );
