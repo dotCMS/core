@@ -36,10 +36,11 @@
     data-testId="dialog">
     <iframe
         #dialogIframe
+        [style]="{ border: 'none', display: loadingIframe ? 'none' : 'block' }"
         (load)="onIframeLoad($event)"
         title="dialog"
         data-testId="dialog-iframe"
         width="100%"
-        height="100%"
-        style="border: none"></iframe>
+        height="100%"></iframe>
+    <dot-spinner *ngIf="loadingIframe" data-testId="spinner"></dot-spinner>
 </p-dialog>

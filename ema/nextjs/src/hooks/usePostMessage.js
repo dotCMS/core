@@ -1,7 +1,7 @@
 import { useLayoutEffect } from 'react';
 
 function reloadWindow(event) {
-    if (event.data !== 'reload') return;
+    if (event.data !== 'ema-reload-page') return;
 
     window.location.reload();
 }

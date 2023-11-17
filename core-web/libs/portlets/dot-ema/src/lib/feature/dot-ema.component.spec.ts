@@ -11,6 +11,7 @@ import { DotEmaComponent } from './dot-ema.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotPageApiService } from '../services/dot-page-api.service';
+import { WINDOW } from '../shared/models';
 
 describe('DotEmaComponent', () => {
     let spectator: Spectator<DotEmaComponent>;
@@ -33,6 +34,10 @@ describe('DotEmaComponent', () => {
                         });
                     }
                 }
+            },
+            {
+                provide: WINDOW,
+                useValue: window
             }
         ]
     });
@@ -152,6 +157,66 @@ describe('DotEmaComponent', () => {
             spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
 
             expect(spectator.component.onIframeLoad).toHaveBeenCalled();
+        });
+
+        it('should show an spinner when triggering an action for the dialog', () => {
+            jest.spyOn(spectator.component, 'onIframeLoad');
+            spectator.triggerEventHandler('select[data-testId="language_id"]', 'change', {
+                target: { name: 'language_id', value: '2' }
+            });
+
+            window.dispatchEvent(
+                new MessageEvent('message', {
+                    origin: 'http://localhost:3000',
+                    data: {
+                        action: 'edit-contentlet',
+                        payload: {
+                            inode: '123'
+                        }
+                    }
+                })
+            );
+
+            spectator.detectChanges();
+
+            const spinner = spectator.query(byTestId('spinner'));
+
+            expect(spinner).toBeTruthy();
+        });
+
+        it('should not show the spinner after iframe load', () => {
+            jest.spyOn(spectator.component, 'onIframeLoad');
+            spectator.triggerEventHandler('select[data-testId="language_id"]', 'change', {
+                target: { name: 'language_id', value: '2' }
+            });
+
+            window.dispatchEvent(
+                new MessageEvent('message', {
+                    origin: 'http://localhost:3000',
+                    data: {
+                        action: 'edit-contentlet',
+                        payload: {
+                            inode: '123'
+                        }
+                    }
+                })
+            );
+
+            spectator.detectChanges();
+
+            const spinner = spectator.query(byTestId('spinner'));
+
+            expect(spinner).toBeTruthy();
+
+            const dialogIframe = spectator.debugElement.query(
+                By.css("[data-testId='dialog-iframe']")
+            );
+
+            spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
+
+            const nullSpinner = spectator.query(byTestId('spinner'));
+
+            expect(nullSpinner).toBeFalsy();
         });
     });
 
