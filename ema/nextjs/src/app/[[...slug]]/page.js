@@ -1,7 +1,5 @@
 import React from 'react';
 
-import Head from 'next/head';
-
 import GlobalProvider from '@/providers/global';
 import { DotcmsPage } from '@/components/dotcms-page';
 
@@ -69,9 +67,6 @@ export default async function Home({ searchParams, params }) {
                 ...data.entity,
                 nav: nav.entity.children
             }}>
-            <Head>
-                <title>My page title</title>
-            </Head>
             <DotcmsPage />
         </GlobalProvider>
     );
