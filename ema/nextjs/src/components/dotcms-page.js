@@ -4,6 +4,17 @@ import { useContext } from 'react';
 import { GlobalContext } from '../providers/global';
 import PostMessageProvider, { PostMessageContext } from '@/providers/message';
 import usePostMessage from '@/hooks/usePostMessage';
+import Image from 'next/image';
+import Link from 'next/link';
+
+// Provide a component for each content type
+const contentComponents = {
+    webPageContent: WebPageContent,
+    Banner: Banner,
+    Activity: Activity,
+    Product: Product,
+    Image: ImageComponent
+};
 
 function WebPageContent({ title, body }) {
     return (
@@ -14,18 +25,137 @@ function WebPageContent({ title, body }) {
     );
 }
 
-function NoContent() {
-    return <h1>No Content</h1>;
+function ImageComponent({ fileAsset, title, description }) {
+    return (
+        <div className="relative overflow-hidden bg-white rounded shadow-lg group">
+            <div className="relative w-full bg-gray-200 h-96">
+                <Image
+                    src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${fileAsset}`}
+                    fill={true}
+                    className="object-cover"
+                    alt={title}
+                />
+            </div>
+            <div className="absolute bottom-0 w-full px-6 py-8 text-white transition-transform duration-300 translate-y-full bg-orange-500 bg-opacity-80 w-100 group-hover:translate-y-0">
+                <div className="mb-2 text-2xl font-bold">{title}</div>
+                <p className="text-base">{description}</p>
+            </div>
+        </div>
+    );
 }
 
-// Provide a component for each content type
-const contentComponents = {
-    webPageContent: WebPageContent
-};
+function Activity({ title, description, image, urlTitle }) {
+    return (
+        <article className="p-4 overflow-hidden bg-white rounded shadow-lg">
+            <Image
+                className="w-full"
+                src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}`}
+                width={100}
+                height={100}
+                alt="Activity Image"
+            />
+            <div className="px-6 py-4">
+                <p className="mb-2 text-xl font-bold">{title}</p>
+                <p className="text-base line-clamp-3">{description}</p>
+            </div>
+            <div className="px-6 pt-4 pb-2">
+                <Link
+                    href={`/activities/${urlTitle || '#'}`}
+                    className="inline-block px-4 py-2 font-bold text-white bg-blue-500 rounded-full hover:bg-blue-700">
+                    Link to detail →
+                </Link>
+            </div>
+        </article>
+    );
+}
+
+function Banner({ title, image, caption, buttonText, link }) {
+    return (
+        <div className="relative w-full p-4 bg-gray-200 h-96">
+            <Image
+                src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}`}
+                fill={true}
+                className="object-cover"
+                alt={title}
+            />
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-white">
+                <h2 className="mb-2 text-6xl font-bold text-shadow">{title}</h2>
+                <p className="mb-4 text-xl text-shadow">{caption}</p>
+                <Link
+                    className="p-4 text-xl transition duration-300 bg-blue-500 rounded hover:bg-blue-600"
+                    href={link || '#'}>
+                    {buttonText}
+                </Link>
+            </div>
+        </div>
+    );
+}
+
+function Product({ image, title, salePrice, retailPrice, urlTitle }) {
+    const formatPrice = (price) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD'
+        }).format(price);
+    };
+
+    return (
+        <div className="overflow-hidden bg-white rounded shadow-lg">
+            <div className="p-4">
+                <Image
+                    className="w-full"
+                    src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}`}
+                    width={100}
+                    height={100}
+                    alt="Activity Image"
+                />
+            </div>
+            <div className="px-6 py-4 bg-slate-100">
+                <div className="mb-2 text-xl font-bold">{title}</div>
+                {retailPrice && salePrice ? (
+                    <>
+                        <div className="text-gray-500 line-through">{formatPrice(retailPrice)}</div>
+                        <div className="text-3xl font-bold ">{formatPrice(salePrice)}</div>
+                    </>
+                ) : (
+                    <div className="text-3xl font-bold">
+                        {retailPrice ? formatPrice(retailPrice) : formatPrice(salePrice)}
+                    </div>
+                )}
+                <Link
+                    href={`/store/products/${urlTitle || '#'}`}
+                    className="inline-block px-4 py-2 mt-4 text-white bg-green-500 rounded hover:bg-green-600">
+                    Buy Now
+                </Link>
+            </div>
+        </div>
+    );
+}
+
+function NoContent({ contentType }) {
+    return <h1>No Content for {contentType}</h1>;
+}
 
 // Header component
 const Header = () => {
-    return <header className="p-4 text-white bg-blue-500">Header</header>;
+    const { nav, page } = useContext(GlobalContext);
+    return (
+        <header className="flex items-center justify-between p-4 bg-blue-500">
+            <div className="flex items-center">
+                <h2 className="text-3xl font-bold text-white">
+                    <Link href="/">TravelLux</Link>
+                </h2>
+            </div>
+            <Navigation className="text-white" nav={nav} />
+            <div className="flex items-center">
+                <select className="px-2 py-1 border border-gray-300 rounded">
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                </select>
+            </div>
+        </header>
+    );
 };
 
 // Footer component
@@ -52,6 +182,7 @@ const Container = ({ containerRef }) => {
 
     return (
         <div
+            className="flex flex-col gap-4"
             data-dot-accept-types={acceptTypes}
             data-dot-object="container"
             data-dot-inode={inode}
@@ -163,6 +294,25 @@ const Row = ({ row }) => {
         </div>
     );
 };
+
+function Navigation({ nav, className }) {
+    return (
+        <nav className={className}>
+            <ul className="flex space-x-4">
+                <li>
+                    <Link href="/">Home</Link>
+                </li>
+                {nav.map((item) => (
+                    <li key={item.folder}>
+                        <Link href={item.href} target={item.target}>
+                            {item.title}
+                        </Link>
+                    </li>
+                ))}
+            </ul>
+        </nav>
+    );
+}
 
 // Main layout component
 export const DotcmsPage = () => {
