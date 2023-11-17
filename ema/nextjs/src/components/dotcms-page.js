@@ -1,21 +1,11 @@
 'use client';
 
-import { useContext, useEffect } from 'react';
+import { useContext } from 'react';
 import { GlobalContext } from '../providers/global';
-
-function reloadWindow(event) {
-    if (event.data !== 'reload') return;
-
-    window.location.reload();
-}
+import PostMessageProvider, { PostMessageContext } from '@/providers/message';
+import usePostMessage from '@/hooks/usePostMessage';
 
 function WebPageContent({ title, body }) {
-    useEffect(() => {
-        window.removeEventListener('message', reloadWindow);
-
-        window.addEventListener('message', reloadWindow);
-    }, []);
-
     return (
         <>
             <h1 className="text-xl font-bold">{title}</h1>
@@ -49,6 +39,7 @@ const Container = ({ containerRef }) => {
 
     // Get the containers from the global context
     const { containers } = useContext(GlobalContext);
+    const { postMessage } = useContext(PostMessageContext);
 
     const { container, containerStructures } = containers[identifier];
     const { inode, maxContentlets } = container;
@@ -98,7 +89,7 @@ const Container = ({ containerRef }) => {
                         <div className="p-4 border border-gray-300">
                             <button
                                 onClick={() => {
-                                    window.parent.postMessage(
+                                    postMessage(
                                         {
                                             action: 'edit-contentlet',
                                             payload: contentlet
@@ -177,17 +168,20 @@ const Row = ({ row }) => {
 export const DotcmsPage = () => {
     // Get the page layout from the global context
     const { layout, page } = useContext(GlobalContext);
+    const { postMessage } = usePostMessage();
 
     return (
-        <div className="flex flex-col min-h-screen">
-            {layout.header && <Header />}
-            <main className="flex-grow">
-                <h1 className="text-xl font-bold">{page.title}</h1>
-                {layout.body.rows.map((row, index) => (
-                    <Row key={index} row={row} />
-                ))}
-            </main>
-            {layout.footer && <Footer />}
-        </div>
+        <PostMessageProvider postMessage={{ postMessage }}>
+            <div className="flex flex-col min-h-screen">
+                {layout.header && <Header />}
+                <main className="flex-grow">
+                    <h1 className="text-xl font-bold">{page.title}</h1>
+                    {layout.body.rows.map((row, index) => (
+                        <Row key={index} row={row} />
+                    ))}
+                </main>
+                {layout.footer && <Footer />}
+            </div>
+        </PostMessageProvider>
     );
 };

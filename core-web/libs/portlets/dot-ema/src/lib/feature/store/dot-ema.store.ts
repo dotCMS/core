@@ -38,6 +38,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly url$: Observable<string> = this.select((state) => state.url);
     readonly pageTitle$: Observable<string> = this.select((state) => state.editor.page.title);
 
+    /**
+     * Load the page editor
+     *
+     * @memberof EditEmaStore
+     */
     readonly load = this.effect((params$: Observable<DotPageApiParams>) => {
         return params$.pipe(
             switchMap(({ language_id, url }) =>

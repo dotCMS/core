@@ -1,9 +1,11 @@
-import { CommonModule, DOCUMENT } from '@angular/common';
+import { AsyncPipe, DOCUMENT, NgFor } from '@angular/common';
 import {
     AfterViewInit,
+    ChangeDetectorRef,
     Component,
     ElementRef,
     Inject,
+    OnDestroy,
     OnInit,
     ViewChild,
     inject
@@ -11,7 +13,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
-import { Dialog } from 'primeng/dialog';
+import { DialogModule } from 'primeng/dialog';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { SafeUrlPipe } from '@dotcms/ui';
@@ -24,15 +26,12 @@ import { CUSTOM_EVENTS, MESSAGE_ACTIONS } from '../shared/models';
 @Component({
     selector: 'dot-ema',
     standalone: true,
-
-    imports: [CommonModule, FormsModule, SafeUrlPipe],
+    imports: [NgFor, AsyncPipe, FormsModule, SafeUrlPipe, DialogModule],
     providers: [EditEmaStore, DotPageApiService],
-
     templateUrl: './dot-ema.component.html',
     styleUrls: ['./dot-ema.component.scss']
 })
-export class DotEmaComponent implements OnInit, AfterViewInit {
-    @ViewChild('dialog') dialog!: Dialog;
+export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
 
@@ -58,20 +57,20 @@ export class DotEmaComponent implements OnInit, AfterViewInit {
         }
     ];
 
-    route = inject(ActivatedRoute);
-    router = inject(Router);
-    store = inject(EditEmaStore);
+    readonly route = inject(ActivatedRoute);
+    readonly router = inject(Router);
+    readonly store = inject(EditEmaStore);
     readonly host = 'http://localhost:3000';
 
-    iframeUrl$ = this.store.iframeUrl$;
-    language_id$ = this.store.language_id$;
-    title$ = this.store.pageTitle$;
-    url$ = this.store.url$;
+    readonly iframeUrl$ = this.store.iframeUrl$;
+    readonly language_id$ = this.store.language_id$;
+    readonly title$ = this.store.pageTitle$;
+    readonly url$ = this.store.url$;
 
     visible = false;
     header = '';
 
-    constructor(@Inject(DOCUMENT) private document: Document) {}
+    constructor(@Inject(DOCUMENT) private document: Document, private cd: ChangeDetectorRef) {}
 
     ngOnInit(): void {
         this.route.queryParams.subscribe(({ language_id, url }: Params) => {
@@ -83,16 +82,16 @@ export class DotEmaComponent implements OnInit, AfterViewInit {
     }
 
     ngAfterViewInit(): void {
-        this.document.defaultView?.addEventListener('message', (event: MessageEvent) => {
-            // This should be the host the user uses for nextjs, because this can trigger react dev tools messages
-            if (event.origin !== this.host) {
-                return;
-            }
-
-            this.handlePostMessage(event.data)();
-        });
+        this.document.defaultView?.addEventListener('message', (event) =>
+            this.handlePostMessage(event)()
+        );
     }
 
+    ngOnDestroy(): void {
+        this.document.defaultView?.removeEventListener('message', (event) =>
+            this.handlePostMessage(event)()
+        );
+    }
     /**
      * Create the url to edit a contentlet
      *
@@ -118,7 +117,7 @@ export class DotEmaComponent implements OnInit, AfterViewInit {
             this.handleNgEvent.bind(this)
         );
 
-        this.dialogIframe.nativeElement.contentWindow?.document.addEventListener(
+        this.dialogIframe.nativeElement.contentWindow?.addEventListener(
             'ng-event',
             this.handleNgEvent.bind(this)
         );
@@ -149,10 +148,15 @@ export class DotEmaComponent implements OnInit, AfterViewInit {
      * @return {*}
      * @memberof DotEmaComponent
      */
-    private handlePostMessage(data: {
-        action: MESSAGE_ACTIONS;
-        payload: DotCMSContentlet;
+    private handlePostMessage({
+        origin,
+        data
+    }: {
+        origin: string;
+        data: { action: MESSAGE_ACTIONS; payload: DotCMSContentlet };
     }): () => void {
+        const action = origin !== this.host ? 'NOOP' : data.action;
+
         return {
             [MESSAGE_ACTIONS.EDIT_CONTENTLET]: () => {
                 this.visible = true;
@@ -160,8 +164,11 @@ export class DotEmaComponent implements OnInit, AfterViewInit {
                 this.dialogIframe.nativeElement.src = this.createEditContentletUrl(
                     data.payload.inode
                 );
+            },
+            NOOP: () => {
+                /* Do Nothing because is not the origin we are expecting */
             }
-        }[data.action];
+        }[action];
     }
 
     /*
