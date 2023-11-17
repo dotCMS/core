@@ -1,10 +1,41 @@
-<iframe
-    #iframe
-    [title]="host"
-    src="http://localhost:3000/test"
-    height="100%"
-    width="100%"
-    style="border: none"></iframe>
+<div class="flex gap-3 toolbar align-items-center">
+    <h4>{{ title$ | async }}</h4>
+
+    <select
+        id="language_id"
+        [ngModel]="language_id$ | async"
+        (change)="onChange($event)"
+        data-testId="language_id"
+        aria-label="language_id"
+        name="language_id">
+        <option *ngFor="let language of languages" value="{{ language.value }}">
+            {{ language.name }}
+        </option>
+    </select>
+
+    <!-- This is for demo purpose, going away -->
+    <select
+        id="url"
+        [ngModel]="url$ | async"
+        (change)="onChange($event)"
+        aria-label="url"
+        name="url">
+        <option *ngFor="let page of pages" value="{{ page.value }}">
+            {{ page.name }}
+        </option>
+    </select>
+</div>
+<div class="iframe-wrapper">
+    <iframe
+        #iframe
+        [src]="iframeUrl$ | async | safeUrl"
+        [title]="host"
+        data-testId="iframe"
+        style="border: none"
+        width="100%"
+        height="100%"
+        title="Editor Page"></iframe>
+</div>
 <p-dialog
     #dialog
     [(visible)]="visible"
