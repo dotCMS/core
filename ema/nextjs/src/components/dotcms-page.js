@@ -30,7 +30,7 @@ function Activity({ title, description, image, urlTitle }) {
             </div>
             <div className="px-6 pt-4 pb-2">
                 <Link
-                    href={`/activities/${urlTitle}`}
+                    href={`/activities/${urlTitle || '#'}`}
                     className="inline-block px-4 py-2 font-bold text-white bg-blue-500 rounded-full hover:bg-blue-700">
                     Link to detail →
                 </Link>
@@ -53,7 +53,7 @@ function Banner({ title, image, caption, buttonText, link }) {
                 <p className="mb-4 text-xl text-shadow">{caption}</p>
                 <Link
                     className="p-4 text-xl transition duration-300 bg-blue-500 rounded hover:bg-blue-600"
-                    href={link}>
+                    href={link || '#'}>
                     {buttonText}
                 </Link>
             </div>
