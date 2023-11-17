@@ -49,7 +49,7 @@ language - *Language operations.*
 == Commands
 
 xref:language-pull.adoc[*pull*]::
-  *dotCMS Language Pull*
+  *Retrieves languages descriptors*
 
 xref:language-find.adoc[*find*]::
   *Get all existing languages*
