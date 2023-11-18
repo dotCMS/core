@@ -1,6 +1,6 @@
 import { Subject, fromEvent } from 'rxjs';
 
-import { AsyncPipe, DOCUMENT, NgFor } from '@angular/common';
+import { AsyncPipe, NgFor, NgIf } from '@angular/common';
 import {
     AfterViewInit,
     Component,
@@ -19,18 +19,25 @@ import { DialogModule } from 'primeng/dialog';
 import { takeUntil } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { SafeUrlPipe } from '@dotcms/ui';
+import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { CUSTOM_EVENTS, MESSAGE_ACTIONS } from '../shared/models';
+import { CUSTOM_EVENTS, MESSAGE_ACTIONS, WINDOW } from '../shared/models';
 
 @Component({
     selector: 'dot-ema',
     standalone: true,
-    imports: [NgFor, AsyncPipe, FormsModule, SafeUrlPipe, DialogModule],
-    providers: [EditEmaStore, DotPageApiService],
+    imports: [NgFor, NgIf, AsyncPipe, FormsModule, SafeUrlPipe, DialogModule, DotSpinnerModule],
+    providers: [
+        EditEmaStore,
+        DotPageApiService,
+        {
+            provide: WINDOW,
+            useValue: window
+        }
+    ],
     templateUrl: './dot-ema.component.html',
     styleUrls: ['./dot-ema.component.scss']
 })
@@ -78,8 +85,9 @@ export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
 
     visible = false;
     header = '';
+    loadingIframe = true;
 
-    constructor(@Inject(DOCUMENT) private document: Document) {}
+    constructor(@Inject(WINDOW) private window: Window) {}
 
     ngOnInit(): void {
         this.route.queryParams.subscribe(({ language_id, url }: Params) => {
@@ -108,7 +116,7 @@ export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     ngAfterViewInit(): void {
-        fromEvent(this.document.defaultView, 'message')
+        fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: MessageEvent) => {
                 this.handlePostMessage(event)();
@@ -126,6 +134,7 @@ export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     onIframeLoad(_: Event) {
+        this.loadingIframe = false;
         // This event is destroyed when you close the dialog
         fromEvent(
             // The events are getting sended to the document
@@ -188,7 +197,7 @@ export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
         if (detail.name === CUSTOM_EVENTS.EDIT_CONTENTLET_LOADED) return;
 
         // This forces a reload in the iframe
-        this.iframe.nativeElement.contentWindow?.postMessage('reload', this.host);
+        this.iframe.nativeElement.contentWindow?.postMessage('ema-reload-page', this.host);
     }
 
     /**
@@ -210,6 +219,7 @@ export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
 
         return {
             [MESSAGE_ACTIONS.EDIT_CONTENTLET]: () => {
+                this.loadingIframe = true;
                 this.visible = true;
                 this.header = data.payload.title;
                 this.dialogIframe.nativeElement.src = this.createEditContentletUrl(
