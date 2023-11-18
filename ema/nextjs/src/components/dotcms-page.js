@@ -25,11 +25,15 @@ function WebPageContent({ title, body }) {
 }
 
 function ImageComponent({ fileAsset, title, description }) {
+    const {
+        viewAs: { language }
+    } = useContext(GlobalContext);
+
     return (
         <div className="relative overflow-hidden bg-white rounded shadow-lg group">
             <div className="relative w-full bg-gray-200 h-96">
                 <Image
-                    src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${fileAsset}`}
+                    src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${fileAsset}?language_id=${language.id}`}
                     fill={true}
                     className="object-cover"
                     alt={title}
@@ -44,11 +48,15 @@ function ImageComponent({ fileAsset, title, description }) {
 }
 
 function Activity({ title, description, image, urlTitle }) {
+    const {
+        viewAs: { language }
+    } = useContext(GlobalContext);
+
     return (
         <article className="p-4 overflow-hidden bg-white rounded shadow-lg">
             <Image
                 className="w-full"
-                src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}`}
+                src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}?language_id=${language.id}`}
                 width={100}
                 height={100}
                 alt="Activity Image"
@@ -69,10 +77,14 @@ function Activity({ title, description, image, urlTitle }) {
 }
 
 function Banner({ title, image, caption, buttonText, link }) {
+    const {
+        viewAs: { language }
+    } = useContext(GlobalContext);
+
     return (
         <div className="relative w-full p-4 bg-gray-200 h-96">
             <Image
-                src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}`}
+                src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}?language_id=${language.id}`}
                 fill={true}
                 className="object-cover"
                 alt={title}
@@ -91,6 +103,10 @@ function Banner({ title, image, caption, buttonText, link }) {
 }
 
 function Product({ image, title, salePrice, retailPrice, urlTitle }) {
+    const {
+        viewAs: { language }
+    } = useContext(GlobalContext);
+
     const formatPrice = (price) => {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
@@ -103,7 +119,7 @@ function Product({ image, title, salePrice, retailPrice, urlTitle }) {
             <div className="p-4">
                 <Image
                     className="w-full"
-                    src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}`}
+                    src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}?language_id=${language.id}`}
                     width={100}
                     height={100}
                     alt="Activity Image"
