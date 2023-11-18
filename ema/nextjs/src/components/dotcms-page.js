@@ -1,9 +1,8 @@
 'use client';
 
+import React, { useEffect } from 'react';
 import { useContext } from 'react';
 import { GlobalContext } from '../providers/global';
-import PostMessageProvider, { PostMessageContext } from '@/providers/message';
-import usePostMessage from '@/hooks/usePostMessage';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -138,7 +137,7 @@ function NoContent({ contentType }) {
 
 // Header component
 const Header = () => {
-    const { nav, page } = useContext(GlobalContext);
+    const { nav } = useContext(GlobalContext);
     return (
         <header className="flex items-center justify-between p-4 bg-blue-500">
             <div className="flex items-center">
@@ -158,6 +157,30 @@ const Header = () => {
     );
 };
 
+// Button component
+function EditButton({ contentlet }) {
+    return (
+        <button
+            style={{
+                border: 0,
+                backgroundColor: 'lightgray',
+                color: 'black',
+                border: 'solid 1px'
+            }}
+            onClick={() => {
+                window.parent.postMessage(
+                    {
+                        action: 'edit-contentlet',
+                        payload: contentlet
+                    },
+                    '*'
+                );
+            }}>
+            edit
+        </button>
+    );
+}
+
 // Footer component
 const Footer = () => {
     return <footer className="p-4 text-white bg-blue-500">Footer</footer>;
@@ -169,7 +192,6 @@ const Container = ({ containerRef }) => {
 
     // Get the containers from the global context
     const { containers } = useContext(GlobalContext);
-    const { postMessage } = useContext(PostMessageContext);
 
     const { container, containerStructures } = containers[identifier];
     const { inode, maxContentlets } = container;
@@ -201,11 +223,11 @@ const Container = ({ containerRef }) => {
                     dotContentTypeId
                 } = contentlet;
 
-                // Get the component for the content type or use the NoContent component
                 const Component = contentComponents[contentlet.contentType] || NoContent;
 
                 return (
                     <div
+                        className="p-4 border border-gray-300"
                         key={contentlet.identifier}
                         data-dot-object="contentlet"
                         data-dot-inode={inode}
@@ -217,21 +239,8 @@ const Container = ({ containerRef }) => {
                         data-dot-can-edit={true}
                         data-dot-content-type-id={dotContentTypeId}
                         data-dot-has-page-lang-version="true">
-                        <div className="p-4 border border-gray-300">
-                            <button
-                                onClick={() => {
-                                    postMessage(
-                                        {
-                                            action: 'edit-contentlet',
-                                            payload: contentlet
-                                        },
-                                        '*'
-                                    );
-                                }}>
-                                edit
-                            </button>
-                            <Component {...contentlet} />
-                        </div>
+                        <EditButton contentlet={contentlet} />
+                        <Component {...contentlet} />
                     </div>
                 );
             })}
@@ -278,7 +287,7 @@ const Column = ({ column }) => {
     return (
         <div className={`${widthClass} ${startClass}`}>
             {column.containers.map((container, index) => (
-                <Container key={index} containerRef={container} />
+                <Container key={container.identifier} containerRef={container} />
             ))}
         </div>
     );
@@ -314,23 +323,35 @@ function Navigation({ nav, className }) {
     );
 }
 
+function reloadWindow(event) {
+    if (event.data !== 'ema-reload-page') return;
+
+    window.location.reload();
+}
+
 // Main layout component
 export const DotcmsPage = () => {
     // Get the page layout from the global context
     const { layout, page } = useContext(GlobalContext);
 
+    useEffect(() => {
+        window.addEventListener('message', reloadWindow);
+
+        return () => {
+            window.removeEventListener('message', reloadWindow);
+        };
+    }, []);
+
     return (
-        <PostMessageProvider>
-            <div className="flex flex-col min-h-screen gap-6">
-                {layout.header && <Header />}
-                <main className="container flex flex-col gap-8 m-auto">
-                    <h1 className="text-xl font-bold">{page.title}</h1>
-                    {layout.body.rows.map((row, index) => (
-                        <Row key={index} row={row} />
-                    ))}
-                </main>
-                {layout.footer && <Footer />}
-            </div>
-        </PostMessageProvider>
+        <div className="flex flex-col min-h-screen gap-6">
+            {layout.header && <Header />}
+            <main className="container flex flex-col gap-8 m-auto">
+                <h1 className="text-xl font-bold">{page.title}</h1>
+                {layout.body.rows.map((row, index) => (
+                    <Row key={index} row={row} />
+                ))}
+            </main>
+            {layout.footer && <Footer />}
+        </div>
     );
 };
