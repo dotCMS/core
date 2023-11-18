@@ -1,9 +1,9 @@
 // tag::picocli-generated-full-manpage[]
 // tag::picocli-generated-man-section-header[]
 :doctype: manpage
-:revnumber: 
+:revnumber:
 :manmanual: Login Manual
-:mansource: 
+:mansource:
 :man-linkstyle: pass:[blue R < >]
 = login(1)
 
@@ -39,13 +39,26 @@ login - *Use this command to login to a dotCMS instance.*
 == Options
 
 *-h*, *--help*::
-  Display this help message.
+Display this help message.
 
 *-p*, *--password*[=_<password>_]::
-  Passphrase
+Passphrase
 
 *-u*, *--user*=_<user>_::
-  User name
+User name
+
+== Example
+
+ The following is the recommended way to use this param as the password will be promted securely
+
+*login* *-u*=admin@dotCMS.com *-p*::
+
+ Both options, user and password are mandatory and they can also be providing inline as follows:
+
+*login* *-u*=admin@dotCMS.com *-p*=admin::
+
+ However, this opens a possibility for password theft
+
 
 // end::picocli-generated-man-section-options[]
 
