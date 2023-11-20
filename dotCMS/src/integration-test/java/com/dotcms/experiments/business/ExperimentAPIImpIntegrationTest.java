@@ -4178,6 +4178,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#deleteVariant(String, String, User)}
+     * When: Deleting the last Variant that is not the Original/Default
+     * Should: Reset the split type to SPLIT_EVENLY
+     */
     @Test
     public void removeAllVariants_ShouldResetSplitTypeToSplitEvenly()
             throws DotDataException, DotSecurityException {
