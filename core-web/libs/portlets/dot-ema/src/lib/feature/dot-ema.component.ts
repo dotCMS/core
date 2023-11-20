@@ -75,11 +75,11 @@ export class DotEmaComponent implements OnInit, OnDestroy {
         }
     ];
 
-    readonly route = inject(ActivatedRoute);
-    readonly router = inject(Router);
-    readonly store = inject(EditEmaStore);
-    readonly host = 'http://localhost:3000';
+    private readonly route = inject(ActivatedRoute);
+    private readonly router = inject(Router);
+    private readonly store = inject(EditEmaStore);
 
+    readonly host = 'http://localhost:3000';
     readonly vm$ = this.store.vm$;
 
     constructor(@Inject(WINDOW) private window: Window) {}
