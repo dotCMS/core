@@ -170,3 +170,4 @@ This maintenance release includes the following code fixes:
 140. https://github.com/dotCMS/core/issues/24775 : LogViewer connection times out. #24775
 141. https://github.com/dotCMS/core/issues/24885 : Define startup and liveness probes #24885
 142. https://github.com/dotCMS/core/issues/25613 : MonitorResource throws exception if DOT_SYSTEM_STATUS_API_IP_ACL is not set #25613
+143. https://github.com/dotCMS/core/issues/26481 : Pubsub Connection should prefer SSL #26481

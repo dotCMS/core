@@ -15,6 +15,8 @@ import io.vavr.control.Try;
  */
 class PgNgDataSourceUrl {
 
+    static final String SSL_MODE = System.getenv("DOT_PUBSUB_SSL_MODE") != null ? System.getenv("DOT_PUBSUB_SSL_MODE") : "prefer";
+
     private final String finalUrl;
 
     /**
@@ -66,7 +68,17 @@ class PgNgDataSourceUrl {
         sw.append("/");
         sw.append(data[data.length - 1]);
 
-        return sw.toString();
+        if(url.contains("ssl.mode=")){
+            return sw.toString();
+        }
+        if(url.contains("?")){
+            sw.append( "&");
+        }else{
+            sw.append( "?");
+        }
+
+        sw.append("ssl.mode=" + SSL_MODE);
+        return  sw.toString();
 
     }
 
