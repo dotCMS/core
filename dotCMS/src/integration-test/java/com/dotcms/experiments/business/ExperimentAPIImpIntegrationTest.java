@@ -43,17 +43,20 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.enterprise.publishing.remote.bundler.VariantBundler;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.VariantResults;
 import com.dotcms.experiments.business.result.VariantResults.ResultResumeItem;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
+import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.GoalFactory;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.RunningIds.RunningId;
 import com.dotcms.experiments.model.Scheduling;
+import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.http.server.mock.MockHttpServer;
 import com.dotcms.http.server.mock.MockHttpServerContext;
 import com.dotcms.http.server.mock.MockHttpServerContext.RequestContext;
@@ -4173,6 +4176,51 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
             }
         }
+    }
+
+    @Test
+    public void removeAllVariants_ShouldResetSplitTypeToSplitEvenly()
+            throws DotDataException, DotSecurityException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .page(pageA).nextPersisted();
+
+        final SortedSet<ExperimentVariant> variants = experiment.trafficProportion().variants();
+        final ExperimentVariant original80 = ExperimentVariant.builder()
+                .from(variants.first()).weight(80f).build();
+
+        final Experiment withVariant = APILocator.getExperimentsAPI()
+                .addVariant(experiment.id().orElseThrow(), "v1",
+                APILocator.systemUser());
+
+        final ExperimentVariant v1 = withVariant.trafficProportion().variants().stream()
+                .filter((variant)->variant.description().equals("v1"))
+                .collect(Collectors.toList()).get(0);
+
+        final SortedSet<ExperimentVariant> weightedVariants = new TreeSet<>();
+        weightedVariants.add(original80);
+        weightedVariants.add(ExperimentVariant.builder().from(v1)
+                .weight(20)
+                .build());
+
+        final Experiment experimentWithSplitCustom = experiment.withTrafficProportion(
+                experiment.trafficProportion().withVariants(weightedVariants).withType(Type.CUSTOM_PERCENTAGES));
+
+        final Experiment persistedExperiment = APILocator.getExperimentsAPI()
+                .save(experimentWithSplitCustom, APILocator.systemUser());
+
+        APILocator.getExperimentsAPI().deleteVariant(persistedExperiment.id().orElseThrow(),
+                v1.id(), APILocator.systemUser());
+
+        final Experiment experimentAfterDelete = APILocator.getExperimentsAPI().
+                find(persistedExperiment.id().orElseThrow(), APILocator.systemUser()).orElseThrow();
+
+        assertEquals(Type.SPLIT_EVENLY, experimentAfterDelete.trafficProportion().type());
     }
 }
 
