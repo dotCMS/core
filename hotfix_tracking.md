@@ -167,3 +167,4 @@ This maintenance release includes the following code fixes:
 137. https://github.com/dotCMS/core/issues/24406 : Block Editor adds trailing space to hyperlinks or marks #24406
 138. https://github.com/dotCMS/core/issues/24468 : Osgi always restart #24468
 139. https://github.com/dotCMS/core/issues/24490 : Content with an invalid detail page fails to render/instanciate #24490
+140. https://github.com/dotCMS/core/issues/24775 : LogViewer connection times out. #24775
