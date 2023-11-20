@@ -244,7 +244,7 @@ describe('DotEmaComponent', () => {
                 })
             );
 
-            spectator.dispatchFakeEvent(dialog, 'onHide');
+            spectator.dispatchFakeEvent(dialog, 'visibleChange');
             spectator.detectChanges();
 
             expect(resetDialogMock).toHaveBeenCalled();

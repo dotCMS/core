@@ -27,14 +27,14 @@
     </div>
     <p-dialog
         #dialog
-        [(visible)]="vm.dialogVisible"
+        [visible]="vm.dialogVisible"
         [style]="{ height: '90vh', width: '90vw' }"
-        [modal]="true"
         [header]="vm.dialogHeader"
         [draggable]="false"
         [resizable]="false"
         [maximizable]="true"
-        (onHide)="resetIframeData()"
+        [modal]="true"
+        (visibleChange)="resetIframeData()"
         data-testId="dialog">
         <iframe
             #dialogIframe
