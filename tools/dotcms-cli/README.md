@@ -204,9 +204,9 @@ dotcms.client.servers.demo=https://demo.dotcms.com/api
 
 Notice how the `dotcms.client.servers` property has a postfix matching the profile name in the `dot-services.yml` file.
 
-Therefore, in order to add a new instance profile, you need to add a new entry in the `dot-services.yml` file and a new property in the `application.properties` file.
-See the Quarkus configuration guide to learn how to extend the `application.properties` file.
-Here https://es.quarkus.io/guides/config-reference#application-properties-file 
+Therefore, in order to add a new instance profile, you need to add a new entry in the `dot-services.yml` file and a new property extending the `application.properties` file.
+Application properties can be extended via system properties, environment variables, `.evn` file or in `$PWD/config/application.properties` file.
+To learn more about how to extend the `application.properties` file see the Quarkus configuration guide [Here](https://es.quarkus.io/guides/config-reference#application-properties-file) 
 
 In future versions this process will be facilitated by the CLI itself.
 
