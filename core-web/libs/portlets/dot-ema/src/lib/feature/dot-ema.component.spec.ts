@@ -127,8 +127,8 @@ describe('DotEmaComponent', () => {
             expect(dialog.getAttribute('ng-reflect-visible')).toBe('false');
         });
 
-        it('should trigger onIframeLoad when the dialog is opened', () => {
-            jest.spyOn(store, 'setDialogIframeLoading');
+        it('should trigger onIframeLoad when the dialog is opened', (done) => {
+            const dialogLoadingMock = jest.spyOn(store, 'setDialogIframeLoading');
 
             spectator.detectChanges();
 
@@ -146,12 +146,36 @@ describe('DotEmaComponent', () => {
 
             spectator.detectChanges();
 
+            const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
             const dialogIframe = spectator.debugElement.query(
-                By.css("[data-testId='dialog-iframe']")
+                By.css('[data-testId="dialog-iframe"]')
             );
+
             spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
 
-            expect(store.setDialogIframeLoading).toHaveBeenCalledWith(false);
+            expect(dialogLoadingMock).toHaveBeenCalledWith(false);
+
+            dialogLoadingMock.mockRestore();
+
+            dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        action: 'edit-contentlet-updated',
+                        payload: {
+                            inode: '123'
+                        }
+                    }
+                })
+            );
+
+            spectator.detectChanges();
+
+            iframe.nativeElement.contentWindow.addEventListener('message', (event) => {
+                expect(event).toBeTruthy();
+                done();
+            });
+
+            dialogLoadingMock.mockRestore(); // To restore the original function
         });
 
         it('should show an spinner when triggering an action for the dialog', () => {
@@ -168,7 +192,6 @@ describe('DotEmaComponent', () => {
                     }
                 })
             );
-
             spectator.detectChanges();
 
             const spinner = spectator.query(byTestId('spinner'));
@@ -206,6 +229,31 @@ describe('DotEmaComponent', () => {
             const nullSpinner = spectator.query(byTestId('spinner'));
 
             expect(nullSpinner).toBeFalsy();
+        });
+
+        it('should reset the dialog properties when the dialog closes', () => {
+            spectator.detectChanges();
+            const resetDialogMock = jest.spyOn(store, 'resetDialog');
+            const dialog = spectator.query(byTestId('dialog'));
+
+            window.dispatchEvent(
+                new MessageEvent('message', {
+                    origin: 'http://localhost:3000',
+                    data: {
+                        action: 'edit-contentlet',
+                        payload: {
+                            inode: '123'
+                        }
+                    }
+                })
+            );
+
+            spectator.dispatchFakeEvent(dialog, 'onHide');
+            spectator.detectChanges();
+
+            expect(resetDialogMock).toHaveBeenCalled();
+
+            resetDialogMock.mockRestore();
         });
     });
 
