@@ -15,7 +15,10 @@ export interface EditEmaState {
             title: string;
         };
     };
-    editIframeURL: string;
+    dialogIframeURL: string;
+    dialogVisible: boolean;
+    dialogHeader: string;
+    dialogIframeLoading: boolean;
 }
 
 @Injectable()
@@ -29,7 +32,10 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     title: ''
                 }
             },
-            editIframeURL: ''
+            dialogIframeURL: '',
+            dialogVisible: false,
+            dialogHeader: '',
+            dialogIframeLoading: false
         });
     }
 
@@ -39,14 +45,17 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly language_id$: Observable<string> = this.select((state) => state.language_id);
     readonly url$: Observable<string> = this.select((state) => state.url);
     readonly pageTitle$: Observable<string> = this.select((state) => state.editor.page.title);
-    readonly editIframeURL$: Observable<string> = this.select((state) => state.editIframeURL);
+    readonly editIframeURL$: Observable<string> = this.select((state) => state.dialogIframeURL);
 
     readonly vm$ = this.select((state) => {
         return {
             iframeUrl: `http://localhost:3000/${state.url}?language_id=${state.language_id}`,
             language_id: state.language_id,
             pageTitle: state.editor.page.title,
-            editIframeURL: state.editIframeURL
+            dialogIframeURL: state.dialogIframeURL,
+            dialogVisible: state.dialogVisible,
+            dialogHeader: state.dialogHeader,
+            dialogIframeLoading: state.dialogIframeLoading
         };
     });
 
@@ -88,8 +97,34 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         url
     }));
 
-    readonly setEditIframeURL = this.updater((state, editIframeURL: string) => ({
+    readonly setDialogIframeURL = this.updater((state, editIframeURL: string) => ({
         ...state,
-        editIframeURL
+        dialogIframeURL: editIframeURL
     }));
+
+    readonly setDialogVisible = this.updater((state, dialogVisible: boolean) => ({
+        ...state,
+        dialogVisible
+    }));
+
+    readonly setDialogHeader = this.updater((state, dialogHeader: string) => ({
+        ...state,
+        dialogHeader
+    }));
+
+    readonly setDialogIframeLoading = this.updater((state, editIframeLoading: boolean) => ({
+        ...state,
+        dialogIframeLoading: editIframeLoading
+    }));
+
+    // This method resets the properties that are being used in for the dialog
+    readonly resetDialog = this.updater((state) => {
+        return {
+            ...state,
+            dialogIframeURL: '',
+            dialogVisible: false,
+            dialogHeader: '',
+            dialogIframeLoading: false
+        };
+    });
 }

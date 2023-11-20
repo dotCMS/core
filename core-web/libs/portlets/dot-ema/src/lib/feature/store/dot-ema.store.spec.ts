@@ -46,14 +46,17 @@ describe('EditEmaStore', () => {
                     },
                     language_id: '',
                     url: 'test-url',
-                    editIframeURL: ''
+                    dialogIframeURL: '',
+                    dialogIframeLoading: false,
+                    dialogHeader: '',
+                    dialogVisible: false
                 });
                 done();
             });
         });
 
         it('should update editFrameURL', (done) => {
-            spectator.service.setEditIframeURL('test-url');
+            spectator.service.setDialogIframeURL('test-url');
 
             spectator.service.state$.subscribe((state) => {
                 expect(state).toEqual({
@@ -64,7 +67,10 @@ describe('EditEmaStore', () => {
                     },
                     language_id: '',
                     url: '',
-                    editIframeURL: 'test-url'
+                    dialogIframeURL: 'test-url',
+                    dialogIframeLoading: false,
+                    dialogHeader: '',
+                    dialogVisible: false
                 });
                 done();
             });
@@ -82,7 +88,98 @@ describe('EditEmaStore', () => {
                     },
                     language_id: '1',
                     url: '',
-                    editIframeURL: ''
+                    dialogIframeURL: '',
+                    dialogIframeLoading: false,
+                    dialogHeader: '',
+                    dialogVisible: false
+                });
+                done();
+            });
+        });
+
+        it('should update dialogVisible', (done) => {
+            spectator.service.setDialogVisible(true);
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state).toEqual({
+                    editor: {
+                        page: {
+                            title: ''
+                        }
+                    },
+                    language_id: '',
+                    url: '',
+                    dialogIframeURL: '',
+                    dialogIframeLoading: false,
+                    dialogHeader: '',
+                    dialogVisible: true
+                });
+                done();
+            });
+        });
+
+        it('should update dialogHeader', (done) => {
+            spectator.service.setDialogHeader('test');
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state).toEqual({
+                    editor: {
+                        page: {
+                            title: ''
+                        }
+                    },
+                    language_id: '',
+                    url: '',
+                    dialogIframeURL: '',
+                    dialogIframeLoading: false,
+                    dialogHeader: 'test',
+                    dialogVisible: false
+                });
+                done();
+            });
+        });
+
+        it('should update editIframeLoading', (done) => {
+            spectator.service.setDialogIframeLoading(true);
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state).toEqual({
+                    editor: {
+                        page: {
+                            title: ''
+                        }
+                    },
+                    language_id: '',
+                    url: '',
+                    dialogIframeURL: '',
+                    dialogIframeLoading: true,
+                    dialogHeader: '',
+                    dialogVisible: false
+                });
+                done();
+            });
+        });
+
+        it('should reset editIframe properties', (done) => {
+            spectator.service.setDialogHeader('test');
+            spectator.service.setDialogVisible(true);
+            spectator.service.setDialogIframeLoading(true);
+
+            spectator.service.resetDialog();
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state).toEqual({
+                    editor: {
+                        page: {
+                            title: ''
+                        }
+                    },
+                    language_id: '',
+                    url: '',
+                    dialogIframeURL: '',
+                    dialogIframeLoading: false,
+                    dialogHeader: '',
+                    dialogVisible: false
                 });
                 done();
             });
@@ -110,7 +207,10 @@ describe('EditEmaStore', () => {
                             title: 'Test Page'
                         }
                     },
-                    editIframeURL: ''
+                    dialogIframeURL: '',
+                    dialogIframeLoading: false,
+                    dialogHeader: '',
+                    dialogVisible: false
                 });
                 done();
             });

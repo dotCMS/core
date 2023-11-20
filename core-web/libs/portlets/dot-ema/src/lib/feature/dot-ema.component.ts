@@ -15,7 +15,7 @@ import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { CUSTOM_EVENTS, MESSAGE_ACTIONS, WINDOW } from '../shared/models';
+import { NG_CUSTOM_EVENTS, POST_MESSAGE_ACTIONS, WINDOW } from '../shared/models';
 
 @Component({
     selector: 'dot-ema',
@@ -71,10 +71,6 @@ export class DotEmaComponent implements OnInit, OnDestroy {
 
     readonly vm$ = this.store.vm$;
 
-    visible = false;
-    header = '';
-    loadingIframe = true;
-
     constructor(@Inject(WINDOW) private window: Window) {}
 
     ngOnInit(): void {
@@ -120,7 +116,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     onIframeLoad(_: Event) {
-        this.loadingIframe = false;
+        this.store.setDialogIframeLoading(false);
         // This event is destroyed when you close the dialog
         fromEvent(
             // The events are getting sended to the document
@@ -158,6 +154,15 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Handle the dialog close event
+     *
+     * @memberof DotEmaComponent
+     */
+    resetIframeData() {
+        this.store.resetDialog();
+    }
+
+    /**
      * Create the url to edit a contentlet
      *
      * @private
@@ -180,17 +185,20 @@ export class DotEmaComponent implements OnInit, OnDestroy {
         const { detail } = event;
 
         // Skip the loaded event
-        if (detail.name === CUSTOM_EVENTS.EDIT_CONTENTLET_LOADED) return;
+        if (detail.name === NG_CUSTOM_EVENTS.EDIT_CONTENTLET_LOADED) return;
 
         // This forces a reload in the iframe
-        this.iframe.nativeElement.contentWindow?.postMessage('ema-reload-page', this.host);
+        this.iframe.nativeElement.contentWindow?.postMessage(
+            POST_MESSAGE_ACTIONS.EMA_RELOAD_PAGE,
+            this.host
+        );
     }
 
     /**
      * Handle the post message event
      *
      * @private
-     * @param {{ action: MESSAGE_ACTIONS; payload: DotCMSContentlet }} data
+     * @param {{ action: POST_MESSAGE_ACTIONS; payload: DotCMSContentlet }} data
      * @return {*}
      * @memberof DotEmaComponent
      */
@@ -199,18 +207,20 @@ export class DotEmaComponent implements OnInit, OnDestroy {
         data
     }: {
         origin: string;
-        data: { action: MESSAGE_ACTIONS; payload: DotCMSContentlet };
+        data: { action: POST_MESSAGE_ACTIONS; payload: DotCMSContentlet };
     }): () => void {
-        const action = origin !== this.host ? 'NOOP' : data.action;
+        const action = origin !== this.host ? POST_MESSAGE_ACTIONS.NOOP : data.action;
 
         return {
-            [MESSAGE_ACTIONS.EDIT_CONTENTLET]: () => {
-                this.loadingIframe = true;
-                this.visible = true;
-                this.header = data.payload.title;
-                this.store.setEditIframeURL(this.createEditContentletUrl(data.payload.inode));
+            [POST_MESSAGE_ACTIONS.EDIT_CONTENTLET]: () => {
+                this.store.patchState({
+                    dialogVisible: true,
+                    dialogHeader: data.payload.title,
+                    dialogIframeLoading: true,
+                    dialogIframeURL: this.createEditContentletUrl(data.payload.inode)
+                });
             },
-            NOOP: () => {
+            [POST_MESSAGE_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }
         }[action];
