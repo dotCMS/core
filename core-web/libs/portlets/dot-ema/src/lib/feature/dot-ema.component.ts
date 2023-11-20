@@ -24,7 +24,7 @@ import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { NG_CUSTOM_EVENTS, POST_MESSAGE_ACTIONS, WINDOW } from '../shared/models';
+import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER, WINDOW } from '../shared/models';
 
 @Component({
     selector: 'dot-ema',
@@ -199,7 +199,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
 
         // This forces a reload in the iframe
         this.iframe.nativeElement.contentWindow?.postMessage(
-            POST_MESSAGE_ACTIONS.EMA_RELOAD_PAGE,
+            NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
             this.host
         );
     }
@@ -208,7 +208,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
      * Handle the post message event
      *
      * @private
-     * @param {{ action: POST_MESSAGE_ACTIONS; payload: DotCMSContentlet }} data
+     * @param {{ action: CUSTOMER_ACTIONS; payload: DotCMSContentlet }} data
      * @return {*}
      * @memberof DotEmaComponent
      */
@@ -217,12 +217,12 @@ export class DotEmaComponent implements OnInit, OnDestroy {
         data
     }: {
         origin: string;
-        data: { action: POST_MESSAGE_ACTIONS; payload: DotCMSContentlet };
+        data: { action: CUSTOMER_ACTIONS; payload: DotCMSContentlet };
     }): () => void {
-        const action = origin !== this.host ? POST_MESSAGE_ACTIONS.NOOP : data.action;
+        const action = origin !== this.host ? CUSTOMER_ACTIONS.NOOP : data.action;
 
         return {
-            [POST_MESSAGE_ACTIONS.EDIT_CONTENTLET]: () => {
+            [CUSTOMER_ACTIONS.EDIT_CONTENTLET]: () => {
                 this.store.patchState({
                     dialogVisible: true,
                     dialogHeader: data.payload.title,
@@ -230,7 +230,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                     dialogIframeURL: this.createEditContentletUrl(data.payload.inode)
                 });
             },
-            [POST_MESSAGE_ACTIONS.NOOP]: () => {
+            [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }
         }[action];
