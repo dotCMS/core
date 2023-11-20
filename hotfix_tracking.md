@@ -168,3 +168,5 @@ This maintenance release includes the following code fixes:
 138. https://github.com/dotCMS/core/issues/24468 : Osgi always restart #24468
 139. https://github.com/dotCMS/core/issues/24490 : Content with an invalid detail page fails to render/instanciate #24490
 140. https://github.com/dotCMS/core/issues/24775 : LogViewer connection times out. #24775
+141. https://github.com/dotCMS/core/issues/24885 : Define startup and liveness probes #24885
+142. https://github.com/dotCMS/core/issues/25613 : MonitorResource throws exception if DOT_SYSTEM_STATUS_API_IP_ACL is not set #25613

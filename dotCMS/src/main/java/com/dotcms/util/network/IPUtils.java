@@ -24,7 +24,7 @@ public class IPUtils {
      * @param ip
      *            - The IP address to validate.
      * @param CIDR
-     *            - The CIDR-notation CIDR - i.e. ({@code "192.168.1.2/24"}, {@code "0:0:0:0:0:0:0:1/128"}).
+     *            - The CIDR-notation CIDR - i.e. ({@code "192.168.1.2/24"}
      * @return If the IP address matches the given CIDR, returns {@code true}
      *         . Otherwise, returns {@code false}.
      */
@@ -42,11 +42,14 @@ public class IPUtils {
             return true;
         }
 
-        final SubnetUtils utils = new SubnetUtils(CIDR);
-        utils.setInclusiveHostCount(true);
-
-
-        return Try.of(() -> utils.getInfo().isInRange(ip)).getOrElse(false);
+        try{
+            final SubnetUtils utils = new SubnetUtils(CIDR);
+            utils.setInclusiveHostCount(true);
+            return utils.getInfo().isInRange(ip);
+        }catch(Exception e){
+            Logger.warnAndDebug(IPUtils.class,"subnet:" + CIDR  + ", ip:" + ip + ", error:" + e.getMessage(), e);
+        }
+        return false;
 
 
     }

@@ -12,6 +12,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.InternalServerErrorException;
+
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -49,7 +52,7 @@ class MonitorHelper {
     private static final long   DEFAULT_ASSET_FS_TIMEOUT    = 1000;
     private static final long   DEFAULT_INDEX_TIMEOUT       = 1000;
     private static final long   DEFAULT_DB_TIMEOUT          = 1000;
-    private static final String[] DEFAULT_IP_ACL_VALUE        = new String[] {"127.0.0.1/32","10.0.0.0/8","172.16.0.0/12","192.168.0.0/16","0:0:0:0:0:0:0:1"};
+    private static final String[] DEFAULT_IP_ACL_VALUE = new String[] {"127.0.0.1/32","10.0.0.0/8","172.16.0.0/12","192.168.0.0/16"};
 
 
     private static final String SYSTEM_STATUS_API_IP_ACL           = "SYSTEM_STATUS_API_IP_ACL";
@@ -60,29 +63,38 @@ class MonitorHelper {
     private static final String SYSTEM_STATUS_API_DB_TIMEOUT       = "SYSTEM_STATUS_API_DB_TIMEOUT";
 
     private static final int SYSTEM_STATUS_CACHE_RESPONSE_SECONDS = Config.getIntProperty("SYSTEM_STATUS_CACHE_RESPONSE_SECONDS",10);
-    
-    
-    
+    private static final String[] ACLS_IPS = Config.getStringArrayProperty(SYSTEM_STATUS_API_IP_ACL, DEFAULT_IP_ACL_VALUE);
+
+
+    private static final long localFSTimeout = Config.getLongProperty(SYSTEM_STATUS_API_LOCAL_FS_TIMEOUT, DEFAULT_LOCAL_FS_TIMEOUT);
+    private static final long cacheTimeout  = Config.getLongProperty(SYSTEM_STATUS_API_CACHE_TIMEOUT, DEFAULT_CACHE_TIMEOUT);
+    private static final long assetTimeout = Config.getLongProperty(SYSTEM_STATUS_API_ASSET_FS_TIMEOUT, DEFAULT_ASSET_FS_TIMEOUT);
+    private static final long indexTimeout = Config.getLongProperty(SYSTEM_STATUS_API_INDEX_TIMEOUT, DEFAULT_INDEX_TIMEOUT);
+    private static final long dbTimeout = Config.getLongProperty(SYSTEM_STATUS_API_DB_TIMEOUT, DEFAULT_DB_TIMEOUT);
     boolean accessGranted = false;
     boolean useExtendedFormat = false;
 
     MonitorHelper(final HttpServletRequest request) throws UnknownHostException {
-        this.useExtendedFormat = request.getParameter("extended")!=null;
+        try {
+            this.useExtendedFormat = request.getParameter("extended") != null;
 
-        // set this.accessGranted
-        final String[] aclIPs = Config.getStringArrayProperty(SYSTEM_STATUS_API_IP_ACL, DEFAULT_IP_ACL_VALUE);
+            // set this.accessGranted
 
-        final String clientIP = HttpRequestDataUtil.getIpAddress(request).toString().split(StringPool.SLASH)[1];
-        if(aclIPs == null) {
-            this.accessGranted = true;
-        }
-        else {
-            for(String aclIP : aclIPs) {
-                if(IPUtils.isIpInCIDR(clientIP, aclIP)){
-                    this.accessGranted = true;
-                    break;
+
+            final String clientIP = HttpRequestDataUtil.getIpAddress(request).toString().split(StringPool.SLASH)[1];
+            if (ACLS_IPS == null || ACLS_IPS.length == 0) {
+                this.accessGranted = true;
+            } else {
+                for (String aclIP : ACLS_IPS) {
+                    if (IPUtils.isIpInCIDR(clientIP, aclIP)) {
+                        this.accessGranted = true;
+                        break;
+                    }
                 }
             }
+        }catch(Exception e){
+            Logger.warnAndDebug(this.getClass(), e.getMessage(), e);
+            throw new DotRuntimeException(e);
         }
     }
 
@@ -96,17 +108,15 @@ class MonitorHelper {
         if(cachedStats!=null && cachedStats._1 > System.currentTimeMillis()) {
             return cachedStats._2;
         }
+        return getMonitorStatsNoCache();
+    }
+
+    MonitorStats getMonitorStatsNoCache() throws Throwable{
         
         
         final MonitorStats monitorStats = new MonitorStats();
 
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
-
-        final long localFSTimeout = Config.getLongProperty(SYSTEM_STATUS_API_LOCAL_FS_TIMEOUT, DEFAULT_LOCAL_FS_TIMEOUT);
-        final long cacheTimeout  = Config.getLongProperty(SYSTEM_STATUS_API_CACHE_TIMEOUT, DEFAULT_CACHE_TIMEOUT);
-        final long assetTimeout = Config.getLongProperty(SYSTEM_STATUS_API_ASSET_FS_TIMEOUT, DEFAULT_ASSET_FS_TIMEOUT);
-        final long indexTimeout = Config.getLongProperty(SYSTEM_STATUS_API_INDEX_TIMEOUT, DEFAULT_INDEX_TIMEOUT);
-        final long dbTimeout = Config.getLongProperty(SYSTEM_STATUS_API_DB_TIMEOUT, DEFAULT_DB_TIMEOUT);
 
         monitorStats.subSystemStats.isDBHealthy = isDBHealthy(dbTimeout);
         monitorStats.subSystemStats.isLiveIndexHealthy = isIndexHealthy(indiciesInfo.getLive(), indexTimeout);
@@ -127,7 +137,7 @@ class MonitorHelper {
         return monitorStats;
     }
 
-    private boolean isDBHealthy(final long timeOut) throws Throwable {
+    boolean isDBHealthy(final long timeOut) throws Throwable {
 
         return Failsafe
                 .with(breaker())
@@ -143,6 +153,7 @@ class MonitorHelper {
                         }
                     }
                     catch(Exception e) {
+                        Logger.warn(getClass(), "db connection failing:" + e.getMessage() );
                         return false;
                     }
                     finally{
@@ -152,7 +163,7 @@ class MonitorHelper {
 
     }
 
-    private boolean isIndexHealthy(final String index, final long timeOut) throws Throwable {
+    boolean isIndexHealthy(final String index, final long timeOut) throws Throwable {
 
         return Failsafe
                 .with(breaker())
@@ -174,25 +185,28 @@ class MonitorHelper {
                                 RestHighLevelClientProvider.getInstance().getClient().search(searchRequest,
                                         RequestOptions.DEFAULT));
                         return response.getHits().getTotalHits().value>0;
+                    }catch(Exception e) {
+                        Logger.warn(getClass(), "ES connection failing: " + e.getMessage() );
+                        return false;
                     }finally{
                         DbConnectionFactory.closeSilently();
                     }
                 }));
     }
 
-    private boolean isCacheHealthy(final long timeOut) throws Throwable {
+    boolean isCacheHealthy(final long timeOut) throws Throwable {
 
         return Failsafe
                 .with(breaker())
                 .withFallback(Boolean.FALSE)
                 .get(this.failFastBooleanPolicy(timeOut, () -> {
                     try{
-                        Identifier id =  APILocator.getIdentifierAPI().loadFromCache(Host.SYSTEM_HOST);
-                        if(id==null || !UtilMethods.isSet(id.getId())){
-                            id =  APILocator.getIdentifierAPI().find(Host.SYSTEM_HOST);
-                            id =  APILocator.getIdentifierAPI().loadFromCache(Host.SYSTEM_HOST);
-                        }
-                        return id!=null && UtilMethods.isSet(id.getId());
+                        // load system host contentlet
+                        Contentlet con = APILocator.getContentletAPI().findContentletByIdentifier(Host.SYSTEM_HOST,false,APILocator.getLanguageAPI().getDefaultLanguage().getId(),APILocator.systemUser(),false);
+                        return UtilMethods.isSet(con::getIdentifier);
+                    }catch(Exception e) {
+                        Logger.warn(getClass(), "Cache is failing: " + e.getMessage() );
+                        return false;
                     }finally{
                         DbConnectionFactory.closeSilently();
                     }
@@ -229,7 +243,7 @@ class MonitorHelper {
 
     }
     
-    private boolean isLocalFileSystemHealthy(final long timeOut) throws Throwable {
+    boolean isLocalFileSystemHealthy(final long timeOut) throws Throwable {
 
         return Failsafe
                 .with(breaker())
@@ -239,7 +253,7 @@ class MonitorHelper {
     }
 
 
-    private boolean isAssetFileSystemHealthy(final long timeOut) throws Throwable {
+    boolean isAssetFileSystemHealthy(final long timeOut) throws Throwable {
 
         return Failsafe
                 .with(breaker())
