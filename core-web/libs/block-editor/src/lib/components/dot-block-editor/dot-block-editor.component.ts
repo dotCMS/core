@@ -89,13 +89,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     @Input() field: DotCMSContentTypeField;
     @Input() contentlet: DotCMSContentlet;
 
-    @Input() allowedContentTypes: string;
-    @Input() customStyles: string;
-    @Input() displayCountBar: boolean | string = true;
-    @Input() charLimit: number;
-    @Input() customBlocks = '';
-    @Input() content: Content = '';
-    @Input() contentletIdentifier: string;
+    public allowedContentTypes: string;
+    public customStyles: string;
+    public displayCountBar: boolean | string = true;
+    public charLimit: number;
+    public customBlocks = '';
+    public content: Content = '';
+    public contentletIdentifier: string;
     @Input() set showVideoThumbnail(value) {
         this.dotMarketingConfigService.setProperty(
             EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL,
@@ -103,12 +103,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         );
     }
     @Input() isFullscreen = false;
-
-    @Input() set allowedBlocks(blocks: string) {
-        const allowedBlocks = blocks ? blocks.replace(/ /g, '').split(',').filter(Boolean) : [];
-
-        this._allowedBlocks = [...this._allowedBlocks, ...allowedBlocks];
-    }
 
     @Input() set value(content: Content) {
         if (typeof content === 'string') {
@@ -119,13 +113,14 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
 
         this.setEditorJSONContent(content);
     }
+
     @Output() valueChange = new EventEmitter<JSONContent>();
 
     editor: Editor;
     subject = new Subject();
     freezeScroll = true;
 
-    private _allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
+    private allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
     private _customNodes: Map<string, AnyExtension> = new Map([
         ['dotContent', ContentletBlock(this.injector)],
         ['image', ImageNode],
@@ -222,6 +217,12 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         this.valueChange.emit(value);
         this.onChange?.(JSON.stringify(value));
         this.onTouched?.();
+    }
+
+    setAllowedBlocks(blocks: string) {
+        const allowedBlocks = blocks ? blocks.replace(/ /g, '').split(',').filter(Boolean) : [];
+
+        this.allowedBlocks = [...this.allowedBlocks, ...allowedBlocks];
     }
 
     private updateCharCount(): void {
@@ -331,7 +332,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         // If you have more than one allow block (other than the paragraph),
         // we customize the starterkit.
         const starterkit =
-            this._allowedBlocks?.length > 1
+            this.allowedBlocks?.length > 1
                 ? StarterKit.configure(this.starterConfig())
                 : StarterKit;
 
@@ -359,11 +360,11 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         //Heading types supported by default in the editor.
         const heading = ['heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6'];
         const levels = heading
-            .filter((heading) => this._allowedBlocks?.includes(heading))
+            .filter((heading) => this.allowedBlocks?.includes(heading))
             .map((heading) => +heading.slice(-1) as Level);
 
         const starterKit = staterKitOptions
-            .filter((option) => !this._allowedBlocks?.includes(option))
+            .filter((option) => !this.allowedBlocks?.includes(option))
             .reduce((options, option) => ({ ...options, [option]: false }), {});
 
         return {
@@ -384,11 +385,11 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
 
         // If only paragraph is included
         // We do not need to filter
-        if (this._allowedBlocks.length <= 1) {
+        if (this.allowedBlocks.length <= 1) {
             return [...this._customNodes.values()];
         }
 
-        for (const block of this._allowedBlocks) {
+        for (const block of this.allowedBlocks) {
             const node = this._customNodes.get(block);
             if (node) {
                 whiteList.push(node);
@@ -410,7 +411,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             DotConfigExtension({
                 lang: this.lang,
                 allowedContentTypes: this.allowedContentTypes,
-                allowedBlocks: this._allowedBlocks,
+                allowedBlocks: this.allowedBlocks,
                 contentletIdentifier: this.contentletIdentifier
             }),
             DotComands,
@@ -461,8 +462,43 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
 
     private setEditorJSONContent(content: Content) {
         this.content =
-            this._allowedBlocks?.length > 1
-                ? removeInvalidNodes(content, this._allowedBlocks)
+            this.allowedBlocks?.length > 1
+                ? removeInvalidNodes(content, this.allowedBlocks)
                 : content;
+    }
+
+    private setFieldVariable() {
+        const {
+            allowedContentTypes,
+            customStyles,
+            displayCountBar,
+            charLimit,
+            customBlocks,
+            allowedBlocks
+        } = this.getFieldVariables();
+
+        this.allowedContentTypes = allowedContentTypes;
+        this.customStyles = customStyles;
+        this.displayCountBar = displayCountBar;
+        this.charLimit = Number(charLimit);
+        this.customBlocks = customBlocks;
+        this.setAllowedBlocks(allowedBlocks);
+    }
+
+    /**
+     * Get field variables
+     *
+     * @private
+     * @return {*}  {Record<string, string>}
+     * @memberof DotBlockEditorComponent
+     */
+    private getFieldVariables(): Record<string, string> {
+        return this.field?.fieldVariables.reduce(
+            (prev, { key, value }) => ({
+                ...prev,
+                [key]: value
+            }),
+            {}
+        );
     }
 }
