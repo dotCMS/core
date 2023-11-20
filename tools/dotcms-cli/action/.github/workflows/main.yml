@@ -85,51 +85,17 @@ jobs:
             echo "Workspace has been updated."
           fi
 
-      - name: Options command
-        id: options
-        run: |
-          import os
-
-          # Access environment variables
-
-          PUSH_OPTIONS = {}
-          PUSH_OPTIONS["dry-run"] = os.getenv("DOT_CLI_DRY_RUN")
-          PUSH_OPTIONS["fail-fast"] = os.getenv("DOT_CLI_FAIL_FAST")
-          PUSH_OPTIONS["forceSiteExecution"] = os.getenv("DOT_CLI_FORCE_SITE_EXECUTION")
-          PUSH_OPTIONS["removeAssets"] = os.getenv("DOT_CLI_REMOVE_ASSETS")
-          PUSH_OPTIONS["removeContentTypes"] = os.getenv("DOT_CLI_REMOVE_CONTENT_TYPES")
-          PUSH_OPTIONS["retry-attempts"] = os.getenv("DOT_CLI_RETRY_ATTEMPS")
-          PUSH_OPTIONS["removeFolders"] = os.getenv("DOT_CLI_REMOVE_FOLDERS")
-          PUSH_OPTIONS["removeLanguages"] = os.getenv("DOT_CLI_REMOVE_LANGUAGES")
-          PUSH_OPTIONS["removeSites"] = os.getenv("DOT_CLI_REMOVE_SITES")
-          PUSH_OPTIONS["errors"] = os.getenv("DOT_CLI_ERRORS")
-
-          COMMAND_PUSH_OPTS = "";
-
-          for key, value in PUSH_OPTIONS.items():
-              if value != None:
-                  if value.lower() == "true":
-                      COMMAND_PUSH_OPTS=f"{COMMAND_PUSH_OPTS} --{key}"
-                  elif value.lower() != "false":
-                      COMMAND_PUSH_OPTS=f"{COMMAND_PUSH_OPTS} --{key} {value}"
-          
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-              print(f 'COMMAND_PUSH_OPTS={COMMAND_PUSH_OPTS}', file=f)
-
-          print(COMMAND_PUSH_OPTS)
-        shell: python
-
       - name: Run dotCMS CLI
         id: dot-push
-        run: |                                   
-            chmod +x ./.github/workflows/scripts/run-push.sh
-            source ./.github/workflows/scripts/run-push.sh
-            install_cli "${{env.DOT_CLI_JAR_DOWNLOAD_URL}}" "${{env.DOT_FORCE_DOWNLOAD}}" "${{env.DOT_API_URL}}"
-            run_cli_push "${{github.workspace}}${{env.DOT_REPO_BASE_PATH}}" "${{ secrets.DOT_TOKEN }}" "${{ steps.options.outputs.command_opts }}"
-            echo "exit-code=$exit_code" >> "$GITHUB_OUTPUT"
-            print_log
-            if [ $exit_code -ne 0 ]; then
-              echo "Error running dotCMS CLI"
-              exit 1
-            fi
+        run: |
+          chmod +x ./.github/workflows/scripts/run-push.sh
+          source ./.github/workflows/scripts/run-push.sh
+          install_cli "${{env.DOT_CLI_JAR_DOWNLOAD_URL}}" "${{env.DOT_FORCE_DOWNLOAD}}" "${{env.DOT_API_URL}}"
+          run_cli_push "${{github.workspace}}${{env.DOT_REPO_BASE_PATH}}" "${{ secrets.DOT_TOKEN }}" "${{ env.DOT_CLI_OPTS }}"
+          echo "exit-code=$exit_code" >> "$GITHUB_OUTPUT"
+          print_log
+          if [ $exit_code -ne 0 ]; then
+            echo "Error running dotCMS CLI"
+            exit 1
+          fi
         shell: bash

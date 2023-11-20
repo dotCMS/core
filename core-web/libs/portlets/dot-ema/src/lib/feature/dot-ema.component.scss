@@ -5,6 +5,18 @@
     flex-direction: column;
     grid-template-rows: 48px 1fr;
     height: 100%;
+
+    ::ng-deep {
+        .p-dialog {
+            .p-dialog-content {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 0;
+                overflow: hidden;
+            }
+        }
+    }
 }
 
 .toolbar {

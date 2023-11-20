@@ -12,26 +12,35 @@
 // tag::picocli-generated-man-section-name[]
 == Name
 
-language-pull - *dotCMS Language Pull*
+language-pull - *Retrieves languages descriptors*
 
 // end::picocli-generated-man-section-name[]
 
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*language pull* [*-h*] [*-fmt*=_<inputOutputFormat>_] [*--workspace*=_<file>_] _idOrIso_
+*language pull* [*-h*] [*-fmt*=_<inputOutputFormat>_] [*--workspace*=_<file>_] [_idOrIso_]
 
 // end::picocli-generated-man-section-synopsis[]
 
 // tag::picocli-generated-man-section-description[]
 == Description
 
- This command pulls a language given its id or iso code (e.g.: en-us).
- A language descriptor file will be created in the current directory.
- If the language already exists, it will be overwritten.
- The file name will be the language's iso code (e.g.: en-us.json).
- if a lang is pulled with the same name as an existing one,
- the existing one will be overwritten.
+  This command fetches and saves the descriptor information
+  for languages within the dotCMS instance. By default, it
+  retrieves descriptors for all languages, unless a specific
+  language's ISO code or ID is provided as an argument.
+  The descriptors are saved into files named after each language's
+  ISO code.
+
+  When a languages is pulled more than once, the existing descriptor file
+  is overwritten. All descriptor files are saved within the 'languages'
+  folder located in the dotCMS workspace, which is created in the
+  current directory by default, unless an alternative workspace is specified.
+
+  The output format for the descriptor files is JSON by default. However,
+  you can specify the YAML format using the --format option
+  if YAML is preferred.
 
 
 // end::picocli-generated-man-section-description[]
@@ -55,7 +64,7 @@ Current directory is used if not specified
 // tag::picocli-generated-man-section-arguments[]
 == Arguments
 
-_idOrIso_::
+[_idOrIso_]::
   Language Id or ISO Code.
 
 // end::picocli-generated-man-section-arguments[]

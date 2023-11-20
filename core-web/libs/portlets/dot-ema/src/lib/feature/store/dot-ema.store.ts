@@ -6,6 +6,7 @@ import { Injectable } from '@angular/core';
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
 import { DotPageApiParams, DotPageApiService } from '../../services/dot-page-api.service';
+import { EDIT_CONTENTLET_URL } from '../../shared/consts';
 
 export interface EditEmaState {
     language_id: string;
@@ -15,6 +16,10 @@ export interface EditEmaState {
             title: string;
         };
     };
+    dialogIframeURL: string;
+    dialogVisible: boolean;
+    dialogHeader: string;
+    dialogIframeLoading: boolean;
 }
 
 @Injectable()
@@ -27,7 +32,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 page: {
                     title: ''
                 }
-            }
+            },
+            dialogIframeURL: '',
+            dialogVisible: false,
+            dialogHeader: '',
+            dialogIframeLoading: false
         });
     }
 
@@ -37,7 +46,25 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly language_id$: Observable<string> = this.select((state) => state.language_id);
     readonly url$: Observable<string> = this.select((state) => state.url);
     readonly pageTitle$: Observable<string> = this.select((state) => state.editor.page.title);
+    readonly editIframeURL$: Observable<string> = this.select((state) => state.dialogIframeURL);
 
+    readonly vm$ = this.select((state) => {
+        return {
+            iframeUrl: `http://localhost:3000/${state.url}?language_id=${state.language_id}`,
+            language_id: state.language_id,
+            pageTitle: state.editor.page.title,
+            dialogIframeURL: state.dialogIframeURL,
+            dialogVisible: state.dialogVisible,
+            dialogHeader: state.dialogHeader,
+            dialogIframeLoading: state.dialogIframeLoading
+        };
+    });
+
+    /**
+     * Load the page editor
+     *
+     * @memberof EditEmaStore
+     */
     readonly load = this.effect((params$: Observable<DotPageApiParams>) => {
         return params$.pipe(
             switchMap(({ language_id, url }) =>
@@ -66,8 +93,64 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         language_id
     }));
 
-    readonly setUrl = this.updater((state, url: string) => ({
+    readonly setURL = this.updater((state, url: string) => ({
         ...state,
         url
     }));
+
+    readonly setDialogIframeURL = this.updater((state, editIframeURL: string) => ({
+        ...state,
+        dialogIframeURL: editIframeURL
+    }));
+
+    readonly setDialogVisible = this.updater((state, dialogVisible: boolean) => ({
+        ...state,
+        dialogVisible
+    }));
+
+    readonly setDialogHeader = this.updater((state, dialogHeader: string) => ({
+        ...state,
+        dialogHeader
+    }));
+
+    readonly setDialogIframeLoading = this.updater((state, editIframeLoading: boolean) => ({
+        ...state,
+        dialogIframeLoading: editIframeLoading
+    }));
+
+    // This method resets the properties that are being used in for the dialog
+    readonly resetDialog = this.updater((state) => {
+        return {
+            ...state,
+            dialogIframeURL: '',
+            dialogVisible: false,
+            dialogHeader: '',
+            dialogIframeLoading: false
+        };
+    });
+
+    // This method is called when the user clicks on the edit button
+    readonly initEditIframeDialog = this.updater(
+        (state, payload: { inode: string; title: string }) => {
+            return {
+                ...state,
+                dialogVisible: true,
+                dialogHeader: payload.title,
+                dialogIframeLoading: true,
+                dialogIframeURL: this.createEditContentletUrl(payload.inode)
+            };
+        }
+    );
+
+    /**
+     * Create the url to edit a contentlet
+     *
+     * @private
+     * @param {string} inode
+     * @return {*}
+     * @memberof DotEmaComponent
+     */
+    private createEditContentletUrl(inode: string): string {
+        return `${EDIT_CONTENTLET_URL}${inode}`;
+    }
 }
