@@ -26,6 +26,7 @@ import { EditEmaStore } from './store/dot-ema.store';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
+import { AddContentletPayload } from '../shared/models';
 
 @Component({
     selector: 'dot-ema',
@@ -78,6 +79,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
     private readonly store = inject(EditEmaStore);
+    private readonly pageApi = inject(DotPageApiService);
 
     readonly host = 'http://localhost:3000';
     readonly vm$ = this.store.vm$;
@@ -112,7 +114,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: MessageEvent) => {
-                this.handlePostMessage(event)();
+                this.handlePostMessage(event)?.();
             });
     }
 
@@ -136,7 +138,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
         )
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: CustomEvent) => {
-                this.handleNgEvent(event);
+                this.handleNgEvent(event)?.();
             });
     }
 
@@ -169,7 +171,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
      *
      * @memberof DotEmaComponent
      */
-    resetIframeData() {
+    resetDialogIframeData() {
         this.store.resetDialog();
     }
 
@@ -183,14 +185,16 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     private handleNgEvent(event: CustomEvent) {
         const { detail } = event;
 
-        // Skip the loaded event
-        if (detail.name === NG_CUSTOM_EVENTS.EDIT_CONTENTLET_LOADED) return;
-
-        // This forces a reload in the iframe
-        this.iframe.nativeElement.contentWindow?.postMessage(
-            NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
-            this.host
-        );
+        return (<Record<NG_CUSTOM_EVENTS, () => void>>{
+            [NG_CUSTOM_EVENTS.EDIT_CONTENTLET_LOADED]: () => {
+                /* */
+            },
+            [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
+                this.store.save(detail.data.identifier); // Save when selected
+                this.resetDialogIframeData();
+                this.reloadIframe();
+            }
+        })[detail.name];
     }
 
     /**
@@ -206,20 +210,45 @@ export class DotEmaComponent implements OnInit, OnDestroy {
         data
     }: {
         origin: string;
-        data: { action: CUSTOMER_ACTIONS; payload: DotCMSContentlet };
+        data: { action: CUSTOMER_ACTIONS; payload: DotCMSContentlet | AddContentletPayload };
     }): () => void {
         const action = origin !== this.host ? CUSTOMER_ACTIONS.NOOP : data.action;
 
-        return {
+        return (<Record<CUSTOMER_ACTIONS, () => void>>{
             [CUSTOMER_ACTIONS.EDIT_CONTENTLET]: () => {
+                const payload = <DotCMSContentlet>data.payload;
+
                 this.store.initEditIframeDialog({
-                    inode: data.payload.inode,
-                    title: data.payload.title
+                    inode: payload.inode,
+                    title: payload.title
                 });
+            },
+            [CUSTOMER_ACTIONS.ADD_CONTENTLET]: () => {
+                const payload = <AddContentletPayload>data.payload;
+
+                this.store.initAddIframeDialog({
+                    containerID: payload.container.identifier,
+                    acceptTypes: payload.container.acceptTypes ?? '*'
+                });
+
+                this.pageApi.currentPageContainers$.next(payload);
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }
-        }[action];
+        })[action];
+    }
+
+    /**
+     * Notify the user to reload the iframe
+     *
+     * @private
+     * @memberof DotEmaComponent
+     */
+    private reloadIframe() {
+        this.iframe.nativeElement.contentWindow?.postMessage(
+            NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
+            this.host
+        );
     }
 }

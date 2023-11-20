@@ -6,7 +6,7 @@ import { Injectable } from '@angular/core';
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
 import { DotPageApiParams, DotPageApiService } from '../../services/dot-page-api.service';
-import { EDIT_CONTENTLET_URL } from '../../shared/consts';
+import { ADD_CONTENTLET_URL, EDIT_CONTENTLET_URL } from '../../shared/consts';
 
 export interface EditEmaState {
     language_id: string;
@@ -14,6 +14,7 @@ export interface EditEmaState {
     editor: {
         page: {
             title: string;
+            identifier: string;
         };
     };
     dialogIframeURL: string;
@@ -30,7 +31,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             url: '',
             editor: {
                 page: {
-                    title: ''
+                    title: '',
+                    identifier: ''
                 }
             },
             dialogIframeURL: '',
@@ -84,6 +86,19 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     }),
                     catchError(() => EMPTY)
                 )
+            )
+        );
+    });
+
+    /**
+     * Save the page
+     *
+     * @memberof EditEmaStore
+     */
+    readonly save = this.effect((contentletID$: Observable<string>) => {
+        return contentletID$.pipe(
+            switchMap((contentletID) =>
+                this.dotPageApiService.save(contentletID, this.get().editor.page.identifier)
             )
         );
     });
@@ -142,6 +157,19 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
+    // This method is called when the user clicks on the edit button
+    readonly initAddIframeDialog = this.updater(
+        (state, payload: { containerID: string; acceptTypes: string }) => {
+            return {
+                ...state,
+                dialogVisible: true,
+                dialogHeader: 'Search Content', // Does this need translation?
+                dialogIframeLoading: true,
+                dialogIframeURL: this.createAddContentletUrl(payload)
+            };
+        }
+    );
+
     /**
      * Create the url to edit a contentlet
      *
@@ -152,5 +180,26 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      */
     private createEditContentletUrl(inode: string): string {
         return `${EDIT_CONTENTLET_URL}${inode}`;
+    }
+
+    /**
+     * Create the url to add a contentlet
+     *
+     * @private
+     * @param {{containerID: string, acceptTypes: string}} {containerID, acceptTypes}
+     * @return {*}  {string}
+     * @memberof EditEmaStore
+     */
+    private createAddContentletUrl({
+        containerID,
+        acceptTypes
+    }: {
+        containerID: string;
+        acceptTypes: string;
+    }): string {
+        return ADD_CONTENTLET_URL.replace('*CONTAINER_ID*', containerID).replace(
+            '*BASE_TYPES*',
+            acceptTypes
+        );
     }
 }
