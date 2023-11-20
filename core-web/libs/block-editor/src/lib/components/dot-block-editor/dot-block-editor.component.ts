@@ -34,7 +34,9 @@ import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 import {
     RemoteCustomExtensions,
     EDITOR_MARKETING_KEYS,
-    IMPORT_RESULTS
+    IMPORT_RESULTS,
+    DotCMSContentlet,
+    DotCMSContentTypeField
 } from '@dotcms/dotcms-models';
 
 import {
@@ -82,6 +84,11 @@ import {
 })
 export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
     @Input() lang = DEFAULT_LANG_ID;
+
+    // New ones
+    @Input() field: DotCMSContentTypeField;
+    @Input() contentlet: DotCMSContentlet;
+
     @Input() allowedContentTypes: string;
     @Input() customStyles: string;
     @Input() displayCountBar: boolean | string = true;
