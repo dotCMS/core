@@ -128,8 +128,6 @@ describe('DotEmaComponent', () => {
         });
 
         it('should trigger onIframeLoad when the dialog is opened', (done) => {
-            const dialogLoadingMock = jest.spyOn(store, 'setDialogIframeLoading');
-
             spectator.detectChanges();
 
             window.dispatchEvent(
@@ -153,10 +151,6 @@ describe('DotEmaComponent', () => {
 
             spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
 
-            expect(dialogLoadingMock).toHaveBeenCalledWith(false);
-
-            dialogLoadingMock.mockRestore();
-
             dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                 new CustomEvent('ng-event', {
                     detail: {
@@ -175,7 +169,9 @@ describe('DotEmaComponent', () => {
                 done();
             });
 
-            dialogLoadingMock.mockRestore(); // To restore the original function
+            const nullSpinner = spectator.query(byTestId('spinner'));
+
+            expect(nullSpinner).toBeNull();
         });
 
         it('should show an spinner when triggering an action for the dialog', () => {
