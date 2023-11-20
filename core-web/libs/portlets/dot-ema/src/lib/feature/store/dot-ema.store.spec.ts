@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { EditEmaStore } from './dot-ema.store';
 
 import { DotPageApiService } from '../../services/dot-page-api.service';
+import { EDIT_CONTENTLET_URL } from '../../shared/consts';
 
 describe('EditEmaStore', () => {
     let spectator: SpectatorService<EditEmaStore>;
@@ -35,7 +36,7 @@ describe('EditEmaStore', () => {
 
     describe('updaters', () => {
         it('should update url', (done) => {
-            spectator.service.setUrl('test-url');
+            spectator.service.setURL('test-url');
 
             spectator.service.state$.subscribe((state) => {
                 expect(state).toEqual({
@@ -45,7 +46,32 @@ describe('EditEmaStore', () => {
                         }
                     },
                     language_id: '',
-                    url: 'test-url'
+                    url: 'test-url',
+                    dialogIframeURL: '',
+                    dialogIframeLoading: false,
+                    dialogHeader: '',
+                    dialogVisible: false
+                });
+                done();
+            });
+        });
+
+        it('should update editFrameURL', (done) => {
+            spectator.service.setDialogIframeURL('test-url');
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state).toEqual({
+                    editor: {
+                        page: {
+                            title: ''
+                        }
+                    },
+                    language_id: '',
+                    url: '',
+                    dialogIframeURL: 'test-url',
+                    dialogIframeLoading: false,
+                    dialogHeader: '',
+                    dialogVisible: false
                 });
                 done();
             });
@@ -62,7 +88,123 @@ describe('EditEmaStore', () => {
                         }
                     },
                     language_id: '1',
-                    url: ''
+                    url: '',
+                    dialogIframeURL: '',
+                    dialogIframeLoading: false,
+                    dialogHeader: '',
+                    dialogVisible: false
+                });
+                done();
+            });
+        });
+
+        it('should update dialogVisible', (done) => {
+            spectator.service.setDialogVisible(true);
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state).toEqual({
+                    editor: {
+                        page: {
+                            title: ''
+                        }
+                    },
+                    language_id: '',
+                    url: '',
+                    dialogIframeURL: '',
+                    dialogIframeLoading: false,
+                    dialogHeader: '',
+                    dialogVisible: true
+                });
+                done();
+            });
+        });
+
+        it('should update dialogHeader', (done) => {
+            spectator.service.setDialogHeader('test');
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state).toEqual({
+                    editor: {
+                        page: {
+                            title: ''
+                        }
+                    },
+                    language_id: '',
+                    url: '',
+                    dialogIframeURL: '',
+                    dialogIframeLoading: false,
+                    dialogHeader: 'test',
+                    dialogVisible: false
+                });
+                done();
+            });
+        });
+
+        it('should update editIframeLoading', (done) => {
+            spectator.service.setDialogIframeLoading(true);
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state).toEqual({
+                    editor: {
+                        page: {
+                            title: ''
+                        }
+                    },
+                    language_id: '',
+                    url: '',
+                    dialogIframeURL: '',
+                    dialogIframeLoading: true,
+                    dialogHeader: '',
+                    dialogVisible: false
+                });
+                done();
+            });
+        });
+
+        it('should reset editIframe properties', (done) => {
+            spectator.service.setDialogHeader('test');
+            spectator.service.setDialogVisible(true);
+            spectator.service.setDialogIframeLoading(true);
+
+            spectator.service.resetDialog();
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state).toEqual({
+                    editor: {
+                        page: {
+                            title: ''
+                        }
+                    },
+                    language_id: '',
+                    url: '',
+                    dialogIframeURL: '',
+                    dialogIframeLoading: false,
+                    dialogHeader: '',
+                    dialogVisible: false
+                });
+                done();
+            });
+        });
+
+        it('should initialize editIframe properties', (done) => {
+            spectator.service.initEditIframeDialog({
+                inode: '123',
+                title: 'test'
+            });
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state).toEqual({
+                    editor: {
+                        page: {
+                            title: ''
+                        }
+                    },
+                    language_id: '',
+                    url: '',
+                    dialogIframeURL: EDIT_CONTENTLET_URL + '123',
+                    dialogIframeLoading: true,
+                    dialogHeader: 'test',
+                    dialogVisible: true
                 });
                 done();
             });
@@ -89,7 +231,11 @@ describe('EditEmaStore', () => {
                         page: {
                             title: 'Test Page'
                         }
-                    }
+                    },
+                    dialogIframeURL: '',
+                    dialogIframeLoading: false,
+                    dialogHeader: '',
+                    dialogVisible: false
                 });
                 done();
             });
