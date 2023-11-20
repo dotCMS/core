@@ -1,16 +1,7 @@
 import { Subject, fromEvent } from 'rxjs';
 
 import { AsyncPipe, NgFor, NgIf } from '@angular/common';
-import {
-    AfterViewInit,
-    Component,
-    ElementRef,
-    Inject,
-    OnDestroy,
-    OnInit,
-    ViewChild,
-    inject
-} from '@angular/core';
+import { Component, ElementRef, Inject, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
@@ -41,7 +32,7 @@ import { CUSTOM_EVENTS, MESSAGE_ACTIONS, WINDOW } from '../shared/models';
     templateUrl: './dot-ema.component.html',
     styleUrls: ['./dot-ema.component.scss']
 })
-export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
+export class DotEmaComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
 
@@ -78,10 +69,7 @@ export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
     readonly store = inject(EditEmaStore);
     readonly host = 'http://localhost:3000';
 
-    readonly iframeUrl$ = this.store.iframeUrl$;
-    readonly language_id$ = this.store.language_id$;
-    readonly title$ = this.store.pageTitle$;
-    readonly url$ = this.store.url$;
+    readonly vm$ = this.store.vm$;
 
     visible = false;
     header = '';
@@ -113,9 +101,7 @@ export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
                 url: url || 'index'
             });
         });
-    }
 
-    ngAfterViewInit(): void {
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: MessageEvent) => {
@@ -222,9 +208,7 @@ export class DotEmaComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.loadingIframe = true;
                 this.visible = true;
                 this.header = data.payload.title;
-                this.dialogIframe.nativeElement.src = this.createEditContentletUrl(
-                    data.payload.inode
-                );
+                this.store.setEditIframeURL(this.createEditContentletUrl(data.payload.inode));
             },
             NOOP: () => {
                 /* Do Nothing because is not the origin we are expecting */

@@ -84,9 +84,7 @@ describe('DotEmaComponent', () => {
         });
 
         it('should open a dialog when the iframe sends a postmessage with the edit-contenlet action', () => {
-            spectator.triggerEventHandler('select[data-testId="language_id"]', 'change', {
-                target: { name: 'language_id', value: '2' }
-            });
+            spectator.detectChanges();
 
             const dialog = spectator.query(byTestId('dialog'));
 
@@ -108,9 +106,7 @@ describe('DotEmaComponent', () => {
         });
 
         it('should not open a dialog when the iframe sends a postmessage with a different origin', () => {
-            spectator.triggerEventHandler('select[data-testId="language_id"]', 'change', {
-                target: { name: 'language_id', value: '2' }
-            });
+            spectator.detectChanges();
 
             const dialog = spectator.query(byTestId('dialog'));
 
@@ -133,9 +129,8 @@ describe('DotEmaComponent', () => {
 
         it('should trigger onIframeLoad when the dialog is opened', () => {
             jest.spyOn(spectator.component, 'onIframeLoad');
-            spectator.triggerEventHandler('select[data-testId="language_id"]', 'change', {
-                target: { name: 'language_id', value: '2' }
-            });
+
+            spectator.detectChanges();
 
             window.dispatchEvent(
                 new MessageEvent('message', {
@@ -160,10 +155,7 @@ describe('DotEmaComponent', () => {
         });
 
         it('should show an spinner when triggering an action for the dialog', () => {
-            jest.spyOn(spectator.component, 'onIframeLoad');
-            spectator.triggerEventHandler('select[data-testId="language_id"]', 'change', {
-                target: { name: 'language_id', value: '2' }
-            });
+            spectator.detectChanges();
 
             window.dispatchEvent(
                 new MessageEvent('message', {
@@ -185,10 +177,7 @@ describe('DotEmaComponent', () => {
         });
 
         it('should not show the spinner after iframe load', () => {
-            jest.spyOn(spectator.component, 'onIframeLoad');
-            spectator.triggerEventHandler('select[data-testId="language_id"]', 'change', {
-                target: { name: 'language_id', value: '2' }
-            });
+            spectator.detectChanges();
 
             window.dispatchEvent(
                 new MessageEvent('message', {

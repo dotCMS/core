@@ -15,6 +15,7 @@ export interface EditEmaState {
             title: string;
         };
     };
+    editIframeURL: string;
 }
 
 @Injectable()
@@ -27,7 +28,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 page: {
                     title: ''
                 }
-            }
+            },
+            editIframeURL: ''
         });
     }
 
@@ -37,6 +39,16 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly language_id$: Observable<string> = this.select((state) => state.language_id);
     readonly url$: Observable<string> = this.select((state) => state.url);
     readonly pageTitle$: Observable<string> = this.select((state) => state.editor.page.title);
+    readonly editIframeURL$: Observable<string> = this.select((state) => state.editIframeURL);
+
+    readonly vm$ = this.select((state) => {
+        return {
+            iframeUrl: `http://localhost:3000/${state.url}?language_id=${state.language_id}`,
+            language_id: state.language_id,
+            pageTitle: state.editor.page.title,
+            editIframeURL: state.editIframeURL
+        };
+    });
 
     /**
      * Load the page editor
@@ -71,8 +83,13 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         language_id
     }));
 
-    readonly setUrl = this.updater((state, url: string) => ({
+    readonly setURL = this.updater((state, url: string) => ({
         ...state,
         url
+    }));
+
+    readonly setEditIframeURL = this.updater((state, editIframeURL: string) => ({
+        ...state,
+        editIframeURL
     }));
 }

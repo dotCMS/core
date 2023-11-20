@@ -35,7 +35,7 @@ describe('EditEmaStore', () => {
 
     describe('updaters', () => {
         it('should update url', (done) => {
-            spectator.service.setUrl('test-url');
+            spectator.service.setURL('test-url');
 
             spectator.service.state$.subscribe((state) => {
                 expect(state).toEqual({
@@ -45,7 +45,26 @@ describe('EditEmaStore', () => {
                         }
                     },
                     language_id: '',
-                    url: 'test-url'
+                    url: 'test-url',
+                    editIframeURL: ''
+                });
+                done();
+            });
+        });
+
+        it('should update editFrameURL', (done) => {
+            spectator.service.setEditIframeURL('test-url');
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state).toEqual({
+                    editor: {
+                        page: {
+                            title: ''
+                        }
+                    },
+                    language_id: '',
+                    url: '',
+                    editIframeURL: 'test-url'
                 });
                 done();
             });
@@ -62,7 +81,8 @@ describe('EditEmaStore', () => {
                         }
                     },
                     language_id: '1',
-                    url: ''
+                    url: '',
+                    editIframeURL: ''
                 });
                 done();
             });
@@ -89,7 +109,8 @@ describe('EditEmaStore', () => {
                         page: {
                             title: 'Test Page'
                         }
-                    }
+                    },
+                    editIframeURL: ''
                 });
                 done();
             });
