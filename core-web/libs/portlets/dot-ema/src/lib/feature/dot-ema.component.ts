@@ -1,7 +1,16 @@
 import { Subject, fromEvent } from 'rxjs';
 
 import { AsyncPipe, NgFor, NgIf } from '@angular/common';
-import { Component, ElementRef, Inject, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    ElementRef,
+    Inject,
+    OnDestroy,
+    OnInit,
+    ViewChild,
+    inject
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
@@ -30,7 +39,8 @@ import { NG_CUSTOM_EVENTS, POST_MESSAGE_ACTIONS, WINDOW } from '../shared/models
         }
     ],
     templateUrl: './dot-ema.component.html',
-    styleUrls: ['./dot-ema.component.scss']
+    styleUrls: ['./dot-ema.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEmaComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
