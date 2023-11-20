@@ -166,3 +166,4 @@ This maintenance release includes the following code fixes:
 136. https://github.com/dotCMS/core/issues/24292 : Content Palette Should Not Show Archived Content #24292
 137. https://github.com/dotCMS/core/issues/24406 : Block Editor adds trailing space to hyperlinks or marks #24406
 138. https://github.com/dotCMS/core/issues/24468 : Osgi always restart #24468
+139. https://github.com/dotCMS/core/issues/24490 : Content with an invalid detail page fails to render/instanciate #24490

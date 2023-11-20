@@ -17,6 +17,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -39,8 +40,10 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.vanityurl.filters.VanityURLFilter;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -64,6 +67,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.io.Files;
@@ -1786,5 +1790,95 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 .findContentletByIdentifierAnyLanguage(identifier);
 
         assertNull(contentletByIdentifierAnyLanguage);
+    }
+
+    @WrapInTransaction
+    private HTMLPageAsset createHtmlPageAsset(final Variant variant,
+                                              final Language language, final Host host, final Template template) {
+        return (HTMLPageAsset) new HTMLPageDataGen(host, template)
+                .variant(variant)
+                .languageId(language.getId())
+                .nextPersisted();
+    }
+
+    @Test
+    public void test_getUrlMapForContentlet_with_bad_detail_page() throws Exception{
+
+        ContentType type =  new ContentTypeDataGen()
+                .detailPage("bad detail page")
+                .nextPersisted();
+
+        Contentlet content = new ContentletDataGen(type.id()).nextPersisted();
+
+        assertNotNull(content);
+        assertNotNull(content.getIdentifier());
+        assertEquals(content.getContentTypeId(), type.id());
+
+        assertNull(APILocator.getContentletAPI().getUrlMapForContentlet(content,user,false));
+
+    }
+
+
+
+
+    @Test
+    public void test_getUrlMapForContentlet_with_detail_page_but_no_pattern() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template_A = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = createHtmlPageAsset(VariantAPI.DEFAULT_VARIANT,
+                APILocator.getLanguageAPI().getDefaultLanguage(), host, template_A);
+
+        Identifier id = APILocator.getIdentifierAPI().find(htmlPageAsset.getIdentifier());
+        ContentType type = new ContentTypeDataGen().detailPage(htmlPageAsset.getIdentifier()).nextPersisted();
+
+        Contentlet content = new ContentletDataGen(type.id()).nextPersisted();
+        assertNotNull(content);
+        assertNotNull(content.getIdentifier());
+        assertEquals(content.getContentTypeId(), type.id());
+
+        assertEquals(id.getPath() + "?id=" + content.getInode(), contentletAPI.getUrlMapForContentlet(content, user, false));
+
+    }
+
+    @Test
+    public void test_getUrlMapForContentlet_with_detail_page_and_pattern() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template_A = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = createHtmlPageAsset(VariantAPI.DEFAULT_VARIANT,
+                APILocator.getLanguageAPI().getDefaultLanguage(), host, template_A);
+
+        List<Field> fields = List.of(
+                new FieldDataGen().name("title").velocityVarName("title").next(),
+                new FieldDataGen().name("urlMap1").velocityVarName("urlMap1").next(),
+                new FieldDataGen().name("urlMap2").velocityVarName("urlMap2").next());
+
+
+        ContentType type = new ContentTypeDataGen()
+                .detailPage(htmlPageAsset.getIdentifier())
+                .urlMapPattern("/testing/{urlMap1}/{urlMap2}")
+                .fields(fields)
+                .nextPersisted();
+
+
+
+
+
+
+        Contentlet content = new ContentletDataGen(type.id())
+                .setProperty("title", "title")
+                .setProperty("urlMap1", "urlMapValue1")
+                .setProperty("urlMap2", "urlMapValue2")
+                .nextPersisted();
+
+
+        assertNotNull(content);
+        assertNotNull(content.getIdentifier());
+        assertEquals(content.getContentTypeId(), type.id());
+
+        assertEquals("/testing/urlMapValue1/urlMapValue2",contentletAPI.getUrlMapForContentlet(content, user, false));
     }
 }
