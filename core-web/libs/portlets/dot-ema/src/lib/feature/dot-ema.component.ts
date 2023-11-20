@@ -24,7 +24,8 @@ import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER, WINDOW } from '../shared/models';
+import { WINDOW } from '../shared/consts';
+import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 
 @Component({
     selector: 'dot-ema',
@@ -173,18 +174,6 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Create the url to edit a contentlet
-     *
-     * @private
-     * @param {string} inode
-     * @return {*}
-     * @memberof DotEmaComponent
-     */
-    private createEditContentletUrl(inode: string): string {
-        return `/c/portal/layout?p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&inode=${inode}`;
-    }
-
-    /**
      * Handle the custom events from the iframe
      *
      * @private
@@ -223,11 +212,9 @@ export class DotEmaComponent implements OnInit, OnDestroy {
 
         return {
             [CUSTOMER_ACTIONS.EDIT_CONTENTLET]: () => {
-                this.store.patchState({
-                    dialogVisible: true,
-                    dialogHeader: data.payload.title,
-                    dialogIframeLoading: true,
-                    dialogIframeURL: this.createEditContentletUrl(data.payload.inode)
+                this.store.initEditIframeDialog({
+                    inode: data.payload.inode,
+                    title: data.payload.title
                 });
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {

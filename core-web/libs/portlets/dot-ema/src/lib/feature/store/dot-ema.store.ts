@@ -6,6 +6,7 @@ import { Injectable } from '@angular/core';
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
 import { DotPageApiParams, DotPageApiService } from '../../services/dot-page-api.service';
+import { EDIT_CONTENTLET_URL } from '../../shared/consts';
 
 export interface EditEmaState {
     language_id: string;
@@ -127,4 +128,29 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             dialogIframeLoading: false
         };
     });
+
+    // This method is called when the user clicks on the edit button
+    readonly initEditIframeDialog = this.updater(
+        (state, payload: { inode: string; title: string }) => {
+            return {
+                ...state,
+                dialogVisible: true,
+                dialogHeader: payload.title,
+                dialogIframeLoading: true,
+                dialogIframeURL: this.createEditContentletUrl(payload.inode)
+            };
+        }
+    );
+
+    /**
+     * Create the url to edit a contentlet
+     *
+     * @private
+     * @param {string} inode
+     * @return {*}
+     * @memberof DotEmaComponent
+     */
+    private createEditContentletUrl(inode: string): string {
+        return `${EDIT_CONTENTLET_URL}${inode}`;
+    }
 }

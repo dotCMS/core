@@ -11,7 +11,7 @@ import { DotEmaComponent } from './dot-ema.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { WINDOW } from '../shared/models';
+import { WINDOW } from '../shared/consts';
 
 describe('DotEmaComponent', () => {
     let spectator: Spectator<DotEmaComponent>;
@@ -86,6 +86,7 @@ describe('DotEmaComponent', () => {
         it('should open a dialog when the iframe sends a postmessage with the edit-contenlet action', () => {
             spectator.detectChanges();
 
+            const initiEditIframeDialogMock = jest.spyOn(store, 'initEditIframeDialog');
             const dialog = spectator.query(byTestId('dialog'));
 
             window.dispatchEvent(
@@ -94,7 +95,8 @@ describe('DotEmaComponent', () => {
                     data: {
                         action: 'edit-contentlet',
                         payload: {
-                            inode: '123'
+                            inode: '123',
+                            title: 'hello world'
                         }
                     }
                 })
@@ -103,6 +105,10 @@ describe('DotEmaComponent', () => {
             spectator.detectChanges();
 
             expect(dialog.getAttribute('ng-reflect-visible')).toBe('true');
+            expect(initiEditIframeDialogMock).toHaveBeenCalledWith({
+                inode: '123',
+                title: 'hello world'
+            });
         });
 
         it('should not open a dialog when the iframe sends a postmessage with a different origin', () => {

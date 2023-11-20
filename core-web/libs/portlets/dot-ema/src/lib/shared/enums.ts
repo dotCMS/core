@@ -1,5 +1,3 @@
-import { InjectionToken } from '@angular/core';
-
 export enum CUSTOMER_ACTIONS {
     EDIT_CONTENTLET = 'edit-contentlet', // The customer hit edit button
     NOOP = 'noop'
@@ -13,5 +11,3 @@ export enum NOTIFY_CUSTOMER {
 export enum NG_CUSTOM_EVENTS {
     EDIT_CONTENTLET_LOADED = 'edit-contentlet-loaded'
 }
-
-export const WINDOW = new InjectionToken<Window>('WindowToken');

@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { EditEmaStore } from './dot-ema.store';
 
 import { DotPageApiService } from '../../services/dot-page-api.service';
+import { EDIT_CONTENTLET_URL } from '../../shared/consts';
 
 describe('EditEmaStore', () => {
     let spectator: SpectatorService<EditEmaStore>;
@@ -180,6 +181,30 @@ describe('EditEmaStore', () => {
                     dialogIframeLoading: false,
                     dialogHeader: '',
                     dialogVisible: false
+                });
+                done();
+            });
+        });
+
+        it('should initialize editIframe properties', (done) => {
+            spectator.service.initEditIframeDialog({
+                inode: '123',
+                title: 'test'
+            });
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state).toEqual({
+                    editor: {
+                        page: {
+                            title: ''
+                        }
+                    },
+                    language_id: '',
+                    url: '',
+                    dialogIframeURL: EDIT_CONTENTLET_URL + '123',
+                    dialogIframeLoading: true,
+                    dialogHeader: 'test',
+                    dialogVisible: true
                 });
                 done();
             });
