@@ -95,9 +95,9 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     );
 
     readonly getSuggestedWinner$: Observable<DotResultVariant | null> = this.select(({ results }) =>
-        BayesianNoWinnerStatus.includes(results?.bayesianResult.suggestedWinner)
+        BayesianNoWinnerStatus.includes(results?.bayesianResult?.suggestedWinner)
             ? null
-            : results?.goals.primary.variants[results?.bayesianResult.suggestedWinner]
+            : results?.goals.primary.variants[results?.bayesianResult?.suggestedWinner]
     );
 
     readonly getPromotedVariant$: Observable<Variant | null> = this.select(({ experiment }) =>
@@ -117,7 +117,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                 const { datasets } = chartData;
 
                 return (
-                    results.bayesianResult.suggestedWinner != BayesianStatusResponse.NONE &&
+                    results.bayesianResult?.suggestedWinner != BayesianStatusResponse.NONE &&
                     datasets.every((dataset) => dataset.data.length > 0)
                 );
             }
@@ -163,7 +163,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                 CONVERSION_RATE_RANGE_SEPARATOR_LABEL
             );
 
-            return results
+            return results && results.bayesianResult
                 ? Object.values(results.goals.primary.variants).map((variant) => {
                       return this.getDotExperimentVariantDetail(
                           experiment,
