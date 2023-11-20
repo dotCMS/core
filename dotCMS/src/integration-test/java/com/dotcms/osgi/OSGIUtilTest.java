@@ -5,6 +5,8 @@ import static org.junit.Assert.assertEquals;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Config;
 import java.io.File;
+import java.util.Set;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.felix.framework.OSGIUtil;
 import org.junit.AfterClass;
@@ -224,6 +226,27 @@ public class OSGIUtilTest {
     private String getUndeployPathInConfig() {
         return Config.getStringProperty(FELIX_UNDEPLOYED_DIR,
                 felixDirectory + File.separator + "undeployed");
+    }
+
+    /**
+     * Method to test: {@link OSGIUtil#getExportedPackagesAsSet()}
+     * Given Scenario: Retrieve the current packages exported by the OSGI framework
+     * ExpectedResult: The packages returned should not have spaces, neither new lines, etc
+     *
+     */
+    @Test
+    public void test_check_get_exported_packages_normalized() {
+
+        final Set<String> exportedPackages = OSGIUtil.getInstance().getExportedPackagesAsSet();
+        Assert.assertNotNull(exportedPackages);
+
+        for (final String exportedPackage : exportedPackages) {
+            Assert.assertNotNull(exportedPackage);
+            Assert.assertFalse(exportedPackage.contains(" "));
+            Assert.assertFalse(exportedPackage.contains("\t"));
+            Assert.assertFalse(exportedPackage.contains("\r"));
+            Assert.assertFalse(exportedPackage.contains("\n"));
+        }
     }
 
 }

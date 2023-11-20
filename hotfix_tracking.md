@@ -165,3 +165,4 @@ This maintenance release includes the following code fixes:
 135. https://github.com/dotCMS/core/issues/24291 : Ensure that sessions can be serialized and replicated across servers #24291
 136. https://github.com/dotCMS/core/issues/24292 : Content Palette Should Not Show Archived Content #24292
 137. https://github.com/dotCMS/core/issues/24406 : Block Editor adds trailing space to hyperlinks or marks #24406
+138. https://github.com/dotCMS/core/issues/24468 : Osgi always restart #24468
