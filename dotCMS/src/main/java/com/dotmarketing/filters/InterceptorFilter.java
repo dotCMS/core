@@ -3,7 +3,7 @@ package com.dotmarketing.filters;
 import com.dotcms.ema.EMAWebInterceptor;
 import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
-import com.dotcms.filters.interceptor.forward.JSPMappingForwardInterceptor;
+import com.dotcms.filters.interceptor.jsp.JSPMappingForwardInterceptor;
 import com.dotcms.filters.interceptor.meta.ResponseMetaDataWebInterceptor;
 import com.dotcms.graphql.GraphqlCacheWebInterceptor;
 import com.dotcms.jitsu.EventLogWebInterceptor;
