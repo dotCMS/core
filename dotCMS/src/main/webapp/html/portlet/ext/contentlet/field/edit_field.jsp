@@ -736,13 +736,14 @@
                         }
                     } : null;
                     const fielData = {
+                        hint: '<%=hint%>',
                         ...(<%=jsonField%>),
                         variable,
                         fieldVariables: JSON.parse('<%=fieldVariablesContent%>')
                     }
 
                     // Setting the value of the field
-                    field.value = "<%=binInode%>"
+                    field.value = "<%=value%>"
 
                     // Creating the binary field dynamically
                     // Help us to set inputs before the ngInit is executed.
@@ -759,6 +760,15 @@
                     });
 
                     binaryFieldContainer.appendChild(binaryField);
+
+                    // Create hint
+                    const hintElement = document.createElement('small');
+                    hintElement.style.color = 'var(--color-palette-black-op-90)';
+                    hintElement.innerHTML = "<%=hint%>";
+
+                    if(hintElement.innerHTML){
+                        binaryFieldContainer.appendChild(hintElement);
+                    }
 
                     document.addEventListener(`binaryField-open-image-editor-${variable}`,({ detail }) => {
                         const { inode, variable = '', tempId } = detail;

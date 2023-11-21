@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
@@ -66,11 +67,19 @@ class LanguageCommandIT extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "1", "--verbose", "--workspace", workspace.root().toString());
+            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
+                    "1", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-            final String output = writer.toString();
+
+            // Reading the resulting JSON file
+            final var languageFilePath = Path.of(workspace.languages().toString(),
+                    "en-us.json");
+            Assertions.assertTrue(Files.exists(languageFilePath));
+
+            // Validating it is a valid language descriptor
+            var json = Files.readString(languageFilePath);
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
-            Language result = mapper.readValue(output, Language.class);
+            Language result = mapper.readValue(json, Language.class);
             Assertions.assertEquals(1, result.id().get());
         } finally {
             workspaceManager.destroy(workspace);
@@ -90,11 +99,19 @@ class LanguageCommandIT extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US", "--verbose", "--workspace", workspace.root().toString());
+            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
+                    "en-US", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-            final String output = writer.toString();
+
+            // Reading the resulting JSON file
+            final var languageFilePath = Path.of(workspace.languages().toString(),
+                    "en-us.json");
+            Assertions.assertTrue(Files.exists(languageFilePath));
+
+            // Validating it is a valid language descriptor
+            var json = Files.readString(languageFilePath);
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
-            Language result = mapper.readValue(output, Language.class);
+            Language result = mapper.readValue(json, Language.class);
             Assertions.assertEquals(1, result.id().get());
         } finally {
             workspaceManager.destroy(workspace);
@@ -385,23 +402,33 @@ class LanguageCommandIT extends CommandTest {
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
+
             //A language with iso code "es-VE" is pushed (we are validating that the iso code is not case-sensitive)
             commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byIso", "es-ve");
             commandLine.setOut(out);
             //we pull the language with iso code "es-VE" to get its id
-            int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE", "--verbose", "--workspace", workspace.root().toString());
+            int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
+                    "es-VE", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-            final String output = writer.toString();
-            final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
-            Language result = mapper.readValue(output, Language.class);
 
+            // Reading the resulting JSON file
+            final var languageFilePath = Path.of(workspace.languages().toString(),
+                    "es-ve.json");
+            Assertions.assertTrue(Files.exists(languageFilePath));
+
+            // Validating it is a valid language descriptor
+            var json = Files.readString(languageFilePath);
+            final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
+            Language result = mapper.readValue(json, Language.class);
 
             //We remove the language with iso code "es-VE"
-            status = commandLine.execute(LanguageCommand.NAME, LanguageRemove.NAME, String.valueOf(result.id().get()), "--cli-test");
+            status = commandLine.execute(LanguageCommand.NAME, LanguageRemove.NAME,
+                    String.valueOf(result.id().get()), "--cli-test");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
             //We check that the language with iso code "es-VE" is not present
-            status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE", "--workspace", workspace.root().toString());
+            status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
+                    "es-VE", "--workspace", workspace.root().toString());
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
         } finally {
             workspaceManager.destroy(workspace);
@@ -600,6 +627,383 @@ class LanguageCommandIT extends CommandTest {
                         getFromLanguageIsoCode("it-VA");
                 clientFactory.getClient(LanguageAPI.class).delete(
                         String.valueOf(foundItalian.entity().id().get())
+                );
+            } catch (Exception e) {
+                // Ignoring
+            }
+
+            try {
+                var foundFrench = clientFactory.getClient(LanguageAPI.class).
+                        getFromLanguageIsoCode("fr");
+                clientFactory.getClient(LanguageAPI.class).delete(
+                        String.valueOf(foundFrench.entity().id().get())
+                );
+            } catch (Exception e) {
+                // Ignoring
+            }
+        }
+    }
+
+    /**
+     * <b>Command to test:</b> Language pull <br>
+     * <b>Given Scenario:</b> Test the language pull command. This test pulls all the languages in
+     * the default format (JSON). <br>
+     * <b>Expected Result:</b> All the existing languages should be pulled and saved as JSON
+     * files.
+     *
+     * @throws IOException if there is an error pulling the languages
+     */
+    @Test
+    void Test_Command_Language_Pull_Pull_All_Default_Format() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        // First we need to see if we already have languages to pull
+        final var languageAPI = clientFactory.getClient(LanguageAPI.class);
+
+        // --
+        // Pulling all the existing languages to have a proper count
+        var languagesResponse = languageAPI.list();
+        var languagesCount = 0;
+        if (languagesResponse != null && languagesResponse.entity() != null) {
+            languagesCount = languagesResponse.entity().size();
+        }
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ---
+            // Creating a some test languages in the server
+            languageAPI.create(Language.builder().
+                    isoCode("ja-jp").
+                    languageCode("ja-JP").
+                    countryCode("JP").
+                    language("Japanese").
+                    country("Japan").
+                    build());
+            languagesCount++;
+
+            languageAPI.create(Language.builder().
+                    isoCode("de-de").
+                    languageCode("de-DE").
+                    countryCode("DE").
+                    language("German").
+                    country("Germany").
+                    build());
+            languagesCount++;
+
+            languageAPI.create(Language.builder().
+                    isoCode("fr").
+                    languageCode("fr").
+                    language("French").
+                    build());
+            languagesCount++;
+
+            // Pulling all languages
+            var status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
+                    "--workspace", workspace.root().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Make sure we have the proper amount of JSON files in the languages folder
+            try (Stream<Path> walk = Files.walk(workspace.languages())) {
+
+                var jsonFiles = walk.filter(Files::isRegularFile)
+                        .filter(path -> path.toString().endsWith(".json"))
+                        .collect(Collectors.toList());
+
+                // Check the count first
+                Assertions.assertEquals(languagesCount, jsonFiles.size(),
+                        "The number of JSON files does not match the expected languages count.");
+
+                // Now check that none of the JSON files are empty
+                for (Path jsonFile : jsonFiles) {
+                    long fileSize = Files.size(jsonFile);
+                    Assertions.assertTrue(fileSize > 0,
+                            "JSON file " + jsonFile + " is empty.");
+                }
+            }
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+
+            // ---
+            // Cleaning up languages
+            try {
+                var foundJapanese = clientFactory.getClient(LanguageAPI.class).
+                        getFromLanguageIsoCode("ja-JP");
+                clientFactory.getClient(LanguageAPI.class).delete(
+                        String.valueOf(foundJapanese.entity().id().get())
+                );
+            } catch (Exception e) {
+                // Ignoring
+            }
+
+            try {
+                var foundGerman = clientFactory.getClient(LanguageAPI.class).
+                        getFromLanguageIsoCode("de-de");
+                clientFactory.getClient(LanguageAPI.class).delete(
+                        String.valueOf(foundGerman.entity().id().get())
+                );
+            } catch (Exception e) {
+                // Ignoring
+            }
+
+            try {
+                var foundFrench = clientFactory.getClient(LanguageAPI.class).
+                        getFromLanguageIsoCode("fr");
+                clientFactory.getClient(LanguageAPI.class).delete(
+                        String.valueOf(foundFrench.entity().id().get())
+                );
+            } catch (Exception e) {
+                // Ignoring
+            }
+        }
+    }
+
+    /**
+     * <b>Command to test:</b> language pull <br>
+     * <b>Given Scenario:</b> Test the language pull command. This test pulls all the languages in
+     * the YAML format. <br>
+     * <b>Expected Result:</b> All the existing languages should be pulled and saved as YAML
+     * files.
+     *
+     * @throws IOException if there is an error pulling the languages
+     */
+    @Test
+    void Test_Command_Language_Pull_Pull_All_YAML_Format() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        // First we need to see if we already have languages to pull
+        final var languageAPI = clientFactory.getClient(LanguageAPI.class);
+
+        // --
+        // Pulling all the existing languages to have a proper count
+        var languagesResponse = languageAPI.list();
+        var languagesCount = 0;
+        if (languagesResponse != null && languagesResponse.entity() != null) {
+            languagesCount = languagesResponse.entity().size();
+        }
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ---
+            // Creating a some test languages in the server
+            languageAPI.create(Language.builder().
+                    isoCode("ja-jp").
+                    languageCode("ja-JP").
+                    countryCode("JP").
+                    language("Japanese").
+                    country("Japan").
+                    build());
+            languagesCount++;
+
+            languageAPI.create(Language.builder().
+                    isoCode("de-de").
+                    languageCode("de-DE").
+                    countryCode("DE").
+                    language("German").
+                    country("Germany").
+                    build());
+            languagesCount++;
+
+            languageAPI.create(Language.builder().
+                    isoCode("fr").
+                    languageCode("fr").
+                    language("French").
+                    build());
+            languagesCount++;
+
+            // Pulling all languages
+            var status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
+                    "--workspace", workspace.root().toString(),
+                    "-fmt", InputOutputFormat.YAML.toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Make sure we have the proper amount of JSON files in the languages folder
+            try (Stream<Path> walk = Files.walk(workspace.languages())) {
+
+                var files = walk.filter(Files::isRegularFile)
+                        .filter(path -> path.toString().endsWith(".yml"))
+                        .collect(Collectors.toList());
+
+                // Check the count first
+                Assertions.assertEquals(languagesCount, files.size(),
+                        "The number of YAML files does not match the expected languages count.");
+
+                // Now check that none of the JSON files are empty
+                for (Path file : files) {
+                    long fileSize = Files.size(file);
+                    Assertions.assertTrue(fileSize > 0,
+                            "YAML file " + file + " is empty.");
+                }
+            }
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+
+            // ---
+            // Cleaning up languages
+            try {
+                var foundJapanese = clientFactory.getClient(LanguageAPI.class).
+                        getFromLanguageIsoCode("ja-JP");
+                clientFactory.getClient(LanguageAPI.class).delete(
+                        String.valueOf(foundJapanese.entity().id().get())
+                );
+            } catch (Exception e) {
+                // Ignoring
+            }
+
+            try {
+                var foundGerman = clientFactory.getClient(LanguageAPI.class).
+                        getFromLanguageIsoCode("de-de");
+                clientFactory.getClient(LanguageAPI.class).delete(
+                        String.valueOf(foundGerman.entity().id().get())
+                );
+            } catch (Exception e) {
+                // Ignoring
+            }
+
+            try {
+                var foundFrench = clientFactory.getClient(LanguageAPI.class).
+                        getFromLanguageIsoCode("fr");
+                clientFactory.getClient(LanguageAPI.class).delete(
+                        String.valueOf(foundFrench.entity().id().get())
+                );
+            } catch (Exception e) {
+                // Ignoring
+            }
+        }
+    }
+
+    /**
+     * <b>Command to test:</b> language pull <br>
+     * <b>Given Scenario:</b> Test the language pull command. This test pulls all the languages
+     * twice, testing the override works properly.<br>
+     * <b>Expected Result:</b> All the existing languages should be pulled and saved as YAML
+     * files.
+     *
+     * @throws IOException if there is an error pulling the languages
+     */
+    @Test
+    void Test_Command_Language_Pull_Pull_All_Twice() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        // First we need to see if we already have languages to pull
+        final var languageAPI = clientFactory.getClient(LanguageAPI.class);
+
+        // --
+        // Pulling all the existing languages to have a proper count
+        var languagesResponse = languageAPI.list();
+        var languagesCount = 0;
+        if (languagesResponse != null && languagesResponse.entity() != null) {
+            languagesCount = languagesResponse.entity().size();
+        }
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ---
+            // Creating a some test languages in the server
+            languageAPI.create(Language.builder().
+                    isoCode("ja-jp").
+                    languageCode("ja-JP").
+                    countryCode("JP").
+                    language("Japanese").
+                    country("Japan").
+                    build());
+            languagesCount++;
+
+            languageAPI.create(Language.builder().
+                    isoCode("de-de").
+                    languageCode("de-DE").
+                    countryCode("DE").
+                    language("German").
+                    country("Germany").
+                    build());
+            languagesCount++;
+
+            languageAPI.create(Language.builder().
+                    isoCode("fr").
+                    languageCode("fr").
+                    language("French").
+                    build());
+            languagesCount++;
+
+            // Pulling all languages
+            var status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
+                    "--workspace", workspace.root().toString(),
+                    "-fmt", InputOutputFormat.YAML.toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Executing a second pull of all the languages
+            status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
+                    "--workspace", workspace.root().toString(),
+                    "-fmt", InputOutputFormat.YAML.toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Make sure we have the proper amount of JSON files in the languages folder
+            try (Stream<Path> walk = Files.walk(workspace.languages())) {
+
+                var files = walk.filter(Files::isRegularFile)
+                        .filter(path -> path.toString().endsWith(".yml"))
+                        .collect(Collectors.toList());
+
+                // Check the count first
+                Assertions.assertEquals(languagesCount, files.size(),
+                        "The number of YAML files does not match the expected languages count.");
+
+                // Now check that none of the JSON files are empty
+                for (Path file : files) {
+                    long fileSize = Files.size(file);
+                    Assertions.assertTrue(fileSize > 0,
+                            "YAML file " + file + " is empty.");
+                }
+            }
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+
+            // ---
+            // Cleaning up languages
+            try {
+                var foundJapanese = clientFactory.getClient(LanguageAPI.class).
+                        getFromLanguageIsoCode("ja-JP");
+                clientFactory.getClient(LanguageAPI.class).delete(
+                        String.valueOf(foundJapanese.entity().id().get())
+                );
+            } catch (Exception e) {
+                // Ignoring
+            }
+
+            try {
+                var foundGerman = clientFactory.getClient(LanguageAPI.class).
+                        getFromLanguageIsoCode("de-de");
+                clientFactory.getClient(LanguageAPI.class).delete(
+                        String.valueOf(foundGerman.entity().id().get())
                 );
             } catch (Exception e) {
                 // Ignoring

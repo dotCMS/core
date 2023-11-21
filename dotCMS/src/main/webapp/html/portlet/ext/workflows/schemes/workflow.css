@@ -148,7 +148,7 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 }
 #wacMessage{
 	text-align: left;
-	width:250px;	
+	max-width:50%;
 	float:right;
 }
 #actionClassParamsDia{
