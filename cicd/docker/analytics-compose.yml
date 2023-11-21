@@ -97,7 +97,7 @@ services:
         condition: service_healthy
     restart: always
     ports:
-      - "${JITSU_CONFIGURATOR_PORT:-7001}:7000"
+      - "${JITSU_CONFIGURATOR_PORT:-7000}:7000"
 
   redis:
     container_name: jitsu_redis
@@ -133,7 +133,7 @@ services:
 
   ch_server:
     container_name: ch_server
-    image: dotcms/clickhouse-server:dev
+    image: dotcms/clickhouse-server:latest
     ports:
       - "${CH_HOST_PORT:-8124}:8123"
     ulimits:
