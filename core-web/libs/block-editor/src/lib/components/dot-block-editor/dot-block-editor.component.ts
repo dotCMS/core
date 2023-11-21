@@ -86,11 +86,9 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     @Input() field: DotCMSContentTypeField;
     @Input() contentlet: DotCMSContentlet;
 
-    @Input() lang = DEFAULT_LANG_ID;
+    @Input() languageId = DEFAULT_LANG_ID;
     @Input() isFullscreen = false;
-    @Input() set value(content: Content) {
-        this.setEditorContent(content);
-    }
+    @Input() value = '';
     @Input() set showVideoThumbnail(value) {
         this.dotMarketingConfigService.setProperty(
             EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL,
@@ -181,6 +179,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                         ...extensions
                     ]
                 });
+                this.setEditorContent(this.value);
                 this.editor.on('create', () => this.updateCharCount());
                 this.subject
                     .pipe(takeUntil(this.destroy$), debounceTime(250))
@@ -395,7 +394,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private getEditorExtensions() {
         return [
             DotConfigExtension({
-                lang: this.lang,
+                lang: this.languageId || this.contentlet?.languageId,
                 allowedContentTypes: this.allowedContentTypes,
                 allowedBlocks: this.allowedBlocks,
                 contentletIdentifier: this.contentletIdentifier
@@ -413,7 +412,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             Superscript,
             ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks()),
             DragHandler(this.viewContainerRef),
-            BubbleLinkFormExtension(this.viewContainerRef, this.lang),
+            BubbleLinkFormExtension(this.viewContainerRef, this.languageId),
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
             AIContentPromptExtension(this.viewContainerRef),
@@ -489,12 +488,14 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
      * @memberof DotBlockEditorComponent
      */
     private getFieldVariables(): Record<string, string> {
-        return this.field?.fieldVariables.reduce(
-            (prev, { key, value }) => ({
-                ...prev,
-                [key]: value
-            }),
-            {}
+        return (
+            this.field?.fieldVariables.reduce(
+                (prev, { key, value }) => ({
+                    ...prev,
+                    [key]: value
+                }),
+                {}
+            ) || {}
         );
     }
 }

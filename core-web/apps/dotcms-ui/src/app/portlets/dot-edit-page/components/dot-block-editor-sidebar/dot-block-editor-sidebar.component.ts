@@ -14,22 +14,15 @@ import {
     DotPropertiesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import {
-    DotCMSContentTypeField,
-    DotCMSContentTypeFieldVariable,
-    EDITOR_MARKETING_KEYS
-} from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, EDITOR_MARKETING_KEYS } from '@dotcms/dotcms-models';
 
 export interface BlockEditorInput {
     content: { [key: string]: string };
     fieldName: string;
-    language: number;
+    field: DotCMSContentTypeField;
     inode: string;
-    fieldVariables?: {
-        allowedBlocks?: string;
-        allowedContentTypes?: string;
-        styles: string;
-    };
+    contentletIdentifier: string;
+    languageId: number;
 }
 
 @Component({
@@ -64,8 +57,8 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
             EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL
         );
 
-        combineLatest([content$, propery$]).subscribe(([eventData, property = 'true']) => {
-            this.blockEditorInput = eventData;
+        combineLatest([content$, propery$]).subscribe(([data, property = 'true']) => {
+            this.blockEditorInput = data;
             this.showVideoThumbnail = property === 'true' || property === 'NOT_FOUND';
         });
     }
@@ -123,36 +116,26 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
         this.destroy$.complete();
     }
 
-    private extractBlockEditorData(dataSet: {
-        [key: string]: string;
-    }): Observable<BlockEditorInput> {
-        return this.dotContentTypeService.getContentType(dataSet.contentType).pipe(
-            switchMap((contentType) =>
-                contentType?.fields.filter((field) => field.variable == dataSet.fieldName)
-            ),
+    private extractBlockEditorData({
+        contentletIdentifier,
+        blockEditorContent,
+        inode,
+        language,
+        fieldName,
+        contentType
+    }: DOMStringMap): Observable<BlockEditorInput> {
+        return this.dotContentTypeService.getContentType(contentType).pipe(
+            switchMap(({ fields }) => fields?.filter(({ variable }) => variable == fieldName)),
             switchMap((field: DotCMSContentTypeField) => {
                 return of({
-                    fieldVariables: this.parseFieldVariables(field.fieldVariables),
-                    fieldName: dataSet.fieldName,
-                    language: parseInt(dataSet.language),
-                    inode: dataSet.inode,
-                    content: JSON.parse(dataSet.blockEditorContent),
-                    contentletIdentifier: dataSet.contentletIdentifier
+                    field,
+                    inode,
+                    contentletIdentifier,
+                    fieldName: fieldName,
+                    languageId: parseInt(language),
+                    content: JSON.parse(blockEditorContent)
                 });
             })
         );
-    }
-
-    private parseFieldVariables(
-        fieldVariables: DotCMSContentTypeFieldVariable[]
-    ): BlockEditorInput['fieldVariables'] {
-        return {
-            allowedBlocks: fieldVariables.find((variable) => variable.key === 'allowedBlocks')
-                ?.value,
-            allowedContentTypes: fieldVariables.find(
-                (variable) => variable.key === 'allowedContentTypes'
-            )?.value,
-            styles: fieldVariables.find((variable) => variable.key === 'styles')?.value
-        };
     }
 }
