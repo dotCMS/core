@@ -1,4 +1,4 @@
-import { describe, test } from '@jest/globals';
+import { describe } from '@jest/globals';
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
@@ -35,10 +35,10 @@ describe('DotEditContentCalendarFieldComponent', () => {
         });
         calendar = spectator.query(byTestId(DATE_FIELD_MOCK.variable));
     });
-
+    // ASK: This is necessary?
     test.each([
         {
-            variable: DATE_FIELD_MOCK.variable,
+            variable: `calendar-id-${DATE_FIELD_MOCK.variable}`,
             attribute: 'id'
         },
         {
