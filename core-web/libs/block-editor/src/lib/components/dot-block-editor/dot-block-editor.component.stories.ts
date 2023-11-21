@@ -53,7 +53,14 @@ export const primary = () => ({
             BrowserAnimationsModule
         ],
         providers: [
-            DotPropertiesService,
+            {
+                provide: DotPropertiesService,
+                useValue: {
+                    getKey(_key) {
+                        return of('true');
+                    }
+                }
+            },
             {
                 provide: DotUploadFileService,
                 useValue: {
