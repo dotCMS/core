@@ -1,7 +1,7 @@
 <!-- TODO: We need to review the tags endpoint and use it here. -->
 <p-autoComplete
     [formControlName]="field.variable"
-    [id]="field.variable"
+    [id]="'tag-id-' + field.variable"
     [inputId]="field.variable"
     [attr.data-testId]="field.variable"
     [suggestions]="[]"

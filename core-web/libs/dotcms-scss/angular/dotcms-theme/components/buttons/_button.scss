@@ -47,6 +47,10 @@
     &.p-button-outlined {
         @extend #button-disabled-outlined;
     }
+
+    &.p-button-text {
+        @extend #button-disabled-text;
+    }
 }
 
 // Severity for basic button
