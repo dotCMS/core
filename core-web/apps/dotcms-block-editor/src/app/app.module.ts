@@ -10,6 +10,7 @@ import { ListboxModule } from 'primeng/listbox';
 import { OrderListModule } from 'primeng/orderlist';
 
 import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
+import { DotPropertiesService } from '@dotcms/data-access';
 
 import { AppComponent } from './app.component';
 @NgModule({
@@ -24,7 +25,7 @@ import { AppComponent } from './app.component';
         ListboxModule,
         HttpClientModule
     ],
-    providers: []
+    providers: [DotPropertiesService]
 })
 export class AppModule implements DoBootstrap {
     constructor(private injector: Injector) {}

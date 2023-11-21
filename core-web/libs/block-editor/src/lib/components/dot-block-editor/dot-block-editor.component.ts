@@ -1,4 +1,4 @@
-import { Subject, from } from 'rxjs';
+import { Observable, Subject, combineLatest, from } from 'rxjs';
 import { assert, object, string, array, optional } from 'superstruct';
 
 import {
@@ -16,7 +16,7 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-import { debounceTime, take, takeUntil } from 'rxjs/operators';
+import { debounceTime, map, take, takeUntil } from 'rxjs/operators';
 
 import { AnyExtension, Content, Editor, JSONContent } from '@tiptap/core';
 import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
@@ -31,6 +31,7 @@ import { Underline } from '@tiptap/extension-underline';
 import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
+import { DotPropertiesService } from '@dotcms/data-access';
 import {
     RemoteCustomExtensions,
     EDITOR_MARKETING_KEYS,
@@ -88,14 +89,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
 
     @Input() languageId = DEFAULT_LANG_ID;
     @Input() isFullscreen = false;
-    @Input() value = '';
-    @Input() set showVideoThumbnail(value) {
-        this.dotMarketingConfigService.setProperty(
-            EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL,
-            value
-        );
-    }
-
+    @Input() value: Content = '';
     @Output() valueChange = new EventEmitter<JSONContent>();
 
     private onChange: (value: string) => void;
@@ -142,7 +136,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         return Math.ceil(this.characterCount.words() / 265);
     }
 
-    private cd = inject(ChangeDetectorRef);
+    private readonly cd = inject(ChangeDetectorRef);
+    private readonly dotPropertiesService = inject(DotPropertiesService);
 
     constructor(
         private readonly injector: Injector,
@@ -159,6 +154,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     writeValue(content: JSONContent): void {
+        this.value = content;
         this.setEditorContent(content);
     }
 
@@ -167,10 +163,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     ngOnInit() {
-        this.setFieldVariable();
-        from(this.getCustomRemoteExtensions())
+        this.setFieldVariable(); // Set the field variables - Before the editor is created
+        combineLatest([this.showVideoThumbnail$(), from(this.getCustomRemoteExtensions())])
             .pipe(take(1))
-            .subscribe((extensions) => {
+            .subscribe(([showVideoThumbnail, extensions]) => {
                 this.editor = new Editor({
                     extensions: [
                         ...this.getEditorExtensions(),
@@ -179,17 +175,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                         ...extensions
                     ]
                 });
-                this.setEditorContent(this.value);
-                this.editor.on('create', () => this.updateCharCount());
-                this.subject
-                    .pipe(takeUntil(this.destroy$), debounceTime(250))
-                    .subscribe(() => this.updateCharCount());
 
-                this.editor.on('transaction', ({ editor }) => {
-                    this.freezeScroll = FREEZE_SCROLL_KEY.getState(editor.view.state)?.freezeScroll;
-                });
+                this.dotMarketingConfigService.setProperty(
+                    EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL,
+                    showVideoThumbnail
+                );
 
-                this.cd.detectChanges();
+                this.subscribeToEditorEvents();
             });
     }
 
@@ -210,6 +202,34 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         this.allowedBlocks = [...this.allowedBlocks, ...allowedBlocks];
     }
 
+    /**
+     * Subscribe to the editor events
+     *
+     * @private
+     * @memberof DotBlockEditorComponent
+     */
+    private subscribeToEditorEvents() {
+        this.editor.on('create', () => {
+            this.setEditorContent(this.value);
+            this.updateCharCount();
+        });
+        this.subject
+            .pipe(takeUntil(this.destroy$), debounceTime(250))
+            .subscribe(() => this.updateCharCount());
+
+        this.editor.on('transaction', ({ editor }) => {
+            this.freezeScroll = FREEZE_SCROLL_KEY.getState(editor.view.state)?.freezeScroll;
+        });
+
+        this.cd.detectChanges();
+    }
+
+    /**
+     * Update the character count
+     *
+     * @private
+     * @memberof DotBlockEditorComponent
+     */
     private updateCharCount(): void {
         const tr = this.editor.state.tr.setMeta('addToHistory', false);
 
@@ -223,6 +243,12 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         }
 
         this.editor.view.dispatch(tr);
+    }
+
+    private showVideoThumbnail$(): Observable<boolean> {
+        return this.dotPropertiesService
+            .getKey(EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL)
+            .pipe(map((property = 'true') => property === 'true' || property === 'NOT_FOUND'));
     }
 
     /**

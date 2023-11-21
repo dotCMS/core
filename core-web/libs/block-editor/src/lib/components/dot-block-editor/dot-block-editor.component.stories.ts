@@ -11,6 +11,8 @@ import { OrderListModule } from 'primeng/orderlist';
 
 import { debounceTime, delay, tap } from 'rxjs/operators';
 
+import { DotPropertiesService } from '@dotcms/data-access';
+
 import { DotBlockEditorComponent } from './dot-block-editor.component';
 
 import { BlockEditorModule } from '../../block-editor.module';
@@ -51,6 +53,7 @@ export const primary = () => ({
             BrowserAnimationsModule
         ],
         providers: [
+            DotPropertiesService,
             {
                 provide: DotUploadFileService,
                 useValue: {
