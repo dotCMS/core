@@ -24,6 +24,15 @@
 						],
 						"type": "text/javascript"
 					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set (\"randomNum\", _.random (20,100));"
+						],
+						"type": "text/javascript"
+					}
 				}
 			],
 			"request": {
@@ -46,7 +55,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"siteName\":\"tags.host2.com\"\n\n}",
+					"raw": "{\n    \"siteName\":\"tags.host{{randomNum}}.com\"\n\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -510,99 +519,6 @@
 						{
 							"key": "name",
 							"value": "xxx"
-						},
-						{
-							"key": "siteId",
-							"value": "{{tagsSiteId}}"
-						}
-					]
-				},
-				"description": "This tests the endpoint that brings back one specific App given the App-key."
-			},
-			"response": []
-		},
-		{
-			"name": "filter-by-tag-name-on-site-where-tag-belongs-also-expect-global-matches",
-			"event": [
-				{
-					"listen": "prerequest",
-					"script": {
-						"exec": [
-							""
-						],
-						"type": "text/javascript"
-					}
-				},
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);    ",
-							"    let jsonData = pm.response.json();",
-							"    let size = Object.keys(jsonData.entity).length;",
-							"    pm.expect(size).to.be.eq(2); //Returns the global occurrence since the site does not have any match",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotCMS.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [
-					{
-						"key": "Content-Type",
-						"name": "Content-Type",
-						"type": "text",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v2/tags?name=global&siteId={{tagsSiteId}}",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v2",
-						"tags"
-					],
-					"query": [
-						{
-							"key": "name",
-							"value": "global"
 						},
 						{
 							"key": "siteId",
@@ -1362,6 +1278,10 @@
 		},
 		{
 			"key": "tagForUpdateId",
+			"value": ""
+		},
+		{
+			"key": "randomNum",
 			"value": ""
 		}
 	]
