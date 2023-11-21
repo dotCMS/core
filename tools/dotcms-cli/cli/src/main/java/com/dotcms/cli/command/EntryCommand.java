@@ -11,16 +11,19 @@ import com.dotcms.cli.common.OutputOptionMixin;
 import io.quarkus.arc.Unremovable;
 import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
 import io.quarkus.picocli.runtime.annotations.TopCommand;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.Produces;
-import javax.enterprise.inject.spi.CDI;
-import javax.inject.Inject;
+import io.quarkus.runtime.QuarkusApplication;
+import io.quarkus.runtime.annotations.QuarkusMain;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.ParameterException;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.Produces;
+import javax.enterprise.inject.spi.CDI;
+import javax.inject.Inject;
 
 @TopCommand
 @CommandLine.Command(
@@ -49,7 +52,8 @@ import picocli.CommandLine.ParameterException;
                 FilesCommand.class
         }
 )
-public class EntryCommand  {
+@QuarkusMain
+public class EntryCommand implements QuarkusApplication {
 
     // Declared here, so we have an instance available via Arc container
     @Unremovable
@@ -60,10 +64,20 @@ public class EntryCommand  {
     @Inject
     AuthenticationParam authenticationParam;
 
-    public static void main(String[] args) {
-        int exitCode = new CommandLine(new EntryCommand()).execute(args);
-        System.exit(exitCode);
+    @Unremovable
+    @Inject
+    CustomConfiguration customConfiguration;
+
+//    public static void main(String[] args) {
+//        int exitCode = new CommandLine(new EntryCommand()).execute(args);
+//        System.exit(exitCode);
+//    }
+
+    @Override
+    public int run(String... args) throws Exception {
+        return new CommandLine(this).execute(args);
     }
+
 }
 
 @ApplicationScoped
