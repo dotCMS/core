@@ -2,7 +2,9 @@ package com.dotcms.rest.api.v1.temp;
 
 import java.io.File;
 
+import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -19,13 +21,25 @@ public class DotTempFile {
     super();
     this.id = id;
     this.file = file;
-    this.mimeType=APILocator.getFileAssetAPI().getMimeType(file.getName());
+    this.mimeType= getMimeType(file);
     this.image = UtilMethods.isImage(file.getName());
     this.referenceUrl = "/dA/" + id + "/tmp/" + file.getName() ;
     this.thumbnailUrl = this.image ? "/contentAsset/image/" + id + "/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/" +  file.getName() :null;
     this.fileName = file.getName();
     this.folder = resolveFolder();
   }
+
+  private String getMimeType(final File file) {
+
+    String mimeType = APILocator.getFileAssetAPI().getMimeType(file.getName());
+    if (FileAsset.UNKNOWN_MIME_TYPE.equals(mimeType)) {
+
+      mimeType = MimeTypeUtils.getMimeType(file);
+    }
+
+    return mimeType;
+  }
+
   @JsonProperty("length")
   public long length() {
     return file.length();

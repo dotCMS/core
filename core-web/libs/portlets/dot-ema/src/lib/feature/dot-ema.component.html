@@ -1,0 +1,50 @@
+<ng-container *ngIf="vm$ | async as vm">
+    <div class="flex gap-3 toolbar align-items-center">
+        <h4>{{ vm.pageTitle }}</h4>
+
+        <select
+            id="language_id"
+            [ngModel]="vm.language_id"
+            (change)="onChange($event)"
+            data-testId="language_id"
+            aria-label="language_id"
+            name="language_id">
+            <option *ngFor="let language of languages" value="{{ language.value }}">
+                {{ language.name }}
+            </option>
+        </select>
+    </div>
+    <div class="iframe-wrapper">
+        <iframe
+            #iframe
+            [src]="vm.iframeUrl | safeUrl"
+            [title]="host"
+            data-testId="iframe"
+            style="border: none"
+            width="100%"
+            height="100%"
+            title="Editor Page"></iframe>
+    </div>
+    <p-dialog
+        #dialog
+        [visible]="vm.dialogVisible"
+        [style]="{ height: '90vh', width: '90vw' }"
+        [header]="vm.dialogHeader"
+        [draggable]="false"
+        [resizable]="false"
+        [maximizable]="true"
+        [modal]="true"
+        (visibleChange)="resetIframeData()"
+        data-testId="dialog">
+        <iframe
+            #dialogIframe
+            [style]="{ border: 'none', display: vm.dialogIframeLoading ? 'none' : 'block' }"
+            [src]="vm.dialogIframeURL | safeUrl"
+            (load)="onIframeLoad($event)"
+            title="dialog"
+            data-testId="dialog-iframe"
+            width="100%"
+            height="100%"></iframe>
+        <dot-spinner *ngIf="vm.dialogIframeLoading" data-testId="spinner"></dot-spinner>
+    </p-dialog>
+</ng-container>

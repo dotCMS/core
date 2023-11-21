@@ -1,4 +1,4 @@
-import { Observable, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
@@ -28,10 +28,10 @@ export class AiContentService {
         return this.lastContentResponse;
     }
 
-    getIAContent(prompt: string): Observable<string> {
+    generateContent(prompt: string): Observable<string> {
         this.lastUsedPrompt = prompt;
 
-        const url = '/api/ai/text/generate';
+        const url = '/api/v1/ai/text/generate';
         const body = JSON.stringify({
             prompt
         });
@@ -52,8 +52,8 @@ export class AiContentService {
         );
     }
 
-    getAIImage(prompt: string) {
-        const url = 'api/ai/image/generate';
+    generateImage(prompt: string) {
+        const url = '/api/v1/ai/image/generate';
         const body = JSON.stringify({
             prompt
         });
@@ -80,12 +80,14 @@ export class AiContentService {
 
     getNewContent(contentType: string): Observable<string> {
         if (contentType === 'aiContent') {
-            return this.getIAContent(this.lastUsedPrompt);
+            return this.generateContent(this.lastUsedPrompt);
         }
 
         if (contentType === 'dotImage') {
-            return this.getAIImage(this.lastImagePrompt);
+            return this.generateImage(this.lastImagePrompt);
         }
+
+        return of('');
     }
 
     createAndPublishContentlet(fileId: string): Observable<DotCMSContentlet[]> {
@@ -99,12 +101,16 @@ export class AiContentService {
         ];
 
         return this.http
-            .post('api/v1/workflow/actions/default/fire/PUBLISH', JSON.stringify({ contentlets }), {
-                headers: {
-                    Origin: window.location.hostname,
-                    'Content-Type': 'application/json;charset=UTF-8'
+            .post(
+                '/api/v1/workflow/actions/default/fire/PUBLISH',
+                JSON.stringify({ contentlets }),
+                {
+                    headers: {
+                        Origin: window.location.hostname,
+                        'Content-Type': 'application/json;charset=UTF-8'
+                    }
                 }
-            })
+            )
             .pipe(
                 pluck('entity', 'results'),
                 catchError((error) => throwError(error))

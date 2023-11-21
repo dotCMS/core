@@ -10,6 +10,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.analytics.metrics.*;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ExperimentDataGen;
 import com.dotcms.datagen.FolderDataGen;
@@ -17,12 +18,9 @@ import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.experiments.business.web.SelectedExperiment.LookBackWindow;
+import com.dotcms.experiments.model.*;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
-import com.dotcms.experiments.model.Experiment;
-import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.RunningIds.RunningId;
-import com.dotcms.experiments.model.TargetingCondition;
-import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.mock.response.DotCMSMockResponse;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -96,7 +94,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
                 assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?\\/" + htmlPageAsset.getPageUrl() + "(\\/?\\?.*)?$",
-                        selectedExperiments.getExperiments().get(0).redirectPattern());
+                        selectedExperiments.getExperiments().get(0).regexs().get("isExperimentPage"));
                 assertEquals(runningId.id(), selectedExperiments.getExperiments().get(0).getRunningId());
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
@@ -111,6 +109,188 @@ public class ExperimentWebAPIImplIntegrationTest {
                 assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
 
             }
+        } finally {
+            ExperimentDataGen.end(experiment);
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
+     * When: You have one experiment running with 100% of traffic allocation and REACH_PAGE Goal
+     * Should: Return two regexs to be validated on the JS Code
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void regexOnReachPageGoal() throws DotDataException, DotSecurityException {
+        final Condition<Object> condition = Condition.builder()
+                .parameter("url")
+                .value("testing")
+                .operator(AbstractCondition.Operator.CONTAINS)
+                .build();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(condition).build();
+
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
+
+        final Experiment experiment = new ExperimentDataGen().addGoal(goal).trafficAllocation(100).nextPersisted();
+
+        try {
+            final Experiment experimentStarted = ExperimentDataGen.start(experiment);
+            final RunningId runningId = experimentStarted.runningIds().getCurrent().orElseThrow();
+            final HTMLPageAsset htmlPageAsset = getExperimentPage(experiment);
+
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+
+            final DotCMSMockResponse response = new DotCMSMockResponse();
+
+            final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
+                    .isUserIncluded(request, response, null);
+
+            final String isExperimentPageRegex = selectedExperiments.getExperiments().get(0).regexs().get("isExperimentPage");
+            final String isTargetPageRegex = selectedExperiments.getExperiments().get(0).regexs().get("isTargetPage");
+
+            assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\/" + htmlPageAsset.getPageUrl() + "(\\/?\\?.*)?$",
+                    isExperimentPageRegex);
+
+            assertEquals(".*testing.*", isTargetPageRegex);
+        } finally {
+            ExperimentDataGen.end(experiment);
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
+     * When: You have one experiment running with 100% of traffic allocation and URL_PARAMETER Goal
+     * Should: Return two regexs to be validated on the JS Code
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void regexOnURLParameterGoal() throws DotDataException, DotSecurityException {
+        final Condition<Object> condition = Condition.builder()
+                .parameter("queryParameter")
+                .value(new QueryParameter("testParameter", "testValue"))
+                .operator(AbstractCondition.Operator.CONTAINS)
+                .build();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.URL_PARAMETER)
+                .addConditions(condition).build();
+
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
+
+        final Experiment experiment = new ExperimentDataGen().addGoal(goal).trafficAllocation(100).nextPersisted();
+
+        try {
+            final Experiment experimentStarted = ExperimentDataGen.start(experiment);
+            final RunningId runningId = experimentStarted.runningIds().getCurrent().orElseThrow();
+            final HTMLPageAsset htmlPageAsset = getExperimentPage(experiment);
+
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+
+            final DotCMSMockResponse response = new DotCMSMockResponse();
+
+            final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
+                    .isUserIncluded(request, response, null);
+
+            final String isExperimentPageRegex = selectedExperiments.getExperiments().get(0).regexs().get("isExperimentPage");
+            final String isTargetPageRegex = selectedExperiments.getExperiments().get(0).regexs().get("isTargetPage");
+
+            assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\/" + htmlPageAsset.getPageUrl() + "(\\/?\\?.*)?$",
+                    isExperimentPageRegex);
+
+            assertEquals(".*\\?(.*&)?testParameter=.*testValue.*(&.*)*", isTargetPageRegex);
+        } finally {
+            ExperimentDataGen.end(experiment);
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
+     * When: You have one experiment running with 100% of traffic allocation and BOUNCE_RATE Goal
+     * Should: Return just one regex
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void regexOnBounceRateGoal() throws DotDataException, DotSecurityException {
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.BOUNCE_RATE)
+                .build();
+
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
+
+        final Experiment experiment = new ExperimentDataGen().addGoal(goal).trafficAllocation(100).nextPersisted();
+
+        try {
+            final Experiment experimentStarted = ExperimentDataGen.start(experiment);
+            final RunningId runningId = experimentStarted.runningIds().getCurrent().orElseThrow();
+            final HTMLPageAsset htmlPageAsset = getExperimentPage(experiment);
+
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+
+            final DotCMSMockResponse response = new DotCMSMockResponse();
+
+            final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
+                    .isUserIncluded(request, response, null);
+
+            final String isExperimentPageRegex = selectedExperiments.getExperiments().get(0).regexs().get("isExperimentPage");
+            final String isTargetPageRegex = selectedExperiments.getExperiments().get(0).regexs().get("isTargetPage");
+
+            assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\/" + htmlPageAsset.getPageUrl() + "(\\/?\\?.*)?$",
+                    isExperimentPageRegex);
+
+            assertNull( isTargetPageRegex);
+        } finally {
+            ExperimentDataGen.end(experiment);
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
+     * When: You have one experiment running with 100% of traffic allocation and EXIT_RATE Goal
+     * Should: Return just one regex
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void regexOnExitRateGoal() throws DotDataException, DotSecurityException {
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.EXIT_RATE)
+                .build();
+
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
+
+        final Experiment experiment = new ExperimentDataGen().addGoal(goal).trafficAllocation(100).nextPersisted();
+
+        try {
+            final Experiment experimentStarted = ExperimentDataGen.start(experiment);
+            final RunningId runningId = experimentStarted.runningIds().getCurrent().orElseThrow();
+            final HTMLPageAsset htmlPageAsset = getExperimentPage(experiment);
+
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+
+            final DotCMSMockResponse response = new DotCMSMockResponse();
+
+            final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
+                    .isUserIncluded(request, response, null);
+
+            final String isExperimentPageRegex = selectedExperiments.getExperiments().get(0).regexs().get("isExperimentPage");
+            final String isTargetPageRegex = selectedExperiments.getExperiments().get(0).regexs().get("isTargetPage");
+
+            assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\/" + htmlPageAsset.getPageUrl() + "(\\/?\\?.*)?$",
+                    isExperimentPageRegex);
+
+            assertNull( isTargetPageRegex);
         } finally {
             ExperimentDataGen.end(experiment);
         }
@@ -144,7 +324,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
                 assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\/" + htmlPageAsset.getPageUrl() + "(\\/?\\?.*)?$",
-                        selectedExperiments.getExperiments().get(0).redirectPattern());
+                        selectedExperiments.getExperiments().get(0).regexs().get("isExperimentPage"));
                 assertEquals(runningId.id(), selectedExperiments.getExperiments().get(0).getRunningId());
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
@@ -203,7 +383,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
                 final String regexExpected = "^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\/blog(\\/index|\\/)?(\\/?\\?.*)?$" ;
-                assertEquals(regexExpected, selectedExperiments.getExperiments().get(0).redirectPattern());
+                assertEquals(regexExpected, selectedExperiments.getExperiments().get(0).regexs().get("isExperimentPage"));
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
@@ -259,7 +439,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
-                assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?(\\/index|\\/)?(\\/?\\?.*)?$", selectedExperiments.getExperiments().get(0).redirectPattern());
+                assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?(\\/index|\\/)?(\\/?\\?.*)?$", selectedExperiments.getExperiments().get(0).regexs().get("isExperimentPage"));
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
@@ -321,7 +501,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
-                assertEquals("(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\/store\\/products\\/(.+)(\\/?\\?.*)?", selectedExperiments.getExperiments().get(0).redirectPattern());
+                assertEquals("(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\/store\\/products\\/(.+)(\\/?\\?.*)?", selectedExperiments.getExperiments().get(0).regexs().get("isExperimentPage"));
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
@@ -391,7 +571,7 @@ public class ExperimentWebAPIImplIntegrationTest {
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
                 assertEquals("(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\/store\\/products\\/(.+)(\\/?\\?.*)?|(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,})(:\\d{1,5})?\\/products\\/detail\\/(.+)(\\/?\\?.*)?",
-                        selectedExperiments.getExperiments().get(0).redirectPattern());
+                        selectedExperiments.getExperiments().get(0).regexs().get("isExperimentPage"));
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
