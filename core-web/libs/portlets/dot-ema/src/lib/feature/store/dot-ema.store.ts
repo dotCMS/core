@@ -1,4 +1,4 @@
-import { ComponentStore } from '@ngrx/component-store';
+import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { EMPTY, Observable } from 'rxjs';
 
 import { Injectable } from '@angular/core';
@@ -7,6 +7,7 @@ import { catchError, switchMap, tap } from 'rxjs/operators';
 
 import { DotPageApiParams, DotPageApiService } from '../../services/dot-page-api.service';
 import { ADD_CONTENTLET_URL, EDIT_CONTENTLET_URL } from '../../shared/consts';
+import { SavePagePayload } from '../../shared/models';
 
 export interface EditEmaState {
     language_id: string;
@@ -95,10 +96,19 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      *
      * @memberof EditEmaStore
      */
-    readonly save = this.effect((contentletID$: Observable<string>) => {
-        return contentletID$.pipe(
-            switchMap((contentletID) =>
-                this.dotPageApiService.save(contentletID, this.get().editor.page.identifier)
+    readonly save = this.effect((payload$: Observable<SavePagePayload>) => {
+        return payload$.pipe(
+            switchMap((payload) =>
+                this.dotPageApiService.save(payload).pipe(
+                    tapResponse(
+                        () => {
+                            payload.whenSaved?.();
+                        },
+                        (e) => {
+                            console.error(e);
+                        }
+                    )
+                )
             )
         );
     });

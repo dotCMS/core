@@ -1,11 +1,17 @@
 export interface AddContentletPayload {
-    container?: AddContentletContainerPayload;
-    pageContainers: AddContentletContainerPayload[];
+    container?: Container;
+    pageContainers: Container[];
+    pageID: string;
 }
 
-export interface AddContentletContainerPayload {
+export interface Container {
     acceptTypes: string;
     identifier: string;
     uuid: string;
     contentletsId: string[];
+}
+
+export interface SavePagePayload extends AddContentletPayload {
+    contentletID: string;
+    whenSaved?: () => void;
 }

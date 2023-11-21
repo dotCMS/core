@@ -1,11 +1,11 @@
-import { BehaviorSubject, Observable } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { catchError, pluck } from 'rxjs/operators';
 
-import { AddContentletPayload } from '../shared/models';
+import { SavePagePayload } from '../shared/models';
 
 export interface DotPageApiResponse {
     page: {
@@ -21,10 +21,6 @@ export interface DotPageApiParams {
 
 @Injectable()
 export class DotPageApiService {
-    readonly currentPageContainers$: BehaviorSubject<AddContentletPayload> = new BehaviorSubject({
-        pageContainers: []
-    });
-
     constructor(private http: HttpClient) {}
 
     /**
@@ -45,27 +41,32 @@ export class DotPageApiService {
     }
 
     /**
-     * Modifies the current page and saves it
+     * Save a contentlet in a page
      *
-     * @param {string} contentletID
+     * @param {SavePagePayload} { pageContainers, container, contentletID, pageID }
+     * @return {*}
      * @memberof DotPageApiService
      */
-    save(contentletID: string, pageID: string) {
-        const { pageContainers, container } = this.currentPageContainers$.getValue();
-
+    save({
+        pageContainers,
+        container,
+        contentletID,
+        pageID
+    }: SavePagePayload): Observable<unknown> {
         const newPage = pageContainers.map((currentContainer) => {
             if (
                 container.uuid === currentContainer.uuid &&
                 container.identifier === currentContainer.identifier
             ) {
-                currentContainer.contentletsId.find((id) => id === contentletID)
-                    ? console.error('this already exists')
-                    : currentContainer.contentletsId.push(contentletID);
+                !currentContainer.contentletsId.find((id) => id === contentletID) &&
+                    currentContainer.contentletsId.push(contentletID);
             }
 
             return currentContainer;
         });
 
-        return this.http.post(`/api/v1/page/${pageID}/content?variantName=DEFAULT`, newPage);
+        return this.http
+            .post(`/api/v1/page/${pageID}/content?variantName=DEFAULT`, newPage)
+            .pipe(catchError(() => EMPTY));
     }
 }

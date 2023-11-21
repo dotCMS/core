@@ -12,6 +12,7 @@ import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
+import { NG_CUSTOM_EVENTS } from '../shared/enums';
 
 describe('DotEmaComponent', () => {
     let spectator: Spectator<DotEmaComponent>;
@@ -160,9 +161,9 @@ describe('DotEmaComponent', () => {
             dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                 new CustomEvent('ng-event', {
                     detail: {
-                        action: 'edit-contentlet-updated',
-                        payload: {
-                            inode: '123'
+                        name: NG_CUSTOM_EVENTS.CONTENTLET_UPDATED,
+                        data: {
+                            identifier: '123'
                         }
                     }
                 })

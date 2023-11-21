@@ -203,7 +203,7 @@ const Container = ({ containerRef }) => {
     const { identifier, uuid } = containerRef;
 
     // Get the containers from the global context
-    const { containers } = useContext(GlobalContext);
+    const { containers, page } = useContext(GlobalContext);
 
     const { container, containerStructures } = containers[identifier];
 
@@ -245,6 +245,7 @@ const Container = ({ containerRef }) => {
                 message={{
                     action: 'add-contentlet',
                     payload: {
+                        pageID: page.identifier,
                         container: {
                             identifier: container.identifier,
                             uuid,

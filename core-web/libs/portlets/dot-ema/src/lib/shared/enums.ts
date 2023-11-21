@@ -11,5 +11,6 @@ export enum NOTIFY_CUSTOMER {
 // All the custom events that come from the JSP Iframe
 export enum NG_CUSTOM_EVENTS {
     EDIT_CONTENTLET_LOADED = 'edit-contentlet-loaded',
-    CONTENT_SEARCH_SELECT = 'select-contentlet'
+    CONTENT_SEARCH_SELECT = 'select-contentlet',
+    CONTENTLET_UPDATED = 'save-page'
 }

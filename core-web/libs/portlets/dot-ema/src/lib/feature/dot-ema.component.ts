@@ -61,25 +61,12 @@ export class DotEmaComponent implements OnInit, OnDestroy {
         }
     ];
 
-    pages = [
-        {
-            name: 'Home',
-            value: 'index'
-        },
-        {
-            name: 'Page One',
-            value: 'page-one'
-        },
-        {
-            name: 'Page Two',
-            value: 'page-two'
-        }
-    ];
-
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
     private readonly store = inject(EditEmaStore);
     private readonly pageApi = inject(DotPageApiService);
+
+    private savePayload: AddContentletPayload;
 
     readonly host = 'http://localhost:3000';
     readonly vm$ = this.store.vm$;
@@ -190,8 +177,16 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                 /* */
             },
             [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
-                this.store.save(detail.data.identifier); // Save when selected
-                this.resetDialogIframeData();
+                this.store.save({
+                    ...this.savePayload,
+                    contentletID: detail.data.identifier,
+                    whenSaved: () => {
+                        this.resetDialogIframeData();
+                        this.reloadIframe();
+                    }
+                }); // Save when selected
+            },
+            [NG_CUSTOM_EVENTS.CONTENTLET_UPDATED]: () => {
                 this.reloadIframe();
             }
         })[detail.name];
@@ -231,7 +226,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                     acceptTypes: payload.container.acceptTypes ?? '*'
                 });
 
-                this.pageApi.currentPageContainers$.next(payload);
+                this.savePayload = payload;
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
