@@ -1,13 +1,14 @@
-import { Observable, forkJoin, of, throwError } from 'rxjs';
+import { forkJoin, Observable, of, throwError } from 'rxjs';
 
 import { HttpErrorResponse, HttpHeaders, HttpResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
 import { catchError, filter, map, switchMap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotSessionStorageService } from '@dotcms/data-access';
 import { DotCMSResponse, HttpCode, Site, SiteService } from '@dotcms/dotcms-js';
 import { DotPageRenderOptions, DotPageRenderState } from '@dotcms/dotcms-models';
 
@@ -22,6 +23,7 @@ import { DotPageStateService } from '../../../content/services/dot-page-state/do
  */
 @Injectable()
 export class DotEditPageResolver implements Resolve<DotPageRenderState> {
+    private dotSessionStorageService: DotSessionStorageService = inject(DotSessionStorageService);
     constructor(
         private dotPageStateService: DotPageStateService,
         private dotRouterService: DotRouterService,
@@ -119,6 +121,7 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
                     : of(dotRenderedPageState);
             }),
             catchError((err: HttpErrorResponse) => {
+                this.dotSessionStorageService.removeVariantId();
                 this.dotRouterService.goToSiteBrowser();
 
                 return this.dotHttpErrorManagerService.handle(err).pipe(map(() => null));
