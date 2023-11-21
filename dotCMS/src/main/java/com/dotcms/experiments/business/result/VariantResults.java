@@ -29,7 +29,7 @@ public class VariantResults {
 
     public VariantResults(final Builder builder) {
         this.variantName = builder.experimentVariant.id();
-        this.uniqueBySession = builder.uniqueBySession;
+        this.uniqueBySession = builder.uniqueBySession != null ? builder.uniqueBySession : new UniqueBySessionResume(0, 0);
         this.details = builder.details;
         this.variantDescription = builder.experimentVariant.description();
         this.weight = builder.experimentVariant.weight();
