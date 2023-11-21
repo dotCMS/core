@@ -5,6 +5,7 @@
     dotFieldRequired
     >{{ field.name }}</label
 >
+
 <ng-container [ngSwitch]="field.fieldType">
     <dot-edit-content-select-field
         *ngSwitchCase="fieldTypes.SELECT"
@@ -59,4 +60,5 @@
         [formControlName]="field.variable"
         [attr.data-testId]="'field-' + field.variable" />
 </ng-container>
+
 <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>
