@@ -11,7 +11,10 @@ import { filter, takeUntil } from 'rxjs/operators';
 import { Editor } from '@tiptap/core';
 
 import { AIContentPromptComponent } from '../ai-content-prompt.component';
-import { AI_CONTENT_PROMPT_PLUGIN_KEY } from '../ai-content-prompt.extension';
+import {
+    AI_CONTENT_PROMPT_PLUGIN_KEY,
+    DOT_AI_TEXT_CONTENT_KEY
+} from '../ai-content-prompt.extension';
 import { AiContentPromptStore } from '../store/ai-content-prompt.store';
 import { TIPPY_OPTIONS } from '../utils';
 
@@ -25,7 +28,6 @@ interface AIContentPromptProps {
 
 interface PluginState {
     open: boolean;
-    form: [];
 }
 
 export type AIContentPromptViewProps = AIContentPromptProps & {
@@ -65,16 +67,8 @@ export class AIContentPromptView {
         this.element.remove();
         this.pluginKey = pluginKey;
         this.component = component;
-        this.componentStore = this.component.instance.store;
 
-        // this.component.instance.formSubmission.pipe(takeUntil(this.destroy$)).subscribe(() => {
-        //     this.editor.commands.closeAIPrompt();
-        // });
-        //
-        // this.component.instance.aiResponse.pipe(takeUntil(this.destroy$)).subscribe((content) => {
-        //     this.editor.commands.insertAINode(content);
-        //     this.editor.commands.openAIContentActions();
-        // });
+        this.componentStore = this.component.injector.get(AiContentPromptStore);
 
         this.componentStore.content$
             .pipe(
@@ -83,13 +77,10 @@ export class AIContentPromptView {
             )
             .subscribe((content) => {
                 this.editor.commands.closeAIPrompt();
+                this.editor.commands.deleteSelection();
                 this.editor.commands.insertAINode(content);
-                this.editor.commands.openAIContentActions();
+                this.editor.commands.openAIContentActions(DOT_AI_TEXT_CONTENT_KEY);
             });
-
-        // this.component.instance.getPromptState.pipe(takeUntil(this.destroy$)).subscribe((state) => {
-        //     console.log('state - content$', state);
-        // });
     }
 
     update(view: EditorView, prevState?: EditorState) {
@@ -103,7 +94,7 @@ export class AIContentPromptView {
         }
 
         if (!next.open) {
-            this.component.instance.cleanForm();
+            this.componentStore.setOpen(true);
         }
 
         this.createTooltip();
@@ -134,11 +125,12 @@ export class AIContentPromptView {
 
     show() {
         this.tippy?.show();
-        this.component.instance.focusField();
+        this.componentStore.setOpen(true);
     }
 
     hide() {
         this.tippy?.hide();
+        this.componentStore.setOpen(false);
         this.editor.view.focus();
     }
 
@@ -156,8 +148,7 @@ export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
         state: {
             init(): PluginState {
                 return {
-                    open: false,
-                    form: []
+                    open: false
                 };
             },
 
@@ -166,11 +157,11 @@ export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
                 value: PluginState,
                 oldState: EditorState
             ): PluginState {
-                const { open, form } = transaction.getMeta(AI_CONTENT_PROMPT_PLUGIN_KEY) || {};
+                const { open } = transaction.getMeta(AI_CONTENT_PROMPT_PLUGIN_KEY) || {};
                 const state = AI_CONTENT_PROMPT_PLUGIN_KEY.getState(oldState);
 
                 if (typeof open === 'boolean') {
-                    return { open, form };
+                    return { open };
                 }
 
                 // keep the old state in case we do not receive a new one.

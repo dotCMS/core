@@ -2,7 +2,8 @@ import { Observable } from 'rxjs';
 
 import { Component, EventEmitter, Output, OnInit } from '@angular/core';
 
-import { AiContentService } from '../../shared/services/ai-content/ai-content.service';
+import { DotAiService } from '../../shared/services/dot-ai/dot-ai.service';
+import { AiContentPromptStore } from '../ai-content-prompt/store/ai-content-prompt.store';
 
 interface ActionOption {
     label: string;
@@ -28,7 +29,10 @@ export class AIContentActionsComponent implements OnInit {
     actionOptions!: ActionOption[];
     tooltipContent = 'Describe the size, color palette, style, mood, etc.';
 
-    constructor(private aiContentService: AiContentService) {}
+    constructor(
+        private aiContentService: DotAiService,
+        private readonly aiContentPromptStore: AiContentPromptStore
+    ) {}
 
     ngOnInit() {
         this.actionOptions = [

@@ -13,7 +13,7 @@ interface OpenAIResponse {
     response: string;
 }
 @Injectable()
-export class AiContentService {
+export class DotAiService {
     private lastUsedPrompt: string | null = null;
     private lastImagePrompt: string | null = null;
     private lastContentResponse: string | null = null;

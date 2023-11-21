@@ -1,18 +1,18 @@
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { AiContentService } from './ai-content.service';
+import { DotAiService } from './dot-ai.service';
 
-describe('AiContentService', () => {
-    let service: AiContentService;
+describe('DotAiService', () => {
+    let service: DotAiService;
     let httpMock: HttpTestingController;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
-            providers: [AiContentService]
+            providers: [DotAiService]
         });
-        service = TestBed.inject(AiContentService);
+        service = TestBed.inject(DotAiService);
         httpMock = TestBed.inject(HttpTestingController);
     });
 

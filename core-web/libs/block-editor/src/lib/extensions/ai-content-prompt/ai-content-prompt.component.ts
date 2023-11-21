@@ -1,6 +1,6 @@
-import { Observable, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
 
-import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 
 import { AiContentPromptState, AiContentPromptStore } from './store/ai-content-prompt.store';
@@ -14,12 +14,10 @@ interface AIContentForm {
     templateUrl: './ai-content-prompt.component.html',
     styleUrls: ['./ai-content-prompt.component.scss']
 })
-export class AIContentPromptComponent implements OnDestroy {
+export class AIContentPromptComponent implements OnInit {
     vm$: Observable<AiContentPromptState> = this.aiContentPromptStore.vm$;
 
     @ViewChild('input') private input: ElementRef;
-
-    private destroy$ = new Subject<boolean>();
 
     form: FormGroup<AIContentForm> = new FormGroup<AIContentForm>({
         textPrompt: new FormControl('', Validators.required)
@@ -27,12 +25,10 @@ export class AIContentPromptComponent implements OnDestroy {
 
     constructor(private readonly aiContentPromptStore: AiContentPromptStore) {}
 
-    ngOnDestroy() {
-        this.destroy$.next(true);
-    }
-
-    get store() {
-        return this.aiContentPromptStore;
+    ngOnInit() {
+        this.aiContentPromptStore.open$.subscribe((open) => {
+            open ? this.input.nativeElement.focus() : this.form.reset();
+        });
     }
 
     onSubmit() {
@@ -41,13 +37,5 @@ export class AIContentPromptComponent implements OnDestroy {
         if (textPrompt) {
             this.aiContentPromptStore.generateContent(textPrompt);
         }
-    }
-
-    cleanForm() {
-        this.form.reset();
-    }
-
-    focusField() {
-        this.input.nativeElement.focus();
     }
 }

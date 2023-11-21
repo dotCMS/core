@@ -1,16 +1,13 @@
 <ng-container *ngIf="vm$ | async as vm">
-    <form
-        id="ai-text-prompt"
-        *ngIf="form"
-        [formGroup]="form"
-        (ngSubmit)="onSubmit()"
-        autocomplete="off">
+    <form id="ai-text-prompt" [formGroup]="form" (ngSubmit)="onSubmit()" autocomplete="off">
         <span class="p-input-icon-right">
             <input
                 #input
+                [disabled]="vm.loading"
                 formControlName="textPrompt"
                 type="text"
                 pInputText
+                autofocus
                 placeholder="Ask AI to write something" />
 
             <ng-container *ngIf="vm.loading; else submitButton">

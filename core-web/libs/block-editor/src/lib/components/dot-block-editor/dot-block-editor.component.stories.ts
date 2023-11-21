@@ -22,7 +22,7 @@ import {
 } from '../../extensions';
 import { ContentletBlockComponent } from '../../nodes';
 import {
-    AiContentService,
+    DotAiService,
     ASSET_MOCK,
     CONTENTLETS_MOCK,
     DotLanguageService,
@@ -32,7 +32,7 @@ import {
     SuggestionsComponent,
     SuggestionsService
 } from '../../shared';
-import { AiContentServiceMock } from '../../shared/services/ai-content/ai-content.service.mock';
+import { DotAiServiceMock } from '../../shared/services/dot-ai/dot-ai-service.mock';
 
 export default {
     title: 'Library/Block Editor'
@@ -182,9 +182,8 @@ export const primary = () => ({
                 }
             },
             {
-                provide: AiContentService,
-                useClass:
-                    process.env.USE_MIDDLEWARE === 'true' ? AiContentService : AiContentServiceMock
+                provide: DotAiService,
+                useClass: process.env.USE_MIDDLEWARE === 'true' ? DotAiService : DotAiServiceMock
             }
         ],
         // We need these here because they are dynamically rendered
