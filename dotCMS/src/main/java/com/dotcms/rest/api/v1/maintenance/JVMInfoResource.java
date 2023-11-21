@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -154,7 +155,7 @@ public class JVMInfoResource implements Serializable {
         
         final Map<String,Object> resultMap=new LinkedHashMap<>();
         resultMap.put("version",ReleaseInfo.getVersion());
-        resultMap.put("buildDate",UtilMethods.dateToHTMLDate (ReleaseInfo.getBuildDate()));
+        resultMap.put("buildDate",UtilMethods.htmlDateToHTMLTime (ReleaseInfo.getBuildDate()));
 
         resultMap.put("name",ReleaseInfo.getName());
         resultMap.put("buildNumber",ReleaseInfo.getBuildNumber());
