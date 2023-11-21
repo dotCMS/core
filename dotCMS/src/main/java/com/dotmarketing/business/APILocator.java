@@ -62,8 +62,8 @@ import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.languagevariable.business.LanguageVariableAPIImpl;
 import com.dotcms.mail.MailAPI;
 import com.dotcms.mail.MailAPIImpl;
-import com.dotcms.metrics.MetricsAPI;
-import com.dotcms.metrics.MetricsAPIImpl;
+import com.dotcms.analytics.metrics.MetricsAPI;
+import com.dotcms.analytics.metrics.MetricsAPIImpl;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.notifications.business.NotificationAPIImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsAPI;
@@ -1140,7 +1140,7 @@ public class APILocator extends Locator<APIIndex> {
 	}
 
 	/**
-	 * Creates a single instance of the {@link com.dotcms.metrics.MetricsAPI} class.
+	 * Creates a single instance of the {@link MetricsAPI} class.
 	 * @return
 	 */
 	public static MetricsAPI getMetricsAPI() {
