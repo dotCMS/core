@@ -106,6 +106,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                         },
                         (e) => {
                             console.error(e);
+                            payload.whenSaved?.();
                         }
                     )
                 )
