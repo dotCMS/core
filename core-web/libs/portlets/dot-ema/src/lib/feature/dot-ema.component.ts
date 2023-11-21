@@ -177,7 +177,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                 /* */
             },
             [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
-                this.store.save({
+                this.store.savePage({
                     ...this.savePayload,
                     contentletID: detail.data.identifier,
                     whenSaved: () => {
@@ -213,7 +213,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
             [CUSTOMER_ACTIONS.EDIT_CONTENTLET]: () => {
                 const payload = <DotCMSContentlet>data.payload;
 
-                this.store.initEditIframeDialog({
+                this.store.initActionEdit({
                     inode: payload.inode,
                     title: payload.title
                 });
@@ -221,7 +221,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
             [CUSTOMER_ACTIONS.ADD_CONTENTLET]: () => {
                 const payload = <AddContentletPayload>data.payload;
 
-                this.store.initAddIframeDialog({
+                this.store.initActionAdd({
                     containerID: payload.container.identifier,
                     acceptTypes: payload.container.acceptTypes ?? '*'
                 });

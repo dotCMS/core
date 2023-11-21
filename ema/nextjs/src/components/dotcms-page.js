@@ -5,6 +5,7 @@ import { useContext } from 'react';
 import { GlobalContext } from '../providers/global';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getPageContainers } from '@/utils';
 
 // Provide a component for each content type
 const contentComponents = {
@@ -216,28 +217,10 @@ const Container = ({ containerRef }) => {
     const contentlets = containers[identifier].contentlets[`uuid-${uuid}`];
 
     // Memoize the contenlets to avoid re-rendering
-    const contentletsId = useMemo(() => {
-        return contentlets.map((contentlet) => contentlet.identifier);
-    }, [contentlets]);
+    const contentletsId = contentlets.map((contentlet) => contentlet.identifier);
 
     // Memoize the page containers to avoid re-rendering
-    const pageContainers = useMemo(() => {
-        return Object.keys(containers).reduce((acc, container) => {
-            const contentlets = containers[container].contentlets;
-
-            const contentletsKeys = Object.keys(contentlets);
-
-            contentletsKeys.forEach((key) => {
-                acc.push({
-                    identifier: containers[container].container.identifier,
-                    uuid: key.replace('uuid-', ''),
-                    contentletsId: contentlets[key].map((contentlet) => contentlet.identifier)
-                });
-            });
-
-            return acc;
-        }, []);
-    }, [containers]);
+    const pageContainers = getPageContainers(containers);
 
     return (
         <>

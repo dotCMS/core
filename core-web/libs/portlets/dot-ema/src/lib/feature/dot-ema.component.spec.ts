@@ -90,7 +90,7 @@ describe('DotEmaComponent', () => {
         it('should open a dialog when the iframe sends a postmessage with the edit-contenlet action', () => {
             spectator.detectChanges();
 
-            const initiEditIframeDialogMock = jest.spyOn(store, 'initEditIframeDialog');
+            const initiEditIframeDialogMock = jest.spyOn(store, 'initActionEdit');
             const dialog = spectator.query(byTestId('dialog'));
 
             window.dispatchEvent(
@@ -185,7 +185,7 @@ describe('DotEmaComponent', () => {
         });
 
         it('should trigger save when ng-event select-contentlet is dispatched', () => {
-            const saveMock = jest.spyOn(store, 'save');
+            const saveMock = jest.spyOn(store, 'savePage');
 
             spectator.detectChanges();
 

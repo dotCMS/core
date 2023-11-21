@@ -96,7 +96,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      *
      * @memberof EditEmaStore
      */
-    readonly save = this.effect((payload$: Observable<SavePagePayload>) => {
+    readonly savePage = this.effect((payload$: Observable<SavePagePayload>) => {
         return payload$.pipe(
             switchMap((payload) =>
                 this.dotPageApiService.save(payload).pipe(
@@ -156,20 +156,18 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     });
 
     // This method is called when the user clicks on the edit button
-    readonly initEditIframeDialog = this.updater(
-        (state, payload: { inode: string; title: string }) => {
-            return {
-                ...state,
-                dialogVisible: true,
-                dialogHeader: payload.title,
-                dialogIframeLoading: true,
-                dialogIframeURL: this.createEditContentletUrl(payload.inode)
-            };
-        }
-    );
+    readonly initActionEdit = this.updater((state, payload: { inode: string; title: string }) => {
+        return {
+            ...state,
+            dialogVisible: true,
+            dialogHeader: payload.title,
+            dialogIframeLoading: true,
+            dialogIframeURL: this.createEditContentletUrl(payload.inode)
+        };
+    });
 
     // This method is called when the user clicks on the edit button
-    readonly initAddIframeDialog = this.updater(
+    readonly initActionAdd = this.updater(
         (state, payload: { containerID: string; acceptTypes: string }) => {
             return {
                 ...state,

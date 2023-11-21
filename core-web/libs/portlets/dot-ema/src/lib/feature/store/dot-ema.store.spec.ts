@@ -15,7 +15,7 @@ describe('EditEmaStore', () => {
 
     beforeEach(() => (spectator = createService()));
 
-    describe('effects', () => {
+    describe('selectors', () => {
         it('should return iframe url', (done) => {
             const dotPageApiService = spectator.inject(DotPageApiService);
             const mockResponse = {
@@ -30,41 +30,6 @@ describe('EditEmaStore', () => {
             spectator.service.iframeUrl$.subscribe((url) => {
                 expect(url).toEqual('http://localhost:3000/test-url?language_id=en');
                 done();
-            });
-        });
-
-        it("should call save method from dotPageApiService when 'save' action is dispatched", () => {
-            const dotPageApiService = spectator.inject(DotPageApiService);
-            const mockResponse = {
-                page: {
-                    title: 'Test Page'
-                }
-            };
-            dotPageApiService.get.andReturn(of(mockResponse));
-
-            spectator.service.load({ language_id: 'en', url: 'test-url' });
-            spectator.service.save({
-                pageContainers: [],
-                container: {
-                    uuid: '123',
-                    identifier: 'test',
-                    contentletsId: [],
-                    acceptTypes: 'test'
-                },
-                contentletID: '456',
-                pageID: '789'
-            });
-
-            expect(dotPageApiService.save).toHaveBeenCalledWith({
-                pageContainers: [],
-                container: {
-                    uuid: '123',
-                    identifier: 'test',
-                    contentletsId: [],
-                    acceptTypes: 'test'
-                },
-                contentletID: '456',
-                pageID: '789'
             });
         });
     });
@@ -229,7 +194,7 @@ describe('EditEmaStore', () => {
         });
 
         it('should initialize editIframe properties', (done) => {
-            spectator.service.initEditIframeDialog({
+            spectator.service.initActionEdit({
                 inode: '123',
                 title: 'test'
             });
@@ -283,6 +248,41 @@ describe('EditEmaStore', () => {
                     dialogVisible: false
                 });
                 done();
+            });
+        });
+
+        it("should call save method from dotPageApiService when 'save' action is dispatched", () => {
+            const dotPageApiService = spectator.inject(DotPageApiService);
+            const mockResponse = {
+                page: {
+                    title: 'Test Page'
+                }
+            };
+            dotPageApiService.get.andReturn(of(mockResponse));
+
+            spectator.service.load({ language_id: 'en', url: 'test-url' });
+            spectator.service.savePage({
+                pageContainers: [],
+                container: {
+                    uuid: '123',
+                    identifier: 'test',
+                    contentletsId: [],
+                    acceptTypes: 'test'
+                },
+                contentletID: '456',
+                pageID: '789'
+            });
+
+            expect(dotPageApiService.save).toHaveBeenCalledWith({
+                pageContainers: [],
+                container: {
+                    uuid: '123',
+                    identifier: 'test',
+                    contentletsId: [],
+                    acceptTypes: 'test'
+                },
+                contentletID: '456',
+                pageID: '789'
             });
         });
     });

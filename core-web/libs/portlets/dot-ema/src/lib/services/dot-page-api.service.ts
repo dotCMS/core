@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { catchError, pluck } from 'rxjs/operators';
 
-import { SavePagePayload } from '../shared/models';
+import { Container, SavePagePayload } from '../shared/models';
 
 export interface DotPageApiResponse {
     page: {
@@ -53,7 +53,43 @@ export class DotPageApiService {
         contentletID,
         pageID
     }: SavePagePayload): Observable<unknown> {
-        const newPage = pageContainers.map((currentContainer) => {
+        const newPage = this.insertContentletInContainer({
+            pageContainers,
+            container,
+            contentletID
+        });
+
+        return this.http
+            .post(`/api/v1/page/${pageID}/content?variantName=DEFAULT`, newPage)
+            .pipe(catchError(() => EMPTY));
+    }
+
+    /**
+     * Insert a contentlet in a container
+     *
+     * @private
+     * @param {{
+     *         pageContainers: Container[];
+     *         container: Container;
+     *         contentletID: string;
+     *     }} {
+     *         pageContainers,
+     *         container,
+     *         contentletID
+     *     }
+     * @return {*}
+     * @memberof DotPageApiService
+     */
+    private insertContentletInContainer({
+        pageContainers,
+        container,
+        contentletID
+    }: {
+        pageContainers: Container[];
+        container: Container;
+        contentletID: string;
+    }): Container[] {
+        return pageContainers.map((currentContainer) => {
             if (
                 container.uuid === currentContainer.uuid &&
                 container.identifier === currentContainer.identifier
@@ -64,9 +100,5 @@ export class DotPageApiService {
 
             return currentContainer;
         });
-
-        return this.http
-            .post(`/api/v1/page/${pageID}/content?variantName=DEFAULT`, newPage)
-            .pipe(catchError(() => EMPTY));
     }
 }
