@@ -57,6 +57,8 @@
     <dot-block-editor
         *ngSwitchCase="fieldTypes.BLOCK_EDITOR"
         [formControlName]="field.variable"
+        [contentlet]="contentlet"
+        [field]="field"
         [attr.data-testId]="'field-' + field.variable" />
 </ng-container>
 <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>

@@ -83,43 +83,27 @@ import {
     ]
 })
 export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
-    @Input() lang = DEFAULT_LANG_ID;
-
-    // New ones
     @Input() field: DotCMSContentTypeField;
     @Input() contentlet: DotCMSContentlet;
 
-    public allowedContentTypes: string;
-    public customStyles: string;
-    public displayCountBar: boolean | string = true;
-    public charLimit: number;
-    public customBlocks = '';
-    public content: Content = '';
-    public contentletIdentifier: string;
+    @Input() lang = DEFAULT_LANG_ID;
+    @Input() isFullscreen = false;
+    @Input() set value(content: Content) {
+        this.setEditorContent(content);
+    }
     @Input() set showVideoThumbnail(value) {
         this.dotMarketingConfigService.setProperty(
             EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL,
             value
         );
     }
-    @Input() isFullscreen = false;
-
-    @Input() set value(content: Content) {
-        if (typeof content === 'string') {
-            this.content = formatHTML(content);
-
-            return;
-        }
-
-        this.setEditorJSONContent(content);
-    }
 
     @Output() valueChange = new EventEmitter<JSONContent>();
 
-    editor: Editor;
-    subject = new Subject();
-    freezeScroll = true;
+    private onChange: (value: string) => void;
+    private onTouched: () => void;
 
+    private destroy$: Subject<boolean> = new Subject<boolean>();
     private allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
     private _customNodes: Map<string, AnyExtension> = new Map([
         ['dotContent', ContentletBlock(this.injector)],
@@ -130,7 +114,17 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         ['loader', LoaderNode]
     ]);
 
-    private destroy$: Subject<boolean> = new Subject<boolean>();
+    public allowedContentTypes: string;
+    public customStyles: string;
+    public displayCountBar: boolean | string = true;
+    public charLimit: number;
+    public customBlocks = '';
+    public content: Content = '';
+    public contentletIdentifier: string;
+
+    editor: Editor;
+    subject = new Subject();
+    freezeScroll = true;
 
     get characterCount(): CharacterCountStorage {
         return this.editor?.storage.characterCount;
@@ -153,13 +147,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private cd = inject(ChangeDetectorRef);
 
     constructor(
-        private injector: Injector,
-        public viewContainerRef: ViewContainerRef,
-        private dotMarketingConfigService: DotMarketingConfigService
+        private readonly injector: Injector,
+        private readonly viewContainerRef: ViewContainerRef,
+        private readonly dotMarketingConfigService: DotMarketingConfigService
     ) {}
-
-    private onChange: (value: string) => void;
-    private onTouched: () => void;
 
     registerOnChange(fn: (value: string) => void) {
         this.onChange = fn;
@@ -170,13 +161,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     writeValue(content: JSONContent): void {
-        if (typeof content === 'string') {
-            this.content = formatHTML(content);
-
-            return;
-        }
-
-        this.setEditorJSONContent(content);
+        this.setEditorContent(content);
     }
 
     async loadCustomBlocks(urls: string[]): Promise<PromiseSettledResult<AnyExtension>[]> {
@@ -184,6 +169,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     ngOnInit() {
+        this.setFieldVariable();
         from(this.getCustomRemoteExtensions())
             .pipe(take(1))
             .subscribe((extensions) => {
@@ -467,10 +453,20 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                 : content;
     }
 
+    private setEditorContent(content: Content) {
+        if (typeof content === 'string') {
+            this.content = formatHTML(content);
+
+            return;
+        }
+
+        this.setEditorJSONContent(content);
+    }
+
     private setFieldVariable() {
         const {
             allowedContentTypes,
-            customStyles,
+            styles: customStyles,
             displayCountBar,
             charLimit,
             customBlocks,

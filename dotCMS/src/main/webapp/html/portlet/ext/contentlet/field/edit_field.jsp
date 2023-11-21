@@ -220,7 +220,7 @@
                         if (typeof editorValue === 'string') {
                             const text = editorValue.replace(/&#96;/g, '`').replace(/&#36;/g, '$');
                             const converter = new showdown.Converter({ tables: true });
-                            content = converter.makeHtml(text);
+                            content = converter.makeHtml(text || '');
                         } else {
                             content = editorValue;
                         }
@@ -243,9 +243,16 @@
                             field.value = !detail ? null : JSON.stringify(detail);;
                         });
 
+                        // 
                         blockEditor.contentlet = contentlet;
                         blockEditor.field = fieldData;
+
+                        // No variable inputs
                         blockEditor.value = content || '';
+                        blockEditor.contentletIdentifier = '<%=contentletIdentifier%>';
+                        blockEditor.showVideoThumbnail = <%=showVideoThumbnail%>;
+                        blockEditor.isFullscreen = <%=fullScreenField%>;
+                        blockEditor.lang = '<%=contentLanguage%>';
                         blockEditorContainer.appendChild(blockEditor);
                     }
                 )();
