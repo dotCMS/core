@@ -1,11 +1,10 @@
 package com.dotcms.rest.api.v2.tags;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.AnonymousAccess;
-import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityBooleanView;
-import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
@@ -45,25 +44,24 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.dotcms.rest.ResponseEntityView.OK;
 import static com.dotcms.rest.tag.TagsResourceHelper.toRestTagMap;
 import static com.dotmarketing.util.UUIDUtil.isUUID;
 
 /**
  * Tag Related logic is exposed to the web here
+ * @author jsanca
  */
 @Path("/v2/tags")
 public class TagResource {
 
     private static final String TAGS = "tags";
+    public static final String NO_TAGS_WERE_FOUND_BY_THE_INODE_S = "No tags were found by the inode %s.";
     private final WebResource webResource;
     private final TagAPI tagAPI;
 	private final TagsResourceHelper helper;
@@ -101,25 +99,24 @@ public class TagResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityTagMapView list(@Context final HttpServletRequest request,@Context final HttpServletResponse response,
-            @QueryParam("name") final String  tagName,
-            @QueryParam("siteId") final String siteId) {
+    public ResponseEntityTagMapView list(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                         @QueryParam("name") final String tagName,
+                                         @QueryParam("siteId") final String siteId) {
 
-      final InitDataObject initDataObject =
-              new WebResource.InitBuilder(webResource)
-                      .requiredAnonAccess(AnonymousAccess.READ)
-                      .requestAndResponse(request, response).init();
+        final InitDataObject initDataObject =
+                new WebResource.InitBuilder(webResource)
+                        .requiredAnonAccess(AnonymousAccess.READ)
+                        .requestAndResponse(request, response).init();
 
         final User user = initDataObject.getUser();
 
-        Logger.debug(this, ()-> "List Tags, tagName: " + tagName + ", siteId:" + siteId);
+        Logger.debug(this, () -> "List Tags, tagName: " + tagName + ", siteId:" + siteId);
 
         final List<Tag> tags = UtilMethods.isSet(tagName)
                 ? helper.searchTagsInternal(tagName, helper.getSiteId(siteId, request, user))
                 : helper.getTagsInternal();
 
-        final Map<String, RestTag> tagsMap = toRestTagMap(tags);
-        return new ResponseEntityTagMapView(tagsMap);
+        return new ResponseEntityTagMapView(toRestTagMap(tags));
     }
 
     /**
@@ -148,6 +145,18 @@ public class TagResource {
         final ImmutableList.Builder<Tag> savedTags = ImmutableList.builder();
         final Map<String, RestTag> tags = tagForm.getTags();
 
+        saveTags(request, tags, user, userId, savedTags);
+
+        return new ResponseEntityTagMapView(toRestTagMap(savedTags.build()));
+    }
+
+    @WrapInTransaction
+    private void saveTags(final HttpServletRequest request,
+                          final Map<String, RestTag> tags,
+                          final User user, final String userId,
+                          final ImmutableList.Builder<Tag> savedTags)
+            throws DotDataException, DotSecurityException {
+
         for (final Entry<String, RestTag> entry : tags.entrySet()) {
             final String tagKey = entry.getKey();
             final RestTag tag   = entry.getValue();
@@ -160,9 +169,6 @@ public class TagResource {
                 Logger.debug(TagResource.class,()->String.format(" Tag %s is now bound with user %s ",createdTag.getTagName(), userId));
             }
         }
-
-        final Map<String, RestTag> tagsMap = toRestTagMap(savedTags.build());
-        return new ResponseEntityTagMapView(tagsMap);
     }
 
     /**
@@ -201,6 +207,7 @@ public class TagResource {
         //We can assign tags to any user as long as we are admin.
         final Tag tagByTagId = Try.of(() -> tagAPI.getTagByTagId(tagForm.tagId)).getOrNull();
         if (null == tagByTagId) {
+
             final String errorMessage = Try.of(() -> LanguageUtil
                     .get(user.getLocale(), "tag.id.not.found", tagForm.tagId))
                     .getOrElse(String.format("Tag with id %s wasn't found.",
@@ -211,8 +218,7 @@ public class TagResource {
 
         tagAPI.updateTag(tagForm.tagId, tagForm.tagName, false, tagForm.siteId);
 
-        final Map<String, RestTag> tagsMap = toRestTagMap(tagAPI.getTagByTagId(tagForm.tagId));
-        return new ResponseEntityTagMapView(tagsMap);
+        return new ResponseEntityTagMapView(toRestTagMap(tagAPI.getTagByTagId(tagForm.tagId)));
     }
 
     /**
@@ -232,12 +238,12 @@ public class TagResource {
             @PathParam("userId") final String userId) {
 
         final InitDataObject initDataObject = getInitDataObject(request, response);
-
         final User user = initDataObject.getUser();
         Logger.debug(TagResource.class,()->String.format(" user %s is requesting tags owned by  %s ",user.getUserId(), userId));
-        final List<Tag> tags = Try.of(() -> tagAPI.getTagsForUserByUserId(userId))
-                .getOrElse(ImmutableList.of());
+
+        final List<Tag> tags = Try.of(() -> tagAPI.getTagsForUserByUserId(userId)).getOrElse(List.of());
         if (tags.isEmpty()) {
+
             final String errorMessage = Try.of(() -> LanguageUtil
                     .get(user.getLocale(), "tag.user.not.found", userId))
                     .getOrElse(String.format("No tags are owned by user %s.",
@@ -246,8 +252,7 @@ public class TagResource {
             throw new DoesNotExistException(errorMessage);
         }
 
-        final Map<String, RestTag> tagsMap = toRestTagMap(tags);
-        return new ResponseEntityTagMapView(tagsMap);
+        return new ResponseEntityTagMapView(toRestTagMap(tags));
     }
 
     /**
@@ -262,14 +267,15 @@ public class TagResource {
     @Path("/{nameOrId}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityTagMapView getTagsByNameOrId(@Context final HttpServletRequest request,@Context final HttpServletResponse response,
-            @PathParam("nameOrId") final String nameOrId) {
+    public ResponseEntityTagMapView getTagsByNameOrId(@Context final HttpServletRequest request,
+                                                      @Context final HttpServletResponse response,
+                                                      @PathParam("nameOrId") final String nameOrId) {
 
         final InitDataObject initDataObject = getInitDataObject(request, response);
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format(" user %s is requesting tags by name %s ",user.getUserId(), nameOrId));
+        Logger.debug(TagResource.class,()->String.format(" user %s is requesting tags by name %s ", user.getUserId(), nameOrId));
         final ImmutableList.Builder<Tag> builder = ImmutableList.builder();
-        if (isUUID(nameOrId)){
+        if (isUUID(nameOrId)) {
             final Tag tagByTagId = Try.of(()->tagAPI.getTagByTagId(nameOrId)).getOrNull();
             if(null != tagByTagId) {
                 builder.add(tagByTagId);
@@ -279,11 +285,12 @@ public class TagResource {
             builder.addAll(tagsByName);
         }
         final List<Tag> foundTags = builder.build();
-        if(foundTags.isEmpty()){
+        if(foundTags.isEmpty()) {
+
            throw new NotFoundException(String.format("No tags were found by the name or id %s.", nameOrId));
         }
-        final Map<String, RestTag> tagsMap = toRestTagMap(foundTags);
-        return new ResponseEntityTagMapView(tagsMap);
+
+        return new ResponseEntityTagMapView(toRestTagMap(foundTags));
     }
 
 
@@ -308,6 +315,7 @@ public class TagResource {
         Logger.debug(TagResource.class,()->String.format(" user %s is requesting delete tags by id %s ",user.getUserId(), tagId));
         final Tag tagByTagId = Try.of(() -> tagAPI.getTagByTagId(tagId)).getOrNull();
         if (null == tagByTagId) {
+
             final String errorMessage = Try.of(() -> LanguageUtil
                     .get(user.getLocale(), "tag.id.not.found", tagId))
                     .getOrElse(String.format("Tag with id %s wasn't found.",
@@ -346,23 +354,27 @@ public class TagResource {
         Logger.debug(TagResource.class,()->String.format(" user %s is requesting linking tags %s with inode %s ",user.getUserId(), nameOrId, inode));
         final List<Tag> tags = new ArrayList<>();
         if (isUUID(nameOrId)){
+
             Logger.error(TagResource.class, String.format("Trying to look up tag `%s` by id.",nameOrId));
             final Tag tagByTagId = Try.of(()->tagAPI.getTagByTagId(nameOrId)).getOrNull();
             if(null != tagByTagId) {
+
                tags.add(tagByTagId);
             }
         } else {
+
             final List<Tag> tagsByName = Try.of(()->tagAPI.getTagsByName(nameOrId)).getOrNull();
             Logger.error(TagResource.class, String.format("There are `%d` tags found under `%s`.",tagsByName.size(), nameOrId));
             tags.addAll(tagsByName);
         }
 
         if (tags.isEmpty()) {
+
             Logger.error(TagResource.class, String.format("No tags like `%s` were found .",nameOrId));
             throw new NotFoundException(String.format("No tags were found by the name or id %s.", nameOrId));
         }
         final List<TagInode> tagInodes = new ArrayList<>();
-        for (final Tag tag:tags) {
+        for (final Tag tag : tags) {
             tagInodes.add(tagAPI.addUserTagInode(tag, inode));
         }
         return new ResponseEntityTagInodesMapView(tagInodes);
@@ -387,11 +399,10 @@ public class TagResource {
         final InitDataObject initDataObject = getInitDataObject(request, response);
         final User user = initDataObject.getUser();
         Logger.debug(TagResource.class,()->String.format(" user %s is requesting finding tags by inode %s ",user.getUserId(), inode));
-        final List<TagInode> tagInodes = Try.of(() -> tagAPI.getTagInodesByInode(inode))
-                .getOrElse(ImmutableList.of());
+        final List<TagInode> tagInodes = Try.of(() -> tagAPI.getTagInodesByInode(inode)).getOrElse(List.of());
         if (tagInodes.isEmpty()) {
-            Logger.error(TagResource.class, String.format("No tags were found by the inode %s.",inode));
-            throw new NotFoundException(String.format("No tags were found by the inode %s.", inode));
+            Logger.error(TagResource.class, String.format(NO_TAGS_WERE_FOUND_BY_THE_INODE_S,inode));
+            throw new NotFoundException(String.format(NO_TAGS_WERE_FOUND_BY_THE_INODE_S, inode));
         }
 
         return new ResponseEntityTagInodesMapView(tagInodes);
@@ -417,10 +428,10 @@ public class TagResource {
         final User user = initDataObject.getUser();
         Logger.debug(TagResource.class,()->String.format(" user %s is requesting delete tagsInode by inode %s ",user.getUserId(), inode));
         final List<TagInode> tagInodes = Try.of(() -> tagAPI.getTagInodesByInode(inode))
-                .getOrElse(ImmutableList.of());
+                .getOrElse(List.of());
         if (tagInodes.isEmpty()) {
-            Logger.error(TagResource.class, String.format("No tags were found by the inode %s.",inode));
-            throw new NotFoundException(String.format("No tags were found by the inode %s.", inode));
+            Logger.error(TagResource.class, String.format(NO_TAGS_WERE_FOUND_BY_THE_INODE_S,inode));
+            throw new NotFoundException(String.format(NO_TAGS_WERE_FOUND_BY_THE_INODE_S, inode));
         }
 
         tagAPI.deleteTagInodesByInode(inode);
@@ -431,7 +442,7 @@ public class TagResource {
 
     private InitDataObject getInitDataObject(final HttpServletRequest request,
                                              final HttpServletResponse response) {
-        final InitDataObject initDataObject =
+        return
                 new WebResource.InitBuilder(webResource)
                         .requiredBackendUser(true)
                         .requiredFrontendUser(false)
@@ -439,7 +450,6 @@ public class TagResource {
                         .rejectWhenNoUser(true)
                         .requiredPortlet(TAGS)
                         .init();
-        return initDataObject;
     }
 
     @POST
