@@ -31,6 +31,6 @@ describe('DotPageApiService', () => {
             })
             .subscribe();
 
-        spectator.expectOne('/api/v1/page/test/content?variantName=DEFAULT', HttpMethod.POST);
+        spectator.expectOne('/api/v1/page/test/content', HttpMethod.POST);
     });
 });

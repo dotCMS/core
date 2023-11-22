@@ -60,7 +60,7 @@ export class DotPageApiService {
         });
 
         return this.http
-            .post(`/api/v1/page/${pageID}/content?variantName=DEFAULT`, newPage)
+            .post(`/api/v1/page/${pageID}/content`, newPage)
             .pipe(catchError(() => EMPTY));
     }
 
@@ -91,8 +91,8 @@ export class DotPageApiService {
     }): Container[] {
         return pageContainers.map((currentContainer) => {
             if (
-                container.uuid === currentContainer.uuid &&
-                container.identifier === currentContainer.identifier
+                container.identifier === currentContainer.identifier &&
+                container.uuid === currentContainer.uuid
             ) {
                 !currentContainer.contentletsId.find((id) => id === contentletID) &&
                     currentContainer.contentletsId.push(contentletID);
