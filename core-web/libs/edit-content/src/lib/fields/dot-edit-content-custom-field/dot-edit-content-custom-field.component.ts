@@ -1,5 +1,3 @@
-import { SafeUrlPipe } from 'libs/ui/src/lib/pipes/safe-url/safe-url.pipe';
-
 import {
     ChangeDetectionStrategy,
     Component,
@@ -13,6 +11,7 @@ import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { SafeUrlPipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-edit-content-custom-field',
