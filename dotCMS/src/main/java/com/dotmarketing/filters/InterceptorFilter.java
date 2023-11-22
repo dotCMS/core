@@ -3,7 +3,6 @@ package com.dotmarketing.filters;
 import com.dotcms.ema.EMAWebInterceptor;
 import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
-import com.dotcms.filters.interceptor.jsp.JSPMappingForwardInterceptor;
 import com.dotcms.filters.interceptor.meta.ResponseMetaDataWebInterceptor;
 import com.dotcms.graphql.GraphqlCacheWebInterceptor;
 import com.dotcms.jitsu.EventLogWebInterceptor;
@@ -40,7 +39,6 @@ public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
         delegate.add(new ResponseMetaDataWebInterceptor());
         delegate.add(new EventLogWebInterceptor());
         delegate.add(new CurrentVariantWebInterceptor());
-        delegate.add(new JSPMappingForwardInterceptor());
     } // addInterceptors.
 
 } // E:O:F:InterceptorFilter.
