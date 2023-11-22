@@ -19,8 +19,8 @@ import {
 import { getUiMessage } from '../utils/binary-field-utils';
 
 export interface BinaryFieldState {
-    file?: BinaryFile;
-    tempFile: DotCMSTempFile | null;
+    file: BinaryFile;
+    value: string;
     mode: BinaryFieldMode;
     status: BinaryFieldStatus;
     uiMessage: UiMessageI;
@@ -30,7 +30,7 @@ export interface BinaryFieldState {
 
 const initialState: BinaryFieldState = {
     file: null,
-    tempFile: null,
+    value: null,
     mode: BinaryFieldMode.DROPZONE,
     status: BinaryFieldStatus.INIT,
     dropZoneActive: false,
@@ -48,11 +48,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         isLoading: state.status === BinaryFieldStatus.UPLOADING
     }));
 
-    // Temp file state
-    readonly tempFile$ = this.select((state) => state.tempFile);
-
-    // Mode state
-    readonly mode$ = this.select((state) => state.mode);
+    readonly value$ = this.select((state) => state.value);
 
     constructor(
         private readonly dotUploadService: DotUploadService,
@@ -73,7 +69,8 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     readonly setTempFile = this.updater<DotCMSTempFile>((state, tempFile) => ({
         ...state,
         status: BinaryFieldStatus.PREVIEW,
-        file: this.fileFromTempFile(tempFile),
+        value: tempFile.id,
+        file: this.getFileFromTempFile(tempFile),
         tempFile
     }));
 
@@ -81,6 +78,11 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         ...state,
         status: BinaryFieldStatus.PREVIEW,
         file
+    }));
+
+    readonly setValue = this.updater<string>((state, value) => ({
+        ...state,
+        value
     }));
 
     readonly setUiMessage = this.updater<UiMessageI>((state, uiMessage) => ({
@@ -127,7 +129,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     readonly removeFile = this.updater((state) => ({
         ...state,
         file: null,
-        tempFile: null,
+        value: '',
         status: BinaryFieldStatus.INIT
     }));
 
@@ -163,7 +165,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
             switchMap((file) => {
                 const { url, mimeType } = file;
                 // TODO: This should be done in the serverside
-                const obs$ = mimeType.includes('text') ? this.getFileContent(url) : of('');
+                const obs$ = mimeType?.includes('text') ? this.getFileContent(url) : of('');
 
                 return obs$.pipe(
                     tap((content) => {
@@ -207,7 +209,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
      * @return {*}  {BinaryFile}
      * @memberof DotBinaryFieldStore
      */
-    private fileFromTempFile({
+    private getFileFromTempFile({
         length,
         thumbnailUrl,
         referenceUrl,

@@ -24,6 +24,7 @@
             #editorRef
             [ngClass]="{ 'binary-field__code-editor--disabled': form.disabled }"
             [options]="editorOptions"
+            (init)="onEditorInit()"
             formControlName="content"
             data-testId="code-editor"></ngx-monaco-editor>
 

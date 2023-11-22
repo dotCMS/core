@@ -729,9 +729,8 @@
                     binaryField.field = fielData;
                     binaryField.contentlet = contentlet;
 
-                    binaryField.addEventListener('tempFile', (event) => {
-                        const tempFile = event.detail;
-                        field.value = tempFile?.id || '';
+                    binaryField.addEventListener('valueUpdated', ({ detail }) => {
+                        field.value = detail;
                     });
 
                     binaryFieldContainer.appendChild(binaryField);

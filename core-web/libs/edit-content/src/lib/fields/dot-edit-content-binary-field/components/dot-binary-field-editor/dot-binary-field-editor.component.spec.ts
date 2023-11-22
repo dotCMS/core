@@ -143,6 +143,8 @@ describe('DotBinaryFieldEditorComponent', () => {
                 .spyOn(dotUploadService, 'uploadFile')
                 .mockReturnValue(Promise.resolve(TEMP_FILE_MOCK));
             const importBtn = spectator.query('[data-testId="import-button"] button');
+            const monacoEditor = spectator.query(MonacoEditorComponent);
+            monacoEditor.init.emit();
 
             component.form.setValue({
                 name: 'file-name.ts',

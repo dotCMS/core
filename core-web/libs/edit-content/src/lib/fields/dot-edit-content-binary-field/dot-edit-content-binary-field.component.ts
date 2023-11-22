@@ -88,7 +88,7 @@ export class DotEditContentBinaryFieldComponent
 {
     @Input() field: DotCMSContentTypeField;
     @Input() contentlet: DotCMSContentlet;
-    @Output() tempFile = new EventEmitter<DotCMSTempFile>();
+    @Output() valueUpdated = new EventEmitter<string>();
     @ViewChild('inputFile') inputFile: ElementRef;
 
     private onChange: (value: string) => void;
@@ -104,6 +104,17 @@ export class DotEditContentBinaryFieldComponent
     readonly vm$ = this.dotBinaryFieldStore.vm$;
     private tempId = '';
     dialogOpen = false;
+
+    private get variable(): string {
+        return this.field.variable;
+    }
+
+    private get metaDataKey(): string {
+        const { baseType } = this.contentlet;
+        const isFileAsset = baseType === DotCMSBaseTypesContentTypes.FILEASSET;
+
+        return isFileAsset ? 'metaData' : this.variable + 'MetaData';
+    }
 
     get maxFileSize(): number {
         return this.DotBinaryFieldValidatorService.maxFileSize;
@@ -124,13 +135,12 @@ export class DotEditContentBinaryFieldComponent
     }
 
     ngOnInit() {
-        this.dotBinaryFieldStore.tempFile$.pipe(skip(1)).subscribe((tempFile) => {
-            this.tempId = tempFile?.id || '';
-            this.tempFile.emit(tempFile); // We change value here
+        this.dotBinaryFieldStore.value$.pipe(skip(1)).subscribe((value) => {
+            this.tempId = value; // If the value changes, it means that a new file was uploaded
+            this.valueUpdated.emit(value);
 
             if (this.onChange) {
-                // If we have a change function we call it
-                this.onChange(this.tempId);
+                this.onChange(value);
                 this.onTouched();
             }
         });
@@ -149,7 +159,7 @@ export class DotEditContentBinaryFieldComponent
 
     ngAfterViewInit() {
         this.setFieldVariables();
-        if (this.contentlet) {
+        if (this.existFileMetadata()) {
             this.setPreviewFile();
         }
 
@@ -292,17 +302,19 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotBinaryFieldComponent
      */
     private setPreviewFile() {
-        const metaDataKey = this.getMetaDataKey();
-        const { variable } = this.field;
-        const { titleImage, inode, [metaDataKey]: metadata } = this.contentlet;
-
-        const { contentType: mimeType } = metadata || {};
+        const {
+            titleImage,
+            inode,
+            [this.metaDataKey]: metadata,
+            [this.variable]: url
+        } = this.contentlet;
+        const { contentType: mimeType } = metadata;
 
         this.dotBinaryFieldStore.setFileAndContent({
             inode,
             titleImage,
             mimeType,
-            url: this.contentlet[variable],
+            url,
             ...metadata
         });
     }
@@ -355,17 +367,17 @@ export class DotEditContentBinaryFieldComponent
     }
 
     /**
-     * Get meta data key
+     * Check if file metadata exist
      *
      * @private
-     * @return {*}  {string}
-     * @memberof DotBinaryFieldComponent
+     * @return {*}  {boolean}
+     * @memberof DotEditContentBinaryFieldComponent
      */
-    private getMetaDataKey(): string {
-        const variable = this.field.variable;
-        const baseType = this.contentlet.baseType;
-        const isFileAsset = baseType === DotCMSBaseTypesContentTypes.FILEASSET;
+    private existFileMetadata(): boolean {
+        if (!this.contentlet) {
+            return false;
+        }
 
-        return isFileAsset ? 'metaData' : variable + 'MetaData';
+        return !!this.contentlet[this.metaDataKey];
     }
 }
