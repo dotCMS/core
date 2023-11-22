@@ -1,4 +1,4 @@
-import { ComponentStore } from '@ngrx/component-store';
+import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { EMPTY, Observable } from 'rxjs';
 
 import { Injectable } from '@angular/core';
@@ -6,7 +6,8 @@ import { Injectable } from '@angular/core';
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
 import { DotPageApiParams, DotPageApiService } from '../../services/dot-page-api.service';
-import { EDIT_CONTENTLET_URL } from '../../shared/consts';
+import { ADD_CONTENTLET_URL, EDIT_CONTENTLET_URL } from '../../shared/consts';
+import { SavePagePayload } from '../../shared/models';
 
 export interface EditEmaState {
     language_id: string;
@@ -14,6 +15,7 @@ export interface EditEmaState {
     editor: {
         page: {
             title: string;
+            identifier: string;
         };
     };
     dialogIframeURL: string;
@@ -30,7 +32,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             url: '',
             editor: {
                 page: {
-                    title: ''
+                    title: '',
+                    identifier: ''
                 }
             },
             dialogIframeURL: '',
@@ -88,6 +91,29 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         );
     });
 
+    /**
+     * Save the page
+     *
+     * @memberof EditEmaStore
+     */
+    readonly savePage = this.effect((payload$: Observable<SavePagePayload>) => {
+        return payload$.pipe(
+            switchMap((payload) =>
+                this.dotPageApiService.save(payload).pipe(
+                    tapResponse(
+                        () => {
+                            payload.whenSaved?.();
+                        },
+                        (e) => {
+                            console.error(e);
+                            payload.whenSaved?.();
+                        }
+                    )
+                )
+            )
+        );
+    });
+
     readonly setLanguage = this.updater((state, language_id: string) => ({
         ...state,
         language_id
@@ -130,14 +156,25 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     });
 
     // This method is called when the user clicks on the edit button
-    readonly initEditIframeDialog = this.updater(
-        (state, payload: { inode: string; title: string }) => {
+    readonly initActionEdit = this.updater((state, payload: { inode: string; title: string }) => {
+        return {
+            ...state,
+            dialogVisible: true,
+            dialogHeader: payload.title,
+            dialogIframeLoading: true,
+            dialogIframeURL: this.createEditContentletUrl(payload.inode)
+        };
+    });
+
+    // This method is called when the user clicks on the edit button
+    readonly initActionAdd = this.updater(
+        (state, payload: { containerID: string; acceptTypes: string }) => {
             return {
                 ...state,
                 dialogVisible: true,
-                dialogHeader: payload.title,
+                dialogHeader: 'Search Content', // Does this need translation?
                 dialogIframeLoading: true,
-                dialogIframeURL: this.createEditContentletUrl(payload.inode)
+                dialogIframeURL: this.createAddContentletUrl(payload)
             };
         }
     );
@@ -152,5 +189,26 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      */
     private createEditContentletUrl(inode: string): string {
         return `${EDIT_CONTENTLET_URL}${inode}`;
+    }
+
+    /**
+     * Create the url to add a contentlet
+     *
+     * @private
+     * @param {{containerID: string, acceptTypes: string}} {containerID, acceptTypes}
+     * @return {*}  {string}
+     * @memberof EditEmaStore
+     */
+    private createAddContentletUrl({
+        containerID,
+        acceptTypes
+    }: {
+        containerID: string;
+        acceptTypes: string;
+    }): string {
+        return ADD_CONTENTLET_URL.replace('*CONTAINER_ID*', containerID).replace(
+            '*BASE_TYPES*',
+            acceptTypes
+        );
     }
 }
