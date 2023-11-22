@@ -1,4 +1,4 @@
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
@@ -14,23 +14,9 @@ interface OpenAIResponse {
 }
 @Injectable()
 export class DotAiService {
-    private lastUsedPrompt: string | null = null;
-    private lastImagePrompt: string | null = null;
-    private lastContentResponse: string | null = null;
-
     constructor(private http: HttpClient) {}
 
-    getLastUsedPrompt(): string | null {
-        return this.lastUsedPrompt;
-    }
-
-    getLastContentResponse(): string | null {
-        return this.lastContentResponse;
-    }
-
     generateContent(prompt: string): Observable<string> {
-        this.lastUsedPrompt = prompt;
-
         const url = '/api/v1/ai/text/generate';
         const body = JSON.stringify({
             prompt
@@ -45,8 +31,6 @@ export class DotAiService {
                 return throwError('Error fetching AI content');
             }),
             map(({ response }) => {
-                this.lastContentResponse = response;
-
                 return response;
             })
         );
@@ -67,27 +51,9 @@ export class DotAiService {
                 return throwError('Error fetching AI content');
             }),
             map(({ response }) => {
-                this.lastContentResponse = response;
-
                 return response;
             })
         );
-    }
-
-    getLatestContent() {
-        return this.lastContentResponse;
-    }
-
-    getNewContent(contentType: string): Observable<string> {
-        if (contentType === 'aiContent') {
-            return this.generateContent(this.lastUsedPrompt);
-        }
-
-        if (contentType === 'dotImage') {
-            return this.generateImage(this.lastImagePrompt);
-        }
-
-        return of('');
     }
 
     createAndPublishContentlet(fileId: string): Observable<DotCMSContentlet[]> {
