@@ -101,6 +101,15 @@ describe('DotBinaryFieldEditorComponent', () => {
         spectator.detectChanges();
     });
 
+    describe('label', () => {
+        it('should set label and have css class required', () => {
+            const label = spectator.query(byTestId('editor-label'));
+
+            expect(label.innerHTML.trim()).toBe('File Name');
+            expect(label.className).toBe('p-label-input-required');
+        });
+    });
+
     describe('Editor', () => {
         it('should set editor language', fakeAsync(() => {
             component.form.setValue({

@@ -20,7 +20,7 @@ import { getUiMessage } from '../utils/binary-field-utils';
 
 export interface BinaryFieldState {
     file?: BinaryFile;
-    tempFile: DotCMSTempFile;
+    tempFile: DotCMSTempFile | null;
     mode: BinaryFieldMode;
     status: BinaryFieldStatus;
     uiMessage: UiMessageI;

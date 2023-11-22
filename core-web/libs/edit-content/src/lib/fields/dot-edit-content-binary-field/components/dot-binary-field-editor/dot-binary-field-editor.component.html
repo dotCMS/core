@@ -1,8 +1,8 @@
 <form class="editor-mode__form" [formGroup]="form" (ngSubmit)="onSubmit()">
     <div class="editor-mode__input-container">
-        <label class="editor-mode__label" for="file-name">
-            <span class="editor-mode__label-text">File Name</span>
-        </label>
+        <label class="p-label-input-required" data-testId="editor-label" for="file-name">{{
+            'dot.binary.field.action.create.new.file.label' | dm
+        }}</label>
         <input
             id="file-name"
             type="text"
