@@ -43,14 +43,10 @@ public class LanguageCommand implements Callable<Integer>, DotCommand {
     @CommandLine.Spec
      CommandLine.Model.CommandSpec spec;
 
-    @CommandLine.Unmatched // avoids throwing errors for unmatched arguments
-    List<String> unmatchedArgs;
-
     @Override
     public Integer call() throws Exception {
         output.throwIfUnmatchedArguments(spec.commandLine());
-        spec.commandLine().usage(System.out);
-        output.info("Listing languages (default action)");
+        output.info("Listing languages (default action, see --help)");
         return spec.commandLine().execute(NAME, LanguageFind.NAME);
     }
 
