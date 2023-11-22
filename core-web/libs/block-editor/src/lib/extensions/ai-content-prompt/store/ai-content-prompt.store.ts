@@ -26,6 +26,7 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     //Selectors
     readonly prompt$ = this.select((state) => state.prompt);
     readonly content$ = this.select((state) => state.content);
+    readonly open$ = this.select((state) => state.open);
     readonly vm$ = this.select((state) => state);
 
     //Updaters
