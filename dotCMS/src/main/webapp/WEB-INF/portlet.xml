@@ -488,10 +488,6 @@
         <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
     </portlet>
 
-    <portlet>
-        <portlet-name>legacycustomfield</portlet-name>
-        <display-name>Legacy Custom Field</display-name>
-        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
-    </portlet>
+
     
 </portlet-app>
