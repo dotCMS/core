@@ -6,7 +6,9 @@ export const getPageContainers = (containers) => {
 
         contentletsKeys.forEach((key) => {
             acc.push({
-                identifier: containers[container].container.identifier,
+                identifier:
+                    containers[container].container.path ??
+                    containers[container].container.identifier,
                 uuid: key.replace('uuid-', ''),
                 contentletsId: contentlets[key].map((contentlet) => contentlet.identifier)
             });

@@ -230,7 +230,7 @@ const Container = ({ containerRef }) => {
                     payload: {
                         pageID: page.identifier,
                         container: {
-                            identifier: container.identifier,
+                            identifier: container.path ?? container.identifier,
                             uuid,
                             contentletsId,
                             acceptTypes
