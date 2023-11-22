@@ -47,5 +47,9 @@
         <dot-spinner *ngIf="vm.dialogIframeLoading" data-testId="spinner"></dot-spinner>
     </p-dialog>
 
-    <p-confirmDialog rejectButtonStyleClass="p-button-outlined"></p-confirmDialog>
+    <p-confirmDialog
+        [style]="{
+            width: '400px'
+        }"
+        rejectButtonStyleClass="p-button-outlined"></p-confirmDialog>
 </ng-container>
