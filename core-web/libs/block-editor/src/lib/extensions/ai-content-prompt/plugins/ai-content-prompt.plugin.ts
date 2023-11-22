@@ -81,6 +81,16 @@ export class AIContentPromptView {
                 this.editor.commands.insertAINode(content);
                 this.editor.commands.openAIContentActions(DOT_AI_TEXT_CONTENT_KEY);
             });
+
+        this.componentStore.vm$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((state) => state.acceptContent)
+            )
+            .subscribe((state) => {
+                this.editor.commands.insertContent(state.content);
+                this.componentStore.setAcceptContent(false);
+            });
     }
 
     update(view: EditorView, prevState?: EditorState) {

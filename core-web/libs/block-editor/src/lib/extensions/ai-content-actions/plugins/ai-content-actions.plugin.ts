@@ -92,43 +92,30 @@ export class AIContentActionsView {
     }
 
     private acceptContent() {
+        const pluginState: PluginState = this.pluginKey?.getState(this.view.state);
+
         this.editor.commands.closeAIContentActions();
-        const content = this.component.instance.getLatestContent();
-        this.editor.commands.insertContent(content);
+
+        //TODO: add the image case to the add content.
+        switch (pluginState.nodeType) {
+            case DOT_AI_TEXT_CONTENT_KEY:
+                // console.log('accept content');
+                this.aiContentPromptStore.setAcceptContent(true);
+                break;
+        }
     }
 
     private generateContent() {
         const pluginState: PluginState = this.pluginKey?.getState(this.view.state);
 
         this.editor.commands.closeAIContentActions();
+
+        //TODO: add the image case to the re-generate content.
         switch (pluginState.nodeType) {
             case DOT_AI_TEXT_CONTENT_KEY:
                 this.aiContentPromptStore.reGenerateContent();
                 break;
         }
-
-        //OLD CODE
-        // const nodeType = this.getNodeType();
-        //
-        // this.editor.commands.closeAIContentActions();
-        //
-        // this.component.instance.getNewContent(nodeType).subscribe((newContent) => {
-        //     if (newContent) {
-        //         this.editor.commands.deleteSelection();
-        //         this.editor.commands.insertAINode(newContent);
-        //         this.editor.commands.openAIContentActions('image');
-        //     }
-        // });
-    }
-
-    private getNodeType() {
-        const { state } = this.editor.view;
-        const { doc, selection } = state;
-        const { ranges } = selection;
-        const from = Math.min(...ranges.map((range) => range.$from.pos));
-        const node = doc?.nodeAt(from);
-
-        return node.type.name;
     }
 
     private deleteContent() {

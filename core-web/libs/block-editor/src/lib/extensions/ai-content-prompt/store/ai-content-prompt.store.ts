@@ -12,6 +12,7 @@ export interface AiContentPromptState {
     loading: boolean;
     content: string;
     open: boolean;
+    acceptContent: boolean;
 }
 
 @Injectable({
@@ -19,7 +20,7 @@ export interface AiContentPromptState {
 })
 export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     constructor(private dotAiService: DotAiService) {
-        super({ prompt: '', loading: false, content: '', open: false });
+        super({ prompt: '', loading: false, content: '', open: false, acceptContent: false });
     }
 
     //Selectors
@@ -27,11 +28,16 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     readonly loading$ = this.select((state) => state.loading);
     readonly content$ = this.select((state) => state.content);
     readonly open$ = this.select((state) => state.open);
+    readonly acceptContent$ = this.select((state) => state.acceptContent);
 
     readonly vm$ = this.select((state) => state);
 
     //Updaters
     readonly setOpen = this.updater((state, open: boolean) => ({ ...state, open }));
+    readonly setAcceptContent = this.updater((state, acceptContent: boolean) => ({
+        ...state,
+        acceptContent
+    }));
 
     // Effects
     readonly generateContent = this.effect((prompt$: Observable<string>) => {
