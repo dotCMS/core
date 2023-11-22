@@ -2698,4 +2698,22 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             throw new DotDataException(e.getMessage(), e);
         }
     }
+
+    @Override
+    public int countWorkflowSchemes(final boolean includeArchived) {
+        DotConnect dc = new DotConnect();
+        final StringBuilder query = new StringBuilder("SELECT count(*) as mycount FROM workflow_scheme ");
+
+        if(!includeArchived) {
+            query.append(" WHERE archived != ? ");
+        }
+        dc.setSQL(query.toString());
+
+        if(!includeArchived) {
+            dc.addParam(true);
+        }
+        return dc.getInt("mycount");
+    }
+
+
 }

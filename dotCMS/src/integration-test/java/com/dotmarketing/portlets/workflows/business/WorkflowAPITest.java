@@ -21,6 +21,7 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.TestWorkflowUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -75,6 +76,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -96,6 +98,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SYSTEM_WORKFLOW;
 import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -4196,5 +4199,75 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 .contentTypeId(parentTypeId).values(cardinality).relationType(childTypeVar).build();
 
         return fieldAPI.save(field, user);
+    }
+
+    /**
+     * Method to test: {@link WorkflowAPI#countWorkflowSchemes(User)}
+     * Given Scenario: Creates 4 workflow schemes, archive one
+     * ExpectedResult: Returns 4, which is the 3 created + system workflow scheme. The archived one
+     * is not counted.
+     */
+    @Test
+    public void testCountWorkflowSchemes()
+            throws DotDataException, DotSecurityException, AlreadyExistException {
+
+        workflowAPI.findSchemes(false)
+                .forEach((workflowScheme -> {
+                    try {
+                        if(!workflowScheme.getName().equals(SYSTEM_WORKFLOW)) {
+                            workflowAPI.archive(workflowScheme, user);
+                            workflowAPI.deleteSchemeTask(workflowScheme, user);
+                        }
+                    } catch (DotDataException | DotSecurityException | AlreadyExistException  e) {
+                        throw new RuntimeException(e);
+                    }
+                }));
+
+        addWorkflowScheme("countTest1" + System.currentTimeMillis());
+        addWorkflowScheme("countTest2" + System.currentTimeMillis());
+        addWorkflowScheme("countTest3" + System.currentTimeMillis());
+        final WorkflowScheme toArchive = addWorkflowScheme("countTest4"
+                + System.currentTimeMillis());
+
+        // let's archive one
+        workflowAPI.archive(toArchive, APILocator.systemUser());
+
+        // 3 new schemes + 1 system workflow scheme
+        assertEquals(4,workflowAPI.countWorkflowSchemes(APILocator.systemUser()));
+    }
+
+    /**
+     * Method to test: {@link WorkflowAPI#countWorkflowSchemesIncludeArchived(User)}
+     * Given Scenario: Creates 4 workflow schemes, archive one
+     * ExpectedResult: Returns 4, which is the 3 created + system workflow scheme. The archived one
+     * is not counted.
+     */
+    @Test
+    public void testCountWorkflowSchemesIncludeArchived()
+            throws DotDataException, DotSecurityException, AlreadyExistException {
+
+        workflowAPI.findSchemes(true)
+                .forEach((workflowScheme -> {
+                    try {
+                        if(!workflowScheme.getName().equals(SYSTEM_WORKFLOW)) {
+                            workflowAPI.archive(workflowScheme, user);
+                            workflowAPI.deleteSchemeTask(workflowScheme, user);
+                        }
+                    } catch (DotDataException | DotSecurityException | AlreadyExistException  e) {
+                        throw new RuntimeException(e);
+                    }
+                }));
+
+        addWorkflowScheme("countTest1" + System.currentTimeMillis());
+        addWorkflowScheme("countTest2" + System.currentTimeMillis());
+        addWorkflowScheme("countTest3" + System.currentTimeMillis());
+        final WorkflowScheme toArchive = addWorkflowScheme("countTest4"
+                + System.currentTimeMillis());
+
+        // let's archive one
+        workflowAPI.archive(toArchive, APILocator.systemUser());
+
+        // 3 new schemes + 1 archived + 1 system workflow scheme
+        assertEquals(5,workflowAPI.countWorkflowSchemesIncludeArchived(APILocator.systemUser()));
     }
 }

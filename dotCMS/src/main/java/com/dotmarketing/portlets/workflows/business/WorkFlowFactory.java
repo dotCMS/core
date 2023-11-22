@@ -486,4 +486,6 @@ public interface WorkFlowFactory {
 	 * @param language {@link Language}
 	 */
     void deleteWorkflowTaskByLanguage(Language language) throws DotDataException;
+
+	int countWorkflowSchemes(boolean includeArchived);
 }
