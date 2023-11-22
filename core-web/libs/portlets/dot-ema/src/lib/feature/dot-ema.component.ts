@@ -30,7 +30,7 @@ import { DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { AddContentletPayload, DeleteContentletPayload } from '../shared/models';
-import { deleteContentletFromContainer, insertContentletInContainer } from '../shared/utils';
+import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
 
 @Component({
     selector: 'dot-ema',

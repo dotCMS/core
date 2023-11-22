@@ -9,6 +9,9 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import { DotEmaComponent } from './dot-ema.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
@@ -17,9 +20,18 @@ import { WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { AddContentletPayload } from '../shared/models';
 
+const messagesMock = {
+    'editpage.content.contentlet.remove.confirmation_message.header': 'Deleting Content',
+    'editpage.content.contentlet.remove.confirmation_message.message':
+        'Are you sure you want to remove this content?',
+    'dot.common.dialog.accept': 'Accept',
+    'dot.common.dialog.reject': 'Reject'
+};
+
 describe('DotEmaComponent', () => {
     let spectator: Spectator<DotEmaComponent>;
     let store: EditEmaStore;
+    let confirmationService: ConfirmationService;
 
     const createComponent = createRoutingFactory({
         component: DotEmaComponent,
@@ -44,6 +56,10 @@ describe('DotEmaComponent', () => {
                 }
             },
             {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService(messagesMock)
+            },
+            {
                 provide: WINDOW,
                 useValue: window
             }
@@ -57,6 +73,7 @@ describe('DotEmaComponent', () => {
             });
 
             store = spectator.inject(EditEmaStore, true);
+            confirmationService = spectator.inject(ConfirmationService, true);
         });
 
         it('should initialize with route query parameters', () => {
@@ -117,6 +134,42 @@ describe('DotEmaComponent', () => {
                 inode: '123',
                 title: 'hello world'
             });
+        });
+
+        it('should open a confirm dialog and save on confirm when the iframe sends a postmessage with the delete-contenlet action', () => {
+            spectator.detectChanges();
+
+            const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
+            const saveMock = jest.spyOn(store, 'savePage');
+            const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+            window.dispatchEvent(
+                new MessageEvent('message', {
+                    origin: 'http://localhost:3000',
+                    data: {
+                        action: 'delete-contentlet',
+                        payload: {
+                            pageID: '123',
+                            container: {
+                                identifier: '123',
+                                uuid: '123'
+                            },
+                            pageContainers: [],
+                            contentletId: '123'
+                        }
+                    }
+                })
+            );
+
+            spectator.detectChanges();
+
+            expect(confirmDialogOpen).toHaveBeenCalled();
+
+            confirmDialog
+                .querySelector('.p-confirm-dialog-accept')
+                .dispatchEvent(new Event('click')); // This is the internal button, coudln't find a better way to test it
+
+            expect(saveMock).toHaveBeenCalled();
         });
 
         it('should not open a dialog when the iframe sends a postmessage with a different origin', () => {

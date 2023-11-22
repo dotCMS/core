@@ -1,4 +1,4 @@
-import { Container } from './models';
+import { Container } from '../shared/models';
 
 /**
  * Insert a contentlet in a container
