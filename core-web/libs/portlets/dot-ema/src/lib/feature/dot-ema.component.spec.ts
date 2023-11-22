@@ -1,4 +1,4 @@
-import { describe } from '@jest/globals';
+import { describe, expect } from '@jest/globals';
 import { Spectator, byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
@@ -105,7 +105,7 @@ describe('DotEmaComponent', () => {
             });
 
             const iframe = spectator.query(byTestId('iframe'));
-            expect(iframe).toHaveAttribute('src', 'http://localhost:3000/page-one?language_id=2');
+            expect(iframe.getAttribute('src')).toBe('http://localhost:3000/page-one?language_id=2');
         });
 
         describe('customer actions', () => {
@@ -128,7 +128,14 @@ describe('DotEmaComponent', () => {
                                         identifier: '123',
                                         uuid: '123'
                                     },
-                                    pageContainers: [],
+                                    pageContainers: [
+                                        {
+                                            identifier: '123',
+                                            uuid: '123',
+                                            acceptTypes: '123',
+                                            contentletsId: ['123']
+                                        }
+                                    ],
                                     contentletId: '123'
                                 }
                             }
@@ -143,7 +150,18 @@ describe('DotEmaComponent', () => {
                         .querySelector('.p-confirm-dialog-accept')
                         .dispatchEvent(new Event('click')); // This is the internal button, coudln't find a better way to test it
 
-                    expect(saveMock).toHaveBeenCalled();
+                    expect(saveMock).toHaveBeenCalledWith({
+                        pageContainers: [
+                            {
+                                identifier: '123',
+                                uuid: '123',
+                                acceptTypes: '123',
+                                contentletsId: []
+                            }
+                        ],
+                        pageID: '123',
+                        whenSaved: expect.any(Function)
+                    });
                 });
             });
 
@@ -159,7 +177,14 @@ describe('DotEmaComponent', () => {
                             data: {
                                 action: 'add-contentlet',
                                 payload: {
-                                    pageContainers: [],
+                                    pageContainers: [
+                                        {
+                                            identifier: 'test',
+                                            acceptTypes: 'test',
+                                            uuid: 'test',
+                                            contentletsId: []
+                                        }
+                                    ],
                                     container: {
                                         identifier: 'test',
                                         acceptTypes: 'test',
@@ -193,7 +218,18 @@ describe('DotEmaComponent', () => {
 
                     spectator.detectChanges();
 
-                    expect(saveMock).toHaveBeenCalled();
+                    expect(saveMock).toHaveBeenCalledWith({
+                        pageContainers: [
+                            {
+                                identifier: 'test',
+                                acceptTypes: 'test',
+                                uuid: 'test',
+                                contentletsId: ['123']
+                            }
+                        ],
+                        pageID: 'test',
+                        whenSaved: expect.any(Function)
+                    });
                 });
             });
 
@@ -397,6 +433,24 @@ describe('DotEmaComponent', () => {
                 expect(resetDialogMock).toHaveBeenCalled();
 
                 resetDialogMock.mockRestore();
+            });
+        });
+
+        describe('DOM', () => {
+            it('should have a dialog for the actions iframe', () => {
+                spectator.detectChanges();
+
+                const dialog = spectator.query(byTestId('dialog'));
+
+                expect(dialog).toBeTruthy();
+            });
+
+            it('should have a confirm dialog', () => {
+                spectator.detectChanges();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+                expect(confirmDialog).toBeTruthy();
             });
         });
     });

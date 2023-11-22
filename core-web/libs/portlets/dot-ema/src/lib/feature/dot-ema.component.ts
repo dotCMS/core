@@ -1,6 +1,6 @@
 import { Subject, fromEvent } from 'rxjs';
 
-import { AsyncPipe, NgFor, NgIf } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -36,9 +36,7 @@ import { deleteContentletFromContainer, insertContentletInContainer } from '../u
     selector: 'dot-ema',
     standalone: true,
     imports: [
-        NgFor,
-        NgIf,
-        AsyncPipe,
+        CommonModule,
         FormsModule,
         SafeUrlPipe,
         DialogModule,
