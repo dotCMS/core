@@ -4211,17 +4211,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
     public void testCountWorkflowSchemes()
             throws DotDataException, DotSecurityException, AlreadyExistException {
 
-        workflowAPI.findSchemes(false)
-                .forEach((workflowScheme -> {
-                    try {
-                        if(!workflowScheme.getName().equals(SYSTEM_WORKFLOW)) {
-                            workflowAPI.archive(workflowScheme, user);
-                            workflowAPI.deleteSchemeTask(workflowScheme, user);
-                        }
-                    } catch (DotDataException | DotSecurityException | AlreadyExistException  e) {
-                        throw new RuntimeException(e);
-                    }
-                }));
+        final int intialSchemaCount = workflowAPI.findSchemes(false).size();
 
         addWorkflowScheme("countTest1" + System.currentTimeMillis());
         addWorkflowScheme("countTest2" + System.currentTimeMillis());
@@ -4232,8 +4222,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
         // let's archive one
         workflowAPI.archive(toArchive, APILocator.systemUser());
 
-        // 3 new schemes + 1 system workflow scheme
-        assertEquals(4,workflowAPI.countWorkflowSchemes(APILocator.systemUser()));
+        // 3 new schemes. Archived one is not counted
+        assertEquals(intialSchemaCount + 3,workflowAPI.countWorkflowSchemes(APILocator.systemUser()));
     }
 
     /**
@@ -4246,17 +4236,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
     public void testCountWorkflowSchemesIncludeArchived()
             throws DotDataException, DotSecurityException, AlreadyExistException {
 
-        workflowAPI.findSchemes(true)
-                .forEach((workflowScheme -> {
-                    try {
-                        if(!workflowScheme.getName().equals(SYSTEM_WORKFLOW)) {
-                            workflowAPI.archive(workflowScheme, user);
-                            workflowAPI.deleteSchemeTask(workflowScheme, user);
-                        }
-                    } catch (DotDataException | DotSecurityException | AlreadyExistException  e) {
-                        throw new RuntimeException(e);
-                    }
-                }));
+        final int intialSchemaCount = workflowAPI.findSchemes(true).size();
 
         addWorkflowScheme("countTest1" + System.currentTimeMillis());
         addWorkflowScheme("countTest2" + System.currentTimeMillis());
@@ -4267,7 +4247,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
         // let's archive one
         workflowAPI.archive(toArchive, APILocator.systemUser());
 
-        // 3 new schemes + 1 archived + 1 system workflow scheme
-        assertEquals(5,workflowAPI.countWorkflowSchemesIncludeArchived(APILocator.systemUser()));
+        // 3 new schemes + 1 archived. Archived one is counted
+        assertEquals(intialSchemaCount + 4,workflowAPI.countWorkflowSchemesIncludeArchived(APILocator.systemUser()));
     }
 }
