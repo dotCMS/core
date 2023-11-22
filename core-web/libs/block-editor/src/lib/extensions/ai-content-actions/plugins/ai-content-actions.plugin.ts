@@ -71,7 +71,6 @@ export class AIContentActionsView {
         //TODO: Add the reference of the image store.
         this.aiContentPromptStore = this.component.injector.get(AiContentPromptStore);
 
-        // the action the user pick.
         this.component.instance.actionEmitter.pipe(takeUntil(this.destroy$)).subscribe((action) => {
             switch (action) {
                 case ACTIONS.ACCEPT:
@@ -99,7 +98,6 @@ export class AIContentActionsView {
         //TODO: add the image case to the add content.
         switch (pluginState.nodeType) {
             case DOT_AI_TEXT_CONTENT_KEY:
-                // console.log('accept content');
                 this.aiContentPromptStore.setAcceptContent(true);
                 break;
         }

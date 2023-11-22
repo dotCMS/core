@@ -70,18 +70,28 @@ export class AIContentPromptView {
 
         this.componentStore = this.component.injector.get(AiContentPromptStore);
 
+        /**
+         * Subscription to insert the AI Node and open the AI Content Actions.
+         */
         this.componentStore.content$
             .pipe(
                 takeUntil(this.destroy$),
                 filter((content) => !!content)
             )
             .subscribe((content) => {
-                this.editor.commands.closeAIPrompt();
-                this.editor.commands.deleteSelection();
-                this.editor.commands.insertAINode(content);
-                this.editor.commands.openAIContentActions(DOT_AI_TEXT_CONTENT_KEY);
+                this.editor
+                    .chain()
+                    .closeAIPrompt()
+                    .deleteSelection()
+                    .insertAINode(content)
+                    .openAIContentActions(DOT_AI_TEXT_CONTENT_KEY)
+                    .run();
             });
 
+        /**
+         * Subscription to insert the text Content once accepted the generated content.
+         * Fired from the AI Content Actions plugin.
+         */
         this.componentStore.vm$
             .pipe(
                 takeUntil(this.destroy$),

@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 
 import { AiContentPromptState, AiContentPromptStore } from './store/ai-content-prompt.store';
@@ -12,7 +12,8 @@ interface AIContentForm {
 @Component({
     selector: 'dot-ai-content-prompt',
     templateUrl: './ai-content-prompt.component.html',
-    styleUrls: ['./ai-content-prompt.component.scss']
+    styleUrls: ['./ai-content-prompt.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AIContentPromptComponent implements OnInit {
     vm$: Observable<AiContentPromptState> = this.aiContentPromptStore.vm$;
