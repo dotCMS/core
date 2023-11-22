@@ -266,22 +266,24 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
      * @return
      */
     public boolean isFieldVariableGraphQLCompatible(final String variable, final Field field) {
+        final Map<String, TypeUtil.TypeFetcher> reservedContentFields = ContentFields.getContentFields();
         // first let's check if there's an inherited field with the same variable
-        if (ContentFields.getContentFields().containsKey(variable)) {
-            // now let's check if the graphql types are compatible
+        for (String key : reservedContentFields.keySet()) {
+            if (key.equalsIgnoreCase(variable)) {
+                // now let's check if the graphql types are compatible
 
-            // get inherited field's graphql type
-            final GraphQLType inheritedFieldGraphQLType = ContentFields.getContentFields()
-                    .get(variable).getType();
+                // get inherited field's graphql type
+                final GraphQLType inheritedFieldGraphQLType = ContentFields.getContentFields().get(key).getType();
 
-            // get new field's type
-            final GraphQLType fieldGraphQLType = getGraphqlTypeForFieldClass(field.type(), field);
+                // get new field's type
+                final GraphQLType fieldGraphQLType = getGraphqlTypeForFieldClass(field.type(), field);
 
-            // if at least one of them is a custom type, they need to be equal to be compatible
-            return (!isCustomFieldType(inheritedFieldGraphQLType)
-                    && !isCustomFieldType(fieldGraphQLType))
-                    || inheritedFieldGraphQLType.equals(fieldGraphQLType)
-                    || inheritedFieldGraphQLType.getName().equals(fieldGraphQLType.getName());
+                // if at least one of them is a custom type, they need to be equal to be compatible
+                return (!isCustomFieldType(inheritedFieldGraphQLType)
+                        && !isCustomFieldType(fieldGraphQLType))
+                        || inheritedFieldGraphQLType.equals(fieldGraphQLType)
+                        || inheritedFieldGraphQLType.getName().equals(fieldGraphQLType.getName());
+            }
         }
 
         return true;
