@@ -3,8 +3,6 @@ import { Spectator, createComponentFactory } from '@ngneat/spectator';
 import { ControlContainer, FormControl, FormGroup, FormGroupDirective } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
-// import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-
 import { DotEditContentCustomFieldComponent } from './dot-edit-content-custom-field.component';
 
 import { CUSTOM_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';

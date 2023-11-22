@@ -99,7 +99,7 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
                 },
                 {
                     provide: ActivatedRoute,
-                    useValue: { snapshot: { params: { contentType: 'test' }, queryParams: {} } }
+                    useValue: { snapshot: { params: { contentType: 'test' } } }
                 }
             ]
         });

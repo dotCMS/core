@@ -1,4 +1,4 @@
-// import { DotSafeUrlPipe } from 'libs/ui/src/lib/pipes/safe-url/safe-url.pipe.ts';
+import { SafeUrlPipe } from 'libs/ui/src/lib/pipes/safe-url/safe-url.pipe';
 
 import {
     ChangeDetectionStrategy,
@@ -17,7 +17,7 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-edit-content-custom-field',
     standalone: true,
-    // imports: [DotSafeUrlPipe],
+    imports: [SafeUrlPipe],
     templateUrl: './dot-edit-content-custom-field.component.html',
     styleUrls: ['./dot-edit-content-custom-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
