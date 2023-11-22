@@ -274,6 +274,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         this.selectionNode = node;
         this.component.instance.items = getBubbleMenuItem(type);
+        this.component.changeDetectorRef.detectChanges();
     }
 
     openImageProperties() {
