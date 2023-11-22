@@ -446,9 +446,4 @@ public class ExperimentUrlPatternCalculatorIntegrationTest {
         assertTrue(("http://localhost:8080/testing").matches(regex));
         assertTrue(("http://localhost:8080/another_testing").matches(regex));
     }
-
-    @Test
-    public void whenNotExistsAnyVanityUrl(){
-        throw new RuntimeException();
-    }
 }
