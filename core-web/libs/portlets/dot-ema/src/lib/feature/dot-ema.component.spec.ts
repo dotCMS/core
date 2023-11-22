@@ -108,263 +108,296 @@ describe('DotEmaComponent', () => {
             expect(iframe).toHaveAttribute('src', 'http://localhost:3000/page-one?language_id=2');
         });
 
-        it('should open a dialog when the iframe sends a postmessage with the edit-contenlet action', () => {
-            spectator.detectChanges();
+        describe('customer actions', () => {
+            describe('delete', () => {
+                it('should open a confirm dialog and save on confirm', () => {
+                    spectator.detectChanges();
 
-            const initiEditIframeDialogMock = jest.spyOn(store, 'initActionEdit');
-            const dialog = spectator.query(byTestId('dialog'));
+                    const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
+                    const saveMock = jest.spyOn(store, 'savePage');
+                    const confirmDialog = spectator.query(byTestId('confirm-dialog'));
 
-            window.dispatchEvent(
-                new MessageEvent('message', {
-                    origin: 'http://localhost:3000',
-                    data: {
-                        action: 'edit-contentlet',
-                        payload: {
-                            inode: '123',
-                            title: 'hello world'
-                        }
-                    }
-                })
-            );
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: 'http://localhost:3000',
+                            data: {
+                                action: 'delete-contentlet',
+                                payload: {
+                                    pageID: '123',
+                                    container: {
+                                        identifier: '123',
+                                        uuid: '123'
+                                    },
+                                    pageContainers: [],
+                                    contentletId: '123'
+                                }
+                            }
+                        })
+                    );
 
-            spectator.detectChanges();
+                    spectator.detectChanges();
 
-            expect(dialog.getAttribute('ng-reflect-visible')).toBe('true');
-            expect(initiEditIframeDialogMock).toHaveBeenCalledWith({
-                inode: '123',
-                title: 'hello world'
-            });
-        });
+                    expect(confirmDialogOpen).toHaveBeenCalled();
 
-        it('should open a confirm dialog and save on confirm when the iframe sends a postmessage with the delete-contenlet action', () => {
-            spectator.detectChanges();
+                    confirmDialog
+                        .querySelector('.p-confirm-dialog-accept')
+                        .dispatchEvent(new Event('click')); // This is the internal button, coudln't find a better way to test it
 
-            const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
-            const saveMock = jest.spyOn(store, 'savePage');
-            const confirmDialog = spectator.query(byTestId('confirm-dialog'));
-
-            window.dispatchEvent(
-                new MessageEvent('message', {
-                    origin: 'http://localhost:3000',
-                    data: {
-                        action: 'delete-contentlet',
-                        payload: {
-                            pageID: '123',
-                            container: {
-                                identifier: '123',
-                                uuid: '123'
-                            },
-                            pageContainers: [],
-                            contentletId: '123'
-                        }
-                    }
-                })
-            );
-
-            spectator.detectChanges();
-
-            expect(confirmDialogOpen).toHaveBeenCalled();
-
-            confirmDialog
-                .querySelector('.p-confirm-dialog-accept')
-                .dispatchEvent(new Event('click')); // This is the internal button, coudln't find a better way to test it
-
-            expect(saveMock).toHaveBeenCalled();
-        });
-
-        it('should not open a dialog when the iframe sends a postmessage with a different origin', () => {
-            spectator.detectChanges();
-
-            const dialog = spectator.query(byTestId('dialog'));
-
-            window.dispatchEvent(
-                new MessageEvent('message', {
-                    origin: 'my.super.cool.website.xyz',
-                    data: {
-                        action: 'edit-contentlet',
-                        payload: {
-                            inode: '123'
-                        }
-                    }
-                })
-            );
-
-            spectator.detectChanges();
-
-            expect(dialog.getAttribute('ng-reflect-visible')).toBe('false');
-        });
-
-        it('should trigger onIframeLoad when the dialog is opened', (done) => {
-            spectator.detectChanges();
-
-            window.dispatchEvent(
-                new MessageEvent('message', {
-                    origin: 'http://localhost:3000',
-                    data: {
-                        action: 'edit-contentlet',
-                        payload: {
-                            inode: '123'
-                        }
-                    }
-                })
-            );
-
-            spectator.detectChanges();
-
-            const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-            const dialogIframe = spectator.debugElement.query(
-                By.css('[data-testId="dialog-iframe"]')
-            );
-
-            spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
-
-            dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
-                new CustomEvent('ng-event', {
-                    detail: {
-                        name: NG_CUSTOM_EVENTS.CONTENTLET_UPDATED,
-                        data: {
-                            identifier: '123'
-                        }
-                    }
-                })
-            );
-
-            spectator.detectChanges();
-
-            iframe.nativeElement.contentWindow.addEventListener('message', (event) => {
-                expect(event).toBeTruthy();
-                done();
+                    expect(saveMock).toHaveBeenCalled();
+                });
             });
 
-            const nullSpinner = spectator.query(byTestId('spinner'));
+            describe('add', () => {
+                it('should trigger save when ng-event select-contentlet is dispatched', () => {
+                    const saveMock = jest.spyOn(store, 'savePage');
 
-            expect(nullSpinner).toBeNull();
-        });
+                    spectator.detectChanges();
 
-        it('should trigger save when ng-event select-contentlet is dispatched', () => {
-            const saveMock = jest.spyOn(store, 'savePage');
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: 'http://localhost:3000',
+                            data: {
+                                action: 'add-contentlet',
+                                payload: {
+                                    pageContainers: [],
+                                    container: {
+                                        identifier: 'test',
+                                        acceptTypes: 'test',
+                                        uuid: 'test',
+                                        contentletsId: []
+                                    },
+                                    pageID: 'test'
+                                } as AddContentletPayload
+                            }
+                        })
+                    );
 
-            spectator.detectChanges();
+                    spectator.detectChanges();
 
-            window.dispatchEvent(
-                new MessageEvent('message', {
-                    origin: 'http://localhost:3000',
-                    data: {
-                        action: 'add-contentlet',
-                        payload: {
-                            pageContainers: [],
-                            container: {
-                                identifier: 'test',
-                                acceptTypes: 'test',
-                                uuid: 'test',
-                                contentletsId: []
-                            },
-                            pageID: 'test'
-                        } as AddContentletPayload
-                    }
-                })
-            );
+                    const dialogIframe = spectator.debugElement.query(
+                        By.css('[data-testId="dialog-iframe"]')
+                    );
 
-            spectator.detectChanges();
+                    spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
 
-            const dialogIframe = spectator.debugElement.query(
-                By.css('[data-testId="dialog-iframe"]')
-            );
+                    dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
+                        new CustomEvent('ng-event', {
+                            detail: {
+                                name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
+                                data: {
+                                    identifier: '123'
+                                }
+                            }
+                        })
+                    );
 
-            spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
+                    spectator.detectChanges();
 
-            dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
-                new CustomEvent('ng-event', {
-                    detail: {
-                        name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
+                    expect(saveMock).toHaveBeenCalled();
+                });
+            });
+
+            describe('edit', () => {
+                it('should open a dialog and send a post message when saving the contentlet', (done) => {
+                    spectator.detectChanges();
+
+                    const initiEditIframeDialogMock = jest.spyOn(store, 'initActionEdit');
+                    const dialog = spectator.query(byTestId('dialog'));
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: 'http://localhost:3000',
+                            data: {
+                                action: 'edit-contentlet',
+                                payload: {
+                                    inode: '123',
+                                    title: 'hello world'
+                                }
+                            }
+                        })
+                    );
+
+                    spectator.detectChanges();
+
+                    expect(dialog.getAttribute('ng-reflect-visible')).toBe('true');
+                    expect(initiEditIframeDialogMock).toHaveBeenCalledWith({
+                        inode: '123',
+                        title: 'hello world'
+                    });
+
+                    const dialogIframe = spectator.debugElement.query(
+                        By.css('[data-testId="dialog-iframe"]')
+                    );
+
+                    spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
+
+                    dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
+                        new CustomEvent('ng-event', {
+                            detail: {
+                                name: NG_CUSTOM_EVENTS.CONTENTLET_UPDATED
+                            }
+                        })
+                    );
+                    spectator.detectChanges();
+
+                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+                    iframe.nativeElement.contentWindow.addEventListener(
+                        'message',
+                        (event: MessageEvent) => {
+                            expect(event).toBeTruthy();
+                            done();
+                        }
+                    );
+                });
+            });
+
+            it('should not open a dialog when the iframe sends a postmessage with a different origin', () => {
+                spectator.detectChanges();
+
+                const dialog = spectator.query(byTestId('dialog'));
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: 'my.super.cool.website.xyz',
                         data: {
-                            identifier: '123'
+                            action: 'edit-contentlet',
+                            payload: {
+                                inode: '123'
+                            }
                         }
-                    }
-                })
-            );
+                    })
+                );
 
-            spectator.detectChanges();
+                spectator.detectChanges();
 
-            expect(saveMock).toHaveBeenCalled();
-        });
+                expect(dialog.getAttribute('ng-reflect-visible')).toBe('false');
+            });
 
-        it('should show an spinner when triggering an action for the dialog', () => {
-            spectator.detectChanges();
+            it('should trigger onIframeLoad when the dialog is opened', (done) => {
+                spectator.detectChanges();
 
-            window.dispatchEvent(
-                new MessageEvent('message', {
-                    origin: 'http://localhost:3000',
-                    data: {
-                        action: 'edit-contentlet',
-                        payload: {
-                            inode: '123'
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: 'http://localhost:3000',
+                        data: {
+                            action: 'edit-contentlet',
+                            payload: {
+                                inode: '123'
+                            }
                         }
-                    }
-                })
-            );
-            spectator.detectChanges();
+                    })
+                );
 
-            const spinner = spectator.query(byTestId('spinner'));
+                spectator.detectChanges();
 
-            expect(spinner).toBeTruthy();
-        });
+                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+                const dialogIframe = spectator.debugElement.query(
+                    By.css('[data-testId="dialog-iframe"]')
+                );
 
-        it('should not show the spinner after iframe load', () => {
-            spectator.detectChanges();
+                spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
 
-            window.dispatchEvent(
-                new MessageEvent('message', {
-                    origin: 'http://localhost:3000',
-                    data: {
-                        action: 'edit-contentlet',
-                        payload: {
-                            inode: '123'
+                dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
+                    new CustomEvent('ng-event', {
+                        detail: {
+                            name: NG_CUSTOM_EVENTS.CONTENTLET_UPDATED,
+                            data: {
+                                identifier: '123'
+                            }
                         }
-                    }
-                })
-            );
+                    })
+                );
 
-            spectator.detectChanges();
+                spectator.detectChanges();
 
-            const spinner = spectator.query(byTestId('spinner'));
+                iframe.nativeElement.contentWindow.addEventListener('message', (event) => {
+                    expect(event).toBeTruthy();
+                    done();
+                });
 
-            expect(spinner).toBeTruthy();
+                const nullSpinner = spectator.query(byTestId('spinner'));
 
-            const dialogIframe = spectator.debugElement.query(
-                By.css("[data-testId='dialog-iframe']")
-            );
+                expect(nullSpinner).toBeNull();
+            });
 
-            spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
+            it('should show an spinner when triggering an action for the dialog', () => {
+                spectator.detectChanges();
 
-            const nullSpinner = spectator.query(byTestId('spinner'));
-
-            expect(nullSpinner).toBeFalsy();
-        });
-
-        it('should reset the dialog properties when the dialog closes', () => {
-            spectator.detectChanges();
-            const resetDialogMock = jest.spyOn(store, 'resetDialog');
-            const dialog = spectator.query(byTestId('dialog'));
-
-            window.dispatchEvent(
-                new MessageEvent('message', {
-                    origin: 'http://localhost:3000',
-                    data: {
-                        action: 'edit-contentlet',
-                        payload: {
-                            inode: '123'
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: 'http://localhost:3000',
+                        data: {
+                            action: 'edit-contentlet',
+                            payload: {
+                                inode: '123'
+                            }
                         }
-                    }
-                })
-            );
+                    })
+                );
+                spectator.detectChanges();
 
-            spectator.dispatchFakeEvent(dialog, 'visibleChange');
-            spectator.detectChanges();
+                const spinner = spectator.query(byTestId('spinner'));
 
-            expect(resetDialogMock).toHaveBeenCalled();
+                expect(spinner).toBeTruthy();
+            });
 
-            resetDialogMock.mockRestore();
+            it('should not show the spinner after iframe load', () => {
+                spectator.detectChanges();
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: 'http://localhost:3000',
+                        data: {
+                            action: 'edit-contentlet',
+                            payload: {
+                                inode: '123'
+                            }
+                        }
+                    })
+                );
+
+                spectator.detectChanges();
+
+                const spinner = spectator.query(byTestId('spinner'));
+
+                expect(spinner).toBeTruthy();
+
+                const dialogIframe = spectator.debugElement.query(
+                    By.css("[data-testId='dialog-iframe']")
+                );
+
+                spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
+
+                const nullSpinner = spectator.query(byTestId('spinner'));
+
+                expect(nullSpinner).toBeFalsy();
+            });
+
+            it('should reset the dialog properties when the dialog closes', () => {
+                spectator.detectChanges();
+                const resetDialogMock = jest.spyOn(store, 'resetDialog');
+                const dialog = spectator.query(byTestId('dialog'));
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: 'http://localhost:3000',
+                        data: {
+                            action: 'edit-contentlet',
+                            payload: {
+                                inode: '123'
+                            }
+                        }
+                    })
+                );
+
+                spectator.dispatchFakeEvent(dialog, 'visibleChange');
+                spectator.detectChanges();
+
+                expect(resetDialogMock).toHaveBeenCalled();
+
+                resetDialogMock.mockRestore();
+            });
         });
     });
 
