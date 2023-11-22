@@ -1,18 +1,19 @@
 package com.dotcms.experiments.business;
 
 import com.dotcms.analytics.metrics.*;
-import com.dotcms.datagen.ExperimentDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.GoalFactory;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.util.StringPool;
+import jdk.jshell.spi.ExecutionControl;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -253,5 +254,201 @@ public class ExperimentUrlPatternCalculatorIntegrationTest {
         assertFalse("http://localhost:8080/testing?testParameterDifferent=testValue".matches(targetRegularExpression));
         assertFalse("http://localhost:8080/testing?DifferentTestParameter=testValue".matches(targetRegularExpression));
         assertTrue("http://localhost:8080/testing?testParameter=anyValue".matches(targetRegularExpression));
+    }
+
+    /**
+     * Method to test: {@link ExperimentUrlPatternCalculator#calculatePageUrlRegexPattern(Experiment)}
+     * When: Exists a Published Vanity Url with the forwardTo equals to the URI og the Experiment's Page
+     * Should: The regex returned by the method should match the VanityUrl's URI
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void experimentWithVanityUrl() throws DotDataException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Condition<Object> condition = Condition.builder()
+                .parameter("url")
+                .value("testing")
+                .operator(AbstractCondition.Operator.CONTAINS)
+                .build();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(condition).build();
+
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
+        final Experiment experiment = new ExperimentDataGen()
+                .page(experimentPage)
+                .addGoal(goal)
+                .nextPersisted();
+
+        final Contentlet vanityUrl = new VanityUrlDataGen()
+                .uri("/testing")
+                .forwardTo(experimentPage.getURI())
+                .action(200)
+                .host(host)
+                .languageId(experimentPage.getLanguageId())
+                .nextPersistedAndPublish();
+
+        final String regex = ExperimentUrlPatternCalculator.INSTANCE.calculatePageUrlRegexPattern(experiment);
+
+        assertTrue(("http://localhost:8080/" + experimentPage.getPageUrl()).matches(regex));
+        assertTrue(("http://localhost:8080/testing").matches(regex));
+
+    }
+
+    /**
+     * Method to test: {@link ExperimentUrlPatternCalculator#calculatePageUrlRegexPattern(Experiment)}
+     * When: Exists a Published Vanity Url with the forwardTo equals to the URI og the Experiment's Page but with not 200 action
+     * Should: The regex returned by the method should NOT match the VanityUrl's URI
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void experimentWithVanityUrlWithNot200Action() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Condition<Object> condition = Condition.builder()
+                .parameter("url")
+                .value("testing")
+                .operator(AbstractCondition.Operator.CONTAINS)
+                .build();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(condition).build();
+
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
+        final Experiment experiment = new ExperimentDataGen()
+                .page(experimentPage)
+                .addGoal(goal)
+                .nextPersisted();
+
+        final Contentlet vanityUrl = new VanityUrlDataGen()
+                .uri("/testing")
+                .forwardTo(experimentPage.getURI())
+                .action(301)
+                .host(host)
+                .languageId(experimentPage.getLanguageId())
+                .nextPersistedAndPublish();
+
+        final String regex = ExperimentUrlPatternCalculator.INSTANCE.calculatePageUrlRegexPattern(experiment);
+
+        assertTrue(("http://localhost:8080/" + experimentPage.getPageUrl()).matches(regex));
+        assertFalse(("http://localhost:8080/testing").matches(regex));
+    }
+
+    /**
+     * Method to test: {@link ExperimentUrlPatternCalculator#calculatePageUrlRegexPattern(Experiment)}
+     * When: Exists a UnPublished Vanity Url with the forwardTo equals to the URI og the Experiment's Page
+     * Should: The regex returned by the method should NOT match the VanityUrl's URI
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void experimentWithUnPublishedVanity() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Condition<Object> condition = Condition.builder()
+                .parameter("url")
+                .value("testing")
+                .operator(AbstractCondition.Operator.CONTAINS)
+                .build();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(condition).build();
+
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
+        final Experiment experiment = new ExperimentDataGen()
+                .page(experimentPage)
+                .addGoal(goal)
+                .nextPersisted();
+
+        final Contentlet vanityUrl = new VanityUrlDataGen()
+                .uri("/testing")
+                .forwardTo(experimentPage.getURI())
+                .action(301)
+                .host(host)
+                .languageId(experimentPage.getLanguageId())
+                .nextPersisted();
+
+        final String regex = ExperimentUrlPatternCalculator.INSTANCE.calculatePageUrlRegexPattern(experiment);
+
+        assertTrue(("http://localhost:8080/" + experimentPage.getPageUrl()).matches(regex));
+        assertFalse(("http://localhost:8080/testing").matches(regex));
+    }
+
+    /**
+     * Method to test: {@link ExperimentUrlPatternCalculator#calculatePageUrlRegexPattern(Experiment)}
+     * When: Exists 2 Published Vanity Url with the forwardTo equals to the URI og the Experiment's Page and action equals to 200
+     * Should: The regex returned by the method should  match both the VanityUrl's URI
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void experimentWithTwoPublishedVanity() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Condition<Object> condition = Condition.builder()
+                .parameter("url")
+                .value("testing")
+                .operator(AbstractCondition.Operator.CONTAINS)
+                .build();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(condition).build();
+
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
+        final Experiment experiment = new ExperimentDataGen()
+                .page(experimentPage)
+                .addGoal(goal)
+                .nextPersisted();
+
+        final Contentlet vanityUrl_1 = new VanityUrlDataGen()
+                .uri("/testing")
+                .forwardTo(experimentPage.getURI())
+                .action(200)
+                .host(host)
+                .languageId(experimentPage.getLanguageId())
+                .nextPersistedAndPublish();
+
+        final Contentlet vanityUrl_2 = new VanityUrlDataGen()
+                .uri("/another_testing")
+                .forwardTo(experimentPage.getURI())
+                .action(200)
+                .host(host)
+                .languageId(experimentPage.getLanguageId())
+                .nextPersistedAndPublish();
+
+        final String regex = ExperimentUrlPatternCalculator.INSTANCE.calculatePageUrlRegexPattern(experiment);
+
+        assertTrue(("http://localhost:8080/" + experimentPage.getPageUrl()).matches(regex));
+        assertTrue(("http://localhost:8080/testing").matches(regex));
+        assertTrue(("http://localhost:8080/another_testing").matches(regex));
+    }
+
+    @Test
+    public void whenNotExistsAnyVanityUrl(){
+        throw new RuntimeException();
     }
 }

@@ -388,5 +388,15 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
       return false;
   }
 
+    @Override
+    public List<CachedVanityUrl> findByForward(final Host host, final Language language, final String forward,
+                                               int action) {
+        return load(host, language)
+                .stream()
+                .filter(cachedVanityUrl -> cachedVanityUrl.response == action)
+                .filter(cachedVanityUrl -> cachedVanityUrl.forwardTo.equals(forward))
+                .collect(Collectors.toList());
+    }
+
 
 }
