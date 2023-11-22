@@ -479,6 +479,7 @@ export const CUSTOM_FIELD_MOCK: DotCMSContentTypeField = {
     indexed: false,
     listed: false,
     modDate: 1700622670000,
+    hint: 'A hint text',
     name: 'custom',
     readOnly: false,
     required: false,
@@ -507,7 +508,8 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     CHECKBOX_FIELD_MOCK,
     MULTI_SELECT_FIELD_MOCK,
     BLOCK_EDITOR_FIELD_MOCK,
-    BINARY_FIELD_MOCK
+    BINARY_FIELD_MOCK,
+    CUSTOM_FIELD_MOCK
 ];
 
 export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;

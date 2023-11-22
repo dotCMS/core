@@ -1,8 +1,9 @@
 import { Spectator, createComponentFactory } from '@ngneat/spectator';
 
-import { ElementRef, Sanitizer } from '@angular/core';
-import { ControlContainer, FormGroupDirective } from '@angular/forms';
+import { ControlContainer, FormControl, FormGroup, FormGroupDirective } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+
+// import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 
 import { DotEditContentCustomFieldComponent } from './dot-edit-content-custom-field.component';
 
@@ -10,39 +11,41 @@ import { CUSTOM_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/moc
 
 describe('DotEditContentCustomFieldComponent', () => {
     let spectator: Spectator<DotEditContentCustomFieldComponent>;
+
+    const FAKE_FORM_GROUP = new FormGroup({
+        custom: new FormControl()
+    });
+
     const createComponent = createComponentFactory({
         component: DotEditContentCustomFieldComponent,
         detectChanges: false,
         componentViewProviders: [
-            { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
+            { provide: ControlContainer, useValue: createFormGroupDirectiveMock(FAKE_FORM_GROUP) }
         ],
-        providers: [FormGroupDirective, Sanitizer],
+        providers: [FormGroupDirective],
         componentProviders: [
             { provide: ActivatedRoute, useValue: { snapshot: { params: { contentType: 'test' } } } }
         ]
     });
 
     beforeEach(() => {
-        spectator = createComponent({});
+        spectator = createComponent({
+            providers: [
+                {
+                    provide: ActivatedRoute,
+                    useValue: { snapshot: { params: { contentType: 'test' } } }
+                }
+            ]
+        });
     });
 
     it('should have a valid iframe src', () => {
         spectator.setInput('field', CUSTOM_FIELD_MOCK);
         spectator.detectChanges();
         expect(spectator.component.src).toBe(
-            `/html/legacy_custom_field/legacy-custom-field.jsp?variable=Test&field=${CUSTOM_FIELD_MOCK.variable}`
+            `/html/legacy_custom_field/legacy-custom-field.jsp?variable=test&field=${CUSTOM_FIELD_MOCK.variable}`
         );
     });
-
-    // it('should have a valid iframe src', () => {
-    //     spectator.setInput('field', CUSTOM_FIELD_MOCK);
-    //     spectator.detectChanges();
-    //     const expectedSrc = spectator.component.sanitizer.bypassSecurityTrustResourceUrl(
-    //         `/html/legacy_custom_field/legacy-custom-field.jsp?variable=test&field=${CUSTOM_FIELD_MOCK.variable}`
-    //     );
-    //     expect(spectator.component.src).toEqual(expectedSrc);
-    // });
-
     it('should set the contentType property correctly', () => {
         spectator.setInput('field', CUSTOM_FIELD_MOCK);
         spectator.detectChanges();
@@ -51,16 +54,10 @@ describe('DotEditContentCustomFieldComponent', () => {
 
     it('should set the iframe contentWindow form property correctly on iframe load', () => {
         spectator.setInput('field', CUSTOM_FIELD_MOCK);
-        const mockContentWindow = {
-            form: null
-        };
-        spectator.component.iframe = {
-            nativeElement: {
-                contentWindow: mockContentWindow
-            }
-        } as ElementRef;
         spectator.component.onIframeLoad();
         spectator.detectChanges();
-        expect(mockContentWindow.form).toBe(spectator.component.form);
+        expect(spectator.component.iframe.nativeElement.contentWindow['form']).toEqual(
+            FAKE_FORM_GROUP
+        );
     });
 });

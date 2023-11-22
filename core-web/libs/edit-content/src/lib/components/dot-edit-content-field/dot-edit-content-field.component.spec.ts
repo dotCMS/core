@@ -7,7 +7,9 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Type } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { ActivatedRoute } from '@angular/router';
 
+// import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotBlockEditorComponent } from '@dotcms/block-editor';
 import { DotBinaryFieldComponent } from '@dotcms/contenttype-fields';
 import { DotLicenseService } from '@dotcms/data-access';
@@ -94,6 +96,10 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
                     useValue: {
                         isEnterprise: () => of(true)
                     }
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: { snapshot: { params: { contentType: 'test' }, queryParams: {} } }
                 }
             ]
         });

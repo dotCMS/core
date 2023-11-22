@@ -1,6 +1,7 @@
+// import { DotSafeUrlPipe } from 'libs/ui/src/lib/pipes/safe-url/safe-url.pipe.ts';
+
 import {
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
     ElementRef,
     Input,
@@ -9,7 +10,6 @@ import {
     inject
 } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -17,6 +17,7 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-edit-content-custom-field',
     standalone: true,
+    // imports: [DotSafeUrlPipe],
     templateUrl: './dot-edit-content-custom-field.component.html',
     styleUrls: ['./dot-edit-content-custom-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -24,25 +25,22 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 export class DotEditContentCustomFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
 
-    @ViewChild('iframe') iframe!: ElementRef;
+    @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
 
     private activatedRoute = inject(ActivatedRoute);
     private controlContainer = inject(ControlContainer);
-    private sanitizer = inject(DomSanitizer);
-    private changeDetectorRef = inject(ChangeDetectorRef);
 
-    public contentType = this.activatedRoute.snapshot.params['contentType'];
+    contentType = this.activatedRoute.snapshot.params['contentType'];
 
-    src!: SafeUrl;
+    src!: string;
 
     ngOnInit() {
-        this.src = this.sanitizer.bypassSecurityTrustResourceUrl(
-            `/html/legacy_custom_field/legacy-custom-field.jsp?variable=${this.contentType}&field=${this.field.variable}`
-        );
+        this.src = `/html/legacy_custom_field/legacy-custom-field.jsp?variable=${this.contentType}&field=${this.field.variable}`;
     }
 
     onIframeLoad() {
-        this.iframe.nativeElement.contentWindow.window.form = this.form;
+        const iframeWindow = this.iframe.nativeElement.contentWindow as Window;
+        iframeWindow['form'] = this.form;
     }
 
     get form() {
