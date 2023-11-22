@@ -21,7 +21,7 @@
         "publish:docs": "gh-pages --dist ./docs --dest ./",
         "build:dev": "nx build dotcms-ui",
         "build:prod": "nx run dotcms-ui:build:production",
-        "build:contenttype-fields": "nx run contenttype-fields-builder:build --configuration production --skip-nx-cache --optimization --output-hashing=none && cat dist/apps/contenttype-fields-builder/{generator-runtime,runtime,polyfills,main}.js > ../dotCMS/src/main/webapp/html/binary-field.js && cat dist/apps/contenttype-fields-builder/styles.css > ../dotCMS/src/main/webapp/html/css/binary-field.css",
+        "build:dotcms-binary-field": "nx run dotcms-binary-field-builder:build --configuration production --skip-nx-cache --optimization --output-hashing=none && cat dist/apps/dotcms-binary-field-builder/{generator-runtime,runtime,polyfills,main}.js > ../dotCMS/src/main/webapp/html/binary-field.js && cat dist/apps/dotcms-binary-field-builder/styles.css > ../dotCMS/src/main/webapp/html/css/binary-field.css",
         "build:dotcms-block-editor": "nx run dotcms-block-editor:build --configuration production --skip-nx-cache --optimization --output-hashing=none && cat dist/apps/dotcms-block-editor/{generator-runtime,runtime,polyfills,main}.js > ../dotCMS/src/main/webapp/html/dotcms-block-editor.js && cat dist/apps/dotcms-block-editor/styles.css >../dotCMS/src/main/webapp/html/css/dotcms-block-editor.css",
         "build:dotcms-webcomponents": "nx build dotcms-webcomponents",
         "docker:test": "npm run docker:build;IMAGE_BASE_NAME=core-web docker-compose -f docker-compose-running-test.yml up",

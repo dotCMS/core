@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 
+import { DotEditContentBinaryFieldComponent } from './dot-edit-content-binary-field/dot-edit-content-binary-field.component';
 import { DotEditContentCalendarFieldComponent } from './dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCheckboxFieldComponent } from './dot-edit-content-checkbox-field/dot-edit-content-checkbox-field.component';
 import { DotEditContentCustomFieldComponent } from './dot-edit-content-custom-field/dot-edit-content-custom-field.component';
@@ -21,7 +22,8 @@ import { DotEditContentTextFieldComponent } from './dot-edit-content-text-field/
         DotEditContentTagFieldComponent,
         DotEditContentCheckboxFieldComponent,
         DotEditContentMultiSelectFieldComponent,
-        DotEditContentCustomFieldComponent
+        DotEditContentCustomFieldComponent,
+        DotEditContentBinaryFieldComponent
     ],
     exports: [
         DotEditContentTextAreaComponent,
@@ -32,7 +34,8 @@ import { DotEditContentTextFieldComponent } from './dot-edit-content-text-field/
         DotEditContentTagFieldComponent,
         DotEditContentCheckboxFieldComponent,
         DotEditContentMultiSelectFieldComponent,
-        DotEditContentCustomFieldComponent
+        DotEditContentCustomFieldComponent,
+        DotEditContentBinaryFieldComponent
     ]
 })
 export class DotEditContentFieldsModule {}

@@ -53,6 +53,7 @@ describe('DotEditPageResolver', () => {
     let dotPageStateService: DotPageStateService;
     let dotPageStateServiceRequestPageSpy: jasmine.Spy;
     let dotRouterService: DotRouterService;
+    let dotSessionStorageService: DotSessionStorageService;
 
     let injector: TestBed;
     let dotEditPageResolver: DotEditPageResolver;
@@ -102,6 +103,7 @@ describe('DotEditPageResolver', () => {
         dotPageStateServiceRequestPageSpy = spyOn(dotPageStateService, 'requestPage');
         dotRouterService = injector.get(DotRouterService);
         siteService = injector.get(SiteService);
+        dotSessionStorageService = injector.get(DotSessionStorageService);
 
         spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(of());
     });
@@ -239,6 +241,38 @@ describe('DotEditPageResolver', () => {
                 expect(state).toBeNull();
             });
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
+                new HttpErrorResponse(
+                    new HttpResponse({
+                        body: null,
+                        status: HttpCode.FORBIDDEN,
+                        headers: null,
+                        url: ''
+                    })
+                )
+            );
+        });
+
+        it('should call to `removeVariantId` when handle error and redirect to site-browser ', () => {
+            spyOn(dotSessionStorageService, 'removeVariantId');
+
+            const mock = new DotPageRenderState(
+                mockUser(),
+                new DotPageRender({
+                    ...mockDotRenderedPage(),
+                    page: {
+                        ...mockDotRenderedPage().page,
+                        canEdit: false
+                    }
+                })
+            );
+            dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
+
+            dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
+                expect(state).toBeNull();
+            });
+
+            expect(dotSessionStorageService.removeVariantId).toHaveBeenCalled();
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
                 new HttpErrorResponse(
                     new HttpResponse({

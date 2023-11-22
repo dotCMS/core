@@ -136,11 +136,15 @@ export const getSuggestedWinner = (
 ): SummaryLegend => {
     const { bayesianResult, sessions } = results;
 
+    if (!bayesianResult) {
+        return ReportSummaryLegendByBayesianStatus.NO_ENOUGH_SESSIONS;
+    }
+
     const hasSessions = sessions.total > 0;
     const isATieBayesianSuggestionWinner =
-        bayesianResult.suggestedWinner === BayesianStatusResponse.TIE;
+        bayesianResult?.suggestedWinner === BayesianStatusResponse.TIE;
     const isNoneBayesianSuggestionWinner =
-        bayesianResult.suggestedWinner === BayesianStatusResponse.NONE;
+        bayesianResult?.suggestedWinner === BayesianStatusResponse.NONE;
 
     if (!hasSessions || isNoneBayesianSuggestionWinner) {
         return experiment.status === DotExperimentStatus.ENDED
@@ -168,7 +172,7 @@ export const getBayesianDatasets = (
     const { sessions, bayesianResult } = results;
 
     // If we don't have a suggested winner, return an empty array
-    if (bayesianResult.suggestedWinner === BayesianStatusResponse.NONE) {
+    if (!bayesianResult || bayesianResult.suggestedWinner === BayesianStatusResponse.NONE) {
         return [];
     }
 

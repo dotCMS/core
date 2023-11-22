@@ -3,6 +3,8 @@ package com.dotcms.model.language;
 import com.dotcms.model.annotation.ValueType;
 import com.dotcms.model.views.CommonViews;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.Optional;
@@ -12,6 +14,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonDeserialize(as = Language.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(Include.NON_EMPTY)
 public interface AbstractLanguage {
 
     String TYPE = "Language";
