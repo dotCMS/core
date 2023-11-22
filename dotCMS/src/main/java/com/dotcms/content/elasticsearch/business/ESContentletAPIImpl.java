@@ -6971,13 +6971,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             "] in contentlet", e);
                     continue;
                 }
-                if (s.length() > 255) {
-                    hasError = true;
-                    cve.addMaxLengthField(field);
-                    Logger.warn(this, "Value of String field [" + field.getVelocityVarName() + "] is greater than 255" +
-                            " characters");
-                    continue;
-                }
             }
 
             // validate regex

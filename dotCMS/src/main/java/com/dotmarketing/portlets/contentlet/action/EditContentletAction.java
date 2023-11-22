@@ -1485,12 +1485,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					ae.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.required", field.getFieldName()));
 				}
 			}
-			if(ve.hasLengthErrors()){
-				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH);
-				for (Field field : reqs) {
-					ae.add(Globals.ERROR_KEY, new ActionMessage("message.contentlet.maxlength", field.getFieldName(),"255"));
-				}
-			}
 			if(ve.hasPatternErrors()){
 				List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_PATTERN);
 				for (Field field : reqs) {

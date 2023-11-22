@@ -4,7 +4,6 @@ import static com.dotmarketing.portlets.contentlet.business.DotContentletValidat
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY;
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BAD_REL;
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_INVALID_REL_CONTENT;
-import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH;
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_PATTERN;
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_REQUIRED;
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_REQUIRED_REL;
@@ -243,19 +242,6 @@ public class ExceptionUtil {
                     errorString = errorString.replace("{0}", field.getFieldName());
                     contentValidationErrors
                             .computeIfAbsent(VALIDATION_FAILED_REQUIRED, k -> new ArrayList<>())
-                            .add(new ValidationError(field.getVelocityVarName(), errorString));
-                }
-
-            }
-
-            if (ve.hasLengthErrors()) {
-                final List<Field> reqs = ve.getNotValidFields().get(VALIDATION_FAILED_MAXLENGTH);
-                for (final Field field : reqs) {
-                    String errorString = LanguageUtil.get(user, "message.contentlet.maxlength");
-                    errorString = errorString.replace("{0}", field.getFieldName());
-                    errorString = errorString.replace("{1}", "255");
-                    contentValidationErrors
-                            .computeIfAbsent(VALIDATION_FAILED_MAXLENGTH, k -> new ArrayList<>())
                             .add(new ValidationError(field.getVelocityVarName(), errorString));
                 }
 

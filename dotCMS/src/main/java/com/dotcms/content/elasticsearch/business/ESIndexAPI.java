@@ -388,6 +388,7 @@ public class ESIndexAPI {
 
 		List<String> indicesWithClusterPrefix = Arrays.stream(indexNames)
 				.map(this::getNameWithClusterIDPrefix).collect(Collectors.toList());
+		Logger.info(this.getClass(),"Deleting the following index: " + indicesWithClusterPrefix);
 		try {
 			DeleteIndexRequest request = new DeleteIndexRequest(indicesWithClusterPrefix
 					.toArray(new String[0]));

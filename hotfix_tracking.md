@@ -171,3 +171,4 @@ This maintenance release includes the following code fixes:
 141. https://github.com/dotCMS/core/issues/24885 : Define startup and liveness probes #24885
 142. https://github.com/dotCMS/core/issues/25613 : MonitorResource throws exception if DOT_SYSTEM_STATUS_API_IP_ACL is not set #25613
 143. https://github.com/dotCMS/core/issues/26481 : Pubsub Connection should prefer SSL #26481
+144. https://github.com/dotCMS/core/issues/26774 : text fields validation limit to 255 chars is not longer required #26774
