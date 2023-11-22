@@ -16,6 +16,7 @@ import { DotEditContentFieldComponent } from './dot-edit-content-field.component
 
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCheckboxFieldComponent } from '../../fields/dot-edit-content-checkbox-field/dot-edit-content-checkbox-field.component';
+import { DotEditContentCustomFieldComponent } from '../../fields/dot-edit-content-custom-field/dot-edit-content-custom-field.component';
 import { DotEditContentMultiSelectFieldComponent } from '../../fields/dot-edit-content-multi-select-field/dot-edit-content-multi-select-field.component';
 import { DotEditContentRadioFieldComponent } from '../../fields/dot-edit-content-radio-field/dot-edit-content-radio-field.component';
 import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-content-select-field/dot-edit-content-select-field.component';
@@ -54,7 +55,8 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown>> = {
     [FIELD_TYPES.CHECKBOX]: DotEditContentCheckboxFieldComponent,
     [FIELD_TYPES.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent,
     [FIELD_TYPES.BLOCK_EDITOR]: DotBlockEditorComponent,
-    [FIELD_TYPES.BINARY]: DotBinaryFieldComponent
+    [FIELD_TYPES.BINARY]: DotBinaryFieldComponent,
+    [FIELD_TYPES.CUSTOM_FIELD]: DotEditContentCustomFieldComponent
 };
 
 describe('FIELD_TYPES and FIELDS_MOCK', () => {
