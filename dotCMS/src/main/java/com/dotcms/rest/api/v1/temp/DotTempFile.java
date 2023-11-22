@@ -10,6 +10,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.vavr.control.Try;
 
 public class DotTempFile {
 
@@ -27,9 +28,8 @@ public class DotTempFile {
     super();
     this.id = id;
     this.file = file;
-    this.metadata = canRead(file)? APILocator.getFileStorageAPI().generateRawBasicMetaData(file):null;
-    this.mimeType= null != metadata && metadata.containsKey("contentType")?
-            (String) metadata.get("contentType"):FileAsset.UNKNOWN_MIME_TYPE;
+    this.metadata = canRead(file)? Try.of(()->APILocator.getFileStorageAPI().generateRawBasicMetaData(file)).getOrNull():null;
+    this.mimeType=  (null != metadata && metadata.containsKey("contentType"))? (String) metadata.get("contentType"):FileAsset.UNKNOWN_MIME_TYPE;
     this.image = UtilMethods.isImage(file.getName());
     this.referenceUrl = "/dA/" + id + "/tmp/" + file.getName() ;
     this.thumbnailUrl = this.image ? "/contentAsset/image/" + id + "/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/" +  file.getName() :null;
