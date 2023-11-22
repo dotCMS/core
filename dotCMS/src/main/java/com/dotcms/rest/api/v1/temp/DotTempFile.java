@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.temp;
 
 import java.io.File;
+import java.io.Serializable;
+import java.util.Map;
 
 import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.business.APILocator;
@@ -13,15 +15,21 @@ public class DotTempFile {
 
   public final String id,mimeType,referenceUrl,thumbnailUrl,fileName,folder;
   public final boolean image;
+  public final Map<String, Serializable> metadata;
 
   @JsonIgnore
   public final File file;
+
+
+
   
   public DotTempFile(final String id, final File file) {
     super();
     this.id = id;
     this.file = file;
-    this.mimeType= getMimeType(file);
+    this.metadata = canRead(file)? APILocator.getFileStorageAPI().generateRawBasicMetaData(file):null;
+    this.mimeType= null != metadata && metadata.containsKey("contentType")?
+            (String) metadata.get("contentType"):FileAsset.UNKNOWN_MIME_TYPE;
     this.image = UtilMethods.isImage(file.getName());
     this.referenceUrl = "/dA/" + id + "/tmp/" + file.getName() ;
     this.thumbnailUrl = this.image ? "/contentAsset/image/" + id + "/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/" +  file.getName() :null;
@@ -29,15 +37,8 @@ public class DotTempFile {
     this.folder = resolveFolder();
   }
 
-  private String getMimeType(final File file) {
-
-    String mimeType = APILocator.getFileAssetAPI().getMimeType(file.getName());
-    if (FileAsset.UNKNOWN_MIME_TYPE.equals(mimeType)) {
-
-      mimeType = MimeTypeUtils.getMimeType(file);
-    }
-
-    return mimeType;
+  private boolean canRead (final File file) {
+    return null != file && file.exists() && file.canRead();
   }
 
   @JsonProperty("length")
