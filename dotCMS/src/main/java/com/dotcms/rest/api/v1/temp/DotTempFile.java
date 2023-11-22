@@ -21,19 +21,17 @@ public class DotTempFile {
   @JsonIgnore
   public final File file;
 
-
-
-  
   public DotTempFile(final String id, final File file) {
     super();
     this.id = id;
     this.file = file;
+    final String fileName = null != file? file.getName(): "unknown";
     this.metadata = canRead(file)? Try.of(()->APILocator.getFileStorageAPI().generateRawBasicMetaData(file)).getOrNull():null;
     this.mimeType=  (null != metadata && metadata.containsKey("contentType"))? (String) metadata.get("contentType"):FileAsset.UNKNOWN_MIME_TYPE;
-    this.image = UtilMethods.isImage(file.getName());
-    this.referenceUrl = "/dA/" + id + "/tmp/" + file.getName() ;
-    this.thumbnailUrl = this.image ? "/contentAsset/image/" + id + "/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/" +  file.getName() :null;
-    this.fileName = file.getName();
+    this.image = UtilMethods.isImage(fileName);
+    this.referenceUrl = "/dA/" + id + "/tmp/" + fileName;
+    this.thumbnailUrl = this.image ? "/contentAsset/image/" + id + "/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/" +  fileName :null;
+    this.fileName = fileName;
     this.folder = resolveFolder();
   }
 
