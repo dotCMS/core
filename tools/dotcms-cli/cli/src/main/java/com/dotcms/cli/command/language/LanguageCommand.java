@@ -43,6 +43,9 @@ public class LanguageCommand implements Callable<Integer>, DotCommand {
     @CommandLine.Spec
      CommandLine.Model.CommandSpec spec;
 
+    @CommandLine.Unmatched // avoids throwing errors for unmatched arguments
+    List<String> unmatchedArgs;
+
     @Override
     public Integer call() throws Exception {
         output.throwIfUnmatchedArguments(spec.commandLine());
