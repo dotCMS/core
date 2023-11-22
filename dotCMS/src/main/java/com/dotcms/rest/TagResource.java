@@ -56,7 +56,7 @@ import static com.dotmarketing.util.UUIDUtil.isUUID;
  * @see com.dotcms.rest.api.v2.tags.TagResource
  */
 @Path("/v1/tags")
-@Deprecated(since = "23.12")
+@Deprecated(since = "23.12") 
 public class TagResource {
 
     private static final String TAGS = "tags";
