@@ -7,12 +7,15 @@ import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { ConfirmationService } from 'primeng/api';
+
 import { DotEmaComponent } from './dot-ema.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
+import { AddContentletPayload } from '../shared/models';
 
 describe('DotEmaComponent', () => {
     let spectator: Spectator<DotEmaComponent>;
@@ -24,6 +27,7 @@ describe('DotEmaComponent', () => {
         detectChanges: false,
         componentProviders: [
             EditEmaStore,
+            ConfirmationService,
             {
                 provide: DotPageApiService,
                 useValue: {
@@ -193,10 +197,17 @@ describe('DotEmaComponent', () => {
                 new MessageEvent('message', {
                     origin: 'http://localhost:3000',
                     data: {
-                        action: 'edit-contentlet',
+                        action: 'add-contentlet',
                         payload: {
-                            inode: '123'
-                        }
+                            pageContainers: [],
+                            container: {
+                                identifier: 'test',
+                                acceptTypes: 'test',
+                                uuid: 'test',
+                                contentletsId: []
+                            },
+                            pageID: 'test'
+                        } as AddContentletPayload
                     }
                 })
             );
