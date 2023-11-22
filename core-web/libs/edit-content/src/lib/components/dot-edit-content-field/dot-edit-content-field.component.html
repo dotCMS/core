@@ -48,6 +48,11 @@
         [field]="field"
         [attr.data-testId]="'field-' + field.variable" />
 
+    <dot-edit-content-json-field
+        *ngSwitchCase="fieldTypes.JSON"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
+
     <dot-edit-content-binary-field
         *ngSwitchCase="fieldTypes.BINARY"
         [formControlName]="field.variable"
