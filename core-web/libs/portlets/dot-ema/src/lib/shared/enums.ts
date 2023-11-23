@@ -1,6 +1,7 @@
 export enum CUSTOMER_ACTIONS {
     EDIT_CONTENTLET = 'edit-contentlet', // The customer hit edit button
     ADD_CONTENTLET = 'add-contentlet', // The customer hit add button
+    SET_URL = 'set-url', // The customer hit add button
     NOOP = 'noop'
 }
 
