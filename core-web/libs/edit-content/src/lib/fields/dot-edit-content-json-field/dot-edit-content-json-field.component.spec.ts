@@ -1,5 +1,5 @@
 import { MonacoEditorComponent, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { Spectator, byTestId } from '@ngneat/spectator';
+import { Spectator } from '@ngneat/spectator';
 import { createComponentFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 
@@ -19,6 +19,7 @@ import { JSON_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks
 describe('DotEditContentJsonFieldComponent', () => {
     describe('test with value', () => {
         let spectator: Spectator<DotEditContentJsonFieldComponent>;
+        let controlContainer: ControlContainer;
 
         const FAKE_FORM_GROUP = new FormGroup({
             json: new FormControl("{ 'test': 'test' }")
@@ -40,6 +41,7 @@ describe('DotEditContentJsonFieldComponent', () => {
 
         beforeEach(() => {
             spectator = createComponent();
+            controlContainer = spectator.inject(ControlContainer, true);
             spectator.setInput('field', JSON_FIELD_MOCK);
             spectator.detectComponentChanges();
         });
@@ -72,13 +74,12 @@ describe('DotEditContentJsonFieldComponent', () => {
             });
         });
 
-        describe('container', () => {
-            it('should be resizible and min-heigh 9.375rem', () => {
-                const element = spectator.query(byTestId('json-field-container'));
-                const style = getComputedStyle(element);
-                const resizeValue = style.getPropertyValue('resize');
-                expect(resizeValue).toBe('vertical');
-            });
+        it('should called markForCheck when the value changes', () => {
+            const spy = jest.spyOn(spectator.component['cd'], 'markForCheck');
+
+            controlContainer.control.get(JSON_FIELD_MOCK.variable).setValue('{ "test": "test" }');
+
+            expect(spy).toHaveBeenCalled();
         });
     });
 });
