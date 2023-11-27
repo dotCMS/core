@@ -25,9 +25,12 @@ export function insertContentletInContainer({
     contentletID: string;
 }): Container[] {
     return pageContainers.map((currentContainer) => {
-        areContainersEquals(currentContainer, container) &&
-            !currentContainer.contentletsId.find((id) => id === contentletID) &&
+        if (
+            areContainersEquals(currentContainer, container) &&
+            !currentContainer.contentletsId.includes(contentletID)
+        ) {
             currentContainer.contentletsId.push(contentletID);
+        }
 
         return currentContainer;
     });
@@ -57,12 +60,16 @@ export function deleteContentletFromContainer({
     container: Container;
     contentletID: string;
 }): Container[] {
-    return pageContainers.map((currentContainer) => ({
-        ...currentContainer,
-        contentletsId: areContainersEquals(currentContainer, container)
-            ? currentContainer.contentletsId.filter((id) => id !== contentletID)
-            : currentContainer.contentletsId
-    }));
+    return pageContainers.map((currentContainer) => {
+        if (areContainersEquals(currentContainer, container)) {
+            return {
+                ...currentContainer,
+                contentletsId: currentContainer.contentletsId.filter((id) => id !== contentletID)
+            };
+        }
+
+        return currentContainer;
+    });
 }
 
 /**

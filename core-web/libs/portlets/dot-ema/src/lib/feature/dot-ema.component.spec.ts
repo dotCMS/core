@@ -445,12 +445,13 @@ describe('DotEmaComponent', () => {
                 expect(dialog).toBeTruthy();
             });
 
-            it('should have a confirm dialog', () => {
+            it('should have a confirm dialog with acceptIcon and rejectIcon attribute', () => {
                 spectator.detectChanges();
 
                 const confirmDialog = spectator.query(byTestId('confirm-dialog'));
 
-                expect(confirmDialog).toBeTruthy();
+                expect(confirmDialog.getAttribute('acceptIcon')).toBeNull();
+                expect(confirmDialog.getAttribute('rejectIcon')).toBeNull();
             });
         });
     });
