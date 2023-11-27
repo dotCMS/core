@@ -20,16 +20,20 @@ import com.dotcms.rendering.js.viewtools.WorkflowJsViewTool;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.util.FileUtil;
 import com.oracle.truffle.js.lang.JavaScriptLanguage;
+import com.oracle.truffle.js.runtime.builtins.JSPromise;
+import com.oracle.truffle.js.runtime.builtins.JSPromiseObject;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.tools.view.context.ChainedContext;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
 
@@ -161,6 +165,8 @@ public class JsEngine implements ScriptEngine {
                         eval.execute(buildArgs(jsRequest, jsResponse, null));
             }
 
+            checkRejected (eval);
+
             if (eval.isHostObject()) {
                 return eval.asHostObject();
             }
@@ -180,6 +186,20 @@ public class JsEngine implements ScriptEngine {
 
             Logger.error(this, e.getMessage(), e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private void checkRejected(final Value eval) {
+
+        try {
+            final JSPromiseObject promise = eval.as(JSPromiseObject.class);
+            if (promise.getPromiseState() == JSPromise.REJECTED) {
+
+                throw new DotRuntimeException("Promise rejected: " + eval.toString());
+            }
+        } catch (ClassCastException e) {
+
+            Logger.error(this, e.getMessage(), e);
         }
     }
 
