@@ -883,4 +883,26 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 	}
 
+	/**
+	 * Method to test: {@link com.dotcms.contenttype.business.ContentTypeFactoryImpl#countContentTypeAssignedToNotSystemWorkflow()}
+	 * When: Call the method and after create a new ContentType and not assigned any Worflow
+	 * and call the method again
+	 * Should: get the same count on the two called
+	 *
+	 * @throws DotDataException
+	 */
+	@Test
+	public void whenContentTypeNotHasAnyWorkflow() throws DotDataException {
+		final long countBefore = FactoryLocator.getContentTypeFactory()
+				.countContentTypeAssignedToNotSystemWorkflow();
+
+		final  ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+		final long countAfter = FactoryLocator.getContentTypeFactory()
+				.countContentTypeAssignedToNotSystemWorkflow();
+
+		assertEquals(countBefore, countAfter);
+
+	}
+
 }
