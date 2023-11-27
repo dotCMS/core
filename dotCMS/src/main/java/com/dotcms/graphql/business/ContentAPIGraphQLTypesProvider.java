@@ -268,7 +268,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     public boolean isFieldVariableGraphQLCompatible(final String variable, final Field field) {
         final Map<String, TypeUtil.TypeFetcher> reservedContentFields = ContentFields.getContentFields();
         // first let's check if there's an inherited field with the same variable
-        for (String key : reservedContentFields.keySet()) {
+        for (final String key : reservedContentFields.keySet()) {
             if (key.equalsIgnoreCase(variable)) {
                 // now let's check if the graphql types are compatible
 
