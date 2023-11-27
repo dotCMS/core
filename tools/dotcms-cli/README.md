@@ -205,7 +205,7 @@ dotcms.client.servers.demo=https://demo.dotcms.com/api
 Notice how the `dotcms.client.servers` property has a suffix matching the profile name in the `dot-services.yml` file.
 
 Therefore, in order to add a new instance profile, you need to add a new entry in the `dot-services.yml` file and a new property extending the `application.properties` file.
-Application properties can be extended via system properties, environment variables, `.evn` file or in `$PWD/config/application.properties` file.
+Application properties can be extended via system properties, environment variables, `.env` file or in `$PWD/config/application.properties` file.
 To learn more about how to extend the `application.properties` file see the Quarkus configuration guide [Here](https://es.quarkus.io/guides/config-reference#application-properties-file) 
 
 In future versions this process will be facilitated by the CLI itself.
@@ -238,8 +238,8 @@ In order to incorporate the CLI into your GitHub Actions workflow, you need to:
 - In Your repository General Settings, Secrets and variables, Actions
   - Create a new variable called `DOT_API_URL` and set the value to a valid dotCMS URL. e.g. `https://demo.dotcms.com/api`
   - Create a new secret called `DOT_TOKEN` and set the value to a valid dotCMS CLI token.  
--  Seed your local repository with a CLI workspace. 
-  -  A cli workspace can be created by running any pull command e.g. `java -jar dotcms-cli.jar files pull //demo.dotcms.com`  
+-  Seed your local repository with a CLI workspace 
+  -  A cli workspace can be created by running any pull command e.g. `java -jar dotcli.jar files pull //demo.dotcms.com`  
   -  Run any pull command from the root of your project see [examples](#examples) section.
   -  A valid CLI workspace should contain a `.dot-worspace` file in the root of your project. Make sure to commit this file to your repository and the others that conform your workspace see the [workspace](#workspace) section. 
   -  Commit and push the changes to your repository. 
