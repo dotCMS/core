@@ -11,7 +11,7 @@ import { filter, skip, takeUntil } from 'rxjs/operators';
 import { Editor } from '@tiptap/core';
 
 import { AIImagePromptComponent } from '../ai-image-prompt.component';
-import { AI_IMAGE_PROMPT_PLUGIN_KEY } from '../ai-image-prompt.extension';
+import { AI_IMAGE_PROMPT_PLUGIN_KEY, DOT_AI_IMAGE_CONTENT_KEY } from '../ai-image-prompt.extension';
 import { DotAiImagePromptStore } from '../ai-image-prompt.store';
 
 interface AIImagePromptProps {
@@ -91,9 +91,8 @@ export class AIImagePromptView {
                 takeUntil(this.destroy$)
             )
             .subscribe(() => {
-                this.editor.commands.insertLoaderNode();
                 this.component.instance.hideDialog();
-                this.editor.commands.closeImagePrompt();
+                this.editor.chain().insertLoaderNode().closeImagePrompt().run();
             });
 
         /**
@@ -107,9 +106,12 @@ export class AIImagePromptView {
             .subscribe((contentlets) => {
                 const data = Object.values(contentlets[0])[0];
 
-                this.editor.commands.deleteSelection();
-                this.editor.commands.insertImage(data);
-                this.editor.commands.openAIContentActions('image');
+                this.editor
+                    .chain()
+                    .deleteSelection()
+                    .insertImage(data)
+                    .openAIContentActions(DOT_AI_IMAGE_CONTENT_KEY)
+                    .run();
             });
     }
 

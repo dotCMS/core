@@ -72,14 +72,9 @@ export class AIImagePromptComponent {
      * Generates an image based on the provided prompt.
      *
      * @param {string} prompt - The text prompt used to generate the image.
-     * @param promptType
      * @return {void} - This method does not return any value.
      */
-    generateImage(prompt: string, promptType: PromptType): void {
-        if (promptType === 'input') {
-            this.store.generateImage(prompt);
-        } else if (promptType === 'auto') {
-            this.store.generateImageUsingBlockEditorContent(prompt);
-        }
+    generateImage(prompt: string): void {
+        this.store.generateImage(prompt);
     }
 }

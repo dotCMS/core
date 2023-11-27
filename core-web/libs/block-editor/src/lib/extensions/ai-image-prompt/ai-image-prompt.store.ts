@@ -1,20 +1,22 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
+import { map, switchMap, withLatestFrom } from 'rxjs/operators';
 
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { PromptType } from './ai-image-prompt.models';
 
-import { AiContentService } from '../../shared';
+import { DotAiService } from '../../shared';
+
+const DEFAULT_INPUT_PROMPT: PromptType = 'input';
 
 export interface DotAiImagePromptComponentState {
     showDialog: boolean;
     selectedPromptType: PromptType | null;
-    prompt: string | null;
+    prompt: string | null; // always will have the final prompt
     editorContent: string | null;
     contentlets: DotCMSContentlet[] | [];
     status: ComponentStatus;
@@ -51,7 +53,7 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
     readonly showDialog = this.updater((state, editorContent: string) => ({
         ...state,
         showDialog: true,
-        selectedPromptType: 'input',
+        selectedPromptType: DEFAULT_INPUT_PROMPT,
         editorContent
     }));
 
@@ -84,11 +86,16 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
 
     readonly generateImage = this.effect((prompt$: Observable<string>) => {
         return prompt$.pipe(
-            tap((prompt) => {
-                this.patchState({ status: ComponentStatus.LOADING, prompt });
-            }),
-            switchMap((prompt) => {
-                return this.aiContentService.generateAndPublishImage(prompt).pipe(
+            withLatestFrom(this.state$),
+            switchMap(([prompt, { selectedPromptType, editorContent }]) => {
+                const finalPrompt =
+                    selectedPromptType === 'auto' && editorContent
+                        ? `${prompt} ${editorContent}`
+                        : prompt;
+
+                this.patchState({ status: ComponentStatus.LOADING, prompt: finalPrompt });
+
+                return this.dotAiService.generateAndPublishImage(finalPrompt).pipe(
                     tapResponse(
                         (contentLets) => {
                             this.patchState({
@@ -97,10 +104,7 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                             });
                         },
                         () => {
-                            // TODO: handle errors
-                            this.patchState({
-                                status: ComponentStatus.IDLE
-                            });
+                            this.patchState({ status: ComponentStatus.IDLE });
                         }
                     )
                 );
@@ -108,36 +112,17 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         );
     });
 
-    readonly generateImageUsingBlockEditorContent = this.effect((prompt$: Observable<string>) => {
-        return prompt$.pipe(
-            tap((prompt) => {
-                this.patchState({ status: ComponentStatus.LOADING, prompt });
-            }),
-            withLatestFrom(this.editorContent$),
-            switchMap(([prompt, editorContent]) => {
-                const promptWithEditorContent = `${prompt} ${editorContent}`;
-
-                return this.aiContentService.generateAndPublishImage(promptWithEditorContent).pipe(
-                    tapResponse(
-                        (contentLets) => {
-                            this.patchState({
-                                status: ComponentStatus.IDLE,
-                                contentlets: contentLets
-                            });
-                        },
-                        () => {
-                            // TODO: handle errors
-                            this.patchState({
-                                status: ComponentStatus.IDLE
-                            });
-                        }
-                    )
-                );
+    readonly reGenerateContent = this.effect((trigger$: Observable<void>) => {
+        return trigger$.pipe(
+            withLatestFrom(this.state$),
+            map(([_, { prompt }]) => {
+                if (!prompt) return;
+                this.generateImage(of(prompt));
             })
         );
     });
 
-    constructor(private aiContentService: AiContentService) {
+    constructor(private dotAiService: DotAiService) {
         super(initialState);
     }
 }
