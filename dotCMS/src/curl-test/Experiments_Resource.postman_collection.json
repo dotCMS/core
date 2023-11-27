@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "a5e961b4-fc0c-4ccb-bcaa-3ff33a2fa948",
+		"_postman_id": "c234271c-cb31-4b51-9b3e-c1324a990e10",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "30436704"
 	},
 	"item": [
 		{
@@ -571,7 +571,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+							"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -3217,7 +3217,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+							"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -3490,7 +3490,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"pageId\": \"9044ec0fdb3788a814ccabf789f376d4\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+							"raw": "{\n    \"pageId\": \"9044ec0fdb3788a814ccabf789f376d4\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -5012,7 +5012,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -5128,9 +5128,6 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
 											"",
 											"});",
 											"",
@@ -5160,7 +5157,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -5520,7 +5517,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -5636,9 +5633,7 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
+											"",
 											"",
 											"});",
 											"",
@@ -5668,7 +5663,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -5963,7 +5958,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -6079,9 +6074,7 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
+											"",
 											"",
 											"});",
 											"",
@@ -6111,7 +6104,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -7140,10 +7133,7 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"queryParameter\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value.name).equal(\"testName\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value.value).equal(\"testValue\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"REGEX\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"visitBefore\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"^(http|https):\\\\/\\\\/(localhost|127.0.0.1|\\\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\\\.)+[a-z]{2,})(:\\\\d{1,5})?\\\\/my-page(\\\\/?\\\\?.*)?$\");",
+											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value.value).equal(\"testValue\")",
 											"",
 											"});",
 											"",
@@ -7216,9 +7206,6 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"queryParameter\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value.name).equal(\"testName\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value.value).equal(\"testValue\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"REGEX\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"visitBefore\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"^(http|https):\\\\/\\\\/(localhost|127.0.0.1|\\\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\\\.)+[a-z]{2,})(:\\\\d{1,5})?\\\\/my-page(\\\\/?\\\\?.*)?$\");",
 											"",
 											"});",
 											"",
@@ -7292,9 +7279,6 @@
 									"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 									"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
 									"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
-									"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
-									"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
-									"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
 									"",
 									"});",
 									"",
@@ -7324,7 +7308,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+							"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -7456,7 +7440,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+							"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n\n            ]\n        }\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -7815,7 +7799,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -7931,9 +7915,6 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
 											"",
 											"});",
 											"",
@@ -7963,7 +7944,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -8117,7 +8098,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -8233,9 +8214,7 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
+											"",
 											"",
 											"});",
 											"",
@@ -8265,7 +8244,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -8640,7 +8619,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -8756,9 +8735,6 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
 											"",
 											"});",
 											"",
@@ -8788,7 +8764,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -9289,9 +9265,6 @@
 									"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 									"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
 									"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
-									"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
-									"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
-									"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
 									"",
 									"});",
 									"",
@@ -9321,7 +9294,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+							"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -9606,7 +9579,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+							"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -9648,9 +9621,7 @@
 									"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 									"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
 									"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
-									"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
-									"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
-									"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
+									"",
 									"    pm.expect(jsonData.entity.targetingConditions.length).equal(3);",
 									"",
 									"});",
@@ -9725,9 +9696,7 @@
 									"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 									"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
 									"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
-									"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
-									"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
-									"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
+									"",
 									"    pm.expect(jsonData.entity.targetingConditions.length).equal(3);",
 									"",
 									"});",
@@ -9980,7 +9949,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+							"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -10096,9 +10065,7 @@
 									"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 									"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
 									"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
-									"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
-									"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
-									"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
+									"",
 									"",
 									"});",
 									"",
@@ -10128,7 +10095,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+							"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -10486,7 +10453,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -10602,9 +10569,6 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
 											"",
 											"});",
 											"",
@@ -10634,7 +10598,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -10844,7 +10808,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -10960,9 +10924,6 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
 											"",
 											"});",
 											"",
@@ -10992,7 +10953,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -11202,7 +11163,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -11318,9 +11279,7 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
+											"",
 											"",
 											"});",
 											"",
@@ -11350,7 +11309,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -11560,7 +11519,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -11676,9 +11635,7 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
+											"",
 											"",
 											"});",
 											"",
@@ -11708,7 +11665,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -11918,7 +11875,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -12034,9 +11991,7 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
+											"",
 											"",
 											"});",
 											"",
@@ -12066,7 +12021,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -12364,7 +12319,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -12480,9 +12435,7 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
+											"",
 											"",
 											"});",
 											"",
@@ -12512,7 +12465,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -12790,7 +12743,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"Experiment to Start\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"Experiment to Start\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -12906,9 +12859,7 @@
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
 											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
-											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
+											"",
 											"",
 											"});",
 											"",
@@ -12938,7 +12889,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -13096,6 +13047,950 @@
 					]
 				}
 			]
+		},
+		{
+			"name": "Add Spanish Contentlet inside Variant",
+			"item": [
+				{
+					"name": "Create a Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"contentTypeIdAddSpanishContent\", jsonData.entity[0].id);",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"defaultType\":false,\n    \"icon\":null,\n    \"fixed\":false,\n    \"system\":false,\n    \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\":\"\",\n    \"host\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"folder\":\"SYSTEM_FOLDER\",\n    \"name\":\"ContentType_Add Spanish Contentlet inside Variant\",\n    \"systemActionMappings\":{\"NEW\":\"\"},\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Field to Content Type",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"layout\":[\n        {\"divider\":{\n            \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"contentTypeId\":\"{{contentTypeIdAddSpanishContent}}\",\n            \"dataType\":\"SYSTEM\",\n            \"fieldContentTypeProperties\":[],\n            \"fieldType\":\"Row\",\n            \"fieldTypeLabel\":\"Row\",\n            \"fieldVariables\":[],\n            \"fixed\":false,\n            \"iDate\":1667572217000,\n            \"indexed\":false,\n            \"listed\":false,\n            \"modDate\":1667572217000,\n            \"name\":\"Row Field\",\n            \"readOnly\":false,\n            \"required\":false,\n            \"searchable\":false,\n            \"sortOrder\":-1,\n            \"unique\":false},\n            \"columns\":[\n                {\n                    \"columnDivider\":{\n                        \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n                        \"contentTypeId\":\"{{contentTypeIdAddSpanishContent}}\",\n                        \"dataType\":\"SYSTEM\",\n                        \"fieldContentTypeProperties\":[],\n                        \"fieldType\":\"Column\",\n                        \"fieldTypeLabel\":\"Column\",\n                        \"fieldVariables\":[],\n                        \"fixed\":false,\n                        \"iDate\":1667572217000,\n                        \"indexed\":false,\n                        \"listed\":false,\n                        \"modDate\":1667572217000,\n                        \"name\":\"Column Field\",\n                        \"readOnly\":false,\n                        \"required\":false,\n                        \"searchable\":false,\n                        \"sortOrder\":-1,\n                        \"unique\":false\n                    },\n                    \"fields\":[\n                        {\n                            \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                            \"name\":\"title\",\n                            \"dataType\":\"TEXT\",\n                            \"regexCheck\":\"\",\n                            \"defaultValue\":\"\",\n                            \"hint\":\"\",\n                            \"required\":false,\n                            \"searchable\":false,\n                            \"indexed\":false,\n                            \"listed\":false,\n                            \"unique\":false,\n                            \"id\":null\n                        }\n                    ]\n                }\n            ]\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v3/contenttype/{{contentTypeIdAddSpanishContent}}/fields/move",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v3",
+								"contenttype",
+								"{{contentTypeIdAddSpanishContent}}",
+								"fields",
+								"move"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Container",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"spanish_content_container_id\", jsonData.entity.identifier);",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"container_add_spanish_contentlet_inside_variant\",\n    \"friendlyName\": \"container_add_spanish_contentlet_inside_variant\",\n    \"maxContentlets\": 1,\n    \"containerStructures\": [{\n        \"structureId\": \"{{contentTypeIdAddSpanishContent}}\",\n        \"maxContentlets\": 1,\n        \"code\": \"$!{dotContentMap.title}\"\n    }]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Template",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"spanish_content_template_id\", jsonData.entity.identifier);",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\t\t\n    \"layout\":{\n        \"body\":{\n            \"rows\":[\n                {\n                    \"styleClass\":\"\",\n                    \"columns\":[\n                        {\n                            \"styleClass\":\"\",\n                            \"leftOffset\":1,\n                            \"width\":12,\n                            \"containers\":[\n                                {\"identifier\":\"{{spanish_content_container_id}}\"}\n                            ]\n                        }\n                    ]\n                }\n            ]\n        }    \n    },\n    \"friendlyName\": \"\",\n    \"title\": \"spanish_content_template\",\n    \"theme\": \"SYSTEM_THEME\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Pubish Templates",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{spanish_content_template_id}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_publish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_publish"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create page 1 And Publish",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"page_version_spanish_content\", jsonData.entity.identifier);",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"page_version_spanish_content\",\n        \"languageId\" : 1,\n        \"stInode\": \"c541abb1-69b3-4bc5-8430-5e09e5239cc8\",\n        \"url\": \"page_version_spanish_content\",\n        \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n        \"template\": \"{{spanish_content_template_id}}\",\n        \"cachettl\": 0,\n        \"friendlyName\": \"friendlyName\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create contentlet_1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"spanish_content_content1_id\", jsonData.entity.identifier);",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"content_1\",\n        \"languageId\" : 1,\n        \"stInode\": \"{{contentTypeIdAddSpanishContent}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create another lang",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"spanish_content_another_lang_id\", jsonData.entity.id);",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"languageCode\":\"sc\",\n\t\"language\":\"Spanish Content Testing Languege\", \n\t\"countryCode\":\"SC\", \n\t\"country\":\"Testing Conuntry\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create contentlet_2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"spanish_content_content2_id\", jsonData.entity.identifier);",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"content_2\",\n        \"languageId\" : {{spanish_content_another_lang_id}},\n        \"stInode\": \"{{contentTypeIdAddSpanishContent}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add contetlet into DEFAULT variant",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Variants with correct weight\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n    {\n    \"contentletsId\": [\"{{spanish_content_content1_id}}\"],\n    \"identifier\": \"{{spanish_content_container_id}}\",\n    \"uuid\": \"1\" \n    }   \n]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{page_version_spanish_content}}/content",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{page_version_spanish_content}}",
+								"content"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Render Page 1 IN PREVIEW MODE after create",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonBody = JSON.parse(jsonData.entity.template.drawedBody);",
+									"var containerId = pm.collectionVariables.get(\"spanish_content_container_id\");",
+									"",
+									"pm.expect(jsonBody.body.rows[0].columns[0].width).to.equal(12);",
+									"pm.expect(jsonBody.body.rows[0].columns[0].containers[0].identifier).to.equal(containerId);",
+									"",
+									"var render = jsonData.entity.containers[containerId].rendered['uuid-1'];",
+									"",
+									"pm.expect(\"content_1\").to.equal(render);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/page_version_spanish_content?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=PREVIEW_MODE",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"page_version_spanish_content"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
+								{
+									"key": "language_id",
+									"value": "1"
+								},
+								{
+									"key": "mode",
+									"value": "PREVIEW_MODE"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createDraftExperiment_shoudSucceed",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"spanish_content_experimentId\", jsonData.entity.id);",
+									"pm.collectionVariables.set(\"spanish_content_experimentShortId\", jsonData.entity.id.substring(0, 11).replace('-', ''));",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pageId\": \"{{page_version_spanish_content}}\",\n    \"name\": \"Add Spanish Content Version\",\n    \"description\": \"\" \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/experiments/",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"experiments",
+								""
+							]
+						},
+						"description": "Create a new Experiment named \"Add/Remove content Experiment\" with the page created in the previous request."
+					},
+					"response": []
+				},
+				{
+					"name": "addVariantToExperiment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"pm.test(\"Variants with correct weight\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"description\": \"Variant to Add Spanish Version in a Variant\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/experiments/{{spanish_content_experimentId}}/variants",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"experiments",
+								"{{spanish_content_experimentId}}",
+								"variants"
+							]
+						},
+						"description": "Create a new variant into the previous created experiment"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Contentlet into a specific variant",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Variants with correct weight\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n    {\n    \"contentletsId\": [\"{{spanish_content_content2_id}}\"],\n    \"identifier\": \"{{spanish_content_container_id}}\",\n    \"uuid\": \"1\" \n    }   \n]\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{page_version_spanish_content}}/content?variantName=dotexperiment-{{spanish_content_experimentShortId}}-variant-1&language_id={{spanish_content_another_lang_id}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{page_version_spanish_content}}",
+								"content"
+							],
+							"query": [
+								{
+									"key": "variantName",
+									"value": "dotexperiment-{{spanish_content_experimentShortId}}-variant-1"
+								},
+								{
+									"key": "language_id",
+									"value": "{{spanish_content_another_lang_id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Render Page 1 IN PREVIEW MODE after create",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonBody = JSON.parse(jsonData.entity.template.drawedBody);",
+									"var containerId = pm.collectionVariables.get(\"spanish_content_container_id\");",
+									"",
+									"pm.expect(jsonBody.body.rows[0].columns[0].width).to.equal(12);",
+									"pm.expect(jsonBody.body.rows[0].columns[0].containers[0].identifier).to.equal(containerId);",
+									"",
+									"var render = jsonData.entity.containers[containerId].rendered['uuid-1'];",
+									"",
+									"pm.expect(\"content_2\").to.equal(render);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/page_version_spanish_content?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id={{spanish_content_another_lang_id}}&mode=PREVIEW_MODE&variantName=dotexperiment-{{spanish_content_experimentShortId}}-variant-1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"page_version_spanish_content"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
+								{
+									"key": "language_id",
+									"value": "{{spanish_content_another_lang_id}}"
+								},
+								{
+									"key": "mode",
+									"value": "PREVIEW_MODE"
+								},
+								{
+									"key": "variantName",
+									"value": "dotexperiment-{{spanish_content_experimentShortId}}-variant-1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Steps:\n\n1. Create one drawed Templates with:\n    \n\nName: should_have_same_template_to_LIVE_and_working_1\n\nBody: Add the SYSTEM_CONTAINER with a with of 12\n\nPublish it.\n\n2\\. Create a Page with DEFAULT lang and using the \"should_have_same_template_to_LIVE_and_working_1\" template\n\n3\\. Render the Page in LIVE and PREVIEW MODE and check that the layout have the SYSTEM_CONTAINER with a width of 12.\n\n4\\. Change the page's Template to \"should_have_same_template_to_LIVE_and_working_2\" and just save.\n\n6\\. Render both Page version and check that now the results is \"Template 2\" for both."
 		}
 	],
 	"variable": [
@@ -13265,6 +14160,46 @@
 		},
 		{
 			"key": "experimentToStartNow_delete",
+			"value": ""
+		},
+		{
+			"key": "contentTypeIdAddSpanishContent",
+			"value": ""
+		},
+		{
+			"key": "spanish_content_container_id",
+			"value": ""
+		},
+		{
+			"key": "spanish_content_template_id",
+			"value": ""
+		},
+		{
+			"key": "page_version_spanish_content_",
+			"value": ""
+		},
+		{
+			"key": "page_version_spanish_content",
+			"value": ""
+		},
+		{
+			"key": "spanish_content_content1_id",
+			"value": ""
+		},
+		{
+			"key": "spanish_content_another_lang_id",
+			"value": ""
+		},
+		{
+			"key": "spanish_content_content2_id",
+			"value": ""
+		},
+		{
+			"key": "spanish_content_experimentId",
+			"value": ""
+		},
+		{
+			"key": "spanish_content_experimentShortId",
 			"value": ""
 		}
 	]

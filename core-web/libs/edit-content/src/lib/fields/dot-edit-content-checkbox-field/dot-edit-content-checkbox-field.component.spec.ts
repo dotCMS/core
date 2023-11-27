@@ -97,6 +97,7 @@ describe('DotEditContentCheckboxFieldComponent', () => {
         it('should have label with for atritbute and text equal to checkbox options', () => {
             spectator.setInput('field', CHECKBOX_FIELD_MOCK);
             spectator.detectComponentChanges();
+
             spectator.queryAll(Checkbox).forEach((checkbox) => {
                 expect(spectator.query(`label[for="${checkbox.inputId}"]`)).toBeTruthy();
                 expect(spectator.query(`label[for="${checkbox.inputId}"]`).textContent).toEqual(

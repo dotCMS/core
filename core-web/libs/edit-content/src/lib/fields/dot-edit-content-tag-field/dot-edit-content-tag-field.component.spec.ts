@@ -42,7 +42,7 @@ describe('DotEditContentTagFieldComponent', () => {
 
     test.each([
         {
-            variable: TAG_FIELD_MOCK.variable,
+            variable: `tag-id-${TAG_FIELD_MOCK.variable}`,
             attribute: 'id'
         },
         {

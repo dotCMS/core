@@ -493,8 +493,8 @@ jobs:
   linux-postman-tests:
     name: Run Postman Tests - ${{matrix.collection_group}}
     runs-on: ubuntu-latest
-    needs: build-jdk11
-    if: "github.repository == 'dotCMS/core' || !endsWith(github.ref, '/master')"
+    needs: [build-jdk11, changes]
+    if: ${{ needs.changes.outputs.backend == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -503,9 +503,7 @@ jobs:
       - id: fetch-core
         name: Fetch Core Repo
         uses: actions/checkout@v3
-
-      - run: npm install --location=global newman
-
+      - run: sudo npm install --location=global newman@5.3.2
       - id: docker-login
         name: Login to GHCR
         uses: docker/login-action@v3.0.0
@@ -513,50 +511,46 @@ jobs:
           registry: ghcr.io
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.GHCR_TOKEN }}
-
       - id: resolve-postman-collections
         uses: ./.github/actions/resolve-postman-collections
         with:
           current: ${{ matrix.collection_group }}
-
       - name: Prepare license
         run: |
           mkdir -p dotcms-postman/license
           touch dotcms-postman/license/license.dat
           echo "${{ secrets.DOTCMS_LICENSE }}" > dotcms-postman/license/license.dat
           chmod 777 dotcms-postman/license/license.dat
-
       - id: run-postman-tests
         name: Run Postman Tests
         timeout-minutes: 90
         run: |
-          collections="${{ steps.resolve-postman-collections.outputs.collections_to_run }}"
-          #export DOTCMS_IMAGE='dotcms/dotcms:latest'
-          export DOTCMS_IMAGE="${{ needs.build-jdk11.outputs.docker-tag }}"
-
-          cmd="./mvnw $JVM_TEST_MAVEN_OPTS verify -pl :dotcms-postman -Dpostman.collections=\"${collections}\""
-          echo "Running command: $cmd"
-          eval $cmd
+          ./mvnw $JVM_TEST_MAVEN_OPTS verify \
+            -pl :dotcms-postman \
+            -Dpostman.collections=\"${{ steps.resolve-postman-collections.outputs.collections_to_run }}\"
+          pec=$?
+          [[ pec -eq 0 ]] || exit pec
         env:
           JVM_TEST_MAVEN_OPTS: "-e -B"
-
+          DOTCMS_IMAGE: ${{ needs.build-jdk11.outputs.docker-tag }}
       - name: Prepare reports archive (if maven failed)
         if: failure()
         shell: bash
-        run: find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
-
+        run: |
+          find . -name '*-reports' -type d
+          tree ./dotcms-postman
+          find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
       - name: Upload failure Archive (if maven failed)
         uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: test-reports-postman-${{ matrix.collection_group }}
           path: 'test-reports.tgz'
-
       - name: failsafe-postman-tests  # Uploads will be merged with same name
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: "build-reports-postman-tests - ${{ matrix.collection_group }}"
+          name: "build-reports-test-postman - ${{ matrix.collection_group }}"
           path: |
             **/target/*-reports/TEST-*.xml
             target/build-report.json

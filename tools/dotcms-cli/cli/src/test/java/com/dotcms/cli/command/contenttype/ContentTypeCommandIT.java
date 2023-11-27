@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.ContentTypeAPI;
+import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.api.client.push.MapperService;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.cli.command.CommandTest;
@@ -24,7 +24,6 @@ import com.dotcms.model.contenttype.SaveContentTypeRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -39,12 +38,14 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.wildfly.common.Assert;
 import picocli.CommandLine;
@@ -79,7 +80,11 @@ class ContentTypeCommandIT extends CommandTest {
      */
     @Test
     void Test_Command_Content_Type_Pull_Option() throws IOException {
-        final Workspace workspace = workspaceManager.getOrCreate();
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
@@ -87,9 +92,16 @@ class ContentTypeCommandIT extends CommandTest {
             final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
                     "fileAsset", "--verbose", "--workspace", workspace.root().toString());
             Assertions.assertEquals(ExitCode.OK, status);
-            final String output = writer.toString();
+
+            // Reading the resulting JSON file
+            final var contentTypeFilePath = Path.of(workspace.contentTypes().toString(),
+                    "FileAsset.json");
+            Assertions.assertTrue(Files.exists(contentTypeFilePath));
+
+            // Validating it is a valid content type descriptor
+            var json = Files.readString(contentTypeFilePath);
             final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
-            final ContentType contentType = objectMapper.readValue(output, ContentType.class);
+            final ContentType contentType = objectMapper.readValue(json, ContentType.class);
             Assertions.assertNotNull(contentType.variable());
         } finally {
             workspaceManager.destroy(workspace);
@@ -642,6 +654,260 @@ class ContentTypeCommandIT extends CommandTest {
         }
 
         return varName;
+    }
+
+    /**
+     * <b>Command to test:</b> content type pull <br>
+     * <b>Given Scenario:</b> Test the content type pull command. This test pulls all the content
+     * types in the default format (JSON). <br>
+     * <b>Expected Result:</b> All the existing content types should be pulled and saved as JSON
+     * files.
+     *
+     * @throws IOException if there is an error pulling the content types
+     */
+    @Test
+    void Test_Command_Content_Type_Pull_Pull_All_Default_Format() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        // First we need to see if we already have content types to pull
+        final var contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
+
+        // --
+        // Pulling all the existing content types to have a proper count
+        var contentTypesResponse = contentTypeAPI.getContentTypes(
+                null,
+                1,
+                1000,
+                "variable",
+                null,
+                null,
+                null
+        );
+        var contentTypesCount = 0;
+        if (contentTypesResponse != null && contentTypesResponse.entity() != null) {
+            contentTypesCount = contentTypesResponse.entity().size();
+        }
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ---
+            // ---
+            // Creating a some test content types in the server
+            createContentType(workspace, false);
+            contentTypesCount++;
+            createContentType(workspace, false);
+            contentTypesCount++;
+            createContentType(workspace, false);
+            contentTypesCount++;
+
+            // Pulling all content types
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                    "--workspace", workspace.root().toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Make sure we have the proper amount of JSON files in the content types folder
+            try (Stream<Path> walk = Files.walk(workspace.contentTypes())) {
+
+                var jsonFiles = walk.filter(Files::isRegularFile)
+                        .filter(path -> path.toString().endsWith(".json"))
+                        .collect(Collectors.toList());
+
+                // Check the count first
+                Assertions.assertEquals(contentTypesCount, jsonFiles.size(),
+                        "The number of JSON files does not match the expected content types count.");
+
+                // Now check that none of the JSON files are empty
+                for (Path jsonFile : jsonFiles) {
+                    long fileSize = Files.size(jsonFile);
+                    Assertions.assertTrue(fileSize > 0,
+                            "JSON file " + jsonFile + " is empty.");
+                }
+            }
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * <b>Command to test:</b> content type pull <br>
+     * <b>Given Scenario:</b> Test the content type pull command. This test pulls all the content
+     * types in the YAML format. <br>
+     * <b>Expected Result:</b> All the existing content types should be pulled and saved as YAML
+     * files.
+     *
+     * @throws IOException if there is an error pulling the content types
+     */
+    @Test
+    @Order(13)
+    void Test_Command_Content_Type_Pull_Pull_All_YAML_Format() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        // First we need to see if we already have contentTypes to pull
+        final var contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
+
+        // --
+        // Pulling all the existing content types to have a proper count
+        var contentTypesResponse = contentTypeAPI.getContentTypes(
+                null,
+                1,
+                1000,
+                "variable",
+                null,
+                null,
+                null
+        );
+        var contentTypesCount = 0;
+        if (contentTypesResponse != null && contentTypesResponse.entity() != null) {
+            contentTypesCount = contentTypesResponse.entity().size();
+        }
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ---
+            // Creating a some test content types in the server
+            createContentType(workspace, false);
+            contentTypesCount++;
+            createContentType(workspace, false);
+            contentTypesCount++;
+            createContentType(workspace, false);
+            contentTypesCount++;
+
+            // Pulling all content types
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                    "--workspace", workspace.root().toString(),
+                    "-fmt", InputOutputFormat.YAML.toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Make sure we have the proper amount of JSON files in the content types folder
+            try (Stream<Path> walk = Files.walk(workspace.contentTypes())) {
+
+                var files = walk.filter(Files::isRegularFile)
+                        .filter(path -> path.toString().endsWith(".yml"))
+                        .collect(Collectors.toList());
+
+                // Check the count first
+                Assertions.assertEquals(contentTypesCount, files.size(),
+                        "The number of YAML files does not match the expected content types count.");
+
+                // Now check that none of the JSON files are empty
+                for (Path file : files) {
+                    long fileSize = Files.size(file);
+                    Assertions.assertTrue(fileSize > 0,
+                            "YAML file " + file + " is empty.");
+                }
+            }
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * <b>Command to test:</b> content type pull <br>
+     * <b>Given Scenario:</b> Test the content type pull command. This test pulls all the content
+     * types twice, testing the override works properly.<br>
+     * <b>Expected Result:</b> All the existing content types should be pulled and saved as YAML
+     * files.
+     *
+     * @throws IOException if there is an error pulling the content types
+     */
+    @Test
+    @Order(14)
+    void Test_Command_Content_Type_Pull_Pull_All_Twice() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        // First we need to see if we already have content types to pull
+        final var contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
+
+        // --
+        // Pulling all the existing content types to have a proper count
+        var contentTypesResponse = contentTypeAPI.getContentTypes(
+                null,
+                1,
+                1000,
+                "variable",
+                null,
+                null,
+                null
+        );
+        var contentTypesCount = 0;
+        if (contentTypesResponse != null && contentTypesResponse.entity() != null) {
+            contentTypesCount = contentTypesResponse.entity().size();
+        }
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            // ---
+            // Creating a some test content types in the server
+            createContentType(workspace, false);
+            contentTypesCount++;
+            createContentType(workspace, false);
+            contentTypesCount++;
+            createContentType(workspace, false);
+            contentTypesCount++;
+
+            // Pulling all content types
+            var status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                    "--workspace", workspace.root().toString(),
+                    "-fmt", InputOutputFormat.YAML.toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Executing a second pull of all the content types
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME,
+                    "--workspace", workspace.root().toString(),
+                    "-fmt", InputOutputFormat.YAML.toString());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            // Make sure we have the proper amount of JSON files in the content types folder
+            try (Stream<Path> walk = Files.walk(workspace.contentTypes())) {
+
+                var files = walk.filter(Files::isRegularFile)
+                        .filter(path -> path.toString().endsWith(".yml"))
+                        .collect(Collectors.toList());
+
+                // Check the count first
+                Assertions.assertEquals(contentTypesCount, files.size(),
+                        "The number of YAML files does not match the expected content types count.");
+
+                // Now check that none of the JSON files are empty
+                for (Path file : files) {
+                    long fileSize = Files.size(file);
+                    Assertions.assertTrue(fileSize > 0,
+                            "YAML file " + file + " is empty.");
+                }
+            }
+
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
     }
 
     /**

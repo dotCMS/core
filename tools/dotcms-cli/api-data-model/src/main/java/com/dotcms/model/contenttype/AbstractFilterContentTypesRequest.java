@@ -16,9 +16,6 @@ public interface AbstractFilterContentTypesRequest {
     Map<String, Object> filter();
 
     @Nullable
-    String query();
-
-    @Nullable
     Integer page();
 
     @Nullable
