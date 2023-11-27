@@ -273,7 +273,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 // now let's check if the graphql types are compatible
 
                 // get inherited field's graphql type
-                final GraphQLType inheritedFieldGraphQLType = ContentFields.getContentFields().get(key).getType();
+                final GraphQLType inheritedFieldGraphQLType = reservedContentFields.get(key).getType();
 
                 // get new field's type
                 final GraphQLType fieldGraphQLType = getGraphqlTypeForFieldClass(field.type(), field);
