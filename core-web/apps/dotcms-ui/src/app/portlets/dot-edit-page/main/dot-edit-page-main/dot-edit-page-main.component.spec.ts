@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { mockProvider } from '@ngneat/spectator';
 import { of, Subject } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -64,7 +65,6 @@ import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
 import { DotEditPageNavComponent } from '../dot-edit-page-nav/dot-edit-page-nav.component';
 import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.module';
-import { mockProvider } from '@ngneat/spectator';
 
 @Injectable()
 class MockDotContentletEditorService {
