@@ -235,9 +235,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                     queryParams: {
                         url: payload.url
                     },
-                    queryParamsHandling: 'merge',
-                    skipLocationChange: true,
-                    onSameUrlNavigation: 'reload'
+                    queryParamsHandling: 'merge'
                 });
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
