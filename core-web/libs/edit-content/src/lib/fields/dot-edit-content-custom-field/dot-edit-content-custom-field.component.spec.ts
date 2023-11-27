@@ -1,10 +1,12 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 
 import { ControlContainer, FormControl, FormGroup, FormGroupDirective } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+
+import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 
 import { DotEditContentCustomFieldComponent } from './dot-edit-content-custom-field.component';
 
+import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { CUSTOM_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
 
 describe('DotEditContentCustomFieldComponent', () => {
@@ -20,21 +22,21 @@ describe('DotEditContentCustomFieldComponent', () => {
         componentViewProviders: [
             { provide: ControlContainer, useValue: createFormGroupDirectiveMock(FAKE_FORM_GROUP) }
         ],
-        providers: [FormGroupDirective],
-        componentProviders: [
-            { provide: ActivatedRoute, useValue: { snapshot: { params: { contentType: 'test' } } } }
+        providers: [
+            FormGroupDirective,
+            {
+                provide: DotEditContentService,
+                useValue: {
+                    currentContentType: 'test'
+                }
+            },
+            mockProvider(DotContentTypeService),
+            mockProvider(DotWorkflowActionsFireService)
         ]
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            providers: [
-                {
-                    provide: ActivatedRoute,
-                    useValue: { snapshot: { params: { contentType: 'test' } } }
-                }
-            ]
-        });
+        spectator = createComponent();
     });
 
     it('should have a valid iframe src', () => {

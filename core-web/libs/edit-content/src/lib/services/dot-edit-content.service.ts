@@ -23,6 +23,8 @@ export class DotEditContentService {
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly http = inject(HttpClient);
 
+    currentContentType: string | undefined;
+
     /**
      * Retrieves the content by its ID.
      * @param id - The ID of the content to retrieve.

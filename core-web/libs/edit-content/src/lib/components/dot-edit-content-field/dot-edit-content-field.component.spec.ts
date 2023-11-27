@@ -1,6 +1,5 @@
 import { describe } from '@jest/globals';
-import { mockProvider } from '@ngneat/spectator';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -11,7 +10,11 @@ import { ActivatedRoute } from '@angular/router';
 
 // import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotBlockEditorComponent } from '@dotcms/block-editor';
-import { DotLicenseService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotLicenseService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
@@ -26,6 +29,7 @@ import { DotEditContentTagFieldComponent } from '../../fields/dot-edit-content-t
 import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-text-area/dot-edit-content-text-area.component';
 import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-text-field/dot-edit-content-text-field.component';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { DotEditContentService } from '../../services/dot-edit-content.service';
 import {
     FIELDS_MOCK,
     FIELDS_WITH_CONTENTLET_MOCK,
@@ -82,7 +86,12 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
                 useValue: createFormGroupDirectiveMock()
             }
         ],
-        providers: [FormGroupDirective]
+        providers: [
+            FormGroupDirective,
+            DotEditContentService,
+            mockProvider(DotContentTypeService),
+            mockProvider(DotWorkflowActionsFireService)
+        ]
     });
 
     beforeEach(async () => {

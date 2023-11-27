@@ -8,10 +8,11 @@ import {
     inject
 } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { SafeUrlPipe } from '@dotcms/ui';
+
+import { DotEditContentService } from '../../services/dot-edit-content.service';
 
 @Component({
     selector: 'dot-edit-content-custom-field',
@@ -26,10 +27,10 @@ export class DotEditContentCustomFieldComponent implements OnInit {
 
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
 
-    private activatedRoute = inject(ActivatedRoute);
     private controlContainer = inject(ControlContainer);
+    private editContentService = inject(DotEditContentService);
 
-    contentType = this.activatedRoute.snapshot.params['contentType'];
+    contentType = this.editContentService.currentContentType;
 
     src!: string;
 
@@ -37,11 +38,19 @@ export class DotEditContentCustomFieldComponent implements OnInit {
         this.src = `/html/legacy_custom_field/legacy-custom-field.jsp?variable=${this.contentType}&field=${this.field.variable}`;
     }
 
+    /**
+     * Event handler for when the iframe has finished loading.
+     * Sets the form property of the iframe's content window.
+     */
     onIframeLoad() {
         const iframeWindow = this.iframe.nativeElement.contentWindow as Window;
         iframeWindow['form'] = this.form;
     }
 
+    /**
+     * Get the form control associated with the custom field component.
+     * @returns The form group.
+     */
     get form() {
         return (this.controlContainer as FormGroupDirective).form;
     }

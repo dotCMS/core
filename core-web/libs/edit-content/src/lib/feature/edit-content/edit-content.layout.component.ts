@@ -1,7 +1,7 @@
 import { EMPTY, Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { map, switchMap } from 'rxjs/operators';
@@ -19,7 +19,7 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [DotEditContentService]
 })
-export class EditContentLayoutComponent {
+export class EditContentLayoutComponent implements OnInit {
     private activatedRoute = inject(ActivatedRoute);
 
     public contentType = this.activatedRoute.snapshot.params['contentType'];
@@ -33,6 +33,7 @@ export class EditContentLayoutComponent {
               switchMap(({ contentType, ...contentData }) => {
                   if (contentType) {
                       this.contentType = contentType;
+                      this.dotEditContentService.currentContentType = contentType;
 
                       return this.dotEditContentService.getContentTypeFormData(contentType).pipe(
                           map(({ layout, fields }) => ({
@@ -49,6 +50,12 @@ export class EditContentLayoutComponent {
         : this.dotEditContentService
               .getContentTypeFormData(this.contentType)
               .pipe(map(({ layout, fields }) => ({ layout, fields })));
+
+    ngOnInit() {
+        if (this.contentType) {
+            this.dotEditContentService.currentContentType = this.contentType;
+        }
+    }
 
     /**
      * Saves the contentlet with the given values.
