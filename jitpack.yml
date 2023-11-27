@@ -1,0 +1,5 @@
+jdk:
+    - openjdk11
+before_install:
+    - sdk install java 11.0.18-amzn
+    - sdk use java 11.0.18-amzn
