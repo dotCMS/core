@@ -143,6 +143,24 @@
         }
 
         function contentSelected(content) {
+
+            // We need this to support the old way of doing things and be sure that ngEditContentletEvents is defined
+            window.ngEditContentletEvents = window.ngEditContentletEvents ?? undefined
+
+            var customEvent = document.createEvent("CustomEvent");
+
+            customEvent.initCustomEvent("ng-event", false, false,  {
+                name: "select-contentlet",
+                data: {
+                        inode: content.inode,
+                        identifier: content.identifier,
+                        type: content.typeVariable,
+                        baseType: content.baseType
+                    }
+            });
+
+            document.dispatchEvent(customEvent);
+
             if (ngEditContentletEvents) {
                 ngEditContentletEvents.next({
                     name: "select",

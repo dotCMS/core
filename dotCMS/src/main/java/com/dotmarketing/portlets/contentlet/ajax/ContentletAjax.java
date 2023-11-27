@@ -976,10 +976,9 @@ public class ContentletAjax {
 				}
 			}
 		}
-		if(allLanguages){
-			if (UtilMethods.isSet(sess)) {
+		if(allLanguages && (UtilMethods.isSet(sess) && sess.getAttribute(WebKeys.LANGUAGE_SEARCHED) == null)) {
 				sess.setAttribute(WebKeys.LANGUAGE_SEARCHED, String.valueOf(0));
-			}
+
 		}
 
 		if(UtilMethods.isSet(categoriesvalues)){
