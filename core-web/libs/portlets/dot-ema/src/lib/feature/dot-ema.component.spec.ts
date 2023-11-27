@@ -12,6 +12,7 @@ import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
+import { NG_CUSTOM_EVENTS } from '../shared/enums';
 
 describe('DotEmaComponent', () => {
     let spectator: Spectator<DotEmaComponent>;
@@ -32,6 +33,9 @@ describe('DotEmaComponent', () => {
                                 title: 'hello world'
                             }
                         });
+                    },
+                    save() {
+                        return of({});
                     }
                 }
             },
@@ -86,7 +90,7 @@ describe('DotEmaComponent', () => {
         it('should open a dialog when the iframe sends a postmessage with the edit-contenlet action', () => {
             spectator.detectChanges();
 
-            const initiEditIframeDialogMock = jest.spyOn(store, 'initEditIframeDialog');
+            const initiEditIframeDialogMock = jest.spyOn(store, 'initActionEdit');
             const dialog = spectator.query(byTestId('dialog'));
 
             window.dispatchEvent(
@@ -160,9 +164,9 @@ describe('DotEmaComponent', () => {
             dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                 new CustomEvent('ng-event', {
                     detail: {
-                        action: 'edit-contentlet-updated',
-                        payload: {
-                            inode: '123'
+                        name: NG_CUSTOM_EVENTS.CONTENTLET_UPDATED,
+                        data: {
+                            identifier: '123'
                         }
                     }
                 })
@@ -178,6 +182,47 @@ describe('DotEmaComponent', () => {
             const nullSpinner = spectator.query(byTestId('spinner'));
 
             expect(nullSpinner).toBeNull();
+        });
+
+        it('should trigger save when ng-event select-contentlet is dispatched', () => {
+            const saveMock = jest.spyOn(store, 'savePage');
+
+            spectator.detectChanges();
+
+            window.dispatchEvent(
+                new MessageEvent('message', {
+                    origin: 'http://localhost:3000',
+                    data: {
+                        action: 'edit-contentlet',
+                        payload: {
+                            inode: '123'
+                        }
+                    }
+                })
+            );
+
+            spectator.detectChanges();
+
+            const dialogIframe = spectator.debugElement.query(
+                By.css('[data-testId="dialog-iframe"]')
+            );
+
+            spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
+
+            dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
+                        data: {
+                            identifier: '123'
+                        }
+                    }
+                })
+            );
+
+            spectator.detectChanges();
+
+            expect(saveMock).toHaveBeenCalled();
         });
 
         it('should show an spinner when triggering an action for the dialog', () => {

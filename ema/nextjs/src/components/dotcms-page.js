@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useContext } from 'react';
 import { GlobalContext } from '../providers/global';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getPageContainers } from '@/utils';
 
 // Provide a component for each content type
 const contentComponents = {
@@ -174,25 +175,21 @@ const Header = () => {
 };
 
 // Button component
-function EditButton({ contentlet }) {
+function ActionButton({ message, children }) {
     return (
         <button
             style={{
                 border: 0,
                 backgroundColor: 'lightgray',
                 color: 'black',
-                border: 'solid 1px'
+                border: 'solid 1px',
+                padding: '0.25rem 0.5rem',
+                marginBottom: '0.5rem'
             }}
             onClick={() => {
-                window.parent.postMessage(
-                    {
-                        action: 'edit-contentlet',
-                        payload: contentlet
-                    },
-                    '*'
-                );
+                window.parent.postMessage(message, '*');
             }}>
-            edit
+            {children || message.action}
         </button>
     );
 }
@@ -207,9 +204,10 @@ const Container = ({ containerRef }) => {
     const { identifier, uuid } = containerRef;
 
     // Get the containers from the global context
-    const { containers } = useContext(GlobalContext);
+    const { containers, page } = useContext(GlobalContext);
 
     const { container, containerStructures } = containers[identifier];
+
     const { inode, maxContentlets } = container;
 
     // Get accepts types of content types for this container
@@ -218,49 +216,79 @@ const Container = ({ containerRef }) => {
     // Get the contentlets for "this" container
     const contentlets = containers[identifier].contentlets[`uuid-${uuid}`];
 
+    // Memoize the contenlets to avoid re-rendering
+    const contentletsId = contentlets.map((contentlet) => contentlet.identifier);
+
+    // Memoize the page containers to avoid re-rendering
+    const pageContainers = getPageContainers(containers);
+
     return (
-        <div
-            className="flex flex-col gap-4"
-            data-dot-accept-types={acceptTypes}
-            data-dot-object="container"
-            data-dot-inode={inode}
-            data-dot-identifier={identifier}
-            data-dot-uuid={uuid}
-            data-max-contentlets={maxContentlets}
-            data-dot-can-add="CONTENT,FORM,WIDGET">
-            {contentlets.map((contentlet) => {
-                const {
-                    identifier,
-                    inode,
-                    contentType,
-                    baseType,
-                    title,
-                    languageId,
-                    dotContentTypeId
-                } = contentlet;
+        <>
+            <ActionButton
+                message={{
+                    action: 'add-contentlet',
+                    payload: {
+                        pageID: page.identifier,
+                        container: {
+                            identifier: container.path ?? container.identifier,
+                            uuid,
+                            contentletsId,
+                            acceptTypes
+                        },
+                        pageContainers
+                    }
+                }}>
+                +
+            </ActionButton>
+            <div
+                className="flex flex-col gap-4"
+                data-dot-accept-types={acceptTypes}
+                data-dot-object="container"
+                data-dot-inode={inode}
+                data-dot-identifier={identifier}
+                data-dot-uuid={uuid}
+                data-max-contentlets={maxContentlets}
+                data-dot-can-add="CONTENT,FORM,WIDGET">
+                {contentlets.map((contentlet) => {
+                    const {
+                        identifier,
+                        inode,
+                        contentType,
+                        baseType,
+                        title,
+                        languageId,
+                        dotContentTypeId
+                    } = contentlet;
 
-                const Component = contentComponents[contentlet.contentType] || NoContent;
+                    const Component = contentComponents[contentlet.contentType] || NoContent;
 
-                return (
-                    <div
-                        className="p-4 border border-gray-300"
-                        key={contentlet.identifier}
-                        data-dot-object="contentlet"
-                        data-dot-inode={inode}
-                        data-dot-identifier={identifier}
-                        data-dot-type={contentType}
-                        data-dot-basetype={baseType}
-                        data-dot-lang={languageId}
-                        data-dot-title={title}
-                        data-dot-can-edit={true}
-                        data-dot-content-type-id={dotContentTypeId}
-                        data-dot-has-page-lang-version="true">
-                        <EditButton contentlet={contentlet} />
-                        <Component {...contentlet} />
-                    </div>
-                );
-            })}
-        </div>
+                    return (
+                        <div
+                            className="p-4 border border-gray-300"
+                            key={contentlet.identifier}
+                            data-dot-object="contentlet"
+                            data-dot-inode={inode}
+                            data-dot-identifier={identifier}
+                            data-dot-type={contentType}
+                            data-dot-basetype={baseType}
+                            data-dot-lang={languageId}
+                            data-dot-title={title}
+                            data-dot-can-edit={true}
+                            data-dot-content-type-id={dotContentTypeId}
+                            data-dot-has-page-lang-version="true">
+                            <ActionButton
+                                message={{
+                                    action: 'edit-contentlet',
+                                    payload: contentlet
+                                }}>
+                                Edit
+                            </ActionButton>
+                            <Component {...contentlet} />
+                        </div>
+                    );
+                })}
+            </div>
+        </>
     );
 };
 
