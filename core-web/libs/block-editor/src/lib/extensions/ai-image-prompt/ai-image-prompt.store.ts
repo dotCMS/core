@@ -3,7 +3,7 @@ import { EMPTY, Observable, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
+import { map, switchMap, withLatestFrom } from 'rxjs/operators';
 
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -104,10 +104,7 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                             });
                         },
                         () => {
-                            // TODO: handle errors
-                            this.patchState({
-                                status: ComponentStatus.IDLE
-                            });
+                            this.patchState({ status: ComponentStatus.IDLE });
                         }
                     )
                 );
