@@ -104,7 +104,10 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                             });
                         },
                         () => {
-                            this.patchState({ status: ComponentStatus.IDLE });
+                            // TODO: handle errors
+                            this.patchState({
+                                status: ComponentStatus.IDLE
+                            });
                         }
                     )
                 );

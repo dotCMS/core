@@ -21,6 +21,7 @@ const headers = new HttpHeaders({
 
 @Injectable()
 export class DotAiService {
+
     constructor(private http: HttpClient) {}
 
     generateContent(prompt: string): Observable<string> {
@@ -62,6 +63,10 @@ export class DotAiService {
                 indexPolicy: 'WAIT_FOR'
             }
         ];
+
+        const headers = new HttpHeaders({
+            'Content-Type': 'application/json'
+        });
 
         return this.http
             .post(`${API_ENDPOINT_FOR_PUBLISH}`, JSON.stringify({ contentlets }), {
