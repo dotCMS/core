@@ -1,6 +1,13 @@
 import { MonacoEditorConstructionOptions, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
-import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    Input,
+    OnInit,
+    inject
+} from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -19,8 +26,11 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
         }
     ]
 })
-export class DotEditContentJsonFieldComponent {
+export class DotEditContentJsonFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
+
+    private cd = inject(ChangeDetectorRef);
+    private controlContainer = inject(ControlContainer);
 
     public readonly editorOptions: MonacoEditorConstructionOptions = {
         theme: 'vs',
@@ -35,4 +45,15 @@ export class DotEditContentJsonFieldComponent {
         automaticLayout: true,
         language: 'json'
     };
+
+    ngOnInit(): void {
+        const form = this.controlContainer.control;
+        const control = form.get(this.field.variable);
+
+        /*
+         * This is a workaround to force the change detection to run when the value of the control changes.
+         * This is needed because the Monaco Editor does not play well with the change detection strategy of the component.
+         */
+        control.valueChanges.subscribe(() => this.cd.markForCheck());
+    }
 }
