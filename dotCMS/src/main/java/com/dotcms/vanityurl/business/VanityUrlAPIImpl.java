@@ -389,6 +389,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
   }
 
     @Override
+    @CloseDBIfOpened
     public List<CachedVanityUrl> findByForward(final Host host, final Language language, final String forward,
                                                int action) {
         return load(host, language)

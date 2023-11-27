@@ -17,7 +17,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.util.StringPool;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Optional;
@@ -78,14 +77,14 @@ public enum ExperimentUrlPatternCalculator {
         }
     }
 
-    @NotNull
-    private static String getVanityUrlsRegex(Host host, Language language, HTMLPageAsset htmlPageAsset) throws DotDataException {
+    private static String getVanityUrlsRegex(final Host host, final Language language,
+                                             final HTMLPageAsset htmlPageAsset) throws DotDataException {
 
         final String vanityUrlRegex = APILocator.getVanityUrlAPI()
                 .findByForward(host, language, htmlPageAsset.getURI(), 200)
                 .stream()
                 .map(vanitysUrls -> String.format(DEFAULT_URL_REGEX_TEMPLATE, vanitysUrls.pattern))
-                .collect(Collectors.joining("|"));
+                .collect(Collectors.joining(StringPool.PIPE));
         return vanityUrlRegex.isEmpty() ? StringPool.BLANK : String.format("^%s$", vanityUrlRegex);
     }
 
