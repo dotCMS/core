@@ -1,6 +1,7 @@
 import { describe } from '@jest/globals';
 import { mockProvider } from '@ngneat/spectator';
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -16,6 +17,7 @@ import { DotEditContentFieldComponent } from './dot-edit-content-field.component
 import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCheckboxFieldComponent } from '../../fields/dot-edit-content-checkbox-field/dot-edit-content-checkbox-field.component';
+import { DotEditContentJsonFieldComponent } from '../../fields/dot-edit-content-json-field/dot-edit-content-json-field.component';
 import { DotEditContentMultiSelectFieldComponent } from '../../fields/dot-edit-content-multi-select-field/dot-edit-content-multi-select-field.component';
 import { DotEditContentRadioFieldComponent } from '../../fields/dot-edit-content-radio-field/dot-edit-content-radio-field.component';
 import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-content-select-field/dot-edit-content-select-field.component';
@@ -54,7 +56,8 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown>> = {
     [FIELD_TYPES.CHECKBOX]: DotEditContentCheckboxFieldComponent,
     [FIELD_TYPES.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent,
     [FIELD_TYPES.BINARY]: DotEditContentBinaryFieldComponent,
-    [FIELD_TYPES.BLOCK_EDITOR]: DotBlockEditorComponent
+    [FIELD_TYPES.BLOCK_EDITOR]: DotBlockEditorComponent,
+    [FIELD_TYPES.JSON]: DotEditContentJsonFieldComponent
 };
 
 describe('FIELD_TYPES and FIELDS_MOCK', () => {
@@ -71,6 +74,8 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
     let spectator: Spectator<DotEditContentFieldComponent>;
     const createComponent = createComponentFactory({
         imports: [HttpClientTestingModule],
+        // Avoid mocking Monaco Editor - It's too complex to mock
+        declarations: [MockComponent(DotEditContentJsonFieldComponent)],
         component: DotEditContentFieldComponent,
         componentViewProviders: [
             {
