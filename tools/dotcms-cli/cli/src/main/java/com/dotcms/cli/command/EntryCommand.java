@@ -12,6 +12,7 @@ import io.quarkus.arc.Unremovable;
 import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
 import io.quarkus.picocli.runtime.annotations.TopCommand;
 import io.quarkus.runtime.QuarkusApplication;
+import io.quarkus.runtime.annotations.QuarkusMain;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 import picocli.CommandLine.Model.CommandSpec;
@@ -51,7 +52,7 @@ import javax.inject.Inject;
                 FilesCommand.class
         }
 )
-//@QuarkusMain
+@QuarkusMain
 public class EntryCommand implements QuarkusApplication {
 
     // Declared here, so we have an instance available via Arc container
@@ -67,16 +68,15 @@ public class EntryCommand implements QuarkusApplication {
     @Inject
     CustomConfiguration customConfiguration;
 
-    public static void main(String[] args) {
-        int exitCode = new CommandLine(new EntryCommand()).execute(args);
-        System.exit(exitCode);
-    }
-
     @Override
     public int run(String... args) throws Exception {
         return new CommandLine(this).execute(args);
     }
 
+    public static void main(String[] args) {
+        int exitCode = new CommandLine(new EntryCommand()).execute(args);
+        System.exit(exitCode);
+    }
 }
 
 @ApplicationScoped
