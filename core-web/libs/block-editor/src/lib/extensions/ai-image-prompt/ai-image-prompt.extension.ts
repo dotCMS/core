@@ -1,5 +1,4 @@
 import { PluginKey } from 'prosemirror-state';
-import { Props } from 'tippy.js';
 
 import { ViewContainerRef } from '@angular/core';
 
@@ -10,7 +9,6 @@ import { aiImagePromptPlugin } from './plugins/ai-image-prompt.plugin';
 
 export interface AIImagePromptOptions {
     pluginKey: PluginKey;
-    tippyOptions?: Partial<Props>;
     element: HTMLElement | null;
 }
 
@@ -32,7 +30,6 @@ export const AIImagePromptExtension = (viewContainerRef: ViewContainerRef) => {
         addOptions() {
             return {
                 element: null,
-                tippyOptions: {},
                 pluginKey: AI_IMAGE_PROMPT_PLUGIN_KEY
             };
         },
@@ -75,7 +72,6 @@ export const AIImagePromptExtension = (viewContainerRef: ViewContainerRef) => {
                     pluginKey: this.options.pluginKey,
                     editor: this.editor,
                     element: component.location.nativeElement,
-                    tippyOptions: this.options.tippyOptions,
                     component: component
                 })
             ];
