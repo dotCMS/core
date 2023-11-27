@@ -918,7 +918,11 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     @Override
     public String toString() {
-        return "DataBaseStoragePersistenceAPIImpl{}";
+        return "DataBaseStoragePersistenceAPIImpl{" +
+                "DATABASE_FILE_BUFFER_SIZE=" + DATABASE_FILE_BUFFER_SIZE +
+                ", DATA_BASE_STORAGE_FILE_REPO_TYPE=" + DATA_BASE_STORAGE_FILE_REPO_TYPE +
+                ", fileRepositoryManager=" + fileRepositoryManager +
+                '}';
     }
 
 }

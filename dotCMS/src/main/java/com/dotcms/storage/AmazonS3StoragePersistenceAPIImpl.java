@@ -15,10 +15,12 @@ import com.dotcms.storage.repository.FileRepositoryManager;
 import com.dotcms.storage.repository.HashedLocalFileRepositoryManager;
 import com.dotcms.storage.repository.LocalFileRepositoryManager;
 import com.dotcms.storage.repository.TempFileRepositoryManager;
+import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.Encryptor;
 import io.vavr.control.Try;
@@ -121,24 +123,33 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         if (this.groups.contains(groupName)) {
             return true;
         }
-        boolean groupExists =  this.storage.existsBucket(this.bucketName) && !this.storage.listObjects(this.bucketName,
-                METADATA_GROUP_NAME).getObjectSummaries().isEmpty();
-        if (groupExists) {
-            this.groups.add(groupName);
+        boolean objectExists = this.storage.existsBucket(this.bucketName);
+        if (objectExists) {
+            objectExists = !this.storage.listObjects(this.bucketName,
+                    METADATA_GROUP_NAME).getObjectSummaries().isEmpty();
+            if (!objectExists) {
+                Logger.debug(this, String.format("Group '%s' does not exist", groupName));
+            }
+        } else {
+            Logger.debug(this, String.format("Bucket '%s' does not exist", this.bucketName));
         }
-        return groupExists;
+        this.groups.add(groupName);
+        return objectExists;
     }
 
     @Override
     public boolean existsObject(final String groupName, final String objectPath) throws DotDataException {
         final String correctedPath = transformReadPath(groupName, objectPath);
-        return this.storage.existsBucket(this.bucketName) && !this.storage.listObjects(this.bucketName,
+        final boolean exists = this.storage.existsBucket(this.bucketName) && !this.storage.listObjects(this.bucketName,
                 correctedPath).getObjectSummaries().isEmpty();
+        Logger.debug(this, String.format("Object '%s' in group '%s' exists? %s", correctedPath, groupName, exists));
+        return exists;
     }
 
     @Override
     public boolean createGroup(final String groupName) throws DotDataException {
         if (!this.existsGroup(groupName)) {
+            Logger.debug(this, String.format("Creating group with name '%s'", groupName));
             this.storage.createFolder(this.bucketName, groupName);
         }
         this.groups.add(groupName);
@@ -175,8 +186,11 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     @Override
     public Object pushFile(final String groupName, final String path, final File file, final Map<String, Serializable> extraMeta) throws DotDataException {
-        final Upload upload = this.storage.uploadFile(this.bucketName, transformWritePath(groupName,path, file.getName()), file);
+        final String pathForS3 = transformWritePath(groupName, path, file.getName());
+        final Upload upload = this.storage.uploadFile(this.bucketName, pathForS3, file);
+        Logger.debug(this, String.format("Pushing file '%s' to group '%s' with path '%s' [ %s ]", file.getName(), groupName, pathForS3, path));
         final UploadResult result = Try.of(upload::waitForUploadResult).getOrElseThrow(e -> new DotDataException(e.getMessage(), e));
+        Logger.debug(this, String.format("File '%s' in group '%s' with path '%s' [ %s ] was pushed successfully!", file.getName(), groupName, pathForS3, path));
         return result.getETag();
     }
 
@@ -189,7 +203,9 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     @Override
     public Future<Object> pushFileAsync(final String groupName, final String path, final File file, final Map<String, Serializable> extraMeta) {
-        final Upload upload = this.storage.uploadFile(this.bucketName, transformWritePath(groupName, path, file.getName()), file);
+        final String pathForS3 = transformWritePath(groupName, path, file.getName());
+        Logger.debug(this, String.format("Async pushing file '%s' to group '%s' with path '%s' [ %s ]", file.getName(), groupName, pathForS3, path));
+        final Upload upload = this.storage.uploadFile(this.bucketName, pathForS3, file);
         return new UploadFuture<>(upload);
     }
 
@@ -203,8 +219,11 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     @Override
     public File pullFile(final String groupName, final String path) throws DotDataException {
         final File file = fileRepositoryManager.getOrCreateFile(path);
-        final Download download = this.storage.downloadFile(this.bucketName, transformReadPath(groupName, path), file);
+        final String pathForS3 = transformReadPath(groupName, path);
+        Logger.debug(this, String.format("Pulling file '%s' from group '%s' with path '%s' [ %s ]", file.getName(), groupName, pathForS3, path));
+        final Download download = this.storage.downloadFile(this.bucketName, pathForS3, file);
         Try.run(download::waitForCompletion).getOrElseThrow(e-> new DotDataException(e.getMessage(), e));
+        Logger.debug(this, String.format("File '%s' in group '%s' with path '%s' [ %s ] was pulled successfully!", file.getName(), groupName, pathForS3, path));
         return file;
     }
 
@@ -215,12 +234,10 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
         if (null != file) {
             object = Try.of(() -> {
-                                try (InputStream inputStream = Files.newInputStream(file.toPath())) {
-
-                                    return readerDelegate.read(inputStream);
-                                }
-                            }
-                    ).getOrNull();
+                        try (final InputStream inputStream = Files.newInputStream(file.toPath())) {
+                            return readerDelegate.read(inputStream);
+                        }
+                    }).getOrNull();
         }
 
         return object;
@@ -229,7 +246,9 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     @Override
     public Future<File> pullFileAsync(final String groupName, final String path) {
         final File file = fileRepositoryManager.getOrCreateFile(path);
-        final Download download = this.storage.downloadFile(groupName, path, file);
+        final String pathForS3 = transformReadPath(groupName, path);
+        Logger.debug(this, String.format("Async pulling file '%s' from group '%s' with path '%s' [ %s ]", file.getName(), groupName, pathForS3, path));
+        final Download download = this.storage.downloadFile(groupName, pathForS3, file);
         return new DownloadFuture<>(download, file, aFile -> aFile);
     }
 
@@ -276,7 +295,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
                 path.substring(path.lastIndexOf(FORWARD_SLASH) + 1) : path;
         final String correctedPath = path.substring(1).replace(fileName, BLANK);
         if (this.pathEncryptionMode == PathEncryptionMode.SHA256) {
-            final String hexString = encodePath(correctedPath);
+            final String hexString = EncryptorFactory.getInstance().getEncryptor().encryptString(correctedPath, this.sha256);
             s3Path = groupName + FORWARD_SLASH + hexString + FORWARD_SLASH + fileName;
         } else {
             s3Path = groupName + FORWARD_SLASH + correctedPath + fileName;
@@ -310,22 +329,13 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         String s3Path;
         final String correctedPath = path.substring(1).replace(fileName, BLANK);
         if (this.pathEncryptionMode == PathEncryptionMode.SHA256) {
-            final String hexString = encodePath(correctedPath);
+            final String hexString = EncryptorFactory.getInstance().getEncryptor().encryptString(correctedPath, this.sha256);
             s3Path = groupName + FORWARD_SLASH + hexString;
         } else {
             s3Path = groupName + FORWARD_SLASH + correctedPath.substring(0,
                     correctedPath.length() - 1);
         }
         return s3Path;
-    }
-
-    private String encodePath(final String path) {
-        final byte[] hash = this.sha256.digest(path.getBytes());
-        final StringBuilder hexString = new StringBuilder();
-        for (final byte b : hash) {
-            hexString.append(String.format("%02x", b));
-        }
-        return hexString.toString();
     }
 
     /**
