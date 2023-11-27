@@ -788,7 +788,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 				.velocityVarName("Host")
 				.type(BinaryField.class)
 				.next();
-		String suggestion = fieldFactory.suggestVelocityVar(field.name(), field, ImmutableList.of());
+		final String suggestion = fieldFactory.suggestVelocityVar(field.name(), field, ImmutableList.of());
 
 		Assert.assertTrue("host1".equals(suggestion));
 
