@@ -63,6 +63,8 @@
     <dot-block-editor
         *ngSwitchCase="fieldTypes.BLOCK_EDITOR"
         [formControlName]="field.variable"
+        [contentlet]="contentlet"
+        [field]="field"
         [attr.data-testId]="'field-' + field.variable" />
 </ng-container>
 
