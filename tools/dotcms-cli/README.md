@@ -237,12 +237,14 @@ In order to incorporate the CLI into your GitHub Actions workflow, you need to:
   -  Workflow Permissions : Read and Write permissions 
 - In Your repository General Settings, Secrets and variables, Actions
   - Create a new variable called `DOT_API_URL` and set the value to a valid dotCMS URL. e.g. `https://demo.dotcms.com/api`
-  - Create a new secret called `DOT_TOKEN` and set the value to a valid dotCMS CLI token.  
--  Seed your local repository with a CLI workspace 
-  -  A cli workspace can be created by running any pull command e.g. `java -jar dotcli.jar files pull //demo.dotcms.com`  
-  -  Run any pull command from the root of your project see [examples](#examples) section.
-  -  A valid CLI workspace should contain a `.dot-worspace` file in the root of your project. Make sure to commit this file to your repository and the others that conform your workspace see the [workspace](#workspace) section. 
-  -  Commit and push the changes to your repository. 
+  ![How to create a variable](doc_images/create_variable.png)
+  - Create a new secret called `DOT_TOKEN` and set the value to a valid dotCMS CLI token. 
+  ![How to create a secret](doc_images/create_secret.png)
+-  Seed your local repository with a CLI workspace
+    * A cli workspace can be created by running any pull command e.g. `java -jar dotcli.jar files pull //demo.dotcms.com`  
+    * Run any pull command from the root of your project see [examples](#examples) section.
+    * A valid CLI workspace should contain a `.dot-worspace` file in the root of your project. Make sure to commit this file to your repository and the others that conform your workspace see the [workspace](#workspace) section. 
+    * Commit and push the changes to your repository. 
 
 - Now if the integration is successful, you should see a new commits made into your repository reflect in you dotCMS instance.
 
