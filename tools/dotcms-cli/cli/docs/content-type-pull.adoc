@@ -12,28 +12,36 @@
 // tag::picocli-generated-man-section-name[]
 == Name
 
-content-type-pull - *Retrieves a Content-type descriptor from a given name or Id.*
+content-type-pull - *Retrieves Content-types descriptors*
 
 // end::picocli-generated-man-section-name[]
 
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*content-type pull* [*-h*] [*-fmt*=_<inputOutputFormat>_] [*--workspace*=_<file>_] _idOrName_
+*content-type pull* [*-h*] [*-fmt*=_<inputOutputFormat>_] [*--workspace*=_<file>_]
+                  [_idOrName_]
 
 // end::picocli-generated-man-section-synopsis[]
 
 // tag::picocli-generated-man-section-description[]
 == Description
 
- This gets you a Content-type from a given Id or Name.
- The content-type descriptor will be retried and saved to a file.
- The file name will be the content-type's variable name.
- if a file is pulled more than once
- the file gets override.
- By default files are saved to the current directory. in json format.
- The format can be changed using the --format option.
- format can be either JSON or YAML.
+  This command fetches and saves the descriptor information
+  for Content-types within the dotCMS instance. By default, it
+  retrieves descriptors for all Content-types, unless a specific
+  Content-type's name or ID is provided as an argument.
+  The descriptors are saved into files named after each Content-type's
+  variable name.
+
+  When a Content-type is pulled more than once, the existing descriptor file
+  is overwritten. All descriptor files are saved within the 'content-types'
+  folder located in the dotCMS workspace, which is created in the
+  current directory by default, unless an alternative workspace is specified.
+
+  The output format for the descriptor files is JSON by default. However,
+  you can specify the YAML format using the --format option
+  if YAML is preferred.
 
 
 // end::picocli-generated-man-section-description[]
@@ -57,7 +65,7 @@ Current directory is used if not specified
 // tag::picocli-generated-man-section-arguments[]
 == Arguments
 
-_idOrName_::
+[_idOrName_]::
   Identifier or Name.
 
 // end::picocli-generated-man-section-arguments[]

@@ -223,3 +223,8 @@
 #button-disabled-outlined {
     border: $field-border-size solid $color-palette-gray-300;
 }
+
+#button-disabled-text {
+    border: none;
+    background-color: transparent;
+}

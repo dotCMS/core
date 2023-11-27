@@ -91,3 +91,9 @@
     color: $color-palette-primary-500;
     border-radius: 0;
 }
+
+.p-dialog-mask.p-dialog-mask-transparent.p-component-overlay {
+    background-color: transparent;
+    -webkit-backdrop-filter: blur($blur-md);
+    backdrop-filter: blur($blur-md);
+}

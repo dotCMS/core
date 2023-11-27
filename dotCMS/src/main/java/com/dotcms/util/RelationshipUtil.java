@@ -17,6 +17,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,8 +79,8 @@ public class RelationshipUtil {
             final String sortBy,
             final User user, final boolean respectFrontendRoles, final boolean isCheckout)
             throws DotDataException, DotSecurityException {
-
-        final Map<String, Contentlet> relatedContentlets = new HashMap<>();
+        //LinkedHashMap to preserve the order of the contentlets
+        final Map<String, Contentlet> relatedContentlets = new LinkedHashMap<>();
 
         //Filter can be an identifier or a lucene query (comma separated)
         for (final String elem : filter.split(StringPool.COMMA)) {
