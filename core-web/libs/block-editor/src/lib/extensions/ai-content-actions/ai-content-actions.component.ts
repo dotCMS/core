@@ -1,7 +1,5 @@
 import { Component, EventEmitter, Output, OnInit, ChangeDetectionStrategy } from '@angular/core';
 
-import { AiContentPromptStore } from '../ai-content-prompt/store/ai-content-prompt.store';
-
 interface ActionOption {
     label: string;
     icon: string;
@@ -26,8 +24,6 @@ export class AIContentActionsComponent implements OnInit {
 
     actionOptions!: ActionOption[];
     tooltipContent = 'Describe the size, color palette, style, mood, etc.';
-
-    constructor(private readonly aiContentPromptStore: AiContentPromptStore) {}
 
     ngOnInit() {
         this.actionOptions = [

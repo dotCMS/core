@@ -57,7 +57,6 @@ export class AIContentPromptView {
 
     constructor(props: AIContentPromptViewProps) {
         const { editor, element, view, tippyOptions = {}, pluginKey, component } = props;
-
         this.editor = editor;
         this.element = element;
         this.view = view;

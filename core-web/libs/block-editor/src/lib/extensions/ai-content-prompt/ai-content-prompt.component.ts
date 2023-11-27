@@ -1,7 +1,16 @@
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
-import { ChangeDetectionStrategy, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    ElementRef,
+    OnDestroy,
+    OnInit,
+    ViewChild
+} from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
+
+import { takeUntil } from 'rxjs/operators';
 
 import { AiContentPromptState, AiContentPromptStore } from './store/ai-content-prompt.store';
 
@@ -15,8 +24,9 @@ interface AIContentForm {
     styleUrls: ['./ai-content-prompt.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AIContentPromptComponent implements OnInit {
+export class AIContentPromptComponent implements OnInit, OnDestroy {
     vm$: Observable<AiContentPromptState> = this.aiContentPromptStore.vm$;
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     @ViewChild('input') private input: ElementRef;
 
@@ -27,9 +37,14 @@ export class AIContentPromptComponent implements OnInit {
     constructor(private readonly aiContentPromptStore: AiContentPromptStore) {}
 
     ngOnInit() {
-        this.aiContentPromptStore.open$.subscribe((open) => {
+        this.aiContentPromptStore.open$.pipe(takeUntil(this.destroy$)).subscribe((open) => {
             open ? this.input.nativeElement.focus() : this.form.reset();
         });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     onSubmit() {

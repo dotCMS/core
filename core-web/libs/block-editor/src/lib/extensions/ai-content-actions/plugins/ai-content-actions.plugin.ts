@@ -67,7 +67,7 @@ export class AIContentActionsView {
         this.pluginKey = pluginKey;
         this.component = component;
 
-        // Reference of stores available in the component.
+        // Reference of stores available ROOT through the Angular component.
         //TODO: Add the reference of the image store.
         this.aiContentPromptStore = this.component.injector.get(AiContentPromptStore);
 
