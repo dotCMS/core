@@ -1,11 +1,17 @@
 @use "variables" as *;
 
+.json-field__container {
+    min-height: 9.375rem; // 150px
+    height: 100%;
+    width: 100%;
+    overflow: auto;
+}
+
 .json-field__editor {
     border-radius: $border-radius-md;
     border: $field-border-size solid $color-palette-gray-400;
     display: block;
     height: 100%;
-    min-height: 20rem;
     overflow: auto;
     width: 100%;
 }
