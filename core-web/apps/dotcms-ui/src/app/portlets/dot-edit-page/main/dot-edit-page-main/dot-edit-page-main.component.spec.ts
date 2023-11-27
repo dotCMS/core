@@ -31,6 +31,7 @@ import {
     DotGenerateSecurePasswordService,
     DotLicenseService,
     DotMessageService,
+    DotSessionStorageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
@@ -63,6 +64,7 @@ import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
 import { DotEditPageNavComponent } from '../dot-edit-page-nav/dot-edit-page-nav.component';
 import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.module';
+import { mockProvider } from '@ngneat/spectator';
 
 @Injectable()
 class MockDotContentletEditorService {
@@ -186,7 +188,8 @@ describe('DotEditPageMainComponent', () => {
                 DotIframeService,
                 LoginService,
                 DotLicenseService,
-                Title
+                Title,
+                mockProvider(DotSessionStorageService)
             ]
         });
     }));
