@@ -241,7 +241,6 @@
                          * to the editor.
                          */
                         blockEditor.addEventListener('valueChange', ({ detail }) => {
-                            console.log(detail);
                             field.value = !detail ? null : JSON.stringify(detail);;
                         });
 
