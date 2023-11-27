@@ -50,6 +50,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import graphql.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -539,7 +541,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 	 * Method to test: {@link com.dotcms.contenttype.business.FieldFactoryImpl#delete(Field)}
 	 * When: Call the delete methos with several fields
 	 * Should: delete all of them
-	 * 
+	 *
 	 * @throws Exception
 	 */
 	@Test
@@ -617,7 +619,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 		}
 
 	}
-	
+
 
 	@Test
 	public void testSuggestVelocityVar() throws Exception {
@@ -769,5 +771,26 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 			assertThat("deleteing fieldVars works", fieldFactory.loadVariables(field).size() == 0);
 
 		}
+	}
+
+
+	/**
+	 * Method to test: {@link com.dotcms.contenttype.business.FieldFactoryImpl#suggestVelocityVar(String, Field, List)}
+	 * Given Scenario: Users should not be able to call "Host" any fields
+	 * ExpectedResult: suggestion should be "host1"
+	 * @throws DotDataException
+	 */
+	@Test
+	public void test_suggestVelocityVar_shouldRespectReservedWords() throws DotDataException {
+
+		final Field field = new FieldDataGen()
+				.name("Host")
+				.velocityVarName("Host")
+				.type(BinaryField.class)
+				.next();
+		String suggestion = fieldFactory.suggestVelocityVar(field.name(), field, ImmutableList.of());
+
+		Assert.assertTrue("host1".equals(suggestion));
+
 	}
 }
