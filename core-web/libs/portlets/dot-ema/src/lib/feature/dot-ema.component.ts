@@ -26,7 +26,7 @@ import { EditEmaStore } from './store/dot-ema.store';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
-import { AddContentletPayload } from '../shared/models';
+import { AddContentletPayload, SetUrlPayload } from '../shared/models';
 
 @Component({
     selector: 'dot-ema',
@@ -227,6 +227,16 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                 });
 
                 this.savePayload = payload;
+            },
+            [CUSTOMER_ACTIONS.SET_URL]: () => {
+                const payload = <SetUrlPayload>data.payload;
+
+                this.router.navigate([], {
+                    queryParams: {
+                        url: payload.url
+                    },
+                    queryParamsHandling: 'merge'
+                });
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
