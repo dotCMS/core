@@ -5,7 +5,7 @@ import { FormBuilder, Validators } from '@angular/forms';
 
 import { catchError, switchMap } from 'rxjs/operators';
 
-import { AiContentService } from '../../shared/services/ai-content/ai-content.service';
+import { DotAiService } from '../../shared/services/dot-ai/dot-ai.service';
 
 @Component({
     selector: 'dot-ai-image-prompt',
@@ -25,7 +25,7 @@ export class AIImagePromptComponent {
     @Output() formSubmission = new EventEmitter<boolean>();
     @Output() aiResponse = new EventEmitter<string>();
 
-    constructor(private fb: FormBuilder, private aiContentService: AiContentService) {}
+    constructor(private fb: FormBuilder, private aiContentService: DotAiService) {}
 
     onSubmit() {
         this.isFormSubmitting = true;

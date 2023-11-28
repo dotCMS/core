@@ -4,6 +4,10 @@ export interface AddContentletPayload {
     pageID: string;
 }
 
+export interface SetUrlPayload {
+    url: string;
+}
+
 export interface Container {
     acceptTypes: string;
     identifier: string;

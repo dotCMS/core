@@ -1,11 +1,11 @@
 package com.dotcms.util.security;
 
-import java.io.Serializable;
-import java.security.Key;
-import java.security.Provider;
-
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.liferay.util.EncryptorException;
+
+import java.io.Serializable;
+import java.security.Key;
+import java.security.MessageDigest;
 
 /**
  * This class is just a wrapper to encapsulate the
@@ -132,5 +132,24 @@ public interface Encryptor extends Serializable {
 
         return PublicEncryptionFactory.decryptString(plainText);
     }
+
+	/**
+	 * This method performs a relatively simple implementation of hashing a String value using the
+	 * specified {@link MessageDigest} instance. It's worth noting that the resulting String does
+	 * not include slash characters at all.
+	 *
+	 * @param value    The value being encrypted.
+	 * @param digester The {@link MessageDigest} instance that will process the encryption.
+	 *
+	 * @return The encrypted value.
+	 */
+	default String encryptString(final String value, final MessageDigest digester) {
+		final byte[] hash = digester.digest(value.getBytes());
+		final StringBuilder hexString = new StringBuilder();
+		for (final byte b : hash) {
+			hexString.append(String.format("%02x", b));
+		}
+		return hexString.toString();
+	}
 
 } // E:O:F:Encryptor.

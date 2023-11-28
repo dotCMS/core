@@ -23,7 +23,9 @@ declare module '@tiptap/core' {
     }
 }
 
-export const AI_CONTENT_PROMPT_PLUGIN_KEY = new PluginKey('aiContentPrompt-form');
+export const DOT_AI_TEXT_CONTENT_KEY = 'dotAITextContent';
+
+export const AI_CONTENT_PROMPT_PLUGIN_KEY = new PluginKey(DOT_AI_TEXT_CONTENT_KEY);
 
 export const AIContentPromptExtension = (viewContainerRef: ViewContainerRef) => {
     return Extension.create<AIContentPromptOptions>({

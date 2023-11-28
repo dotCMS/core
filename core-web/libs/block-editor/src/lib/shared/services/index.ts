@@ -3,4 +3,4 @@ export * from './dot-marketing-config/dot-marketing-config.service';
 export * from './dot-upload-file/dot-upload-file.service';
 export * from './search/search.service';
 export * from './suggestions/suggestions.service';
-export * from './ai-content/ai-content.service';
+export * from './dot-ai/dot-ai.service';

@@ -1,8 +1,4 @@
-import { Observable } from 'rxjs';
-
-import { Component, EventEmitter, Output, OnInit } from '@angular/core';
-
-import { AiContentService } from '../../shared/services/ai-content/ai-content.service';
+import { Component, EventEmitter, Output, OnInit, ChangeDetectionStrategy } from '@angular/core';
 
 interface ActionOption {
     label: string;
@@ -20,15 +16,14 @@ export enum ACTIONS {
 @Component({
     selector: 'dot-ai-content-actions',
     templateUrl: './ai-content-actions.component.html',
-    styleUrls: ['./ai-content-actions.component.scss']
+    styleUrls: ['./ai-content-actions.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AIContentActionsComponent implements OnInit {
     @Output() actionEmitter = new EventEmitter<ACTIONS>();
 
     actionOptions!: ActionOption[];
     tooltipContent = 'Describe the size, color palette, style, mood, etc.';
-
-    constructor(private aiContentService: AiContentService) {}
 
     ngOnInit() {
         this.actionOptions = [
@@ -55,13 +50,5 @@ export class AIContentActionsComponent implements OnInit {
 
     private emitAction(action: ACTIONS) {
         this.actionEmitter.emit(action);
-    }
-
-    getLatestContent(): string {
-        return this.aiContentService.getLatestContent();
-    }
-
-    getNewContent(contentType: string): Observable<string> {
-        return this.aiContentService.getNewContent(contentType);
     }
 }
