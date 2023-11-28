@@ -30,6 +30,8 @@ import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.JsDynamicObjectUtils;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.js.lang.JavaScriptLanguage;
+import com.oracle.truffle.js.runtime.GraalJSException;
+import com.oracle.truffle.js.runtime.builtins.JSErrorObject;
 import com.oracle.truffle.js.runtime.builtins.JSPromise;
 import com.oracle.truffle.js.runtime.builtins.JSPromiseObject;
 import com.oracle.truffle.object.LayoutImpl;
@@ -56,6 +58,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Js script engine implementation
@@ -204,16 +208,43 @@ public class JsEngine implements ScriptEngine {
             if (promise.getPromiseState() == JSPromise.REJECTED) {
 
                 final Object[] stackTraceArray = JsDynamicObjectUtils.getObjectArray(promise);
-
+                final String strackTrace = stackTraceToString(stackTraceArray);
                 throw new DotRuntimeException(Map.of(
                         "message", "Promise rejected",
                         "rootCause", eval.toString(),
-                        "stackTrace", Arrays.asList(stackTraceArray)).toString());
+                        "stackTrace", strackTrace).toString());
             }
         } catch (ClassCastException e) {
 
             Logger.error(this, e.getMessage(), e);
         }
+    }
+
+    private String stackTraceToString (final Object[] stackTraceArray) {
+
+        final List<String> stackTraceList = new ArrayList<>();
+        for (final Object stackTrace: stackTraceArray) {
+
+            if (stackTrace instanceof JSErrorObject) {
+
+                final GraalJSException graalJSException = JSErrorObject.class.cast(stackTrace).getException();
+
+                final List<String> list = Stream.of(graalJSException.getJSStackTrace()).map(this::jsStrackTraceToString).collect(Collectors.toList());
+                stackTraceList.add(Map.of("message", graalJSException.getMessage(),"jsstackTrace",list).toString());
+            } else {
+
+                    stackTraceList.add(stackTrace.toString());
+            }
+        }
+        return stackTraceList.toString();
+    }
+
+    private String jsStrackTraceToString(final GraalJSException.JSStackTraceElement element) {
+
+            return element.getClassName() + "." + element.getFunctionName().toString() + "(" +
+                            (element.getFileName() != null && element.getLineNumber() >= 0 ?
+                                    element.getFileName() + ":" + element.getLineNumber() + ")" :
+                                    (element.getFileName() != null ?  ""+element.getFileName()+")" : "Unknown Source)"));
     }
 
     private List<Source> getDotSources() throws IOException {
