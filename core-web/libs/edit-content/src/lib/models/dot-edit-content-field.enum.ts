@@ -21,5 +21,6 @@ export enum FIELD_TYPES {
     MULTI_SELECT = 'Multi-Select',
     BLOCK_EDITOR = 'Story-Block',
     BINARY = 'Binary',
-    CUSTOM_FIELD = 'Custom-Field'
+    CUSTOM_FIELD = 'Custom-Field',
+    JSON = 'JSON-Field'
 }

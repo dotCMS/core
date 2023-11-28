@@ -69,5 +69,9 @@ export const getFinalCastedValue = (
         return value;
     }
 
+    if (field.fieldType === FIELD_TYPES.JSON) {
+        return JSON.stringify(value, null, 2); // This is a workaround to avoid the Monaco Editor to show the value as a string and keep the formatting
+    }
+
     return castSingleSelectableValue(value as string, field.dataType);
 };
