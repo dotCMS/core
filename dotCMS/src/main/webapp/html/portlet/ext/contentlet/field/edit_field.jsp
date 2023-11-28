@@ -173,11 +173,13 @@
             Boolean showVideoThumbnail = Config.getBooleanProperty("SHOW_VIDEO_THUMBNAIL", true);
             
             // If it can be parsed as a JSON, then it means that the value is already a Block Editor's value
-            try {
-                Map<String, Object> map = mapper.readValue((String) value, Map.class);
-            } catch (IOException e) {
-                // If it can't be parsed as a JSON, then it means that the value is a string
-                value = safeTextValue;
+            if (value != null) {
+                try {
+                     Map<String, Object> map = mapper.readValue((String) value, Map.class);
+                } catch (IOException e) {
+                    // If it can't be parsed as a JSON, then it means that the value is a string
+                    value = safeTextValue;
+                }
             }
 
             // Get Field and Contentlet as JSON
