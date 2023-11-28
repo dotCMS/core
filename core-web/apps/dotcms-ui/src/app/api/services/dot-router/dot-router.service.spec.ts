@@ -26,6 +26,12 @@ class RouterMock {
         });
     });
 
+    navigateByUrl = jasmine.createSpy('navigateByUrl').and.callFake(() => {
+        return new Promise((resolve) => {
+            resolve(true);
+        });
+    });
+
     get events() {
         return this._events.asObservable();
     }
@@ -233,6 +239,18 @@ describe('DotRouterService', () => {
     it('should return true if the currentPortlet is not a custom portlet', () => {
         router.routerState.snapshot.url = '/c/c-testing';
         expect(service.isCustomPortlet('site-browser')).toBe(false);
+    });
+
+    it('should go to porlet by URL', () => {
+        service.gotoPortlet('/c/test%3Ffilter%3DBlog');
+        expect(router.navigateByUrl).toHaveBeenCalledWith('/c/test?filter=Blog', {
+            replaceUrl: false
+        });
+    });
+
+    it('should decode the URL and go to porlet', () => {
+        service.gotoPortlet('/c/test');
+        expect(router.navigateByUrl).toHaveBeenCalledWith('/c/test', { replaceUrl: false });
     });
 
     it('should return the correct  Portlet Id', () => {

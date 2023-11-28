@@ -316,8 +316,17 @@ export class DotRouterService {
         return this.currentPortlet.id === 'edit-page';
     }
 
-    gotoPortlet(link: string, replaceUrl?: boolean): Promise<boolean> {
-        return this.router.navigateByUrl(link, { replaceUrl: replaceUrl });
+    /**
+     * Go to a portlet by URL
+     *
+     * @param {string} link
+     * @param {boolean} [replaceUrl]
+     * @return {*}  {Promise<boolean>}
+     * @memberof DotRouterService
+     */
+    gotoPortlet(link: string, replaceUrl: boolean = false): Promise<boolean> {
+        // Use `decodeURIComponent` to preserve the original URL - Query Params
+        return this.router.navigateByUrl(decodeURIComponent(link), { replaceUrl: replaceUrl });
     }
 
     goToForgotPassword(): void {
