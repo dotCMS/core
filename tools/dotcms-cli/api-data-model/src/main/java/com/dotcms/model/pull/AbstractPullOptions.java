@@ -3,6 +3,7 @@ package com.dotcms.model.pull;
 import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.io.File;
 import java.util.Optional;
 import org.immutables.value.Value;
 
@@ -36,6 +37,11 @@ import org.immutables.value.Value;
 public interface AbstractPullOptions {
 
     /**
+     * Retrieves the destination for the pulled content.
+     */
+    File destination();
+
+    /**
      * Retrieves a content key used to pull a specific content. If no content key is set, then all
      * the contents are pulled.
      *
@@ -53,5 +59,15 @@ public interface AbstractPullOptions {
      * Retrieves whether the pulled content should be printed to the console or stored to disk.
      */
     boolean isShortOutput();
+
+    /**
+     * Retrieves whether the pull operation should fail fast or continue on error.
+     */
+    boolean failFast();
+
+    /**
+     * Number of retry attempts on errors.
+     */
+    int maxRetryAttempts();
 
 }

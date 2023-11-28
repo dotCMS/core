@@ -55,7 +55,7 @@ xref:files-ls.adoc[*ls*]::
   *dotCMS Files ls*
 
 xref:files-pull.adoc[*pull*]::
-  *dotCMS Files pull*
+  *Files pull*
 
 xref:files-push.adoc[*push*]::
   *dotCMS Files push*

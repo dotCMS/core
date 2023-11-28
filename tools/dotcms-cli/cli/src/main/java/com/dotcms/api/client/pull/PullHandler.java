@@ -1,5 +1,8 @@
 package com.dotcms.api.client.pull;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * This interface provides utility methods to handle the pulled content.
  *
@@ -14,20 +17,13 @@ public interface PullHandler<T> {
     String title();
 
     /**
-     * Returns a display name of a given T element. Used for logging purposes.
+     * Returns a header for the T elements being pulled. Used for console user feedback.
      */
-    String displayName(T content);
-
-    /**
-     * Returns the file name for a given T elements used to save the content to a file.
-     *
-     * @param content the content to be saved to a file.
-     */
-    String fileName(T content);
+    String startPullingHeader(List<T> contents);
 
     /**
      * Returns a short format of a given T element. Used for console user feedback.
      */
-    String shortFormat(T content);
+    String shortFormat(T content, Map<String, Object> customOptions);
 
 }

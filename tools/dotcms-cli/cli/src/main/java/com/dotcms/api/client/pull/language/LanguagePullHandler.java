@@ -1,15 +1,26 @@
 package com.dotcms.api.client.pull.language;
 
-import com.dotcms.api.client.pull.PullHandler;
+import com.dotcms.api.client.pull.GenericPullHandler;
 import com.dotcms.model.language.Language;
+import java.util.List;
+import java.util.Map;
 import javax.enterprise.context.Dependent;
 
 @Dependent
-public class LanguagePullHandler implements PullHandler<Language> {
+public class LanguagePullHandler implements GenericPullHandler<Language> {
 
     @Override
     public String title() {
         return "Languages";
+    }
+
+    @Override
+    public String startPullingHeader(List<Language> contents) {
+
+        return String.format("\r@|bold,green [%d]|@ %s to pull",
+                contents.size(),
+                title()
+        );
     }
 
     @Override
@@ -23,7 +34,7 @@ public class LanguagePullHandler implements PullHandler<Language> {
     }
 
     @Override
-    public String shortFormat(final Language language) {
+    public String shortFormat(final Language language, final Map<String, Object> customOptions) {
 
         return String.format(
                 "language: [@|bold,underline,blue %s|@] id: [@|bold,underline,cyan %s|@] code: [@|bold,underline,green %s|@] country:[@|bold,yellow %s|@] countryCode: [@|bold,yellow %s|@] isoCode: [@|bold,yellow %s|@]",

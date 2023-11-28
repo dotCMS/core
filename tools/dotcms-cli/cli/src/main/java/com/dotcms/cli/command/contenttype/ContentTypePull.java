@@ -94,11 +94,13 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
 
         // Execute the push
         pullService.pull(
-                contentTypesFolder,
                 PullOptions.builder().
+                        destination(contentTypesFolder).
                         contentKey(Optional.ofNullable(contentTypePullMixin.idOrVar)).
                         outputFormat(pullMixin.inputOutputFormat().toString()).
                         isShortOutput(pullMixin.shortOutputOption().isShortOutput()).
+                        failFast(pullMixin.failFast).
+                        maxRetryAttempts(pullMixin.retryAttempts).
                         build(),
                 output,
                 contentTypeProvider,

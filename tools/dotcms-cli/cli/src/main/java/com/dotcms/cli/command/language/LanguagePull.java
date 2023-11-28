@@ -94,11 +94,13 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
 
         // Execute the push
         pullService.pull(
-                languagesFolder,
                 PullOptions.builder().
+                        destination(languagesFolder).
                         contentKey(Optional.ofNullable(languagePullMixin.languageIdOrIso)).
                         outputFormat(pullMixin.inputOutputFormat().toString()).
                         isShortOutput(pullMixin.shortOutputOption().isShortOutput()).
+                        failFast(pullMixin.failFast).
+                        maxRetryAttempts(pullMixin.retryAttempts).
                         build(),
                 output,
                 languageProvider,

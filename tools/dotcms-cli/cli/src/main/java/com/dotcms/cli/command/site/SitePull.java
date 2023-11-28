@@ -97,11 +97,13 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer>, 
 
         // Execute the push
         pullService.pull(
-                sitesFolder,
                 PullOptions.builder().
+                        destination(sitesFolder).
                         contentKey(Optional.ofNullable(sitePullMixin.siteNameOrId)).
                         outputFormat(pullMixin.inputOutputFormat().toString()).
                         isShortOutput(pullMixin.shortOutputOption().isShortOutput()).
+                        failFast(pullMixin.failFast).
+                        maxRetryAttempts(pullMixin.retryAttempts).
                         build(),
                 output,
                 siteProvider,

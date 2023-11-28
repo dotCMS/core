@@ -1,7 +1,7 @@
 package com.dotcms.api.client.pull.task;
 
 import com.dotcms.api.client.MapperService;
-import com.dotcms.api.client.pull.PullHandler;
+import com.dotcms.api.client.pull.GenericPullHandler;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.cli.common.OutputOptionMixin;
@@ -23,7 +23,7 @@ public interface AbstractPullTaskParams<T> extends Serializable {
 
     List<T> contents();
 
-    PullHandler<T> pullHandler();
+    GenericPullHandler<T> pullHandler();
 
     InputOutputFormat format();
 
@@ -34,5 +34,7 @@ public interface AbstractPullTaskParams<T> extends Serializable {
     Logger logger();
 
     ConsoleProgressBar progressBar();
+
+    boolean failFast();
 
 }
