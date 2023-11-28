@@ -104,6 +104,7 @@ public class SiteResource implements Serializable {
     private final SiteHelper siteHelper;
     private final PaginationUtil paginationUtil;
 
+    @SuppressWarnings("unused")
     public SiteResource() {
         this(new WebResource(),
                 SiteHelper.getInstance(),
@@ -397,15 +398,17 @@ public class SiteResource implements Serializable {
     }
 
     /**
-     * Publish a Site
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param siteId
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws PortalException
-     * @throws SystemException
+     * Publishes a Site.
+     *
+     * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
+     * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
+     * @param siteId              The identifier of the Site to be published.
+     *
+     * @return The {@link Response} object containing the result of the operation.
+     *
+     * @throws DotDataException     An error occurred when publishing the Site.
+     * @throws DotSecurityException The logged-in User does not have the required permissions to
+     *                              perform this action.
      */
     @PUT
     @Path("/{siteId}/_publish")
@@ -420,31 +423,33 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("sites")
+                .requiredPortlet(PortletID.SITES.toString())
                 .init().getUser();
 
         Logger.debug(this, ()-> "Publishing site: " + siteId);
 
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
-        final Host host = pageMode.respectAnonPerms? this.siteHelper.getSite(user, siteId):
+        final Host site = pageMode.respectAnonPerms? this.siteHelper.getSite(user, siteId):
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
-        if (null == host) {
-            throw new IllegalArgumentException("Site: " + siteId + " does not exists");
+        if (null == site) {
+            throw new IllegalArgumentException(String.format("Site '%s' does not exist", siteId));
         }
-        this.siteHelper.publish(host, user, pageMode.respectAnonPerms);
-        return Response.ok(new ResponseEntityView(this.toView(host))).build();
+        this.siteHelper.publish(site, user, pageMode.respectAnonPerms);
+        return Response.ok(new ResponseEntityView<>(this.toView(site))).build();
     }
 
     /**
-     * Unpublish a site
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param siteId
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws PortalException
-     * @throws SystemException
+     * Un-publishes a Site.
+     *
+     * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
+     * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
+     * @param siteId              The identifier of the Site to be un-published.
+     *
+     * @return The {@link Response} object containing the result of the operation.
+     *
+     * @throws DotDataException     An error occurred when un-publishing the Site.
+     * @throws DotSecurityException The logged-in User does not have the required permissions to
+     *                              perform this action.
      */
     @PUT
     @Path("/{siteId}/_unpublish")
@@ -459,7 +464,7 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("sites")
+                .requiredPortlet(PortletID.SITES.toString())
                 .init().getUser();
 
         Logger.debug(this, ()-> "Unpublishing site: " + siteId);
@@ -469,23 +474,25 @@ public class SiteResource implements Serializable {
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
 
         if (null == site) {
-            throw new NotFoundException("Site: " + siteId + " does not exists");
+            throw new NotFoundException(String.format("Site '%s' does not exist", siteId));
         }
 
         this.siteHelper.unpublish(site, user, pageMode.respectAnonPerms);
-        return Response.ok(new ResponseEntityView(this.toView(site))).build();
+        return Response.ok(new ResponseEntityView<>(this.toView(site))).build();
     }
 
     /**
-     * Archive a site
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param siteId
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws PortalException
-     * @throws SystemException
+     * Archives a Site.
+     *
+     * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
+     * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
+     * @param siteId              The identifier of the Site to be archived.
+     *
+     * @return The {@link Response} object containing the result of the operation.
+     *
+     * @throws DotDataException     An error occurred when archiving the Site.
+     * @throws DotSecurityException The logged-in User does not have the required permissions to
+     *                              perform this action.
      */
     @PUT
     @Path("/{siteId}/_archive")
@@ -500,26 +507,25 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("sites")
+                .requiredPortlet(PortletID.SITES.toString())
                 .init().getUser();
 
-        Logger.debug(this, ()-> "Archiving site: " + siteId);
+        Logger.debug(this, "Archiving site: " + siteId);
 
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
         final Host site = pageMode.respectAnonPerms? this.siteHelper.getSite(user, siteId):
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
 
         if (null == site) {
-            throw new NotFoundException("Site: " + siteId + " does not exists");
+            throw new NotFoundException(String.format("Site '%s' does not exist", siteId));
         }
 
         if(site.isDefault()) {
-
-            throw new DotStateException("the default site can't be archived");
+            throw new DotStateException(String.format("Site '%s' is the default site. It can't be archived", site));
         }
 
         this.archive(user, pageMode, site);
-        return Response.ok(new ResponseEntityView(this.toView(site))).build();
+        return Response.ok(new ResponseEntityView<>(this.toView(site))).build();
     }
 
     @WrapInTransaction
@@ -536,15 +542,17 @@ public class SiteResource implements Serializable {
     }
 
     /**
-     * Unarchive a site
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param siteId
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws PortalException
-     * @throws SystemException
+     * Un-archives a Site.
+     *
+     * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
+     * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
+     * @param siteId              The identifier of the Site to be un-archived.
+     *
+     * @return The {@link Response} object containing the result of the operation.
+     *
+     * @throws DotDataException     An error occurred when un-archiving the Site.
+     * @throws DotSecurityException The logged-in User does not have the required permissions to
+     *                              perform this action.
      */
     @PUT
     @Path("/{siteId}/_unarchive")
@@ -559,34 +567,34 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("sites")
+                .requiredPortlet(PortletID.SITES.toString())
                 .init().getUser();
 
         Logger.debug(this, ()-> "unarchiving site: " + siteId);
 
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
-        final Host host = pageMode.respectAnonPerms? this.siteHelper.getSite(user, siteId):
+        final Host site = pageMode.respectAnonPerms? this.siteHelper.getSite(user, siteId):
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
 
-        if (null == host) {
-            throw new IllegalArgumentException("Site: " + siteId + " does not exists");
+        if (null == site) {
+            throw new IllegalArgumentException(String.format("Site '%s' does not exist", siteId));
         }
 
-        this.siteHelper.unarchive(host, user, pageMode.respectAnonPerms);
-        return Response.ok(new ResponseEntityView(this.toView(host))).build();
+        this.siteHelper.unarchive(site, user, pageMode.respectAnonPerms);
+        return Response.ok(new ResponseEntityView<>(this.toView(site))).build();
     }
 
     /**
-     * Delete a site
-     * Default site can not be deleted
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param siteId
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws PortalException
-     * @throws SystemException
+     * Deletes a Site. It's worth noting that the Default Site cannot be deleted, so you need to
+     * mark another Site as "default" before doing this.
+     *
+     * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
+     * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
+     * @param siteId              The identifier of the Site to be deleted.
+     *
+     * @throws DotDataException     An error occurred when deleting the Site.
+     * @throws DotSecurityException The logged-in User does not have the required permissions to
+     *                              perform this action.
      */
     @DELETE
     @Path("/{siteId}")
@@ -602,34 +610,32 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("sites")
+                .requiredPortlet(PortletID.SITES.toString())
                 .init().getUser();
 
         Logger.debug(this, ()-> "deleting the site: " + siteId);
 
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
         final boolean respectFrontendRoles = pageMode.respectAnonPerms;
-        final Host host = pageMode.respectAnonPerms? this.siteHelper.getSite(user, siteId):
+        final Host site = pageMode.respectAnonPerms? this.siteHelper.getSite(user, siteId):
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
 
-        if (null == host) {
-            throw new IllegalArgumentException("Site: " + siteId + " does not exists");
+        if (null == site) {
+            throw new IllegalArgumentException(String.format("Site '%s' does not exist", siteId));
         }
 
-        if(host.isDefault()) {
-
-            throw new DotStateException("the default site can't be deleted");
+        if(site.isDefault()) {
+            throw new DotStateException(String.format("Site '%s' is the default site. It can't be deleted", site));
         }
 
-        final Future<Boolean> deleteHostResult = this.siteHelper.delete(host, user, respectFrontendRoles);
+        final Future<Boolean> deleteHostResult = this.siteHelper.delete(site, user, respectFrontendRoles);
         if (null == deleteHostResult) {
-
-            throw new DotStateException("the Site: " + siteId + " couldn't be deleted");
+            throw new DotStateException(String.format("Site '%s' couldn't be deleted", siteId));
         } else {
 
             try {
-                asyncResponse.resume(new ResponseEntityView(deleteHostResult.get()));
-            } catch (Exception e) {
+                asyncResponse.resume(new ResponseEntityView<>(deleteHostResult.get()));
+            } catch (final Exception e) {
                 asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
             }
         }
@@ -637,15 +643,17 @@ public class SiteResource implements Serializable {
 
 
     /**
-     * Make a site as a default
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param siteId
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws PortalException
-     * @throws SystemException
+     * Marks a Site as "default".
+     *
+     * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
+     * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
+     * @param siteId              The identifier of the Site to be marked as "default"..
+     *
+     * @return The {@link Response} object containing the result of the operation.
+     *
+     * @throws DotDataException     An error occurred when marking the Site as "default".
+     * @throws DotSecurityException The logged-in User does not have the required permissions to
+     *                              perform this action.
      */
     @PUT
     @Path("/{siteId}/_makedefault")
@@ -660,34 +668,32 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("sites")
+                .requiredPortlet(PortletID.SITES.toString())
                 .init().getUser();
 
         Logger.debug(this, ()-> "making the site: " + siteId + " as a default");
 
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
         final boolean respectFrontendRoles = pageMode.respectAnonPerms;
-        final Host host = pageMode.respectAnonPerms? this.siteHelper.getSite(user, siteId):
+        final Host site = pageMode.respectAnonPerms? this.siteHelper.getSite(user, siteId):
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
 
-        if (null == host) {
-            throw new IllegalArgumentException("Site: " + siteId + " does not exists");
+        if (null == site) {
+            throw new IllegalArgumentException(String.format("Site '%s' does not exist", siteId));
         }
 
-        return Response.ok(new ResponseEntityView(
-                this.siteHelper.makeDefault(host, user, respectFrontendRoles))).build();
+        return Response.ok(new ResponseEntityView<>(
+                this.siteHelper.makeDefault(site, user, respectFrontendRoles))).build();
     }
 
     /**
-     * Get the site setup progress when the site assets are being copied on background
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param siteId
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws PortalException
-     * @throws SystemException
+     * Returns the site setup progress when the site assets are being copied in the background.
+     *
+     * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
+     * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
+     * @param siteId              The identifier of the Site that the setup process belongs to.
+     *
+     * @return The {@link Response} object containing the result of the operation.
      */
     @GET
     @Path("/{siteId}/setup_progress")
@@ -702,25 +708,27 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("sites")
+                .requiredPortlet(PortletID.SITES.toString())
                 .init().getUser();
 
         Logger.debug(this, ()-> "Getting the site : " + siteId + " as a default");
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 QuartzUtils.getTaskProgress("setup-host-" + siteId, "setup-host-group"))).build();
     }
 
     /**
-     * Finds the site by identifier
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param siteId
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws PortalException
-     * @throws SystemException
+     * Retrieves a Site by its Identifier.
+     *
+     * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
+     * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
+     * @param siteId              The identifier of the Site to be retrieved.
+     *
+     * @return The {@link Response} object containing the Site.
+     *
+     * @throws DotDataException     An error occurred when retrieving the Site.
+     * @throws DotSecurityException The logged-in User does not have the required permissions to
+     *                              perform this action.
      */
     @GET
     @Path("/{siteId}")
@@ -729,7 +737,7 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response findHostByIdentifier(@Context final HttpServletRequest httpServletRequest,
                                          @Context final HttpServletResponse httpServletResponse,
-                                         @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException, PortalException, SystemException {
+                                         @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -744,23 +752,25 @@ public class SiteResource implements Serializable {
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
 
         if (null == site) {
-            throw new NotFoundException("Site: " + siteId + " does not exists");
+            throw new NotFoundException(String.format("Site '%s' does not exist", siteId));
         }
 
-        return Response.ok(new ResponseEntityView(this.toView(site))).build();
+        return Response.ok(new ResponseEntityView<>(this.toView(site))).build();
     }
 
     /**
-     * Finds a site by name
-     * The site name is sent by post to avoid escape url issues.
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param searchSiteByNameForm
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws PortalException
-     * @throws SystemException
+     * Finds a site by its name. The site name is sent via POST in order to avoid escaped url
+     * issues.
+     *
+     * @param httpServletRequest   The current instance of the {@link HttpServletRequest} object.
+     * @param httpServletResponse  The current instance of the {@link HttpServletResponse} object.
+     * @param searchSiteByNameForm The form containing the site name to be searched.
+     *
+     * @return The {@link Response} object containing the Site.
+     *
+     * @throws DotDataException     An error occurred when retrieving the Site.
+     * @throws DotSecurityException The logged-in User does not have the required permissions to
+     *                              perform this action.
      */
     @POST
     @Path("/_byname")
@@ -786,14 +796,14 @@ public class SiteResource implements Serializable {
         Logger.debug(this, ()-> "Finding the site by name: " + hostname);
 
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
-        final Host host = pageMode.respectAnonPerms? this.siteHelper.getSiteByName(user, hostname):
+        final Host site = pageMode.respectAnonPerms? this.siteHelper.getSiteByName(user, hostname):
                 this.siteHelper.getSiteByNameNoFrontEndRoles(user, hostname);
 
-        if (null == host) {
-            throw new NotFoundException("Site: " + hostname + " does not exists");
+        if (null == site) {
+            throw new NotFoundException(String.format("Site '%s' does not exist", hostname));
         }
 
-        return Response.ok(new ResponseEntityView(this.toView(host))).build();
+        return Response.ok(new ResponseEntityView<>(this.toView(site))).build();
     }
 
     /**
@@ -913,17 +923,17 @@ public class SiteResource implements Serializable {
 
     /**
      * Saves a Site Variable in the specified Site.
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param newSiteForm
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws PortalException
-     * @throws SystemException
-     * @throws ParseException
-     * @throws SchedulerException
-     * @throws ClassNotFoundException
+     *
+     * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
+     * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
+     * @param siteVariableForm    The form containing the Site Variable to be saved.
+     *
+     * @return The {@link Response} object containing the Site Variable.
+     *
+     * @throws DotDataException     An error occurred when saving the Site Variable.
+     * @throws DotSecurityException The logged-in User does not have the required permissions to
+     *                              perform this action.
+     * @throws LanguageException    An error occurred when retrieving the default Language.
      */
     @PUT
     @Path("/variable")
@@ -946,7 +956,7 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("sites")
+                .requiredPortlet(PortletID.SITES.toString())
                 .init().getUser();
         final PageMode pageMode = PageMode.get(httpServletRequest);
 
@@ -1142,8 +1152,7 @@ public class SiteResource implements Serializable {
         final Host site = siteHelper.getSite(user, siteIdentifier);
 
         if (null == site) {
-
-            throw new NotFoundException("Site: " + siteIdentifier + " does not exist");
+            throw new NotFoundException(String.format("Site '%s' does not exist", siteIdentifier));
         }
 
         // we need to clean up mostly the null properties when recovery the by identifier
@@ -1208,16 +1217,16 @@ public class SiteResource implements Serializable {
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
                 .requireLicense(true)
-                .requiredPortlet("sites")
+                .requiredPortlet(PortletID.SITES.toString())
                 .init().getUser();
 
         final String siteId = copySiteForm.getCopyFromSiteId();
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
-        final Host sourceHost = pageMode.respectAnonPerms? this.siteHelper.getSite(user, siteId):
+        final Host sourceSite = pageMode.respectAnonPerms? this.siteHelper.getSite(user, siteId):
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
 
-        if (null == sourceHost) {
-            throw new NotFoundException("Site: " + siteId + " does not exists");
+        if (null == sourceSite) {
+            throw new NotFoundException(String.format("Site '%s' does not exist", siteId));
         }
 
         final Response response  = this.createNewSite(httpServletRequest, httpServletResponse, copySiteForm.getSite());
@@ -1233,7 +1242,7 @@ public class SiteResource implements Serializable {
                             copySiteForm.isCopyContentOnPages(), copySiteForm.isCopyContentOnSite(),
                             copySiteForm.isCopySiteVariables());
 
-        HostAssetsJobProxy.fireJob(newSite.getIdentifier(), sourceHost.getIdentifier(), hostCopyOptions, user.getUserId());
+        HostAssetsJobProxy.fireJob(newSite.getIdentifier(), sourceSite.getIdentifier(), hostCopyOptions, user.getUserId());
         return Response.ok(new ResponseEntityView<>(newSite)).build();
     }
 
