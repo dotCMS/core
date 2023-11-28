@@ -525,15 +525,15 @@ describe('DotEmaComponent', () => {
                     expect(event).toBeTruthy();
                     done();
                 });
+            });
 
-                it('should have a confirm dialog with acceptIcon and rejectIcon attribute', () => {
-                    spectator.detectChanges();
+            it('should have a confirm dialog with acceptIcon and rejectIcon attribute', () => {
+                spectator.detectChanges();
 
-                    const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
 
-                    expect(confirmDialog.getAttribute('acceptIcon')).toBeNull();
-                    expect(confirmDialog.getAttribute('rejectIcon')).toBeNull();
-                });
+                expect(confirmDialog.getAttribute('acceptIcon')).toBeNull();
+                expect(confirmDialog.getAttribute('rejectIcon')).toBeNull();
             });
         });
     });
