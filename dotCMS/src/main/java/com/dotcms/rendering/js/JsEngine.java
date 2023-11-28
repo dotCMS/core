@@ -25,9 +25,16 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.util.FileUtil;
+import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.JsDynamicObjectUtils;
+import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.js.lang.JavaScriptLanguage;
 import com.oracle.truffle.js.runtime.builtins.JSPromise;
 import com.oracle.truffle.js.runtime.builtins.JSPromiseObject;
+import com.oracle.truffle.object.LayoutImpl;
+import com.oracle.truffle.object.LayoutStrategy;
+import com.oracle.truffle.object.ShapeImpl;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.tools.view.context.ChainedContext;
@@ -44,6 +51,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -195,7 +203,12 @@ public class JsEngine implements ScriptEngine {
             final JSPromiseObject promise = eval.as(JSPromiseObject.class);
             if (promise.getPromiseState() == JSPromise.REJECTED) {
 
-                throw new DotRuntimeException("Promise rejected: " + eval.toString());
+                final Object[] stackTraceArray = JsDynamicObjectUtils.getObjectArray(promise);
+
+                throw new DotRuntimeException(Map.of(
+                        "message", "Promise rejected",
+                        "rootCause", eval.toString(),
+                        "stackTrace", Arrays.asList(stackTraceArray)).toString());
             }
         } catch (ClassCastException e) {
 
