@@ -1,4 +1,4 @@
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
@@ -63,10 +63,6 @@ export class DotAiService {
                 indexPolicy: 'WAIT_FOR'
             }
         ];
-
-        const headers = new HttpHeaders({
-            'Content-Type': 'application/json'
-        });
 
         return this.http
             .post(`${API_ENDPOINT_FOR_PUBLISH}`, JSON.stringify({ contentlets }), {
