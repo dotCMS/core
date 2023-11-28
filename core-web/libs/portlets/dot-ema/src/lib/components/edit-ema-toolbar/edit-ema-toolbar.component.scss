@@ -17,6 +17,7 @@
     background-color: $color-palette-gray-200;
     width: 113px;
     height: 40px;
+    border-radius: $border-radius-md; // Required for all buttons
 }
 
 .edit-ema-toolbar-actions {
