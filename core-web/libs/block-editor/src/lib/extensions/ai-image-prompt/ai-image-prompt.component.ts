@@ -1,3 +1,5 @@
+import { Observable } from 'rxjs';
+
 import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -10,7 +12,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { PromptType } from './ai-image-prompt.models';
-import { DotAiImagePromptStore } from './ai-image-prompt.store';
+import { DotAiImagePromptStore, VmAiImagePrompt } from './ai-image-prompt.store';
 import { AiImagePromptInputComponent } from './components/ai-image-prompt-input/ai-image-prompt-input.component';
 
 @Component({
@@ -29,11 +31,10 @@ import { AiImagePromptInputComponent } from './components/ai-image-prompt-input/
         AiImagePromptInputComponent,
         AsyncPipe
     ],
-    providers: [DotAiImagePromptStore],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AIImagePromptComponent {
-    vm$ = inject(DotAiImagePromptStore).vm$;
+    vm$: Observable<VmAiImagePrompt> = inject(DotAiImagePromptStore).vm$;
 
     protected readonly ComponentStatus = ComponentStatus;
     private store = inject(DotAiImagePromptStore);

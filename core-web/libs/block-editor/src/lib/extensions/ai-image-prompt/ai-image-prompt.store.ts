@@ -16,11 +16,17 @@ const DEFAULT_INPUT_PROMPT: PromptType = 'input';
 export interface DotAiImagePromptComponentState {
     showDialog: boolean;
     selectedPromptType: PromptType | null;
-    prompt: string | null; // always will have the final prompt
+    prompt: string | null; // we always have the final prompt here
     editorContent: string | null;
     contentlets: DotCMSContentlet[] | [];
     status: ComponentStatus;
     error: string | null;
+}
+
+export interface VmAiImagePrompt {
+    selectedPromptType: PromptType | null;
+    showDialog: boolean;
+    status: ComponentStatus;
 }
 
 const initialState: DotAiImagePromptComponentState = {
@@ -36,7 +42,6 @@ const initialState: DotAiImagePromptComponentState = {
 @Injectable({ providedIn: 'root' })
 export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptComponentState> {
     readonly isOpenDialog$ = this.select(this.state$, ({ showDialog }) => showDialog);
-    readonly editorContent$ = this.select(this.state$, ({ editorContent }) => editorContent);
 
     readonly isLoading$ = this.select(
         this.state$,
@@ -63,36 +68,29 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         selectedPromptType: null
     }));
 
-    readonly vm$: Observable<DotAiImagePromptComponentState> = this.select(
+    readonly vm$: Observable<VmAiImagePrompt> = this.select(
         this.state$,
-        ({
+        ({ selectedPromptType, showDialog, status }) => ({
             selectedPromptType,
             showDialog,
-            status,
-            prompt,
-            contentlets,
-            error,
-            editorContent
-        }) => ({
-            selectedPromptType,
-            showDialog,
-            status,
-            prompt,
-            contentlets,
-            error,
-            editorContent
+            status
         })
     );
 
+    /**
+     * The `generateImage` variable is a function that generates an image based on a given prompt.
+     *
+     * @param {Observable<string>} prompt$ - An observable representing the prompt.
+     * @returns {Observable} - An observable that emits the generated image.
+     */
     readonly generateImage = this.effect((prompt$: Observable<string>) => {
         return prompt$.pipe(
             withLatestFrom(this.state$),
             switchMap(([prompt, { selectedPromptType, editorContent }]) => {
                 const finalPrompt =
                     selectedPromptType === 'auto' && editorContent
-                        ? `${prompt} ${editorContent}`
+                        ? `${prompt} to illustrate the following content: ${editorContent}`
                         : prompt;
-
                 this.patchState({ status: ComponentStatus.LOADING, prompt: finalPrompt });
 
                 return this.dotAiService.generateAndPublishImage(finalPrompt).pipe(
@@ -112,6 +110,9 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         );
     });
 
+    /**
+     * Regenerate the image and call the generateImage effect with withLatestFrom prompt
+     */
     readonly reGenerateContent = this.effect((trigger$: Observable<void>) => {
         return trigger$.pipe(
             withLatestFrom(this.state$),

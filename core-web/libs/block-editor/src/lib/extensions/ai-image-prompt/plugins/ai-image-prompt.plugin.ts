@@ -64,8 +64,6 @@ export class AIImagePromptView {
         this.store = this.component.injector.get(DotAiImagePromptStore);
 
         // TODO: handle the error
-        // TODO: Handle regenerating the image
-        // TODO: No accept the image
 
         /**
          * Subscription fired by the store when the dialog change of the state
@@ -124,7 +122,7 @@ export class AIImagePromptView {
             this.component.instance.showDialog(this.editor.getText());
         }
 
-        // hide the dialog by observables
+        // hide the dialog handled by isOpenDialog$ subscription
     }
 
     destroy() {

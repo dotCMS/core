@@ -5,7 +5,9 @@ import {
     EventEmitter,
     inject,
     Input,
-    Output
+    OnChanges,
+    Output,
+    SimpleChanges
 } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -23,6 +25,7 @@ import {
 import { PromptType } from '../../ai-image-prompt.models';
 
 //TODO: make this component more flexible is we need more PromptType
+//TODO: disable in auto if you dont have a prompt and content in BlockEditor
 @Component({
     selector: 'dot-ai-image-prompt-input',
     standalone: true,
@@ -44,7 +47,7 @@ import { PromptType } from '../../ai-image-prompt.models';
 
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AiImagePromptInputComponent {
+export class AiImagePromptInputComponent implements OnChanges {
     isSelected = false;
 
     @Input()
@@ -52,10 +55,13 @@ export class AiImagePromptInputComponent {
 
     @Input()
     isLoading: boolean;
+
     @Input()
     type: PromptType;
+
     @Output()
     promptChanged = new EventEmitter<string>();
+
     form = inject(FormBuilder).group({
         prompt: ['', Validators.required]
     });
@@ -79,6 +85,14 @@ export class AiImagePromptInputComponent {
         if (this.form.valid) {
             this.promptChanged.emit(this.promptControl.value);
             this.disableForm();
+        }
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        const { type } = changes;
+        if (type && type.currentValue === 'auto') {
+            this.promptControl.clearValidators();
+            this.form.updateValueAndValidity();
         }
     }
 
