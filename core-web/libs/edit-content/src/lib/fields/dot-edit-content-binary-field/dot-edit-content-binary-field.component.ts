@@ -374,10 +374,6 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     private existFileMetadata(): boolean {
-        if (!this.contentlet) {
-            return false;
-        }
-
-        return !!this.contentlet[this.metaDataKey];
+        return !!this.contentlet && !!this.contentlet[this.metaDataKey];
     }
 }
