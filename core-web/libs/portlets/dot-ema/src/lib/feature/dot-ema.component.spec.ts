@@ -137,6 +137,30 @@ describe('DotEmaComponent', () => {
             expect(dialog.getAttribute('ng-reflect-visible')).toBe('false');
         });
 
+        it('should navigate to new url when postMessage SET_URL', () => {
+            const router = spectator.inject(Router);
+            jest.spyOn(router, 'navigate');
+
+            spectator.detectChanges();
+
+            window.dispatchEvent(
+                new MessageEvent('message', {
+                    origin: 'http://localhost:3000',
+                    data: {
+                        action: 'set-url',
+                        payload: {
+                            url: '/some'
+                        }
+                    }
+                })
+            );
+
+            expect(router.navigate).toHaveBeenCalledWith([], {
+                queryParams: { url: '/some' },
+                queryParamsHandling: 'merge'
+            });
+        });
+
         it('should trigger onIframeLoad when the dialog is opened', (done) => {
             spectator.detectChanges();
 
