@@ -9,8 +9,8 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
+import { DotLanguagesServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEmaComponent } from './dot-ema.component';
 import { EditEmaStore } from './store/dot-ema.store';
@@ -40,6 +40,7 @@ describe('DotEmaComponent', () => {
         componentProviders: [
             EditEmaStore,
             ConfirmationService,
+            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
             {
                 provide: DotPageApiService,
                 useValue: {
@@ -84,28 +85,6 @@ describe('DotEmaComponent', () => {
             spectator.detectChanges();
 
             expect(store.load).toHaveBeenCalledWith(mockQueryParams);
-        });
-
-        it('should update store and update the route on page change', () => {
-            const router = spectator.inject(Router);
-
-            jest.spyOn(store, 'setLanguage');
-            jest.spyOn(router, 'navigate');
-
-            spectator.detectChanges();
-
-            spectator.triggerEventHandler('select[data-testId="language_id"]', 'change', {
-                target: { name: 'language_id', value: '2' }
-            });
-
-            expect(store.setLanguage).toHaveBeenCalledWith('2');
-            expect(router.navigate).toHaveBeenCalledWith([], {
-                queryParams: { language_id: '2' },
-                queryParamsHandling: 'merge'
-            });
-
-            const iframe = spectator.query(byTestId('iframe'));
-            expect(iframe.getAttribute('src')).toBe('http://localhost:3000/page-one?language_id=2');
         });
 
         describe('customer actions', () => {

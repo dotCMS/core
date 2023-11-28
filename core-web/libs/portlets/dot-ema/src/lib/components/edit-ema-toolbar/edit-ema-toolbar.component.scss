@@ -1,3 +1,32 @@
+@use "variables" as *;
+
 :host {
-    display: block;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    border: solid 1px $color-palette-gray-100;
+    padding: $spacing-2 $spacing-3;
+    gap: $spacing-1;
+
+    h4 {
+        margin: 0;
+    }
+}
+
+.dummy-button {
+    background-color: $color-palette-gray-200;
+    width: 113px;
+    height: 40px;
+}
+
+.edit-ema-toolbar-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .edit-ema-toolbar-actions__buttons {
+        display: flex;
+        align-items: center;
+        gap: $spacing-2;
+    }
 }

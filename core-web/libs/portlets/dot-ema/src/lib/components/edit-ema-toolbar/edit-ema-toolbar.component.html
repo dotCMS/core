@@ -1,9 +1,16 @@
-<p-menu #menu [model]="items" [popup]="true"></p-menu>
-<button
-    class="p-button-sm p-button-text"
-    [attr.aria-label]="label"
-    [label]="label"
-    (click)="menu.toggle($event)"
-    pButton
-    type="button"
-    icon="pi pi-globe"></button>
+<h4>{{ pageTitle }}</h4>
+
+<div class="edit-ema-toolbar-actions">
+    <div class="edit-ema-toolbar-actions__buttons">
+        <div class="dummy-button"></div>
+        <div class="dummy-button"></div>
+        <div class="dummy-button"></div>
+        <div class="dummy-button"></div>
+    </div>
+
+    <div class="edit-ema-toolbar-actions__buttons">
+        <div class="dummy-button"></div>
+        <dot-edit-ema-language-selector></dot-edit-ema-language-selector>
+        <div class="dummy-button"></div>
+    </div>
+</div>

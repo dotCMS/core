@@ -20,12 +20,13 @@ import { DialogModule } from 'primeng/dialog';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaStore } from './store/dot-ema.store';
 
+import { EditEmaToolbarComponent } from '../components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
@@ -41,12 +42,14 @@ import { deleteContentletFromContainer, insertContentletInContainer } from '../u
         SafeUrlPipe,
         DialogModule,
         DotSpinnerModule,
-        ConfirmDialogModule
+        ConfirmDialogModule,
+        EditEmaToolbarComponent
     ],
     providers: [
         EditEmaStore,
         DotPageApiService,
         ConfirmationService,
+        DotLanguagesService,
         {
             provide: WINDOW,
             useValue: window
@@ -61,17 +64,6 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
 
     readonly destroy$ = new Subject<boolean>();
-
-    languages = [
-        {
-            name: 'English',
-            value: '1'
-        },
-        {
-            name: 'Spanish',
-            value: '2'
-        }
-    ];
 
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
@@ -116,6 +108,15 @@ export class DotEmaComponent implements OnInit, OnDestroy {
             .subscribe((event: MessageEvent) => {
                 this.handlePostMessage(event)?.();
             });
+
+        this.store.language_id$.subscribe((language_id) => {
+            this.router.navigate([], {
+                queryParams: {
+                    language_id
+                },
+                queryParamsHandling: 'merge'
+            });
+        });
     }
 
     ngOnDestroy(): void {
@@ -140,30 +141,6 @@ export class DotEmaComponent implements OnInit, OnDestroy {
             .subscribe((event: CustomEvent) => {
                 this.handleNgEvent(event)?.();
             });
-    }
-
-    /**
-     * Updates store value and navigates with updated query parameters on select element change event.
-     *
-     * @param {Event} e
-     * @memberof DotEmaComponent
-     */
-    onChange(e: Event) {
-        const name = (e.target as HTMLSelectElement).name;
-        const value = (e.target as HTMLSelectElement).value;
-
-        switch (name) {
-            case 'language_id':
-                this.store.setLanguage(value);
-                break;
-        }
-
-        this.router.navigate([], {
-            queryParams: {
-                [name]: value
-            },
-            queryParamsHandling: 'merge'
-        });
     }
 
     /**
