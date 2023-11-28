@@ -7434,7 +7434,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                   final String... dateFormats) {
         if (value instanceof Number) { // is a timestamp
             contentlet.setDateProperty(field.getVelocityVarName(),
-                    new Date(TimeUnit.MILLISECONDS.convert(Number.class.cast(value).longValue(), TimeUnit.SECONDS)));
+                    DateUtil.convertDate(Number.class.cast(value).longValue()));
         } else if (value instanceof Date) {
             contentlet.setDateProperty(field.getVelocityVarName(), (Date) value);
         } else if (value instanceof String) {
