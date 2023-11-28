@@ -29,7 +29,7 @@ import { EditEmaStore } from './store/dot-ema.store';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
-import { AddContentletPayload, DeleteContentletPayload } from '../shared/models';
+import { AddContentletPayload, DeleteContentletPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
 
 @Component({
@@ -278,6 +278,16 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                             }
                         }); // Save when selected
                     }
+                });
+            },
+            [CUSTOMER_ACTIONS.SET_URL]: () => {
+                const payload = <SetUrlPayload>data.payload;
+
+                this.router.navigate([], {
+                    queryParams: {
+                        url: payload.url
+                    },
+                    queryParamsHandling: 'merge'
                 });
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {

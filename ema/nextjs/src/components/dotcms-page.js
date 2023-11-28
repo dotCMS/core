@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { useContext } from 'react';
 import { GlobalContext } from '../providers/global';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getPageContainers } from '@/utils';
+import { usePathname } from 'next/navigation';
 
 // Provide a component for each content type
 const contentComponents = {
@@ -392,8 +393,21 @@ function reloadWindow(event) {
 
 // Main layout component
 export const DotcmsPage = () => {
+    const pathname = usePathname();
     // Get the page layout from the global context
     const { layout, page } = useContext(GlobalContext);
+
+    useEffect(() => {
+        window.parent.postMessage(
+            {
+                action: 'set-url',
+                payload: {
+                    url: url === '/' ? 'index' : pathname.split('/').pop()
+                }
+            },
+            '*'
+        );
+    }, [pathname]);
 
     useEffect(() => {
         window.addEventListener('message', reloadWindow);

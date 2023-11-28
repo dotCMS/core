@@ -13,6 +13,10 @@ export interface DeleteContentletPayload {
     contentletId: string;
 }
 
+export interface SetUrlPayload {
+    url: string;
+}
+
 export interface Container {
     acceptTypes?: string;
     identifier: string;
