@@ -167,7 +167,7 @@ public class CubeJSClientTest {
             }
 
             try {
-                cubeClient.sendWithPagination(null);
+                cubeClient.send(null);
                 throw new AssertionError("IllegalArgumentException Expected");
             }  catch (IllegalArgumentException e) {
                 mockhttpServer.mustNeverCalled("/cubejs-api/v1/load");

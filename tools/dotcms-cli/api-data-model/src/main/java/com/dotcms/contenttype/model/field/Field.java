@@ -2,6 +2,8 @@
 package com.dotcms.contenttype.model.field;
 
 import com.dotcms.api.provider.ClientObjectMapper;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -56,6 +58,8 @@ import org.immutables.value.Value.Default;
         @Type(value = RowField.class),
         @Type(value = ColumnField.class),
 })
+@JsonInclude(Include.NON_DEFAULT)
+@Value.Style(passAnnotations = {JsonInclude.class})
 public abstract class Field {
 
     @Value.Default

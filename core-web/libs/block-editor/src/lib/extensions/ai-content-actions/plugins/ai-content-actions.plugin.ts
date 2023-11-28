@@ -10,6 +10,8 @@ import { takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
+import { DOT_AI_TEXT_CONTENT_KEY } from '../../ai-content-prompt/ai-content-prompt.extension';
+import { AiContentPromptStore } from '../../ai-content-prompt/store/ai-content-prompt.store';
 import { ACTIONS, AIContentActionsComponent } from '../ai-content-actions.component';
 import { AI_CONTENT_ACTIONS_PLUGIN_KEY } from '../ai-content-actions.extension';
 import { TIPPY_OPTIONS } from '../utils';
@@ -24,6 +26,7 @@ interface AIContentActionsProps {
 
 interface PluginState {
     open: boolean;
+    nodeType: string;
 }
 
 export type AIContentActionsViewProps = AIContentActionsProps & {
@@ -47,6 +50,8 @@ export class AIContentActionsView {
 
     public component: ComponentRef<AIContentActionsComponent>;
 
+    private aiContentPromptStore: AiContentPromptStore;
+
     private destroy$ = new Subject<boolean>();
 
     constructor(props: AIContentActionsViewProps) {
@@ -61,6 +66,10 @@ export class AIContentActionsView {
         this.element.remove();
         this.pluginKey = pluginKey;
         this.component = component;
+
+        // Reference of stores available ROOT through the Angular component.
+        //TODO: Add the reference of the image store.
+        this.aiContentPromptStore = this.component.injector.get(AiContentPromptStore);
 
         this.component.instance.actionEmitter.pipe(takeUntil(this.destroy$)).subscribe((action) => {
             switch (action) {
@@ -82,33 +91,29 @@ export class AIContentActionsView {
     }
 
     private acceptContent() {
+        const pluginState: PluginState = this.pluginKey?.getState(this.view.state);
+
         this.editor.commands.closeAIContentActions();
-        const content = this.component.instance.getLatestContent();
-        this.editor.commands.insertContent(content);
+
+        //TODO: add the image case to the add content.
+        switch (pluginState.nodeType) {
+            case DOT_AI_TEXT_CONTENT_KEY:
+                this.aiContentPromptStore.setAcceptContent(true);
+                break;
+        }
     }
 
     private generateContent() {
-        const nodeType = this.getNodeType();
+        const pluginState: PluginState = this.pluginKey?.getState(this.view.state);
 
         this.editor.commands.closeAIContentActions();
 
-        this.component.instance.getNewContent(nodeType).subscribe((newContent) => {
-            if (newContent) {
-                this.editor.commands.deleteSelection();
-                this.editor.commands.insertAINode(newContent);
-                this.editor.commands.openAIContentActions();
-            }
-        });
-    }
-
-    private getNodeType() {
-        const { state } = this.editor.view;
-        const { doc, selection } = state;
-        const { ranges } = selection;
-        const from = Math.min(...ranges.map((range) => range.$from.pos));
-        const node = doc?.nodeAt(from);
-
-        return node.type.name;
+        //TODO: add the image case to the re-generate content.
+        switch (pluginState.nodeType) {
+            case DOT_AI_TEXT_CONTENT_KEY:
+                this.aiContentPromptStore.reGenerateContent();
+                break;
+        }
     }
 
     private deleteContent() {
@@ -176,7 +181,8 @@ export const aiContentActionsPlugin = (options: AIContentActionsProps) => {
         state: {
             init(): PluginState {
                 return {
-                    open: false
+                    open: false,
+                    nodeType: null
                 };
             },
 
@@ -185,11 +191,11 @@ export const aiContentActionsPlugin = (options: AIContentActionsProps) => {
                 value: PluginState,
                 oldState: EditorState
             ): PluginState {
-                const { open } = transaction.getMeta(AI_CONTENT_ACTIONS_PLUGIN_KEY) || {};
+                const { open, nodeType } = transaction.getMeta(AI_CONTENT_ACTIONS_PLUGIN_KEY) || {};
                 const state = AI_CONTENT_ACTIONS_PLUGIN_KEY?.getState(oldState);
 
                 if (typeof open === 'boolean') {
-                    return { open };
+                    return { open, nodeType };
                 }
 
                 return state || value;

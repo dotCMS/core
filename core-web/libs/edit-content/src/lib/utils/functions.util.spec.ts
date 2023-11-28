@@ -3,7 +3,7 @@ import { it, describe, expect } from '@jest/globals';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import * as functionsUtil from './functions.util';
-import { CALENDAR_FIELD_TYPES } from './mocks';
+import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK } from './mocks';
 
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
 import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
@@ -357,6 +357,50 @@ describe('Utils Functions', () => {
                 getFinalCastedValue(value, field);
 
                 expect(castSingleSelectableValueMock).toHaveBeenCalledWith(value, field.dataType);
+            });
+        });
+
+        it('should return undefined value', () => {
+            const value = undefined;
+            const field = {
+                fieldType: 'something',
+                dataType: 'something'
+            } as DotCMSContentTypeField;
+
+            const res = getFinalCastedValue(value, field);
+            expect(res).toBeUndefined();
+        });
+
+        it('should return a JSON value', () => {
+            const value = {
+                attrs: {},
+                content: [],
+                type: 'doc'
+            };
+            const field = {
+                fieldType: 'Story-Block',
+                dataType: 'something'
+            } as DotCMSContentTypeField;
+
+            const res = getFinalCastedValue(value, field);
+            expect(res).toEqual(value);
+        });
+
+        describe('JSON Field', () => {
+            it('should return a JSON value as string keeping the format', () => {
+                const value = {
+                    value1: 'value1',
+                    value2: 'value2',
+                    value3: 'value3'
+                };
+
+                const field = {
+                    fieldType: JSON_FIELD_MOCK.fieldType
+                } as DotCMSContentTypeField;
+
+                const res = getFinalCastedValue(value, field);
+                const formattedValue = JSON.stringify(value, null, 2);
+                expect(res).toBe(formattedValue);
             });
         });
     });

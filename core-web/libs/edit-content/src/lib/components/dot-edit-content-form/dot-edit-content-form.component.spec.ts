@@ -10,7 +10,8 @@ import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 import {
     CONTENT_FORM_DATA_MOCK,
     JUST_FIELDS_MOCKS,
-    LAYOUT_FIELDS_VALUES_MOCK
+    LAYOUT_FIELDS_VALUES_MOCK,
+    MOCK_DATE
 } from '../../utils/mocks';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 
@@ -42,7 +43,8 @@ describe('DotFormComponent', () => {
                 name1: 'Placeholder',
                 text2: null,
                 text3: null,
-                someTag: ['some', 'tags', 'separated', 'by', 'comma']
+                someTag: ['some', 'tags', 'separated', 'by', 'comma'],
+                date: new Date(MOCK_DATE)
             });
         });
 
@@ -68,7 +70,7 @@ describe('DotFormComponent', () => {
         it('should have 1 row, 2 columns and 3 fields', () => {
             expect(spectator.queryAll(byTestId('row'))).toHaveLength(1);
             expect(spectator.queryAll(byTestId('column'))).toHaveLength(2);
-            expect(spectator.queryAll(byTestId('field'))).toHaveLength(4);
+            expect(spectator.queryAll(byTestId('field'))).toHaveLength(5);
         });
 
         it('should pass field to attr to dot-edit-content-field', () => {

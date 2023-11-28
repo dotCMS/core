@@ -442,14 +442,17 @@ describe('DotTemplateListComponent', () => {
                 DotHttpErrorManagerService,
                 DotAlertConfirmService,
                 ConfirmationService,
-                LoginService,
                 DotcmsEventsService,
                 DotEventsSocket,
                 DotcmsConfigService,
                 DotMessageDisplayService,
                 DialogService,
                 DotSiteBrowserService,
-                { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
+                { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
+                {
+                    provide: LoginService,
+                    useValue: { currentUserLanguageId: 'en-US' }
+                }
             ],
             imports: [
                 DotListingDataTableModule,

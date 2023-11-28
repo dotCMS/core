@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.dotcms</groupId>
-        <artifactId>build-parent</artifactId>
+        <artifactId>dotcms-build-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../build-parent/pom.xml</relativePath>
     </parent>
@@ -147,4 +147,3 @@
     </repositories>
 
 </project>
-

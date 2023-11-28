@@ -76,7 +76,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.contenttype.ContentTypeResourceTest.class,
         Chainable404StorageCacheTest.class,
         FileStorageAPITest.class,
-        com.dotcms.analytics.metrics.QueryParameterValuesGetterTest.class,
         com.dotcms.analytics.metrics.QueryParameterValuesTransformerTest.class,
         QuartzUtilsTest.class,
         DotConnectTest.class

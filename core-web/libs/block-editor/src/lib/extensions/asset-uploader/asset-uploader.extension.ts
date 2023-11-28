@@ -179,6 +179,8 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
 
                     return true;
                 }
+
+                return false;
             }
 
             /**

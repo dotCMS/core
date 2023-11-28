@@ -11,26 +11,30 @@ import { OrderListModule } from 'primeng/orderlist';
 
 import { debounceTime, delay, tap } from 'rxjs/operators';
 
+import { DotPropertiesService } from '@dotcms/data-access';
+
 import { DotBlockEditorComponent } from './dot-block-editor.component';
 
 import { BlockEditorModule } from '../../block-editor.module';
 import {
+    AssetFormComponent,
     BubbleLinkFormComponent,
     DragHandlerComponent,
-    AssetFormComponent,
     UploadPlaceholderComponent
 } from '../../extensions';
 import { ContentletBlockComponent } from '../../nodes';
 import {
+    DotAiService,
+    ASSET_MOCK,
     CONTENTLETS_MOCK,
     DotLanguageService,
+    DotUploadFileService,
+    FileStatus,
     SearchService,
     SuggestionsComponent,
-    SuggestionsService,
-    DotUploadFileService,
-    ASSET_MOCK,
-    FileStatus
+    SuggestionsService
 } from '../../shared';
+import { DotAiServiceMock } from '../../shared/services/dot-ai/dot-ai-service.mock';
 
 export default {
     title: 'Library/Block Editor'
@@ -49,6 +53,14 @@ export const primary = () => ({
             BrowserAnimationsModule
         ],
         providers: [
+            {
+                provide: DotPropertiesService,
+                useValue: {
+                    getKey(_key) {
+                        return of('true');
+                    }
+                }
+            },
             {
                 provide: DotUploadFileService,
                 useValue: {
@@ -178,6 +190,10 @@ export const primary = () => ({
                         }).pipe(delay(1000));
                     }
                 }
+            },
+            {
+                provide: DotAiService,
+                useClass: process.env.USE_MIDDLEWARE === 'true' ? DotAiService : DotAiServiceMock
             }
         ],
         // We need these here because they are dynamically rendered

@@ -38,7 +38,7 @@ You can find more details about how to use the dotCMS CLI in the [Examples](#exa
 
 1. Log in with an admin user
 ```shell script
-login --user=admin@dotCMS.com --password=admin
+login --user=admin@dotCMS.com --password
 ```
 2. List and choose the dotCMS instance we want to run against
 ```shell script
@@ -166,7 +166,7 @@ Example:
 
 ```shell
 export QUARKUS_LOG_FILE_PATH=/Users/my-user/CLI/dotcms-cli.log
-java -jar cli-1.0.0-SNAPSHOT-runner.jar login -u admin@dotcms.com -p admin
+java -jar cli-1.0.0-SNAPSHOT-runner.jar login -u admin@dotcms.com -p
 ```
 
 ##### 2. Set the system property
@@ -176,3 +176,96 @@ Example:
 ```shell
 ../mvnw quarkus:dev -Dquarkus.log.file.path=/Users/my-user/CLI/dotcms-cli.log
 ```
+
+## CLI Instance Configuration
+
+The CLI can be used to manage multiple dotCMS instances. Each instance profile is defined in the `~/.dotcms/dot-service.yml` file. 
+Whatever profile is active will be used by the CLI to execute the commands.
+The selected profile can be obtained by running the `status` command.
+Here's an example of the default `dot-service.yml` file shipped with the CLI:
+
+```yaml
+- name: "default"
+  credentials:
+    user: "admin@dotcms.com"
+- name: "demo"
+  active: true
+  credentials:
+    user: "admin@dotCMS.com"
+```
+
+The profiles declared on this file are paired up with properties defined in an internal `application.properties` file.
+
+```properties
+# Your configuration properties
+dotcms.client.servers.default=http://localhost:8080/api
+dotcms.client.servers.demo=https://demo.dotcms.com/api
+```
+
+Notice how the `dotcms.client.servers` property has a postfix matching the profile name in the `dot-service.yml` file.
+
+Therefore, in order to add a new instance profile, you need to add a new entry in the `dot-service.yml` file and a new property extending the `application.properties` file.
+Application properties can be extended via system properties, environment variables, `.evn` file or in `$PWD/config/application.properties` file.
+To learn more about how to extend the `application.properties` file see the Quarkus configuration guide [Here](https://es.quarkus.io/guides/config-reference#application-properties-file) 
+
+In future versions this process will be facilitated by the CLI itself.
+
+## Workspace
+
+The CLI needs a workspace to be able to pull and push content to a dotCMS instance. 
+The workspace is basically a set of directories and files used to house and organize the different type of assets that can be managed by the CLI.
+And a marker file called `.dot-workspace.yml` that indicates the CLI that the current directory is a valid workspace.
+In the following table you can see the different directories and files that conform a workspace.
+
+| File/Directory       | Type | Description             |
+|----------------------|------|-------------------------|
+| `content-types/`     | Dir  | Content-Types directory |
+| `files/`             | Dir  | Files directory         |
+| `languages/`         | Dir  | Languages Directory     |
+| `sites/`             | Dir  | Sites Directory         |
+| `.dot-workspace.yml` | File | CLI workspace marker    |
+
+## GitHub Actions integration
+We provide support for GitHub Actions to be able to run the CLI as part of your CI/CD pipeline. 
+
+The following example shows how to create a brand-new repository and seed it with a CLI workspace.
+In order to incorporate the CLI into your GitHub Actions workflow, you need to:
+
+- Create a GitHub Repository to manage your dotCMS assets.
+- Copy the contents of the [action](./action) directory into your root project `.github/workflows` directory.
+- In Your repository General Settings, enable the following permissions:
+  -  Workflow Permissions : Read and Write permissions 
+- In Your repository General Settings, Secrets and variables, Actions
+  - Create a new variable called `DOT_API_URL` and set the value to a valid dotCMS URL. e.g. `https://demo.dotcms.com/api`
+  - Create a new secret called `DOT_TOKEN` and set the value to a valid dotCMS CLI token.  
+-  Seed you local repository with a CLI workspace. 
+  -  A cli workspace can be created by running any pull command e.g. `java -jar dotcms-cli.jar files pull //demo.dotcms.com`  
+  -  Run any pull command from the root of your project see [examples](#examples) section.
+  -  A valid CLI workspace should contain a `.dot-worspace` file in the root of your project. Make sure to commit this file to your repository and the others that conform your workspace see the [workspace](#workspace) section. 
+  -  Commit and push the changes to your repository. 
+
+- Now if the integration is successful, you should see a new commits made into your repository reflect in you dotCMS instance.
+
+Here's an example of how a Git repository could look like after the GitHub Action has been integrated:
+
+| File/Directory       | Type | Description               |
+|----------------------|------|---------------------------|
+| `.github/workflows/` | Dir  | GitHub Actions workflow   |
+| `content-types/`     | Dir  | Content-Types directory   |
+| `files/`             | Dir  | Files directory           |
+| `languages/`         | Dir  | Languages Directory       |
+| `sites/`             | Dir  | Sites Directory           |
+| `.dot-workspace.yml` | File | CLI workspace marker      |
+| `.gitignore`         | File | Git files exclude         |
+| `README.md`          | File | Project readme            |
+| `.env`               | File | Push command Options Spec |
+
+- The default command executed by our GitHub Action is the global `push` 
+- Global Push has different options. For more details to control the execution of the command see [Global Push](cli/docs/push.adoc) section for more details.
+- Any additional Options required by the Global push command can be specified in the `.env` file in the following format `DOT_CLI_OPTS="--option1 --option2"`
+So a valid example of a `.env` file could look like this `DOT_CLI_OPTS="--force --dry-run"`
+```shell script
+   DOT_CLI_OPTS=" --removeAssets --removeFolders --removeSites --removeContentTypes --removeLanguages --errors"
+```
+These options can cause data loss, so use them with caution. That's why they are not enabled by default.
+Do not enable them unless you know what you are doing.

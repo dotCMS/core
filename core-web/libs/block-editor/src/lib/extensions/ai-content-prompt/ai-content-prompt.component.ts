@@ -1,11 +1,18 @@
-import { of } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
-import { Component, ElementRef, EventEmitter, Output, ViewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    ElementRef,
+    OnDestroy,
+    OnInit,
+    ViewChild
+} from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 
-import { catchError } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
-import { AiContentService } from '../../shared/services/ai-content/ai-content.service';
+import { AiContentPromptState, AiContentPromptStore } from './store/ai-content-prompt.store';
 
 interface AIContentForm {
     textPrompt: FormControl<string>;
@@ -14,42 +21,37 @@ interface AIContentForm {
 @Component({
     selector: 'dot-ai-content-prompt',
     templateUrl: './ai-content-prompt.component.html',
-    styleUrls: ['./ai-content-prompt.component.scss']
+    styleUrls: ['./ai-content-prompt.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AIContentPromptComponent {
-    isFormSubmitting = false;
+export class AIContentPromptComponent implements OnInit, OnDestroy {
+    vm$: Observable<AiContentPromptState> = this.aiContentPromptStore.vm$;
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     @ViewChild('input') private input: ElementRef;
-    @Output() formSubmission = new EventEmitter<boolean>();
-    @Output() aiResponse = new EventEmitter<string>();
 
     form: FormGroup<AIContentForm> = new FormGroup<AIContentForm>({
         textPrompt: new FormControl('', Validators.required)
     });
 
-    constructor(private aiContentService: AiContentService) {}
+    constructor(private readonly aiContentPromptStore: AiContentPromptStore) {}
+
+    ngOnInit() {
+        this.aiContentPromptStore.open$.pipe(takeUntil(this.destroy$)).subscribe((open) => {
+            open ? this.input.nativeElement.focus() : this.form.reset();
+        });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
+    }
 
     onSubmit() {
-        this.isFormSubmitting = true;
         const textPrompt = this.form.value.textPrompt;
 
         if (textPrompt) {
-            this.aiContentService
-                .getIAContent(textPrompt)
-                .pipe(catchError(() => of(null)))
-                .subscribe((response) => {
-                    this.isFormSubmitting = false;
-                    this.formSubmission.emit(true);
-                    this.aiResponse.emit(response);
-                });
+            this.aiContentPromptStore.generateContent(textPrompt);
         }
-    }
-
-    cleanForm() {
-        this.form.reset();
-    }
-
-    focusField() {
-        this.input.nativeElement.focus();
     }
 }
