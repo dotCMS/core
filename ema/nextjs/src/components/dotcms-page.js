@@ -277,13 +277,30 @@ const Container = ({ containerRef }) => {
                             data-dot-can-edit={true}
                             data-dot-content-type-id={dotContentTypeId}
                             data-dot-has-page-lang-version="true">
-                            <ActionButton
-                                message={{
-                                    action: 'edit-contentlet',
-                                    payload: contentlet
-                                }}>
-                                Edit
-                            </ActionButton>
+                            <div className="flex gap-2">
+                                <ActionButton
+                                    message={{
+                                        action: 'edit-contentlet',
+                                        payload: contentlet
+                                    }}>
+                                    Edit
+                                </ActionButton>
+                                <ActionButton
+                                    message={{
+                                        action: 'delete-contentlet',
+                                        payload: {
+                                            pageID: page.identifier,
+                                            container: {
+                                                identifier: container.path ?? container.identifier,
+                                                uuid
+                                            },
+                                            pageContainers,
+                                            contentletId: contentlet.identifier
+                                        }
+                                    }}>
+                                    Delete
+                                </ActionButton>
+                            </div>
                             <Component {...contentlet} />
                         </div>
                     );
@@ -381,11 +398,13 @@ export const DotcmsPage = () => {
     const { layout, page } = useContext(GlobalContext);
 
     useEffect(() => {
+        const url = pathname.split('/');
+
         window.parent.postMessage(
             {
                 action: 'set-url',
                 payload: {
-                    url: url === '/' ? 'index' : pathname.split('/').pop()
+                    url: url === '/' ? 'index' : url.pop()
                 }
             },
             '*'
