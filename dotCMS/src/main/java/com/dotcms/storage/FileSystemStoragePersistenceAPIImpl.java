@@ -58,7 +58,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         final File rootFolder = getRootFolder();
         groups.put(rootGroupKey, rootFolder);
         Logger.debug(FileSystemStoragePersistenceAPIImpl.class, () -> String
-                .format("Default group key is `%s` currently mapped to folder `%s` ", rootGroupKey,
+                .format("Default root group '%s' is currently mapped to folder '%s' ", rootGroupKey,
                         rootFolder));
     }
 
@@ -72,11 +72,11 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
         if (!folder.isDirectory() || !folder.exists() || !folder.canWrite()) {
             throw new IllegalArgumentException(String.format(
-                    "Invalid attempt of mapping an non existing or writable folder. Argument`%s` must be a valid. ",
-                    folder));
+                    "Folder '%s' cannot be mapped to group '%s' as it is not a directory, doesn't exist, or doesn't have write permissions",
+                    folder, groupName));
         }
         groups.put(groupName.toLowerCase(), folder);
-        Logger.debug(FileSystemStoragePersistenceAPIImpl.class, () -> String.format("Registering New Group with key is `%s` mapped to folder `%s` ",groupName, folder));
+        Logger.debug(FileSystemStoragePersistenceAPIImpl.class, String.format("Registering new group '%s' mapped to folder '%s' ",groupName, folder));
     }
 
     /**
@@ -515,6 +515,10 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         }
     } // FilesIterable.
 
+    /**
+     * This is a simple Iterator-based class that allows you to traverse the files in a given
+     * FS location or bucket.
+     */
     class ObjectPathIterator implements Iterator<ObjectPath> {
 
         private final File destBucketFile;
@@ -571,5 +575,12 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         }
 
     } // ObjectPathIterator.
+
+    @Override
+    public String toString() {
+        return "FileSystemStoragePersistenceAPIImpl{" +
+                "groups=" + groups +
+                '}';
+    }
 
 }

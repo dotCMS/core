@@ -17,7 +17,7 @@ export interface AIContentActionsOptions {
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         AIContentActions: {
-            openAIContentActions: () => ReturnType;
+            openAIContentActions: (nodeType: string) => ReturnType;
             closeAIContentActions: () => ReturnType;
         };
     }
@@ -40,11 +40,11 @@ export const AIContentActionsExtension = (viewContainerRef: ViewContainerRef) =>
         addCommands() {
             return {
                 openAIContentActions:
-                    () =>
+                    (nodeType) =>
                     ({ chain }) => {
                         return chain()
                             .command(({ tr }) => {
-                                tr.setMeta(AI_CONTENT_ACTIONS_PLUGIN_KEY, { open: true });
+                                tr.setMeta(AI_CONTENT_ACTIONS_PLUGIN_KEY, { open: true, nodeType });
 
                                 return true;
                             })

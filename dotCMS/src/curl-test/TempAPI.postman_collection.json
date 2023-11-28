@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "1faea77b-c035-4129-a215-3608487d19b3",
+		"_postman_id": "cf0ae976-98a7-4e35-a637-699ebbb6198a",
 		"name": "TempAPI",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "11174695"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -16,9 +16,22 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"File name check\", function () {",
-							"    pm.expect(jsonData.tempFiles[0].fileName).to.eql('Landscape_2009_romantic_country_garden.jpeg');",
-							"    pm.expect(jsonData.tempFiles[1].fileName).to.eql('16475687531_eac8a30914_b.jpeg');",
-							"    pm.expect(jsonData.tempFiles[2].errorCode).to.eql('400');",
+							"",
+							"    for(let i = 0; i < jsonData.tempFiles.lenght;++i) {",
+							"",
+							"        if (jsonData.tempFiles[i].fileName && sonData.tempFiles[i].fileName == 'Landscape_2009_romantic_country_garden.jpeg') {",
+							"",
+							"            pm.expect(jsonData.tempFiles[i].fileName).to.eql('Landscape_2009_romantic_country_garden.jpeg');",
+							"             pm.expect(jsonData.tempFiles[i].metadata.contentType).to.eql('image/jpeg');",
+							"        } else if (jsonData.tempFiles[i].fileName && sonData.tempFiles[i].fileName == '16475687531_eac8a30914_b.jpeg') {",
+							"",
+							"            pm.expect(jsonData.tempFiles[i].fileName).to.eql('16475687531_eac8a30914_b.jpeg');",
+							"             pm.expect(jsonData.tempFiles[i].metadata.contentType).to.eql('image/jpeg');",
+							"        } else {",
+							"             pm.expect(jsonData.tempFiles[i].errorCode).to.eql('400');",
+							"        }",
+							"    }",
+							"  ",
 							"});",
 							"",
 							""
