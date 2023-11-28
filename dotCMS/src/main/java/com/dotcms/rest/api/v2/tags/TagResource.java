@@ -23,6 +23,7 @@ import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.google.common.collect.ImmutableList;
@@ -54,14 +55,14 @@ import static com.dotcms.rest.tag.TagsResourceHelper.toRestTagMap;
 import static com.dotmarketing.util.UUIDUtil.isUUID;
 
 /**
- * Tag Related logic is exposed to the web here
+ * This REST Endpoint provide CRUD operations for Tags in dotCMS.
+ *
  * @author jsanca
  */
 @Path("/v2/tags")
 public class TagResource {
 
-    private static final String TAGS = "tags";
-    public static final String NO_TAGS_WERE_FOUND_BY_THE_INODE_S = "No tags were found by the inode %s.";
+    public static final String NO_TAGS_WERE_FOUND_BY_THE_INODE_S = "No tags with Inode %s were found.";
     private final WebResource webResource;
     private final TagAPI tagAPI;
 	private final TagsResourceHelper helper;
@@ -72,11 +73,13 @@ public class TagResource {
     }
 
     /**
-     * Test constructor
-     * @param tagAPI
-     * @param hostAPI
-     * @param folderAPI
-     * @param webResource
+     * Class constructor Integration Tests, if required.
+     *
+     * @param tagAPI      Singleton instance of the {@link TagAPI}.
+     * @param hostAPI     Singleton instance of the {@link HostAPI}.
+     * @param folderAPI   Singleton instance of the {@link FolderAPI}.
+     * @param webResource The {@link WebResource} object containing authentication data, parameters,
+     *                    etc.
      */
     @VisibleForTesting
     protected TagResource(final TagAPI tagAPI, final HostAPI hostAPI, final FolderAPI folderAPI, final WebResource webResource) {
@@ -86,14 +89,18 @@ public class TagResource {
     }
 
     /**
-     * This performs a list operation. But if a name is provided a search-by-name (like) operation will be performed instead.
-     * The search-by-name operation can be delimited by a siteId
-     * if No matches are found against the siteId the search-by-name operation will be performed against the global tags.
-     * @param request
-     * @param response
-     * @param tagName
-     * @param siteId
-     * @return ResponseEntityTagMapView
+     * Lists all Tags based on the provided criteria. If a Tag name is provided, a search-by-name
+     * (like) operation will be performed instead. The search-by-name operation can be delimited by
+     * a Site ID as well. If no matches are found against the Site ID, the search-by-name operation
+     * will be performed against the global tags.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     * @param tagName  The name of the Tag to search for.
+     * @param siteId   The ID of the Site where the specified Tag lives, in case it was provided.
+     *
+     * @return The {@link ResponseEntityTagMapView} containing the list of Tags that match the
+     * provided criteria.
      */
     @GET
     @JSONP
@@ -110,7 +117,9 @@ public class TagResource {
 
         final User user = initDataObject.getUser();
 
-        Logger.debug(this, () -> "List Tags, tagName: " + tagName + ", siteId:" + siteId);
+        Logger.debug(this, UtilMethods.isSet(tagName)
+                ? String.format("Listing Tag(s) '%s' from Site '%s'", tagName, siteId)
+                : "Listing ALL Tags");
 
         final List<Tag> tags = UtilMethods.isSet(tagName)
                 ? helper.searchTagsInternal(tagName, helper.getSiteId(siteId, request, user))
@@ -120,11 +129,13 @@ public class TagResource {
     }
 
     /**
-     * Creates new tags and link them to an owner-user if provided
-     * @param request
-     * @param response
-     * @param tagForm
-     * @return ResponseEntityTagMapView
+     * Creates one or more Tags and link them to an owner/user, if provided.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     * @param tagForm  The {@link TagForm} containing the Tags to save.
+     *
+     * @return The {@link ResponseEntityTagMapView} containing the saved Tags.
      */
     @POST
     @JSONP
@@ -138,7 +149,7 @@ public class TagResource {
         final InitDataObject initDataObject = getInitDataObject(request, response);
 
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format(" user %s is adding tag %s ", user.getUserId(), tagForm));
+        Logger.debug(TagResource.class,()->String.format("User '%s' is adding tag(s): %s ", user.getUserId(), tagForm));
 
         //We can assign tags to any user as long as we are admin.
         final String userId = tagForm.getOwnerId();
@@ -150,6 +161,19 @@ public class TagResource {
         return new ResponseEntityTagMapView(toRestTagMap(savedTags.build()));
     }
 
+    /**
+     * Saves a Tag in dotCMS.
+     *
+     * @param request   The current instance of the {@link HttpServletRequest}.
+     * @param tags      The {@link Map} containing the Tags to save.
+     * @param user      The {@link User} performing the operation.
+     * @param userId    The ID of the User to link the Tag to.
+     * @param savedTags The {@link ImmutableList.Builder} containing the Tags that were saved.
+     *
+     * @throws DotDataException     An error occurred when persisting Tag data.
+     * @throws DotSecurityException The specified user does not have the required permissions to
+     *                              perform this operation.
+     */
     @WrapInTransaction
     private void saveTags(final HttpServletRequest request,
                           final Map<String, RestTag> tags,
@@ -162,21 +186,23 @@ public class TagResource {
             final RestTag tag   = entry.getValue();
             final String siteId = helper.getValidateSite(tag.siteId, user, request);
             final Tag createdTag = tagAPI.getTagAndCreate(tagKey, userId, siteId);
-            Logger.debug(TagResource.class,()->String.format(" saved Tag %s ",createdTag.getTagName()));
+            Logger.debug(TagResource.class, String.format("Saving Tag '%s'", createdTag.getTagName()));
             savedTags.add(createdTag);
             if (UtilMethods.isSet(userId)) {
                 tagAPI.addUserTagInode(createdTag, userId);
-                Logger.debug(TagResource.class,()->String.format(" Tag %s is now bound with user %s ",createdTag.getTagName(), userId));
+                Logger.debug(TagResource.class, String.format("Tag '%s' is now bound to user '%s'",createdTag.getTagName(), userId));
             }
         }
     }
 
     /**
-     * Tag Update
-     * @param request
-     * @param response
-     * @param tagForm
-     * @return ResponseEntityTagMapView
+     * Updates the information belonging to a specific Tag.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     * @param tagForm  The {@link UpdateTagForm} containing the Tag information to update.
+     *
+     * @return The {@link ResponseEntityTagMapView} containing the updated Tag information.
      */
     @PUT
     @JSONP
@@ -190,23 +216,23 @@ public class TagResource {
         final InitDataObject initDataObject = getInitDataObject(request, response);
 
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format(" user %s is updating tag %s ", user.getUserId(), tagForm));
+        Logger.debug(TagResource.class,()->String.format("User '%s' is updating Tag %s", user.getUserId(), tagForm));
 
         if (UtilMethods.isNotSet(tagForm.tagId) || UtilMethods.isNotSet(tagForm.siteId)
                 || UtilMethods.isNotSet(tagForm.tagName)) {
 
             Logger.error(TagResource.class,
-                    String.format("update tag `%s` data is invalid or incomplete ", tagForm.tagId));
+                    String.format("Data for Tag `%s` is invalid or incomplete", tagForm.tagId));
             final String errorMessage = Try
                     .of(() -> LanguageUtil.get(user.getLocale(), "tag.save.error.default", tagForm.tagId))
-                    .getOrElse(String.format("update tag `%s` data is invalid or incomplete .",
+                    .getOrElse(String.format("Data for Tag `%s` is invalid or incomplete",
                             tagForm.tagId)); //fallback message
             throw new BadRequestException(errorMessage);
         }
 
         //We can assign tags to any user as long as we are admin.
-        final Tag tagByTagId = Try.of(() -> tagAPI.getTagByTagId(tagForm.tagId)).getOrNull();
-        if (null == tagByTagId) {
+        final Tag tag = Try.of(() -> tagAPI.getTagByTagId(tagForm.tagId)).getOrNull();
+        if (null == tag) {
 
             final String errorMessage = Try.of(() -> LanguageUtil
                     .get(user.getLocale(), "tag.id.not.found", tagForm.tagId))
@@ -222,11 +248,14 @@ public class TagResource {
     }
 
     /**
-     * if an owner was provided when saving the tag this should return all the tags owned byt a given user
-     * @param request
-     * @param response
-     * @param userId
-     * @return ResponseEntityTagMapView
+     * Retrieves all Tags owned by a given User if an owner was provided when saving such Tags.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     * @param userId   The User ID that matches a given Tag.
+     *
+     * @return The {@link ResponseEntityTagMapView} containing the list of Tags that belong to a
+     * User.
      */
     @GET
     @JSONP
@@ -239,14 +268,14 @@ public class TagResource {
 
         final InitDataObject initDataObject = getInitDataObject(request, response);
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format(" user %s is requesting tags owned by  %s ",user.getUserId(), userId));
+        Logger.debug(TagResource.class, String.format("User '%s' is requesting tags owned by User '%s'",user.getUserId(), userId));
 
         final List<Tag> tags = Try.of(() -> tagAPI.getTagsForUserByUserId(userId)).getOrElse(List.of());
         if (tags.isEmpty()) {
 
             final String errorMessage = Try.of(() -> LanguageUtil
                     .get(user.getLocale(), "tag.user.not.found", userId))
-                    .getOrElse(String.format("No tags are owned by user %s.",
+                    .getOrElse(String.format("No tags are owned by user '%s'",
                             userId)); //fallback message
             Logger.error(TagResource.class, errorMessage);
             throw new DoesNotExistException(errorMessage);
@@ -256,11 +285,15 @@ public class TagResource {
     }
 
     /**
-     * Lookup operation. Tags can be retrieved by tag name or tag id
-     * @param request
-     * @param response
-     * @param nameOrId
-     * @return ResponseEntityTagMapView
+     * Retrieves Tags by name or ID. If the provided value is a valid UUID, a search-by-ID operation
+     * will be performed and will yield one single result.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     * @param nameOrId The name or ID of the Tag to search for.
+     *
+     * @return The {@link ResponseEntityTagMapView} containing the list of Tags that match the
+     * search criteria.
      */
     @GET
     @JSONP
@@ -273,12 +306,12 @@ public class TagResource {
 
         final InitDataObject initDataObject = getInitDataObject(request, response);
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format(" user %s is requesting tags by name %s ", user.getUserId(), nameOrId));
+        Logger.debug(TagResource.class,()->String.format("User '%s' is requesting tags by name or ID '%s'", user.getUserId(), nameOrId));
         final ImmutableList.Builder<Tag> builder = ImmutableList.builder();
         if (isUUID(nameOrId)) {
-            final Tag tagByTagId = Try.of(()->tagAPI.getTagByTagId(nameOrId)).getOrNull();
-            if(null != tagByTagId) {
-                builder.add(tagByTagId);
+            final Tag tag = Try.of(()->tagAPI.getTagByTagId(nameOrId)).getOrNull();
+            if(null != tag) {
+                builder.add(tag);
             }
         } else {
             final List<Tag> tagsByName = Try.of(()->tagAPI.getTagsByName(nameOrId)).getOrNull();
@@ -287,7 +320,7 @@ public class TagResource {
         final List<Tag> foundTags = builder.build();
         if(foundTags.isEmpty()) {
 
-           throw new NotFoundException(String.format("No tags were found by the name or id %s.", nameOrId));
+           throw new NotFoundException(String.format("No tags were found by the name or ID '%s'", nameOrId));
         }
 
         return new ResponseEntityTagMapView(toRestTagMap(foundTags));
@@ -295,11 +328,13 @@ public class TagResource {
 
 
     /**
-     * Delete tag for a given tag Id
-     * @param request
-     * @param response
-     * @param tagId
-     * @return ResponseEntityBooleanView
+     * Deletes a Tag based on its ID.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     * @param tagId    The ID of the Tag to delete.
+     *
+     * @return A {@link ResponseEntityBooleanView} containing the result of the delete operation.
      */
     @DELETE
     @JSONP
@@ -312,9 +347,9 @@ public class TagResource {
 
         final InitDataObject initDataObject = getInitDataObject(request, response);
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format(" user %s is requesting delete tags by id %s ",user.getUserId(), tagId));
-        final Tag tagByTagId = Try.of(() -> tagAPI.getTagByTagId(tagId)).getOrNull();
-        if (null == tagByTagId) {
+        Logger.debug(TagResource.class,()->String.format("User '%s' is deleting tags by ID '%s'",user.getUserId(), tagId));
+        final Tag tag = Try.of(() -> tagAPI.getTagByTagId(tagId)).getOrNull();
+        if (null == tag) {
 
             final String errorMessage = Try.of(() -> LanguageUtil
                     .get(user.getLocale(), "tag.id.not.found", tagId))
@@ -324,20 +359,21 @@ public class TagResource {
             throw new DoesNotExistException(errorMessage);
         }
 
-        tagAPI.deleteTag(tagByTagId);
+        tagAPI.deleteTag(tag);
         return new ResponseEntityBooleanView(true);
     }
 
     /**
-     * This allows for binding a tag with a given inode
-     * The lookup can be done via tag name or tag id
-     * if the tag name matches more than one tag all the matching tags will be bound.
-     * So if you want to be more specific provide an id instead of a tag-name
-     * @param request
-     * @param response
-     * @param nameOrId
-     * @param inode
-     * @return ResponseEntityTagInodesMapView
+     * Binds a Tag with a given inode. The lookup can be done via tag name or tag id. if the tag
+     * name matches more than one tag, all the matching tags will be bound. So, if you want to be
+     * more specific, provide the Tag ID instead of its name.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     * @param nameOrId The name or ID of the Tag to link.
+     * @param inode    The inode of the Tag to be linked.
+     *
+     * @return The {@link ResponseEntityTagInodesMapView} containing the list of linked Tags.
      */
     @PUT
     @JSONP
@@ -351,27 +387,27 @@ public class TagResource {
 
         final InitDataObject initDataObject = getInitDataObject(request, response);
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format(" user %s is requesting linking tags %s with inode %s ",user.getUserId(), nameOrId, inode));
+        Logger.debug(TagResource.class, String.format("User '%s' is linking Tag '%s' with inode '%s'",user.getUserId(), nameOrId, inode));
         final List<Tag> tags = new ArrayList<>();
         if (isUUID(nameOrId)){
 
-            Logger.error(TagResource.class, String.format("Trying to look up tag `%s` by id.",nameOrId));
-            final Tag tagByTagId = Try.of(()->tagAPI.getTagByTagId(nameOrId)).getOrNull();
-            if(null != tagByTagId) {
+            Logger.debug(TagResource.class, String.format("Trying to look up tag `%s` by name or id",nameOrId));
+            final Tag tag = Try.of(()->tagAPI.getTagByTagId(nameOrId)).getOrNull();
+            if(null != tag) {
 
-               tags.add(tagByTagId);
+               tags.add(tag);
             }
         } else {
 
             final List<Tag> tagsByName = Try.of(()->tagAPI.getTagsByName(nameOrId)).getOrNull();
-            Logger.error(TagResource.class, String.format("There are `%d` tags found under `%s`.",tagsByName.size(), nameOrId));
+            Logger.debug(TagResource.class, String.format("There are `%d` tags found under `%s`",tagsByName.size(), nameOrId));
             tags.addAll(tagsByName);
         }
 
         if (tags.isEmpty()) {
 
-            Logger.error(TagResource.class, String.format("No tags like `%s` were found .",nameOrId));
-            throw new NotFoundException(String.format("No tags were found by the name or id %s.", nameOrId));
+            Logger.error(TagResource.class, String.format("No Tags as `%s` were found",nameOrId));
+            throw new NotFoundException(String.format("No tags were found by the name or id '%s'", nameOrId));
         }
         final List<TagInode> tagInodes = new ArrayList<>();
         for (final Tag tag : tags) {
@@ -381,11 +417,14 @@ public class TagResource {
     }
 
     /**
-     * Given an inode this will retrieve all the tags associated to it.
-     * @param request
-     * @param response
-     * @param inode
-     * @return ResponseEntityTagInodesMapView
+     * Retrieves all Tags associated to a given Inode.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     * @param inode    The inode of the Tags to search for.
+     *
+     * @return The {@link ResponseEntityTagInodesMapView} containing the list of Tags that match the
+     * specified Inode.
      */
     @GET
     @JSONP
@@ -398,7 +437,7 @@ public class TagResource {
 
         final InitDataObject initDataObject = getInitDataObject(request, response);
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format(" user %s is requesting finding tags by inode %s ",user.getUserId(), inode));
+        Logger.debug(TagResource.class, String.format("User '%s' is requesting tags by inode '%s'",user.getUserId(), inode));
         final List<TagInode> tagInodes = Try.of(() -> tagAPI.getTagInodesByInode(inode)).getOrElse(List.of());
         if (tagInodes.isEmpty()) {
             Logger.error(TagResource.class, String.format(NO_TAGS_WERE_FOUND_BY_THE_INODE_S,inode));
@@ -409,11 +448,13 @@ public class TagResource {
     }
 
     /**
-     * Breaks the link between an inode and all the associated tags
-     * @param request
-     * @param response
-     * @param inode
-     * @return ResponseEntityBooleanView
+     * Breaks the link between an inode and all its associated Tags.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     * @param inode    The inode of the Tags to delete.
+     *
+     * @return A {@link ResponseEntityBooleanView} containing the result of the delete operation.
      */
     @DELETE
     @JSONP
@@ -426,7 +467,7 @@ public class TagResource {
 
         final InitDataObject initDataObject = getInitDataObject(request, response);
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format(" user %s is requesting delete tagsInode by inode %s ",user.getUserId(), inode));
+        Logger.debug(TagResource.class, String.format("User '%s' is deleting Tags by inode '%s'",user.getUserId(), inode));
         final List<TagInode> tagInodes = Try.of(() -> tagAPI.getTagInodesByInode(inode))
                 .getOrElse(List.of());
         if (tagInodes.isEmpty()) {
@@ -435,11 +476,22 @@ public class TagResource {
         }
 
         tagAPI.deleteTagInodesByInode(inode);
-        Logger.error(TagResource.class, String.format("Tags with inode %s successfully removed.",inode));
+        Logger.debug(TagResource.class, String.format("Tags with inode '%s' were removed successfully",inode));
 
         return new ResponseEntityBooleanView(true);
     }
 
+    /**
+     * Creates the Initialization Data Object, which is in charge of providing the necessary
+     * authentication data, parameters, and restriction mechanisms when an any method of this
+     * endpoint is called by any user. For this specific scenario, this endpoint can only be used by
+     * dotCMS Back-End users with access to the {@code Tags} portlet.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     *
+     * @return The {@link InitDataObject} containing the authentication and request data.
+     */
     private InitDataObject getInitDataObject(final HttpServletRequest request,
                                              final HttpServletResponse response) {
         return
@@ -448,10 +500,24 @@ public class TagResource {
                         .requiredFrontendUser(false)
                         .requestAndResponse(request, response)
                         .rejectWhenNoUser(true)
-                        .requiredPortlet(TAGS)
+                        .requiredPortlet(PortletID.TAGS.toString())
                         .init();
     }
 
+    /**
+     * Imports Tags from a CSV file.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     * @param form     The {@link FormDataMultiPart} containing the CSV file.
+     *
+     * @return A {@link ResponseEntityBooleanView} containing the result of the import operation.
+     *
+     * @throws DotDataException     An error occurred when persisting Tag data.
+     * @throws IOException          An error occurred when reading the CSV file.
+     * @throws DotSecurityException The specified user does not have the required permissions to
+     *                              perform this operation.
+     */
     @POST
     @Path("/import")
     @JSONP
@@ -466,7 +532,7 @@ public class TagResource {
         final InitDataObject initDataObject = getInitDataObject(request, response);
 
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format(" user %s is requesting import of tags",user.getUserId()));
+        Logger.debug(TagResource.class, String.format("User '%s' is importing Tags form CSV file.",user.getUserId()));
         helper.importTags(form, user, request);
 
         return new ResponseEntityBooleanView(true);

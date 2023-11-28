@@ -1,7 +1,5 @@
 package com.dotcms.rest.api.v1.site;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.HostAssetsJobProxy;
 import com.dotcms.exception.ExceptionUtil;
@@ -34,6 +32,7 @@ import com.dotmarketing.quartz.job.HostCopyOptions;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
@@ -47,18 +46,10 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.vavr.control.Try;
-import java.io.File;
-import java.io.Serializable;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
+import org.apache.commons.lang.StringUtils;
+import org.glassfish.jersey.server.JSONP;
+import org.quartz.SchedulerException;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
@@ -74,9 +65,19 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.commons.lang.StringUtils;
-import org.glassfish.jersey.server.JSONP;
-import org.quartz.SchedulerException;
+import java.io.File;
+import java.io.Serializable;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * This resource provides all the different end-points associated to information
@@ -822,7 +823,7 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("sites")
+                .requiredPortlet(PortletID.SITES.toString())
                 .init().getUser();
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
         final Host newSite = new Host();
@@ -833,65 +834,81 @@ public class SiteResource implements Serializable {
             throw new IllegalArgumentException("siteName can not be Null");
         }
 
-        Logger.debug(this, ()->"Creating the site: " + newSiteForm);
+        Logger.debug(this, "Creating the site: " + newSiteForm);
         newSite.setHostname(newSiteForm.getSiteName());
         if (UtilMethods.isSet(newSiteForm.getSiteThumbnail())) {
 
             final Optional<DotTempFile> dotTempFileOpt = tempFileAPI.getTempFile(httpServletRequest, newSiteForm.getSiteThumbnail());
-            if (dotTempFileOpt.isPresent()) {
-                newSite.setHostThumbnail(dotTempFileOpt.get().file);
-            }
+            dotTempFileOpt.ifPresent(dotTempFile -> newSite.setHostThumbnail(dotTempFile.file));
         }
 
         newSite.setIdentifier(newSiteForm.getIdentifier());
         newSite.setInode(newSiteForm.getInode());
-
-        if (UtilMethods.isSet(newSiteForm.getAliases())) {
-            newSite.setAliases(newSiteForm.getAliases());
-        }
-
-        if (UtilMethods.isSet(newSiteForm.getTagStorage())) {
-            newSite.setTagStorage(newSiteForm.getTagStorage());
-        }
-
-        newSite.setProperty(RUN_DASHBOARD, newSiteForm.isRunDashboard());
-        if (UtilMethods.isSet(newSiteForm.getKeywords())) {
-            newSite.setProperty(KEYWORDS, newSiteForm.getKeywords());
-        }
-
-        if (UtilMethods.isSet(newSiteForm.getDescription())) {
-            newSite.setProperty(DESCRIPTION, newSiteForm.getDescription());
-        }
-
-        if (UtilMethods.isSet(newSiteForm.getGoogleMap())) {
-            newSite.setProperty(GOOGLE_MAP, newSiteForm.getGoogleMap());
-        }
-
-        if (UtilMethods.isSet(newSiteForm.getGoogleAnalytics())) {
-            newSite.setProperty(GOOGLE_ANALYTICS, newSiteForm.getGoogleAnalytics());
-        }
-
-        if (UtilMethods.isSet(newSiteForm.getAddThis())) {
-            newSite.setProperty(ADD_THIS, newSiteForm.getAddThis());
-        }
-
-        if (UtilMethods.isSet(newSiteForm.getProxyUrlForEditMode())) {
-            newSite.setProperty(PROXY_EDIT_MODE_URL, newSiteForm.getProxyUrlForEditMode());
-        }
-
-        if (UtilMethods.isSet(newSiteForm.getEmbeddedDashboard())) {
-            newSite.setProperty(EMBEDDED_DASHBOARD, newSiteForm.getEmbeddedDashboard());
-        }
-
-        final long languageId = 0 == newSiteForm.getLanguageId()?
-                APILocator.getLanguageAPI().getDefaultLanguage().getId(): newSite.getLanguageId();
-
-        newSite.setLanguageId(languageId);
-
-        Logger.debug(this, ()-> "Creating new Host: " + newSiteForm);
+        copySitePropertiesFromForm(newSiteForm, newSite);
 
         return Response.ok(new ResponseEntityView<>(
                 this.toView(this.siteHelper.save(newSite, user, pageMode.respectAnonPerms)))).build();
+    }
+
+    /**
+     * Copy the most common properties from the REST form into the Site object.
+     * <p>It's very important to note that copying properties such as the Identifier, the Inode or
+     * the Site Name is NOT part of this method as they are very specific to what you may need to
+     * do; i.e., creating or updating a Site. So, make sure you handle those properties
+     * appropriately before or after calling this method.</p>
+     *
+     * @param siteForm The REST {@link SiteForm} object containing the information to be copied.
+     * @param site     The application {@link Host} that will contain the properties above.
+     */
+    private void copySitePropertiesFromForm(final SiteForm siteForm, final Host site) {
+        if (UtilMethods.isSet(siteForm.getAliases())) {
+            site.setAliases(siteForm.getAliases());
+        }
+
+        if (UtilMethods.isSet(siteForm.getTagStorage())) {
+            final Host tagStorageSite =
+                    Try.of(() -> this.siteHelper.getSite(APILocator.systemUser(), siteForm.getTagStorage())).getOrNull();
+            if (null == tagStorageSite) {
+                throw new IllegalArgumentException(String.format("Tag Storage Site '%s' was not found", siteForm.getTagStorage()));
+            }
+            site.setTagStorage(tagStorageSite.getIdentifier());
+        } else {
+            site.setTagStorage(Host.SYSTEM_HOST);
+        }
+
+        site.setProperty(RUN_DASHBOARD, siteForm.isRunDashboard());
+        if (UtilMethods.isSet(siteForm.getKeywords())) {
+            site.setProperty(KEYWORDS, siteForm.getKeywords());
+        }
+
+        if (UtilMethods.isSet(siteForm.getDescription())) {
+            site.setProperty(DESCRIPTION, siteForm.getDescription());
+        }
+
+        if (UtilMethods.isSet(siteForm.getGoogleMap())) {
+            site.setProperty(GOOGLE_MAP, siteForm.getGoogleMap());
+        }
+
+        if (UtilMethods.isSet(siteForm.getGoogleAnalytics())) {
+            site.setProperty(GOOGLE_ANALYTICS, siteForm.getGoogleAnalytics());
+        }
+
+        if (UtilMethods.isSet(siteForm.getAddThis())) {
+            site.setProperty(ADD_THIS, siteForm.getAddThis());
+        }
+
+        if (UtilMethods.isSet(siteForm.getProxyUrlForEditMode())) {
+            site.setProperty(PROXY_EDIT_MODE_URL, siteForm.getProxyUrlForEditMode());
+        }
+
+        if (UtilMethods.isSet(siteForm.getEmbeddedDashboard())) {
+            site.setProperty(EMBEDDED_DASHBOARD, siteForm.getEmbeddedDashboard());
+        }
+
+        final long languageId = 0 == siteForm.getLanguageId()?
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(): site.getLanguageId();
+
+        site.setLanguageId(languageId);
     }
 
     /**
@@ -1086,18 +1103,19 @@ public class SiteResource implements Serializable {
         return Response.ok(new ResponseSiteVariablesEntityView(resultList)).build();
     }
     /**
-     * Updates a site
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param newSiteForm
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws PortalException
-     * @throws SystemException
-     * @throws ParseException
-     * @throws SchedulerException
-     * @throws ClassNotFoundException
+     * Updates an existing Site in dotCMS. In order to do this, the User calling this method must
+     * have access to the {@code Sites} portlet.
+     *
+     * @param httpServletRequest  The current instance of the {@link HttpServletRequest}.
+     * @param httpServletResponse The current instance of the {@link HttpServletResponse}.
+     * @param newSiteForm         The {@link SiteForm} containing the information of the updated
+     *                            Site.
+     *
+     * @return The {@link Response} containing the updated Site.
+     *
+     * @throws DotDataException      An error occurred when persisting the Site's information.
+     * @throws DotSecurityException  The user calling this method does not have the required
+     *                               permissions to create a Site.
      */
     @PUT
     @JSONP
@@ -1113,7 +1131,7 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("sites")
+                .requiredPortlet(PortletID.SITES.toString())
                 .init().getUser();
 
         if (!UtilMethods.isSet(siteIdentifier)) {
@@ -1125,7 +1143,7 @@ public class SiteResource implements Serializable {
 
         if (null == site) {
 
-            throw new NotFoundException("Site: " + siteIdentifier + " does not exists");
+            throw new NotFoundException("Site: " + siteIdentifier + " does not exist");
         }
 
         // we need to clean up mostly the null properties when recovery the by identifier
@@ -1150,55 +1168,10 @@ public class SiteResource implements Serializable {
         if (UtilMethods.isSet(newSiteForm.getSiteThumbnail())) {
 
             final Optional<DotTempFile> dotTempFileOpt = tempFileAPI.getTempFile(httpServletRequest, newSiteForm.getSiteThumbnail());
-            if (dotTempFileOpt.isPresent()) {
-                site.setHostThumbnail(dotTempFileOpt.get().file);
-            }
+            dotTempFileOpt.ifPresent(dotTempFile -> site.setHostThumbnail(dotTempFile.file));
         }
 
-
-        if (UtilMethods.isSet(newSiteForm.getAliases())) {
-            site.setAliases(newSiteForm.getAliases());
-        }
-
-        if (UtilMethods.isSet(newSiteForm.getTagStorage())) {
-            site.setTagStorage(newSiteForm.getTagStorage());
-        }
-
-        site.setProperty(RUN_DASHBOARD, newSiteForm.isRunDashboard());
-        if (UtilMethods.isSet(newSiteForm.getKeywords())) {
-            site.setProperty(KEYWORDS, newSiteForm.getKeywords());
-        }
-
-        if (UtilMethods.isSet(newSiteForm.getDescription())) {
-            site.setProperty(DESCRIPTION, newSiteForm.getDescription());
-        }
-
-        if (UtilMethods.isSet(newSiteForm.getGoogleMap())) {
-            site.setProperty(GOOGLE_MAP, newSiteForm.getGoogleMap());
-        }
-
-        if (UtilMethods.isSet(newSiteForm.getGoogleAnalytics())) {
-            site.setProperty(GOOGLE_ANALYTICS, newSiteForm.getGoogleAnalytics());
-        }
-
-        if (UtilMethods.isSet(newSiteForm.getAddThis())) {
-            site.setProperty(ADD_THIS, newSiteForm.getAddThis());
-        }
-
-        if (UtilMethods.isSet(newSiteForm.getProxyUrlForEditMode())) {
-            site.setProperty(PROXY_EDIT_MODE_URL, newSiteForm.getProxyUrlForEditMode());
-        }
-
-        if (UtilMethods.isSet(newSiteForm.getEmbeddedDashboard())) {
-            site.setProperty(EMBEDDED_DASHBOARD, newSiteForm.getEmbeddedDashboard());
-        }
-
-        final long languageId = 0 == newSiteForm.getLanguageId()?
-                APILocator.getLanguageAPI().getDefaultLanguage().getId(): site.getLanguageId();
-
-        site.setLanguageId(languageId);
-
-        Logger.debug(this, ()-> "Creating new Host: " + newSiteForm);
+        copySitePropertiesFromForm(newSiteForm, site);
 
         return Response.ok(new ResponseEntityView<>(
                 this.toView(this.siteHelper.update(site, user, pageMode.respectAnonPerms)))).build();
