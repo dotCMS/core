@@ -222,6 +222,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -7324,25 +7325,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentlet.setStringProperty(field.getVelocityVarName(), value.toString());
             }
         } else if (field.getFieldContentlet().startsWith("date")) {
-            if (value instanceof Date) {
-                contentlet.setDateProperty(field.getVelocityVarName(), (Date) value);
-            } else if (value instanceof String) {
-                if (((String) value).trim().length() > 0) {
-                    try {
-                        final String trimmedValue = ((String) value).trim();
-                        contentlet.setDateProperty(field.getVelocityVarName(),
-                                DateUtil.convertDate(trimmedValue, dateFormats));
-                    } catch (Exception e) {
-                        throw new DotContentletStateException(
-                                "Unable to convert string to date " + value);
-                    }
-                } else {
-                    contentlet.setDateProperty(field.getVelocityVarName(), null);
-                }
-            } else if (field.isRequired() && value == null) {
-                throw new DotContentletStateException(
-                        "Date fields must either be of type String or Date");
-            }
+            parseDate(contentlet, field, value, dateFormats);
         } else if (field.getFieldContentlet().startsWith("bool")) {
             if (value instanceof Boolean) {
                 contentlet.setBoolProperty(field.getVelocityVarName(), (Boolean) value);
@@ -7442,6 +7425,34 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         } else {
             throw new DotContentletStateException("Unable to set value : Unknown field type");
+        }
+    }
+
+    private static void parseDate(final Contentlet contentlet,
+                                  final Field field,
+                                  final Object value,
+                                  final String... dateFormats) {
+        if (value instanceof Number) { // is a timestamp
+            contentlet.setDateProperty(field.getVelocityVarName(),
+                    new Date(TimeUnit.MILLISECONDS.convert(Number.class.cast(value).longValue(), TimeUnit.SECONDS)));
+        } else if (value instanceof Date) {
+            contentlet.setDateProperty(field.getVelocityVarName(), (Date) value);
+        } else if (value instanceof String) {
+            if (((String) value).trim().length() > 0) {
+                try {
+                    final String trimmedValue = ((String) value).trim();
+                    contentlet.setDateProperty(field.getVelocityVarName(),
+                            DateUtil.convertDate(trimmedValue, dateFormats));
+                } catch (Exception e) {
+                    throw new DotContentletStateException(
+                            "Unable to convert string to date " + value);
+                }
+            } else {
+                contentlet.setDateProperty(field.getVelocityVarName(), null);
+            }
+        } else if (field.isRequired() && value == null) {
+            throw new DotContentletStateException(
+                    "Date fields must either be of type String or Date");
         }
     }
 
