@@ -27,3 +27,9 @@ export interface Container {
 export interface SavePagePayload extends AddContentletPayload {
     whenSaved?: () => void;
 }
+
+export interface ContainerActionPayload {
+    pageContainers: Container[];
+    container: Container;
+    contentletID: string;
+}

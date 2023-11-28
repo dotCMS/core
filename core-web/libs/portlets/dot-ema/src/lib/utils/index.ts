@@ -1,29 +1,21 @@
-import { Container } from '../shared/models';
+import { Container, ContainerActionPayload } from '../shared/models';
 
 /**
  * Insert a contentlet in a container
  *
- * @param {{
- *         pageContainers: Container[];
- *         container: Container;
- *         contentletID: string;
- *     }} {
- *         pageContainers,
- *         container,
- *         contentletID
- *     }
- * @return {*}
-
+ * @export
+ * @param {ContainerActionPayload} {
+ *     pageContainers,
+ *     container,
+ *     contentletID
+ * }
+ * @return {*}  {Container[]}
  */
 export function insertContentletInContainer({
     pageContainers,
     container,
     contentletID
-}: {
-    pageContainers: Container[];
-    container: Container;
-    contentletID: string;
-}): Container[] {
+}: ContainerActionPayload): Container[] {
     return pageContainers.map((currentContainer) => {
         if (
             areContainersEquals(currentContainer, container) &&
@@ -39,27 +31,19 @@ export function insertContentletInContainer({
 /**
  * Delete a contentlet from a container
  *
- * @param {{
- *         pageContainers: Container[];
- *         container: Container;
- *         contentletID: string;
- *     }} {
- *         pageContainers,
- *         container,
- *         contentletID
- *     }
- * @return {*}
-
+ * @export
+ * @param {ContainerActionPayload} {
+ *     pageContainers,
+ *     container,
+ *     contentletID
+ * }
+ * @return {*}  {Container[]}
  */
 export function deleteContentletFromContainer({
     pageContainers,
     container,
     contentletID
-}: {
-    pageContainers: Container[];
-    container: Container;
-    contentletID: string;
-}): Container[] {
+}: ContainerActionPayload): Container[] {
     return pageContainers.map((currentContainer) => {
         if (areContainersEquals(currentContainer, container)) {
             return {
