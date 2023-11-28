@@ -30,24 +30,10 @@
 
 %>
 
-<%--
-  Created by IntelliJ IDEA.
-  User: jsanca
-  Date: 11/15/23
-  Time: 2:57 PM
-  To change this template use File | Settings | File Templates.
---%>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
 <head>
     <title>Custom Field Legacy</title>
 
-    <!-- <script
-    data-dojo-config="async: 1"
-    src="//ajax.googleapis.com/ajax/libs/dojo/1.10.4/dojo/dojo.js"
-  ></script> -->
-
-  <!-- Remove later -->
   <link rel="stylesheet" type="text/css" href="<%=dojoPath%>/dijit/themes/dijit.css">
   <link rel="stylesheet" type="text/css" href="/html/css/dijit-dotcms/dotcms.css?b=<%= ReleaseInfo.getVersion() %>">
   
@@ -211,12 +197,6 @@
 	}
 
   </style>
-
-<!-- <% String dotBackImage = (!UtilMethods.isSet(company.getHomeURL()) || "localhost".equals(company.getHomeURL())) ? "/html/images/backgrounds/bg-3.jpg" : company.getHomeURL();%>
-<style>
-    .imageBG{background-color:<%= company.getSize() %>;background-image:url(<%= dotBackImage %>);background-repeat:no-repeat;background-position:top center;background-size:100% auto;height:75px;position:absolute;top:0;left:0;width:100%;z-index:-2;}
-</style> -->
-
 
 </head>
 

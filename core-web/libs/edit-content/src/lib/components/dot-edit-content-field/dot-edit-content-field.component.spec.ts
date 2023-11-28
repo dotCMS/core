@@ -8,7 +8,6 @@ import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
-// import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotBlockEditorComponent } from '@dotcms/block-editor';
 import {
     DotContentTypeService,
