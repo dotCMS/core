@@ -590,6 +590,17 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
     }
 
+    public long countAllSchemasSteps() throws DotDataException {
+        final DotConnect db = new DotConnect();
+        db.setSQL("SELECT COUNT(*) FROM workflow_step " +
+                "INNER JOIN workflow_scheme ON workflow_scheme.id=workflow_step.scheme_id " +
+                "WHERE archived = false");
+        final Map results = (Map) db.loadResults().get(0);
+
+        return Long.parseLong((String) results.get("count"));
+
+    }
+
     @Override
     public void deleteWorkflowTaskByLanguage(final Language language) throws DotDataException {
 
