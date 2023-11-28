@@ -27,7 +27,7 @@ export const DotcmsPage = () => {
             {
                 action: 'set-url',
                 payload: {
-                    url: url === '/' ? 'index' : url.pop()
+                    url: url === '/' ? 'index' : url.pop() //TODO: We need to enhance this, this will break for: nested/pages/like/this
                 }
             },
             '*'
