@@ -3,7 +3,7 @@ import { it, describe, expect } from '@jest/globals';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import * as functionsUtil from './functions.util';
-import { CALENDAR_FIELD_TYPES } from './mocks';
+import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK } from './mocks';
 
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
 import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
@@ -384,6 +384,24 @@ describe('Utils Functions', () => {
 
             const res = getFinalCastedValue(value, field);
             expect(res).toEqual(value);
+        });
+
+        describe('JSON Field', () => {
+            it('should return a JSON value as string keeping the format', () => {
+                const value = {
+                    value1: 'value1',
+                    value2: 'value2',
+                    value3: 'value3'
+                };
+
+                const field = {
+                    fieldType: JSON_FIELD_MOCK.fieldType
+                } as DotCMSContentTypeField;
+
+                const res = getFinalCastedValue(value, field);
+                const formattedValue = JSON.stringify(value, null, 2);
+                expect(res).toBe(formattedValue);
+            });
         });
     });
 });

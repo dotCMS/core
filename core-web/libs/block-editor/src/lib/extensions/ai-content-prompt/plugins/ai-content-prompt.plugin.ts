@@ -6,12 +6,16 @@ import tippy, { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
 
-import { takeUntil } from 'rxjs/operators';
+import { filter, takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
 import { AIContentPromptComponent } from '../ai-content-prompt.component';
-import { AI_CONTENT_PROMPT_PLUGIN_KEY } from '../ai-content-prompt.extension';
+import {
+    AI_CONTENT_PROMPT_PLUGIN_KEY,
+    DOT_AI_TEXT_CONTENT_KEY
+} from '../ai-content-prompt.extension';
+import { AiContentPromptStore } from '../store/ai-content-prompt.store';
 import { TIPPY_OPTIONS } from '../utils';
 
 interface AIContentPromptProps {
@@ -24,7 +28,6 @@ interface AIContentPromptProps {
 
 interface PluginState {
     open: boolean;
-    form: [];
 }
 
 export type AIContentPromptViewProps = AIContentPromptProps & {
@@ -48,11 +51,12 @@ export class AIContentPromptView {
 
     public component: ComponentRef<AIContentPromptComponent>;
 
+    private componentStore: AiContentPromptStore;
+
     private destroy$ = new Subject<boolean>();
 
     constructor(props: AIContentPromptViewProps) {
         const { editor, element, view, tippyOptions = {}, pluginKey, component } = props;
-
         this.editor = editor;
         this.element = element;
         this.view = view;
@@ -63,14 +67,39 @@ export class AIContentPromptView {
         this.pluginKey = pluginKey;
         this.component = component;
 
-        this.component.instance.formSubmission.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.editor.commands.closeAIPrompt();
-        });
+        this.componentStore = this.component.injector.get(AiContentPromptStore);
 
-        this.component.instance.aiResponse.pipe(takeUntil(this.destroy$)).subscribe((content) => {
-            this.editor.commands.insertAINode(content);
-            this.editor.commands.openAIContentActions();
-        });
+        /**
+         * Subscription to insert the AI Node and open the AI Content Actions.
+         */
+        this.componentStore.content$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((content) => !!content)
+            )
+            .subscribe((content) => {
+                this.editor
+                    .chain()
+                    .closeAIPrompt()
+                    .deleteSelection()
+                    .insertAINode(content)
+                    .openAIContentActions(DOT_AI_TEXT_CONTENT_KEY)
+                    .run();
+            });
+
+        /**
+         * Subscription to insert the text Content once accepted the generated content.
+         * Fired from the AI Content Actions plugin.
+         */
+        this.componentStore.vm$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((state) => state.acceptContent)
+            )
+            .subscribe((state) => {
+                this.editor.commands.insertContent(state.content);
+                this.componentStore.setAcceptContent(false);
+            });
     }
 
     update(view: EditorView, prevState?: EditorState) {
@@ -84,7 +113,7 @@ export class AIContentPromptView {
         }
 
         if (!next.open) {
-            this.component.instance.cleanForm();
+            this.componentStore.setOpen(true);
         }
 
         this.createTooltip();
@@ -115,11 +144,12 @@ export class AIContentPromptView {
 
     show() {
         this.tippy?.show();
-        this.component.instance.focusField();
+        this.componentStore.setOpen(true);
     }
 
     hide() {
         this.tippy?.hide();
+        this.componentStore.setOpen(false);
         this.editor.view.focus();
     }
 
@@ -137,8 +167,7 @@ export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
         state: {
             init(): PluginState {
                 return {
-                    open: false,
-                    form: []
+                    open: false
                 };
             },
 
@@ -147,11 +176,11 @@ export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
                 value: PluginState,
                 oldState: EditorState
             ): PluginState {
-                const { open, form } = transaction.getMeta(AI_CONTENT_PROMPT_PLUGIN_KEY) || {};
+                const { open } = transaction.getMeta(AI_CONTENT_PROMPT_PLUGIN_KEY) || {};
                 const state = AI_CONTENT_PROMPT_PLUGIN_KEY.getState(oldState);
 
                 if (typeof open === 'boolean') {
-                    return { open, form };
+                    return { open };
                 }
 
                 // keep the old state in case we do not receive a new one.

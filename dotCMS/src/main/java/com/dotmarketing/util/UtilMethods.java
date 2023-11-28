@@ -2373,7 +2373,7 @@ public class UtilMethods {
         if (x == null) {
             return "";
         }
-
+        HTML_DATETIME_TO_DATE.setTimeZone(APILocator.systemTimeZone());
         return HTML_DATETIME_TO_DATE.format(x);
     }
 

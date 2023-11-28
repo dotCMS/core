@@ -1,9 +1,12 @@
 'use client';
 
+import React, { useEffect } from 'react';
 import { useContext } from 'react';
 import { GlobalContext } from '../providers/global';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getPageContainers } from '@/utils';
+import { usePathname } from 'next/navigation';
 
 // Provide a component for each content type
 const contentComponents = {
@@ -24,11 +27,15 @@ function WebPageContent({ title, body }) {
 }
 
 function ImageComponent({ fileAsset, title, description }) {
+    const {
+        viewAs: { language }
+    } = useContext(GlobalContext);
+
     return (
         <div className="relative overflow-hidden bg-white rounded shadow-lg group">
             <div className="relative w-full bg-gray-200 h-96">
                 <Image
-                    src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${fileAsset}`}
+                    src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${fileAsset}?language_id=${language.id}`}
                     fill={true}
                     className="object-cover"
                     alt={title}
@@ -43,11 +50,15 @@ function ImageComponent({ fileAsset, title, description }) {
 }
 
 function Activity({ title, description, image, urlTitle }) {
+    const {
+        viewAs: { language }
+    } = useContext(GlobalContext);
+
     return (
         <article className="p-4 overflow-hidden bg-white rounded shadow-lg">
             <Image
                 className="w-full"
-                src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}`}
+                src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}?language_id=${language.id}`}
                 width={100}
                 height={100}
                 alt="Activity Image"
@@ -68,10 +79,14 @@ function Activity({ title, description, image, urlTitle }) {
 }
 
 function Banner({ title, image, caption, buttonText, link }) {
+    const {
+        viewAs: { language }
+    } = useContext(GlobalContext);
+
     return (
         <div className="relative w-full p-4 bg-gray-200 h-96">
             <Image
-                src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}`}
+                src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}?language_id=${language.id}`}
                 fill={true}
                 className="object-cover"
                 alt={title}
@@ -90,6 +105,10 @@ function Banner({ title, image, caption, buttonText, link }) {
 }
 
 function Product({ image, title, salePrice, retailPrice, urlTitle }) {
+    const {
+        viewAs: { language }
+    } = useContext(GlobalContext);
+
     const formatPrice = (price) => {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
@@ -102,7 +121,7 @@ function Product({ image, title, salePrice, retailPrice, urlTitle }) {
             <div className="p-4">
                 <Image
                     className="w-full"
-                    src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}`}
+                    src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}?language_id=${language.id}`}
                     width={100}
                     height={100}
                     alt="Activity Image"
@@ -136,7 +155,7 @@ function NoContent({ contentType }) {
 
 // Header component
 const Header = () => {
-    const { nav, page } = useContext(GlobalContext);
+    const { nav } = useContext(GlobalContext);
     return (
         <header className="flex items-center justify-between p-4 bg-blue-500">
             <div className="flex items-center">
@@ -156,6 +175,26 @@ const Header = () => {
     );
 };
 
+// Button component
+function ActionButton({ message, children }) {
+    return (
+        <button
+            style={{
+                border: 0,
+                backgroundColor: 'lightgray',
+                color: 'black',
+                border: 'solid 1px',
+                padding: '0.25rem 0.5rem',
+                marginBottom: '0.5rem'
+            }}
+            onClick={() => {
+                window.parent.postMessage(message, '*');
+            }}>
+            {children || message.action}
+        </button>
+    );
+}
+
 // Footer component
 const Footer = () => {
     return <footer className="p-4 text-white bg-blue-500">Footer</footer>;
@@ -166,9 +205,10 @@ const Container = ({ containerRef }) => {
     const { identifier, uuid } = containerRef;
 
     // Get the containers from the global context
-    const { containers } = useContext(GlobalContext);
+    const { containers, page } = useContext(GlobalContext);
 
     const { container, containerStructures } = containers[identifier];
+
     const { inode, maxContentlets } = container;
 
     // Get accepts types of content types for this container
@@ -177,48 +217,96 @@ const Container = ({ containerRef }) => {
     // Get the contentlets for "this" container
     const contentlets = containers[identifier].contentlets[`uuid-${uuid}`];
 
+    // Memoize the contenlets to avoid re-rendering
+    const contentletsId = contentlets.map((contentlet) => contentlet.identifier);
+
+    // Memoize the page containers to avoid re-rendering
+    const pageContainers = getPageContainers(containers);
+
     return (
-        <div
-            className="flex flex-col gap-4"
-            data-dot-accept-types={acceptTypes}
-            data-dot-object="container"
-            data-dot-inode={inode}
-            data-dot-identifier={identifier}
-            data-dot-uuid={uuid}
-            data-max-contentlets={maxContentlets}
-            data-dot-can-add="CONTENT,FORM,WIDGET">
-            {contentlets.map((contentlet) => {
-                const {
-                    identifier,
-                    inode,
-                    contentType,
-                    baseType,
-                    title,
-                    languageId,
-                    dotContentTypeId
-                } = contentlet;
+        <>
+            <ActionButton
+                message={{
+                    action: 'add-contentlet',
+                    payload: {
+                        pageID: page.identifier,
+                        container: {
+                            identifier: container.path ?? container.identifier,
+                            uuid,
+                            contentletsId,
+                            acceptTypes
+                        },
+                        pageContainers
+                    }
+                }}>
+                +
+            </ActionButton>
+            <div
+                className="flex flex-col gap-4"
+                data-dot-accept-types={acceptTypes}
+                data-dot-object="container"
+                data-dot-inode={inode}
+                data-dot-identifier={identifier}
+                data-dot-uuid={uuid}
+                data-max-contentlets={maxContentlets}
+                data-dot-can-add="CONTENT,FORM,WIDGET">
+                {contentlets.map((contentlet) => {
+                    const {
+                        identifier,
+                        inode,
+                        contentType,
+                        baseType,
+                        title,
+                        languageId,
+                        dotContentTypeId
+                    } = contentlet;
 
-                // Get the component for the content type or use the NoContent component
-                const Component = contentComponents[contentlet.contentType] || NoContent;
+                    const Component = contentComponents[contentlet.contentType] || NoContent;
 
-                return (
-                    <div
-                        key={contentlet.identifier}
-                        data-dot-object="contentlet"
-                        data-dot-inode={inode}
-                        data-dot-identifier={identifier}
-                        data-dot-type={contentType}
-                        data-dot-basetype={baseType}
-                        data-dot-lang={languageId}
-                        data-dot-title={title}
-                        data-dot-can-edit={true}
-                        data-dot-content-type-id={dotContentTypeId}
-                        data-dot-has-page-lang-version="true">
-                        <Component {...contentlet} />
-                    </div>
-                );
-            })}
-        </div>
+                    return (
+                        <div
+                            className="p-4 border border-gray-300"
+                            key={contentlet.identifier}
+                            data-dot-object="contentlet"
+                            data-dot-inode={inode}
+                            data-dot-identifier={identifier}
+                            data-dot-type={contentType}
+                            data-dot-basetype={baseType}
+                            data-dot-lang={languageId}
+                            data-dot-title={title}
+                            data-dot-can-edit={true}
+                            data-dot-content-type-id={dotContentTypeId}
+                            data-dot-has-page-lang-version="true">
+                            <div className="flex gap-2">
+                                <ActionButton
+                                    message={{
+                                        action: 'edit-contentlet',
+                                        payload: contentlet
+                                    }}>
+                                    Edit
+                                </ActionButton>
+                                <ActionButton
+                                    message={{
+                                        action: 'delete-contentlet',
+                                        payload: {
+                                            pageID: page.identifier,
+                                            container: {
+                                                identifier: container.path ?? container.identifier,
+                                                uuid
+                                            },
+                                            pageContainers,
+                                            contentletId: contentlet.identifier
+                                        }
+                                    }}>
+                                    Delete
+                                </ActionButton>
+                            </div>
+                            <Component {...contentlet} />
+                        </div>
+                    );
+                })}
+            </div>
+        </>
     );
 };
 
@@ -261,7 +349,7 @@ const Column = ({ column }) => {
     return (
         <div className={`${widthClass} ${startClass}`}>
             {column.containers.map((container, index) => (
-                <Container key={index} containerRef={container} />
+                <Container key={container.identifier} containerRef={container} />
             ))}
         </div>
     );
@@ -297,15 +385,45 @@ function Navigation({ nav, className }) {
     );
 }
 
+function reloadWindow(event) {
+    if (event.data !== 'ema-reload-page') return;
+
+    window.location.reload();
+}
+
 // Main layout component
 export const DotcmsPage = () => {
+    const pathname = usePathname();
     // Get the page layout from the global context
-    const { layout } = useContext(GlobalContext);
+    const { layout, page } = useContext(GlobalContext);
+
+    useEffect(() => {
+        const url = pathname.split('/');
+
+        window.parent.postMessage(
+            {
+                action: 'set-url',
+                payload: {
+                    url: url === '/' ? 'index' : url.pop()
+                }
+            },
+            '*'
+        );
+    }, [pathname]);
+
+    useEffect(() => {
+        window.addEventListener('message', reloadWindow);
+
+        return () => {
+            window.removeEventListener('message', reloadWindow);
+        };
+    }, []);
 
     return (
         <div className="flex flex-col min-h-screen gap-6">
             {layout.header && <Header />}
             <main className="container flex flex-col gap-8 m-auto">
+                <h1 className="text-xl font-bold">{page.title}</h1>
                 {layout.body.rows.map((row, index) => (
                     <Row key={index} row={row} />
                 ))}

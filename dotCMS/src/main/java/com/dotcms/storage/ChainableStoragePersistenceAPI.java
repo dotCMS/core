@@ -37,11 +37,11 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
 
     private static final String SUBMITTER_NAME = Config.getStringProperty("COMPOSITE_STORAGE_SUBMITTER_NAME", "SubmitterCompositeStoragePersistenceAPI");
 
-    public ChainableStoragePersistenceAPI(final List<StoragePersistenceAPI> storagePersistenceAPIList) {
+    protected ChainableStoragePersistenceAPI(final List<StoragePersistenceAPI> storagePersistenceAPIList) {
         this(new JsonWriterDelegate(), storagePersistenceAPIList, CacheLocator.getChainable404StorageCache());
     }
 
-    public ChainableStoragePersistenceAPI(final ObjectWriterDelegate defaultWriterDelegate,
+    protected ChainableStoragePersistenceAPI(final ObjectWriterDelegate defaultWriterDelegate,
                                           final List<StoragePersistenceAPI> storagePersistenceAPIList,
                                           final Chainable404StorageCache cache) {
 
@@ -67,13 +67,14 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
 
     @Override
     public boolean existsObject(final String groupName, final String objectPath) {
-
         if (this.cache.is404(groupName, objectPath)) {
-
             return false;
         }
-
-        return this.storagePersistenceAPIList.stream().anyMatch(storage -> Try.of(()->storage.existsObject(groupName, objectPath)).getOrElse(false));
+        final boolean anyMatch = this.storagePersistenceAPIList.stream().anyMatch(storage -> Try.of(()->storage.existsObject(groupName, objectPath)).getOrElse(false));
+        if (!anyMatch) {
+            this.cache.put404(groupName, objectPath);
+        }
+        return anyMatch;
     }
 
     @Override
