@@ -131,7 +131,7 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
                     .expireTime(experiment.lookBackWindowExpireTime())
                     .runningId(currentRunningId)
                     .experimentPagePattern(ExperimentUrlPatternCalculator.INSTANCE
-                            .calculatePageUrlRegexPattern(htmlPageAsset));
+                            .calculatePageUrlRegexPattern(experiment));
 
             final Optional<String> targetPageUrlPattern = ExperimentUrlPatternCalculator.INSTANCE
                     .calculateTargetPageUrlPattern(htmlPageAsset, metric);
