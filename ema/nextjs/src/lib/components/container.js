@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { GlobalContext } from '@/lib/providers/global';
-import { getContainersData } from '@/utils';
+import { getContainersData } from '@/lib/utils';
 import { contentComponents } from '@/components/content-types';
 import NoContent from '@/components/content-types/noContent';
 import ActionButton from './actionButton';
