@@ -13,14 +13,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FieldDataGen;
-import com.dotcms.datagen.LanguageDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.datagen.TestWorkflowUtils;
-import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -75,6 +68,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
+import io.vavr.Tuple3;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -84,19 +80,13 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.*;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.UNPUBLISHED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -4196,5 +4186,81 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 .contentTypeId(parentTypeId).values(cardinality).relationType(childTypeVar).build();
 
         return fieldAPI.save(field, user);
+    }
+
+    /**
+     * Method to test: {@link WorkflowFactoryImpl#countAllSchemasSteps()}
+     * When: create a new Workflow with 5 steps
+     * Should: the count must be 5 more than before
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void countAllWorkflowSteps() throws DotDataException, DotSecurityException {
+
+        final long firstCount = APILocator.getWorkflowAPI().countAllSchemasSteps(APILocator.systemUser());
+
+        final List<Tuple2<String, List<Tuple3<String, String, Set<WorkflowState>>>>> workflowStepsAndActions_1 = getStepsAndActions();
+
+        final WorkflowScheme workflow_1= new WorkflowDataGen().name("Testing")
+                .stepAndAction(workflowStepsAndActions_1).nextPersistedWithStepsAndActions();
+
+        final long secondCount = APILocator.getWorkflowAPI().countAllSchemasSteps(APILocator.systemUser());
+        assertEquals(firstCount + 5, secondCount);
+
+        final List<Tuple2<String, List<Tuple3<String, String, Set<WorkflowState>>>>> workflowStepsAndActions_2 = getStepsAndActions();
+
+        final WorkflowScheme workflow_2 = new WorkflowDataGen().name("Testing")
+                .stepAndAction(workflowStepsAndActions_2).nextPersistedWithStepsAndActions();
+
+        final long thirdCount = APILocator.getWorkflowAPI().countAllSchemasSteps(APILocator.systemUser());
+        assertEquals(secondCount + 5, thirdCount);
+    }
+
+
+    /**
+     * Method to test: {@link WorkflowFactoryImpl#countAllSchemasSteps()}
+     * When: Try to count Steos with limited USer
+     * Should: throw a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test(expected = DotSecurityException.class)
+    public void countSteosWithLimitedUser() throws DotDataException, DotSecurityException {
+        final User user = new UserDataGen().nextPersisted();
+        APILocator.getWorkflowAPI().countAllSchemasSteps(user);
+    }
+
+    private static List<Tuple2<String, List<Tuple3<String, String, Set<WorkflowState>>>>> getStepsAndActions() {
+        final List<Tuple2<String, List<Tuple3<String, String, Set<WorkflowState>>>>> workflowStepsAndActions = Arrays
+                .asList(
+                        Tuple.of("Editing",
+                                Arrays.asList(
+                                        Tuple.of("Save as Draft", "Current Step", EnumSet.of(EDITING, UNLOCKED, LOCKED, NEW, PUBLISHED, UNPUBLISHED))
+                                )
+                        ),
+                        Tuple.of("Review",
+                                Arrays.asList(
+                                        Tuple.of("Save as Draft", "Current Step", EnumSet.of(EDITING, LOCKED, NEW, PUBLISHED, UNPUBLISHED))
+                                )
+                        ),
+                        Tuple.of("Legal Approval",
+                                Arrays.asList(
+                                        Tuple.of("Save as Draft", "Current Step", EnumSet.of(EDITING, LOCKED, NEW, PUBLISHED, UNPUBLISHED))
+                                )
+                        ),
+                        Tuple.of("Published",
+                                Arrays.asList(
+                                        Tuple.of("Republish", "Published", EnumSet.of(EDITING, LOCKED, UNLOCKED, PUBLISHED, ARCHIVED))
+                                ))
+                        ,
+                        Tuple.of("Archived",
+                                Arrays.asList(
+                                        Tuple.of("Full Delete", "Archived", EnumSet.of(EDITING, LISTING, LOCKED, UNLOCKED, ARCHIVED))
+                                )
+
+                        )
+                );
+        return workflowStepsAndActions;
     }
 }
