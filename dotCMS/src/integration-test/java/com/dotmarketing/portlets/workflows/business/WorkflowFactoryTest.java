@@ -9,6 +9,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -21,15 +22,20 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.util.UUIDGenerator;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
+import io.vavr.Tuple3;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.*;
+import static org.junit.Assert.assertEquals;
 
 public class WorkflowFactoryTest extends BaseWorkflowIntegrationTest {
 
@@ -141,5 +147,93 @@ public class WorkflowFactoryTest extends BaseWorkflowIntegrationTest {
 
         Assert.assertNotNull(workflowSchemesAfterForceDelete);
         Assert.assertTrue(workflowSchemesAfterForceDelete.size() == 0);
+    }
+
+    /**
+     * Method to test: {@link WorkflowFactoryImpl#countAllSchemasSteps()}
+     * When: create a new Workflow with 5 steps
+     * Should: the count must be 5 more than before
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void countAllWorkflowSteps() throws DotDataException {
+
+        final long firstCount = FactoryLocator.getWorkFlowFactory().countAllSchemasSteps();
+
+        final List<Tuple2<String, List<Tuple3<String, String, Set<WorkflowState>>>>> workflowStepsAndActions_1 = getStepsAndActions();
+
+        final WorkflowScheme workflow_1= new WorkflowDataGen().name("Testing")
+                .stepAndAction(workflowStepsAndActions_1).nextPersistedWithStepsAndActions();
+
+        final long secondCount = FactoryLocator.getWorkFlowFactory().countAllSchemasSteps();
+        assertEquals(firstCount + 5, secondCount);
+
+        final List<Tuple2<String, List<Tuple3<String, String, Set<WorkflowState>>>>> workflowStepsAndActions_2 = getStepsAndActions();
+
+        final WorkflowScheme workflow_2 = new WorkflowDataGen().name("Testing")
+                .stepAndAction(workflowStepsAndActions_2).nextPersistedWithStepsAndActions();
+
+        final long thirdCount = FactoryLocator.getWorkFlowFactory().countAllSchemasSteps();
+        assertEquals(secondCount + 5, thirdCount);
+    }
+
+    /**
+     * Method to test: {@link WorkflowFactoryImpl#countAllSchemasSteps()}
+     * When: create a new Workflow with 5 steps, and later archive it
+     * Should: not take account the archived Schema
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void notCountStepsFromArchivedSchema() throws DotDataException, DotSecurityException, AlreadyExistException {
+
+        final long firstCount = FactoryLocator.getWorkFlowFactory().countAllSchemasSteps();
+
+        final List<Tuple2<String, List<Tuple3<String, String, Set<WorkflowState>>>>> workflowStepsAndActions_1 = getStepsAndActions();
+
+        final WorkflowScheme workflow_1= new WorkflowDataGen().name("Testing")
+                .stepAndAction(workflowStepsAndActions_1).nextPersistedWithStepsAndActions();
+
+        final long secondCount = FactoryLocator.getWorkFlowFactory().countAllSchemasSteps();
+        assertEquals(firstCount + 5, secondCount);
+
+        APILocator.getWorkflowAPI().archive(workflow_1, APILocator.systemUser());
+
+        final long thirdCount = FactoryLocator.getWorkFlowFactory().countAllSchemasSteps();
+        assertEquals(firstCount, thirdCount);
+    }
+
+    private static List<Tuple2<String, List<Tuple3<String, String, Set<WorkflowState>>>>> getStepsAndActions() {
+        final List<Tuple2<String, List<Tuple3<String, String, Set<WorkflowState>>>>> workflowStepsAndActions = Arrays
+                .asList(
+                        Tuple.of("Editing",
+                                Arrays.asList(
+                                        Tuple.of("Save as Draft", "Current Step", EnumSet.of(EDITING, UNLOCKED, LOCKED, NEW, PUBLISHED, UNPUBLISHED))
+                                )
+                        ),
+                        Tuple.of("Review",
+                                Arrays.asList(
+                                        Tuple.of("Save as Draft", "Current Step", EnumSet.of(EDITING, LOCKED, NEW, PUBLISHED, UNPUBLISHED))
+                                )
+                        ),
+                        Tuple.of("Legal Approval",
+                                Arrays.asList(
+                                        Tuple.of("Save as Draft", "Current Step", EnumSet.of(EDITING, LOCKED, NEW, PUBLISHED, UNPUBLISHED))
+                                )
+                        ),
+                        Tuple.of("Published",
+                                Arrays.asList(
+                                        Tuple.of("Republish", "Published", EnumSet.of(EDITING, LOCKED, UNLOCKED, PUBLISHED, ARCHIVED))
+                                ))
+                        ,
+                        Tuple.of("Archived",
+                                Arrays.asList(
+                                        Tuple.of("Full Delete", "Archived", EnumSet.of(EDITING, LISTING, LOCKED, UNLOCKED, ARCHIVED))
+                                )
+
+                        )
+                );
+        return workflowStepsAndActions;
     }
 }
