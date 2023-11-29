@@ -2,11 +2,13 @@
     [label]="selectedLanguage?.language"
     (click)="op.toggle($event)"
     styleClass="p-button-text"
-    icon="pi pi-globe"></p-button>
-<p-overlayPanel #op styleClass="edit-ema-language-selector">
+    icon="pi pi-globe"
+    data-testId="language-button"></p-button>
+<p-overlayPanel #op styleClass="edit-ema-language-selector" data-testId="language-op">
     <p-listbox
         [filter]="true"
         [options]="languages"
         (onChange)="onChange($event)"
-        optionLabel="language"></p-listbox>
+        optionLabel="language"
+        data-testId="language-listbox"></p-listbox>
 </p-overlayPanel>

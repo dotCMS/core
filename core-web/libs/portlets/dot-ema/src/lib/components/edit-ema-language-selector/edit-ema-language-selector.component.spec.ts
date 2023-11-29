@@ -1,44 +1,97 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { of } from 'rxjs';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { By } from '@angular/platform-browser';
+
+import { DotLanguagesService } from '@dotcms/data-access';
+import { DotLanguagesServiceMock } from '@dotcms/utils-testing';
 
 import { EmaLanguageSelectorComponent } from './edit-ema-language-selector.component';
 
+import { EditEmaStore } from '../../feature/store/dot-ema.store';
+import { DotPageApiService } from '../../services/dot-page-api.service';
+
 describe('DotEmaLanguageSelectorComponent', () => {
-    let component: EmaLanguageSelectorComponent;
-    let fixture: ComponentFixture<EmaLanguageSelectorComponent>;
+    let spectator: Spectator<EmaLanguageSelectorComponent>;
+    let store: EditEmaStore;
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [EmaLanguageSelectorComponent]
-        }).compileComponents();
-
-        fixture = TestBed.createComponent(EmaLanguageSelectorComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+    const createComponent = createComponentFactory({
+        component: EmaLanguageSelectorComponent,
+        imports: [HttpClientTestingModule],
+        providers: [
+            EditEmaStore,
+            {
+                provide: DotPageApiService,
+                useValue: {
+                    get() {
+                        return of({
+                            page: {
+                                title: 'hello world',
+                                langugae_id: '1'
+                            }
+                        });
+                    },
+                    save() {
+                        return of({});
+                    }
+                }
+            },
+            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() }
+        ]
     });
 
-    it('should create', () => {
-        expect(component).toBeTruthy();
+    beforeEach(() => {
+        spectator = createComponent();
+
+        store = spectator.inject(EditEmaStore);
+
+        store.load({ language_id: '1', url: 'page-one' });
     });
 
-    // it('should update store and update the route on page change', () => {
-    //     const router = spectator.inject(Router);
+    describe('DOM', () => {
+        it('should render a button with the language that comes from the page', () => {
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('language-button')).textContent).toBe('English');
+        });
 
-    //     jest.spyOn(store, 'setLanguage');
-    //     jest.spyOn(router, 'navigate');
+        it('should render a overlay panel', () => {
+            expect(spectator.query(byTestId('language-op'))).not.toBeNull();
+        });
 
-    //     spectator.detectChanges();
+        it('should render a listbox of languages', () => {
+            const button = spectator.query(byTestId('language-button'));
 
-    //     spectator.triggerEventHandler('select[data-testId="language_id"]', 'change', {
-    //         target: { name: 'language_id', value: '2' }
-    //     });
+            spectator.click(button);
 
-    //     expect(store.setLanguage).toHaveBeenCalledWith('2');
-    //     expect(router.navigate).toHaveBeenCalledWith([], {
-    //         queryParams: { language_id: '2' },
-    //         queryParamsHandling: 'merge'
-    //     });
+            const list = spectator.query(byTestId('language-listbox'));
 
-    //     const iframe = spectator.query(byTestId('iframe'));
-    //     expect(iframe.getAttribute('src')).toBe('http://localhost:3000/page-one?language_id=2');
-    // });
+            expect(list).not.toBeNull();
+        });
+    });
+
+    describe('store changes', () => {
+        it('should trigger the store when the language changes', () => {
+            const button = spectator.query(byTestId('language-button'));
+            const setLanguageMock = jest.spyOn(store, 'setLanguage');
+
+            spectator.click(button);
+
+            const list = spectator.debugElement.query(By.css('[data-testId="language-listbox"]'));
+
+            spectator.triggerEventHandler(list, 'onChange', {
+                event: new Event('change'),
+                value: {
+                    id: 2,
+                    languageCode: 'IT',
+                    countryCode: '',
+                    language: 'Italian',
+                    country: 'Italy'
+                }
+            });
+
+            expect(setLanguageMock).toHaveBeenCalledWith('2');
+            expect(button.textContent).toBe('Italian');
+        });
+    });
 });

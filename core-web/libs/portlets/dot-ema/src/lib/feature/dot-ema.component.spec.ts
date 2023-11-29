@@ -87,6 +87,24 @@ describe('DotEmaComponent', () => {
             expect(store.load).toHaveBeenCalledWith(mockQueryParams);
         });
 
+        it('should update store and update the route on page change', () => {
+            spectator.detectChanges();
+            const router = spectator.inject(Router);
+
+            jest.spyOn(router, 'navigate');
+
+            store.setLanguage('2');
+            spectator.detectChanges();
+
+            expect(router.navigate).toHaveBeenCalledWith([], {
+                queryParams: { language_id: '2' },
+                queryParamsHandling: 'merge'
+            });
+
+            const iframe = spectator.query(byTestId('iframe'));
+            expect(iframe.getAttribute('src')).toBe('http://localhost:3000/page-one?language_id=2');
+        });
+
         describe('customer actions', () => {
             describe('delete', () => {
                 it('should open a confirm dialog and save on confirm', () => {
