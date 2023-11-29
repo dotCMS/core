@@ -47,8 +47,5 @@ describe('EditEmaToolbarComponent', () => {
         it('should have a heading with the page title', () => {
             expect(spectator.query(byTestId('page-title')).textContent).toBe('Test Page');
         });
-        it('should have a language selector', () => {
-            expect(spectator.query('dot-edit-ema-language-selector')).not.toBeNull();
-        });
     });
 });

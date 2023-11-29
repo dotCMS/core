@@ -26,6 +26,7 @@ import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaStore } from './store/dot-ema.store';
 
+import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaToolbarComponent } from '../components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
@@ -43,7 +44,8 @@ import { deleteContentletFromContainer, insertContentletInContainer } from '../u
         DialogModule,
         DotSpinnerModule,
         ConfirmDialogModule,
-        EditEmaToolbarComponent
+        EditEmaToolbarComponent,
+        EmaLanguageSelectorComponent
     ],
     providers: [
         EditEmaStore,
@@ -83,7 +85,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
             const queryParams = {};
 
             if (!language_id) {
-                queryParams['language_id'] = '1';
+                queryParams['language_id'] = 1;
             }
 
             if (!url) {
@@ -98,7 +100,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
             }
 
             this.store.load({
-                language_id: language_id || '1',
+                language_id: language_id || 1,
                 url: url || 'index'
             });
         });
@@ -108,15 +110,6 @@ export class DotEmaComponent implements OnInit, OnDestroy {
             .subscribe((event: MessageEvent) => {
                 this.handlePostMessage(event)?.();
             });
-
-        this.store.language_id$.subscribe((language_id) => {
-            this.router.navigate([], {
-                queryParams: {
-                    language_id
-                },
-                queryParamsHandling: 'merge'
-            });
-        });
     }
 
     ngOnDestroy(): void {
@@ -150,6 +143,21 @@ export class DotEmaComponent implements OnInit, OnDestroy {
      */
     resetDialogIframeData() {
         this.store.resetDialog();
+    }
+
+    /**
+     * Handle the language selection
+     *
+     * @param {number} language_id
+     * @memberof DotEmaComponent
+     */
+    onLanguageSelected(language_id: number) {
+        this.router.navigate([], {
+            queryParams: {
+                language_id
+            },
+            queryParamsHandling: 'merge'
+        });
     }
 
     /**

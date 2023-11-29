@@ -15,6 +15,7 @@ import { DotLanguagesServiceMock, MockDotMessageService } from '@dotcms/utils-te
 import { DotEmaComponent } from './dot-ema.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
+import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
@@ -44,12 +45,37 @@ describe('DotEmaComponent', () => {
             {
                 provide: DotPageApiService,
                 useValue: {
-                    get() {
-                        return of({
-                            page: {
-                                title: 'hello world'
-                            }
-                        });
+                    get({ language_id }) {
+                        return {
+                            2: of({
+                                page: {
+                                    title: 'hello world'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 2,
+                                        language: 'Spanish',
+                                        countryCode: 'ES',
+                                        languageCode: 'es',
+                                        country: 'España'
+                                    }
+                                }
+                            }),
+                            1: of({
+                                page: {
+                                    title: 'hello world'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 1,
+                                        language: 'English',
+                                        countryCode: 'US',
+                                        languageCode: 'EN',
+                                        country: 'United States'
+                                    }
+                                }
+                            })
+                        }[language_id];
                     },
                     save() {
                         return of({});
@@ -70,7 +96,7 @@ describe('DotEmaComponent', () => {
     describe('with queryParams', () => {
         beforeEach(() => {
             spectator = createComponent({
-                queryParams: { language_id: '1', url: 'page-one' }
+                queryParams: { language_id: 1, url: 'page-one' }
             });
 
             store = spectator.inject(EditEmaStore, true);
@@ -78,7 +104,7 @@ describe('DotEmaComponent', () => {
         });
 
         it('should initialize with route query parameters', () => {
-            const mockQueryParams = { language_id: '1', url: 'page-one' };
+            const mockQueryParams = { language_id: 1, url: 'page-one' };
 
             jest.spyOn(store, 'load');
 
@@ -87,22 +113,28 @@ describe('DotEmaComponent', () => {
             expect(store.load).toHaveBeenCalledWith(mockQueryParams);
         });
 
-        it('should update store and update the route on page change', () => {
+        it('should call navigate when selecting a language', () => {
             spectator.detectChanges();
             const router = spectator.inject(Router);
 
             jest.spyOn(router, 'navigate');
 
-            store.setLanguage('2');
+            spectator.triggerEventHandler(EmaLanguageSelectorComponent, 'languageSelected', 2);
             spectator.detectChanges();
 
             expect(router.navigate).toHaveBeenCalledWith([], {
-                queryParams: { language_id: '2' },
+                queryParams: { language_id: 2 },
                 queryParamsHandling: 'merge'
             });
+        });
 
-            const iframe = spectator.query(byTestId('iframe'));
-            expect(iframe.getAttribute('src')).toBe('http://localhost:3000/page-one?language_id=2');
+        it('should update the iframe url when the language changes', () => {
+            spectator.detectChanges();
+            spectator.triggerEventHandler(EmaLanguageSelectorComponent, 'languageSelected', 2);
+
+            const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+            expect(iframe.nativeElement.src).toBe('http://localhost:3000/page-one?language_id=2');
         });
 
         describe('customer actions', () => {
@@ -545,7 +577,7 @@ describe('DotEmaComponent', () => {
         });
 
         it('should initialize with default value', () => {
-            const mockQueryParams = { language_id: '1', url: 'index' };
+            const mockQueryParams = { language_id: 1, url: 'index' };
 
             jest.spyOn(store, 'load');
 

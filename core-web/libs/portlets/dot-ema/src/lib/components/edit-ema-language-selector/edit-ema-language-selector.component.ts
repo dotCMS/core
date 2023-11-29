@@ -1,7 +1,5 @@
-import { combineLatest } from 'rxjs';
-
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { ListboxModule } from 'primeng/listbox';
@@ -9,8 +7,6 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
-
-import { EditEmaStore } from '../../feature/store/dot-ema.store';
 
 interface DotLanguageWithLabel extends DotLanguage {
     label: string;
@@ -24,27 +20,31 @@ interface DotLanguageWithLabel extends DotLanguage {
     styleUrls: ['./edit-ema-language-selector.component.scss']
 })
 export class EmaLanguageSelectorComponent implements OnInit {
-    selectedLanguage: DotLanguageWithLabel;
+    @Output() languageSelected: EventEmitter<number> = new EventEmitter();
+    @Input() language: DotLanguage;
+
     languages: DotLanguageWithLabel[] = [];
 
-    private store = inject(EditEmaStore);
+    get selectedLanguage() {
+        return {
+            ...this.language,
+            label: this.language.countryCode.trim().length
+                ? `${this.language.language} - ${this.language.countryCode}`
+                : this.language.language
+        };
+    }
+
     private languagesService = inject(DotLanguagesService);
 
     ngOnInit(): void {
-        combineLatest([this.languagesService.get(), this.store.language_id$]).subscribe(
-            ([languages, language_id]) => {
-                this.languages = languages.map((lang) => ({
-                    ...lang,
-                    label: lang.countryCode.trim().length
-                        ? `${lang.language} - ${lang.countryCode}`
-                        : lang.language
-                }));
-
-                this.selectedLanguage = this.languages.find(
-                    (lang) => lang.id == Number(language_id)
-                );
-            }
-        );
+        this.languagesService.get().subscribe((languages) => {
+            this.languages = languages.map((lang) => ({
+                ...lang,
+                label: lang.countryCode.trim().length
+                    ? `${lang.language} - ${lang.countryCode}`
+                    : lang.language
+            }));
+        });
     }
 
     /**
@@ -54,7 +54,6 @@ export class EmaLanguageSelectorComponent implements OnInit {
      * @memberof EmaLanguageSelectorComponent
      */
     onChange({ value }: { event: Event; value: DotLanguageWithLabel }) {
-        this.selectedLanguage = value;
-        this.store.setLanguage(value.id.toString());
+        this.languageSelected.emit(value.id);
     }
 }

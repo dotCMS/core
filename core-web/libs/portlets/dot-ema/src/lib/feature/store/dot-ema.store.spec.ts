@@ -21,14 +21,23 @@ describe('EditEmaStore', () => {
             const mockResponse = {
                 page: {
                     title: 'Test Page'
+                },
+                viewAs: {
+                    language: {
+                        id: 1,
+                        language: '',
+                        countryCode: '',
+                        languageCode: '',
+                        country: ''
+                    }
                 }
             };
             dotPageApiService.get.andReturn(of(mockResponse));
 
-            spectator.service.load({ language_id: 'en', url: 'test-url' });
+            spectator.service.load({ language_id: '1', url: 'test-url' });
 
             spectator.service.iframeUrl$.subscribe((url) => {
-                expect(url).toEqual('http://localhost:3000/test-url?language_id=en');
+                expect(url).toEqual('http://localhost:3000/test-url?language_id=1');
                 done();
             });
         });
@@ -44,9 +53,17 @@ describe('EditEmaStore', () => {
                         page: {
                             title: '',
                             identifier: ''
+                        },
+                        viewAs: {
+                            language: {
+                                id: 0,
+                                language: '',
+                                countryCode: '',
+                                languageCode: '',
+                                country: ''
+                            }
                         }
                     },
-                    language_id: '',
                     url: 'test-url',
                     dialogIframeURL: '',
                     dialogIframeLoading: false,
@@ -66,33 +83,19 @@ describe('EditEmaStore', () => {
                         page: {
                             title: '',
                             identifier: ''
+                        },
+                        viewAs: {
+                            language: {
+                                id: 0,
+                                language: '',
+                                countryCode: '',
+                                languageCode: '',
+                                country: ''
+                            }
                         }
                     },
-                    language_id: '',
                     url: '',
                     dialogIframeURL: 'test-url',
-                    dialogIframeLoading: false,
-                    dialogHeader: '',
-                    dialogVisible: false
-                });
-                done();
-            });
-        });
-
-        it('should update language_id', (done) => {
-            spectator.service.setLanguage('1');
-
-            spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
-                    editor: {
-                        page: {
-                            title: '',
-                            identifier: ''
-                        }
-                    },
-                    language_id: '1',
-                    url: '',
-                    dialogIframeURL: '',
                     dialogIframeLoading: false,
                     dialogHeader: '',
                     dialogVisible: false
@@ -110,9 +113,17 @@ describe('EditEmaStore', () => {
                         page: {
                             title: '',
                             identifier: ''
+                        },
+                        viewAs: {
+                            language: {
+                                id: 0,
+                                language: '',
+                                countryCode: '',
+                                languageCode: '',
+                                country: ''
+                            }
                         }
                     },
-                    language_id: '',
                     url: '',
                     dialogIframeURL: '',
                     dialogIframeLoading: false,
@@ -132,9 +143,17 @@ describe('EditEmaStore', () => {
                         page: {
                             title: '',
                             identifier: ''
+                        },
+                        viewAs: {
+                            language: {
+                                id: 0,
+                                language: '',
+                                countryCode: '',
+                                languageCode: '',
+                                country: ''
+                            }
                         }
                     },
-                    language_id: '',
                     url: '',
                     dialogIframeURL: '',
                     dialogIframeLoading: false,
@@ -154,9 +173,17 @@ describe('EditEmaStore', () => {
                         page: {
                             title: '',
                             identifier: ''
+                        },
+                        viewAs: {
+                            language: {
+                                id: 0,
+                                language: '',
+                                countryCode: '',
+                                languageCode: '',
+                                country: ''
+                            }
                         }
                     },
-                    language_id: '',
                     url: '',
                     dialogIframeURL: '',
                     dialogIframeLoading: true,
@@ -180,9 +207,17 @@ describe('EditEmaStore', () => {
                         page: {
                             title: '',
                             identifier: ''
+                        },
+                        viewAs: {
+                            language: {
+                                id: 0,
+                                language: '',
+                                countryCode: '',
+                                languageCode: '',
+                                country: ''
+                            }
                         }
                     },
-                    language_id: '',
                     url: '',
                     dialogIframeURL: '',
                     dialogIframeLoading: false,
@@ -205,9 +240,17 @@ describe('EditEmaStore', () => {
                         page: {
                             title: '',
                             identifier: ''
+                        },
+                        viewAs: {
+                            language: {
+                                id: 0,
+                                language: '',
+                                countryCode: '',
+                                languageCode: '',
+                                country: ''
+                            }
                         }
                     },
-                    language_id: '',
                     url: '',
                     dialogIframeURL: EDIT_CONTENTLET_URL + '123',
                     dialogIframeLoading: true,
@@ -226,6 +269,15 @@ describe('EditEmaStore', () => {
                 page: {
                     title: 'Test Page',
                     identifier: '123'
+                },
+                viewAs: {
+                    language: {
+                        id: 0,
+                        language: '',
+                        countryCode: '',
+                        languageCode: '',
+                        country: ''
+                    }
                 }
             };
             dotPageApiService.get.andReturn(of(mockResponse));
@@ -234,12 +286,20 @@ describe('EditEmaStore', () => {
 
             spectator.service.state$.subscribe((state) => {
                 expect(state).toEqual({
-                    language_id: 'en',
                     url: 'test-url',
                     editor: {
                         page: {
                             title: 'Test Page',
                             identifier: '123'
+                        },
+                        viewAs: {
+                            language: {
+                                id: 0,
+                                language: '',
+                                countryCode: '',
+                                languageCode: '',
+                                country: ''
+                            }
                         }
                     },
                     dialogIframeURL: '',

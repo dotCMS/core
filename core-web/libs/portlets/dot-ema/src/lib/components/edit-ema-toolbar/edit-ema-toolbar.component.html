@@ -2,15 +2,10 @@
 
 <div class="edit-ema-toolbar-actions">
     <div class="edit-ema-toolbar-actions__buttons">
-        <div class="dummy-button"></div>
-        <div class="dummy-button"></div>
-        <div class="dummy-button"></div>
-        <div class="dummy-button"></div>
+        <ng-content select="[left]"></ng-content>
     </div>
 
     <div class="edit-ema-toolbar-actions__buttons">
-        <div class="dummy-button"></div>
-        <dot-edit-ema-language-selector></dot-edit-ema-language-selector>
-        <div class="dummy-button"></div>
+        <ng-content select="[right]"></ng-content>
     </div>
 </div>

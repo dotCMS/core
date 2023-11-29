@@ -6,6 +6,13 @@
     grid-template-rows: 100px 1fr;
     height: 100%;
 
+    .dummy-button {
+        background-color: $color-palette-gray-200;
+        width: 113px;
+        height: 40px;
+        border-radius: $border-radius-md; // Required for all buttons
+    }
+
     ::ng-deep {
         .p-dialog {
             .p-dialog-content {

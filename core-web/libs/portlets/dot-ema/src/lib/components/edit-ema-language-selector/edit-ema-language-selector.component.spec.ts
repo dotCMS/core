@@ -15,6 +15,7 @@ import { DotPageApiService } from '../../services/dot-page-api.service';
 describe('DotEmaLanguageSelectorComponent', () => {
     let spectator: Spectator<EmaLanguageSelectorComponent>;
     let store: EditEmaStore;
+    let component: EmaLanguageSelectorComponent;
 
     const createComponent = createComponentFactory({
         component: EmaLanguageSelectorComponent,
@@ -27,8 +28,16 @@ describe('DotEmaLanguageSelectorComponent', () => {
                     get() {
                         return of({
                             page: {
-                                title: 'hello world',
-                                language_id: '1'
+                                title: 'hello world'
+                            },
+                            viewAs: {
+                                language: {
+                                    id: 1,
+                                    language: 'English',
+                                    countryCode: 'US',
+                                    languageCode: 'EN',
+                                    country: 'United States'
+                                }
                             }
                         });
                     },
@@ -42,9 +51,20 @@ describe('DotEmaLanguageSelectorComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent();
+        spectator = createComponent({
+            props: {
+                language: {
+                    id: 1,
+                    language: 'English',
+                    countryCode: 'US',
+                    languageCode: 'EN',
+                    country: 'United States'
+                }
+            }
+        });
 
         store = spectator.inject(EditEmaStore);
+        component = spectator.component;
 
         store.load({ language_id: '1', url: 'page-one' });
     });
@@ -73,7 +93,7 @@ describe('DotEmaLanguageSelectorComponent', () => {
     describe('store changes', () => {
         it('should trigger the store when the language changes', () => {
             const button = spectator.query(byTestId('language-button'));
-            const setLanguageMock = jest.spyOn(store, 'setLanguage');
+            const languageChangeSpy = jest.spyOn(component.languageSelected, 'emit');
 
             spectator.click(button);
 
@@ -90,8 +110,7 @@ describe('DotEmaLanguageSelectorComponent', () => {
                 }
             });
 
-            expect(setLanguageMock).toHaveBeenCalledWith('2');
-            expect(button.textContent).toBe('Italian');
+            expect(languageChangeSpy).toHaveBeenCalledWith(2);
         });
     });
 });
