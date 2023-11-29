@@ -87,10 +87,12 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         return prompt$.pipe(
             withLatestFrom(this.state$),
             switchMap(([prompt, { selectedPromptType, editorContent }]) => {
+                const cleanPrompt = prompt ? prompt.trim() : '';
+
                 const finalPrompt =
                     selectedPromptType === 'auto' && editorContent
-                        ? `${prompt} to illustrate the following content: ${editorContent}`
-                        : prompt;
+                        ? `${cleanPrompt} to illustrate the following content: ${editorContent}`
+                        : cleanPrompt;
                 this.patchState({ status: ComponentStatus.LOADING, prompt: finalPrompt });
 
                 return this.dotAiService.generateAndPublishImage(finalPrompt).pipe(

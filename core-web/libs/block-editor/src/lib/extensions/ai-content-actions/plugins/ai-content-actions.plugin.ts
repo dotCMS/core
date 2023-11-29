@@ -148,10 +148,6 @@ export class AIContentActionsView {
             case DOT_AI_TEXT_CONTENT_KEY:
                 this.aiContentPromptStore.setAcceptContent(true);
                 break;
-
-            case DOT_AI_IMAGE_CONTENT_KEY:
-                // this.dotAiImagePromptStore.setAcceptContent(true);
-                break;
         }
     }
 
