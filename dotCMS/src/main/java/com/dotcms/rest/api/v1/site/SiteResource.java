@@ -99,6 +99,7 @@ public class SiteResource implements Serializable {
     public static final String ADD_THIS = "addThis";
     public static final String PROXY_EDIT_MODE_URL = "proxyEditModeUrl";
     public static final String EMBEDDED_DASHBOARD = "embeddedDashboard";
+    private static final String SITE_DOESNT_EXIST_ERR_MSG = "Site '%s' does not exist";
 
     private final WebResource webResource;
     private final SiteHelper siteHelper;
@@ -432,7 +433,7 @@ public class SiteResource implements Serializable {
         final Host site = pageMode.respectAnonPerms? this.siteHelper.getSite(user, siteId):
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
         if (null == site) {
-            throw new IllegalArgumentException(String.format("Site '%s' does not exist", siteId));
+            throw new IllegalArgumentException(String.format(SITE_DOESNT_EXIST_ERR_MSG, siteId));
         }
         this.siteHelper.publish(site, user, pageMode.respectAnonPerms);
         return Response.ok(new ResponseEntityView<>(this.toView(site))).build();
@@ -474,7 +475,7 @@ public class SiteResource implements Serializable {
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
 
         if (null == site) {
-            throw new NotFoundException(String.format("Site '%s' does not exist", siteId));
+            throw new NotFoundException(String.format(SITE_DOESNT_EXIST_ERR_MSG, siteId));
         }
 
         this.siteHelper.unpublish(site, user, pageMode.respectAnonPerms);
@@ -517,7 +518,7 @@ public class SiteResource implements Serializable {
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
 
         if (null == site) {
-            throw new NotFoundException(String.format("Site '%s' does not exist", siteId));
+            throw new NotFoundException(String.format(SITE_DOESNT_EXIST_ERR_MSG, siteId));
         }
 
         if(site.isDefault()) {
@@ -577,7 +578,7 @@ public class SiteResource implements Serializable {
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
 
         if (null == site) {
-            throw new IllegalArgumentException(String.format("Site '%s' does not exist", siteId));
+            throw new IllegalArgumentException(String.format(SITE_DOESNT_EXIST_ERR_MSG, siteId));
         }
 
         this.siteHelper.unarchive(site, user, pageMode.respectAnonPerms);
@@ -621,7 +622,7 @@ public class SiteResource implements Serializable {
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
 
         if (null == site) {
-            throw new IllegalArgumentException(String.format("Site '%s' does not exist", siteId));
+            throw new IllegalArgumentException(String.format(SITE_DOESNT_EXIST_ERR_MSG, siteId));
         }
 
         if(site.isDefault()) {
@@ -679,7 +680,7 @@ public class SiteResource implements Serializable {
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
 
         if (null == site) {
-            throw new IllegalArgumentException(String.format("Site '%s' does not exist", siteId));
+            throw new IllegalArgumentException(String.format(SITE_DOESNT_EXIST_ERR_MSG, siteId));
         }
 
         return Response.ok(new ResponseEntityView<>(
@@ -752,7 +753,7 @@ public class SiteResource implements Serializable {
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
 
         if (null == site) {
-            throw new NotFoundException(String.format("Site '%s' does not exist", siteId));
+            throw new NotFoundException(String.format(SITE_DOESNT_EXIST_ERR_MSG, siteId));
         }
 
         return Response.ok(new ResponseEntityView<>(this.toView(site))).build();
@@ -800,7 +801,7 @@ public class SiteResource implements Serializable {
                 this.siteHelper.getSiteByNameNoFrontEndRoles(user, hostname);
 
         if (null == site) {
-            throw new NotFoundException(String.format("Site '%s' does not exist", hostname));
+            throw new NotFoundException(String.format(SITE_DOESNT_EXIST_ERR_MSG, hostname));
         }
 
         return Response.ok(new ResponseEntityView<>(this.toView(site))).build();
@@ -1152,7 +1153,7 @@ public class SiteResource implements Serializable {
         final Host site = siteHelper.getSite(user, siteIdentifier);
 
         if (null == site) {
-            throw new NotFoundException(String.format("Site '%s' does not exist", siteIdentifier));
+            throw new NotFoundException(String.format(SITE_DOESNT_EXIST_ERR_MSG, siteIdentifier));
         }
 
         // we need to clean up mostly the null properties when recovery the by identifier
@@ -1226,7 +1227,7 @@ public class SiteResource implements Serializable {
                 this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
 
         if (null == sourceSite) {
-            throw new NotFoundException(String.format("Site '%s' does not exist", siteId));
+            throw new NotFoundException(String.format(SITE_DOESNT_EXIST_ERR_MSG, siteId));
         }
 
         final Response response  = this.createNewSite(httpServletRequest, httpServletResponse, copySiteForm.getSite());
