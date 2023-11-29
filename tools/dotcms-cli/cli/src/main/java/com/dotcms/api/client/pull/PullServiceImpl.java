@@ -71,7 +71,7 @@ public class PullServiceImpl implements PullService {
 
                 // ---
                 // Just print the short format
-                pullToConsole(contents, output, pullHandler, customOptions);
+                pullToConsole(contents, pullOptions, output, pullHandler, customOptions);
             } else {
 
                 // ---
@@ -166,11 +166,13 @@ public class PullServiceImpl implements PullService {
      * pullHandler.
      *
      * @param contents    The contents to be pulled to the console.
+     * @param pullOptions The pull options.
      * @param output      The output option mixin.
      * @param pullHandler The pull handler.
      * @param <T>         The type of the contents.
      */
     private <T> void pullToConsole(List<T> contents,
+            final PullOptions pullOptions,
             final OutputOptionMixin output,
             final PullHandler<T> pullHandler,
             final Map<String, Object> customOptions) {
@@ -178,10 +180,11 @@ public class PullServiceImpl implements PullService {
         output.info(pullHandler.startPullingHeader(contents));
 
         for (var content : contents) {
-            final String shortFormat = pullHandler.shortFormat(content, customOptions);
+            final String shortFormat = pullHandler.shortFormat(content, pullOptions, customOptions);
             output.info(shortFormat);
         }
 
+        output.info(String.format("%n%n"));
     }
 
     /**
@@ -320,6 +323,8 @@ public class PullServiceImpl implements PullService {
 
         var failed = false;
 
+        output.info(pullHandler.startPullingHeader(contents));
+
         for (var content : contents) {
 
             var errors = pullHandler.pull(
@@ -372,7 +377,9 @@ public class PullServiceImpl implements PullService {
                 () -> {
 
                     final var format = InputOutputFormat.valueOf(
-                            pullOptions.outputFormat());
+                            pullOptions.outputFormat()
+                                    .orElse(InputOutputFormat.defaultFormat().toString())
+                    );
 
                     var forkJoinPool = ForkJoinPool.commonPool();
                     var task = new PullTask<>(PullTaskParams.<T>builder().

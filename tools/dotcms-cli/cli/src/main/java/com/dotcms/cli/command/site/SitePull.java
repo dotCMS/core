@@ -95,7 +95,7 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer>, 
             );
         }
 
-        // Execute the push
+        // Execute the pull
         pullService.pull(
                 PullOptions.builder().
                         destination(sitesFolder).

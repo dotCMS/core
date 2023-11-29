@@ -92,7 +92,7 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
             );
         }
 
-        // Execute the push
+        // Execute the pull
         pullService.pull(
                 PullOptions.builder().
                         destination(languagesFolder).

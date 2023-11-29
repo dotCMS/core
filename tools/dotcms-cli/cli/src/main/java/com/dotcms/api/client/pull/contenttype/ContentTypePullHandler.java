@@ -2,6 +2,7 @@ package com.dotcms.api.client.pull.contenttype;
 
 import com.dotcms.api.client.pull.GenericPullHandler;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.model.pull.PullOptions;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +37,7 @@ public class ContentTypePullHandler implements GenericPullHandler<ContentType> {
     }
 
     @Override
-    public String shortFormat(final ContentType contentType,
+    public String shortFormat(final ContentType contentType, final PullOptions pullOptions,
             final Map<String, Object> customOptions) {
 
         final var simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

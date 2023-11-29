@@ -8,6 +8,7 @@ import static com.dotcms.api.client.pull.file.OptionConstants.INCLUDE_FOLDER_PAT
 import static com.dotcms.api.client.pull.file.OptionConstants.NON_RECURSIVE;
 import static com.dotcms.api.client.pull.file.OptionConstants.PRESERVE;
 
+import com.dotcms.api.client.pull.PullService;
 import com.dotcms.api.client.pull.file.FileFetcher;
 import com.dotcms.api.client.pull.file.FilePullHandler;
 import com.dotcms.cli.command.DotCommand;
@@ -67,7 +68,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
     WorkspaceManager workspaceManager;
 
     @Inject
-    com.dotcms.api.client.pull.PullService pullService;
+    PullService pullService;
 
     @Inject
     FileFetcher fileProvider;
@@ -116,7 +117,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                 INCLUDE_EMPTY_FOLDERS, filePullMixin.includeEmptyFolders
         );
 
-        // Execute the push
+        // Execute the pull
         pullService.pull(
                 PullOptions.builder().
                         destination(filesFolder).

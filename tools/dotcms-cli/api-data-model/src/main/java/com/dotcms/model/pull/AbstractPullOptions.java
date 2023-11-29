@@ -51,9 +51,13 @@ public interface AbstractPullOptions {
     Optional<String> contentKey();
 
     /**
-     * Retrieves the output format for the pulled content (JSON/YAML).
+     * Retrieves the output format used for displaying the content. If no output format is set, the
+     * default output format will be used.
+     *
+     * @return an Optional containing the output format, or an empty Optional if no output format is
+     * set.
      */
-    String outputFormat();
+    Optional<String> outputFormat();
 
     /**
      * Retrieves whether the pulled content should be printed to the console or stored to disk.

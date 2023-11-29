@@ -1,5 +1,6 @@
 package com.dotcms.api.client.pull;
 
+import com.dotcms.model.pull.PullOptions;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +25,6 @@ public interface PullHandler<T> {
     /**
      * Returns a short format of a given T element. Used for console user feedback.
      */
-    String shortFormat(T content, Map<String, Object> customOptions);
+    String shortFormat(T content, PullOptions pullOptions, Map<String, Object> customOptions);
 
 }

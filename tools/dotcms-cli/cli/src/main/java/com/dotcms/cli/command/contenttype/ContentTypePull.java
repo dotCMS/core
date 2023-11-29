@@ -92,7 +92,7 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
             );
         }
 
-        // Execute the push
+        // Execute the pull
         pullService.pull(
                 PullOptions.builder().
                         destination(contentTypesFolder).
