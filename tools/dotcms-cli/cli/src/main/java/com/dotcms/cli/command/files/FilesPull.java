@@ -122,7 +122,6 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                 PullOptions.builder().
                         destination(filesFolder).
                         contentKey(Optional.ofNullable(filePullMixin.path)).
-                        outputFormat(pullMixin.inputOutputFormat().toString()).
                         isShortOutput(pullMixin.shortOutputOption().isShortOutput()).
                         failFast(pullMixin.failFast).
                         maxRetryAttempts(pullMixin.retryAttempts).
