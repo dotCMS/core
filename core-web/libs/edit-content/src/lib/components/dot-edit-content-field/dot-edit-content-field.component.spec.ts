@@ -1,6 +1,5 @@
 import { describe } from '@jest/globals';
-import { mockProvider } from '@ngneat/spectator';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
