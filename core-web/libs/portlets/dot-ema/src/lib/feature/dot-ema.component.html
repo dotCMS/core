@@ -22,8 +22,7 @@
             data-testId="iframe"
             style="border: none"
             width="100%"
-            height="100%"
-            title="Editor Page"></iframe>
+            height="100%"></iframe>
     </div>
     <p-dialog
         #dialog
@@ -34,7 +33,7 @@
         [resizable]="false"
         [maximizable]="true"
         [modal]="true"
-        (visibleChange)="resetIframeData()"
+        (visibleChange)="resetDialogIframeData()"
         data-testId="dialog">
         <iframe
             #dialogIframe
@@ -47,4 +46,13 @@
             height="100%"></iframe>
         <dot-spinner *ngIf="vm.dialogIframeLoading" data-testId="spinner"></dot-spinner>
     </p-dialog>
+
+    <p-confirmDialog
+        [style]="{
+            width: '400px'
+        }"
+        [rejectIcon]="null"
+        [acceptIcon]="null"
+        rejectButtonStyleClass="p-button-outlined"
+        data-testId="confirm-dialog"></p-confirmDialog>
 </ng-container>

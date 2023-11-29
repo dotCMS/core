@@ -1,6 +1,6 @@
 import { Subject, fromEvent } from 'rxjs';
 
-import { AsyncPipe, NgFor, NgIf } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -14,10 +14,13 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
+import { ConfirmationService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 
 import { takeUntil } from 'rxjs/operators';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
@@ -26,14 +29,24 @@ import { EditEmaStore } from './store/dot-ema.store';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
+import { AddContentletPayload, DeleteContentletPayload, SetUrlPayload } from '../shared/models';
+import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
 
 @Component({
     selector: 'dot-ema',
     standalone: true,
-    imports: [NgFor, NgIf, AsyncPipe, FormsModule, SafeUrlPipe, DialogModule, DotSpinnerModule],
+    imports: [
+        CommonModule,
+        FormsModule,
+        SafeUrlPipe,
+        DialogModule,
+        DotSpinnerModule,
+        ConfirmDialogModule
+    ],
     providers: [
         EditEmaStore,
         DotPageApiService,
+        ConfirmationService,
         {
             provide: WINDOW,
             useValue: window
@@ -60,26 +73,15 @@ export class DotEmaComponent implements OnInit, OnDestroy {
         }
     ];
 
-    pages = [
-        {
-            name: 'Home',
-            value: 'index'
-        },
-        {
-            name: 'Page One',
-            value: 'page-one'
-        },
-        {
-            name: 'Page Two',
-            value: 'page-two'
-        }
-    ];
+    private readonly route = inject(ActivatedRoute);
+    private readonly router = inject(Router);
+    private readonly store = inject(EditEmaStore);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly confirmationService = inject(ConfirmationService);
 
-    readonly route = inject(ActivatedRoute);
-    readonly router = inject(Router);
-    readonly store = inject(EditEmaStore);
+    private savePayload: AddContentletPayload;
+
     readonly host = 'http://localhost:3000';
-
     readonly vm$ = this.store.vm$;
 
     constructor(@Inject(WINDOW) private window: Window) {}
@@ -112,7 +114,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: MessageEvent) => {
-                this.handlePostMessage(event)();
+                this.handlePostMessage(event)?.();
             });
     }
 
@@ -136,7 +138,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
         )
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: CustomEvent) => {
-                this.handleNgEvent(event);
+                this.handleNgEvent(event)?.();
             });
     }
 
@@ -169,7 +171,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
      *
      * @memberof DotEmaComponent
      */
-    resetIframeData() {
+    resetDialogIframeData() {
         this.store.resetDialog();
     }
 
@@ -183,14 +185,31 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     private handleNgEvent(event: CustomEvent) {
         const { detail } = event;
 
-        // Skip the loaded event
-        if (detail.name === NG_CUSTOM_EVENTS.EDIT_CONTENTLET_LOADED) return;
+        return (<Record<NG_CUSTOM_EVENTS, () => void>>{
+            [NG_CUSTOM_EVENTS.EDIT_CONTENTLET_LOADED]: () => {
+                /* */
+            },
+            [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
+                const pageContainers = insertContentletInContainer({
+                    pageContainers: this.savePayload.pageContainers,
+                    container: this.savePayload.container,
+                    contentletID: detail.data.identifier
+                });
 
-        // This forces a reload in the iframe
-        this.iframe.nativeElement.contentWindow?.postMessage(
-            NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
-            this.host
-        );
+                this.store.savePage({
+                    pageContainers,
+                    pageID: this.savePayload.pageID,
+                    whenSaved: () => {
+                        this.resetDialogIframeData();
+                        this.reloadIframe();
+                        this.savePayload = undefined;
+                    }
+                }); // Save when selected
+            },
+            [NG_CUSTOM_EVENTS.CONTENTLET_UPDATED]: () => {
+                this.reloadIframe();
+            }
+        })[detail.name];
     }
 
     /**
@@ -206,20 +225,87 @@ export class DotEmaComponent implements OnInit, OnDestroy {
         data
     }: {
         origin: string;
-        data: { action: CUSTOMER_ACTIONS; payload: DotCMSContentlet };
+        data: { action: CUSTOMER_ACTIONS; payload: DotCMSContentlet | AddContentletPayload };
     }): () => void {
         const action = origin !== this.host ? CUSTOMER_ACTIONS.NOOP : data.action;
 
-        return {
+        return (<Record<CUSTOMER_ACTIONS, () => void>>{
             [CUSTOMER_ACTIONS.EDIT_CONTENTLET]: () => {
-                this.store.initEditIframeDialog({
-                    inode: data.payload.inode,
-                    title: data.payload.title
+                const payload = <DotCMSContentlet>data.payload;
+
+                this.store.initActionEdit({
+                    inode: payload.inode,
+                    title: payload.title
+                });
+            },
+            [CUSTOMER_ACTIONS.ADD_CONTENTLET]: () => {
+                const payload = <AddContentletPayload>data.payload;
+
+                this.store.initActionAdd({
+                    containerID: payload.container.identifier,
+                    acceptTypes: payload.container.acceptTypes ?? '*'
+                });
+
+                this.savePayload = payload;
+            },
+            [CUSTOMER_ACTIONS.DELETE_CONTENTLET]: () => {
+                const { pageContainers, container, contentletId, pageID } = <
+                    DeleteContentletPayload
+                >data.payload;
+
+                const newPageContainers = deleteContentletFromContainer({
+                    pageContainers: pageContainers,
+                    container: container,
+                    contentletID: contentletId
+                });
+
+                this.confirmationService.confirm({
+                    header: this.dotMessageService.get(
+                        'editpage.content.contentlet.remove.confirmation_message.header'
+                    ),
+                    message: this.dotMessageService.get(
+                        'editpage.content.contentlet.remove.confirmation_message.message'
+                    ),
+                    acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
+                    rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+                    accept: () => {
+                        this.store.savePage({
+                            pageContainers: newPageContainers,
+                            pageID,
+                            whenSaved: () => {
+                                this.resetDialogIframeData();
+                                this.reloadIframe();
+                            }
+                        }); // Save when selected
+                    }
+                });
+            },
+            [CUSTOMER_ACTIONS.SET_URL]: () => {
+                const payload = <SetUrlPayload>data.payload;
+
+                this.router.navigate([], {
+                    queryParams: {
+                        url: payload.url
+                    },
+                    queryParamsHandling: 'merge'
                 });
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }
-        }[action];
+        })[action];
+    }
+
+    /**
+     * Notify the user to reload the iframe
+     *
+     * @private
+     * @memberof DotEmaComponent
+     */
+    private reloadIframe() {
+        this.iframe.nativeElement.contentWindow?.postMessage(
+            NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
+            this.host
+        );
     }
 }

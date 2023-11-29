@@ -42,7 +42,8 @@ describe('EditEmaStore', () => {
                 expect(state).toEqual({
                     editor: {
                         page: {
-                            title: ''
+                            title: '',
+                            identifier: ''
                         }
                     },
                     language_id: '',
@@ -63,7 +64,8 @@ describe('EditEmaStore', () => {
                 expect(state).toEqual({
                     editor: {
                         page: {
-                            title: ''
+                            title: '',
+                            identifier: ''
                         }
                     },
                     language_id: '',
@@ -84,7 +86,8 @@ describe('EditEmaStore', () => {
                 expect(state).toEqual({
                     editor: {
                         page: {
-                            title: ''
+                            title: '',
+                            identifier: ''
                         }
                     },
                     language_id: '1',
@@ -105,7 +108,8 @@ describe('EditEmaStore', () => {
                 expect(state).toEqual({
                     editor: {
                         page: {
-                            title: ''
+                            title: '',
+                            identifier: ''
                         }
                     },
                     language_id: '',
@@ -126,7 +130,8 @@ describe('EditEmaStore', () => {
                 expect(state).toEqual({
                     editor: {
                         page: {
-                            title: ''
+                            title: '',
+                            identifier: ''
                         }
                     },
                     language_id: '',
@@ -147,7 +152,8 @@ describe('EditEmaStore', () => {
                 expect(state).toEqual({
                     editor: {
                         page: {
-                            title: ''
+                            title: '',
+                            identifier: ''
                         }
                     },
                     language_id: '',
@@ -172,7 +178,8 @@ describe('EditEmaStore', () => {
                 expect(state).toEqual({
                     editor: {
                         page: {
-                            title: ''
+                            title: '',
+                            identifier: ''
                         }
                     },
                     language_id: '',
@@ -187,7 +194,7 @@ describe('EditEmaStore', () => {
         });
 
         it('should initialize editIframe properties', (done) => {
-            spectator.service.initEditIframeDialog({
+            spectator.service.initActionEdit({
                 inode: '123',
                 title: 'test'
             });
@@ -196,7 +203,8 @@ describe('EditEmaStore', () => {
                 expect(state).toEqual({
                     editor: {
                         page: {
-                            title: ''
+                            title: '',
+                            identifier: ''
                         }
                     },
                     language_id: '',
@@ -216,7 +224,8 @@ describe('EditEmaStore', () => {
             const dotPageApiService = spectator.inject(DotPageApiService);
             const mockResponse = {
                 page: {
-                    title: 'Test Page'
+                    title: 'Test Page',
+                    identifier: '123'
                 }
             };
             dotPageApiService.get.andReturn(of(mockResponse));
@@ -229,7 +238,8 @@ describe('EditEmaStore', () => {
                     url: 'test-url',
                     editor: {
                         page: {
-                            title: 'Test Page'
+                            title: 'Test Page',
+                            identifier: '123'
                         }
                     },
                     dialogIframeURL: '',
@@ -238,6 +248,39 @@ describe('EditEmaStore', () => {
                     dialogVisible: false
                 });
                 done();
+            });
+        });
+
+        it("should call save method from dotPageApiService when 'save' action is dispatched", () => {
+            const dotPageApiService = spectator.inject(DotPageApiService);
+            const mockResponse = {
+                page: {
+                    title: 'Test Page'
+                }
+            };
+            dotPageApiService.get.andReturn(of(mockResponse));
+
+            spectator.service.load({ language_id: 'en', url: 'test-url' });
+            spectator.service.savePage({
+                pageContainers: [],
+                container: {
+                    uuid: '123',
+                    identifier: 'test',
+                    contentletsId: [],
+                    acceptTypes: 'test'
+                },
+                pageID: '789'
+            });
+
+            expect(dotPageApiService.save).toHaveBeenCalledWith({
+                pageContainers: [],
+                container: {
+                    uuid: '123',
+                    identifier: 'test',
+                    contentletsId: [],
+                    acceptTypes: 'test'
+                },
+                pageID: '789'
             });
         });
     });

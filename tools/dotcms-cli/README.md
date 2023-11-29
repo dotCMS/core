@@ -179,10 +179,10 @@ Example:
 
 ## CLI Instance Configuration
 
-The CLI can be used to manage multiple dotCMS instances. Each instance profile is defined in the `~/.dotcms/dot-services.yml` file. 
+The CLI can be used to manage multiple dotCMS instances. Each instance profile is defined in the `~/.dotcms/dot-service.yml` file. 
 Whatever profile is active will be used by the CLI to execute the commands.
 The selected profile can be obtained by running the `status` command.
-Here's an example of the default `dot-services.yml` file shipped with the CLI:
+Here's an example of the default `dot-service.yml` file shipped with the CLI:
 
 ```yaml
 - name: "default"
@@ -202,9 +202,9 @@ dotcms.client.servers.default=http://localhost:8080/api
 dotcms.client.servers.demo=https://demo.dotcms.com/api
 ```
 
-Notice how the `dotcms.client.servers` property has a postfix matching the profile name in the `dot-services.yml` file.
+Notice how the `dotcms.client.servers` property has a postfix matching the profile name in the `dot-service.yml` file.
 
-Therefore, in order to add a new instance profile, you need to add a new entry in the `dot-services.yml` file and a new property extending the `application.properties` file.
+Therefore, in order to add a new instance profile, you need to add a new entry in the `dot-service.yml` file and a new property extending the `application.properties` file.
 Application properties can be extended via system properties, environment variables, `.evn` file or in `$PWD/config/application.properties` file.
 To learn more about how to extend the `application.properties` file see the Quarkus configuration guide [Here](https://es.quarkus.io/guides/config-reference#application-properties-file) 
 

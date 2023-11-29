@@ -18,6 +18,7 @@
 <%@page import="com.dotmarketing.portlets.structure.business.FieldAPI"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="com.dotmarketing.portlets.structure.model.FieldVariable"%>
+<%@page import="java.io.IOException"%>
 
 <%@ include file="/html/portlet/ext/contentlet/init.jsp"%>
 
@@ -163,120 +164,99 @@
 
         // STORY BLOCK
         else if (field.getFieldType().equals(Field.FieldType.STORY_BLOCK_FIELD.toString())) {
-            String textValue = UtilMethods.isSet(value) ? value.toString() : (UtilMethods.isSet(defaultValue) ? defaultValue : "");
-            String customStyles = "";
-            String customClassName = "";
-            String allowedContentTypes = "";
-            String allowedBlocks = "";
-            String displayCountBar = "";
-            String charLimit = "";
-            String customBlocks = "";
+            String textValue = UtilMethods.isSet(value) ? value.toString(): (UtilMethods.isSet(defaultValue) ? defaultValue : "");
+            String safeTextValue = "`" + StringEscapeUtils.escapeJavaScript(textValue.replaceAll("`", "&#96;").replaceAll("\\$", "&#36;")) + "`";
+
             String contentletIdentifier = contentlet.getIdentifier();
+            String jsonField = "{}";
+            String contentletObj = "{}";
             Boolean showVideoThumbnail = Config.getBooleanProperty("SHOW_VIDEO_THUMBNAIL", true);
 
-            // By default this is an empty JSON `{}`.
-            JSONObject JSONValue = new JSONObject();
-            try {
-                JSONValue = new JSONObject(textValue);
-            } catch(Exception e) {
-                // Need it in case the value contains Single quote/backtick.
-                textValue = "`" + StringEscapeUtils.escapeJavaScript(textValue.replaceAll("`", "&#96;").replaceAll("\\$", "&#36;")) + "`";
+            ObjectMapper mapper = new ObjectMapper(); // Create an ObjectMapper instance
+            
+            // If it can be parsed as a JSON, then it means that the value is already a Block Editor's value
+            if (value != null) {
+                try {
+                     Map<String, Object> map = mapper.readValue((String) value, Map.class);
+                } catch (IOException e) {
+                    // If it can't be parsed as a JSON, then it means that the value is a string
+                    value = safeTextValue;
+                }
+            }
+
+            // Get Field and Contentlet as JSON
+            try{
+                jsonField = mapper.writeValueAsString(field); // Field
+                contentletObj = mapper.writeValueAsString(contentlet); // Contentlet
+            } catch(Exception e){
+                Logger.error(this.getClass(), e.getMessage());
             }
 
             List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
-            for(FieldVariable fv : acceptTypes){
-                if("styles".equalsIgnoreCase(fv.getKey())){
-                    customStyles = fv.getValue();
-                }
-                if("contentTypes".equalsIgnoreCase(fv.getKey())){
-                    //only allow alphanumeric character an comma
-                    allowedContentTypes = fv.getValue().replaceAll("[^a-zA-Z0-9,]", "");
-                }
-                if("allowedBlocks".equalsIgnoreCase(fv.getKey())){
-                    allowedBlocks = fv.getValue().replaceAll("[^a-zA-Z0-9,]", "");
-                }
-                if("displayCountBar".equalsIgnoreCase(fv.getKey())){
-                    displayCountBar = fv.getValue();
-                }
-                if("charLimit".equalsIgnoreCase(fv.getKey())){
-                    charLimit = fv.getValue();
-                }
-                if("customBlocks".equalsIgnoreCase(fv.getKey())){
-                    customBlocks = fv.getValue();
-                }
-            }
+            String fieldVariablesContent = mapper.writeValueAsString(acceptTypes); // Field Variables
             %>
             <script src="/html/showdown.min.js"></script>
-            <dotcms-block-editor
-                id="block-editor-<%=field.getVelocityVarName()%>"
-                allowed-content-types="<%=allowedContentTypes%>"
-                allowed-blocks="<%=allowedBlocks%>"
-                custom-styles="<%=customStyles%>"
-                display-count-bar="<%=displayCountBar%>"
-                char-limit="<%=charLimit%>"
-                lang="<%=contentLanguage%>"
-                custom-blocks='<%=customBlocks%>'
-                contentlet-identifier='<%=contentletIdentifier%>'
-                is-fullscreen='<%=fullScreenField%>'
-            >
-
-            </dotcms-block-editor>
-            <input type="hidden" name="<%=field.getFieldContentlet()%>" id="editor-input-value-<%=field.getVelocityVarName()%>"/>
+            <div  id="block-editor-<%=field.getVelocityVarName()%>-container">
+                <input type="hidden" name="<%=field.getFieldContentlet()%>" id="editor-input-value-<%=field.getVelocityVarName()%>"/>
+            </div>
 
             <script>
 
                 // Create a new scope so that variables defined here can have the same name without being overwritten.
-                (function autoexecute() {
-                    /**
-                     * "JSONValue" is by default an empty Object.
-                     *  If that's the case we set "JSONValue" as null.
-                     *  Otherwise, we set "JSONValue" equals to "JSONValue".
-                     */
-                    const JSONValue = JSON.stringify(<%=JSONValue%>) !== JSON.stringify({}) ? <%=JSONValue%> : null;
-                    let content;
+                (
+                    function autoexecute() {
+                        const blockEditorContainer = document.querySelector('#block-editor-<%=field.getVelocityVarName()%>-container');
+                        const field = document.querySelector('#editor-input-value-<%=field.getVelocityVarName()%>');
+                        const blockEditor = document.createElement('dotcms-block-editor');
+                        const proseMirror = blockEditor.querySelector('.ProseMirror');
+                        blockEditor.id = "block-editor-<%=field.getVelocityVarName()%>";
 
-                    /**
-                     * Try/catch will tell us if the content in the DB is html string (WYSIWYG)
-                     * or JSON (block editor)
-                     */
-                    try {
-                        // If JSONValue is an valid Object, we use it as the Block Editor Content.
-                        // Otherwise, we try to parse the "textValue".
-                        content = JSONValue || JSON.parse(<%=textValue%>);
-                    } catch (error) {
-                        const text = (<%=textValue%>).replace(/&#96;/g, '`').replace(/&#36;/g, '$');
-                        const converter = new showdown.Converter({tables: true});
-                        content = converter.makeHtml(text);
+                        const editorValue = <%=value%> || null;
+                        let content;
+
+                        /**
+                         * If the value is a string, we need to convert it to HTML
+                         * using showdown.
+                         * If the value is an object, it means that the value is already Block Editor's
+                         */
+                        if (typeof editorValue === 'string') {
+                            const text = editorValue.replace(/&#96;/g, '`').replace(/&#36;/g, '$');
+                            const converter = new showdown.Converter({ tables: true });
+                            content = converter.makeHtml(text || '');
+                        } else {
+                            content = editorValue;
+                        }
+
+                        // Set current value in the hidden field
+                        field.value = content || '';
+
+                        const contentlet =  (<%=contentletObj%>);
+                        const fieldData = {
+                            ...(<%=jsonField%>),
+                            fieldVariables: JSON.parse('<%=fieldVariablesContent%>')
+                        }
+
+                        /**
+                         * We need to listen to the "valueChange" event BEFORE setting the value
+                         * to the editor.
+                         */
+                        blockEditor.addEventListener('valueChange', ({ detail }) => {
+                            field.value = !detail ? null : JSON.stringify(detail);;
+                        });
+
+                        // 
+                        blockEditor.contentlet = contentlet;
+                        blockEditor.field = fieldData;
+
+                        // No variable inputs
+                        blockEditor.value = content || '';
+                        blockEditor.contentletIdentifier = '<%=contentletIdentifier%>';
+                        blockEditor.showVideoThumbnail = <%=showVideoThumbnail%>;
+                        blockEditor.isFullscreen = <%=fullScreenField%>;
+                        blockEditor.lang = '<%=contentLanguage%>';
+                        blockEditorContainer.appendChild(blockEditor);
                     }
-
-                    const blockEditor = document.getElementById("block-editor-<%=field.getVelocityVarName()%>");
-                    const block = blockEditor.querySelector('.ProseMirror');
-                    const field = document.querySelector('#editor-input-value-<%=field.getVelocityVarName()%>');
-
-                    /**
-                     * Safeguard just in case the editor changes are not triggering the
-                     * "valueChange" event.
-                     */
-                    if (typeof <%=textValue%> === 'object') {
-                        field.value = JSON.stringify(<%=textValue%>);
-                    } else {
-                        field.value = <%=textValue%>;
-                    }
-
-                    /**
-                     * We need to listen to the "valueChange" event BEFORE setting the value
-                     * to the editor.
-                     */
-                    blockEditor.addEventListener('valueChange', (event) => {
-                        field.value = block.editor.isEmpty ? null : JSON.stringify(event.detail);;
-                    });
-
-                    if (content) {
-                        blockEditor.value = content;
-                    }
-
-                    blockEditor.showVideoThumbnail = <%=showVideoThumbnail%>;
-                })();
+                )();
 
             </script>
         <% }
