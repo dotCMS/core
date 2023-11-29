@@ -91,7 +91,7 @@ describe('DotEmaLanguageSelectorComponent', () => {
             });
 
             expect(setLanguageMock).toHaveBeenCalledWith('2');
-            expect(button.textContent).toBe('Italian - ');
+            expect(button.textContent).toBe('Italian');
         });
     });
 });

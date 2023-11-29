@@ -35,7 +35,9 @@ export class EmaLanguageSelectorComponent implements OnInit {
             ([languages, language_id]) => {
                 this.languages = languages.map((lang) => ({
                     ...lang,
-                    label: `${lang.language} - ${lang.countryCode}`
+                    label: lang.countryCode.trim().length
+                        ? `${lang.language} - ${lang.countryCode}`
+                        : lang.language
                 }));
 
                 this.selectedLanguage = this.languages.find(
