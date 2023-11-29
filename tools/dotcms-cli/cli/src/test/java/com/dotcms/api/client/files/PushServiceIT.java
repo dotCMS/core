@@ -1,18 +1,28 @@
 package com.dotcms.api.client.files;
 
+import static com.dotcms.api.client.pull.file.OptionConstants.EXCLUDE_ASSET_PATTERNS;
+import static com.dotcms.api.client.pull.file.OptionConstants.EXCLUDE_FOLDER_PATTERNS;
+import static com.dotcms.api.client.pull.file.OptionConstants.INCLUDE_ASSET_PATTERNS;
+import static com.dotcms.api.client.pull.file.OptionConstants.INCLUDE_EMPTY_FOLDERS;
+import static com.dotcms.api.client.pull.file.OptionConstants.INCLUDE_FOLDER_PATTERNS;
+import static com.dotcms.api.client.pull.file.OptionConstants.NON_RECURSIVE;
+import static com.dotcms.api.client.pull.file.OptionConstants.PRESERVE;
 import static com.dotcms.common.AssetsUtils.buildRemoteAssetURL;
 
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
-import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.api.client.files.traversal.PushTraverseParams;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
+import com.dotcms.api.client.pull.PullService;
+import com.dotcms.api.client.pull.file.FileFetcher;
+import com.dotcms.api.client.pull.file.FilePullHandler;
 import com.dotcms.cli.command.PushContext;
 import com.dotcms.cli.common.FilesTestHelper;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.ServiceBean;
+import com.dotcms.model.pull.PullOptions;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.io.File;
@@ -22,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.Map;
 import javax.inject.Inject;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Assertions;
@@ -48,6 +59,12 @@ class PushServiceIT extends FilesTestHelper {
     PullService pullService;
 
     @Inject
+    FileFetcher fileProvider;
+
+    @Inject
+    FilePullHandler filePullHandler;
+
+    @Inject
     PushService pushService;
 
     @Inject
@@ -55,10 +72,6 @@ class PushServiceIT extends FilesTestHelper {
 
     @Inject
     PushContext pushContext;
-
-    @Inject
-    RestClientFactory clientFactory;
-
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -96,20 +109,33 @@ class PushServiceIT extends FilesTestHelper {
 
             final var folderPath = String.format("//%s", testSiteName);
 
-            var result = remoteTraversalService.traverseRemoteFolder(
-                    folderPath,
-                    null,
-                    true,
-                    new HashSet<>(),
-                    new HashSet<>(),
-                    new HashSet<>(),
-                    new HashSet<>()
-            );
-
             // Pulling the content
             OutputOptionMixin outputOptions = new MockOutputOptionMixin();
-            pullService.pullTree(outputOptions, result.getRight(), workspace.files().toAbsolutePath().toFile(),
-                    true, true, true, 0);
+
+            Map<String, Object> customOptions = Map.of(
+                    INCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    INCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    EXCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    EXCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    NON_RECURSIVE, false,
+                    PRESERVE, false,
+                    INCLUDE_EMPTY_FOLDERS, true
+            );
+
+            // Execute the pull
+            pullService.pull(
+                    PullOptions.builder().
+                            destination(workspace.files().toAbsolutePath().toFile()).
+                            contentKey(folderPath).
+                            isShortOutput(false).
+                            failFast(true).
+                            maxRetryAttempts(0).
+                            build(),
+                    outputOptions,
+                    fileProvider,
+                    filePullHandler,
+                    customOptions
+            );
 
             // ---
             // Now we are going to push the content
@@ -169,20 +195,33 @@ class PushServiceIT extends FilesTestHelper {
 
             final var folderPath = String.format("//%s", testSiteName);
 
-            var result = remoteTraversalService.traverseRemoteFolder(
-                    folderPath,
-                    null,
-                    true,
-                    new HashSet<>(),
-                    new HashSet<>(),
-                    new HashSet<>(),
-                    new HashSet<>()
-            );
-
             // Pulling the content
             OutputOptionMixin outputOptions = new MockOutputOptionMixin();
-            pullService.pullTree(outputOptions, result.getRight(), workspace.files().toAbsolutePath().toFile(),
-                    true, true, true, 0);
+
+            Map<String, Object> customOptions = Map.of(
+                    INCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    INCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    EXCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    EXCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    NON_RECURSIVE, false,
+                    PRESERVE, false,
+                    INCLUDE_EMPTY_FOLDERS, true
+            );
+
+            // Execute the pull
+            pullService.pull(
+                    PullOptions.builder().
+                            destination(workspace.files().toAbsolutePath().toFile()).
+                            contentKey(folderPath).
+                            isShortOutput(false).
+                            failFast(true).
+                            maxRetryAttempts(0).
+                            build(),
+                    outputOptions,
+                    fileProvider,
+                    filePullHandler,
+                    customOptions
+            );
 
             // ---
             // Renaming the site folder to simulate a new site
@@ -280,21 +319,34 @@ class PushServiceIT extends FilesTestHelper {
 
             final var folderPath = String.format("//%s", testSiteName);
 
-            var result = remoteTraversalService.traverseRemoteFolder(
-                    folderPath,
-                    null,
-                    true,
-                    new HashSet<>(),
-                    new HashSet<>(),
-                    new HashSet<>(),
-                    new HashSet<>()
-            );
-
             // Pulling the content
             OutputOptionMixin outputOptions = new MockOutputOptionMixin();
             final Path absolutePath = workspace.files().toAbsolutePath();
-            pullService.pullTree(outputOptions, result.getRight(), absolutePath.toFile(),
-                    true, true, true, 0);
+
+            Map<String, Object> customOptions = Map.of(
+                    INCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    INCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    EXCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    EXCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    NON_RECURSIVE, false,
+                    PRESERVE, false,
+                    INCLUDE_EMPTY_FOLDERS, true
+            );
+
+            // Execute the pull
+            pullService.pull(
+                    PullOptions.builder().
+                            destination(absolutePath.toFile()).
+                            contentKey(folderPath).
+                            isShortOutput(false).
+                            failFast(true).
+                            maxRetryAttempts(0).
+                            build(),
+                    outputOptions,
+                    fileProvider,
+                    filePullHandler,
+                    customOptions
+            );
 
             // --
             // Modifying the pulled data
@@ -438,21 +490,34 @@ class PushServiceIT extends FilesTestHelper {
 
             final var folderPath = String.format("//%s", testSiteName);
 
-            var result = remoteTraversalService.traverseRemoteFolder(
-                    folderPath,
-                    null,
-                    true,
-                    new HashSet<>(),
-                    new HashSet<>(),
-                    new HashSet<>(),
-                    new HashSet<>()
-            );
-
+            // Pulling the content
             OutputOptionMixin outputOptions = new MockOutputOptionMixin();
             final Path absolutePath = workspace.files().toAbsolutePath();
 
-            pullService.pullTree(outputOptions, result.getRight(), absolutePath.toFile(),
-                    true, true, true, 0);
+            Map<String, Object> customOptions = Map.of(
+                    INCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    INCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    EXCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    EXCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    NON_RECURSIVE, false,
+                    PRESERVE, false,
+                    INCLUDE_EMPTY_FOLDERS, true
+            );
+
+            // Execute the pull
+            pullService.pull(
+                    PullOptions.builder().
+                            destination(workspace.files().toAbsolutePath().toFile()).
+                            contentKey(folderPath).
+                            isShortOutput(false).
+                            failFast(true).
+                            maxRetryAttempts(0).
+                            build(),
+                    outputOptions,
+                    fileProvider,
+                    filePullHandler,
+                    customOptions
+            );
 
             Files.find(absolutePath, Integer.MAX_VALUE,
                     (filePath, fileAttr) -> fileAttr.isRegularFile())

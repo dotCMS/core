@@ -1,14 +1,24 @@
 package com.dotcms.api.client.files;
 
+import static com.dotcms.api.client.pull.file.OptionConstants.EXCLUDE_ASSET_PATTERNS;
+import static com.dotcms.api.client.pull.file.OptionConstants.EXCLUDE_FOLDER_PATTERNS;
+import static com.dotcms.api.client.pull.file.OptionConstants.INCLUDE_ASSET_PATTERNS;
+import static com.dotcms.api.client.pull.file.OptionConstants.INCLUDE_EMPTY_FOLDERS;
+import static com.dotcms.api.client.pull.file.OptionConstants.INCLUDE_FOLDER_PATTERNS;
+import static com.dotcms.api.client.pull.file.OptionConstants.NON_RECURSIVE;
+import static com.dotcms.api.client.pull.file.OptionConstants.PRESERVE;
+
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.client.ServiceManager;
-import com.dotcms.api.client.files.traversal.RemoteTraversalService;
+import com.dotcms.api.client.pull.PullService;
+import com.dotcms.api.client.pull.file.FileFetcher;
+import com.dotcms.api.client.pull.file.FilePullHandler;
 import com.dotcms.cli.common.FilesTestHelper;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.WorkspaceManager;
-import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.config.ServiceBean;
+import com.dotcms.model.pull.PullOptions;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
@@ -41,10 +51,13 @@ class PullServiceIT extends FilesTestHelper {
     ServiceManager serviceManager;
 
     @Inject
-    RemoteTraversalService remoteTraversalService;
+    PullService pullService;
 
     @Inject
-    PullService pullService;
+    FileFetcher fileProvider;
+
+    @Inject
+    FilePullHandler filePullHandler;
 
     @Inject
     WorkspaceManager workspaceManager;
@@ -85,20 +98,33 @@ class PullServiceIT extends FilesTestHelper {
 
             final var folderPath = String.format("//%s", testSiteName);
 
-            var result = remoteTraversalService.traverseRemoteFolder(
-                    folderPath,
-                    null,
-                    true,
-                    parsePatternOption(null),
-                    parsePatternOption(null),
-                    parsePatternOption(null),
-                    parsePatternOption(null)
-            );
-
             // Pulling the content
             OutputOptionMixin outputOptions = new MockOutputOptionMixin();
-            pullService.pullTree(outputOptions, result.getRight(), workspace.files().toAbsolutePath().toFile(),
-                    true, true, true, 0);
+
+            Map<String, Object> customOptions = Map.of(
+                    INCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    INCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    EXCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    EXCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    NON_RECURSIVE, false,
+                    PRESERVE, false,
+                    INCLUDE_EMPTY_FOLDERS, true
+            );
+
+            // Execute the pull
+            pullService.pull(
+                    PullOptions.builder().
+                            destination(workspace.files().toAbsolutePath().toFile()).
+                            contentKey(folderPath).
+                            isShortOutput(false).
+                            failFast(true).
+                            maxRetryAttempts(0).
+                            build(),
+                    outputOptions,
+                    fileProvider,
+                    filePullHandler,
+                    customOptions
+            );
 
             // ============================
             //Validating the file system
@@ -236,26 +262,33 @@ class PullServiceIT extends FilesTestHelper {
 
             final var folderPath = String.format("//%s/folder3/image 3.png", testSiteName);
 
-            var result = remoteTraversalService.traverseRemoteFolder(
-                    folderPath,
-                    null,
-                    true,
-                    parsePatternOption(null),
-                    parsePatternOption(null),
-                    parsePatternOption(null),
-                    parsePatternOption(null)
-            );
-            Assertions.assertNotNull(result.getRight());
-            Assertions.assertEquals(1, result.getRight().assets().size());
-
-            var foundAsset = AssetVersionsView.builder().versions(result.getRight().assets())
-                    .build();
-
             // Pulling the content
             OutputOptionMixin outputOptions = new MockOutputOptionMixin();
-            pullService.pullFile(outputOptions, foundAsset, folderPath,
-                    workspace.files().toAbsolutePath().toFile(),
-                    true, true, 0);
+
+            Map<String, Object> customOptions = Map.of(
+                    INCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    INCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    EXCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    EXCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    NON_RECURSIVE, false,
+                    PRESERVE, false,
+                    INCLUDE_EMPTY_FOLDERS, true
+            );
+
+            // Execute the pull
+            pullService.pull(
+                    PullOptions.builder().
+                            destination(workspace.files().toAbsolutePath().toFile()).
+                            contentKey(folderPath).
+                            isShortOutput(false).
+                            failFast(true).
+                            maxRetryAttempts(0).
+                            build(),
+                    outputOptions,
+                    fileProvider,
+                    filePullHandler,
+                    customOptions
+            );
 
             // ============================
             //Validating the file system
@@ -373,26 +406,33 @@ class PullServiceIT extends FilesTestHelper {
             final var folderPath = String.format(
                     "//%s/folder2/subFolder2-1/subFolder2-1-1/image2.png", testSiteName);
 
-            var result = remoteTraversalService.traverseRemoteFolder(
-                    folderPath,
-                    null,
-                    true,
-                    parsePatternOption(null),
-                    parsePatternOption(null),
-                    parsePatternOption(null),
-                    parsePatternOption(null)
-            );
-            Assertions.assertNotNull(result.getRight());
-            Assertions.assertEquals(1, result.getRight().assets().size());
-
-            var foundAsset = AssetVersionsView.builder().versions(result.getRight().assets())
-                    .build();
-
             // Pulling the content
             OutputOptionMixin outputOptions = new MockOutputOptionMixin();
-            pullService.pullFile(outputOptions, foundAsset, folderPath,
-                    workspace.files().toAbsolutePath().toFile(),
-                    true, true, 0);
+
+            Map<String, Object> customOptions = Map.of(
+                    INCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    INCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    EXCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    EXCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    NON_RECURSIVE, false,
+                    PRESERVE, false,
+                    INCLUDE_EMPTY_FOLDERS, true
+            );
+
+            // Execute the pull
+            pullService.pull(
+                    PullOptions.builder().
+                            destination(workspace.files().toAbsolutePath().toFile()).
+                            contentKey(folderPath).
+                            isShortOutput(false).
+                            failFast(true).
+                            maxRetryAttempts(0).
+                            build(),
+                    outputOptions,
+                    fileProvider,
+                    filePullHandler,
+                    customOptions
+            );
 
             // ============================
             //Validating the file system

@@ -34,7 +34,7 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
     private static final long serialVersionUID = -8200625720953134243L;
 
     @Inject
-    protected RestClientFactory clientFactory;
+    RestClientFactory clientFactory;
 
     @Inject
     RemoteTraversalService remoteTraversalService;
