@@ -45,6 +45,7 @@ jobs:
           docker tag dotcms/dotcms-test:1.0.0-SNAPSHOT dotcms/dotcms:master_latest_snapshot
           docker push dotcms/dotcms:master_${SHORT_SHA}_snapshot
           docker push dotcms/dotcms:master_latest_snapshot
+          exit 0
 
       -
         name: Slack Notification
