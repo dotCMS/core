@@ -457,6 +457,7 @@
                         <doclint>none</doclint>
                         <show>package</show>
                         <additionalOptions>${javadoc.additional.params}</additionalOptions>
+                        <sourcepath>src/main/java:src/enterprise/java:${project.basedir}/target/generated-sources/annotations</sourcepath>
                         <archive>
                             <index>true</index>
                             <manifest>
