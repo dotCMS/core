@@ -64,6 +64,7 @@ describe('DotEditContentJsonFieldComponent', () => {
                 minimap: {
                     enabled: false
                 },
+                fixedOverflowWidgets: true,
                 cursorBlinking: 'solid',
                 overviewRulerBorder: false,
                 mouseWheelZoom: false,

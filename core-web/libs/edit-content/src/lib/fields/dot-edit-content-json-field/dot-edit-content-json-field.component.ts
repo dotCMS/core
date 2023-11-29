@@ -42,6 +42,7 @@ export class DotEditContentJsonFieldComponent implements OnInit, OnDestroy {
         minimap: {
             enabled: false
         },
+        fixedOverflowWidgets: true,
         cursorBlinking: 'solid',
         overviewRulerBorder: false,
         mouseWheelZoom: false,
