@@ -30,7 +30,7 @@ import picocli.CommandLine;
 @ActivateRequestContext
 @CommandLine.Command(
         name = FilesPull.NAME,
-        header = "@|bold,blue Files pull|@",
+        header = "@|bold,blue dotCMS Files pull|@",
         description = {
                 "  This command pulls files from the dotCMS instance.",
                 "  By default, without a specified @|yellow 'path'|@ parameter, it retrieves files from",

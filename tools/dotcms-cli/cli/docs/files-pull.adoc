@@ -12,7 +12,7 @@
 // tag::picocli-generated-man-section-name[]
 == Name
 
-files-pull - *Files pull*
+files-pull - *dotCMS Files pull*
 
 // end::picocli-generated-man-section-name[]
 
