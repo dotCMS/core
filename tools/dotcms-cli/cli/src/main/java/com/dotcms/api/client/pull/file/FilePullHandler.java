@@ -142,14 +142,15 @@ public class FilePullHandler implements CustomPullHandler<FileTraverseResult> {
                 progressBar
         );
 
+        final List<Exception> foundErrors;
+
         try {
 
             // Waits for the completion of both the file system tree builder and console progress bar animation tasks.
             // This line blocks the current thread until both CompletableFuture instances
             // (treeBuilderFuture and animationFuture) have completed.
             CompletableFuture.allOf(treeBuilderFuture, animationFuture).join();
-
-            return treeBuilderFuture.get();
+            foundErrors = treeBuilderFuture.get();
 
         } catch (InterruptedException | ExecutionException e) {
             var errorMessage = String.format("Error occurred while pulling assets: [%s].",
@@ -157,6 +158,9 @@ public class FilePullHandler implements CustomPullHandler<FileTraverseResult> {
             logger.error(errorMessage, e);
             throw new PullException(errorMessage, e);
         }
+
+        output.info(String.format("%n"));
+        return foundErrors;
     }
 
     /**
