@@ -14,7 +14,7 @@ import { filter } from 'rxjs/operators';
 
 import { LOGOUT_URL } from '@dotcms/dotcms-js';
 import { DotAppsSites } from '@dotcms/dotcms-models';
-import { PortletNav } from '@models/navigation';
+import { DotNavigateToOptions, PortletNav } from '@models/navigation';
 
 @Injectable()
 export class DotRouterService {
@@ -128,7 +128,11 @@ export class DotRouterService {
      * @memberof DotRouterService
      */
     goToEditContentlet(inode: string): Promise<boolean> {
-        return this.router.navigate([`${this.currentPortlet.url}/${inode}`]);
+        const url = this.currentPortlet.url.split('?')[0]; // remove query params from portlet url
+
+        return this.router.navigate([`${url}/${inode}`], {
+            queryParamsHandling: 'preserve'
+        }); // Preserve query params
     }
 
     /**
@@ -324,9 +328,11 @@ export class DotRouterService {
      * @return {*}  {Promise<boolean>}
      * @memberof DotRouterService
      */
-    gotoPortlet(link: string, replaceUrl: boolean = false): Promise<boolean> {
-        // Use `decodeURIComponent` to preserve the original URL - Query Params
-        return this.router.navigateByUrl(decodeURIComponent(link), { replaceUrl: replaceUrl });
+    gotoPortlet(link: string, navigateToPorletOptions?: DotNavigateToOptions): Promise<boolean> {
+        const { replaceUrl = false, queryParamsHandling = '' } = navigateToPorletOptions || {};
+        const url = this.router.createUrlTree([link], { queryParamsHandling }); // preserve query params if any
+
+        return this.router.navigateByUrl(url, { replaceUrl });
     }
 
     goToForgotPassword(): void {
