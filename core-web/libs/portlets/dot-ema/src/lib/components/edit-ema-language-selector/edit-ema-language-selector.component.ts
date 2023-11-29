@@ -12,6 +12,10 @@ import { DotLanguage } from '@dotcms/dotcms-models';
 
 import { EditEmaStore } from '../../feature/store/dot-ema.store';
 
+interface DotLanguageWithLabel extends DotLanguage {
+    label: string;
+}
+
 @Component({
     selector: 'dot-edit-ema-language-selector',
     standalone: true,
@@ -20,8 +24,8 @@ import { EditEmaStore } from '../../feature/store/dot-ema.store';
     styleUrls: ['./edit-ema-language-selector.component.scss']
 })
 export class EmaLanguageSelectorComponent implements OnInit {
-    selectedLanguage: DotLanguage;
-    languages: DotLanguage[] = [];
+    selectedLanguage: DotLanguageWithLabel;
+    languages: DotLanguageWithLabel[] = [];
 
     private store = inject(EditEmaStore);
     private languagesService = inject(DotLanguagesService);
@@ -29,7 +33,10 @@ export class EmaLanguageSelectorComponent implements OnInit {
     ngOnInit(): void {
         combineLatest([this.languagesService.get(), this.store.language_id$]).subscribe(
             ([languages, language_id]) => {
-                this.languages = languages;
+                this.languages = languages.map((lang) => ({
+                    ...lang,
+                    label: `${lang.language} - ${lang.countryCode}`
+                }));
 
                 this.selectedLanguage = this.languages.find(
                     (lang) => lang.id == Number(language_id)
@@ -41,10 +48,10 @@ export class EmaLanguageSelectorComponent implements OnInit {
     /**
      * Set the selected language in the store
      *
-     * @param {{ event: Event; value: DotLanguage }} { value }
+     * @param {{ event: Event; value:DotLanguageWithLabel }} { value }
      * @memberof EmaLanguageSelectorComponent
      */
-    onChange({ value }: { event: Event; value: DotLanguage }) {
+    onChange({ value }: { event: Event; value: DotLanguageWithLabel }) {
         this.selectedLanguage = value;
         this.store.setLanguage(value.id.toString());
     }

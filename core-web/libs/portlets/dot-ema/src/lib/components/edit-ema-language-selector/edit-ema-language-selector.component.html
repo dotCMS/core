@@ -1,5 +1,5 @@
 <p-button
-    [label]="selectedLanguage?.language"
+    [label]="selectedLanguage?.label"
     (click)="op.toggle($event)"
     styleClass="p-button-text"
     icon="pi pi-globe"
@@ -9,6 +9,6 @@
         [filter]="true"
         [options]="languages"
         (onChange)="onChange($event)"
-        optionLabel="language"
+        optionLabel="label"
         data-testId="language-listbox"></p-listbox>
 </p-overlayPanel>

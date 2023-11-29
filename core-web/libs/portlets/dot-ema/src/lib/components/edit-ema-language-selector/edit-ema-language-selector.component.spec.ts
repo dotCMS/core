@@ -28,7 +28,7 @@ describe('DotEmaLanguageSelectorComponent', () => {
                         return of({
                             page: {
                                 title: 'hello world',
-                                langugae_id: '1'
+                                language_id: '1'
                             }
                         });
                     },
@@ -52,7 +52,7 @@ describe('DotEmaLanguageSelectorComponent', () => {
     describe('DOM', () => {
         it('should render a button with the language that comes from the page', () => {
             spectator.detectChanges();
-            expect(spectator.query(byTestId('language-button')).textContent).toBe('English');
+            expect(spectator.query(byTestId('language-button')).textContent).toBe('English - US');
         });
 
         it('should render a overlay panel', () => {
@@ -84,14 +84,14 @@ describe('DotEmaLanguageSelectorComponent', () => {
                 value: {
                     id: 2,
                     languageCode: 'IT',
-                    countryCode: '',
+                    countryCode: '', // It comes like this from the mock and is intended
                     language: 'Italian',
                     country: 'Italy'
                 }
             });
 
             expect(setLanguageMock).toHaveBeenCalledWith('2');
-            expect(button.textContent).toBe('Italian');
+            expect(button.textContent).toBe('Italian - ');
         });
     });
 });
