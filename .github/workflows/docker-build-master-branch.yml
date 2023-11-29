@@ -39,6 +39,7 @@ jobs:
           export SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`
           echo "short sha: ${SHORT_SHA}"
           ./mvnw install -DskipTests=true -pl :dotcms-core-bundles -am
+          ./mvnw install -DskipTests=true -pl :dotcms-system-bundles -am
           ./mvnw clean install -DskipTests=true -Ddocker.platforms=linux/arm64,linux/amd64 -pl :dotcms-core -am
           docker tag dotcms/dotcms-test:1.0.0-SNAPSHOT dotcms/dotcms:master_${SHORT_SHA}_snapshot
           docker tag dotcms/dotcms-test:1.0.0-SNAPSHOT dotcms/dotcms:master_latest_snapshot
