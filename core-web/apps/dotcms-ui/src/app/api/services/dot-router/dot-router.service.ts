@@ -132,7 +132,7 @@ export class DotRouterService {
 
         return this.router.navigate([`${url}/${inode}`], {
             queryParamsHandling: 'preserve'
-        }); // Preserve query params
+        }); // Preserve URL query params
     }
 
     /**
@@ -330,7 +330,7 @@ export class DotRouterService {
      */
     gotoPortlet(link: string, navigateToPorletOptions?: DotNavigateToOptions): Promise<boolean> {
         const { replaceUrl = false, queryParamsHandling = '' } = navigateToPorletOptions || {};
-        const url = this.router.createUrlTree([link], { queryParamsHandling }); // preserve query params if any
+        const url = this.router.createUrlTree([link], { queryParamsHandling });
 
         return this.router.navigateByUrl(url, { replaceUrl });
     }
