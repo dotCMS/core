@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+
+
+<project name="imported" basedir=".">
+<!--
+this file is called when we build a new dotcms to distribute -
+it tries to find passwords and wipe them out.  It will not be
+copied into the distro package.
+
+-->
+
+	<target name="wipehiddenstuff">
+
+	</target>
+
+
+</project>
