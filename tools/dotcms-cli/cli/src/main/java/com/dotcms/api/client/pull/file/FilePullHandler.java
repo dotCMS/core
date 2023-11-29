@@ -186,21 +186,22 @@ public class FilePullHandler implements CustomPullHandler<FileTraverseResult> {
         final TreeNode tree;
         final TreeNodeInfo treeNodeInfo;
 
-        if (content.tree().isPresent()) {
+        var optionalTree = content.tree();
+        var optionalAsset = content.asset();
 
-            tree = content.tree().get();
+        if (optionalTree.isPresent()) {
 
             // Collect important information about the tree
+            tree = optionalTree.get();
             treeNodeInfo = tree.collectUniqueStatusAndLanguage(generateEmptyFolders);
 
-        } else if (content.asset().isPresent()) {
-
-            var asset = content.asset().get();
+        } else if (optionalAsset.isPresent()) {
 
             // Parsing and validating the given path
-            var dotCMSPath = AssetsUtils.parseRemotePath(options.contentKey().get());
+            var dotCMSPath = AssetsUtils.parseRemotePath(options.contentKey().orElseThrow());
 
             // Create a simple tree node for the asset to handle
+            var asset = optionalAsset.get();
             var folder = FolderView.builder()
                     .host(dotCMSPath.site())
                     .path(dotCMSPath.folderPath().toString())
@@ -236,18 +237,23 @@ public class FilePullHandler implements CustomPullHandler<FileTraverseResult> {
 
         if (content.tree().isPresent()) {
 
-            return String.format("\r@|bold,green [%s]|@ Assets in " +
+            return String.format("\r@|bold,green [%s]|@ - " +
+                            "@|bold,green [%s]|@ Assets in " +
                             "@|bold,green [%s]|@ Folders and " +
                             "@|bold,green [%s]|@ Languages to pull\n\n",
+                    treeNodeInfo.site(),
                     treeNodeInfo.assetsCount(),
                     treeNodeInfo.foldersCount() == 0 ? 1 : treeNodeInfo.foldersCount(),
                     treeNodeInfo.languages().size());
 
         } else if (content.asset().isPresent()) {
 
-            return String.format("\r@|bold,green [%s]|@ Assets in " +
+            return String.format("\r@|bold,green [%s]|@ - " +
+                            "@|bold,green [%s]|@ Assets in " +
                             "@|bold,green [%s]|@ Languages to pull\n\n",
-                    1, treeNodeInfo.languages().size());
+                    treeNodeInfo.site(),
+                    1,
+                    treeNodeInfo.languages().size());
         } else {
             throw new IllegalStateException("Invalid state. Either tree or asset must be present.");
         }

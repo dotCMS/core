@@ -222,7 +222,7 @@ public class TreeNode {
      */
     public TreeNodeInfo collectUniqueStatusAndLanguage(final boolean showEmptyFolders) {
 
-        TreeNodeInfo nodeInfo = new TreeNodeInfo();
+        TreeNodeInfo nodeInfo = new TreeNodeInfo(this.folder().host());
         internalCollectUniqueStatusAndLanguage(nodeInfo, showEmptyFolders);
         return nodeInfo;
     }
