@@ -1,5 +1,6 @@
 import { describe, expect } from '@jest/globals';
-import { Spectator, byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
+import { SpectatorRouting } from '@ngneat/spectator';
+import { byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -30,7 +31,7 @@ const messagesMock = {
 };
 
 describe('DotEmaComponent', () => {
-    let spectator: Spectator<DotEmaComponent>;
+    let spectator: SpectatorRouting<DotEmaComponent>;
     let store: EditEmaStore;
     let confirmationService: ConfirmationService;
 
@@ -128,13 +129,19 @@ describe('DotEmaComponent', () => {
             });
         });
 
-        it('should update the iframe url when the language changes', () => {
+        it('should update the iframe url when the queryParams changes', () => {
             spectator.detectChanges();
-            spectator.triggerEventHandler(EmaLanguageSelectorComponent, 'languageSelected', 2);
 
             const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
-            expect(iframe.nativeElement.src).toBe('http://localhost:3000/page-one?language_id=2');
+            spectator.triggerNavigation({
+                url: [],
+                queryParams: { language_id: 2, url: 'my-awesome-route' }
+            });
+
+            expect(iframe.nativeElement.src).toBe(
+                'http://localhost:3000/my-awesome-route?language_id=2'
+            );
         });
 
         describe('customer actions', () => {
