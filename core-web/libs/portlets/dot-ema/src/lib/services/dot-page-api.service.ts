@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { catchError, pluck } from 'rxjs/operators';
 
-import { Container, SavePagePayload } from '../shared/models';
+import { SavePagePayload } from '../shared/models';
 
 export interface DotPageApiResponse {
     page: {
@@ -47,58 +47,9 @@ export class DotPageApiService {
      * @return {*}
      * @memberof DotPageApiService
      */
-    save({
-        pageContainers,
-        container,
-        contentletID,
-        pageID
-    }: SavePagePayload): Observable<unknown> {
-        const newPage = this.insertContentletInContainer({
-            pageContainers,
-            container,
-            contentletID
-        });
-
+    save({ pageContainers, pageID }: SavePagePayload): Observable<unknown> {
         return this.http
-            .post(`/api/v1/page/${pageID}/content`, newPage)
+            .post(`/api/v1/page/${pageID}/content`, pageContainers)
             .pipe(catchError(() => EMPTY));
-    }
-
-    /**
-     * Insert a contentlet in a container
-     *
-     * @private
-     * @param {{
-     *         pageContainers: Container[];
-     *         container: Container;
-     *         contentletID: string;
-     *     }} {
-     *         pageContainers,
-     *         container,
-     *         contentletID
-     *     }
-     * @return {*}
-     * @memberof DotPageApiService
-     */
-    private insertContentletInContainer({
-        pageContainers,
-        container,
-        contentletID
-    }: {
-        pageContainers: Container[];
-        container: Container;
-        contentletID: string;
-    }): Container[] {
-        return pageContainers.map((currentContainer) => {
-            if (
-                container.identifier === currentContainer.identifier &&
-                container.uuid === currentContainer.uuid
-            ) {
-                !currentContainer.contentletsId.find((id) => id === contentletID) &&
-                    currentContainer.contentletsId.push(contentletID);
-            }
-
-            return currentContainer;
-        });
     }
 }

@@ -26,7 +26,6 @@ describe('DotPageApiService', () => {
                     uuid: 'test',
                     contentletsId: []
                 },
-                contentletID: 'test',
                 pageID: 'test'
             })
             .subscribe();
