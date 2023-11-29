@@ -33,9 +33,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Add SHORT_SHA env property with commit short sha
-
-
       -
         name: Run Docker Build / Publish
         run: |
