@@ -20,6 +20,7 @@ env:
   NODE_VERSION: 16
   NEXT_VERSION: '1.0.0-SNAPSHOT'
   DOCKER_BUILD_CONTEXT: /home/runner/work/_temp/core-build
+  GITHUB_USER: victoralfaro-dotcms
 
 jobs:
   prepare-release:
@@ -340,7 +341,8 @@ jobs:
           git config user.email "actions@github.com"
           
           release_version=${{ needs.prepare-release.outputs.release_version }}
-          git checkout -b release-${release_version}
+          release_branch=${{ needs.prepare-release.outputs.release_branch }}
+          git checkout -b ${release_branch}
           
           for file in $(find . -name build.gradle)
           do
@@ -352,8 +354,9 @@ jobs:
           git status
           git add .
           git commit -m "Updating dotcms version to ${release_version}"
-          git commit --allow-empty -m "Publish Release ${release_version}" 
-          git push origin ${{ needs.prepare-release.outputs.release_branch }}
+          git commit --allow-empty -m "Publish Release ${release_version}"
+          
+          git push https://${{ env.GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotCMS/plugin-seeds.git
 
   publish-release-image:
     name: Publish Release Image
