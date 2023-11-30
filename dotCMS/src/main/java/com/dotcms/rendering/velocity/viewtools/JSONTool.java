@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
+import com.dotcms.http.CircuitBreakerUrlBuilder;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.velocity.tools.view.ImportSupport;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -18,6 +21,18 @@ import com.dotmarketing.util.json.JSONObject;
 
 public class JSONTool extends ImportSupport implements ViewTool {
 
+  private final Supplier<CircuitBreakerUrlBuilder> circuitBreakerUrlSupplier;
+
+  public JSONTool() {
+    super();
+    this.circuitBreakerUrlSupplier = CircuitBreakerUrl::builder;
+  }
+
+  @VisibleForTesting
+  JSONTool(final Supplier<CircuitBreakerUrlBuilder> circuitBreakerUrlSupplier) {
+    super();
+    this.circuitBreakerUrlSupplier = circuitBreakerUrlSupplier;
+  }
   public void init(Object obj) {
 
   }
@@ -102,8 +117,8 @@ public class JSONTool extends ImportSupport implements ViewTool {
 
   public Object get(String url, int timeout, Map<String, String> headers) {
     try {
-      String x = CircuitBreakerUrl
-              .builder()
+      final String x = this.circuitBreakerUrlSupplier
+              .get()
               .setHeaders(headers)
               .setUrl(url)
               .setTimeout(timeout)
@@ -117,11 +132,19 @@ public class JSONTool extends ImportSupport implements ViewTool {
     return null;
   }
 
+  /**
+   * Will put data to the remote URL returning the JSON Object or JSON Array response from the server
+   * @param url The URL to put to
+   * @param timeout The timeout in milliseconds
+   * @param headers The headers to send in the HTTP request
+   * @param rawData The raw data to send in the request
+   * @return The JSON Object or JSON Array returned from the remote URL
+   */
   public Object put(final String url, final int timeout, final Map<String, String> headers,
           final String rawData) {
     try {
-      final String response = CircuitBreakerUrl
-              .builder()
+      final String response = this.circuitBreakerUrlSupplier
+              .get()
               .setMethod(Method.PUT)
               .setHeaders(headers)
               .setUrl(url)
@@ -137,20 +160,34 @@ public class JSONTool extends ImportSupport implements ViewTool {
     return null;
   }
 
+  /**
+   * Will put data to the remote URL returning the JSON Object or JSON Array response from the server
+   * @param url The URL to put to
+   * @param headers The headers to send in the HTTP request
+   * @param rawData The raw data to send in the request
+   * @return The JSON Object or JSON Array returned from the remote URL
+   */
   public Object put(final String url, final Map<String, String> headers, final String rawData) {
     return put(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 2000), headers, rawData);
   }
 
-  
+  /**
+   * Will put data to the remote URL returning the JSON Object or JSON Array response from the server
+   * @param url The URL to put to
+   * @param timeout The timeout in milliseconds
+   * @param headers The headers to send in the HTTP request
+   * @param params The parameters to send in the request
+   * @return The JSON Object or JSON Array returned from the remote URL
+   */
   public Object put(final String url, final int timeout, final Map<String, String> headers,
-          final Map<String, String> params) {
+          final Map<String, Object> params) {
     try {
-      final String response = CircuitBreakerUrl
-              .builder()
+      final String response = this.circuitBreakerUrlSupplier
+              .get()
               .setMethod(Method.PUT)
               .setHeaders(headers)
               .setUrl(url)
-              .setParams(params)
+              .setParams(convertObjToStringParameters(params))
               .setTimeout(timeout)
               .build()
               .doString();
@@ -162,16 +199,65 @@ public class JSONTool extends ImportSupport implements ViewTool {
     return null;
   }
 
+  /**
+   * Will put data to the remote URL returning the JSON Object or JSON Array response from the server
+   * @param url The URL to put to
+   * @param headers The headers to send in the HTTP request
+   * @param params The parameters to send in the request
+   * @return The JSON Object or JSON Array returned from the remote URL
+   */
   public Object put(final String url, final Map<String, String> headers,
-          final Map<String, String> params) {
-    return post(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 2000), headers, params);
+                    final Map<String, Object> params) {
+    return put(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 2000), headers, params);
   }
 
+  /**
+   * Will put data to the remote URL returning the JSON Object or JSON Array response from the server
+   * @param url The URL to put to
+   * @param timeout The timeout in milliseconds
+   * @param headers The headers to send in the HTTP request
+   * @param params The parameters to send in the request
+   * @param useParamsAsJsonPayload If true, the params will be sent as a JSON payload,
+   *                               otherwise they will be sent as request parameters
+   * @return The JSON Object or JSON Array returned from the remote URL
+   */
+  public Object put(final String url, final int timeout, final Map<String, String> headers,
+                    final Map<String, Object> params, final boolean useParamsAsJsonPayload) {
+    if (useParamsAsJsonPayload) {
+      return put(url, timeout, headers, generate(params).toString());
+    } else {
+      return put(url, timeout, headers, params);
+    }
+  }
+
+  /**
+   * Will put data to the remote URL returning the JSON Object or JSON Array response from the server
+   * @param url The URL to put to
+   * @param headers The headers to send in the HTTP request
+   * @param params The parameters to send in the request
+   * @param useParamsAsJsonPayload If true, the params will be sent as a JSON payload,
+   *                               otherwise they will be sent as request parameters
+   * @return The JSON Object or JSON Array returned from the remote URL
+   */
+  public Object put(final String url, final Map<String, String> headers,
+                    final Map<String, Object> params, final boolean useParamsAsJsonPayload) {
+    return put(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 2000),
+            headers, params, useParamsAsJsonPayload);
+  }
+
+  /**
+   * Will post data to the remote URL returning the JSON Object or JSON Array response from the server
+   * @param url The URL to post to
+   * @param timeout The timeout in milliseconds
+   * @param headers The headers to send in the HTTP request
+   * @param rawData The raw data to send in the request
+   * @return The JSON Object or JSON Array returned from the remote URL
+   */
   public Object post(final String url, final int timeout, final Map<String, String> headers,
           final String rawData) {
     try {
-      final String response = CircuitBreakerUrl
-              .builder()
+      final String response = this.circuitBreakerUrlSupplier
+              .get()
               .setMethod(Method.POST)
               .setHeaders(headers)
               .setUrl(url)
@@ -187,19 +273,33 @@ public class JSONTool extends ImportSupport implements ViewTool {
     return null;
   }
 
+  /**
+   * Will post data to the remote URL returning the JSON Object or JSON Array response from the server
+   * @param url The URL to post to
+   * @param headers The headers to send in the HTTP request
+   * @param rawData The raw data to send in the request
+   * @return The JSON Object or JSON Array returned from the remote URL
+   */
   public Object post(final String url, final Map<String, String> headers, final String rawData) {
     return post(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 5000), headers, rawData);
   }
 
+  /**
+   * Will post data to the remote URL returning the JSON Object or JSON Array response from the server
+   * @param url The URL to post to
+   * @param timeout The timeout in milliseconds
+   * @param headers The headers to send in the HTTP request
+   * @param params The parameters to send in the request
+   * @return The JSON Object or JSON Array returned from the remote URL
+   */
   public Object post(final String url, final int timeout, final Map<String, String> headers,
-          final Map<String, String> params) {
+          final Map<String, Object> params) {
     try {
-      final String response = CircuitBreakerUrl
-              .builder()
+      final String response = this.circuitBreakerUrlSupplier.get()
               .setMethod(Method.POST)
               .setHeaders(headers)
               .setUrl(url)
-              .setParams(params)
+              .setParams(convertObjToStringParameters(params))
               .setTimeout(timeout)
               .build()
               .doString();
@@ -211,9 +311,73 @@ public class JSONTool extends ImportSupport implements ViewTool {
     return null;
   }
 
+  /**
+   * Will post data to the remote URL returning the JSON Object or JSON Array response from the server
+   * @param url The URL to post to
+   * @param headers The headers to send in the HTTP request
+   * @param params The parameters to send in the request
+   * @return The JSON Object or JSON Array returned from the remote URL
+   */
   public Object post(final String url, final Map<String, String> headers,
-          final Map<String, String> params) {
+                     final Map<String, Object> params) {
     return post(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 2000), headers, params);
+  }
+
+  /**
+   * Will post data to the remote URL returning the JSON Object or JSON Array response from the server
+   * @param url The URL to post to
+   * @param timeout The timeout in milliseconds
+   * @param headers The headers to send in the HTTP request
+   * @param params The parameters to send in the request
+   * @param useParamsAsJsonPayload If true, the params will be sent as a JSON payload,
+   *                               otherwise they will be sent as request parameters
+   * @return The JSON Object or JSON Array returned from the remote URL
+   */
+  public Object post(final String url, final int timeout, final Map<String, String> headers,
+                     final Map<String, Object> params, final boolean useParamsAsJsonPayload) {
+    if (useParamsAsJsonPayload) {
+      return post(url, timeout, headers, generate(params).toString());
+    } else {
+      return post(url, timeout, headers, params);
+    }
+  }
+
+  /**
+   * Will post data to the remote URL returning the JSON Object or JSON Array response from the server
+   * @param url The URL to post to
+   * @param headers The headers to send in the HTTP request
+   * @param params The parameters to send in the request
+   * @param useParamsAsJsonPayload If true, the params will be sent as a JSON payload,
+   *                               otherwise they will be sent as request parameters
+   * @return The JSON Object or JSON Array returned from the remote URL
+   */
+  public Object post(final String url, final Map<String, String> headers,
+                     final Map<String, Object> params, final boolean useParamsAsJsonPayload) {
+    return post(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 2000),
+            headers, params, useParamsAsJsonPayload);
+  }
+
+  /**
+   * Converts the given map of objects to a map of strings to be used as parameters in a request
+   * @param objParams The map of objects to convert
+   * @return The map of strings to be used as parameters in a request
+   */
+  private Map<String, String> convertObjToStringParameters(Map<String, Object> objParams) {
+    Map<String, String> params = new HashMap<>();
+    for (Map.Entry<String, Object> entry : objParams.entrySet()) {
+      String value;
+      if (entry.getValue() == null) {
+        value = "";
+      } else if (entry.getValue() instanceof Map || entry.getValue() instanceof List) {
+        value = generate(entry.getValue()).toString();
+      } else if (entry.getValue() instanceof String) {
+        value = (String) entry.getValue();
+      } else {
+        value = entry.getValue().toString();
+      }
+      params.put(entry.getKey(), value);
+    }
+    return params;
   }
 
   /**
