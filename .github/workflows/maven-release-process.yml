@@ -83,9 +83,6 @@ jobs:
       - name: Create Release Tag
         id: create-release-tag
         run: |
-           git config user.name "GitHub Actions"
-           git config user.email "actions@github.com"
-           
            release_tag=${{ steps.set-common-vars.outputs.release_tag }}
            if git rev-parse "${release_tag}" >/dev/null 2>&1; then 
             echo "Tag ${release_tag} exists, removing it"
