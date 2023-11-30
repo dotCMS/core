@@ -125,7 +125,7 @@ jobs:
           
           git status
           git commit -a -m "🏁 Releasing version $release_version"
-          git push origin master
+          git push origin ${{ steps.set-common-vars.outputs.release_branch }}
 
       - name: Build Core (no tests)
         shell: bash
@@ -177,7 +177,6 @@ jobs:
         with:
           path: |
             ~/.npm
-          # if specific cache does not exist then can base upon latest version
           key: npm-${{ hashFiles('core-web/package-lock.json') }}
           restore-keys: npm-
 
