@@ -447,6 +447,7 @@ public class PullServiceImpl implements PullService {
             }
         }
 
+        output.info(String.format("%n%n"));
     }
 
 }

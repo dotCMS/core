@@ -19,9 +19,9 @@ files-pull - *dotCMS Files pull*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*files pull* [*-hp*] [*-ff*] [*-ie*] [*-nr*] [*-ea*=_patterns_] [*-ef*=_patterns_]
-           [*-fmt*=_<inputOutputFormat>_] [*-ia*=_patterns_] [*-if*=_patterns_]
-           [*--retry-attempts*=_<retryAttempts>_] [*--workspace*=_<file>_] [_path_]
+*files pull* [*-hp*] [*-ff*] [*-ie*] [*-nr*] [*-ea*=_patterns_] [*-ef*=_patterns_] [*-ia*=_patterns_]
+           [*-if*=_patterns_] [*--retry-attempts*=_<retryAttempts>_]
+           [*--workspace*=_<file>_] [_path_]
 
 // end::picocli-generated-man-section-synopsis[]
 
@@ -60,11 +60,6 @@ files-pull - *dotCMS Files pull*
 *-ff, --fail-fast*::
   Stop at first failure and exit the command. By default, this option is disabled, and the command will continue on error.
 
-*-fmt, --format*=_<inputOutputFormat>_::
-  Format for the pulled descriptor files. 
-+
-Supported values: JSON, YAML, YML
-
 *-h*, *--help*::
   Display this help message.
 
@@ -97,7 +92,11 @@ Current directory is used if not specified
 == Arguments
 
 [_path_]::
-  dotCMS path to a specific site, directory or file to pull. - Format: //{site} - //{site}/{folder} - //{site}/{folder}/{file}If no path is provided, all files across all sites will be pulled, which can be a resource-intensive operation.
+  dotCMS path to a specific site, directory or file to pull. 
++
+Format: //{site} - //{site}/{folder} - //{site}/{folder}/{file}.
++
+If no path is provided, all files across all sites will be pulled, which can be a resource-intensive operation.
 
 // end::picocli-generated-man-section-arguments[]
 

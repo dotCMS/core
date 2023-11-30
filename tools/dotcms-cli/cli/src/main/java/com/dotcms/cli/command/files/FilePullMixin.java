@@ -6,8 +6,8 @@ public class FilePullMixin {
 
     @CommandLine.Parameters(index = "0", arity = "0..1", paramLabel = "path",
             description = "dotCMS path to a specific site, directory or file to pull. "
-                    + "- Format: //{site} - //{site}/{folder} - //{site}/{folder}/{file}"
-                    + "If no path is provided, all files across all sites will be pulled, "
+                    + "%nFormat: //{site} - //{site}/{folder} - //{site}/{folder}/{file}."
+                    + "%nIf no path is provided, all files across all sites will be pulled, "
                     + "which can be a resource-intensive operation.")
     String path;
 

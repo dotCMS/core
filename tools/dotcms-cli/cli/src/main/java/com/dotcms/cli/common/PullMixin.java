@@ -10,11 +10,6 @@ import picocli.CommandLine;
  */
 public class PullMixin {
 
-    @CommandLine.Option(names = {"-fmt",
-            "--format"}, description = {"Format for the pulled descriptor files. ",
-            "Supported values: ${COMPLETION-CANDIDATES}"})
-    InputOutputFormat inputOutputFormat = InputOutputFormat.defaultFormat();
-
     @CommandLine.Mixin(name = "workspace")
     WorkspaceMixin workspaceMixin;
 
@@ -39,10 +34,6 @@ public class PullMixin {
             hidden = true,
             defaultValue = "false")
     public boolean noValidateUnmatchedArguments;
-
-    public InputOutputFormat inputOutputFormat() {
-        return inputOutputFormat;
-    }
 
     public Path workspace() {
         return workspaceMixin.workspace();
