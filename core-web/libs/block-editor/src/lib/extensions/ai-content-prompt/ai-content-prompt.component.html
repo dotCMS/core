@@ -4,6 +4,8 @@
             <input
                 #input
                 [attr.disabled]="vm.loading || null"
+                (keyup.escape)="handleScape($event)"
+                (keydown.escape)="$event.stopPropagation()"
                 formControlName="textPrompt"
                 type="text"
                 pInputText

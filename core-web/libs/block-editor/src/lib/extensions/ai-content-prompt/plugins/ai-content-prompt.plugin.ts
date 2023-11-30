@@ -100,6 +100,17 @@ export class AIContentPromptView {
                 this.editor.commands.insertContent(state.content);
                 this.componentStore.setAcceptContent(false);
             });
+
+        /**
+         * Subscription to close the tooltip since that can happen on escape listener that is in the html
+         * template in ai-content-prompt.component.html
+         */
+        this.componentStore.open$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((open) => !open)
+            )
+            .subscribe(() => this.hide());
     }
 
     update(view: EditorView, prevState?: EditorState) {
@@ -112,9 +123,9 @@ export class AIContentPromptView {
             return;
         }
 
-        if (!next.open) {
-            this.componentStore.setOpen(true);
-        }
+        // if (!next.open) {
+        //     this.componentStore.setOpen(true);
+        // }
 
         this.createTooltip();
 
@@ -163,9 +174,17 @@ export class AIContentPromptView {
         this.componentStore.setOpen(true);
     }
 
-    hide() {
+    /**
+     * Hide the tooltip but ignore store update if coming from ai-content-prompt.component.html keyup event.
+     *
+     * @param notifyStore
+     */
+    hide(notifyStore = true) {
         this.tippy?.hide();
-        this.componentStore.setOpen(false);
+        if (notifyStore) {
+            this.componentStore.setOpen(false);
+        }
+
         this.editor.view.focus();
     }
 
@@ -205,5 +224,3 @@ export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
         }
     });
 };
-
-// Function to adjust the x position by 40 pixels

@@ -53,4 +53,9 @@ export class AIContentPromptComponent implements OnInit, OnDestroy {
             this.aiContentPromptStore.generateContent(textPrompt);
         }
     }
+
+    handleScape(event: KeyboardEvent): void {
+        this.aiContentPromptStore.setOpen(false);
+        event.stopPropagation();
+    }
 }
