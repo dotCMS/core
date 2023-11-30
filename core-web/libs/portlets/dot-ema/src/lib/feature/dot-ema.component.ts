@@ -29,7 +29,7 @@ import { EditEmaStore } from './store/dot-ema.store';
 import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaToolbarComponent } from '../components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { WINDOW } from '../shared/consts';
+import { DEFAULT_LANGUAGE_ID, DEFAULT_URL, WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { AddContentletPayload, DeleteContentletPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
@@ -85,11 +85,11 @@ export class DotEmaComponent implements OnInit, OnDestroy {
             const queryParams = {};
 
             if (!language_id) {
-                queryParams['language_id'] = 1;
+                queryParams['language_id'] = DEFAULT_LANGUAGE_ID;
             }
 
             if (!url) {
-                queryParams['url'] = 'index';
+                queryParams['url'] = DEFAULT_URL;
             }
 
             if (Object.keys(queryParams).length > 0) {
@@ -100,8 +100,8 @@ export class DotEmaComponent implements OnInit, OnDestroy {
             }
 
             this.store.load({
-                language_id: language_id || 1,
-                url: url || 'index'
+                language_id: language_id || DEFAULT_LANGUAGE_ID,
+                url: url || DEFAULT_URL
             });
         });
 
