@@ -1,11 +1,12 @@
-<h4 data-testId="page-title">{{ pageTitle }}</h4>
-
-<div class="edit-ema-toolbar-actions">
-    <div class="edit-ema-toolbar-actions__buttons">
-        <ng-content select="[left]"></ng-content>
+<p-toolbar>
+    <div class="p-toolbar-group-left" data-testId="toolbar-left-content">
+        <div class="edit-ema-toolbar-actions__buttons">
+            <ng-content select="[left]"></ng-content>
+        </div>
     </div>
-
-    <div class="edit-ema-toolbar-actions__buttons">
-        <ng-content select="[right]"></ng-content>
+    <div class="p-toolbar-group-right" data-testId="toolbar-right-content">
+        <div class="edit-ema-toolbar-actions__buttons">
+            <ng-content select="[right]"></ng-content>
+        </div>
     </div>
-</div>
+</p-toolbar>

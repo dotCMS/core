@@ -1,5 +1,4 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
-import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
@@ -9,45 +8,14 @@ import { DotLanguagesServiceMock } from '@dotcms/utils-testing';
 
 import { EmaLanguageSelectorComponent } from './edit-ema-language-selector.component';
 
-import { EditEmaStore } from '../../feature/store/dot-ema.store';
-import { DotPageApiService } from '../../services/dot-page-api.service';
-
 describe('DotEmaLanguageSelectorComponent', () => {
     let spectator: Spectator<EmaLanguageSelectorComponent>;
-    let store: EditEmaStore;
     let component: EmaLanguageSelectorComponent;
 
     const createComponent = createComponentFactory({
         component: EmaLanguageSelectorComponent,
         imports: [HttpClientTestingModule],
-        providers: [
-            EditEmaStore,
-            {
-                provide: DotPageApiService,
-                useValue: {
-                    get() {
-                        return of({
-                            page: {
-                                title: 'hello world'
-                            },
-                            viewAs: {
-                                language: {
-                                    id: 1,
-                                    language: 'English',
-                                    countryCode: 'US',
-                                    languageCode: 'EN',
-                                    country: 'United States'
-                                }
-                            }
-                        });
-                    },
-                    save() {
-                        return of({});
-                    }
-                }
-            },
-            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() }
-        ]
+        providers: [{ provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() }]
     });
 
     beforeEach(() => {
@@ -63,10 +31,7 @@ describe('DotEmaLanguageSelectorComponent', () => {
             }
         });
 
-        store = spectator.inject(EditEmaStore);
         component = spectator.component;
-
-        store.load({ language_id: '1', url: 'page-one' });
     });
 
     describe('DOM', () => {
@@ -93,7 +58,7 @@ describe('DotEmaLanguageSelectorComponent', () => {
     describe('store changes', () => {
         it('should trigger the store when the language changes', () => {
             const button = spectator.query(byTestId('language-button'));
-            const languageChangeSpy = jest.spyOn(component.languageSelected, 'emit');
+            const languageChangeSpy = jest.spyOn(component.selected, 'emit');
 
             spectator.click(button);
 

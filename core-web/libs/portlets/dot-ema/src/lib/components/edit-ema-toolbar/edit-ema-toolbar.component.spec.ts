@@ -1,51 +1,41 @@
 import { Spectator, createComponentFactory, byTestId } from '@ngneat/spectator';
-import { of } from 'rxjs';
 
-import { DotLanguagesService } from '@dotcms/data-access';
-import { DotLanguagesServiceMock } from '@dotcms/utils-testing';
+import { Component } from '@angular/core';
 
 import { EditEmaToolbarComponent } from './edit-ema-toolbar.component';
 
-import { EditEmaStore } from '../../feature/store/dot-ema.store';
-import { DotPageApiService } from '../../services/dot-page-api.service';
+@Component({
+    template: `<dot-edit-ema-toolbar>
+        <ng-container left><div data-testId="left-content"></div></ng-container>
+        <ng-container right><div data-testId="right-content"></div></ng-container>
+    </dot-edit-ema-toolbar>`
+})
+class TestHostComponent {}
 
 describe('EditEmaToolbarComponent', () => {
-    let spectator: Spectator<EditEmaToolbarComponent>;
+    let spectator: Spectator<TestHostComponent>;
 
     const createComponent = createComponentFactory({
-        component: EditEmaToolbarComponent,
-        providers: [
-            EditEmaStore,
-            {
-                provide: DotPageApiService,
-                useValue: {
-                    get() {
-                        return of({
-                            page: {
-                                title: 'hello world'
-                            }
-                        });
-                    },
-                    save() {
-                        return of({});
-                    }
-                }
-            },
-            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() }
-        ]
+        component: TestHostComponent,
+        imports: [EditEmaToolbarComponent],
+        providers: []
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                pageTitle: 'Test Page'
-            }
-        });
+        spectator = createComponent();
     });
 
     describe('DOM', () => {
-        it('should have a heading with the page title', () => {
-            expect(spectator.query(byTestId('page-title')).textContent).toBe('Test Page');
+        it('should have left-content on left', () => {
+            const leftContent = spectator.query(byTestId('toolbar-left-content'));
+
+            expect(leftContent.querySelector('[data-testId="left-content"]')).not.toBeNull();
+        });
+
+        it('should have right-content on right', () => {
+            const rightContent = spectator.query(byTestId('toolbar-right-content'));
+
+            expect(rightContent.querySelector('[data-testId="right-content"]')).not.toBeNull();
         });
     });
 });

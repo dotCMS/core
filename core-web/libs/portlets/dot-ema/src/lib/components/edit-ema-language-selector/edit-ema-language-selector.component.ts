@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { ListboxModule } from 'primeng/listbox';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
+
+import { map } from 'rxjs/operators';
 
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
@@ -19,33 +21,27 @@ interface DotLanguageWithLabel extends DotLanguage {
     templateUrl: './edit-ema-language-selector.component.html',
     styleUrls: ['./edit-ema-language-selector.component.scss']
 })
-export class EmaLanguageSelectorComponent implements OnInit {
-    @Output() languageSelected: EventEmitter<number> = new EventEmitter();
+export class EmaLanguageSelectorComponent {
+    @Output() selected: EventEmitter<number> = new EventEmitter();
     @Input() language: DotLanguage;
-
-    languages: DotLanguageWithLabel[] = [];
 
     get selectedLanguage() {
         return {
             ...this.language,
-            label: this.language.countryCode.trim().length
-                ? `${this.language.language} - ${this.language.countryCode}`
-                : this.language.language
+            label: this.createLanguageLabel(this.language)
         };
     }
 
-    private languagesService = inject(DotLanguagesService);
-
-    ngOnInit(): void {
-        this.languagesService.get().subscribe((languages) => {
-            this.languages = languages.map((lang) => ({
-                ...lang,
-                label: lang.countryCode.trim().length
-                    ? `${lang.language} - ${lang.countryCode}`
-                    : lang.language
-            }));
-        });
-    }
+    languages$ = inject(DotLanguagesService)
+        .get()
+        .pipe(
+            map((languages) =>
+                languages.map((lang) => ({
+                    ...lang,
+                    label: this.createLanguageLabel(lang)
+                }))
+            )
+        );
 
     /**
      * Set the selected language in the store
@@ -54,6 +50,20 @@ export class EmaLanguageSelectorComponent implements OnInit {
      * @memberof EmaLanguageSelectorComponent
      */
     onChange({ value }: { event: Event; value: DotLanguageWithLabel }) {
-        this.languageSelected.emit(value.id);
+        this.selected.emit(value.id);
+    }
+
+    /**
+     * Create the label for the language
+     *
+     * @private
+     * @param {DotLanguage} lang
+     * @return {*}  {string}
+     * @memberof EmaLanguageSelectorComponent
+     */
+    private createLanguageLabel(lang: DotLanguage): string {
+        return lang.countryCode.trim().length
+            ? `${lang.language} - ${lang.countryCode}`
+            : lang.language;
     }
 }

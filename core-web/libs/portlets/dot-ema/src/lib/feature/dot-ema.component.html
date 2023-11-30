@@ -1,19 +1,23 @@
 <ng-container *ngIf="vm$ | async as vm">
-    <dot-edit-ema-toolbar [pageTitle]="vm.pageTitle">
-        <ng-container left>
-            <div class="dummy-button"></div>
-            <div class="dummy-button"></div>
-            <div class="dummy-button"></div>
-            <div class="dummy-button"></div>
-        </ng-container>
-        <ng-container right>
-            <div class="dummy-button"></div>
-            <dot-edit-ema-language-selector
-                [language]="vm.editor.viewAs.language"
-                (languageSelected)="onLanguageSelected($event)" />
-            <div class="dummy-button"></div>
-        </ng-container>
-    </dot-edit-ema-toolbar>
+    <div class="ema-header">
+        <h4>{{ vm.pageTitle }}</h4>
+        <dot-edit-ema-toolbar>
+            <ng-container left>
+                <div class="dummy-button"></div>
+                <div class="dummy-button"></div>
+                <div class="dummy-button"></div>
+                <div class="dummy-button"></div>
+            </ng-container>
+            <ng-container right>
+                <div class="dummy-button"></div>
+                <dot-edit-ema-language-selector
+                    [language]="vm.editor.viewAs.language"
+                    (selected)="onLanguageSelected($event)"
+                    data-testId="language-selector" />
+                <div class="dummy-button"></div>
+            </ng-container>
+        </dot-edit-ema-toolbar>
+    </div>
     <div class="iframe-wrapper">
         <iframe
             #iframe

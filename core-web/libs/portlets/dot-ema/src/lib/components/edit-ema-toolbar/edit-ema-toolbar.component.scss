@@ -1,22 +1,12 @@
 @use "variables" as *;
 
 :host {
-    display: flex;
-    justify-content: center;
-    flex-direction: column;
     border: solid 1px $color-palette-gray-100;
-    padding: $spacing-2 $spacing-3;
-    gap: $spacing-1;
 
-    h4 {
+    .toolbar-title {
         margin: 0;
+        padding: 0 $spacing-4;
     }
-}
-
-.edit-ema-toolbar-actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
 }
 
 .edit-ema-toolbar-actions__buttons {

@@ -7,7 +7,7 @@
 <p-overlayPanel #op styleClass="edit-ema-language-selector" data-testId="language-op">
     <p-listbox
         [filter]="true"
-        [options]="languages"
+        [options]="languages$ | async"
         (onChange)="onChange($event)"
         optionLabel="label"
         data-testId="language-listbox"></p-listbox>

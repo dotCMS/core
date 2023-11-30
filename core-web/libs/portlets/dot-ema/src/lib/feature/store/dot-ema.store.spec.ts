@@ -56,7 +56,7 @@ describe('EditEmaStore', () => {
                         },
                         viewAs: {
                             language: {
-                                id: 0,
+                                id: 1,
                                 language: '',
                                 countryCode: '',
                                 languageCode: '',
@@ -86,7 +86,7 @@ describe('EditEmaStore', () => {
                         },
                         viewAs: {
                             language: {
-                                id: 0,
+                                id: 1,
                                 language: '',
                                 countryCode: '',
                                 languageCode: '',
@@ -116,7 +116,7 @@ describe('EditEmaStore', () => {
                         },
                         viewAs: {
                             language: {
-                                id: 0,
+                                id: 1,
                                 language: '',
                                 countryCode: '',
                                 languageCode: '',
@@ -146,7 +146,7 @@ describe('EditEmaStore', () => {
                         },
                         viewAs: {
                             language: {
-                                id: 0,
+                                id: 1,
                                 language: '',
                                 countryCode: '',
                                 languageCode: '',
@@ -176,7 +176,7 @@ describe('EditEmaStore', () => {
                         },
                         viewAs: {
                             language: {
-                                id: 0,
+                                id: 1,
                                 language: '',
                                 countryCode: '',
                                 languageCode: '',
@@ -210,7 +210,7 @@ describe('EditEmaStore', () => {
                         },
                         viewAs: {
                             language: {
-                                id: 0,
+                                id: 1,
                                 language: '',
                                 countryCode: '',
                                 languageCode: '',
@@ -243,7 +243,7 @@ describe('EditEmaStore', () => {
                         },
                         viewAs: {
                             language: {
-                                id: 0,
+                                id: 1,
                                 language: '',
                                 countryCode: '',
                                 languageCode: '',
@@ -272,7 +272,7 @@ describe('EditEmaStore', () => {
                 },
                 viewAs: {
                     language: {
-                        id: 0,
+                        id: 1,
                         language: '',
                         countryCode: '',
                         languageCode: '',
@@ -294,7 +294,7 @@ describe('EditEmaStore', () => {
                         },
                         viewAs: {
                             language: {
-                                id: 0,
+                                id: 1,
                                 language: '',
                                 countryCode: '',
                                 languageCode: '',

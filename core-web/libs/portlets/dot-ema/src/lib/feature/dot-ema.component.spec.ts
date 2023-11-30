@@ -114,18 +114,32 @@ describe('DotEmaComponent', () => {
             expect(store.load).toHaveBeenCalledWith(mockQueryParams);
         });
 
-        it('should call navigate when selecting a language', () => {
-            spectator.detectChanges();
-            const router = spectator.inject(Router);
+        describe('language selector', () => {
+            it('should have a language selector', () => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('language-selector'))).not.toBeNull();
+            });
 
-            jest.spyOn(router, 'navigate');
+            it("should have the current language as label in the language selector's button", () => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('language-button')).textContent).toBe(
+                    'English - US'
+                );
+            });
 
-            spectator.triggerEventHandler(EmaLanguageSelectorComponent, 'languageSelected', 2);
-            spectator.detectChanges();
+            it('should call navigate when selecting a language', () => {
+                spectator.detectChanges();
+                const router = spectator.inject(Router);
 
-            expect(router.navigate).toHaveBeenCalledWith([], {
-                queryParams: { language_id: 2 },
-                queryParamsHandling: 'merge'
+                jest.spyOn(router, 'navigate');
+
+                spectator.triggerEventHandler(EmaLanguageSelectorComponent, 'selected', 2);
+                spectator.detectChanges();
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: { language_id: 2 },
+                    queryParamsHandling: 'merge'
+                });
             });
         });
 

@@ -34,7 +34,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 },
                 viewAs: {
                     language: {
-                        id: 0,
+                        id: 1,
                         language: '',
                         countryCode: '',
                         languageCode: '',
