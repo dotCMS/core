@@ -4,7 +4,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 
 import { AIImagePromptComponent } from './ai-image-prompt.component';
 
-import { AiContentService } from '../../shared';
+import { DotAiService } from '../../shared';
 
 describe('AIImagePromptComponent', () => {
     let component: AIImagePromptComponent;
@@ -14,7 +14,7 @@ describe('AIImagePromptComponent', () => {
         await TestBed.configureTestingModule({
             imports: [ReactiveFormsModule, HttpClientTestingModule],
             declarations: [AIImagePromptComponent],
-            providers: [AiContentService]
+            providers: [DotAiService]
         }).compileComponents();
 
         fixture = TestBed.createComponent(AIImagePromptComponent);

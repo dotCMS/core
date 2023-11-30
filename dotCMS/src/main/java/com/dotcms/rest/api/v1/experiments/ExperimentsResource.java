@@ -525,7 +525,7 @@ public class ExperimentsResource {
             @Context final HttpServletResponse response)
             throws DotDataException, DotSecurityException, SystemException, PortalException {
 
-        final InitDataObject initData = getInitData(request, response);
+        getInitData(request, response);
         final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
         final AnalyticsApp analyticsApp = Try.of(()->AnalyticsHelper.get().appFromHost(host))
                 .getOrNull();
@@ -534,7 +534,7 @@ public class ExperimentsResource {
             return new ResponseEntityView<>(Map.of(HEALTH_KEY, Health.NOT_CONFIGURED));
         }
 
-        final EventLogRunnable eventLogRunnable = new EventLogRunnable(host);
+        final EventLogRunnable eventLogRunnable = new EventLogRunnable(analyticsApp);
         return new ResponseEntityView<>(Map.of(HEALTH_KEY, eventLogRunnable.sendTestEvent()
                 .isPresent()?Health.OK:Health.CONFIGURATION_ERROR));
     }

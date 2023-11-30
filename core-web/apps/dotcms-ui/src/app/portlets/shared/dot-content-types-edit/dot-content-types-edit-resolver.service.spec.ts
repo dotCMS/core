@@ -100,7 +100,9 @@ describe('DotContentTypeEditResolver', () => {
         dotContentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe();
 
         expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', 'invalid-id');
-        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular', true);
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular', {
+            replaceUrl: true
+        });
     });
 
     it('should get and return null and go to home', () => {
@@ -125,7 +127,9 @@ describe('DotContentTypeEditResolver', () => {
 
         dotContentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe();
         expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', '123');
-        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular', true);
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular', {
+            replaceUrl: true
+        });
     });
 
     it('should return a content type placeholder base on type', () => {

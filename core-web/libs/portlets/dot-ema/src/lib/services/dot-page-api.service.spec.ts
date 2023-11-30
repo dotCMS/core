@@ -15,4 +15,21 @@ describe('DotPageApiService', () => {
 
         spectator.expectOne('/api/v1/page/json/test-url?language_id=en', HttpMethod.GET);
     });
+
+    it('should send a POST request to save the data', () => {
+        spectator.service
+            .save({
+                pageContainers: [],
+                container: {
+                    identifier: 'test',
+                    acceptTypes: 'test',
+                    uuid: 'test',
+                    contentletsId: []
+                },
+                pageID: 'test'
+            })
+            .subscribe();
+
+        spectator.expectOne('/api/v1/page/test/content', HttpMethod.POST);
+    });
 });

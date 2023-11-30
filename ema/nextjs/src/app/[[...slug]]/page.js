@@ -1,6 +1,6 @@
 import React from 'react';
 
-import GlobalProvider from '@/providers/global';
+import GlobalProvider from '@/lib/providers/global';
 import { DotcmsPage } from '@/components/dotcms-page';
 
 async function getPage({ url, language_id }) {
@@ -12,7 +12,8 @@ async function getPage({ url, language_id }) {
     const res = await fetch(requestUrl, {
         headers: {
             Authorization: `Bearer ${process.env.DOTCMS_AUTH_TOKEN}`
-        }
+        },
+        cache: 'no-store'
     });
 
     if (!res.ok) {

@@ -1,13 +1,16 @@
-import { Observable } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { catchError, pluck } from 'rxjs/operators';
+
+import { SavePagePayload } from '../shared/models';
 
 export interface DotPageApiResponse {
     page: {
         title: string;
+        identifier: string;
     };
 }
 
@@ -32,12 +35,21 @@ export class DotPageApiService {
 
         return this.http
             .get<{
-                entity: {
-                    page: {
-                        title: string;
-                    };
-                };
+                entity: DotPageApiResponse;
             }>(apiUrl)
             .pipe(pluck('entity'));
+    }
+
+    /**
+     * Save a contentlet in a page
+     *
+     * @param {SavePagePayload} { pageContainers, container, contentletID, pageID }
+     * @return {*}
+     * @memberof DotPageApiService
+     */
+    save({ pageContainers, pageID }: SavePagePayload): Observable<unknown> {
+        return this.http
+            .post(`/api/v1/page/${pageID}/content`, pageContainers)
+            .pipe(catchError(() => EMPTY));
     }
 }
