@@ -76,16 +76,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     @Output()
     removeFields = new EventEmitter<DotCMSContentTypeField[]>();
-
-    private _loading: boolean;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    get isBlockEditorField() {
-        return (
-            this.currentFieldType?.clazz ===
-            'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
-        );
-    }
 
     constructor(
         private dotMessageService: DotMessageService,
@@ -97,6 +88,30 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         private elRef: ElementRef,
         private rendered: Renderer2
     ) {}
+
+    private _loading: boolean;
+
+    get loading(): boolean {
+        return this._loading;
+    }
+
+    @Input()
+    set loading(loading: boolean) {
+        this._loading = loading;
+
+        if (loading) {
+            this.dotLoadingIndicatorService.show();
+        } else {
+            this.dotLoadingIndicatorService.hide();
+        }
+    }
+
+    get isBlockEditorField() {
+        return (
+            this.currentFieldType?.clazz ===
+            'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
+        );
+    }
 
     private static findColumnBreakIndex(fields: DotCMSContentTypeField[]): number {
         return fields.findIndex((item: DotCMSContentTypeField) => {
@@ -211,21 +226,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         if (changes.layout && changes.layout.currentValue) {
             this.fieldRows = _.cloneDeep(changes.layout.currentValue);
         }
-    }
-
-    @Input()
-    set loading(loading: boolean) {
-        this._loading = loading;
-
-        if (loading) {
-            this.dotLoadingIndicatorService.show();
-        } else {
-            this.dotLoadingIndicatorService.hide();
-        }
-    }
-
-    get loading(): boolean {
-        return this._loading;
     }
 
     ngOnDestroy(): void {
@@ -444,13 +444,15 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     private setUpDragulaScroll(): void {
-        const drake = this.dragulaService.find('fields-bag')?.drake;
+        // const drake = this.dragulaService.find('fields-bag')?.drake;
         autoScroll([this.elRef.nativeElement.parentElement], {
             margin: 100,
             maxSpeed: 60,
             scrollWhenOutside: true,
             autoScroll() {
-                return this.down && drake.dragging;
+                // TODO: Verify if this works
+                // return this.down && drake.dragging;
+                return this.down;
             }
         });
     }
