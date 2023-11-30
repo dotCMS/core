@@ -102,7 +102,7 @@ export class AIContentPromptView {
             });
 
         /**
-         * Subscription to close the tooltip since that can happen on escape listener that is in the html
+         * Subscription to close the tippy since that can happen on escape listener that is in the html
          * template in ai-content-prompt.component.html
          */
         this.componentStore.open$
@@ -122,10 +122,6 @@ export class AIContentPromptView {
 
             return;
         }
-
-        // if (!next.open) {
-        //     this.componentStore.setOpen(true);
-        // }
 
         this.createTooltip();
 
