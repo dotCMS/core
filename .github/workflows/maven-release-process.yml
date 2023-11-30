@@ -269,7 +269,6 @@ jobs:
           servers: '[{ "id": "dotcms-libs", "username": "${repo.username}", "password": "${repo.password}" }]'
 
       - name: Deploy Release
-        working-directory: ${{ github.workspace }}/dotCMS
         run: |
           ./mvnw -B -ntp \
             ${JVM_TEST_MAVEN_OPTS} \
@@ -278,7 +277,8 @@ jobs:
             -DskipITs=true \
             -Drepo.username=${{ secrets.EE_REPO_USERNAME }} \
             -Drepo.password=${{ secrets.EE_REPO_PASSWORD }} \
-            deploy
+            deploy \
+            --file dotCMS/pom.xml
 
       - name: Push Distro
         run: |
