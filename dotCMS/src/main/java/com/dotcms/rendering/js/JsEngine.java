@@ -241,7 +241,7 @@ public class JsEngine implements ScriptEngine {
 
     private String jsStrackTraceToString(final GraalJSException.JSStackTraceElement element) {
 
-            return element.getClassName() + "." + element.getFunctionName().toString() + "(" +
+            return null == element.getClassName()?"UnknownClass":element.getClassName() + "." + element.getFunctionName().toString() + "(" +
                             (element.getFileName() != null && element.getLineNumber() >= 0 ?
                                     element.getFileName() + ":" + element.getLineNumber() + ")" :
                                     (element.getFileName() != null ?  ""+element.getFileName()+")" : "Unknown Source)"));

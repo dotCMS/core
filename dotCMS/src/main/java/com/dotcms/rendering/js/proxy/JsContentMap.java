@@ -2,6 +2,7 @@ package com.dotcms.rendering.js.proxy;
 
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.graalvm.polyglot.HostAccess;
 
 import java.io.IOException;
@@ -12,6 +13,7 @@ import java.io.Serializable;
  *
  * @author jsanca
  */
+@JsonSerialize(using = JsContentMapSerializer.class)
 public class JsContentMap implements Serializable, JsProxyObject<ContentMap> {
 
     private final ContentMap contentMap;
