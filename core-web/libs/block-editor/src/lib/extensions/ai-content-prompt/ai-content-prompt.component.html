@@ -3,7 +3,7 @@
         <span class="p-input-icon-right">
             <input
                 #input
-                [disabled]="vm.loading"
+                [attr.disabled]="vm.loading || null"
                 formControlName="textPrompt"
                 type="text"
                 pInputText
@@ -11,7 +11,7 @@
                 placeholder="Ask AI to write something" />
 
             <ng-container *ngIf="vm.loading; else submitButton">
-                <span class="pending-label">Pending</span>
+                <span class="pi pi-spin pi-spinner"></span>
             </ng-container>
 
             <ng-template #submitButton>

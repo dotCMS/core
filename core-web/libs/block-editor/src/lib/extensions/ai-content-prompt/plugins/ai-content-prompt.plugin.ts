@@ -1,5 +1,5 @@
 import { Node } from 'prosemirror-model';
-import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
+import { EditorState, Plugin, PluginKey, TextSelection, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { Subject } from 'rxjs';
 import tippy, { Instance, Props } from 'tippy.js';
@@ -125,21 +125,37 @@ export class AIContentPromptView {
         const { element: editorElement } = this.editor.options;
         const editorIsAttached = !!editorElement.parentElement;
 
-        if (this.tippy || !editorIsAttached) {
+        if (!editorIsAttached) {
             return;
         }
 
-        this.tippy = tippy(editorElement, {
-            ...TIPPY_OPTIONS,
-            ...this.tippyOptions,
-            content: this.element,
-            onHide: () => {
-                this.editor.commands.closeAIPrompt();
-            },
-            onShow: (instance) => {
-                (instance.popper as HTMLElement).style.width = '100%';
-            }
-        });
+        //The following 4 lines are to attach tippy to where the cursor is when opening.
+        // Get the current editor selection.
+        const { selection } = this.editor.state;
+        if (selection instanceof TextSelection) {
+            // Use `domAtPos` to get the DOM information at the cursor position
+            const { pos } = selection.$cursor;
+            const domAtPos = this.editor.view.domAtPos(pos);
+            const clientTarget = domAtPos.node as Element;
+
+            this.tippy = tippy(editorElement, {
+                ...TIPPY_OPTIONS,
+                ...this.tippyOptions,
+                content: this.element,
+                getReferenceClientRect: clientTarget.getBoundingClientRect.bind(clientTarget),
+                onHide: () => {
+                    this.editor.commands.closeAIPrompt();
+                },
+                onShow: (instance) => {
+                    const popperElement = instance.popper as HTMLElement;
+                    popperElement.style.width = '100%';
+                    // override the top position set by popper. so the prompt is on top of the +. not below it.
+                    setTimeout(() => {
+                        popperElement.style.marginTop = '-40px'; // Use marginTop instead of top
+                    }, 0);
+                }
+            });
+        }
     }
 
     show() {
@@ -189,3 +205,5 @@ export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
         }
     });
 };
+
+// Function to adjust the x position by 40 pixels

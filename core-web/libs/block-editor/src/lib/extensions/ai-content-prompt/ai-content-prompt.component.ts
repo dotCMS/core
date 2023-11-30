@@ -49,7 +49,6 @@ export class AIContentPromptComponent implements OnInit, OnDestroy {
 
     onSubmit() {
         const textPrompt = this.form.value.textPrompt;
-
         if (textPrompt) {
             this.aiContentPromptStore.generateContent(textPrompt);
         }
