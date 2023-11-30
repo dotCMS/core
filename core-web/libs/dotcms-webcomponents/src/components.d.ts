@@ -5,13 +5,20 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { DotCMSContentlet, DotCMSContentTypeLayoutColumn, DotCMSContentTypeLayoutRow, DotContentState, DotHttpErrorResponse } from "@dotcms/dotcms-models";
+import { DotCMSContentlet, DotCMSContentTypeLayoutColumn, DotCMSContentTypeLayoutRow, DotContentState, DotHttpErrorResponse } from "../../dotcms-models/src/index";
 import { DotBinaryFileEvent, DotFieldStatusEvent, DotFieldValueEvent, DotInputCalendarStatusEvent, DotKeyValueField } from "./models";
 import { DotCardContentletEvent, DotCardContentletItem } from "./models/dot-card-contentlet.model";
 import { DotContentletItem } from "./models/dot-contentlet-item.model";
 import { DotContextMenuOption } from "./models/dot-context-menu.model";
 import { DotContextMenuAction } from "./models/dot-context-menu-action.model";
 import { DotSelectButtonOption } from "./models/dotSelectButtonOption";
+export { DotCMSContentlet, DotCMSContentTypeLayoutColumn, DotCMSContentTypeLayoutRow, DotContentState, DotHttpErrorResponse } from "../../dotcms-models/src/index";
+export { DotBinaryFileEvent, DotFieldStatusEvent, DotFieldValueEvent, DotInputCalendarStatusEvent, DotKeyValueField } from "./models";
+export { DotCardContentletEvent, DotCardContentletItem } from "./models/dot-card-contentlet.model";
+export { DotContentletItem } from "./models/dot-contentlet-item.model";
+export { DotContextMenuOption } from "./models/dot-context-menu.model";
+export { DotContextMenuAction } from "./models/dot-context-menu-action.model";
+export { DotSelectButtonOption } from "./models/dotSelectButtonOption";
 export namespace Components {
     interface DotAssetDropZone {
         /**
@@ -1286,13 +1293,37 @@ export interface KeyValueTableCustomEvent<T> extends CustomEvent<T> {
     target: HTMLKeyValueTableElement;
 }
 declare global {
+    interface HTMLDotAssetDropZoneElementEventMap {
+        "uploadComplete": DotCMSContentlet[] | DotHttpErrorResponse[] | any;
+    }
     interface HTMLDotAssetDropZoneElement extends Components.DotAssetDropZone, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotAssetDropZoneElementEventMap>(type: K, listener: (this: HTMLDotAssetDropZoneElement, ev: DotAssetDropZoneCustomEvent<HTMLDotAssetDropZoneElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotAssetDropZoneElementEventMap>(type: K, listener: (this: HTMLDotAssetDropZoneElement, ev: DotAssetDropZoneCustomEvent<HTMLDotAssetDropZoneElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotAssetDropZoneElement: {
         prototype: HTMLDotAssetDropZoneElement;
         new (): HTMLDotAssetDropZoneElement;
     };
+    interface HTMLDotAutocompleteElementEventMap {
+        "selection": string;
+        "enter": string;
+        "lostFocus": FocusEvent;
+    }
     interface HTMLDotAutocompleteElement extends Components.DotAutocomplete, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotAutocompleteElementEventMap>(type: K, listener: (this: HTMLDotAutocompleteElement, ev: DotAutocompleteCustomEvent<HTMLDotAutocompleteElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotAutocompleteElementEventMap>(type: K, listener: (this: HTMLDotAutocompleteElement, ev: DotAutocompleteCustomEvent<HTMLDotAutocompleteElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotAutocompleteElement: {
         prototype: HTMLDotAutocompleteElement;
@@ -1304,45 +1335,91 @@ declare global {
         prototype: HTMLDotBadgeElement;
         new (): HTMLDotBadgeElement;
     };
+    interface HTMLDotBinaryFileElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     /**
      * Represent a dotcms binary file control.
      * @export 
      * @class DotBinaryFileComponent
      */
     interface HTMLDotBinaryFileElement extends Components.DotBinaryFile, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotBinaryFileElementEventMap>(type: K, listener: (this: HTMLDotBinaryFileElement, ev: DotBinaryFileCustomEvent<HTMLDotBinaryFileElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotBinaryFileElementEventMap>(type: K, listener: (this: HTMLDotBinaryFileElement, ev: DotBinaryFileCustomEvent<HTMLDotBinaryFileElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotBinaryFileElement: {
         prototype: HTMLDotBinaryFileElement;
         new (): HTMLDotBinaryFileElement;
     };
+    interface HTMLDotBinaryFilePreviewElementEventMap {
+        "delete": any;
+    }
     /**
      * Represent a dotcms text field for the binary file preview.
      * @export 
      * @class DotBinaryFilePreviewComponent
      */
     interface HTMLDotBinaryFilePreviewElement extends Components.DotBinaryFilePreview, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotBinaryFilePreviewElementEventMap>(type: K, listener: (this: HTMLDotBinaryFilePreviewElement, ev: DotBinaryFilePreviewCustomEvent<HTMLDotBinaryFilePreviewElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotBinaryFilePreviewElementEventMap>(type: K, listener: (this: HTMLDotBinaryFilePreviewElement, ev: DotBinaryFilePreviewCustomEvent<HTMLDotBinaryFilePreviewElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotBinaryFilePreviewElement: {
         prototype: HTMLDotBinaryFilePreviewElement;
         new (): HTMLDotBinaryFilePreviewElement;
     };
+    interface HTMLDotBinaryTextFieldElementEventMap {
+        "fileChange": DotBinaryFileEvent;
+        "lostFocus": any;
+    }
     /**
      * Represent a dotcms text field for the binary file element.
      * @export 
      * @class DotBinaryFile
      */
     interface HTMLDotBinaryTextFieldElement extends Components.DotBinaryTextField, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotBinaryTextFieldElementEventMap>(type: K, listener: (this: HTMLDotBinaryTextFieldElement, ev: DotBinaryTextFieldCustomEvent<HTMLDotBinaryTextFieldElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotBinaryTextFieldElementEventMap>(type: K, listener: (this: HTMLDotBinaryTextFieldElement, ev: DotBinaryTextFieldCustomEvent<HTMLDotBinaryTextFieldElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotBinaryTextFieldElement: {
         prototype: HTMLDotBinaryTextFieldElement;
         new (): HTMLDotBinaryTextFieldElement;
     };
+    interface HTMLDotBinaryUploadButtonElementEventMap {
+        "fileChange": DotBinaryFileEvent;
+    }
     /**
      * Represent a dotcms text field for the binary file element.
      * @export 
      * @class DotBinaryFile
      */
     interface HTMLDotBinaryUploadButtonElement extends Components.DotBinaryUploadButton, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotBinaryUploadButtonElementEventMap>(type: K, listener: (this: HTMLDotBinaryUploadButtonElement, ev: DotBinaryUploadButtonCustomEvent<HTMLDotBinaryUploadButtonElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotBinaryUploadButtonElementEventMap>(type: K, listener: (this: HTMLDotBinaryUploadButtonElement, ev: DotBinaryUploadButtonCustomEvent<HTMLDotBinaryUploadButtonElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotBinaryUploadButtonElement: {
         prototype: HTMLDotBinaryUploadButtonElement;
@@ -1354,25 +1431,72 @@ declare global {
         prototype: HTMLDotCardElement;
         new (): HTMLDotCardElement;
     };
+    interface HTMLDotCardContentletElementEventMap {
+        "checkboxChange": DotCardContentletEvent;
+        "contextMenuClick": MouseEvent;
+    }
     interface HTMLDotCardContentletElement extends Components.DotCardContentlet, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotCardContentletElementEventMap>(type: K, listener: (this: HTMLDotCardContentletElement, ev: DotCardContentletCustomEvent<HTMLDotCardContentletElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotCardContentletElementEventMap>(type: K, listener: (this: HTMLDotCardContentletElement, ev: DotCardContentletCustomEvent<HTMLDotCardContentletElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotCardContentletElement: {
         prototype: HTMLDotCardContentletElement;
         new (): HTMLDotCardContentletElement;
     };
+    interface HTMLDotCardViewElementEventMap {
+        "selected": any;
+        "cardClick": any;
+    }
     interface HTMLDotCardViewElement extends Components.DotCardView, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotCardViewElementEventMap>(type: K, listener: (this: HTMLDotCardViewElement, ev: DotCardViewCustomEvent<HTMLDotCardViewElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotCardViewElementEventMap>(type: K, listener: (this: HTMLDotCardViewElement, ev: DotCardViewCustomEvent<HTMLDotCardViewElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotCardViewElement: {
         prototype: HTMLDotCardViewElement;
         new (): HTMLDotCardViewElement;
     };
+    interface HTMLDotCheckboxElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     interface HTMLDotCheckboxElement extends Components.DotCheckbox, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotCheckboxElementEventMap>(type: K, listener: (this: HTMLDotCheckboxElement, ev: DotCheckboxCustomEvent<HTMLDotCheckboxElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotCheckboxElementEventMap>(type: K, listener: (this: HTMLDotCheckboxElement, ev: DotCheckboxCustomEvent<HTMLDotCheckboxElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotCheckboxElement: {
         prototype: HTMLDotCheckboxElement;
         new (): HTMLDotCheckboxElement;
     };
+    interface HTMLDotChipElementEventMap {
+        "remove": String;
+    }
     interface HTMLDotChipElement extends Components.DotChip, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotChipElementEventMap>(type: K, listener: (this: HTMLDotChipElement, ev: DotChipCustomEvent<HTMLDotChipElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotChipElementEventMap>(type: K, listener: (this: HTMLDotChipElement, ev: DotChipCustomEvent<HTMLDotChipElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotChipElement: {
         prototype: HTMLDotChipElement;
@@ -1413,19 +1537,55 @@ declare global {
         prototype: HTMLDotDataViewButtonElement;
         new (): HTMLDotDataViewButtonElement;
     };
+    interface HTMLDotDateElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     interface HTMLDotDateElement extends Components.DotDate, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotDateElementEventMap>(type: K, listener: (this: HTMLDotDateElement, ev: DotDateCustomEvent<HTMLDotDateElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotDateElementEventMap>(type: K, listener: (this: HTMLDotDateElement, ev: DotDateCustomEvent<HTMLDotDateElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotDateElement: {
         prototype: HTMLDotDateElement;
         new (): HTMLDotDateElement;
     };
+    interface HTMLDotDateRangeElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     interface HTMLDotDateRangeElement extends Components.DotDateRange, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotDateRangeElementEventMap>(type: K, listener: (this: HTMLDotDateRangeElement, ev: DotDateRangeCustomEvent<HTMLDotDateRangeElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotDateRangeElementEventMap>(type: K, listener: (this: HTMLDotDateRangeElement, ev: DotDateRangeCustomEvent<HTMLDotDateRangeElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotDateRangeElement: {
         prototype: HTMLDotDateRangeElement;
         new (): HTMLDotDateRangeElement;
     };
+    interface HTMLDotDateTimeElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     interface HTMLDotDateTimeElement extends Components.DotDateTime, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotDateTimeElementEventMap>(type: K, listener: (this: HTMLDotDateTimeElement, ev: DotDateTimeCustomEvent<HTMLDotDateTimeElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotDateTimeElementEventMap>(type: K, listener: (this: HTMLDotDateTimeElement, ev: DotDateTimeCustomEvent<HTMLDotDateTimeElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotDateTimeElement: {
         prototype: HTMLDotDateTimeElement;
@@ -1437,7 +1597,18 @@ declare global {
         prototype: HTMLDotErrorMessageElement;
         new (): HTMLDotErrorMessageElement;
     };
+    interface HTMLDotFormElementEventMap {
+        "submit": DotCMSContentlet;
+    }
     interface HTMLDotFormElement extends Components.DotForm, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotFormElementEventMap>(type: K, listener: (this: HTMLDotFormElement, ev: DotFormCustomEvent<HTMLDotFormElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotFormElementEventMap>(type: K, listener: (this: HTMLDotFormElement, ev: DotFormCustomEvent<HTMLDotFormElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotFormElement: {
         prototype: HTMLDotFormElement;
@@ -1455,19 +1626,57 @@ declare global {
         prototype: HTMLDotFormRowElement;
         new (): HTMLDotFormRowElement;
     };
+    interface HTMLDotHtmlToImageElementEventMap {
+        "pageThumbnail": {
+        file: File;
+        error?: string;
+    };
+    }
     interface HTMLDotHtmlToImageElement extends Components.DotHtmlToImage, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotHtmlToImageElementEventMap>(type: K, listener: (this: HTMLDotHtmlToImageElement, ev: DotHtmlToImageCustomEvent<HTMLDotHtmlToImageElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotHtmlToImageElementEventMap>(type: K, listener: (this: HTMLDotHtmlToImageElement, ev: DotHtmlToImageCustomEvent<HTMLDotHtmlToImageElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotHtmlToImageElement: {
         prototype: HTMLDotHtmlToImageElement;
         new (): HTMLDotHtmlToImageElement;
     };
+    interface HTMLDotInputCalendarElementEventMap {
+        "_dotValueChange": DotFieldValueEvent;
+        "_dotStatusChange": DotInputCalendarStatusEvent;
+    }
     interface HTMLDotInputCalendarElement extends Components.DotInputCalendar, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotInputCalendarElementEventMap>(type: K, listener: (this: HTMLDotInputCalendarElement, ev: DotInputCalendarCustomEvent<HTMLDotInputCalendarElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotInputCalendarElementEventMap>(type: K, listener: (this: HTMLDotInputCalendarElement, ev: DotInputCalendarCustomEvent<HTMLDotInputCalendarElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotInputCalendarElement: {
         prototype: HTMLDotInputCalendarElement;
         new (): HTMLDotInputCalendarElement;
     };
+    interface HTMLDotKeyValueElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     interface HTMLDotKeyValueElement extends Components.DotKeyValue, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotKeyValueElementEventMap>(type: K, listener: (this: HTMLDotKeyValueElement, ev: DotKeyValueCustomEvent<HTMLDotKeyValueElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotKeyValueElementEventMap>(type: K, listener: (this: HTMLDotKeyValueElement, ev: DotKeyValueCustomEvent<HTMLDotKeyValueElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotKeyValueElement: {
         prototype: HTMLDotKeyValueElement;
@@ -1484,18 +1693,41 @@ declare global {
         prototype: HTMLDotLabelElement;
         new (): HTMLDotLabelElement;
     };
+    interface HTMLDotMaterialIconPickerElementEventMap {
+        "dotValueChange": { name: string; value: string; colorValue: string };
+    }
     interface HTMLDotMaterialIconPickerElement extends Components.DotMaterialIconPicker, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotMaterialIconPickerElementEventMap>(type: K, listener: (this: HTMLDotMaterialIconPickerElement, ev: DotMaterialIconPickerCustomEvent<HTMLDotMaterialIconPickerElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotMaterialIconPickerElementEventMap>(type: K, listener: (this: HTMLDotMaterialIconPickerElement, ev: DotMaterialIconPickerCustomEvent<HTMLDotMaterialIconPickerElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotMaterialIconPickerElement: {
         prototype: HTMLDotMaterialIconPickerElement;
         new (): HTMLDotMaterialIconPickerElement;
     };
+    interface HTMLDotMultiSelectElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     /**
      * Represent a dotcms multi select control.
      * @export 
      * @class DotSelectComponent
      */
     interface HTMLDotMultiSelectElement extends Components.DotMultiSelect, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotMultiSelectElementEventMap>(type: K, listener: (this: HTMLDotMultiSelectElement, ev: DotMultiSelectCustomEvent<HTMLDotMultiSelectElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotMultiSelectElementEventMap>(type: K, listener: (this: HTMLDotMultiSelectElement, ev: DotMultiSelectCustomEvent<HTMLDotMultiSelectElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotMultiSelectElement: {
         prototype: HTMLDotMultiSelectElement;
@@ -1512,29 +1744,64 @@ declare global {
         prototype: HTMLDotProgressBarElement;
         new (): HTMLDotProgressBarElement;
     };
+    interface HTMLDotRadioElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     /**
      * Represent a dotcms radio control.
      * @export 
      * @class DotRadioComponent
      */
     interface HTMLDotRadioElement extends Components.DotRadio, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotRadioElementEventMap>(type: K, listener: (this: HTMLDotRadioElement, ev: DotRadioCustomEvent<HTMLDotRadioElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotRadioElementEventMap>(type: K, listener: (this: HTMLDotRadioElement, ev: DotRadioCustomEvent<HTMLDotRadioElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotRadioElement: {
         prototype: HTMLDotRadioElement;
         new (): HTMLDotRadioElement;
     };
+    interface HTMLDotSelectElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     /**
      * Represent a dotcms select control.
      * @export 
      * @class DotSelectComponent
      */
     interface HTMLDotSelectElement extends Components.DotSelect, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotSelectElementEventMap>(type: K, listener: (this: HTMLDotSelectElement, ev: DotSelectCustomEvent<HTMLDotSelectElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotSelectElementEventMap>(type: K, listener: (this: HTMLDotSelectElement, ev: DotSelectCustomEvent<HTMLDotSelectElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotSelectElement: {
         prototype: HTMLDotSelectElement;
         new (): HTMLDotSelectElement;
     };
+    interface HTMLDotSelectButtonElementEventMap {
+        "selected": string;
+    }
     interface HTMLDotSelectButtonElement extends Components.DotSelectButton, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotSelectButtonElementEventMap>(type: K, listener: (this: HTMLDotSelectButtonElement, ev: DotSelectButtonCustomEvent<HTMLDotSelectButtonElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotSelectButtonElementEventMap>(type: K, listener: (this: HTMLDotSelectButtonElement, ev: DotSelectButtonCustomEvent<HTMLDotSelectButtonElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotSelectButtonElement: {
         prototype: HTMLDotSelectButtonElement;
@@ -1546,35 +1813,83 @@ declare global {
         prototype: HTMLDotStateIconElement;
         new (): HTMLDotStateIconElement;
     };
+    interface HTMLDotTagsElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     interface HTMLDotTagsElement extends Components.DotTags, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotTagsElementEventMap>(type: K, listener: (this: HTMLDotTagsElement, ev: DotTagsCustomEvent<HTMLDotTagsElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotTagsElementEventMap>(type: K, listener: (this: HTMLDotTagsElement, ev: DotTagsCustomEvent<HTMLDotTagsElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotTagsElement: {
         prototype: HTMLDotTagsElement;
         new (): HTMLDotTagsElement;
     };
+    interface HTMLDotTextareaElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     /**
      * Represent a dotcms textarea control.
      * @export 
      * @class DotTextareaComponent
      */
     interface HTMLDotTextareaElement extends Components.DotTextarea, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotTextareaElementEventMap>(type: K, listener: (this: HTMLDotTextareaElement, ev: DotTextareaCustomEvent<HTMLDotTextareaElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotTextareaElementEventMap>(type: K, listener: (this: HTMLDotTextareaElement, ev: DotTextareaCustomEvent<HTMLDotTextareaElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotTextareaElement: {
         prototype: HTMLDotTextareaElement;
         new (): HTMLDotTextareaElement;
     };
+    interface HTMLDotTextfieldElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     /**
      * Represent a dotcms input control.
      * @export 
      * @class DotTextfieldComponent
      */
     interface HTMLDotTextfieldElement extends Components.DotTextfield, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotTextfieldElementEventMap>(type: K, listener: (this: HTMLDotTextfieldElement, ev: DotTextfieldCustomEvent<HTMLDotTextfieldElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotTextfieldElementEventMap>(type: K, listener: (this: HTMLDotTextfieldElement, ev: DotTextfieldCustomEvent<HTMLDotTextfieldElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotTextfieldElement: {
         prototype: HTMLDotTextfieldElement;
         new (): HTMLDotTextfieldElement;
     };
+    interface HTMLDotTimeElementEventMap {
+        "dotValueChange": DotFieldValueEvent;
+        "dotStatusChange": DotFieldStatusEvent;
+    }
     interface HTMLDotTimeElement extends Components.DotTime, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLDotTimeElementEventMap>(type: K, listener: (this: HTMLDotTimeElement, ev: DotTimeCustomEvent<HTMLDotTimeElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLDotTimeElementEventMap>(type: K, listener: (this: HTMLDotTimeElement, ev: DotTimeCustomEvent<HTMLDotTimeElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLDotTimeElement: {
         prototype: HTMLDotTimeElement;
@@ -1592,13 +1907,38 @@ declare global {
         prototype: HTMLDotVideoThumbnailElement;
         new (): HTMLDotVideoThumbnailElement;
     };
+    interface HTMLKeyValueFormElementEventMap {
+        "add": DotKeyValueField;
+        "keyChanged": string;
+        "lostFocus": FocusEvent;
+    }
     interface HTMLKeyValueFormElement extends Components.KeyValueForm, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLKeyValueFormElementEventMap>(type: K, listener: (this: HTMLKeyValueFormElement, ev: KeyValueFormCustomEvent<HTMLKeyValueFormElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLKeyValueFormElementEventMap>(type: K, listener: (this: HTMLKeyValueFormElement, ev: KeyValueFormCustomEvent<HTMLKeyValueFormElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLKeyValueFormElement: {
         prototype: HTMLKeyValueFormElement;
         new (): HTMLKeyValueFormElement;
     };
+    interface HTMLKeyValueTableElementEventMap {
+        "delete": number;
+        "reorder": any;
+    }
     interface HTMLKeyValueTableElement extends Components.KeyValueTable, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLKeyValueTableElementEventMap>(type: K, listener: (this: HTMLKeyValueTableElement, ev: KeyValueTableCustomEvent<HTMLKeyValueTableElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLKeyValueTableElementEventMap>(type: K, listener: (this: HTMLKeyValueTableElement, ev: KeyValueTableCustomEvent<HTMLKeyValueTableElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLKeyValueTableElement: {
         prototype: HTMLKeyValueTableElement;
