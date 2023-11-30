@@ -63,7 +63,7 @@ jobs:
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          
+
           release_version=${{ github.event.inputs.release_version }}
           release_tag=v${release_version}
           release_branch=release-${release_version}
@@ -81,13 +81,12 @@ jobs:
           echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
 
       - name: Create Release Tag
-        id: create-release-tag
         run: |
-           release_tag=${{ steps.set-common-vars.outputs.release_tag }}
-           if git rev-parse "${release_tag}" >/dev/null 2>&1; then 
+          release_tag=${{ steps.set-common-vars.outputs.release_tag }}
+          if git rev-parse "${release_tag}" >/dev/null 2>&1; then 
             echo "Tag ${release_tag} exists, removing it"
             git push origin :refs/tags/${release_tag}
-           fi
+          fi
       
           release_branch=${{ steps.set-common-vars.outputs.release_branch }}
           remote=$(git ls-remote --heads https://github.com/dotCMS/core.git ${release_branch} | wc -l | tr -d '[:space:]')
