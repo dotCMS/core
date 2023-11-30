@@ -69,7 +69,7 @@ describe('DotEditContentCustomFieldComponent', () => {
         iframe.nativeElement.contentWindow.parent.dispatchEvent(
             new MessageEvent('message', {
                 origin: 'http://localhost:3000',
-                data: { type: 'turnOnFullScreen' }
+                data: { type: 'toggleFullscreen' }
             })
         );
 

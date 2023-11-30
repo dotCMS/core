@@ -54,17 +54,8 @@ export class DotEditContentCustomFieldComponent implements OnInit {
      */
     @HostListener('window:message', ['$event'])
     onMessageFromCustomField(event: MessageEvent) {
-        switch (event.data.type) {
-            case 'turnOnFullScreen':
-                this.isFullscreen = true;
-                break;
-
-            case 'turnOffFullScreen':
-                this.isFullscreen = false;
-                break;
-
-            default:
-                break;
+        if (event.data.type === 'toggleFullscreen') {
+            this.isFullscreen = !this.isFullscreen;
         }
     }
 
