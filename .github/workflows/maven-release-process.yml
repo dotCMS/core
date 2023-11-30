@@ -122,19 +122,19 @@ jobs:
           path: ~/.m2/repository
           key: mavencore-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
           restore-keys: |
-            mavencore-${{ steps.set-common-vars.outputs.date }}
+            maven-core-${{ steps.set-common-vars.outputs.date }}
 
-      - name: Cache Maven Target
-        id: cache-maven-target
-        uses: actions/cache@v3
-        with:
-          path: |
-            ./dotCMS/target/classes
-            ./dotCMS/target/generated-sources
-            ./dotCMS/target/dotcms-core-${{ steps.set-common-vars.outputs.release_version }}.zip
-          key: mavencoretarget-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
-          restore-keys: |
-            mavencoretarget-${{ steps.set-common-vars.outputs.date }}
+#      - name: Cache Core Output
+#        id: cache-core-output
+#        uses: actions/cache@v3
+#        with:
+#          path: |
+#            ./dotCMS/target/classes
+#            ./dotCMS/target/generated-sources
+#            ./dotCMS/target/dotcms-core-${{ steps.set-common-vars.outputs.release_version }}.zip
+#          key: maven-core-output-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
+#          restore-keys: |
+#            core-output-${{ steps.set-common-vars.outputs.date }}
 
       - name: Cache Node Binary
         id: cache-node-binary
@@ -161,7 +161,7 @@ jobs:
           path: ${{ env.DOCKER_BUILD_CONTEXT }}
           key: docker-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
           restore-keys: |
-            dockercontext-${{ steps.set-common-vars.outputs.date }}
+            docker-context-${{ steps.set-common-vars.outputs.date }}
 
       - name: Create Release
         run: |
@@ -188,16 +188,16 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: ~/.m2/repository
-          key: mavencore-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
+          key: maven-core-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
 
-      - name: Restore Maven Target
-        id: restore-maven-target
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            ./dotCMS/target/classes
-            ./dotCMS/target/generated-sources
-          key: mavencoretarget-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
+#      - name: Restore Core Output
+#        id: restore-core-output
+#        uses: actions/cache/restore@v3
+#        with:
+#          path: |
+#            ./dotCMS/target/classes
+#            ./dotCMS/target/generated-sources
+#          key: core-output-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
 
       - name: Restore Node Binary
         id: restore-node-binary
@@ -218,7 +218,7 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: ${{ env.DOCKER_BUILD_CONTEXT }}
-          key: dockercontext-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
+          key: docker-context-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
 
       - name: Setup Java
         uses: actions/setup-java@v3
