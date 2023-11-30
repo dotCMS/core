@@ -59,7 +59,6 @@ jobs:
 
       - name: Set Common Vars
         id: set-common-vars
-        shell: bash
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
@@ -129,7 +128,6 @@ jobs:
           git push origin ${{ steps.set-common-vars.outputs.release_branch }}
 
       - name: Build Core (no tests)
-        shell: bash
         run: |
           ./mvnw -B -ntp ${JVM_TEST_MAVEN_OPTS} clean install --file parent/pom.xml
           ./mvnw -B -ntp ${JVM_TEST_MAVEN_OPTS} clean install --file bom/pom.xml
@@ -359,7 +357,6 @@ jobs:
     steps:
       - name: Set Common Vars
         id: set-common-vars
-        shell: bash
         run: |
           release_version=${{ needs.prepare-release.outputs.release_version }}
           tags="${release_version}_${{ needs.prepare-release.outputs.release_hash }},${release_version}"
