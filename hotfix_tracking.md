@@ -172,3 +172,4 @@ This maintenance release includes the following code fixes:
 142. https://github.com/dotCMS/core/issues/25613 : MonitorResource throws exception if DOT_SYSTEM_STATUS_API_IP_ACL is not set #25613
 143. https://github.com/dotCMS/core/issues/26481 : Pubsub Connection should prefer SSL #26481
 144. https://github.com/dotCMS/core/issues/26774 : text fields validation limit to 255 chars is not longer required #26774
+145. https://github.com/dotCMS/core/issues/24874 : Unable to import starter.zip #24874

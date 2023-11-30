@@ -296,7 +296,7 @@ public class ExportStarterUtil {
         HibernateUtil hibernateUtil;
         DotConnect dc;
         List<?> resultList;
-        final ObjectMapper defaultObjectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+        final ObjectMapper defaultObjectMapper = ContentletJsonHelper.INSTANCE.get().objectMapper();
         try {
             for (final Class<?> clazz : dbTablesAsClasses) {
                 int i;
