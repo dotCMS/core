@@ -271,28 +271,28 @@ jobs:
           repositories: '[{ "id": "dotcms-libs", "name": "DotCMS libs Release", "url": "https://repo.dotcms.com/artifactory/libs-release" }]'
           servers: '[{ "id": "dotcms-libs", "username": "${{ secrets.EE_REPO_USERNAME }}", "password": "${{ secrets.EE_REPO_PASSWORD }}" }]'
 
-      - name: Deploy Release
-        run: |
-          ./mvnw -B -ntp \
-            ${JVM_TEST_MAVEN_OPTS} \
-            -Dprod=true \
-            -DskipTests=true \
-            -DskipITs=true \
-            deploy \
-            --file dotCMS/pom.xml
+#      - name: Deploy Release
+#        run: |
+#          ./mvnw -B -ntp \
+#            ${JVM_TEST_MAVEN_OPTS} \
+#            -Dprod=true \
+#            -DskipTests=true \
+#            -DskipITs=true \
+#            deploy \
+#            --file dotCMS/pom.xml
 
-      - name: Push Distro
-        run: |
-          target_dir=./dotCMS/target
-          distro_file=dotcms_${{ needs.prepare-release.outputs.release_version }}.zip
-          mv ${target_dir}/dotcms-core-${{ needs.prepare-release.outputs.release_version }}.zip ${target_dir}/${distro_file}
-          
-          aws s3 cp \
-            ${target_dir}/${distro_file} \
-            s3://static.dotcms.com/versions/${{ needs.prepare-release.outputs.release_version }}/${distro_file}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#      - name: Push Distro
+#        run: |
+#          target_dir=./dotCMS/target
+#          distro_file=dotcms_${{ needs.prepare-release.outputs.release_version }}.zip
+#          mv ${target_dir}/dotcms-core-${{ needs.prepare-release.outputs.release_version }}.zip ${target_dir}/${distro_file}
+#
+#          aws s3 cp \
+#            ${target_dir}/${distro_file} \
+#            s3://static.dotcms.com/versions/${{ needs.prepare-release.outputs.release_version }}/${distro_file}
+#        env:
+#          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Generate/Push Javadoc
         run: |
