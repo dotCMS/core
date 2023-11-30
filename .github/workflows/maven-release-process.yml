@@ -232,7 +232,7 @@ jobs:
             ./dotCMS/target/classes
             ./dotCMS/target/generated-sources
             ./dotCMS/target/dotcms-core-${{ needs.prepare-release.outputs.release_version }}.zip
-          key: core-output-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
+          key: maven-core-output-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
 
       - name: Restore Node Binary
         id: restore-node-binary
