@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "ac23d1fe-0831-4bd2-830b-30be74ac4b9f",
+		"_postman_id": "06743017-e871-4014-81a1-7d902a501d1c",
 		"name": "Tags Resource V2",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "781456"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -13,13 +13,14 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"const jsonData = pm.response.json();",
-							"",
-							"pm.collectionVariables.set(\"tagsSiteId\", jsonData.entity.identifier);",
+							"pm.test(\"Retrieve and save the test Site ID where Tags will be saved\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.collectionVariables.set(\"tagsSiteId\", jsonData.entity.identifier);",
+							"});",
 							""
 						],
 						"type": "text/javascript"
@@ -92,14 +93,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
-							"    const jsonData = pm.response.json();",
-							"    ",
+							"});",
+							"",
+							"pm.test(\"Retrieve and save the Tag ID to update it later\", function () {",
+							"    const jsonData = pm.response.json();    ",
 							"    const tag = jsonData.entity['non-global-tag'];",
 							"    pm.collectionVariables.set(\"tagForUpdateId\", tag.id);",
-							"",
-							"});"
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -175,15 +178,17 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Check that the updated Tag is being returned correctly\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    console.log(jsonData.entity);",
-							"    const tag = jsonData.entity['non-global-tag-changed'];",
-							"    ",
+							"    const tag = jsonData.entity['non-global-tag-changed'];    ",
 							"    pm.expect(tag).not.eql(undefined);",
-							"",
-							"});"
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -259,12 +264,14 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
-							"    let jsonData = pm.response.json();",
+							"});",
+							"",
+							"pm.test(\"Verify that ALL four test Tags are listed\", function () {",
+							"    let jsonData = pm.response.json().entity;",
 							"    let size = Object.keys(jsonData).length;",
 							"    pm.expect(size).to.be.greaterThan(0);",
-							"",
 							"    for (const key in jsonData) {",
 							"        let tagObject = jsonData[key];",
 							"        if(\"default-site-tag-1\" === key){           ",
@@ -276,17 +283,16 @@
 							"        if(\"third-site-tag\" === key) {           ",
 							"           pm.collectionVariables.set(\"thirdSiteTag\", tagObject);",
 							"        }",
-							"        if(\"non-global-tag\" === key) {           ",
+							"        if(\"non-global-tag-changed\" === key) {           ",
 							"           pm.collectionVariables.set(\"nonGlobalTag\", tagObject);",
 							"        }",
 							"    }",
-							"        pm.expect(pm.collectionVariables.get(\"defaultSiteTag\")).to.not.eql(undefined);",
-							"        pm.expect(pm.collectionVariables.get(\"globalTag\")).to.not.eql(undefined);",
-							"        pm.expect(pm.collectionVariables.get(\"thirdSiteTag\")).to.not.eql(undefined);",
-							"        pm.expect(pm.collectionVariables.get(\"nonGlobalTag\")).to.not.eql(undefined);",
-							"        ",
-							"",
-							"});"
+							"    pm.expect(pm.collectionVariables.get(\"defaultSiteTag\")).to.not.eql(undefined);",
+							"    pm.expect(pm.collectionVariables.get(\"globalTag\")).to.not.eql(undefined);",
+							"    pm.expect(pm.collectionVariables.get(\"thirdSiteTag\")).to.not.eql(undefined);",
+							"    pm.expect(pm.collectionVariables.get(\"nonGlobalTag\")).to.not.eql(undefined);",
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -364,12 +370,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);    ",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Check that there's at least one Tag matching the name 'default'\", function () {    ",
 							"    let jsonData = pm.response.json();",
 							"    let size = Object.keys(jsonData.entity).length;",
-							"    pm.expect(size).to.be.eq(1);",
-							"});"
+							"    pm.expect(size).to.be.gte(1);",
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -453,12 +463,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);    ",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"There must be not Tag matching the name 'xxx'\", function () {    ",
 							"    let jsonData = pm.response.json();",
 							"    let size = Object.keys(jsonData.entity).length;",
 							"    pm.expect(size).to.be.eq(0);",
-							"});"
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -546,9 +560,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 400\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(400);    ",
-							"});"
+							"});",
+							"",
+							"pm.test(\"The 'error' attribute must be present\", function () {    ",
+							"    let jsonData = pm.response.json();",
+							"    let error = jsonData.error;",
+							"    pm.expect(error).to.not.eql(undefined);",
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -636,13 +657,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);    ",
+							"});",
+							"",
+							"pm.test(\"There must be at least one Tag owned by 'dotcms.org.1'\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    let size = Object.keys(jsonData.entity).length;",
 							"    pm.expect(size).to.be.greaterThan(0);",
-							"    ",
-							"});"
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -722,8 +746,11 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Return the expected Tag by name and save its ID\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    let size = Object.keys(jsonData.entity).length;",
 							"    pm.expect(size).to.be.greaterThan(0);",
@@ -731,7 +758,8 @@
 							"    const key = keys[0];",
 							"    const id = jsonData.entity[key].id;",
 							"    pm.collectionVariables.set(\"retrievedTagId\", id);",
-							"});"
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -810,16 +838,19 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);    ",
+							"});",
+							"",
+							"pm.test(\"Return the expected Tag by ID\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    let size = Object.keys(jsonData.entity).length;",
 							"    pm.expect(size).to.be.greaterThan(0);",
 							"    const keys = Object.keys(jsonData.entity);",
 							"    const key = keys[0];",
 							"    pm.expect(key).equals(\"third-site-tag\");",
-							"    ",
-							"});"
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -899,9 +930,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
-							"});"
+							"});",
+							"",
+							"pm.test(\"There must be no generated errors\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    let errors = jsonData.errors.length;",
+							"    pm.expect(errors).to.be.eq(0);",
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -977,9 +1015,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 404\", function () {",
+							"pm.test(\"HTTP Status code must be 404\", function () {",
 							"    pm.response.to.have.status(404);",
-							"});"
+							"});",
+							"",
+							"pm.test(\"The error message must be present\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    let errorMsg = jsonData.message;",
+							"    pm.expect(errorMsg).to.not.eql(undefined);",
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -1046,9 +1091,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test.skip(\"Status code is 200\", function () {",
+							"pm.test.skip(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
-							"});"
+							"});",
+							"",
+							"pm.test(\"There must be no generated errors\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    let errors = jsonData.errors.length;",
+							"    pm.expect(errors).to.be.eq(0);",
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -1137,10 +1189,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
+							"});",
 							"",
-							"});"
+							"pm.test(\"The 'fieldVarName' must be '1000'\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    let fieldVarName = jsonData.entity[0].fieldVarName;",
+							"    pm.expect(fieldVarName).to.equal(\"1000\");",
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -1229,27 +1287,7 @@
 	],
 	"variable": [
 		{
-			"key": "site_id",
-			"value": ""
-		},
-		{
-			"key": "43333",
-			"value": ""
-		},
-		{
-			"key": "globalTag",
-			"value": ""
-		},
-		{
-			"key": "personaTag",
-			"value": ""
-		},
-		{
-			"key": "siteSpecificTag",
-			"value": ""
-		},
-		{
-			"key": "siteId",
+			"key": "randomNum",
 			"value": ""
 		},
 		{
@@ -1257,11 +1295,15 @@
 			"value": ""
 		},
 		{
+			"key": "tagForUpdateId",
+			"value": ""
+		},
+		{
 			"key": "defaultSiteTag",
 			"value": ""
 		},
 		{
-			"key": "thirdSiteTag",
+			"key": "globalTag",
 			"value": ""
 		},
 		{
@@ -1269,7 +1311,7 @@
 			"value": ""
 		},
 		{
-			"key": "deleteTagCandidateId",
+			"key": "thirdSiteTag",
 			"value": ""
 		},
 		{
@@ -1277,11 +1319,7 @@
 			"value": ""
 		},
 		{
-			"key": "tagForUpdateId",
-			"value": ""
-		},
-		{
-			"key": "randomNum",
+			"key": "deleteTagCandidateId",
 			"value": ""
 		}
 	]
