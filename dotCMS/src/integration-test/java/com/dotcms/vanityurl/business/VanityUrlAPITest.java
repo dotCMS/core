@@ -1035,4 +1035,255 @@ public class VanityUrlAPITest {
        return  ContentletDataGen.publish(vanityURL);
     }
 
+    /**
+     * Method to test: {@link VanityUrlAPIImpl#findByForward(Host, Language, String)}
+     * When: Have Vanity Urls with the follow fowardTo values (the firsts 7 with the same Lang and Host):
+     * 1) /Testing
+     * 2) /folder/Testing
+     * 3) /folder/sub_folder/Testing
+     * 4) /whatever/Testing
+     * 5) /folder/whatever
+     * 6) /Testing but with different action
+     * 7) /Testing but with different uri
+     * 8) /Testing but in another host
+     * 9) /folder/Testing but in another lang
+     * 10 and 11 /folder/Testing but with different action
+     *
+     * and we call the method with the Host and Language of the first 5 Vanity Urls and with the Regex equals to: "/Testing"
+     *
+     * Should: returns (1) and (7)
+     */
+    @Test
+    public void findByForward(){
+        final Host host = new SiteDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final Contentlet vanityUrl_1 = new VanityUrlDataGen()
+                .forwardTo("/Testing")
+                .uri("/whatever")
+                .action(200)
+                .host(host)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        final Contentlet vanityUrl_2 = new VanityUrlDataGen()
+                .forwardTo("/folder/Testing")
+                .uri("/whatever")
+                .action(200)
+                .host(host)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        final Contentlet vanityUrl_3 = new VanityUrlDataGen()
+                .forwardTo("/folder/sub_folder/Testing")
+                .uri("/whatever")
+                .action(200)
+                .host(host)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        final Contentlet vanityUrl_4 = new VanityUrlDataGen()
+                .forwardTo("/whatever/Testing")
+                .uri("/whatever")
+                .action(200)
+                .host(host)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        final Contentlet vanityUrl_5 = new VanityUrlDataGen()
+                .forwardTo("/folder/whatever")
+                .uri("/whatever")
+                .action(200)
+                .host(host)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        final Contentlet vanityUrl_6 = new VanityUrlDataGen()
+                .forwardTo("/Testing")
+                .uri("/whatever")
+                .action(301)
+                .host(host)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        final Contentlet vanityUrl_7 = new VanityUrlDataGen()
+                .forwardTo("/Testing")
+                .uri("/whatever_2")
+                .action(200)
+                .host(host)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        final Host host_2 = new SiteDataGen().nextPersisted();
+
+        final Contentlet vanityUrl_8 = new VanityUrlDataGen()
+                .forwardTo("/Testing")
+                .uri("/whatever")
+                .action(200)
+                .host(host_2)
+                .nextPersistedAndPublish();
+
+        final Language language_2 = new LanguageDataGen().nextPersisted();
+
+        final Contentlet vanityUrl_9 = new VanityUrlDataGen()
+                .forwardTo("/Testing")
+                .uri("/folder/Testing")
+                .action(200)
+                .host(host)
+                .languageId(language_2.getId())
+                .nextPersistedAndPublish();
+
+        final Contentlet vanityUrl_10 = new VanityUrlDataGen()
+                .forwardTo("/folder/Testing")
+                .uri("/whatever")
+                .action(301)
+                .host(host)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        final Contentlet vanityUrl_11 = new VanityUrlDataGen()
+                .forwardTo("/folder/Testing")
+                .uri("/whatever")
+                .action(302)
+                .host(host)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        final List<CachedVanityUrl> byForward = APILocator.getVanityUrlAPI().findByForward(host, language,
+                "/Testing", 200);
+
+        assertEquals(2, byForward.size());
+
+       final List<String> ids = byForward.stream().map(cachedVanityUrl -> cachedVanityUrl.vanityUrlId)
+                .collect(Collectors.toList());
+
+       assertTrue(ids.contains(vanityUrl_1.getIdentifier()));
+       assertTrue(ids.contains(vanityUrl_7.getIdentifier()));
+    }
+
+    /**
+     * Method to test: {@link VanityUrlAPIImpl#findByForward(Host, Language, String)}
+     * When: Have Vanity Urls with the follow fowardTo values ( the first 2 have the same Lang and Host):
+     * 1) /Testing   (Publish)
+     * 2)  /Testing   (Not Publish)
+     * 3) /Testing   (Publish) with different host
+     * 4) /Testing   (Publish) with different action
+     *
+     * and we call the method with the Host and Language of the first 5 Vanity Urls and with the Regex equals to: "/Testing"
+     *
+     * Should: returns just (1)
+     */
+    @Test
+    public void findByForwardNotReturnUnPublish() {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final Contentlet vanityUrl_1 = new VanityUrlDataGen()
+                .forwardTo("/Testing")
+                .uri("/whatever")
+                .action(200)
+                .host(host)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        final Contentlet vanityUrl_2 = new VanityUrlDataGen()
+                .forwardTo("/Testing")
+                .uri("/whatever")
+                .action(200)
+                .host(host)
+                .languageId(language.getId())
+                .nextPersisted();
+
+        final Contentlet vanityUrl_3 = new VanityUrlDataGen()
+                .forwardTo("/Testing")
+                .uri("/whatever")
+                .action(301)
+                .host(host)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        final Host host_2 = new SiteDataGen().nextPersisted();
+
+        final Contentlet vanityUrl_4 = new VanityUrlDataGen()
+                .forwardTo("/Testing")
+                .uri("/whatever")
+                .action(200)
+                .host(host_2)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        final List<CachedVanityUrl> byForward = APILocator.getVanityUrlAPI().findByForward(host, language,
+                "/Testing", 200);
+
+        assertEquals(1, byForward.size());
+
+        final List<String> ids = byForward.stream().map(cachedVanityUrl -> cachedVanityUrl.vanityUrlId)
+                .collect(Collectors.toList());
+
+        assertTrue(ids.contains(vanityUrl_1.getIdentifier()));
+    }
+
+    /**
+     * Method to test: {@link VanityUrlAPIImpl#findByForward(Host, Language, String)}
+     * When: Have Vanity Urls with the follow fowardTo values (all of them with the same Lang and Host):
+     * 1) /Testing Not Publish
+     * 2) /folder/Testing
+     * 3) /folder/sub_folder/Testing
+     * 4) /whatever/Testing
+     * 5) /folder/whatever
+     *
+     * and we call the method with Regex equals to: "\/folder_2\/.*"
+     *
+     * Should: return an empty list
+     */
+    @Test
+    public void findByForwardReturnedEmptyList(){
+        final Host host = new SiteDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final Contentlet vanityUrl_1 = new VanityUrlDataGen()
+                .forwardTo("/Testing")
+                .uri("/whatever")
+                .action(200)
+                .host(host)
+                .languageId(language.getId())
+                .nextPersisted();
+
+        final Contentlet vanityUrl_2 = new VanityUrlDataGen()
+                .forwardTo("/folder/Testing")
+                .uri("/whatever")
+                .action(200)
+                .host(host)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        final Contentlet vanityUrl_3 = new VanityUrlDataGen()
+                .forwardTo("/folder/sub_folder/Testing")
+                .uri("/whatever")
+                .action(200)
+                .host(host)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        final Contentlet vanityUrl_4 = new VanityUrlDataGen()
+                .forwardTo("/whatever/Testing")
+                .uri("/whatever")
+                .action(200)
+                .host(host)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        final Contentlet vanityUrl_5 = new VanityUrlDataGen()
+                .forwardTo("/folder/whatever")
+                .uri("/whatever")
+                .action(200)
+                .host(host)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        final List<CachedVanityUrl> byForward = APILocator.getVanityUrlAPI().findByForward(host, language,
+                "/Testing", 200);
+
+        assertTrue(byForward.isEmpty());
+    }
 }

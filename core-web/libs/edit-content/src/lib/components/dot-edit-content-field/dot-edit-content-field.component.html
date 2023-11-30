@@ -5,6 +5,7 @@
     dotFieldRequired
     >{{ field.name }}</label
 >
+
 <ng-container [ngSwitch]="field.fieldType">
     <dot-edit-content-select-field
         *ngSwitchCase="fieldTypes.SELECT"
@@ -47,6 +48,11 @@
         [field]="field"
         [attr.data-testId]="'field-' + field.variable" />
 
+    <dot-edit-content-json-field
+        *ngSwitchCase="fieldTypes.JSON"
+        [field]="field"
+        [attr.data-testId]="'field-' + field.variable" />
+
     <dot-edit-content-binary-field
         *ngSwitchCase="fieldTypes.BINARY"
         [formControlName]="field.variable"
@@ -57,6 +63,9 @@
     <dot-block-editor
         *ngSwitchCase="fieldTypes.BLOCK_EDITOR"
         [formControlName]="field.variable"
+        [contentlet]="contentlet"
+        [field]="field"
         [attr.data-testId]="'field-' + field.variable" />
 </ng-container>
+
 <small *ngIf="field.hint" [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>

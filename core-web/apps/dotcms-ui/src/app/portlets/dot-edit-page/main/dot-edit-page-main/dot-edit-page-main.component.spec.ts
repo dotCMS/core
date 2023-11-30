@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { mockProvider } from '@ngneat/spectator';
 import { of, Subject } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -31,6 +32,7 @@ import {
     DotGenerateSecurePasswordService,
     DotLicenseService,
     DotMessageService,
+    DotSessionStorageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
@@ -186,7 +188,8 @@ describe('DotEditPageMainComponent', () => {
                 DotIframeService,
                 LoginService,
                 DotLicenseService,
-                Title
+                Title,
+                mockProvider(DotSessionStorageService)
             ]
         });
     }));

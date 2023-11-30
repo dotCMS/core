@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
 import org.apache.commons.lang3.BooleanUtils;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -67,6 +68,9 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
+    @ConfigProperty(name = "contentType.pageSize", defaultValue = "25")
+    Integer pageSize;
+
     @Override
     public Integer call() throws Exception {
 
@@ -82,7 +86,6 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
 
     private int list() {
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
-        final int pageSize = 10;
         int page = 1;
         while (true) {
             final ResponseEntityView<List<ContentType>> responseEntityView = contentTypeAPI.getContentTypes(

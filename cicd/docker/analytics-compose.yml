@@ -38,7 +38,7 @@ services:
     image: dotcms/configurator:latest
     environment:
       - JITSU_USE_CONFIGURATOR='true'
-      - JITSU_JITSU_CONFIGURATOR=http://jitsu-configurator:7000/
+      - JITSU_JITSU_CONFIGURATOR=http://host.docker.internal:7007/
       - JITSU_CLUSTER_TOKEN=myadmin
       - JITSU_JITSU_SERVER=http://jitsu:8001/
       - QUARKUS_OIDC_AUTH_SERVER_URL=${AUTH_SERVER_URL:-http://host.docker.internal:61111/realms/dotcms}
@@ -64,7 +64,7 @@ services:
     environment:
       - CLUSTER_ADMIN_TOKEN=myadmin
       - REDIS_URL=redis://jitsu_redis:6379
-      - JITSU_CONFIGURATOR_URL=${JITSU_CONFIGURATOR_URL:-http://jitsu-configurator:7000}
+      - JITSU_CONFIGURATOR_URL=${JITSU_CONFIGURATOR_URL:-http://host.docker.internal:7007}
 #      - JITSU_CONFIGURATOR_URL=${JITSU_CONFIGURATOR_URL:-http://dotcms-analytics:8090}
       - SERVER_PORT=8001
       - TERM=xterm-256color
@@ -97,7 +97,7 @@ services:
         condition: service_healthy
     restart: always
     ports:
-      - "${JITSU_CONFIGURATOR_PORT:-7000}:7000"
+      - "${JITSU_CONFIGURATOR_PORT:-7007}:7000"
 
   redis:
     container_name: jitsu_redis

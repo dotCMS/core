@@ -1,0 +1,19 @@
+@use "variables" as *;
+
+:host {
+    min-height: 9.375rem; // 150px
+    height: 100%;
+    width: 100%;
+    overflow: auto;
+    display: block;
+    resize: vertical;
+}
+
+ngx-monaco-editor {
+    border-radius: $border-radius-md;
+    border: $field-border-size solid $color-palette-gray-400;
+    display: block;
+    height: 100%;
+    overflow: auto;
+    width: 100%;
+}

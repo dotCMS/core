@@ -78,11 +78,7 @@ public final class ReleaseInfo {
     }
 
     public static String getBuildDateString() {
-        return new SimpleDateFormat("MMMM dd, yyyy", Locale.US).format(getBuildDate());
-    }
-
-    public static String getBuildDateString(Locale locale) {
-        return DateFormat.getDateInstance(DateFormat.LONG, locale).format(getBuildDate());
+        return new SimpleDateFormat("MMMM dd, yyyy h:mm a", Locale.US).format(getBuildDate());
     }
 
     public static Date getBuildDate() {

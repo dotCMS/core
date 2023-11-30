@@ -237,63 +237,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 equals(experimentToSave.scheduling());
     }
 
-    private static boolean isUrlParameterOrReachPage(Goals goals) {
-        final MetricType metricType = goals.primary().getMetric().type();
-        return metricType == MetricType.URL_PARAMETER || metricType == MetricType.REACH_PAGE;
-    }
-
-    private static boolean isExitOrBounceRate(Goals goals) {
-        final MetricType metricType = goals.primary().getMetric().type();
-        return metricType == MetricType.EXIT_RATE || metricType == MetricType.BOUNCE_RATE;
-    }
-
-    private void addVisitBeforeCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
-
-        final com.dotcms.analytics.metrics.Condition visitBefore = com.dotcms.analytics.metrics.Condition.builder()
-                .parameter("visitBefore")
-                //.operator(Operator.REGEX)
-                .value(ExperimentUrlPatternCalculator.INSTANCE.calculatePageUrlRegexPattern(page))
-                .build();
-
-        final Goals newGoal = createNewGoals(goals, visitBefore);
-        builder.goals(newGoal);
-    }
-
-    private void addUrlCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
-
-        final com.dotcms.analytics.metrics.Condition refererCondition = createConditionWithUrlValue(
-                page, "url");
-
-        final Goals newGoal = createNewGoals(goals, refererCondition);
-        builder.goals(newGoal);
-    }
-
-    @NotNull
-    private static Goals createNewGoals(final Goals oldGoals,
-            final com.dotcms.analytics.metrics.Condition newConditionToAdd) {
-        final Metric newMetric = Metric.builder().from(oldGoals.primary().getMetric())
-                .addConditions(newConditionToAdd).build();
-        final Goal newGoal = GoalFactory.create(newMetric);
-        return Goals.builder().from(oldGoals).primary(newGoal).build();
-    }
-
-    private boolean hasCondition(final Goals goals, final String conditionName){
-        return goals.primary().getMetric().conditions()
-                .stream()
-                .anyMatch(condition ->conditionName .equals(condition.parameter()));
-    }
-    private com.dotcms.analytics.metrics.Condition createConditionWithUrlValue(
-            final HTMLPageAsset page,
-            final String conditionName) {
-
-            return com.dotcms.analytics.metrics.Condition.builder()
-                    .parameter(conditionName)
-                    //.operator(Operator.REGEX)
-                    .value(ExperimentUrlPatternCalculator.INSTANCE.calculatePageUrlRegexPattern(page))
-                    .build();
-
-    }
-
     private void saveTargetingConditions(final Experiment experiment, final User user)
             throws DotDataException, DotSecurityException {
         if(experiment.targetingConditions().isEmpty()) {
@@ -1075,9 +1018,22 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final TrafficProportion weightedTraffic = persistedExperiment.trafficProportion()
                 .withVariants(weightedVariants);
         final Experiment withUpdatedTraffic = persistedExperiment.withTrafficProportion(weightedTraffic);
-        final Experiment fromDB = save(withUpdatedTraffic, user);
+        Experiment fromDB = save(withUpdatedTraffic, user);
         variantAPI.archive(toDelete.name());
         variantAPI.delete(toDelete.name());
+
+        if(withUpdatedTraffic.trafficProportion().variants().size()==1
+                && VariantAPI.DEFAULT_VARIANT.name()
+                .equals(withUpdatedTraffic.trafficProportion().variants().first().id())) {
+            final TrafficProportion currentTrafficProportion = withUpdatedTraffic.trafficProportion();
+            final TrafficProportion splitEvenlyTrafficProportion = TrafficProportion.builder()
+                    .from(currentTrafficProportion).type(Type.SPLIT_EVENLY).build();
+
+            fromDB = save(withUpdatedTraffic.withTrafficProportion(splitEvenlyTrafficProportion),
+                    user);
+        }
+
+
         return fromDB;
 
     }

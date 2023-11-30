@@ -1089,6 +1089,13 @@ public interface WorkflowAPI {
 	boolean hasDestroyActionlet(final WorkflowAction action);
 
 	/**
+	 * Return the count of Steps in all Schemas
+	 *
+	 * @return
+	 */
+	long countAllSchemasSteps(User user) throws DotDataException, DotSecurityException;
+
+	/**
 	 * This method creates a WorkflowTask (does not persists it) based on the information on the contentlet (id + lang),
 	 * user (role to assign, and created by), workflowStep (status 'current step'), title and description
 	 *
