@@ -42,7 +42,7 @@ export class DotContentletsComponent implements AfterViewInit {
             .slice(0, -1)
             .join('/');
 
-        this.dotRouterService.gotoPortlet(portletUrl);
+        this.dotRouterService.gotoPortlet(portletUrl, { queryParamsHandling: 'preserve' });
         this.dotIframeService.reloadData(this.dotRouterService.currentPortlet.id);
     }
 
