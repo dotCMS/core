@@ -112,28 +112,27 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRO }}
 
-      - name: Set Release Version
-        id: set-version
-        run: |
-          release_version=${{ steps.set-common-vars.outputs.release_version }}
-          ./mvnw -B -ntp \
-            ${JVM_TEST_MAVEN_OPTS} \
-             versions:set \
-             versions:commit \
-             -DnewVersion=${release_version} \
-             -DprocessAllModules=true
-          
-          git status
-          git commit -a -m "🏁 Releasing version ${release_version}"
-          git push origin ${{ steps.set-common-vars.outputs.release_branch }}
-
       - name: Build Core
         run: |
+          release_version=${{ steps.set-common-vars.outputs.release_version }}
+          
           ./mvnw -B -ntp \
+            ${JVM_TEST_MAVEN_OPTS} \
+            versions:set \
+            versions:commit \
+            -DnewVersion=${release_version} \
+            -DprocessAllModules=true
+          
+          ./mvnw -B -ntp \
+            ${JVM_TEST_MAVEN_OPTS} \
             versions:set-property \
             -Dproperty=tika.api.version \
             -DnewVersion=99.12.31 \
             --file independent-projects/pom.xml
+          
+          git status
+          git commit -a -m "🏁 Publishing release version [${release_version}]"
+          git push origin ${{ steps.set-common-vars.outputs.release_branch }}
           
           mkdir -p ${DOCKER_BUILD_CONTEXT}
           ./mvnw -B -ntp \
@@ -147,12 +146,14 @@ jobs:
             --file pom.xml \
             --show-version
           
+          git status
+
       - name: Cache Maven Repository
         id: cache-maven
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: mavencore-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
+          key: maven-core-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
           restore-keys: |
             maven-core-${{ steps.set-common-vars.outputs.date }}
 
@@ -166,7 +167,7 @@ jobs:
 #            ./dotCMS/target/dotcms-core-${{ steps.set-common-vars.outputs.release_version }}.zip
 #          key: maven-core-output-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
 #          restore-keys: |
-#            core-output-${{ steps.set-common-vars.outputs.date }}
+#            maven-core-output-${{ steps.set-common-vars.outputs.date }}
 
       - name: Cache Node Binary
         id: cache-node-binary
@@ -190,7 +191,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ env.DOCKER_BUILD_CONTEXT }}
-          key: docker-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
+          key: docker-context-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
           restore-keys: |
             docker-context-${{ steps.set-common-vars.outputs.date }}
 
