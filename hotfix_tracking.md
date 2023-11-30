@@ -208,3 +208,6 @@ This maintenance release includes the following code fixes:
 174. https://github.com/dotCMS/core/issues/25870 : Using showFields field variable replicates title to all items #25870
 175. https://github.com/dotCMS/core/issues/26374 : Use of Png filter on images results in a 404 #26374
 176. https://github.com/dotCMS/core/issues/26391 : custom REST CORS header configuration is not applied to responses #26391
+
+**Release-22.03.12**
+
