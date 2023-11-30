@@ -6,7 +6,7 @@
     "prefix": "dotcms",
     "targets": {
         "lint": {
-            "executor": "@nrwl/linter:eslint",
+            "executor": "@nx/eslint:lint",
             "options": {
                 "lintFilePatterns": ["libs/ui/src/**/*.ts", "libs/ui/src/**/*.html"]
             },

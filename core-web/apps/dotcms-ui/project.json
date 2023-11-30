@@ -101,18 +101,18 @@
         "serve": {
             "executor": "@angular-devkit/build-angular:dev-server",
             "options": {
-                "browserTarget": "dotcms-ui:build:development",
-                "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs"
+                "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",
+                "buildTarget": "dotcms-ui:build:development"
             }
         },
         "extract-i18n": {
             "executor": "@angular-devkit/build-angular:extract-i18n",
             "options": {
-                "browserTarget": "dotcms-ui:build"
+                "buildTarget": "dotcms-ui:build"
             }
         },
         "lint": {
-            "executor": "@nrwl/linter:eslint",
+            "executor": "@nx/eslint:lint",
             "options": {
                 "lintFilePatterns": ["apps/dotcms-ui/src/**/*.ts", "apps/dotcms-ui/src/**/*.html"]
             },
