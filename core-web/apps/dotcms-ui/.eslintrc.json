@@ -24,7 +24,8 @@
                         "prefix": "dot",
                         "style": "kebab-case"
                     }
-                ]
+                ],
+                "@typescript-eslint/no-duplicate-enum-values": "off"
             }
         },
         {
