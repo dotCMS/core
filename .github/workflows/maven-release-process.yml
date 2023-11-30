@@ -316,12 +316,11 @@ jobs:
           
           site_dir=./dotCMS/target/site
           javadoc_dir=${site_dir}/javadocs
+          s3_uri=s3://static.dotcms.com/docs/${{ needs.prepare-release.outputs.release_version }}/javadocs
           
           mv ${site_dir}/apidocs ${javadoc_dir}
-          aws s3 cp \
-            ${javadoc_dir} \ 
-            s3://static.dotcms.com/docs/${{ needs.prepare-release.outputs.release_version }}/javadocs \
-            --recursive
+          echo "Running: aws s3 cp ${javadoc_dir} ${s3_uri} --recursive"
+          aws s3 cp ${javadoc_dir} ${s3_uri} --recursive
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
