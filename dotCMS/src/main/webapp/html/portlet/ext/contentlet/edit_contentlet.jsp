@@ -21,7 +21,7 @@
 	public boolean isNextFieldFullScreen(Structure structure, Field oldField) {
 
 		try{
-			ContentType type = new StructureTransformer(structure).from();
+			ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(structure.getInode());
 			com.dotcms.contenttype.model.field.Field fieldIn = LegacyFieldTransformer.from(oldField);
 			com.dotcms.contenttype.model.field.Field field = type.fields().subList(type.fields().indexOf(fieldIn), type.fields().size()).stream().filter(f->!(f instanceof RowField || f instanceof ColumnField || f instanceof TabDividerField)).findFirst().get();
 			return isFullScreenField(field);
