@@ -44,7 +44,7 @@ export class EmaLanguageSelectorComponent {
         );
 
     /**
-     * Set the selected language in the store
+     * Handle the change of the language
      *
      * @param {{ event: Event; value:DotLanguageWithLabel }} { value }
      * @memberof EmaLanguageSelectorComponent
