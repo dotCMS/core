@@ -46,6 +46,10 @@
             <param-value>${CMS_HSTS_INCLUDE_SUB_DOMAINS}</param-value>
         </init-param>
         <init-param>
+            <param-name>hstsPreload</param-name>
+            <param-value>${CMS_HSTS_PRELOAD}</param-value>
+        </init-param>
+        <init-param>
             <param-name>antiClickJackingEnabled</param-name>
             <param-value>${CMS_ANTI_CLICK_JACKING_ENABLED}</param-value>
         </init-param>
