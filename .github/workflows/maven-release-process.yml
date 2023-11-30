@@ -127,10 +127,11 @@ jobs:
           git commit -a -m "🏁 Releasing version ${release_version}"
           git push origin ${{ steps.set-common-vars.outputs.release_branch }}
 
-      - name: Build Core (no tests)
+      - name: Build Core
         run: |
-          ./mvnw -B -ntp ${JVM_TEST_MAVEN_OPTS} clean install --file parent/pom.xml
-          ./mvnw -B -ntp ${JVM_TEST_MAVEN_OPTS} clean install --file bom/pom.xml
+#          ./mvnw -B -ntp ${JVM_TEST_MAVEN_OPTS} clean install --file bom/pom.xml
+#          ./mvnw -B -ntp ${JVM_TEST_MAVEN_OPTS} clean install --file parent/pom.xml
+          ./mvnw -B -ntp versions:set-property -Dproperty=tika.api.version -DnewVersion=99.12.31 --file independent-projects/pom.xml
           
           mkdir -p ${DOCKER_BUILD_CONTEXT}
           ./mvnw -B -ntp \
