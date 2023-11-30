@@ -4375,6 +4375,26 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return workFlowFactory.countAllSchemasSteps();
 	}
 
+	public long countAllSchemasActions(final User user) throws DotDataException, DotSecurityException {
+		try {
+			this.isUserAllowToModifiedWorkflow(user);
+		} catch (WorkflowPortletAccessException | InvalidLicenseException e) {
+			throw new DotSecurityException(e.getMessage(), e);
+		}
+
+		return workFlowFactory.countAllSchemasActions();
+	}
+
+	public long countAllSchemasSubActions(final User user) throws DotDataException, DotSecurityException {
+		try {
+			this.isUserAllowToModifiedWorkflow(user);
+		} catch (WorkflowPortletAccessException | InvalidLicenseException e) {
+			throw new DotSecurityException(e.getMessage(), e);
+		}
+
+		return workFlowFactory.countAllSchemasSubActions();
+	}
+
 	@Override
 	public WorkflowTask createWorkflowTask(final Contentlet contentlet, final User user,
 									final WorkflowStep workflowStep, final String title, String description) throws DotDataException {

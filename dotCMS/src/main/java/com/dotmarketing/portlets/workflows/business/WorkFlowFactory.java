@@ -488,9 +488,23 @@ public interface WorkFlowFactory {
     void deleteWorkflowTaskByLanguage(Language language) throws DotDataException;
 
 	/**
-	 * Return the count of Steps in all Schemas
+	 * Return the count of Steps in all not archived  Schemas
 	 *
 	 * @return
 	 */
 	long countAllSchemasSteps() throws DotDataException;
+
+	/**
+	 * Return the count of Action in all not archived Schemas
+	 *
+	 * @return
+	 */
+	long countAllSchemasActions() throws DotDataException;
+
+	/**
+	 * Return the count of SubAction in all Action
+	 *
+	 * @return
+	 */
+	long countAllSchemasSubActions() throws DotDataException;
 }
