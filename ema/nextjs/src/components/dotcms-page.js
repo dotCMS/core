@@ -20,6 +20,8 @@ export const DotcmsPage = () => {
     // Get the page layout from the global context
     const { layout, page } = useContext(GlobalContext);
 
+    console.log(page.identifier);
+
     useEffect(() => {
         const url = pathname.split('/');
 

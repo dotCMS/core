@@ -27,6 +27,7 @@ import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 import { EditEmaStore } from './store/dot-ema.store';
 
 import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaPersonaSelectorComponent } from '../components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaToolbarComponent } from '../components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_LANGUAGE_ID, DEFAULT_URL, WINDOW } from '../shared/consts';
@@ -45,7 +46,8 @@ import { deleteContentletFromContainer, insertContentletInContainer } from '../u
         DotSpinnerModule,
         ConfirmDialogModule,
         EditEmaToolbarComponent,
-        EmaLanguageSelectorComponent
+        EmaLanguageSelectorComponent,
+        EditEmaPersonaSelectorComponent
     ],
     providers: [
         EditEmaStore,
