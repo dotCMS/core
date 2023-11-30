@@ -211,3 +211,5 @@ This maintenance release includes the following code fixes:
 
 **Release-22.03.12**
 
+177. https://github.com/dotCMS/core/issues/18575 : DotCMS uses incorrect language when adding new content #18575
+178. 
