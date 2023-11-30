@@ -77,13 +77,13 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-<<<<<<< HEAD
+
 import io.vavr.control.Try;
-=======
+
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
->>>>>>> origin/master
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
