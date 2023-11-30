@@ -124,13 +124,15 @@ jobs:
              -DprocessAllModules=true
           
           git status
-          git commit -a -m "🏁 Releasing version $release_version"
+          git commit -a -m "🏁 Releasing version ${release_version}"
           git push origin ${{ steps.set-common-vars.outputs.release_branch }}
 
       - name: Build Core (no tests)
         shell: bash
         run: |
-          echo "Creating $DOCKER_BUILD_CONTEXT"
+          ./mvnw clean install -DskipTests -DskipITs --file bom/pom.xml
+          ./mvnw clean install -DskipTests -DskipITs --file parent/pom.xml
+          
           mkdir -p ${DOCKER_BUILD_CONTEXT}
           ./mvnw -Dprod=true \
             ${JVM_TEST_MAVEN_OPTS} \
