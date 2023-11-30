@@ -117,14 +117,14 @@ jobs:
         run: |
           release_version=${{ steps.set-common-vars.outputs.release_version }}
           
-          ./mvnw -B -ntp \
+          ./mvnw -ntp \
             ${JVM_TEST_MAVEN_OPTS} \
             versions:set \
             versions:commit \
             -DnewVersion=${release_version} \
             -DprocessAllModules=true
           
-          ./mvnw -B -ntp \
+          ./mvnw -ntp \
             ${JVM_TEST_MAVEN_OPTS} \
             versions:set-property \
             -Dproperty=tika.api.version \
@@ -139,7 +139,7 @@ jobs:
           echo "release_commit=${release_commit}" >> $GITHUB_OUTPUT
           
           mkdir -p ${DOCKER_BUILD_CONTEXT}
-          ./mvnw -B -ntp \
+          ./mvnw -ntp \
             ${JVM_TEST_MAVEN_OPTS} \
             -Dprod=true \
             -Ddocker.buildArchiveOnly=${DOCKER_BUILD_CONTEXT} \
@@ -159,17 +159,17 @@ jobs:
           restore-keys: |
             maven-core-${{ steps.set-common-vars.outputs.date }}
 
-#      - name: Cache Core Output
-#        id: cache-core-output
-#        uses: actions/cache@v3
-#        with:
-#          path: |
-#            ./dotCMS/target/classes
-#            ./dotCMS/target/generated-sources
-#            ./dotCMS/target/dotcms-core-${{ steps.set-common-vars.outputs.release_version }}.zip
-#          key: maven-core-output-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
-#          restore-keys: |
-#            maven-core-output-${{ steps.set-common-vars.outputs.date }}
+      - name: Cache Core Output
+        id: cache-core-output
+        uses: actions/cache@v3
+        with:
+          path: |
+            ./dotCMS/target/classes
+            ./dotCMS/target/generated-sources
+            ./dotCMS/target/dotcms-core-${{ steps.set-common-vars.outputs.release_version }}.zip
+          key: maven-core-output-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
+          restore-keys: |
+            maven-core-output-${{ steps.set-common-vars.outputs.date }}
 
       - name: Cache Node Binary
         id: cache-node-binary
@@ -224,14 +224,15 @@ jobs:
           path: ~/.m2/repository
           key: maven-core-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
 
-#      - name: Restore Core Output
-#        id: restore-core-output
-#        uses: actions/cache/restore@v3
-#        with:
-#          path: |
-#            ./dotCMS/target/classes
-#            ./dotCMS/target/generated-sources
-#          key: core-output-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
+      - name: Restore Core Output
+        id: restore-core-output
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            ./dotCMS/target/classes
+            ./dotCMS/target/generated-sources
+            ./dotCMS/target/dotcms-core-${{ needs.prepare-release.outputs.release_version }}.zip
+          key: core-output-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
 
       - name: Restore Node Binary
         id: restore-node-binary
@@ -273,7 +274,7 @@ jobs:
 
 #      - name: Deploy Release
 #        run: |
-#          ./mvnw -B -ntp \
+#          ./mvnw -ntp \
 #            ${JVM_TEST_MAVEN_OPTS} \
 #            -Dprod=true \
 #            -DskipTests=true \
@@ -296,10 +297,10 @@ jobs:
 
       - name: Generate/Push Javadoc
         run: |
-          ./mvnw -B -ntp \
+          ./mvnw -ntp \
             ${JVM_TEST_MAVEN_OPTS} \
-            --file dotCMS/pom.xml \
-            javadoc:javadoc
+            javadoc:javadoc \
+            --file dotCMS/pom.xml
           rc=$?
           if [[ $rc != 0 ]]; then
             echo "Javadoc generation failed with exit code $rc"
