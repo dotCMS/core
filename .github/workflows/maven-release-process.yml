@@ -80,6 +80,37 @@ jobs:
           echo "is_lts=${is_lts}" >> $GITHUB_OUTPUT
           echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
 
+      - name: Create Release Tag
+        id: create-release-tag
+        run: |
+           git config user.name "GitHub Actions"
+           git config user.email "actions@github.com"
+           
+           release_tag=${{ steps.set-common-vars.outputs.release_tag }}
+           if git rev-parse "${release_tag}" >/dev/null 2>&1; then 
+            echo "Tag ${release_tag} exists, removing it"
+            git push origin :refs/tags/${release_tag}
+           fi
+      
+          release_branch=${{ steps.set-common-vars.outputs.release_branch }}
+          remote=$(git ls-remote --heads https://github.com/dotCMS/core.git ${release_branch} | wc -l | tr -d '[:space:]')
+          is_lts_trunk=false
+          if [[ "${remote}" == '1' ]]; then
+            if [[ ${{ steps.set-common-vars.outputs.release_version }} =~ [0-9]{2}.[0-9]{2}.[0-9]{2}_lts ]]; then
+              is_lts_trunk=true
+              echo "LTS release branch ${release_branch} already exists, ignoring removal"
+            else
+              echo "Release branch ${release_branch} already exists, removing it"
+              git push origin :${release_branch}
+            fi
+          fi
+
+          git reset --hard ${{ steps.set-common-vars.outputs.release_commit }}
+          if [[ ${is_lts_trunk} == 'false' ]]; then
+            git checkout -b ${release_branch}
+            git push origin ${release_branch}
+          fi
+
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
