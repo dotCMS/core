@@ -16,6 +16,7 @@ import {
     DotCrudService,
     DotLicenseService,
     DotMessageService,
+    DotSessionStorageService,
     DotWorkflowActionsFireService,
     PaginatorService
 } from '@dotcms/data-access';
@@ -79,6 +80,7 @@ const PROVIDERS: Provider[] = [
     DotWorkflowActionsFireService,
     DotGlobalMessageService,
     CanDeactivateGuardService,
+    DotSessionStorageService,
     {
         provide: TitleStrategy,
         useClass: DotTitleStrategy

@@ -961,12 +961,16 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     save(builder.build());
   }
 
-    @Override
-    public boolean isContentTypeAllowed(ContentType contentType) {
-        return LicenseManager.getInstance().isEnterprise() || !BaseContentType
-                .getEnterpriseBaseTypes().contains(contentType.baseType());
-    }
 
+  @Override
+  public boolean isContentTypeAllowed(ContentType contentType) {
+      return LicenseManager.getInstance().isEnterprise() || !BaseContentType
+              .getEnterpriseBaseTypes().contains(contentType.baseType());
+  }
+
+  public long countContentTypeAssignedToNotSystemWorkflow() throws DotDataException {
+    return contentTypeFactory.countContentTypeAssignedToNotSystemWorkflow();
+  }
   /**
    * Utility method which verifies whether the current User has {@link PermissionAPI#PERMISSION_READ} permission on a
    * given Content Type or not.
