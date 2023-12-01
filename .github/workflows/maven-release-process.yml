@@ -412,12 +412,10 @@ jobs:
           images: |
             dotcms/dotcms
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,enable=true,priority=100,prefix=,suffix=_,format=short
+            type=raw,value={{version}}_{{sha}},enable=true
+            type=raw,value={{version}},enable=true
             type=raw,value=latest,enable=true
+
       - name: Debug docker metadata
         run: |
           echo "${{ fromJSON(steps.meta.outputs.json) }}"
