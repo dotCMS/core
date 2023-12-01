@@ -16578,7 +16578,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR ",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -16590,6 +16590,12 @@
 								"default",
 								"fire",
 								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR "
+								}
 							]
 						}
 					},
@@ -16627,7 +16633,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR ",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -16639,6 +16645,12 @@
 								"default",
 								"fire",
 								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR "
+								}
 							]
 						}
 					},
