@@ -7421,6 +7421,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    /**
+     * This method parse the date value and set it to the contentlet
+     * The value could be a number (translated to an unix timestamp as Date)
+     * A string (translated to a Date using the dateFormats)
+     * Or an actual date (which is just set as it is)
+     * Otherwise throws an exception ({@link DotContentletStateException}).
+     * @param contentlet
+     * @param field
+     * @param value
+     * @param dateFormats
+     */
     private static void parseDate(final Contentlet contentlet,
                                   final Field field,
                                   final Object value,
@@ -7437,15 +7448,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setDateProperty(field.getVelocityVarName(),
                             DateUtil.convertDate(trimmedValue, dateFormats));
                 } catch (Exception e) {
+
                     throw new DotContentletStateException(
-                            "Unable to convert string to date " + value);
+                            "Unable to convert string to date " + value + ", field: " +
+                                    field.getVelocityVarName());
                 }
             } else {
+                
                 contentlet.setDateProperty(field.getVelocityVarName(), null);
             }
         } else if (field.isRequired() && value == null) {
+
             throw new DotContentletStateException(
-                    "Date fields must either be of type String or Date");
+                    "Date fields must either be of type String or Date, field: " +
+                            field.getVelocityVarName());
         }
     }
 
