@@ -47,7 +47,7 @@ public class FilePullHandler implements CustomPullHandler<FileTraverseResult> {
     }
 
     @Override
-    public String startPullingHeader(List<FileTraverseResult> contents) {
+    public String startPullingHeader(final List<FileTraverseResult> contents) {
         return String.format("\rPulling %s", title());
     }
 

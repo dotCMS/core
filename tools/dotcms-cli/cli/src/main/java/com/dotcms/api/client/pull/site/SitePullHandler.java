@@ -16,7 +16,7 @@ public class SitePullHandler implements GeneralPullHandler<SiteView> {
     }
 
     @Override
-    public String startPullingHeader(List<SiteView> contents) {
+    public String startPullingHeader(final List<SiteView> contents) {
 
         return String.format("\r@|bold,green [%d]|@ %s to pull",
                 contents.size(),

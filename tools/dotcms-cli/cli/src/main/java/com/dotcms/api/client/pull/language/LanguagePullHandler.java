@@ -15,7 +15,7 @@ public class LanguagePullHandler implements GeneralPullHandler<Language> {
     }
 
     @Override
-    public String startPullingHeader(List<Language> contents) {
+    public String startPullingHeader(final List<Language> contents) {
 
         return String.format("\r@|bold,green [%d]|@ %s to pull",
                 contents.size(),
