@@ -3,7 +3,7 @@ import { EMPTY, Observable, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { map, switchMap, withLatestFrom } from 'rxjs/operators';
+import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
 
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
