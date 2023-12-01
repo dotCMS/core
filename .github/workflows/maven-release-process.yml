@@ -25,7 +25,7 @@ env:
   NODE_VERSION: 16
   DOCKER_BUILD_CONTEXT: /home/runner/work/_temp/core-build
   GITHUB_USER: victoralfaro-dotcms
-  GITHUB_PUSH_URL: 'https://${{ env.GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com'
+  GITHUB_PUSH_URL: https://${{ env.GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com
   CORE_GITHUB_PUSH_URL: ${{ env.GITHUB_PUSH_URL }}/${{ github.repository }}
 
 jobs:
