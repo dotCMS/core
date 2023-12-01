@@ -8,6 +8,11 @@ on:
       release_commit:
         description: 'Commit Hash (default to latest commit)'
         required: false
+      create_release_branch:
+        description: 'Create release branch'
+        type: boolean
+        default: true
+        required: false
       update_github_labels:
         description: 'Update GitHub labels'
         type: boolean
@@ -56,6 +61,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          token: ${{ secrets.CICD_GITHUB_TOKEN }}
 
       - name: Set Common Vars
         id: set-common-vars
@@ -65,7 +71,11 @@ jobs:
 
           release_version=${{ github.event.inputs.release_version }}
           release_tag=v${release_version}
-          release_branch=release-${release_version}
+          if [[ "${{ github.event.inputs.create_release_branch }}" == 'true' ]]; then
+            release_branch=release-${release_version}
+          else
+            release_branch=master
+          fi
           release_commit=${{ github.event.inputs.release_commit }}
           if [[ -z "${release_commit}" ]]; then
               release_commit=$(git log -1 --pretty=%H)
@@ -92,19 +102,21 @@ jobs:
       
           is_lts_trunk=false
           release_branch=${{ steps.set-common-vars.outputs.release_branch }}
-          remote=$(git ls-remote --heads https://github.com/dotCMS/core.git ${release_branch} | wc -l | tr -d '[:space:]')
-          if [[ "${remote}" == '1' ]]; then
-            if [[ ${{ steps.set-common-vars.outputs.release_version }} =~ [0-9]{2}.[0-9]{2}.[0-9]{2}_lts ]]; then
-              is_lts_trunk=true
-              echo "LTS release branch ${release_branch} already exists, ignoring removal"
-            else
-              echo "Release branch ${release_branch} already exists, removing it"
-              git push origin :${release_branch}
+          if [[ "${release_branch}" != 'master' ]]; then
+            remote=$(git ls-remote --heads https://github.com/dotCMS/core.git ${release_branch} | wc -l | tr -d '[:space:]')
+            if [[ "${remote}" == '1' ]]; then
+              if [[ ${{ steps.set-common-vars.outputs.release_version }} =~ [0-9]{2}.[0-9]{2}.[0-9]{2}_lts ]]; then
+                is_lts_trunk=true
+                echo "LTS release branch ${release_branch} already exists, ignoring removal"
+              else
+                echo "Release branch ${release_branch} already exists, removing it"
+                git push origin :${release_branch}
+              fi
             fi
           fi
 
           git reset --hard ${{ steps.set-common-vars.outputs.release_commit }}
-          if [[ ${is_lts_trunk} == 'false' ]]; then
+          if [[ "${release_branch}" != 'master' && ${is_lts_trunk} == 'false' ]]; then
             git checkout -b ${release_branch}
             git push origin ${release_branch}
           fi
@@ -119,6 +131,7 @@ jobs:
         id: build-core
         run: |
           release_version=${{ steps.set-common-vars.outputs.release_version }}
+          release_branch=${{ steps.set-common-vars.outputs.release_branch }}
           
           ./mvnw -ntp \
             ${JVM_TEST_MAVEN_OPTS} \
@@ -136,7 +149,11 @@ jobs:
           
           git status
           git commit -a -m "🏁 Publishing release version [${release_version}]"
-          git push origin ${{ steps.set-common-vars.outputs.release_branch }}
+          if [[ "${release_branch}" == 'master' ]]; then
+            git push https://${GITHUB_USER}:${{ secrets.CICD_GITHUB_TOKEN }}@${{ github.repository }}
+          else
+            git push origin ${release_branch}
+          fi
           
           release_commit=$(git log -1 --pretty=%H)
           echo "release_commit=${release_commit}" >> $GITHUB_OUTPUT
@@ -342,7 +359,7 @@ jobs:
           git config user.email "actions@github.com"
           
           release_version=${{ needs.prepare-release.outputs.release_version }}
-          release_branch=${{ needs.prepare-release.outputs.release_branch }}
+          release_branch=release-${release_version}
           
           remote=$(git ls-remote --heads https://github.com/dotCMS/plugin-seeds.git ${release_branch} | wc -l | tr -d '[:space:]')
           if [[ "${remote}" == '1' ]]; then
@@ -435,7 +452,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Build base image
+      - name: Build Docker Image
         uses: docker/build-push-action@v5
         with:
           context: ${{ env.DOCKER_BUILD_CONTEXT }}/context
