@@ -333,6 +333,7 @@ jobs:
           ref: master
           fetch-depth: 0
           token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          path: ${{ github.workspace }}/plugin-seeds
 
       - name: Update Plugins
         working-directory: ${{ github.workspace }}/plugin-seeds
