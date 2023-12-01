@@ -59,9 +59,11 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLScalarType;
 import graphql.schema.PropertyDataFetcher;
 import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -78,6 +80,13 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
     INSTANCE;
 
+    public enum PrimitiveGraphQLType {
+        STRING,
+        INT,
+        FLOAT,
+        BOOLEAN,
+        ID
+    }
     private GraphQLFieldGeneratorFactory fieldGeneratorFactory = new GraphQLFieldGeneratorFactory();
 
     private final Map<Class<? extends Field>, GraphQLOutputType> fieldClassGraphqlTypeMap = new HashMap<>();
@@ -277,6 +286,9 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
             // get new field's type
             final GraphQLType fieldGraphQLType = getGraphqlTypeForFieldClass(field.type(), field);
 
+            if (isPrimitiveFieldType(inheritedFieldGraphQLType)) {
+                return false;
+            }
             // if at least one of them is a custom type, they need to be equal to be compatible
             return (!isCustomFieldType(inheritedFieldGraphQLType)
                     && !isCustomFieldType(fieldGraphQLType))
@@ -285,6 +297,12 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         }
 
         return true;
+    }
+
+    private boolean isPrimitiveFieldType( GraphQLType type) {
+            return type instanceof GraphQLScalarType &&
+                    type.getName() != null &&
+                    Arrays.stream(PrimitiveGraphQLType.values()).anyMatch((primitiveType) -> primitiveType.name().equalsIgnoreCase(type.getName()));
     }
 
     @VisibleForTesting

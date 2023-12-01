@@ -50,6 +50,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -99,14 +101,14 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
      */
 	@Test
 	public void testSelectByContentTypeInDb() throws DotDataException, DotSecurityException {
-	    ContentType contentType = null;
+		ContentType contentType = null;
 
-	    try {
+		try {
             contentType = getContentTypeForTest(null);
             validateFieldsOrder(fieldFactory.selectByContentTypeInDb(contentType.id()));
         } finally {
-	        if (contentType != null && contentType.id() != null){
-	            contentTypeApi.delete(contentType);
+			if (contentType != null && contentType.id() != null){
+				contentTypeApi.delete(contentType);
             }
         }
     }
@@ -272,19 +274,19 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 	@Test
 	public void testTextDBColumn() throws Exception {
 
-	    String uu = UUID.randomUUID().toString();
+		String uu = UUID.randomUUID().toString();
 
-	    TextField textField = ImmutableTextField.builder().name("test field" + uu)
-	            .variable(TEST_VAR_PREFIX + uu).contentTypeId(newsLikeContentType.id()).hint("my hint")
-	            .dataType(DataTypes.TEXT).id(uu).build();
+		TextField textField = ImmutableTextField.builder().name("test field" + uu)
+				.variable(TEST_VAR_PREFIX + uu).contentTypeId(newsLikeContentType.id()).hint("my hint")
+				.dataType(DataTypes.TEXT).id(uu).build();
 
-	    Field savedField = fieldFactory.save(textField);
-	    String inode = savedField.inode();
-	    Field field2 = fieldFactory.byId(inode);
-	    assertThat("field2 text data type", field2.dataType() == DataTypes.TEXT);
-	    assertThat("field2 text db column", field2.dbColumn().matches("text[0-9]+"));
+		Field savedField = fieldFactory.save(textField);
+		String inode = savedField.inode();
+		Field field2 = fieldFactory.byId(inode);
+		assertThat("field2 text data type", field2.dataType() == DataTypes.TEXT);
+		assertThat("field2 text db column", field2.dbColumn().matches("text[0-9]+"));
 	}
-	
+
 
 
     @Test
@@ -398,10 +400,9 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
         assertThat("testBadBoolDBColumn select data type", field2.dataType() == DataTypes.BOOL);
         assertThat("testBadBoolDBColumn select db column", field2.dbColumn().matches("bool[0-9]+"));
     }
-    
-	
-	
-    @Test
+
+
+	@Test
     public void testTextIntColumn() throws Exception {
 
         String uu = UUID.randomUUID().toString();
@@ -470,7 +471,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
         //assertThat("binField system_field db column", field2.dbColumn().matches("system_field"));
 
     }
-    
+
 	@Test
 	public void testDataTypeLimit() throws Exception {
 
@@ -624,22 +625,21 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
 		Map<String, String> testingNames =
 				ImmutableMap.<String, String>builder().put("This is a Variable", "thisIsAVariable")
-				.put("HereIs ONe", "hereisOne")
-				.put("A. A. Milne", "aAMilne")
-				.put("test", "test")
-				.put("teSt", "teSt1")
-				.put("TEST", "test2")
-				.put("TeST", "test3")
-				.put("TeSt", "test4")
-				.put("Test", "test5")
-				.put("1 x 2/5", "x25")
-				.put("Test5", "test51")
-				.put("SKU", "sku")
-				.put("Camel Case DOne Wrong", "camelCaseDoneWrong")
-				.put("NOOWORK ee", "nooworkEe")
-				.put("#@%!$Q#^QAGR", "qQagr")
-				.build();
-
+						.put("HereIs ONe", "hereisOne")
+						.put("A. A. Milne", "aAMilne")
+						.put("test", "test")
+						.put("teSt", "teSt1")
+						.put("TEST", "test2")
+						.put("TeST", "test3")
+						.put("TeSt", "test4")
+						.put("Test", "test5")
+						.put("1 x 2/5", "x25")
+						.put("Test5", "test51")
+						.put("SKU", "sku")
+						.put("Camel Case DOne Wrong", "camelCaseDoneWrong")
+						.put("NOOWORK ee", "nooworkEe")
+						.put("#@%!$Q#^QAGR", "qQagr")
+						.build();
 
 
 		List<Field> testFields = null;
@@ -677,9 +677,8 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 			Field field = Mockito.mock(Field.class);
 			String suggest = fieldFactory.suggestVelocityVar(key, field,
 					testFields.stream().map(Field::variable).collect(Collectors.toList()));
-			
 
-			
+
 			testFields.add(ImmutableTextField.builder().name(key).variable(suggest)
 					.contentTypeId("fake").build());
 			assertThat("variable " + key + " "  + " returned "
@@ -694,13 +693,10 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 		}
 
 
-
 	}
 
-	
-	
-	
-    @Test
+
+	@Test
     public void testUTF8SuggestVariable() throws Exception {
 
         List<String> testingNames = ImmutableList.<String>builder()
@@ -767,6 +763,35 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 				assertThat("deleteing works", nodb instanceof NotFoundInDbException);
 			}
 			assertThat("deleteing fieldVars works", fieldFactory.loadVariables(field).size() == 0);
+
+		}
+	}
+
+
+	@Test
+	public void test_SuggestVelocityVar_shoudRetrictReservedWords() throws DotDataException {
+
+		List<String> testingNames = ImmutableList.<String>builder()
+				.add("inode") //ID
+				.add("identifier") //ID
+				.add("live") //Boolean
+				.add("contentType") //String
+				.build();
+
+		for (String key : testingNames) {
+
+
+			final Field field = new FieldDataGen()
+					.name(key)
+					.velocityVarName(key)
+					.type(BinaryField.class)
+					.next();
+			final String suggestion = fieldFactory.suggestVelocityVar(field.name(), field, ImmutableList.of());
+
+			Assert.assertTrue(key.length() < suggestion.length() + 1);
+
+			final int lastNumber = Integer.parseInt(String.valueOf(suggestion.charAt(suggestion.length() - 1)));
+			Assert.assertTrue(lastNumber > 0);
 
 		}
 	}
