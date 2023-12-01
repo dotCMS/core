@@ -366,7 +366,6 @@ jobs:
     outputs:
       formatted_tags: ${{ steps.set-common-vars.outputs.formatted_tags }}
     env:
-      DOCKER_BUILD_CONTEXT: /home/runner/work/_temp/core-build
       DOCKER_PLATFORMS: linux/amd64,linux/arm64
     steps:
       - name: Set Common Vars
@@ -375,9 +374,7 @@ jobs:
           release_version=${{ needs.prepare-release.outputs.release_version }}
           tags="${release_version}_${{ needs.prepare-release.outputs.release_hash }},${release_version}"
           formatted_tags=''
-          if [[ "${{ needs.prepare-release.outputs.is_lts }}" != 'true' ]]; then
-            tags="${tags},latest"
-          fi
+          [[ "${{ needs.prepare-release.outputs.is_lts }}" != 'true' ]] && tags="${tags},latest"
           
           old_ifs=$IFS
           IFS=,
@@ -445,7 +442,7 @@ jobs:
           fetch_operation: 'WITH_LABELS'
           fetch_value: ${{ env.FETCH_VALUE }}
           github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-        if: ${{ github.event.inputs.update_github_labels == 'true' }}
+        if: github.event.inputs.update_github_labels == 'true'
 
       - name: Clear next release issues
         uses: ./.github/actions/issue-labeler
@@ -454,7 +451,7 @@ jobs:
           labels: ${{ env.FETCH_VALUE }}
           operation: 'REMOVE'
           github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-        if: ${{ github.event.inputs.update_github_labels == 'true' }}
+        if: github.event.inputs.update_github_labels == 'true'
 
       - name: Label current release issues
         uses: ./.github/actions/issue-labeler
@@ -463,7 +460,7 @@ jobs:
           labels: 'Release ${{ needs.prepare-release.outputs.release_version }}'
           operation: 'ADD'
           github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-        if: ${{ github.event.inputs.update_github_labels == 'true' }}
+        if: github.event.inputs.update_github_labels == 'true'
 
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
