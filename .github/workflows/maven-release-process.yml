@@ -470,6 +470,9 @@ jobs:
 
       - name: Set Next Version
         run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          
           next_version=${{ env.NEXT_VERSION }}
 
           ./mvnw -ntp \
