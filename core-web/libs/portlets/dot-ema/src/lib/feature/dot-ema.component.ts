@@ -77,11 +77,9 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     private readonly confirmationService = inject(ConfirmationService);
 
     private savePayload: AddContentletPayload;
-    private currentPersonaTag: string;
 
     readonly host = 'http://localhost:3000';
     readonly vm$ = this.store.vm$;
-    readonly currentPersonaTag$ = this.store.currentPersonaTag$;
 
     constructor(@Inject(WINDOW) private window: Window) {}
 
@@ -117,10 +115,6 @@ export class DotEmaComponent implements OnInit, OnDestroy {
             .subscribe((event: MessageEvent) => {
                 this.handlePostMessage(event)?.();
             });
-
-        this.currentPersonaTag$.subscribe((tag) => {
-            this.currentPersonaTag = tag;
-        });
     }
 
     ngOnDestroy(): void {
@@ -205,7 +199,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                     pageContainers: this.savePayload.pageContainers,
                     container: this.savePayload.container,
                     contentletID: detail.data.identifier,
-                    personaTag: this.currentPersonaTag
+                    personaTag: this.savePayload.personaTag
                 });
 
                 this.store.savePage({
@@ -261,15 +255,14 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                 this.savePayload = payload;
             },
             [CUSTOMER_ACTIONS.DELETE_CONTENTLET]: () => {
-                const { pageContainers, container, contentletId, pageID } = <
-                    DeleteContentletPayload
-                >data.payload;
+                const { pageContainers, container, contentletId, pageID, personaTag } =
+                    data.payload as DeleteContentletPayload;
 
                 const newPageContainers = deleteContentletFromContainer({
                     pageContainers: pageContainers,
                     container: container,
                     contentletID: contentletId,
-                    personaTag: this.currentPersonaTag
+                    personaTag
                 });
 
                 this.confirmationService.confirm({

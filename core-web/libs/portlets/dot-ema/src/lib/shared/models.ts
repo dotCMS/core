@@ -3,6 +3,7 @@ export interface AddContentletPayload {
     container?: Container;
     pageContainers: Container[];
     pageID: string;
+    personaTag?: string;
 }
 
 // This is the payload we recieve from the iframe for delete action
@@ -11,6 +12,7 @@ export interface DeleteContentletPayload {
     pageContainers: Container[];
     pageID: string;
     contentletId: string;
+    personaTag?: string;
 }
 
 export interface SetUrlPayload {

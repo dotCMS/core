@@ -44,10 +44,6 @@ import { DEFAULT_PERSONA_ID } from '../../shared/consts';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EditEmaPersonaSelectorComponent {
-    // I need to trigger a service to update the persona in the backend.
-    // Do I need to make changes in nextJS to handle the persona?
-    // Test the hell out of it to be sure it does works.
-
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly personalizeService = inject(DotPersonalizeService);

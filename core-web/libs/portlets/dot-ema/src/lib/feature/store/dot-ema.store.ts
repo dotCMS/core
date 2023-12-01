@@ -69,9 +69,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly pageTitle$: Observable<string> = this.select((state) => state.editor.page.title);
     readonly editIframeURL$: Observable<string> = this.select((state) => state.dialogIframeURL);
     readonly editor$: Observable<DotPageApiResponse> = this.select((state) => state.editor);
-    readonly currentPersonaTag$: Observable<string> = this.select(
-        (state) => state.editor.viewAs.persona?.keyTag
-    );
 
     readonly vm$ = this.select((state) => {
         return {
