@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.workflow.form.AdditionalParamsBean;
 import com.dotmarketing.beans.Permission;
@@ -322,6 +324,10 @@ public interface WorkflowAPI {
 	 * @throws AlreadyExistException
 	 */
 	public Future<WorkflowScheme> deleteScheme(WorkflowScheme scheme, User user) throws DotDataException, DotSecurityException, AlreadyExistException;
+
+	@WrapInTransaction
+	@VisibleForTesting
+	WorkflowScheme deleteSchemeTask(WorkflowScheme scheme, User user);
 
 	/**
 	 * Find the steps associated to the scheme
@@ -1135,7 +1141,11 @@ public interface WorkflowAPI {
 			final ConcurrentMap<String,Object> context,
 			final int sleep);
 
-	/**
+    int countWorkflowSchemes(User user);
+
+	int countWorkflowSchemesIncludeArchived(User user);
+
+    /**
 	 * Render mode for the available actions
 	 */
     enum RenderMode {

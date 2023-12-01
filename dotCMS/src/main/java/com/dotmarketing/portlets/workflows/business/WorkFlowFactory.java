@@ -487,6 +487,8 @@ public interface WorkFlowFactory {
 	 */
     void deleteWorkflowTaskByLanguage(Language language) throws DotDataException;
 
+	int countWorkflowSchemes(boolean includeArchived);
+
 	/**
 	 * Return the count of Steps in all Schemas
 	 *
