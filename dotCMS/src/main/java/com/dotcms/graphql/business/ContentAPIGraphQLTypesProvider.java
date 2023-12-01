@@ -268,10 +268,9 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
      * @return
      */
     public boolean isFieldVariableGraphQLCompatible(final String variable, final Field field) {
-        final Map<String, TypeUtil.TypeFetcher> reservedContentFields = ContentFields.getContentFields();
         final Map<String, TypeUtil.TypeFetcher> lowerNewFieldMap = new LowerKeyMap<>();
         // making the keys lowercase
-        lowerNewFieldMap.putAll(reservedContentFields);
+        lowerNewFieldMap.putAll(ContentFields.getContentFields());
 
         // first let's check if there's an inherited field with the same variable
             if (lowerNewFieldMap.containsKey(variable.toLowerCase())) {
