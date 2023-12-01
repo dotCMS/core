@@ -1,6 +1,6 @@
 package com.dotcms.api.client.pull.contenttype;
 
-import com.dotcms.api.client.pull.GenericPullHandler;
+import com.dotcms.api.client.pull.GeneralPullHandler;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.pull.PullOptions;
 import java.text.SimpleDateFormat;
@@ -10,7 +10,7 @@ import javax.enterprise.context.Dependent;
 import org.apache.commons.lang3.StringUtils;
 
 @Dependent
-public class ContentTypePullHandler implements GenericPullHandler<ContentType> {
+public class ContentTypePullHandler implements GeneralPullHandler<ContentType> {
 
     @Override
     public String title() {

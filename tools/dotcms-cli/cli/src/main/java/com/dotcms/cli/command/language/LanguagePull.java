@@ -5,7 +5,7 @@ import com.dotcms.api.client.pull.language.LanguageFetcher;
 import com.dotcms.api.client.pull.language.LanguagePullHandler;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPull;
-import com.dotcms.cli.common.CompletePullMixin;
+import com.dotcms.cli.common.FullPullOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PullMixin;
 import com.dotcms.common.WorkspaceManager;
@@ -50,7 +50,7 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
     static final String LANGUAGE_PULL_MIXIN = "languagePullMixin";
 
     @CommandLine.Mixin
-    CompletePullMixin pullMixin;
+    FullPullOptionsMixin pullMixin;
 
     @CommandLine.Mixin(name = LANGUAGE_PULL_MIXIN)
     LanguagePullMixin languagePullMixin;

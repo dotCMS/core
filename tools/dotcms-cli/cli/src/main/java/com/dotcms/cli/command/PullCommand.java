@@ -1,7 +1,7 @@
 package com.dotcms.cli.command;
 
 import com.dotcms.cli.common.AuthenticationMixin;
-import com.dotcms.cli.common.CompletePullMixin;
+import com.dotcms.cli.common.FullPullOptionsMixin;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import java.util.ArrayList;
@@ -35,7 +35,7 @@ public class PullCommand implements Callable<Integer>, DotCommand {
     HelpOptionMixin helpOption;
 
     @CommandLine.Mixin
-    CompletePullMixin pullMixin;
+    FullPullOptionsMixin pullMixin;
 
     @CommandLine.Mixin
     AuthenticationMixin authenticationMixin;

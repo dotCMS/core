@@ -278,7 +278,7 @@ public class PullServiceImpl implements PullService {
                         contents,
                         pullOptions,
                         output,
-                        (GenericPullHandler<T>) pullHandler
+                        (GeneralPullHandler<T>) pullHandler
                 );
 
             }
@@ -359,7 +359,7 @@ public class PullServiceImpl implements PullService {
     private <T> boolean genericPull(List<T> contents,
             final PullOptions pullOptions,
             final OutputOptionMixin output,
-            final GenericPullHandler<T> pullHandler)
+            final GeneralPullHandler<T> pullHandler)
             throws ExecutionException, InterruptedException {
 
         var failed = false;

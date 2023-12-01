@@ -4,7 +4,7 @@ import static com.dotcms.api.client.pull.file.OptionConstants.INCLUDE_EMPTY_FOLD
 import static com.dotcms.api.client.pull.file.OptionConstants.PRESERVE;
 
 import com.dotcms.api.LanguageAPI;
-import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.pull.CustomPullHandler;
 import com.dotcms.api.client.pull.exception.PullException;
 import com.dotcms.api.traversal.TreeNode;

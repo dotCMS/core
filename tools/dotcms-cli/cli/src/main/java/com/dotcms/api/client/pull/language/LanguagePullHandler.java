@@ -1,6 +1,6 @@
 package com.dotcms.api.client.pull.language;
 
-import com.dotcms.api.client.pull.GenericPullHandler;
+import com.dotcms.api.client.pull.GeneralPullHandler;
 import com.dotcms.model.language.Language;
 import com.dotcms.model.pull.PullOptions;
 import java.util.List;
@@ -8,7 +8,7 @@ import java.util.Map;
 import javax.enterprise.context.Dependent;
 
 @Dependent
-public class LanguagePullHandler implements GenericPullHandler<Language> {
+public class LanguagePullHandler implements GeneralPullHandler<Language> {
 
     @Override
     public String title() {

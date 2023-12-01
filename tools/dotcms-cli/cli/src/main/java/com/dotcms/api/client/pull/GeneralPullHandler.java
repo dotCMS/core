@@ -7,7 +7,7 @@ package com.dotcms.api.client.pull;
  *
  * @param <T>
  */
-public interface GenericPullHandler<T> extends PullHandler<T> {
+public interface GeneralPullHandler<T> extends PullHandler<T> {
 
     /**
      * Returns a display name of a given T element. Used for logging purposes.

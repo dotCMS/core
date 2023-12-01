@@ -9,7 +9,7 @@ import picocli.CommandLine;
  * This mixin structure allows for sharing common options across multiple pull commands, while also
  * offering command-specific options where necessary.
  */
-public class CompletePullMixin extends PullMixin {
+public class FullPullOptionsMixin extends PullMixin {
 
     @CommandLine.Option(names = {"-fmt",
             "--format"}, description = {"Format for the pulled descriptor files. ",

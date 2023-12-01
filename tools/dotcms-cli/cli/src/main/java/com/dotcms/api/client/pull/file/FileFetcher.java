@@ -9,8 +9,8 @@ import static com.dotcms.common.LocationUtils.encodePath;
 
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.SiteAPI;
-import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
+import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.pull.ContentFetcher;
 import com.dotcms.common.LocationUtils;
 import com.dotcms.model.ResponseEntityView;

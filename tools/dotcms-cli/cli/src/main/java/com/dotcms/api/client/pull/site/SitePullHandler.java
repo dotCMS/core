@@ -1,6 +1,6 @@
 package com.dotcms.api.client.pull.site;
 
-import com.dotcms.api.client.pull.GenericPullHandler;
+import com.dotcms.api.client.pull.GeneralPullHandler;
 import com.dotcms.model.pull.PullOptions;
 import com.dotcms.model.site.SiteView;
 import java.util.List;
@@ -9,7 +9,7 @@ import javax.enterprise.context.Dependent;
 import org.apache.commons.lang3.BooleanUtils;
 
 @Dependent
-public class SitePullHandler implements GenericPullHandler<SiteView> {
+public class SitePullHandler implements GeneralPullHandler<SiteView> {
 
     @Override
     public String title() {
