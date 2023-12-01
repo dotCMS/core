@@ -382,7 +382,7 @@ jobs:
           git status
           git commit -a -m "Updating dotcms version to ${release_version}"
           git commit --allow-empty -m "Publish Release ${release_version}"
-          git push ${GITHUB_PUSH_URL}/plugin-seeds.git
+          git push ${GITHUB_PUSH_URL}/${GITHUB_REPOSITORY_OWNER}/plugin-seeds.git
 
   build_push_image:
     name: Build and Push Image
