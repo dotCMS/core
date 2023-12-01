@@ -21,8 +21,16 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+
 import com.dotmarketing.portlets.workflows.actionlet.*;
 import com.dotmarketing.portlets.workflows.model.*;
+
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
+
 import com.dotmarketing.util.UUIDGenerator;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -577,7 +585,6 @@ public class WorkflowFactoryTest extends BaseWorkflowIntegrationTest {
         final long thirdCount = FactoryLocator.getWorkFlowFactory().countAllSchemasUniqueSubActions();
         assertEquals(firstCount, thirdCount);
     }
-
     private static List<Tuple2<String, List<Tuple3<String, String, Set<WorkflowState>>>>> getStepsAndActions() {
         final List<Tuple2<String, List<Tuple3<String, String, Set<WorkflowState>>>>> workflowStepsAndActions = Arrays
                 .asList(

@@ -1,8 +1,10 @@
-package com.dotcms.api.client;
+package com.dotcms.api.client.model;
 
 
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationAPI;
+import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.authentication.APITokenRequest;
 import com.dotcms.model.authentication.TokenEntity;

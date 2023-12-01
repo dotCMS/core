@@ -13,6 +13,15 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.TestWorkflowUtils;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.datagen.*;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
@@ -68,9 +77,13 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+
+import io.vavr.control.Try;
+
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -84,6 +97,7 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SYSTEM_WORKFLOW;
 import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
 import static com.dotmarketing.portlets.workflows.model.WorkflowState.*;
 import static com.dotmarketing.portlets.workflows.model.WorkflowState.UNPUBLISHED;
@@ -4189,6 +4203,57 @@ public class WorkflowAPITest extends IntegrationTestBase {
     }
 
     /**
+<<<<<<< HEAD
+     * Method to test: {@link WorkflowAPI#countWorkflowSchemes(User)}
+     * Given Scenario: Creates 4 workflow schemes, archive one
+     * ExpectedResult: Returns 4, which is the 3 created + system workflow scheme. The archived one
+     * is not counted.
+     */
+    @Test
+    public void testCountWorkflowSchemes()
+            throws DotDataException, DotSecurityException, AlreadyExistException {
+
+        final int intialSchemaCount = workflowAPI.findSchemes(false).size();
+
+        addWorkflowScheme("countTest1" + System.currentTimeMillis());
+        addWorkflowScheme("countTest2" + System.currentTimeMillis());
+        addWorkflowScheme("countTest3" + System.currentTimeMillis());
+        final WorkflowScheme toArchive = addWorkflowScheme("countTest4"
+                + System.currentTimeMillis());
+
+        // let's archive one
+        workflowAPI.archive(toArchive, APILocator.systemUser());
+
+        // 3 new schemes. Archived one is not counted
+        assertEquals(intialSchemaCount + 3,workflowAPI.countWorkflowSchemes(APILocator.systemUser()));
+    }
+
+    /**
+     * Method to test: {@link WorkflowAPI#countWorkflowSchemesIncludeArchived(User)}
+     * Given Scenario: Creates 4 workflow schemes, archive one
+     * ExpectedResult: Returns 4, which is the 3 created + system workflow scheme. The archived one
+     * is not counted.
+     */
+    @Test
+    public void testCountWorkflowSchemesIncludeArchived()
+            throws DotDataException, DotSecurityException, AlreadyExistException {
+
+        final int intialSchemaCount = workflowAPI.findSchemes(true).size();
+
+        addWorkflowScheme("countTest1" + System.currentTimeMillis());
+        addWorkflowScheme("countTest2" + System.currentTimeMillis());
+        addWorkflowScheme("countTest3" + System.currentTimeMillis());
+        final WorkflowScheme toArchive = addWorkflowScheme("countTest4"
+                + System.currentTimeMillis());
+
+        // let's archive one
+        workflowAPI.archive(toArchive, APILocator.systemUser());
+
+        // 3 new schemes + 1 archived. Archived one is counted
+        assertEquals(intialSchemaCount + 4, workflowAPI.countWorkflowSchemesIncludeArchived(APILocator.systemUser()));
+    }
+
+     /*
      * Method to test: {@link WorkflowFactoryImpl#countAllSchemasSteps()}
      * When: create a new Workflow with 5 steps
      * Should: the count must be 5 more than before
