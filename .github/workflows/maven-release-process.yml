@@ -23,7 +23,6 @@ env:
   JAVA_DISTRO: temurin
   JVM_TEST_MAVEN_OPTS: '-e -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'
   NODE_VERSION: 16
-  NEXT_VERSION: '1.0.0-SNAPSHOT'
   DOCKER_BUILD_CONTEXT: /home/runner/work/_temp/core-build
   GITHUB_USER: victoralfaro-dotcms
 
@@ -36,15 +35,8 @@ jobs:
       release_version: ${{ steps.set-common-vars.outputs.release_version }}
       release_tag: ${{ steps.set-common-vars.outputs.release_tag }}
       release_branch: ${{ steps.set-common-vars.outputs.release_branch }}
-      release_hash: ${{ steps.set-common-vars.outputs.release_hash }}
       is_lts: ${{ steps.set-common-vars.outputs.is_lts }}
       date: ${{ steps.set-common-vars.outputs.date }}
-    env:
-      REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
-      REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      IMAGE_NAME: dotcms/dotcms
     steps:
       - name: Validate Inputs
         run: |
@@ -127,8 +119,8 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRO }}
 
-      - name: Build Core
-        id: build-core
+      - name: Set Release Version
+        id: set-release-version
         run: |
           release_version=${{ steps.set-common-vars.outputs.release_version }}
           release_branch=${{ steps.set-common-vars.outputs.release_branch }}
@@ -143,21 +135,20 @@ jobs:
           ./mvnw -ntp \
             ${JVM_TEST_MAVEN_OPTS} \
             versions:set-property \
+            versions:commit \
             -Dproperty=tika.api.version \
-            -DnewVersion=99.12.31 \
+            -DnewVersion=${release_version} \
             --file independent-projects/pom.xml
           
           git status
           git commit -a -m "🏁 Publishing release version [${release_version}]"
-          if [[ "${release_branch}" == 'master' ]]; then
-            git push https://${GITHUB_USER}:${{ secrets.CICD_GITHUB_TOKEN }}@${{ github.repository }}
-          else
-            git push origin ${release_branch}
-          fi
+          git push https://${GITHUB_USER}:${{ secrets.CICD_GITHUB_TOKEN }}@${{ github.repository }}
           
           release_commit=$(git log -1 --pretty=%H)
           echo "release_commit=${release_commit}" >> $GITHUB_OUTPUT
-          
+
+      - name: Build Core
+        run: |
           mkdir -p ${DOCKER_BUILD_CONTEXT}
           ./mvnw -ntp \
             ${JVM_TEST_MAVEN_OPTS} \
@@ -168,12 +159,18 @@ jobs:
             clean install \
             --file pom.xml \
             --show-version
+          rc=$?
+          if [[ $rc != 0 ]]; then
+            echo "Build failed with exit code $rc"
+            exit $rc
+          fi
 
       - name: Setup Context
         id: setup-docker-context
         run: |
           mkdir -p ${DOCKER_BUILD_CONTEXT}/context
           tar -xvf ${DOCKER_BUILD_CONTEXT}/docker-build.tar -C ${DOCKER_BUILD_CONTEXT}/context
+        if: success()
 
       - name: Cache Maven Repository
         id: cache-maven
@@ -183,6 +180,7 @@ jobs:
           key: maven-core-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
           restore-keys: |
             maven-core-${{ steps.set-common-vars.outputs.date }}
+        if: success()
 
       - name: Cache Core Output
         id: cache-core-output
@@ -195,6 +193,7 @@ jobs:
           key: maven-core-output-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
           restore-keys: |
             maven-core-output-${{ steps.set-common-vars.outputs.date }}
+        if: success()
 
       - name: Cache Node Binary
         id: cache-node-binary
@@ -203,6 +202,7 @@ jobs:
           path: |
             core-web/installs
           key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
+        if: success()
 
       - name: Cache NPM
         id: cache-npm
@@ -212,6 +212,7 @@ jobs:
             ~/.npm
           key: npm-${{ hashFiles('core-web/package-lock.json') }}
           restore-keys: npm-
+        if: success()
 
       - name: Cache Docker Context
         id: cache-docker-context
@@ -221,6 +222,7 @@ jobs:
           key: docker-context-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
           restore-keys: |
             docker-context-${{ steps.set-common-vars.outputs.date }}
+        if: success()
 
       - name: Create Release
         run: |
@@ -229,7 +231,8 @@ jobs:
             -H "X-GitHub-Api-Version: 2022-11-28" \
             -H "Authorization: Bearer ${{ secrets.CICD_GITHUB_TOKEN }}" \
             https://api.github.com/repos/dotCMS/core/releases \
-            -d '{"tag_name": "${{ steps.set-common-vars.outputs.release_tag }}", "name": "Release ${{ steps.set-common-vars.outputs.release_version }}", "target_commitish": "${{ steps.build-core.outputs.release_commit }}", "draft": false, "prerelease": false, "generate_release_notes": false}'
+            -d '{"tag_name": "${{ steps.set-common-vars.outputs.release_tag }}", "name": "Release ${{ steps.set-common-vars.outputs.release_version }}", "target_commitish": "${{ steps.set-release-version.outputs.release_commit }}", "draft": false, "prerelease": false, "generate_release_notes": false}'
+        if: success()
 
   release-process:
     name: Release Process
@@ -383,7 +386,7 @@ jobs:
   publish-release-image:
     name: Publish Release Image
     runs-on: ubuntu-latest
-    needs: [prepare-release, release-process]
+    needs: prepare-release
     if: success()
     outputs:
       tags: ${{ steps.format-tags.outputs.tags }}
@@ -470,12 +473,36 @@ jobs:
     needs: [prepare-release, release-process, publish-release-image]
     if: success()
     env:
+      NEXT_VERSION: '1.0.0-SNAPSHOT'
       FETCH_VALUE: 'Next Release'
     steps:
       - name: Checkout core
         uses: actions/checkout@v3
         with:
-          ref: ${{ needs.prepare-release.outputs.release_tag }}
+          ref: ${{ needs.prepare-release.outputs.release_branch }}
+
+      - name: Set Next Version
+        run: |
+          next_version=${{ env.NEXT_VERSION }}
+
+          ./mvnw -ntp \
+            ${JVM_TEST_MAVEN_OPTS} \
+            versions:set \
+            versions:commit \
+            -DnewVersion=${next_version} \
+            -DprocessAllModules=true
+
+          ./mvnw -ntp \
+            ${JVM_TEST_MAVEN_OPTS} \
+            versions:set-property \
+            versions:commit \
+            -Dproperty=tika.api.version \
+            -DnewVersion=${next_version} \
+            --file independent-projects/pom.xml
+
+          git status
+          git commit -a -m "Setting to next version: ${next_version}
+          git push https://${GITHUB_USER}:${{ secrets.CICD_GITHUB_TOKEN }}@${{ github.repository }}
 
       - name: Fetch `Next Release` issues
         id: fetch-next-release-issues
