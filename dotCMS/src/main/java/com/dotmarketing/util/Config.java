@@ -47,6 +47,8 @@ public class Config {
 
     public static final Map<String, String> testOverrideTracker = new ConcurrentHashMap<>();
 
+    private static Set<String> environmentSetKeys = ConcurrentHashMap.newKeySet();
+
     private static SystemTableConfigSource systemTableConfigSource = null;
 
     @VisibleForTesting
@@ -348,7 +350,10 @@ public class Config {
     private static void readEnvironmentVariables() {
         synchronized (Config.class) {
             EnvironmentVariablesService.getInstance().getenv().entrySet().stream().filter(e -> e.getKey().startsWith(ENV_PREFIX))
-                    .forEach(e -> props.setProperty(e.getKey(), e.getValue()));
+                    .forEach(e -> {
+                        environmentSetKeys.add(e.getKey());
+                        props.setProperty(e.getKey(), e.getValue());
+                    });
         }
     }
 
@@ -543,18 +548,27 @@ public class Config {
     public static String[] getStringArrayProperty(final String name, final String[] defaultValue) {
 
         final String envKey = envKey(name);
+
+        final Supplier<String[]> propsSupplier = () -> {
+
+            _refreshProperties();
+            return props.containsKey(envKey)
+                    ? props.getStringArray(envKey)
+                    : props.containsKey(name)
+                    ? props.getStringArray(name)
+                    : defaultValue;
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
+        }
+
         final String valueString = getSystemTableValue(envKey, name);
         if (null != valueString) {
             return valueString.split(StringPool.COMMA);
         }
 
-        _refreshProperties();
-
-        return props.containsKey(envKey)
-                ? props.getStringArray(envKey)
-                : props.containsKey(name)
-                        ? props.getStringArray(name)
-                        : defaultValue;
+        return propsSupplier.get();
     }
 
     /**
@@ -564,35 +578,56 @@ public class Config {
     public static int getIntProperty(final String name) {
 
         final String envKey = envKey(name);
+
+        final Supplier<Integer> propsSupplier = () -> {
+
+            _refreshProperties();
+
+            Integer value = Try.of(() -> props.getInt(envKey)).getOrNull();
+            if (value != null) {
+                return value;
+            }
+
+            return props.getInt(name);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
+        }
+
         final String valueString = getSystemTableValue(envKey, name);
         if (null != valueString) {
             return Integer.parseInt(valueString);
         }
 
-        _refreshProperties();
-
-        Integer value = Try.of(() -> props.getInt(envKey)).getOrNull();
-        if (value != null) {
-            return value;
-        }
-
-        return props.getInt(name);
+        return propsSupplier.get();
     }
 
     public static long getLongProperty(final String name, final long defaultVal) {
 
         final String envKey = envKey(name);
+
+        final Supplier<Long> propsSupplier = () -> {
+
+            _refreshProperties();
+
+            Long value = Try.of(() -> props.getLong(envKey)).getOrNull();
+            if (value != null) {
+                return value;
+            }
+            return props.getLong(name, defaultVal);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
+        }
+
         final String valueString = getSystemTableValue(envKey, name);
         if (null != valueString) {
             return Long.parseLong(valueString);
         }
 
-        _refreshProperties();
-        Long value = Try.of(() -> props.getLong(envKey)).getOrNull();
-        if (value != null) {
-            return value;
-        }
-        return props.getLong(name, defaultVal);
+        return propsSupplier.get();
     }
 
     /**
@@ -603,18 +638,29 @@ public class Config {
     public static int getIntProperty(final String name, final int defaultVal) {
 
         final String envKey = envKey(name);
+
+        final Supplier<Integer> propsSupplier = () -> {
+
+            _refreshProperties();
+
+            Integer value = Try.of(() -> props.getInt(envKey(name))).getOrNull();
+            if (value != null) {
+                return value;
+            }
+
+            return props.getInt(name, defaultVal);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
+        }
+
         final String valueString = getSystemTableValue(envKey, name);
         if (null != valueString) {
             return Integer.parseInt(valueString);
         }
 
-        _refreshProperties();
-        Integer value = Try.of(() -> props.getInt(envKey(name))).getOrNull();
-        if (value != null) {
-            return value;
-        }
-
-        return props.getInt(name, defaultVal);
+        return propsSupplier.get();
     }
 
     /**
@@ -624,19 +670,29 @@ public class Config {
     public static float getFloatProperty(final String name) {
 
         final String envKey = envKey(name);
+
+        final Supplier<Float> propsSupplier = () -> {
+
+            _refreshProperties();
+
+            Float value = Try.of(() -> props.getFloat(envKey)).getOrNull();
+            if (value != null) {
+                return value;
+            }
+
+            return props.getFloat(name);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
+        }
+
         final String valueString = getSystemTableValue(envKey, name);
         if (null != valueString) {
             return Float.parseFloat(valueString);
         }
 
-        _refreshProperties();
-
-        Float value = Try.of(() -> props.getFloat(envKey)).getOrNull();
-        if (value != null) {
-            return value;
-        }
-
-        return props.getFloat(name);
+        return propsSupplier.get();
     }
 
     /**
@@ -647,17 +703,28 @@ public class Config {
     public static float getFloatProperty(final String name, final float defaultVal) {
 
         final String envKey = envKey(name);
+
+        final Supplier<Float> propsSupplier = () -> {
+
+            _refreshProperties();
+
+            Float value = Try.of(() -> props.getFloat(envKey)).getOrNull();
+            if (value != null) {
+                return value;
+            }
+            return props.getFloat(name, defaultVal);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
+        }
+
         final String valueString = getSystemTableValue(envKey, name);
         if (null != valueString) {
             return Float.parseFloat(valueString);
         }
 
-        _refreshProperties();
-        Float value = Try.of(() -> props.getFloat(envKey)).getOrNull();
-        if (value != null) {
-            return value;
-        }
-        return props.getFloat(name, defaultVal);
+        return propsSupplier.get();
     }
 
 
@@ -670,17 +737,28 @@ public class Config {
     public static boolean getBooleanProperty(final String name) {
 
         final String envKey = envKey(name);
+
+        final Supplier<Boolean> propsSupplier = () -> {
+
+            _refreshProperties();
+
+            Boolean value = Try.of(() -> props.getBoolean(envKey)).getOrNull();
+            if (value != null) {
+                return value;
+            }
+            return props.getBoolean(name);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
+        }
+
         final String valueString = getSystemTableValue(envKey, name);
         if (null != valueString) {
             return Boolean.parseBoolean(valueString);
         }
 
-        _refreshProperties();
-        Boolean value = Try.of(() -> props.getBoolean(envKey)).getOrNull();
-        if (value != null) {
-            return value;
-        }
-        return props.getBoolean(name);
+        return propsSupplier.get();
     }
 
     /**
@@ -691,18 +769,30 @@ public class Config {
     public static boolean getBooleanProperty(String name, boolean defaultVal) {
 
         final String envKey = envKey(name);
+
+        final Supplier<Boolean> propsSupplier = () -> {
+
+            _refreshProperties();
+            
+            final Boolean value =
+                    props.containsKey(envKey) ? Try.of(() -> props.getBoolean(envKey))
+                            .getOrNull() : null;
+            if (null != value) {
+                return value;
+            }
+            return props.getBoolean(name, defaultVal);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
+        }
+
         final String valueString = getSystemTableValue(envKey, name);
         if (null != valueString) {
             return Boolean.parseBoolean(valueString);
         }
 
-        final Boolean value =
-                props.containsKey(envKey) ? Try.of(() -> props.getBoolean(envKey))
-                        .getOrNull() : null;
-        if (null != value) {
-            return value;
-        }
-        return props.getBoolean(name, defaultVal);
+        return propsSupplier.get();
     }
 
     /**
