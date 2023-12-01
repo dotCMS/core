@@ -503,7 +503,7 @@ jobs:
             --file independent-projects/pom.xml
 
           git status
-          git commit -a -m "Setting to next version: ${next_version}
+          git commit -a -m "Setting to next version: ${next_version}"
           git push https://${GITHUB_USER}:${{ secrets.CICD_GITHUB_TOKEN }}@@github.com/${{ github.repository }}
 
       - name: Fetch `Next Release` issues
