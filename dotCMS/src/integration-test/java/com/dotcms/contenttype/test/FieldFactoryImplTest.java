@@ -767,18 +767,23 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 		}
 	}
 
-
+	/**
+	 * Method to test: {@link com.dotcms.contenttype.business.FieldFactoryImpl#suggestVelocityVar(String, Field, List)}
+	 * Given Scenario: Users should not be able tu use any reserved fields names, like "inode", "identifier", "live", "contentType"
+	 * ExpectedResult: suggestion should be ("name" + number )
+	 * @throws DotDataException
+	 */
 	@Test
 	public void test_SuggestVelocityVar_shoudRetrictReservedWords() throws DotDataException {
 
-		List<String> testingNames = ImmutableList.<String>builder()
+		final List<String> testingNames = ImmutableList.<String>builder()
 				.add("inode") //ID
 				.add("identifier") //ID
 				.add("live") //Boolean
 				.add("contentType") //String
 				.build();
 
-		for (String key : testingNames) {
+		for (final String key : testingNames) {
 
 
 			final Field field = new FieldDataGen()

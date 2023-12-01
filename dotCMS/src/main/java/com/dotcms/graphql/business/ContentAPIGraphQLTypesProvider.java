@@ -80,6 +80,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
     INSTANCE;
 
+    // name of primitive types of GraphQL
     public enum PrimitiveGraphQLType {
         STRING,
         INT,
@@ -286,6 +287,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
             // get new field's type
             final GraphQLType fieldGraphQLType = getGraphqlTypeForFieldClass(field.type(), field);
 
+            //if it's a reserved word and a primitive type, it's not compatible
             if (isPrimitiveFieldType(inheritedFieldGraphQLType)) {
                 return false;
             }
@@ -299,6 +301,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         return true;
     }
 
+    //Checks if the given type is a primitive type in GraphQL.
     private boolean isPrimitiveFieldType( GraphQLType type) {
             return type instanceof GraphQLScalarType &&
                     type.getName() != null &&
