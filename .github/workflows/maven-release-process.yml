@@ -389,8 +389,9 @@ jobs:
           
           old_ifs=$IFS
           IFS=,
+          tags_arr=( $tags )
           
-          for tag in "${tags[@]}"
+          for tag in "${tags_arr[@]}"
           do
             [[ -n "${real_tags}" ]] && real_tags="${real_tags}," && formatted_tags="${formatted_tags}, "
             
