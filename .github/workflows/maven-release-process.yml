@@ -249,13 +249,6 @@ jobs:
           path: ~/.npm
           key: npm-${{ hashFiles('core-web/package-lock.json') }}
 
-      - name: Restore Docker Context
-        id: restore-docker-context
-        uses: actions/cache/restore@v3
-        with:
-          path: ${{ env.DOCKER_BUILD_CONTEXT }}
-          key: docker-context-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
-
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
@@ -394,6 +387,13 @@ jobs:
 
           echo "tags=${tags}" >> $GITHUB_OUTPUT
           echo "formatted_tags=${formatted_tags}" >> $GITHUB_OUTPUT
+
+      - name: Restore Docker Context
+        id: restore-docker-context
+        uses: actions/cache/restore@v3
+        with:
+          path: ${{ env.DOCKER_BUILD_CONTEXT }}
+          key: docker-context-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.0.0
