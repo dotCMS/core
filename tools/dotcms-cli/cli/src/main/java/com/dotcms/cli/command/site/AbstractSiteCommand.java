@@ -1,7 +1,7 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
-import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
@@ -13,7 +13,6 @@ import picocli.CommandLine;
 
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
-import java.util.Optional;
 
 public abstract class AbstractSiteCommand {
 

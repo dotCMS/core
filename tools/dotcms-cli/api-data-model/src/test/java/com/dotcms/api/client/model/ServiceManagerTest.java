@@ -1,5 +1,6 @@
-package com.dotcms.api.client;
+package com.dotcms.api.client.model;
 
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.model.config.CredentialsBean;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.test.junit.QuarkusTest;

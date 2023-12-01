@@ -1,6 +1,6 @@
 package com.dotcms.cli.command;
 
-import com.dotcms.api.client.AuthenticationParam;
+import com.dotcms.api.client.model.AuthenticationParam;
 import com.dotcms.cli.command.contenttype.ContentTypeCommand;
 import com.dotcms.cli.command.files.FilesCommand;
 import com.dotcms.cli.command.language.LanguageCommand;

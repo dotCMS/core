@@ -1,4 +1,4 @@
-package com.dotcms.api.client;
+package com.dotcms.api.client.model;
 
 import com.dotcms.api.exception.ClientConfigNotFoundException;
 import com.dotcms.model.config.ServiceBean;
