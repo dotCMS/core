@@ -119,14 +119,14 @@ jobs:
           release_version=${{ steps.set-common-vars.outputs.release_version }}
           
           ./mvnw -ntp \
-            ${JVM_TEST_MAVEN_OPTS} \
+            ${{ env.JVM_TEST_MAVEN_OPTS }} \
             versions:set \
             versions:commit \
             -DnewVersion=${release_version} \
             -DprocessAllModules=true
           
           ./mvnw -ntp \
-            ${JVM_TEST_MAVEN_OPTS} \
+            ${{ env.JVM_TEST_MAVEN_OPTS }} \
             versions:set-property \
             -Dproperty=tika.api.version \
             -DnewVersion=99.12.31 \
@@ -139,12 +139,11 @@ jobs:
           release_commit=$(git log -1 --pretty=%H)
           echo "release_commit=${release_commit}" >> $GITHUB_OUTPUT
           
-          mkdir -p ${DOCKER_BUILD_CONTEXT}
+          mkdir -p ${{ env.DOCKER_BUILD_CONTEXT }}
           ./mvnw -ntp \
             ${JVM_TEST_MAVEN_OPTS} \
             -Dprod=true \
-            -Ddocker.buildArchiveOnly=${DOCKER_BUILD_CONTEXT} \
-            -Dskip.npm.install=${NODE_CACHE_HIT} \
+            -Ddocker.buildArchiveOnly=${{ env.DOCKER_BUILD_CONTEXT }} \
             -DskipTests=true \
             -DskipITs=true \
             clean install \
@@ -368,6 +367,11 @@ jobs:
     env:
       DOCKER_PLATFORMS: linux/amd64,linux/arm64
     steps:
+      - name: Checkout core
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.prepare-release.outputs.release_tag }}
+
       - name: Set Common Vars
         id: set-common-vars
         run: |
