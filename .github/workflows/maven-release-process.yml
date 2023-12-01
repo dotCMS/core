@@ -398,17 +398,29 @@ jobs:
             real_tag="${dotcms_image}:${tag}"
             real_tags="${real_tags}${real_tag}"
             formatted_tags="${formatted_tags}\`${real_tag}\`"
-          
-            echo "tag: ${tag}
-            real_tag: ${real_tag}
-            real_tags: ${real_tags}
-            formatted_tags: ${formatted_tags}"
           done
           
           IFS=${old_ifs}
 
           echo "tags=${real_tags}" >> $GITHUB_OUTPUT
           echo "formatted_tags=${formatted_tags}" >> $GITHUB_OUTPUT
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            dotcms/dotcms
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,enable=true,priority=100,prefix=,suffix=_,format=short
+            type=raw,value=latest,enable=true
+      - name: Debug docker metadata
+        run: |
+          echo "${{ fromJSON(steps.meta.outputs.json) }}"
 
       - name: Restore Docker Context
         id: restore-docker-context
@@ -442,7 +454,8 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ${{ env.DOCKER_BUILD_CONTEXT }}/context
-          tags: ${{ steps.set-common-vars.outputs.tags }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           platforms: ${{ env.DOCKER_PLATFORMS }}
           pull: true
           push: true
