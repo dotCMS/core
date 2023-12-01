@@ -354,9 +354,7 @@ jobs:
           
           git status
           git commit -a -m "Updating dotcms version to ${release_version}"
-          git commit --allow-empty -m "Publish Release ${release_version}"
-          
-#          git push origin ${release_branch}
+          git commit --allow-empty -m "Publish Release ${release_version}"          
           git push https://${{ env.GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotCMS/plugin-seeds.git
 
   publish-release-image:
