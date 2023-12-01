@@ -28,10 +28,10 @@
 
         <div class="flex gap-1">
             <p class="text-center">
-                <strong>Generate</strong> an AI image based on your input and requests.
+                {{ 'block-editor.extension.ai-image.input-text.title' | dm }}
                 <i
                     class="pi pi-info-circle"
-                    pTooltip="Describe the type of image you want to generate."
+                    pTooltip="{{ 'block-editor.extension.ai-image.input-text.tooltip' | dm }}"
                     tooltipZIndex="999999"></i>
             </p>
         </div>
@@ -50,14 +50,14 @@
         </div>
         <dot-field-validation-message
             [field]="promptControl"
-            message="The information provided is insufficient" />
+            message=" {{ 'block-editor.common.input-prompt-required-error' | dm }}" />
 
         <button
             class="p-button-outlined"
             [loading]="isLoading"
             (click)="generateImage()"
             icon="pi pi-send"
-            label="Generate"
+            label="{{ 'block-editor.common.generate' | dm }}"
             pButton
             type="submit"></button>
     </form>
@@ -84,11 +84,10 @@
 
         <div class="flex gap-1">
             <p class="text-center">
-                <strong>Auto-Generate</strong> an Image based on the content created within the
-                Block Editor.
+                {{ 'block-editor.extension.ai-image.auto-text.title' | dm }}
                 <i
                     class="pi pi-info-circle"
-                    pTooltip="Describe the size, color palette,  style, mood, etc."
+                    pTooltip="{{ 'block-editor.extension.ai-image.auto-text.tooltip' | dm }}"
                     tooltipZIndex="999999"></i>
             </p>
         </div>
