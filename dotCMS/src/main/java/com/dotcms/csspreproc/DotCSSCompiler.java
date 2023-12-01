@@ -3,6 +3,7 @@ package com.dotcms.csspreproc;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.base.Joiner;
 import com.liferay.util.StringPool;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -280,6 +281,9 @@ abstract class DotCSSCompiler {
               .collect(Collectors.toList());
 
       for (final Contentlet con : contentletList) {
+        if(con.isArchived()){
+          continue;
+        }
         final FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(con);
         final File f = new File(
             compDir.getAbsolutePath() + File.separator + inputHost.getHostname() + asset.getPath() + File.separator + asset.getFileName());
@@ -291,6 +295,11 @@ abstract class DotCSSCompiler {
         }
         getAllImportedURI().add(assetUri);
         f.getParentFile().mkdirs();
+        if(UtilMethods.isEmpty(()->asset.getFileAsset())){
+
+          Logger.warn(this.getClass(),"Unable to find file for asset:" + asset.getURI());
+          continue;
+        }
         FileUtil.copyFile(asset.getFileAsset(), f);
       }
 
