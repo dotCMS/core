@@ -289,7 +289,7 @@ jobs:
 #            -DskipITs=true \
 #            deploy \
 #            --file dotCMS/pom.xml
-
+#
 #      - name: Push Distro
 #        run: |
 #          target_dir=./dotCMS/target
@@ -382,22 +382,27 @@ jobs:
         id: set-common-vars
         run: |
           release_version=${{ needs.prepare-release.outputs.release_version }}
+          
           tags="${release_version}_${{ needs.prepare-release.outputs.release_hash }},${release_version}"
-          formatted_tags=''
           [[ "${{ needs.prepare-release.outputs.is_lts }}" != 'true' ]] && tags="${tags},latest"
+          real_tags=''
+          formatted_tags=''
+          dotcms_image=dotcms/dotcms
           
           old_ifs=$IFS
           IFS=,
           
           for tag in "${tags[@]}"
           do
-            [[ -n "${formatted_tags}" ]] && formatted_tags="${formatted_tags}, "
-            formatted_tags="\`dotcms/dotcms:${tag}\`"
+            [[ -n "${real_tags}" ]] && real_tags="${real_tags}," && formatted_tags="${formatted_tags}, "
+            real_tag="${dotcms_image}:${tag}"
+            real_tags="${real_tags}${real_tag}"
+            formatted_tags="${formatted_tags}\`${real_tag}\`"
           done
           
           IFS=${old_ifs}
 
-          echo "tags=${tags}" >> $GITHUB_OUTPUT
+          echo "tags=${real_tags}" >> $GITHUB_OUTPUT
           echo "formatted_tags=${formatted_tags}" >> $GITHUB_OUTPUT
 
       - name: Restore Docker Context
