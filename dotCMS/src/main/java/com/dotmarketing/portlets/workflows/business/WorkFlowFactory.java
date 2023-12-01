@@ -507,4 +507,11 @@ public interface WorkFlowFactory {
 	 * @return
 	 */
 	long countAllSchemasSubActions() throws DotDataException;
+
+	/**
+	 * Return the count of Unique SubAction in all Action
+	 *
+	 * @return
+	 */
+	long countAllSchemasUniqueSubActions() throws DotDataException;
 }

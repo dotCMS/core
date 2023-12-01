@@ -1110,6 +1110,13 @@ public interface WorkflowAPI {
 	long countAllSchemasSubActions(User user) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Return the count of Unique SubAction in all Action
+	 *
+	 * @return
+	 */
+	long countAllSchemasUniqueSubActions(User user) throws DotDataException, DotSecurityException;
+
+	/**
 	 * This method creates a WorkflowTask (does not persists it) based on the information on the contentlet (id + lang),
 	 * user (role to assign, and created by), workflowStep (status 'current step'), title and description
 	 *

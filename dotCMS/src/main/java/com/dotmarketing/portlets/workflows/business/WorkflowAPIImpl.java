@@ -4398,6 +4398,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return workFlowFactory.countAllSchemasSubActions();
 	}
 
+	@CloseDBIfOpened
+	public long countAllSchemasUniqueSubActions(final User user) throws DotDataException, DotSecurityException {
+		try {
+			this.isUserAllowToModifiedWorkflow(user);
+		} catch (WorkflowPortletAccessException | InvalidLicenseException e) {
+			throw new DotSecurityException(e.getMessage(), e);
+		}
+
+		return workFlowFactory.countAllSchemasUniqueSubActions();
+	}
 	@Override
 	public WorkflowTask createWorkflowTask(final Contentlet contentlet, final User user,
 									final WorkflowStep workflowStep, final String title, String description) throws DotDataException {
