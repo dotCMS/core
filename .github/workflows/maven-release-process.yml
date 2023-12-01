@@ -205,7 +205,7 @@ jobs:
 
       - name: Create Release
         run: |
-          tree ${DOCKER_BUILD_CONTEXT }/context
+          tree ${DOCKER_BUILD_CONTEXT}/context
           du -hs ${DOCKER_BUILD_CONTEXT}/context
           
           curl -X POST \
