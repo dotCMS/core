@@ -205,7 +205,6 @@ jobs:
 
       - name: Create Release
         run: |
-          tree ${DOCKER_BUILD_CONTEXT}/context
           du -hs ${DOCKER_BUILD_CONTEXT}/context
           
           curl -X POST \
@@ -393,7 +392,7 @@ jobs:
           for tag in "${tags[@]}"
           do
             [[ -n "${formatted_tags}" ]] && formatted_tags="${formatted_tags}, "
-            formatted_tags="\`${tag}\`"
+            formatted_tags="\`dotcms/dotcms:${tag}\`"
           done
           
           IFS=${old_ifs}
@@ -409,7 +408,6 @@ jobs:
           key: docker-context-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
 
       - run: |
-          tree ${DOCKER_BUILD_CONTEXT}/context
           du -hs ${DOCKER_BUILD_CONTEXT}/context
 
       - name: Set up QEMU
