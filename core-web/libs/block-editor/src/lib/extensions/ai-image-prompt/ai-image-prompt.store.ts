@@ -1,5 +1,5 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import { Observable, of } from 'rxjs';
+import { EMPTY, Observable, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
@@ -119,7 +119,7 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         return trigger$.pipe(
             withLatestFrom(this.state$),
             tap(([_, { prompt }]) => {
-                if (!prompt) return;
+                if (!prompt) return EMPTY;
 
                 return this.generateImage(of(prompt));
             })
