@@ -16,7 +16,8 @@
                     data-testId="language-selector" />
                 <dot-edit-ema-persona-selector
                     [personas]="vm.personas"
-                    [personaID]="vm.selectedPersona"
+                    [selectedPersona]="vm.selectedPersona"
+                    [pageID]="vm.editor.page.identifier"
                     (selected)="onPersonaSelected($event)" />
             </ng-container>
         </dot-edit-ema-toolbar>

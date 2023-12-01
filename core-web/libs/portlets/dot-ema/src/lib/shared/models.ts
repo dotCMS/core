@@ -22,6 +22,7 @@ export interface Container {
     identifier: string;
     uuid: string;
     contentletsId?: string[];
+    personaTag?: string;
 }
 
 export interface SavePagePayload extends AddContentletPayload {
@@ -32,4 +33,5 @@ export interface ContainerActionPayload {
     pageContainers: Container[];
     container: Container;
     contentletID: string;
+    personaTag?: string;
 }

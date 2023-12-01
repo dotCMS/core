@@ -20,8 +20,8 @@ import { DialogModule } from 'primeng/dialog';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotPersona } from '@dotcms/dotcms-models';
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaStore } from './store/dot-ema.store';
@@ -54,6 +54,7 @@ import { deleteContentletFromContainer, insertContentletInContainer } from '../u
         DotPageApiService,
         ConfirmationService,
         DotLanguagesService,
+        DotPersonalizeService,
         {
             provide: WINDOW,
             useValue: window
@@ -76,9 +77,11 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     private readonly confirmationService = inject(ConfirmationService);
 
     private savePayload: AddContentletPayload;
+    private currentPersonaTag: string;
 
     readonly host = 'http://localhost:3000';
     readonly vm$ = this.store.vm$;
+    readonly currentPersonaTag$ = this.store.currentPersonaTag$;
 
     constructor(@Inject(WINDOW) private window: Window) {}
 
@@ -114,6 +117,10 @@ export class DotEmaComponent implements OnInit, OnDestroy {
             .subscribe((event: MessageEvent) => {
                 this.handlePostMessage(event)?.();
             });
+
+        this.currentPersonaTag$.subscribe((tag) => {
+            this.currentPersonaTag = tag;
+        });
     }
 
     ngOnDestroy(): void {
@@ -167,13 +174,13 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     /**
      * Handle the persona selection
      *
-     * @param {string} persona_id
+     * @param {DotPersona} persona
      * @memberof DotEmaComponent
      */
-    onPersonaSelected(persona_id: string) {
+    onPersonaSelected(persona: DotPersona) {
         this.router.navigate([], {
             queryParams: {
-                'com.dotmarketing.persona.id': persona_id
+                'com.dotmarketing.persona.id': persona.identifier
             },
             queryParamsHandling: 'merge'
         });
@@ -197,7 +204,8 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                 const pageContainers = insertContentletInContainer({
                     pageContainers: this.savePayload.pageContainers,
                     container: this.savePayload.container,
-                    contentletID: detail.data.identifier
+                    contentletID: detail.data.identifier,
+                    personaTag: this.currentPersonaTag
                 });
 
                 this.store.savePage({
@@ -260,7 +268,8 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                 const newPageContainers = deleteContentletFromContainer({
                     pageContainers: pageContainers,
                     container: container,
-                    contentletID: contentletId
+                    contentletID: contentletId,
+                    personaTag: this.currentPersonaTag
                 });
 
                 this.confirmationService.confirm({

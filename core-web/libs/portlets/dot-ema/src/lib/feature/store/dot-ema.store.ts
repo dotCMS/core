@@ -69,6 +69,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly pageTitle$: Observable<string> = this.select((state) => state.editor.page.title);
     readonly editIframeURL$: Observable<string> = this.select((state) => state.dialogIframeURL);
     readonly editor$: Observable<DotPageApiResponse> = this.select((state) => state.editor);
+    readonly currentPersonaTag$: Observable<string> = this.select(
+        (state) => state.editor.viewAs.persona?.keyTag
+    );
 
     readonly vm$ = this.select((state) => {
         return {
@@ -84,7 +87,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             dialogIframeLoading: state.dialogIframeLoading,
             editor: state.editor,
             personas: state.personas,
-            selectedPersona: state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA_ID
+            selectedPersona: state.personas.find(
+                (persona) =>
+                    persona.identifier ===
+                    (state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA_ID)
+            )
         };
     });
 

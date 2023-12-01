@@ -1,4 +1,4 @@
-<p-button (onClick)="op.toggle($event)" styleClass="p-button-outlined">
+<p-button (onClick)="op.toggle($event)" styleClass="p-button-text">
     <p-avatar
         *ngIf="selectedPersona && selectedPersona?.identifier !== 'modes.persona.no.persona'"
         [text]="selectedPersona?.name"
@@ -16,7 +16,7 @@
     <p-listbox
         [filter]="true"
         [options]="personas"
-        (onChange)="onChange($event)"
+        (onChange)="onSelect($event)"
         optionLabel="title"
         data-testId="language-listbox">
         <ng-template let-persona pTemplate="item">
@@ -30,5 +30,6 @@
                 <span>{{ persona.title }}</span>
             </div>
         </ng-template>
+        <ng-template let-options filter> </ng-template>
     </p-listbox>
 </p-overlayPanel>
