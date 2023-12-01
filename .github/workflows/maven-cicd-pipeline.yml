@@ -153,6 +153,7 @@ jobs:
       - name: Setup Context
         id: setup-docker-context
         run: |
+          
           mkdir -p $DOCKER_BUILD_CONTEXT/context
           tar -xvf $DOCKER_BUILD_CONTEXT/docker-build.tar -C $DOCKER_BUILD_CONTEXT/context
       - name: Build base image
