@@ -4364,6 +4364,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return this.hasActionlet(action, Actionlet::destroy);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public long countAllSchemasSteps(final User user) throws DotDataException, DotSecurityException {
 		try {
@@ -4375,6 +4376,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return workFlowFactory.countAllSchemasSteps();
 	}
 
+	@CloseDBIfOpened
 	public long countAllSchemasActions(final User user) throws DotDataException, DotSecurityException {
 		try {
 			this.isUserAllowToModifiedWorkflow(user);
@@ -4385,6 +4387,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return workFlowFactory.countAllSchemasActions();
 	}
 
+	@CloseDBIfOpened
 	public long countAllSchemasSubActions(final User user) throws DotDataException, DotSecurityException {
 		try {
 			this.isUserAllowToModifiedWorkflow(user);
