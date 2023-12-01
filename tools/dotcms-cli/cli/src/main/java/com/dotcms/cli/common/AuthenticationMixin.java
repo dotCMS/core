@@ -1,6 +1,6 @@
 package com.dotcms.cli.common;
 
-import com.dotcms.api.client.AuthenticationParam;
+import com.dotcms.api.client.model.AuthenticationParam;
 import io.quarkus.arc.Arc;
 import java.util.Stack;
 import picocli.CommandLine;
