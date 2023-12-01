@@ -10,7 +10,7 @@ import static com.dotcms.api.client.pull.file.OptionConstants.PRESERVE;
 
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
-import com.dotcms.api.client.ServiceManager;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.api.client.pull.PullService;
 import com.dotcms.api.client.pull.file.FileFetcher;
 import com.dotcms.api.client.pull.file.FilePullHandler;

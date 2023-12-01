@@ -1,11 +1,10 @@
 package com.dotcms.api;
 
 import com.dotcms.DotCMSITProfile;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.api.client.ServiceManager;
+import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldLayoutRow;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableColumnField;
@@ -40,7 +39,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import javax.inject.Inject;
-import javax.management.relation.Relation;
 import javax.ws.rs.NotFoundException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
