@@ -385,7 +385,7 @@ jobs:
           for tag in "${tags[@]}"
           do
             [[ -n "${formatted_tags}" ]] && formatted_tags="${formatted_tags}, "
-            formatted_tags="`${tag}`"
+            formatted_tags="\`${tag}\`"
           done
           
           IFS=${old_ifs}
