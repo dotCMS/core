@@ -7,11 +7,13 @@
                 autofocus
                 formControlName="textPrompt"
                 pInputText
-                placeholder="{{ 'Ask AI to write something' | dm }}"
+                placeholder="{{
+                    'block-editor.extension.ai-content.ask-ai-to-write-something' | dm
+                }}"
                 type="text" />
 
             <ng-container *ngIf="vm.loading; else submitButton">
-                <span class="pending-label">Pending</span>
+                <span class="pending-label">{{ 'block-editor.common.pending' | dm }}</span>
             </ng-container>
 
             <ng-template #submitButton>
