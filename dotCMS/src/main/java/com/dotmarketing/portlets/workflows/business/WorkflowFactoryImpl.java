@@ -601,6 +601,30 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
     }
 
+    public long countAllSchemasActions() throws DotDataException {
+        final DotConnect db = new DotConnect();
+        db.setSQL("SELECT COUNT(*) FROM workflow_action " +
+                "INNER JOIN workflow_scheme ON workflow_scheme.id=workflow_action.scheme_id " +
+                "WHERE archived = false");
+        final List<Map<String, Object>> results = (List<Map<String, Object>>) db.loadResults();
+        final Map<String, Object> result = results.get(0);
+
+        return Long.parseLong((String) result.get("count"));
+    }
+
+    public long countAllSchemasSubActions() throws DotDataException {
+        final DotConnect db = new DotConnect();
+        db.setSQL("SELECT COUNT(*) " +
+                "FROM workflow_action_class " +
+                "INNER JOIN workflow_action ON workflow_action.id=workflow_action_class.action_id " +
+                "INNER JOIN workflow_scheme ON workflow_scheme.id=workflow_action.scheme_id " +
+                "WHERE archived = false");
+
+        final List<Map<String, Object>> results = (List<Map<String, Object>>) db.loadResults();
+        final Map<String, Object> result = results.get(0);
+
+        return Long.parseLong((String) result.get("count"));
+    }
     @Override
     public void deleteWorkflowTaskByLanguage(final Language language) throws DotDataException {
 
