@@ -15,7 +15,7 @@
                 [isLoading]="vm.status === ComponentStatus.LOADING"
                 [selected]="vm.selectedPromptType === 'input'"
                 (click)="selectType('input', vm.selectedPromptType)"
-                (promptChanged)="generateImage($event, 'input')"
+                (promptChanged)="generateImage($event)"
                 placeholder="Create a realistic image of a cow in the snow"
                 type="input" />
 
@@ -24,7 +24,7 @@
                 [isLoading]="vm.status === ComponentStatus.LOADING"
                 [selected]="vm.selectedPromptType === 'auto'"
                 (click)="selectType('auto', vm.selectedPromptType)"
-                (promptChanged)="generateImage($event, 'auto')"
+                (promptChanged)="generateImage($event)"
                 placeholder="E.g. 1200x800px, vibrant colors, impressionistic, adventurous."
                 type="auto" />
         </div>

@@ -40,17 +40,6 @@ export class AIImagePromptComponent {
     private store = inject(DotAiImagePromptStore);
 
     /**
-     * Show the dialog.
-     * Called from the plugin extension
-     *
-     * @memberof AIImagePromptComponent
-     * @returns {void}
-     */
-    showDialog(editorContent: string): void {
-        this.store.showDialog(editorContent);
-    }
-
-    /**
      * Hides the dialog.
      * @return {void}
      */

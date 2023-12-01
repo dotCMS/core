@@ -89,7 +89,7 @@ export class AIImagePromptView {
                 takeUntil(this.destroy$)
             )
             .subscribe(() => {
-                this.component.instance.hideDialog();
+                this.store.hideDialog();
                 this.editor.chain().insertLoaderNode().closeImagePrompt().run();
             });
 
@@ -119,7 +119,7 @@ export class AIImagePromptView {
 
         // show the dialog
         if (next.open && prev.open === false) {
-            this.component.instance.showDialog(this.editor.getText());
+            this.store.showDialog(this.editor.getText());
         }
 
         // hide the dialog handled by isOpenDialog$ subscription

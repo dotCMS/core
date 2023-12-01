@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { map, switchMap, withLatestFrom } from 'rxjs/operators';
+import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
 
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -87,7 +87,7 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         return prompt$.pipe(
             withLatestFrom(this.state$),
             switchMap(([prompt, { selectedPromptType, editorContent }]) => {
-                const cleanPrompt = prompt ? prompt.trim() : '';
+                const cleanPrompt = prompt?.trim() ?? '';
 
                 const finalPrompt =
                     selectedPromptType === 'auto' && editorContent
@@ -118,9 +118,10 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
     readonly reGenerateContent = this.effect((trigger$: Observable<void>) => {
         return trigger$.pipe(
             withLatestFrom(this.state$),
-            map(([_, { prompt }]) => {
+            tap(([_, { prompt }]) => {
                 if (!prompt) return;
-                this.generateImage(of(prompt));
+
+                return this.generateImage(of(prompt));
             })
         );
     });

@@ -4,7 +4,7 @@
     form {
         position: relative;
         .field {
-            margin-bottom: 2rem;
+            margin-bottom: $spacing-5;
         }
         dot-field-validation-message {
             position: absolute;
