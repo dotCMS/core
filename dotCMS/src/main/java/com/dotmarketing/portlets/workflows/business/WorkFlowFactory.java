@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.AlreadyExistException;
@@ -492,6 +493,7 @@ public interface WorkFlowFactory {
 	 *
 	 * @return
 	 */
+	@CloseDBIfOpened
 	long countAllSchemasSteps() throws DotDataException;
 
 	/**
@@ -499,6 +501,7 @@ public interface WorkFlowFactory {
 	 *
 	 * @return
 	 */
+	@CloseDBIfOpened
 	long countAllSchemasActions() throws DotDataException;
 
 	/**
@@ -506,5 +509,6 @@ public interface WorkFlowFactory {
 	 *
 	 * @return
 	 */
+	@CloseDBIfOpened
 	long countAllSchemasSubActions() throws DotDataException;
 }
