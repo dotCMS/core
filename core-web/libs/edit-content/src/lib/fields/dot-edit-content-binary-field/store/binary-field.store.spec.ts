@@ -17,7 +17,7 @@ import { getUiMessage } from '../utils/binary-field-utils';
 
 const INITIAL_STATE: BinaryFieldState = {
     file: null,
-    tempFile: null,
+    value: null,
     mode: BinaryFieldMode.DROPZONE,
     status: BinaryFieldStatus.INIT,
     uiMessage: getUiMessage(UI_MESSAGE_KEYS.DEFAULT),
@@ -104,11 +104,11 @@ describe('DotBinaryFieldStore', () => {
                 done();
             });
         });
-        it('should set TempFile', (done) => {
+        it('should set value from TempFile', (done) => {
             store.setTempFile(TEMP_FILE_MOCK);
 
-            store.tempFile$.subscribe((tempFile) => {
-                expect(tempFile).toEqual(TEMP_FILE_MOCK);
+            store.value$.subscribe((value) => {
+                expect(value).toEqual(TEMP_FILE_MOCK.id);
                 done();
             });
         });
@@ -150,15 +150,15 @@ describe('DotBinaryFieldStore', () => {
 
     describe('Actions', () => {
         describe('handleUploadFile', () => {
-            it('should set tempFile and status to PREVIEW when dropping a valid', (done) => {
+            it('should set value from tempFile and status to PREVIEW when dropping a valid', (done) => {
                 const file = new File([''], 'filename');
                 const spyUploading = jest.spyOn(store, 'setUploading');
 
                 store.handleUploadFile(file);
 
                 // Skip initial state
-                store.tempFile$.pipe(skip(1)).subscribe((tempFile) => {
-                    expect(tempFile).toBe(TEMP_FILE_MOCK);
+                store.value$.pipe(skip(1)).subscribe((value) => {
+                    expect(value).toBe(TEMP_FILE_MOCK.id);
                     done();
                 });
 
@@ -174,7 +174,7 @@ describe('DotBinaryFieldStore', () => {
                 store.handleUploadFile(file);
 
                 // Skip initial state
-                store.tempFile$.pipe(skip(1)).subscribe(() => {
+                store.value$.pipe(skip(1)).subscribe(() => {
                     expect(spyOnUploadService).toHaveBeenCalledWith({
                         file,
                         maxSize: '1MB',
