@@ -1,6 +1,34 @@
-<p-button styleClass="p-button-outlined">
-    <p-avatar [text]="'modes.persona.no.persona' | dm" dotAvatar></p-avatar>
+<p-button (onClick)="op.toggle($event)" styleClass="p-button-outlined">
+    <p-avatar
+        *ngIf="selectedPersona && selectedPersona?.identifier !== 'modes.persona.no.persona'"
+        [text]="selectedPersona?.name"
+        [image]="selectedPersona?.photo"
+        dotAvatar></p-avatar>
+    <p-avatar
+        *ngIf="selectedPersona && selectedPersona?.identifier === 'modes.persona.no.persona'"
+        [text]="'modes.persona.no.persona' | dm"
+        dotAvatar></p-avatar>
     <span class="p-button-label">
-        {{ 'modes.persona.no.persona' | dm }}
+        {{ selectedPersona?.title }}
     </span>
 </p-button>
+<p-overlayPanel #op styleClass="edit-ema-persona-selector" data-testId="language-op">
+    <p-listbox
+        [filter]="true"
+        [options]="personas"
+        (onChange)="onChange($event)"
+        optionLabel="title"
+        data-testId="language-listbox">
+        <ng-template let-persona pTemplate="item">
+            <div class="edit-ema-persona-selector__persona">
+                <p-avatar
+                    [text]="persona?.name"
+                    [image]="persona?.photo"
+                    [badgeDisabled]="!persona?.personalized"
+                    pBadge
+                    dotAvatar></p-avatar>
+                <span>{{ persona.title }}</span>
+            </div>
+        </ng-template>
+    </p-listbox>
+</p-overlayPanel>

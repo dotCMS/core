@@ -105,7 +105,11 @@ describe('DotEmaComponent', () => {
         });
 
         it('should initialize with route query parameters', () => {
-            const mockQueryParams = { language_id: 1, url: 'page-one' };
+            const mockQueryParams = {
+                language_id: 1,
+                url: 'page-one',
+                persona_id: 'modes.persona.no.persona'
+            };
 
             jest.spyOn(store, 'load');
 
@@ -154,7 +158,7 @@ describe('DotEmaComponent', () => {
             });
 
             expect(iframe.nativeElement.src).toBe(
-                'http://localhost:3000/my-awesome-route?language_id=2'
+                'http://localhost:3000/my-awesome-route?language_id=2&com.dotmarketing.persona.id=modes.persona.no.persona'
             );
         });
 
@@ -598,7 +602,11 @@ describe('DotEmaComponent', () => {
         });
 
         it('should initialize with default value', () => {
-            const mockQueryParams = { language_id: 1, url: 'index' };
+            const mockQueryParams = {
+                language_id: 1,
+                url: 'index',
+                persona_id: 'modes.persona.no.persona'
+            };
 
             jest.spyOn(store, 'load');
 

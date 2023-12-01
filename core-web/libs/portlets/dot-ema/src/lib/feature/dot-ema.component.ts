@@ -30,7 +30,7 @@ import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-se
 import { EditEmaPersonaSelectorComponent } from '../components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaToolbarComponent } from '../components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_LANGUAGE_ID, DEFAULT_URL, WINDOW } from '../shared/consts';
+import { PARAMS_AND_DEFAULT_VALUES, WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { AddContentletPayload, DeleteContentletPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
@@ -83,27 +83,29 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     constructor(@Inject(WINDOW) private window: Window) {}
 
     ngOnInit(): void {
-        this.route.queryParams.subscribe(({ language_id, url }: Params) => {
-            const queryParams = {};
+        this.route.queryParams.subscribe((queryParams: Params) => {
+            const newParams = {};
 
-            if (!language_id) {
-                queryParams['language_id'] = DEFAULT_LANGUAGE_ID;
-            }
+            PARAMS_AND_DEFAULT_VALUES.forEach(([param, defaultValue]) => {
+                if (!queryParams[param]) {
+                    newParams[param] = defaultValue;
+                } else {
+                    newParams[param] = queryParams[param];
+                }
+            });
 
-            if (!url) {
-                queryParams['url'] = DEFAULT_URL;
-            }
-
-            if (Object.keys(queryParams).length > 0) {
+            if (Object.keys(newParams).length > 0) {
+                // This maintains all the params in the url updated
                 this.router.navigate([], {
-                    queryParams,
+                    queryParams: newParams,
                     queryParamsHandling: 'merge'
                 });
             }
 
             this.store.load({
-                language_id: language_id || DEFAULT_LANGUAGE_ID,
-                url: url || DEFAULT_URL
+                language_id: newParams['language_id'],
+                url: newParams['url'],
+                persona_id: newParams['com.dotmarketing.persona.id']
             });
         });
 
@@ -157,6 +159,21 @@ export class DotEmaComponent implements OnInit, OnDestroy {
         this.router.navigate([], {
             queryParams: {
                 language_id
+            },
+            queryParamsHandling: 'merge'
+        });
+    }
+
+    /**
+     * Handle the persona selection
+     *
+     * @param {string} persona_id
+     * @memberof DotEmaComponent
+     */
+    onPersonaSelected(persona_id: string) {
+        this.router.navigate([], {
+            queryParams: {
+                'com.dotmarketing.persona.id': persona_id
             },
             queryParamsHandling: 'merge'
         });

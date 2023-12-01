@@ -5,12 +5,15 @@ import { Injectable } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
+import { DotPersona } from '@dotcms/dotcms-models';
+
 import {
     DotPageApiParams,
     DotPageApiResponse,
-    DotPageApiService
+    DotPageApiService,
+    GetPersonasParams
 } from '../../services/dot-page-api.service';
-import { ADD_CONTENTLET_URL, EDIT_CONTENTLET_URL } from '../../shared/consts';
+import { ADD_CONTENTLET_URL, DEFAULT_PERSONA_ID, EDIT_CONTENTLET_URL } from '../../shared/consts';
 import { SavePagePayload } from '../../shared/models';
 
 export interface EditEmaState {
@@ -20,6 +23,7 @@ export interface EditEmaState {
     dialogVisible: boolean;
     dialogHeader: string;
     dialogIframeLoading: boolean;
+    personas: DotPersona[];
 }
 
 @Injectable()
@@ -45,12 +49,18 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             dialogIframeURL: '',
             dialogVisible: false,
             dialogHeader: '',
-            dialogIframeLoading: false
+            dialogIframeLoading: false,
+            personas: []
         });
     }
 
     readonly iframeUrl$: Observable<string> = this.select(
-        ({ url, editor }) => `http://localhost:3000/${url}?language_id=${editor.viewAs.language.id}`
+        ({ url, editor }) =>
+            `http://localhost:3000/${url}?language_id=${
+                editor.viewAs.language.id
+            }&com.dotmarketing.persona.id=${
+                editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA_ID
+            }`
     );
     readonly language_id$: Observable<number> = this.select(
         (state) => state.editor.viewAs.language.id
@@ -62,13 +72,19 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     readonly vm$ = this.select((state) => {
         return {
-            iframeUrl: `http://localhost:3000/${state.url}?language_id=${state.editor.viewAs.language.id}`,
+            iframeUrl: `http://localhost:3000/${state.url}?language_id=${
+                state.editor.viewAs.language.id
+            }&com.dotmarketing.persona.id=${
+                state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA_ID
+            }`,
             pageTitle: state.editor.page.title,
             dialogIframeURL: state.dialogIframeURL,
             dialogVisible: state.dialogVisible,
             dialogHeader: state.dialogHeader,
             dialogIframeLoading: state.dialogIframeLoading,
-            editor: state.editor
+            editor: state.editor,
+            personas: state.personas,
+            selectedPersona: state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA_ID
         };
     });
 
@@ -79,8 +95,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      */
     readonly load = this.effect((params$: Observable<DotPageApiParams>) => {
         return params$.pipe(
-            switchMap(({ language_id, url }) =>
-                this.dotPageApiService.get({ language_id, url }).pipe(
+            switchMap(({ language_id, url, persona_id }) =>
+                this.dotPageApiService.get({ language_id, url, persona_id }).pipe(
                     tap({
                         next: (editor) => {
                             this.patchState({
@@ -93,7 +109,35 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             console.log(e);
                         }
                     }),
-                    catchError(() => EMPTY)
+                    catchError(() => EMPTY),
+
+                    switchMap((editor) => {
+                        return this.personasRequest({ pageID: editor.page.identifier });
+                    })
+                )
+            )
+        );
+    });
+
+    /**
+     * Get the personas
+     *
+     * @memberof EditEmaStore
+     */
+    readonly getPersonas = this.effect((params$: Observable<GetPersonasParams>) => {
+        return params$.pipe(
+            switchMap(({ pageID, filter }) =>
+                this.personasRequest({ pageID, filter }).pipe(
+                    tapResponse(
+                        (personas) => {
+                            this.patchState({
+                                personas
+                            });
+                        },
+                        () => {
+                            return EMPTY;
+                        }
+                    )
                 )
             )
         );
@@ -212,6 +256,29 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         return ADD_CONTENTLET_URL.replace('*CONTAINER_ID*', containerID).replace(
             '*BASE_TYPES*',
             acceptTypes
+        );
+    }
+
+    /**
+     * Get the personas
+     *
+     * @private
+     * @param {GetPersonasParams} { pageID, filter }
+     * @return {*}  {Observable<DotPersona[]>}
+     * @memberof EditEmaStore
+     */
+    private personasRequest({ pageID, filter }: GetPersonasParams): Observable<DotPersona[]> {
+        return this.dotPageApiService.getPersonas({ pageID, filter }).pipe(
+            tapResponse(
+                (personas) => {
+                    this.patchState({
+                        personas
+                    });
+                },
+                () => {
+                    return EMPTY;
+                }
+            )
         );
     }
 }
