@@ -10,8 +10,8 @@ import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import {
-    AIContentPromptComponent,
     AIContentActionsComponent,
+    AIContentPromptComponent,
     AIImagePromptComponent,
     BubbleLinkFormComponent,
     BubbleMenuButtonComponent,
@@ -39,7 +39,8 @@ import { SharedModule } from './shared/shared.module';
         PrimengModule,
         AssetFormModule,
         DotFieldRequiredDirective,
-        UploadPlaceholderComponent
+        UploadPlaceholderComponent,
+        AIImagePromptComponent
     ],
     declarations: [
         EditorDirective,
@@ -55,8 +56,7 @@ import { SharedModule } from './shared/shared.module';
         DotEditorCountBarComponent,
         FloatingButtonComponent,
         AIContentPromptComponent,
-        AIContentActionsComponent,
-        AIImagePromptComponent
+        AIContentActionsComponent
     ],
     providers: [DotUploadFileService, LoggerService, StringUtils, DotAiService],
     exports: [
