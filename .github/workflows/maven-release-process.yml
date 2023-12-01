@@ -25,6 +25,8 @@ env:
   NODE_VERSION: 16
   DOCKER_BUILD_CONTEXT: /home/runner/work/_temp/core-build
   GITHUB_USER: victoralfaro-dotcms
+  GITHUB_PUSH_URL: 'https://${{ env.GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com'
+  CORE_GITHUB_PUSH_URL: ${{ env.GITHUB_PUSH_URL }}/${{ github.repository }}
 
 jobs:
   prepare-release:
@@ -142,7 +144,7 @@ jobs:
           
           git status
           git commit -a -m "🏁 Publishing release version [${release_version}]"
-          git push https://${GITHUB_USER}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git push ${CORE_GITHUB_PUSH_URL}
           
           release_commit=$(git log -1 --pretty=%H)
           echo "release_commit=${release_commit}" >> $GITHUB_OUTPUT
@@ -383,15 +385,15 @@ jobs:
           git status
           git commit -a -m "Updating dotcms version to ${release_version}"
           git commit --allow-empty -m "Publish Release ${release_version}"          
-          git push https://${GITHUB_USER}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotCMS/plugin-seeds.git
+          git push ${GITHUB_PUSH_URL}/dotCMS/plugin-seeds.git
 
-  publish-release-image:
-    name: Publish Release Image
+  build_push_image:
+    name: Build and Push Image
     runs-on: ubuntu-latest
     needs: prepare-release
     if: success()
     outputs:
-      tags: ${{ steps.format-tags.outputs.tags }}
+      tags: ${{ steps.meta.outputs.tags }}
     env:
       DOCKER_PLATFORMS: linux/amd64,linux/arm64
     steps:
@@ -414,20 +416,6 @@ jobs:
       - name: Debug docker metadata
         run: |
           echo "${{ fromJSON(steps.meta.outputs.json) }}"
-
-      - name: Format Tags
-        id: format-tags
-        run: |
-          tags=''
-          tags_arr=( ${{ steps.meta.outputs.tags }} )
-          
-          for tag in "${tags_arr[@]}"
-          do
-            [[ -n "${tags}" ]] && tags="${tags}, "
-            tags="${tags}\`${tag}\`"
-          done
-          
-          echo "tags=${tags}" >> $GITHUB_OUTPUT
 
       - name: Restore Docker Context
         id: restore-docker-context
@@ -472,7 +460,7 @@ jobs:
   finish-release:
     name: Finish Release
     runs-on: ubuntu-latest
-    needs: [prepare-release, release-process, publish-release-image]
+    needs: [prepare-release, release-process, build_push_image]
     if: success()
     env:
       NEXT_VERSION: '1.0.0-SNAPSHOT'
@@ -504,7 +492,21 @@ jobs:
 
           git status
           git commit -a -m "Setting to next version: ${next_version}"
-          git push https://${GITHUB_USER}:${{ secrets.CICD_GITHUB_TOKEN }}@@github.com/${{ github.repository }}
+          git push ${CORE_GITHUB_PUSH_URL}
+
+      - name: Format Tags
+        id: format-tags
+        run: |
+          tags=''
+          tags_arr=( ${{ needs.build_push_image.outputs.tags }} )
+          
+          for tag in "${tags_arr[@]}"
+          do
+            [[ -n "${tags}" ]] && tags="${tags}, "
+            tags="${tags}\`${tag}\`"
+          done
+          
+          echo "tags=${tags}" >> $GITHUB_OUTPUT  
 
       - name: Fetch `Next Release` issues
         id: fetch-next-release-issues
@@ -543,5 +545,5 @@ jobs:
           MSG_MINIMAL: true
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
-          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS `${{ needs.prepare-release.outputs.release_version }}` :rocket:\n:docker: Produced images: [${{ needs.publish-release-image.outputs.tags }}]"
+          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS `${{ needs.prepare-release.outputs.release_version }}` :rocket:\n:docker: Produced images: [${{ steps.format-tags.outputs.tags }}]"
         if: success()
