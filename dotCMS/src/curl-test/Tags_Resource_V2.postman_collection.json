@@ -7,7 +7,7 @@
 	},
 	"item": [
 		{
-			"name": "create tags site2",
+			"name": "Create test Site for Tags",
 			"event": [
 				{
 					"listen": "test",
@@ -56,7 +56,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"siteName\":\"tags.host{{randomNum}}.com\"\n\n}",
+					"raw": "{\n    \"siteName\":\"tags.host{{randomNum}}.com\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -78,7 +78,7 @@
 			"response": []
 		},
 		{
-			"name": "save-tags",
+			"name": "Save Tags in Site and System Host",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -99,7 +99,7 @@
 							"",
 							"pm.test(\"Retrieve and save the Tag ID to update it later\", function () {",
 							"    const jsonData = pm.response.json();    ",
-							"    const tag = jsonData.entity['non-global-tag'];",
+							"    const tag = jsonData.entity['non-global-tag-v2'];",
 							"    pm.collectionVariables.set(\"tagForUpdateId\", tag.id);",
 							"});",
 							""
@@ -144,7 +144,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n   \"ownerId\":\"dotcms.org.1\",\n   \"tags\":{\n      \"default-site-tag-1\":{\n         \"siteId\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n         \"persona\":false\n      },\n      \"global-tag-1\":{\n         \"siteId\":\"SYSTEM_HOST\",\n         \"persona\":false\n      },\n      \"third-site-tag\":{\n         \"siteId\":\"{{tagsSiteId}}\",\n         \"persona\":false\n      },\n      \"non-global-tag\":{\n         \"siteId\":\"{{tagsSiteId}}\",\n         \"persona\":false\n      }\n   }\n}"
+					"raw": "{\n   \"ownerId\":\"dotcms.org.1\",\n   \"tags\":{\n      \"default-site-tag-1-v2\":{\n         \"siteId\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n         \"persona\":false\n      },\n      \"global-tag-1-v2\":{\n         \"siteId\":\"SYSTEM_HOST\",\n         \"persona\":false\n      },\n      \"third-site-tag-v2\":{\n         \"siteId\":\"{{tagsSiteId}}\",\n         \"persona\":false\n      },\n      \"non-global-tag-v2\":{\n         \"siteId\":\"{{tagsSiteId}}\",\n         \"persona\":false\n      }\n   }\n}"
 				},
 				"url": {
 					"raw": "{{serverURL}}/api/v2/tags/",
@@ -163,7 +163,7 @@
 			"response": []
 		},
 		{
-			"name": "update-tag",
+			"name": "Update Tag in test Site",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -185,7 +185,7 @@
 							"pm.test(\"Check that the updated Tag is being returned correctly\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    console.log(jsonData.entity);",
-							"    const tag = jsonData.entity['non-global-tag-changed'];    ",
+							"    const tag = jsonData.entity['non-global-tag-v2-changed'];    ",
 							"    pm.expect(tag).not.eql(undefined);",
 							"});",
 							""
@@ -230,7 +230,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n   \"siteId\":\"{{tagsSiteId}}\",\n   \"tagName\":\"non-global-tag-changed\",\n   \"tagId\":\"{{tagForUpdateId}}\"\n}"
+					"raw": "{\n   \"siteId\":\"{{tagsSiteId}}\",\n   \"tagName\":\"non-global-tag-v2-changed\",\n   \"tagId\":\"{{tagForUpdateId}}\"\n}"
 				},
 				"url": {
 					"raw": "{{serverURL}}/api/v2/tags/",
@@ -249,7 +249,7 @@
 			"response": []
 		},
 		{
-			"name": "list-all-tags",
+			"name": "List ALL Tags",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -274,16 +274,16 @@
 							"    pm.expect(size).to.be.greaterThan(0);",
 							"    for (const key in jsonData) {",
 							"        let tagObject = jsonData[key];",
-							"        if(\"default-site-tag-1\" === key){           ",
+							"        if(\"default-site-tag-1-v2\" === key){           ",
 							"           pm.collectionVariables.set(\"defaultSiteTag\", tagObject);",
 							"        } ",
-							"        if(\"global-tag-1\" === key) {           ",
+							"        if(\"global-tag-1-v2\" === key) {           ",
 							"           pm.collectionVariables.set(\"globalTag\", tagObject);",
 							"        }",
-							"        if(\"third-site-tag\" === key) {           ",
+							"        if(\"third-site-tag-v2\" === key) {           ",
 							"           pm.collectionVariables.set(\"thirdSiteTag\", tagObject);",
 							"        }",
-							"        if(\"non-global-tag-changed\" === key) {           ",
+							"        if(\"non-global-tag-v2-changed\" === key) {           ",
 							"           pm.collectionVariables.set(\"nonGlobalTag\", tagObject);",
 							"        }",
 							"    }",
@@ -355,7 +355,7 @@
 			"response": []
 		},
 		{
-			"name": "suggest-tags-by-name-expect-1-match",
+			"name": "Get Tag by Name and Site",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -427,7 +427,7 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v2/tags?name=default",
+					"raw": "{{serverURL}}/api/v2/tags?name=default&siteId=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -440,6 +440,10 @@
 						{
 							"key": "name",
 							"value": "default"
+						},
+						{
+							"key": "siteId",
+							"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
 						}
 					]
 				},
@@ -448,7 +452,7 @@
 			"response": []
 		},
 		{
-			"name": "filter-by-tag-name-on-site-where-tag-does-not-exist-expect-no-match",
+			"name": "Get Tag that does not exist",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -545,7 +549,7 @@
 			"response": []
 		},
 		{
-			"name": "suggest-tags-invalid-sites",
+			"name": "Get Tag from non-existing Site",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -642,7 +646,7 @@
 			"response": []
 		},
 		{
-			"name": "get-tag-by-user-id",
+			"name": "Get Tags owned by a User ID",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -731,7 +735,7 @@
 			"response": []
 		},
 		{
-			"name": "get-tag-by-name",
+			"name": "Get Tag by its name",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -807,7 +811,7 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v2/tags/third-site-tag",
+					"raw": "{{serverURL}}/api/v2/tags/third-site-tag-v2",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -815,7 +819,7 @@
 						"api",
 						"v2",
 						"tags",
-						"third-site-tag"
+						"third-site-tag-v2"
 					]
 				},
 				"description": "This tests the endpoint that brings back one specific App given the App-key."
@@ -823,7 +827,7 @@
 			"response": []
 		},
 		{
-			"name": "get-tag-by-id",
+			"name": "Get Tag by its ID",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -848,7 +852,7 @@
 							"    pm.expect(size).to.be.greaterThan(0);",
 							"    const keys = Object.keys(jsonData.entity);",
 							"    const key = keys[0];",
-							"    pm.expect(key).equals(\"third-site-tag\");",
+							"    pm.expect(key).equals(\"third-site-tag-v2\");",
 							"});",
 							""
 						],
@@ -914,7 +918,7 @@
 			"response": []
 		},
 		{
-			"name": "delete tag",
+			"name": "Delete a specific Tag",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -1000,7 +1004,7 @@
 			"response": []
 		},
 		{
-			"name": "delete-tag-invalid-id",
+			"name": "Delet a non-existing Tag",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -1085,7 +1089,7 @@
 			"response": []
 		},
 		{
-			"name": "import-tags",
+			"name": "Import Tags from CSV file",
 			"event": [
 				{
 					"listen": "test",
@@ -1174,7 +1178,7 @@
 			"response": []
 		},
 		{
-			"name": "link-inode-tag",
+			"name": "Link a Tag to a specific Inode",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -1283,44 +1287,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "randomNum",
-			"value": ""
-		},
-		{
-			"key": "tagsSiteId",
-			"value": ""
-		},
-		{
-			"key": "tagForUpdateId",
-			"value": ""
-		},
-		{
-			"key": "defaultSiteTag",
-			"value": ""
-		},
-		{
-			"key": "globalTag",
-			"value": ""
-		},
-		{
-			"key": "nonGlobalTag",
-			"value": ""
-		},
-		{
-			"key": "thirdSiteTag",
-			"value": ""
-		},
-		{
-			"key": "retrievedTagId",
-			"value": ""
-		},
-		{
-			"key": "deleteTagCandidateId",
-			"value": ""
 		}
 	]
 }
