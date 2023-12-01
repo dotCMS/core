@@ -4,7 +4,7 @@ import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Type } from '@angular/core';
+import { FactoryProvider, Type } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
@@ -49,7 +49,11 @@ declare module '@tiptap/core' {
 
 // This holds the mapping between the field type and the component that should be used to render it.
 // We need to hold this record here, because for some reason the references just fall to undefined.
-const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown>> = {
+const FIELD_TYPES_COMPONENTS: Record<
+    FIELD_TYPES,
+    | Type<unknown>
+    | { component: Type<unknown>; providers?: FactoryProvider[]; declarations?: Type<unknown>[] }
+> = {
     // We had to use unknown because components have different types.
     [FIELD_TYPES.TEXT]: DotEditContentTextFieldComponent,
     [FIELD_TYPES.TEXTAREA]: DotEditContentTextAreaComponent,
@@ -62,9 +66,18 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown>> = {
     [FIELD_TYPES.CHECKBOX]: DotEditContentCheckboxFieldComponent,
     [FIELD_TYPES.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent,
     [FIELD_TYPES.BLOCK_EDITOR]: DotBlockEditorComponent,
-    [FIELD_TYPES.CUSTOM_FIELD]: DotEditContentCustomFieldComponent,
+    [FIELD_TYPES.CUSTOM_FIELD]: {
+        component: DotEditContentCustomFieldComponent,
+        providers: [
+            mockProvider(DotContentTypeService),
+            mockProvider(DotWorkflowActionsFireService)
+        ]
+    },
     [FIELD_TYPES.BINARY]: DotEditContentBinaryFieldComponent,
-    [FIELD_TYPES.JSON]: DotEditContentJsonFieldComponent
+    [FIELD_TYPES.JSON]: {
+        component: DotEditContentJsonFieldComponent,
+        declarations: [MockComponent(DotEditContentJsonFieldComponent)]
+    }
 };
 
 describe('FIELD_TYPES and FIELDS_MOCK', () => {
@@ -78,11 +91,15 @@ describe('FIELD_TYPES and FIELDS_MOCK', () => {
 });
 
 describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fieldMock) => {
+    const fieldTestBed = FIELD_TYPES_COMPONENTS[fieldMock.fieldType];
     let spectator: Spectator<DotEditContentFieldComponent>;
     const createComponent = createComponentFactory({
         imports: [HttpClientTestingModule],
         // Avoid mocking Monaco Editor - It's too complex to mock
-        declarations: [MockComponent(DotEditContentJsonFieldComponent)],
+        declarations: [
+            ...(fieldTestBed?.declarations || [])
+            //MockComponent(DotEditContentJsonFieldComponent)
+        ],
         component: DotEditContentFieldComponent,
         componentViewProviders: [
             {
@@ -93,8 +110,9 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
         providers: [
             FormGroupDirective,
             DotEditContentService,
-            mockProvider(DotContentTypeService),
-            mockProvider(DotWorkflowActionsFireService)
+            ...(fieldTestBed?.providers || [])
+            // mockProvider(DotContentTypeService),
+            // mockProvider(DotWorkflowActionsFireService)
         ]
     });
 
@@ -136,10 +154,8 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
             const field = spectator.debugElement.query(
                 By.css(`[data-testId="field-${fieldMock.variable}"]`)
             );
-
-            expect(
-                field.componentInstance instanceof FIELD_TYPES_COMPONENTS[fieldMock.fieldType]
-            ).toBeTruthy();
+            const fieldType = fieldTestBed.component ? fieldTestBed.component : fieldTestBed;
+            expect(field.componentInstance instanceof fieldType).toBeTruthy();
         });
     });
 });

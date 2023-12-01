@@ -5,15 +5,13 @@ iframe {
     width: 100%;
 }
 
-.legacy-custom-field {
-    &--fullscreen {
-        width: 100%;
-        height: 100%;
-        z-index: 99999;
-        position: absolute;
-        top: 0;
-        left: 0;
-    }
+.legacy-custom-field--fullscreen {
+    width: 100%;
+    height: 100%;
+    z-index: 99999;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
 dot-icon {
