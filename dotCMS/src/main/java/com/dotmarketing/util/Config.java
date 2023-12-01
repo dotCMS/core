@@ -33,6 +33,11 @@ import java.util.stream.Collectors;
  * This class provides access to the system configuration parameters that are set through the
  * {@code dotmarketing-config.properties}, and the {@code dotcms-config-cluster.properties} files.
  *
+ * The order of the properties resolution is:
+ * 1) any property set by environmet variable
+ * 2) any property set by the system table (could be on runtime)
+ * 3) any property set by the property files
+ *
  * @author root
  * @version 1.0
  * @since Mar 22, 2012
@@ -326,6 +331,15 @@ public class Config {
             props.copy(configuration);
         }
 
+    }
+
+    /**
+     * Force the refresh properties, only for testing
+     */
+    @VisibleForTesting
+    protected static void refreshProperties() {
+
+       _loadProperties();
     }
 
     /**
