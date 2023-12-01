@@ -88,9 +88,9 @@ jobs:
             git push origin :refs/tags/${release_tag}
           fi
       
+          is_lts_trunk=false
           release_branch=${{ steps.set-common-vars.outputs.release_branch }}
           remote=$(git ls-remote --heads https://github.com/dotCMS/core.git ${release_branch} | wc -l | tr -d '[:space:]')
-          is_lts_trunk=false
           if [[ "${remote}" == '1' ]]; then
             if [[ ${{ steps.set-common-vars.outputs.release_version }} =~ [0-9]{2}.[0-9]{2}.[0-9]{2}_lts ]]; then
               is_lts_trunk=true
@@ -344,6 +344,11 @@ jobs:
           release_version=${{ needs.prepare-release.outputs.release_version }}
           release_branch=${{ needs.prepare-release.outputs.release_branch }}
           
+          remote=$(git ls-remote --heads https://github.com/dotCMS/plugin-seeds.git ${release_branch} | wc -l | tr -d '[:space:]')
+          if [[ "${remote}" == '1' ]]; then
+            echo "Release branch ${release_branch} already exists, removing it"
+            git push origin :${release_branch}
+          fi
           git checkout -b ${release_branch}
           
           for file in $(find . -name build.gradle)
