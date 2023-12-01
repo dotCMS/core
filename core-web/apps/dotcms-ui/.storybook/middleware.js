@@ -12,10 +12,7 @@ module.exports = function expressMiddleware(router) {
             '/api/v1/ai/text/generate',
             createProxyMiddleware({
                 target: 'http://localhost:8080',
-                changeOrigin: true,
-                pathRewrite: {
-                    '^/api/v1/ai/text/generate': '/api/v1/ai/text/generate'
-                }
+                changeOrigin: true
             })
         );
 
@@ -24,10 +21,7 @@ module.exports = function expressMiddleware(router) {
             '/api/v1/ai/image/generate',
             createProxyMiddleware({
                 target: 'http://localhost:8080',
-                changeOrigin: true,
-                pathRewrite: {
-                    '^/api/v1/ai/image/generate': '/api/v1/ai/image/generate'
-                }
+                changeOrigin: true
             })
         );
 
@@ -36,14 +30,19 @@ module.exports = function expressMiddleware(router) {
             '/api/v1/workflow/actions/default/fire/PUBLISH',
             createProxyMiddleware({
                 target: 'http://localhost:8080',
-                changeOrigin: true,
-                pathRewrite: {
-                    '^/api/v1/workflow/actions/default/fire/PUBLISH':
-                        '/api/v1/workflow/actions/default/fire/PUBLISH'
-                }
+                changeOrigin: true
             })
         );
 
-        console.info(`\x1b[32m[dotCMS]\x1b[0m`, 'Using middleware for storybook');
+        // Route dotAssets to the backend
+        router.use(
+            '/da',
+            createProxyMiddleware({
+                target: 'http://localhost:8080',
+                changeOrigin: true
+            })
+        );
+
+        console.info(`\x1b[35m[dotCMS]\x1b[0m`, 'Using middleware for storybook');
     }
 };

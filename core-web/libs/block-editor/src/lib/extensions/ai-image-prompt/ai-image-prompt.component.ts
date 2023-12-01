@@ -1,73 +1,70 @@
-import { of } from 'rxjs';
+import { Observable } from 'rxjs';
 
-import { Component, EventEmitter, Output } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
+import { AsyncPipe, NgIf } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 
-import { catchError, switchMap } from 'rxjs/operators';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAiService } from '../../shared/services/dot-ai/dot-ai.service';
+import { ComponentStatus } from '@dotcms/dotcms-models';
+
+import { PromptType } from './ai-image-prompt.models';
+import { DotAiImagePromptStore, VmAiImagePrompt } from './ai-image-prompt.store';
+import { AiImagePromptInputComponent } from './components/ai-image-prompt-input/ai-image-prompt-input.component';
 
 @Component({
     selector: 'dot-ai-image-prompt',
+    standalone: true,
     templateUrl: './ai-image-prompt.component.html',
-    styleUrls: ['./ai-image-prompt.component.scss']
+    styleUrls: ['./ai-image-prompt.component.scss'],
+    imports: [
+        ButtonModule,
+        TooltipModule,
+        ReactiveFormsModule,
+        OverlayPanelModule,
+        NgIf,
+        DialogModule,
+        AiImagePromptInputComponent,
+        AiImagePromptInputComponent,
+        AsyncPipe
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AIImagePromptComponent {
-    form = this.fb.group({
-        promptGenerate: ['', Validators.required],
-        promptAutoGenerate: ['', Validators.required]
-    });
+    vm$: Observable<VmAiImagePrompt> = inject(DotAiImagePromptStore).vm$;
 
-    isFormSubmitting = false;
-    showFormOne = true;
-    showFormTwo = false;
+    protected readonly ComponentStatus = ComponentStatus;
+    private store = inject(DotAiImagePromptStore);
 
-    @Output() formSubmission = new EventEmitter<boolean>();
-    @Output() aiResponse = new EventEmitter<string>();
+    /**
+     * Hides the dialog.
+     * @return {void}
+     */
+    hideDialog(): void {
+        this.store.hideDialog();
+    }
 
-    constructor(private fb: FormBuilder, private aiContentService: DotAiService) {}
-
-    onSubmit() {
-        this.isFormSubmitting = true;
-        const promptGenerate = this.form.value.promptGenerate;
-        const promptAutoGenerate = this.form.value.promptAutoGenerate;
-        const combinedPrompt = `${promptGenerate} ${promptAutoGenerate}`;
-
-        this.isFormSubmitting = false;
-        this.formSubmission.emit(true);
-
-        if (prompt) {
-            this.aiContentService
-                .generateImage(combinedPrompt)
-                .pipe(
-                    catchError(() => of(null)),
-                    switchMap((imageId) => {
-                        if (!imageId) {
-                            return of(null);
-                        }
-
-                        return this.aiContentService.createAndPublishContentlet(imageId);
-                    })
-                )
-                .subscribe((contentlet) => {
-                    this.aiResponse.emit(contentlet);
-                });
+    /**
+     * Selects the prompt type
+     *
+     * @return {void}
+     */
+    selectType(promptType: PromptType, current: PromptType): void {
+        if (current != promptType) {
+            this.store.setPromptType(promptType);
         }
     }
 
-    openFormOne() {
-        this.showFormOne = true;
-        this.showFormTwo = false;
-    }
-
-    openFormTwo() {
-        this.showFormTwo = true;
-        this.showFormOne = false;
-    }
-
-    cleanForm() {
-        this.form.reset();
-        this.showFormOne = true;
-        this.showFormTwo = false;
+    /**
+     * Generates an image based on the provided prompt.
+     *
+     * @param {string} prompt - The text prompt used to generate the image.
+     * @return {void} - This method does not return any value.
+     */
+    generateImage(prompt: string): void {
+        this.store.generateImage(prompt);
     }
 }
