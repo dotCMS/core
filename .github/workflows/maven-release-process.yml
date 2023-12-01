@@ -330,18 +330,19 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: dotCMS/plugin-seeds
-          path: plugins
           ref: master
           fetch-depth: 0
+          token: ${{ secrets.CICD_GITHUB_TOKEN }}
 
       - name: Update Plugins
-        working-directory: ${{ github.workspace }}/plugins
+        working-directory: ${{ github.workspace }}/plugin-seeds
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           
           release_version=${{ needs.prepare-release.outputs.release_version }}
           release_branch=${{ needs.prepare-release.outputs.release_branch }}
+          
           git checkout -b ${release_branch}
           
           for file in $(find . -name build.gradle)
@@ -352,10 +353,10 @@ jobs:
           done
           
           git status
-          git add .
-          git commit -m "Updating dotcms version to ${release_version}"
+          git commit -a -m "Updating dotcms version to ${release_version}"
           git commit --allow-empty -m "Publish Release ${release_version}"
           
+#          git push origin ${release_branch}
           git push https://${{ env.GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotCMS/plugin-seeds.git
 
   publish-release-image:
