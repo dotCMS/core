@@ -322,4 +322,10 @@ describe('SiteSelectorComponent', () => {
         const siteTitle: DebugElement = de.query(By.css('.site-selector__title'));
         expect(siteTitle).not.toBeNull();
     });
+
+    it('should display as site selector data list', () => {
+        fixtureHost.detectChanges();
+        const siteSelectorDataList: DebugElement = de.query(By.css('site_selector__data-list'));
+        expect(siteSelectorDataList).not.toBeNull();
+    });
 });
