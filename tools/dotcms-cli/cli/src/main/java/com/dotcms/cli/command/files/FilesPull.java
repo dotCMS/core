@@ -125,11 +125,11 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
                         isShortOutput(pullMixin.shortOutputOption().isShortOutput()).
                         failFast(pullMixin.failFast).
                         maxRetryAttempts(pullMixin.retryAttempts).
+                        customOptions(customOptions).
                         build(),
                 output,
                 fileProvider,
-                filePullHandler,
-                customOptions
+                filePullHandler
         );
 
         return CommandLine.ExitCode.OK;

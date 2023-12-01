@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
@@ -41,7 +42,7 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
 
     @ActivateRequestContext
     @Override
-    public List<FileTraverseResult> fetch(Map<String, Object> customOptions) {
+    public List<FileTraverseResult> fetch(final Map<String, Object> customOptions) {
 
         // ---
         // First we need to fetch the all the existing sites
@@ -82,9 +83,9 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
 
         // ---
         // And now for each site we need to fetch the tree under the specified site
-        List<FileTraverseResult> results = new ArrayList<>();
-        for (Site site : allSites) {
-            String sitePath = String.format("//%s", site.hostName());
+        final List<FileTraverseResult> results = new ArrayList<>();
+        for (final Site site : allSites) {
+            final String sitePath = String.format("//%s", site.hostName());
             results.add(fetch(sitePath, customOptions));
         }
 
@@ -172,13 +173,12 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
      * @return The set of values associated with the key, or null if the options map is null or does
      * not contain the key
      */
-    private Set<String> getSetFromOptions(Map<String, Object> options, String key) {
+    @SuppressWarnings("unchecked")
+    private Set<String> getSetFromOptions(final Map<String, Object> options, final String key) {
 
-        if (options != null && options.containsKey(key)) {
-            return (Set<String>) options.get(key);
-        }
-
-        return Collections.emptySet();
+        return Optional.ofNullable(options)
+                .map(map -> (Set<String>) map.getOrDefault(key, Collections.emptySet()))
+                .orElse(Collections.emptySet());
     }
 
 }

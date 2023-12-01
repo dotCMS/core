@@ -5,7 +5,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.pull.PullOptions;
 import java.text.SimpleDateFormat;
 import java.util.List;
-import java.util.Map;
 import javax.enterprise.context.Dependent;
 import org.apache.commons.lang3.StringUtils;
 
@@ -18,7 +17,7 @@ public class ContentTypePullHandler implements GeneralPullHandler<ContentType> {
     }
 
     @Override
-    public String startPullingHeader(List<ContentType> contents) {
+    public String startPullingHeader(final List<ContentType> contents) {
 
         return String.format("\r@|bold,green [%d]|@ %s to pull",
                 contents.size(),
@@ -37,8 +36,7 @@ public class ContentTypePullHandler implements GeneralPullHandler<ContentType> {
     }
 
     @Override
-    public String shortFormat(final ContentType contentType, final PullOptions pullOptions,
-            final Map<String, Object> customOptions) {
+    public String shortFormat(final ContentType contentType, final PullOptions pullOptions) {
 
         final var simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 

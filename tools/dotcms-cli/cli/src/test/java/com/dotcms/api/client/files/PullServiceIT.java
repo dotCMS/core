@@ -119,11 +119,11 @@ class PullServiceIT extends FilesTestHelper {
                             isShortOutput(false).
                             failFast(true).
                             maxRetryAttempts(0).
+                            customOptions(customOptions).
                             build(),
                     outputOptions,
                     fileProvider,
-                    filePullHandler,
-                    customOptions
+                    filePullHandler
             );
 
             class Validator {
@@ -305,11 +305,11 @@ class PullServiceIT extends FilesTestHelper {
                             isShortOutput(false).
                             failFast(true).
                             maxRetryAttempts(0).
+                            customOptions(customOptions).
                             build(),
                     outputOptions,
                     fileProvider,
-                    filePullHandler,
-                    customOptions
+                    filePullHandler
             );
 
             // ============================
@@ -469,11 +469,11 @@ class PullServiceIT extends FilesTestHelper {
                             isShortOutput(false).
                             failFast(true).
                             maxRetryAttempts(0).
+                            customOptions(customOptions).
                             build(),
                     outputOptions,
                     fileProvider,
-                    filePullHandler,
-                    customOptions
+                    filePullHandler
             );
 
             // ============================
@@ -613,11 +613,11 @@ class PullServiceIT extends FilesTestHelper {
                             isShortOutput(false).
                             failFast(true).
                             maxRetryAttempts(0).
+                            customOptions(customOptions).
                             build(),
                     outputOptions,
                     fileProvider,
-                    filePullHandler,
-                    customOptions
+                    filePullHandler
             );
 
             // ============================

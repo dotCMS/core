@@ -4,7 +4,6 @@ import com.dotcms.api.client.pull.GeneralPullHandler;
 import com.dotcms.model.pull.PullOptions;
 import com.dotcms.model.site.SiteView;
 import java.util.List;
-import java.util.Map;
 import javax.enterprise.context.Dependent;
 import org.apache.commons.lang3.BooleanUtils;
 
@@ -36,8 +35,7 @@ public class SitePullHandler implements GeneralPullHandler<SiteView> {
     }
 
     @Override
-    public String shortFormat(final SiteView site, final PullOptions pullOptions,
-            final Map<String, Object> customOptions) {
+    public String shortFormat(final SiteView site, final PullOptions pullOptions) {
         
         return String.format(
                 "name: [@|bold,underline,blue %s|@] id: [@|bold,underline,cyan %s|@] inode: [@|bold,underline,green %s|@] live:[@|bold,yellow %s|@] default: [@|bold,yellow %s|@] archived: [@|bold,yellow %s|@]",

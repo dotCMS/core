@@ -17,7 +17,6 @@ import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.language.Language;
 import com.dotcms.model.pull.PullOptions;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import javax.enterprise.context.Dependent;
@@ -26,6 +25,10 @@ import javax.inject.Inject;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jboss.logging.Logger;
 
+/**
+ * The FilePullHandler class is responsible for handling the pulling of files. It implements the
+ * CustomPullHandler interface allowing to provide custom logic for pulling files.
+ */
 @Dependent
 public class FilePullHandler implements CustomPullHandler<FileTraverseResult> {
 
@@ -49,21 +52,21 @@ public class FilePullHandler implements CustomPullHandler<FileTraverseResult> {
     }
 
     @Override
-    public String shortFormat(final FileTraverseResult content, final PullOptions pullOptions,
-            Map<String, Object> customOptions) {
+    public String shortFormat(final FileTraverseResult content, final PullOptions pullOptions) {
 
         boolean includeEmptyFolders = false;
 
-        if (customOptions != null) {
-            includeEmptyFolders = (boolean) customOptions.getOrDefault(INCLUDE_EMPTY_FOLDERS,
-                    false);
+        final var customOptions = pullOptions.customOptions();
+        if (customOptions.isPresent()) {
+            includeEmptyFolders = (boolean) customOptions.get().
+                    getOrDefault(INCLUDE_EMPTY_FOLDERS, false);
         }
 
         var treeInfo = treeInfo(content, pullOptions, includeEmptyFolders);
         final TreeNode tree = treeInfo.getLeft();
         final TreeNodeInfo treeNodeInfo = treeInfo.getRight();
 
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         sb.append(header(content, treeNodeInfo));
 
         // We need to retrieve the languages
@@ -83,16 +86,17 @@ public class FilePullHandler implements CustomPullHandler<FileTraverseResult> {
 
     @Override
     @ActivateRequestContext
-    public List<Exception> pull(FileTraverseResult content, final PullOptions pullOptions,
-            Map<String, Object> customOptions, final OutputOptionMixin output) {
+    public List<Exception> pull(final FileTraverseResult content, final PullOptions pullOptions,
+            final OutputOptionMixin output) {
 
         boolean preserve = false;
         boolean includeEmptyFolders = false;
 
-        if (customOptions != null) {
-            preserve = (boolean) customOptions.getOrDefault(PRESERVE, false);
-            includeEmptyFolders = (boolean) customOptions.getOrDefault(INCLUDE_EMPTY_FOLDERS,
-                    false);
+        final var customOptions = pullOptions.customOptions();
+        if (customOptions.isPresent()) {
+            preserve = (boolean) customOptions.get().getOrDefault(PRESERVE, false);
+            includeEmptyFolders = (boolean) customOptions.get().
+                    getOrDefault(INCLUDE_EMPTY_FOLDERS, false);
         }
 
         return pullTree(content, pullOptions, output, !preserve, includeEmptyFolders);

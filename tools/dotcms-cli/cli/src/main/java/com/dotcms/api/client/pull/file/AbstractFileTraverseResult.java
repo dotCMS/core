@@ -14,10 +14,27 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface AbstractFileTraverseResult {
 
+    /**
+     * Returns a list of exceptions that can be thrown during the lookup of files
+     *
+     * @return a list of exceptions
+     */
     List<Exception> exceptions();
 
+    /**
+     * Returns an Optional<TreeNode> representing the tree structure of traversed remote files.
+     *
+     * @return an Optional<TreeNode> representing the tree structure, or an empty Optional if no
+     * tree structure is available
+     */
     Optional<TreeNode> tree();
 
+    /**
+     * Returns an Optional<AssetVersionsView> representing a single asset.
+     *
+     * @return an Optional<AssetVersionsView> representing a single asset, or an empty Optional if
+     * no asset is available
+     */
     Optional<AssetVersionsView> asset();
 
 }

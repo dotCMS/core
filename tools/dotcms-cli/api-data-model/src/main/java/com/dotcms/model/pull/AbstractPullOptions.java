@@ -4,6 +4,7 @@ import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.File;
+import java.util.Map;
 import java.util.Optional;
 import org.immutables.value.Value;
 
@@ -73,5 +74,13 @@ public interface AbstractPullOptions {
      * Number of retry attempts on errors.
      */
     int maxRetryAttempts();
+
+    /**
+     * Retrieves the custom options a pull command can use to customize the pull operation.
+     *
+     * @return an Optional containing the custom options, or an empty Optional if no custom options
+     * are set.
+     */
+    Optional<Map<String, Object>> customOptions();
 
 }

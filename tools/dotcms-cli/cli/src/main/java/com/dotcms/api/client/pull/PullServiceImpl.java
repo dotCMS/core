@@ -11,9 +11,7 @@ import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.pull.PullOptions;
 import io.quarkus.arc.DefaultBean;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
@@ -44,21 +42,9 @@ public class PullServiceImpl implements PullService {
     public <T> void pull(PullOptions options, OutputOptionMixin output, ContentFetcher<T> provider,
             PullHandler<T> pullHandler) {
 
-        pull(options, output, provider, pullHandler, new HashMap<>());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @ActivateRequestContext
-    @Override
-    public <T> void pull(PullOptions pullOptions, OutputOptionMixin output,
-            ContentFetcher<T> provider, PullHandler<T> pullHandler,
-            Map<String, Object> customOptions) {
-
         // ---
         // Fetching the contents
-        var contents = fetch(pullOptions, output, provider, pullHandler, customOptions);
+        var contents = fetch(options, output, provider, pullHandler);
 
         var outputBuilder = new StringBuilder();
 
@@ -67,26 +53,25 @@ public class PullServiceImpl implements PullService {
 
         if (!contents.isEmpty()) {
 
-            if (pullOptions.isShortOutput()) {
+            if (options.isShortOutput()) {
 
                 // ---
                 // Just print the short format
-                pullToConsole(contents, pullOptions, output, pullHandler, customOptions);
+                pullToConsole(contents, options, output, pullHandler);
             } else {
 
                 // ---
                 // Storing the contents to disk
-                pullToDisk(contents, pullOptions, output, pullHandler, customOptions);
+                pullToDisk(contents, options, output, pullHandler);
 
                 output.info(String.format("%n%n Output has been written to [%s].%n%n",
-                        pullOptions.destination().getAbsolutePath()));
+                        options.destination().getAbsolutePath()));
             }
 
         } else {
             outputBuilder.append(String.format("%n%n No %s to pull", pullHandler.title()));
             output.info(outputBuilder.toString());
         }
-
     }
 
     /**
@@ -97,7 +82,6 @@ public class PullServiceImpl implements PullService {
      * @param output        The output option mixin.
      * @param provider      The content fetcher.
      * @param pullHandler   The pull handler.
-     * @param customOptions The custom options.
      * @param <T>           The type of content to fetch.
      * @return The list of fetched contents.
      * @throws PullException If an error occurs while fetching the contents.
@@ -106,8 +90,7 @@ public class PullServiceImpl implements PullService {
             final PullOptions pullOptions,
             final OutputOptionMixin output,
             final ContentFetcher<T> provider,
-            final PullHandler<T> pullHandler,
-            final Map<String, Object> customOptions) {
+            final PullHandler<T> pullHandler) {
 
         CompletableFuture<List<T>>
                 fetcherServiceFuture = CompletableFuture.supplyAsync(
@@ -122,14 +105,16 @@ public class PullServiceImpl implements PullService {
                                 pullOptions.contentKey().get()
                         ));
 
-                        var foundContent = provider.fetchByKey(pullOptions.contentKey().get(),
-                                customOptions);
+                        var foundContent = provider.fetchByKey(
+                                pullOptions.contentKey().get(),
+                                pullOptions.customOptions().orElse(null)
+                        );
                         return List.of(foundContent);
                     }
 
                     // Fetching all contents
                     logger.debug(String.format("Fetching all %s.", pullHandler.title()));
-                    return provider.fetch(customOptions);
+                    return provider.fetch(pullOptions.customOptions().orElse(null));
                 });
 
         // ConsoleLoadingAnimation instance to handle the waiting "animation"
@@ -174,13 +159,12 @@ public class PullServiceImpl implements PullService {
     private <T> void pullToConsole(List<T> contents,
             final PullOptions pullOptions,
             final OutputOptionMixin output,
-            final PullHandler<T> pullHandler,
-            final Map<String, Object> customOptions) {
+            final PullHandler<T> pullHandler) {
 
         output.info(pullHandler.startPullingHeader(contents));
 
-        for (var content : contents) {
-            final String shortFormat = pullHandler.shortFormat(content, pullOptions, customOptions);
+        for (final var content : contents) {
+            final String shortFormat = pullHandler.shortFormat(content, pullOptions);
             output.info(shortFormat);
         }
 
@@ -196,14 +180,12 @@ public class PullServiceImpl implements PullService {
      * @param pullOptions   The pull options.
      * @param output        The output option mixin.
      * @param pullHandler   The pull handler for handling each content.
-     * @param customOptions The custom options.
      * @throws PullException If an error occurs while pulling the contents.
      */
     private <T> void pullToDisk(List<T> contents,
             final PullOptions pullOptions,
             final OutputOptionMixin output,
-            final PullHandler<T> pullHandler,
-            final Map<String, Object> customOptions) {
+            final PullHandler<T> pullHandler) {
 
         var maxRetryAttempts = pullOptions.maxRetryAttempts();
         var failed = false;
@@ -226,7 +208,6 @@ public class PullServiceImpl implements PullService {
                     pullOptions,
                     output,
                     pullHandler,
-                    customOptions,
                     retryAttempts,
                     maxRetryAttempts
             );
@@ -246,7 +227,6 @@ public class PullServiceImpl implements PullService {
      * @param pullOptions      The pull options.
      * @param output           The output option mixin.
      * @param pullHandler      The pull handler for handling each content.
-     * @param customOptions    The custom options.
      * @param retryAttempts    The number of retry attempts made during the pull process.
      * @param maxRetryAttempts The maximum number of retry attempts allowed.
      * @return True if errors were found during the pull process, false otherwise.
@@ -256,7 +236,7 @@ public class PullServiceImpl implements PullService {
      */
     private <T> boolean performPull(List<T> contents, final PullOptions pullOptions,
             final OutputOptionMixin output, final PullHandler<T> pullHandler,
-            final Map<String, Object> customOptions, int retryAttempts, int maxRetryAttempts) {
+            int retryAttempts, int maxRetryAttempts) {
 
         try {
 
@@ -268,8 +248,7 @@ public class PullServiceImpl implements PullService {
                         contents,
                         pullOptions,
                         output,
-                        (CustomPullHandler<T>) pullHandler,
-                        customOptions
+                        (CustomPullHandler<T>) pullHandler
                 );
 
             } else {
@@ -312,25 +291,22 @@ public class PullServiceImpl implements PullService {
      * @param pullOptions   The pull options.
      * @param output        The output option mixin.
      * @param pullHandler   The pull handler for handling each pulled content.
-     * @param customOptions The custom options.
      * @return true if there are errors during the pull process; false otherwise.
      */
     private <T> boolean customPull(List<T> contents,
             final PullOptions pullOptions,
             final OutputOptionMixin output,
-            final CustomPullHandler<T> pullHandler,
-            final Map<String, Object> customOptions) {
+            final CustomPullHandler<T> pullHandler) {
 
         var failed = false;
 
         output.info(pullHandler.startPullingHeader(contents));
 
-        for (var content : contents) {
+        for (final var content : contents) {
 
             var errors = pullHandler.pull(
                     content,
                     pullOptions,
-                    customOptions,
                     output
             );
 
@@ -422,7 +398,7 @@ public class PullServiceImpl implements PullService {
      * @param errors The list of errors to be printed.
      * @param output The output option mixin for providing output messages.
      */
-    private void printErrors(List<Exception> errors, OutputOptionMixin output) {
+    private void printErrors(final List<Exception> errors, final OutputOptionMixin output) {
 
         if (!errors.isEmpty()) {
 
@@ -432,7 +408,7 @@ public class PullServiceImpl implements PullService {
                             errors.size()
                     )
             );
-            for (var error : errors) {
+            for (final var error : errors) {
                 if (error instanceof TraversalTaskException || error instanceof PullException) {
                     output.error(
                             String.format(

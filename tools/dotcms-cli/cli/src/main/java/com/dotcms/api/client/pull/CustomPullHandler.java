@@ -3,7 +3,6 @@ package com.dotcms.api.client.pull;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.pull.PullOptions;
 import java.util.List;
-import java.util.Map;
 
 /**
  * A custom pull handler that can be used to pull any type of content. Use this handler when special
@@ -26,7 +25,6 @@ public interface CustomPullHandler<T> extends PullHandler<T> {
     List<Exception> pull(
             T content,
             final PullOptions pullOptions,
-            Map<String, Object> customOptions,
             final OutputOptionMixin output
     );
 

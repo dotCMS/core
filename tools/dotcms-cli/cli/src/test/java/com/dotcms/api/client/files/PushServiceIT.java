@@ -11,9 +11,9 @@ import static com.dotcms.common.AssetsUtils.buildRemoteAssetURL;
 
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
-import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.api.client.files.traversal.PushTraverseParams;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.api.client.pull.PullService;
 import com.dotcms.api.client.pull.file.FileFetcher;
 import com.dotcms.api.client.pull.file.FilePullHandler;
@@ -130,11 +130,11 @@ class PushServiceIT extends FilesTestHelper {
                             isShortOutput(false).
                             failFast(true).
                             maxRetryAttempts(0).
+                            customOptions(customOptions).
                             build(),
                     outputOptions,
                     fileProvider,
-                    filePullHandler,
-                    customOptions
+                    filePullHandler
             );
 
             // ---
@@ -216,11 +216,11 @@ class PushServiceIT extends FilesTestHelper {
                             isShortOutput(false).
                             failFast(true).
                             maxRetryAttempts(0).
+                            customOptions(customOptions).
                             build(),
                     outputOptions,
                     fileProvider,
-                    filePullHandler,
-                    customOptions
+                    filePullHandler
             );
 
             // ---
@@ -341,11 +341,11 @@ class PushServiceIT extends FilesTestHelper {
                             isShortOutput(false).
                             failFast(true).
                             maxRetryAttempts(0).
+                            customOptions(customOptions).
                             build(),
                     outputOptions,
                     fileProvider,
-                    filePullHandler,
-                    customOptions
+                    filePullHandler
             );
 
             // --
@@ -512,11 +512,11 @@ class PushServiceIT extends FilesTestHelper {
                             isShortOutput(false).
                             failFast(true).
                             maxRetryAttempts(0).
+                            customOptions(customOptions).
                             build(),
                     outputOptions,
                     fileProvider,
-                    filePullHandler,
-                    customOptions
+                    filePullHandler
             );
 
             Files.find(absolutePath, Integer.MAX_VALUE,
