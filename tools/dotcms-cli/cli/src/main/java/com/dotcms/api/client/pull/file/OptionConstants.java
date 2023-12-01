@@ -1,5 +1,10 @@
 package com.dotcms.api.client.pull.file;
 
+/**
+ * The OptionConstants class provides constant values for various options used in pull commands.
+ * These options are used to configure specific behaviors and settings. This class cannot be
+ * instantiated and only contains static final fields.
+ */
 public class OptionConstants {
 
     public static final String INCLUDE_FOLDER_PATTERNS = "includeFolderPatterns";
