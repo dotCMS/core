@@ -3,13 +3,12 @@
         <h4>{{ vm.pageTitle }}</h4>
         <dot-edit-ema-toolbar>
             <ng-container left>
-                <div class="dummy-button"></div>
-                <div class="dummy-button"></div>
-                <div class="dummy-button"></div>
-                <div class="dummy-button"></div>
+                <div class="dummy-button">Preview</div>
+                <div class="dummy-button">Bookmark</div>
+                <div class="dummy-button">Copy ID</div>
+                <div class="dummy-button">API</div>
             </ng-container>
             <ng-container right>
-                <div class="dummy-button"></div>
                 <dot-edit-ema-language-selector
                     [language]="vm.editor.viewAs.language"
                     (selected)="onLanguageSelected($event)"
@@ -19,6 +18,7 @@
                     [selectedPersona]="vm.selectedPersona"
                     [pageID]="vm.editor.page.identifier"
                     (selected)="onPersonaSelected($event)" />
+                <div class="dummy-button">Save</div>
             </ng-container>
         </dot-edit-ema-toolbar>
     </div>
