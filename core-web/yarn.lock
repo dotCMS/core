@@ -2886,22 +2886,30 @@
     pump "^3.0.0"
     tar-fs "^2.1.1"
 
-"@ngneat/spectator@^14.0.0":
-  version "14.0.0"
-  resolved "https://registry.yarnpkg.com/@ngneat/spectator/-/spectator-14.0.0.tgz#6ed2411b1dbdaaa2f407159b354065c6d620b3af"
-  integrity sha512-lGdh9a3FAsIdvhAGD58go4J4ooslF5L2v7w8GECAlBTz7UxFx4wowRoALlTknakqtbpHmJ7RHPBSDd/3ub5XWw==
+"@ngneat/spectator@^15.0.1":
+  version "15.0.1"
+  resolved "https://registry.yarnpkg.com/@ngneat/spectator/-/spectator-15.0.1.tgz#b5699d419db54fa163b8eb0902abbe4d199bceb2"
+  integrity sha512-rcIWYco6KngfLHBTShhU0fTgjMD4b9Gfx8tEbnML+URApTjyXqVaNu9YLiA8PVxUTRO1EOTsF9gOCIbIJA8lTA==
   dependencies:
     "@testing-library/dom" "^8.11.0"
     jquery "3.6.0"
     replace-in-file "6.2.0"
     tslib "^2.1.0"
 
-"@ngrx/component-store@15.3.0":
-  version "15.3.0"
-  resolved "https://registry.yarnpkg.com/@ngrx/component-store/-/component-store-15.3.0.tgz#782777826a7bdce9252564dd49f0884573a3dee2"
-  integrity sha512-fbCx5dA7fZXNHxUSPUiW4Yx/tsBPLTbJUIus+/P4blPfTLFfHuLBDua06Z87PZ41pKoLUCAvoOffQ+cOOE6dzw==
+"@ngrx/component-store@17.0.1":
+  version "17.0.1"
+  resolved "https://registry.yarnpkg.com/@ngrx/component-store/-/component-store-17.0.1.tgz#de84dab7c3595329378ca46b2b82595d6406e87e"
+  integrity sha512-6A7IXzZHAdFadcCILbljNQzrVMwOlx1opdCV/91h3S3ttY7HrPuatyZJyjau8dSf1ANjnAm1kcoof8lZfwhaHg==
   dependencies:
+    "@ngrx/operators" "17.0.0-beta.0"
     tslib "^2.0.0"
+
+"@ngrx/operators@17.0.0-beta.0":
+  version "17.0.0-beta.0"
+  resolved "https://registry.yarnpkg.com/@ngrx/operators/-/operators-17.0.0-beta.0.tgz#030486f3a610fa919d2b155aad3bc7b4c708550d"
+  integrity sha512-EbO8AONuQ6zo2v/mPyBOi4y0CTAp1x4Z+bx7ZF+Pd8BL5ma53BTCL1TmzaeK5zPUe0yApudLk9/ZbHXPnVox5A==
+  dependencies:
+    tslib "^2.3.0"
 
 "@ngtools/webpack@17.0.5":
   version "17.0.5"
@@ -3981,15 +3989,15 @@
   resolved "https://registry.yarnpkg.com/@socket.io/component-emitter/-/component-emitter-3.1.0.tgz#96116f2a912e0c02817345b3c10751069920d553"
   integrity sha512-+9jVqKhRSpsc591z5vX+X5Yyw+he/HCB4iQ/RYxw35CEPaY1gnsNE43nf9n9AaYjAQrTiI/mOwKUKdUs9vf7Xg==
 
-"@stencil/core@^4.8.0":
-  version "4.8.0"
-  resolved "https://registry.yarnpkg.com/@stencil/core/-/core-4.8.0.tgz#564f9db3dd63661e8dc9c19aef91e4f76510b119"
-  integrity sha512-iNEaMiEt9oFZXSjZ7qkdlBpPTzWzBgWM7go8nI8a7V6ZOkmdVhhT0xGQD7OY13v5ZuDoIw5IsGvbIAGefhIhhQ==
+"@stencil/core@^2.22.2":
+  version "2.22.3"
+  resolved "https://registry.yarnpkg.com/@stencil/core/-/core-2.22.3.tgz#83987e20bba855c450f6d6780e3a20192603f13f"
+  integrity sha512-kmVA0M/HojwsfkeHsifvHVIYe4l5tin7J5+DLgtl8h6WWfiMClND5K3ifCXXI2ETDNKiEk21p6jql3Fx9o2rng==
 
-"@stencil/sass@^3.0.7":
-  version "3.0.7"
-  resolved "https://registry.yarnpkg.com/@stencil/sass/-/sass-3.0.7.tgz#7f8225cd0122b3c517c0f9007ed0cd98cf82ea3d"
-  integrity sha512-HcBjrh2CJ6aJnkOrBNSVyf1+x3FnUneYFk44rcx/jDK6Lx7R4w0dXMEsIR5MXqtROYWonZt7WtR8wsM1vcD+6w==
+"@stencil/sass@^2.0.3":
+  version "2.0.4"
+  resolved "https://registry.yarnpkg.com/@stencil/sass/-/sass-2.0.4.tgz#7ee981dce5dbbaa5a88c1fefe8833ef40d32fa5c"
+  integrity sha512-tq+ZgJ9ynmag+e21cYmA6+YYJxBJapxjf94eL+uysxY78dM1801ydAhnT+64S5UnX8Jh+22uAuTY2bEYDBPUww==
 
 "@storybook/builder-manager@7.6.2":
   version "7.6.2"
@@ -12178,7 +12186,7 @@ jest-circus@^29.7.0:
     slash "^3.0.0"
     stack-utils "^2.0.3"
 
-jest-cli@^29.7.0:
+jest-cli@29.7.0, jest-cli@^29.7.0:
   version "29.7.0"
   resolved "https://registry.yarnpkg.com/jest-cli/-/jest-cli-29.7.0.tgz#5592c940798e0cae677eec169264f2d839a37995"
   integrity sha512-OVVobw2IubN/GSYsxETi+gOe7Ka59EFMR/twOU3Jb2GnKKeMGJB5SGUUrEz3SFVmJASUdZUzy83sLNNQ2gZslg==
@@ -14361,7 +14369,7 @@ next-tick@^1.1.0:
   resolved "https://registry.yarnpkg.com/next-tick/-/next-tick-1.1.0.tgz#1836ee30ad56d67ef281b22bd199f709449b35eb"
   integrity sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==
 
-ng-mocks@^14.11.0:
+ng-mocks@^14.12.1:
   version "14.12.1"
   resolved "https://registry.yarnpkg.com/ng-mocks/-/ng-mocks-14.12.1.tgz#a2d698c872616e0ceeefa08ecb4bd357ae85a7dd"
   integrity sha512-5OdTYYOva7IkCCi6kTtgnII1hSfw+qYOM1ScrKhyo7iaI/ViV8xI4MGa89Ts7XnH6XqISSez2Un3zFSomkFpmg==
@@ -16408,10 +16416,10 @@ primeicons@^6.0.1:
   resolved "https://registry.yarnpkg.com/primeicons/-/primeicons-6.0.1.tgz#431fa7c79825934eefd62087d8e1faa6a9e376ad"
   integrity sha512-KDeO94CbWI4pKsPnYpA1FPjo79EsY9I+M8ywoPBSf9XMXoe/0crjbUK7jcQEDHuc0ZMRIZsxH3TYLv4TUtHmAA==
 
-primeng@17.0.0-rc.1:
-  version "17.0.0-rc.1"
-  resolved "https://registry.yarnpkg.com/primeng/-/primeng-17.0.0-rc.1.tgz#32c511ef2883d7eb68f80009c2392547cf367934"
-  integrity sha512-S1z7DnP2p3Ia6KmBICHXsrxAlSVIiIyu6jSEKnuQTrUiTWMsaJnZX8IMHp+d21f8Q35HsS65etxyqxt8wn/MVQ==
+primeng@15.4.13-lts:
+  version "15.4.13-lts"
+  resolved "https://registry.yarnpkg.com/primeng/-/primeng-15.4.13-lts.tgz#a2480a83ea9796889c81ce8036fecb65ead1ab03"
+  integrity sha512-yybyQ4n7phd1Z6DrSWfhsUKAbgR4QIDynmnfnL3iJ9cnu8Rckgx2OITMGx+0e0G8iaO5AZnqyKiYKIcsoineCg==
   dependencies:
     tslib "^2.3.0"
 
@@ -17248,6 +17256,11 @@ requires-port@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/requires-port/-/requires-port-1.0.0.tgz#925d2601d39ac485e091cf0da5c6e694dc3dcaff"
   integrity sha512-KigOCHcocU3XODJxsu8i/j8T9tzT4adHiecwORRQ0ZZFcp7ahwXuRU1m+yuO90C5ZUyGeGfocHDI14M3L3yDAQ==
+
+resize-observer-polyfill@^1.5.1:
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/resize-observer-polyfill/-/resize-observer-polyfill-1.5.1.tgz#0e9020dd3d21024458d4ebd27e23e40269810464"
+  integrity sha512-LwZrotdHOo12nQuZlHEmtuXdqGoOD0OhaxopaNFxWzInpEgaLWoVuAMbTzixuosCx2nEG58ngzW3vxdWoxIgdg==
 
 resolve-cwd@^3.0.0:
   version "3.0.0"
