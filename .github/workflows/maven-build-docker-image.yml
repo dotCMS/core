@@ -17,7 +17,7 @@ on:
         type: string
       docker_registry:
         description: 'Docker registry to push the image to (DOCKER.IO, GHCR.IO, BOTH)'
-        required: true
+        required: false
         type: string
         default: 'DOCKER.IO'
 jobs:
