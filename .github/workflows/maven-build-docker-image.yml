@@ -169,7 +169,7 @@ jobs:
         uses: docker/setup-qemu-action@v3.0.0
         with:
           image: tonistiigi/binfmt:latest
-          platforms: ${{ input.docker_platforms }}
+          platforms: ${{ inputs.docker_platforms }}
 
       - name: Docker Setup Buildx
         id: docker-setup-buildx
