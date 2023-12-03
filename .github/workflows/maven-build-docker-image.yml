@@ -16,13 +16,9 @@ on:
         required: true
         type: string
       docker_registry:
-        description: 'Docker registry to push the image to'
+        description: 'Docker registry to push the image to (DOCKER.IO, GHCR.IO, BOTH)'
         required: true
-        type: choice
-        options:
-          - DOCKER.IO
-          - GHCR.IO
-          - BOTH
+        type: string
         default: 'DOCKER.IO'
 jobs:
   build_push_image:
