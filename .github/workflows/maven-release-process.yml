@@ -24,7 +24,6 @@ env:
   JVM_TEST_MAVEN_OPTS: '-e -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'
   NODE_VERSION: 16
   DOCKER_BUILD_CONTEXT: /home/runner/work/_temp/core-build
-  GITHUB_PUSH_URL: 'https://${{ secrets.CICD_GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com'
 jobs:
   prepare-release:
     if: ${{ !startsWith(github.event.release.name, 'dotcms-cli') }}
@@ -140,7 +139,7 @@ jobs:
           
           git status
           git commit -a -m "🏁 Publishing release version [${release_version}]"
-          git push ${GITHUB_PUSH_URL}/${GITHUB_REPOSITORY}
+          git push https://${{ secrets.CICD_GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}
           
           release_commit=$(git log -1 --pretty=%H)
           echo "release_commit=${release_commit}" >> $GITHUB_OUTPUT
@@ -381,10 +380,9 @@ jobs:
           git status
           git commit -a -m "Updating dotcms version to ${release_version}"
           git commit --allow-empty -m "Publish Release ${release_version}"
-          git push ${GITHUB_PUSH_URL}/${GITHUB_REPOSITORY_OWNER}/plugin-seeds.git
+          git push https://${{ secrets.CICD_GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY_OWNER}/plugin-seeds.git
 
   build_push_image:
-    name: Build and Push Image
     needs: prepare-release
     uses: ./.github/workflows/maven-build-docker-image.yml
     with:
@@ -430,7 +428,7 @@ jobs:
 
           git status
           git commit -a -m "Setting to next version: ${next_version}"
-          git push ${GITHUB_PUSH_URL}/${GIT_REPOSITORY}
+          git push https://${{ secrets.CICD_GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/${GIT_REPOSITORY}
 
       - name: Format Tags
         id: format-tags
