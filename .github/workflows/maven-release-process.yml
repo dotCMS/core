@@ -364,7 +364,7 @@ jobs:
           release_branch=release-${release_version}
           
           remote=$(git ls-remote --heads https://github.com/dotCMS/plugin-seeds.git ${release_branch} | wc -l | tr -d '[:space:]')
-          if [[ "${remote}" == '1' ]]; then
+          if [[ "${remote}" == '1' && "${release_branch}" == 'master' ]]; then
             echo "Release branch ${release_branch} already exists, removing it"
             git push origin :${release_branch}
           fi
