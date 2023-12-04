@@ -120,32 +120,32 @@ jobs:
         run: yarn --frozen-lockfile
         working-directory: core-web
 
-#      - name: Run Nx Affected ${{ matrix.task }}
-#        id: ${{ matrix.task }}
-#        working-directory: core-web
-#        run: |
-#          exclude_option=""
-#          if [ "${{ matrix.task }}" = "test" ] || [ "${{ matrix.task }}" = "lint" ]; then
-#            exclude_option="--exclude=${{ env.EXCLUDED_PROJECTS }}"
-#          fi
-#
-#          if ! (npx nx affected --target=${{ matrix.task }} --base=origin/master --head=HEAD --parallel $exclude_option) then
-#            echo "name=:x: ${{ matrix.task }}" >>$GITHUB_OUTPUT
-#            echo "status=failure" >>$GITHUB_OUTPUT
-#            echo "color=#ff2400" >>$GITHUB_OUTPUT
-#            exit 1;
-#          fi
-
-      - name: Lint2
-        id: lint1
+      - name: Run Nx Affected ${{ matrix.task }}
+        id: ${{ matrix.task }}
         working-directory: core-web
         run: |
-          if ! (npx nx affected --target=lint --base=origin/master --head=HEAD --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
-            echo "name=:x: Lint" >>$GITHUB_OUTPUT
+          exclude_option=""
+          if [ "${{ matrix.task }}" = "test" ] || [ "${{ matrix.task }}" = "lint" ]; then
+            exclude_option="--exclude=${{ env.EXCLUDED_PROJECTS }}"
+          fi
+
+          if ! (npx nx affected --target=${{ matrix.task }} --base=origin/master --head=HEAD --parallel $exclude_option) then
+            echo "name=:x: ${{ matrix.task }}" >>$GITHUB_OUTPUT
             echo "status=failure" >>$GITHUB_OUTPUT
             echo "color=#ff2400" >>$GITHUB_OUTPUT
             exit 1;
           fi
+
+#      - name: Lint2
+#        id: lint1
+#        working-directory: core-web
+#        run: |
+#          if ! (npx nx affected --target=lint --base=origin/master --head=HEAD --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
+#            echo "name=:x: Lint" >>$GITHUB_OUTPUT
+#            echo "status=failure" >>$GITHUB_OUTPUT
+#            echo "color=#ff2400" >>$GITHUB_OUTPUT
+#            exit 1;
+#          fi
 #
 #      - name: Test
 #        id: test
