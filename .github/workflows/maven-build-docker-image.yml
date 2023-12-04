@@ -35,7 +35,7 @@ on:
         required: false
 jobs:
   build_push_image:
-    name: Build and Push Image
+    name: Build/Push Image
     runs-on: ubuntu-latest
     env:
       JAVA_VERSION: 11

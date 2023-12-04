@@ -384,6 +384,7 @@ jobs:
           git push https://${{ secrets.CICD_GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY_OWNER}/plugin-seeds.git
 
   build_push_image:
+    name: Build/Push Image
     needs: prepare-release
     uses: ./.github/workflows/maven-build-docker-image.yml
     with:
