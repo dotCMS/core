@@ -23,6 +23,10 @@ jobs:
     outputs:
       docker_platforms: ${{ steps.get-docker-platforms.outputs.docker_platforms }}
     steps:
+      - run: echo 'GitHub context'
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+
       - name: Resolve Docker Platforms
         id: get-docker-platforms
         run: |
