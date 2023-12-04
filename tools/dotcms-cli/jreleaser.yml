@@ -42,20 +42,20 @@ release:
           - dependabot
 
 distributions:
-  dotcms-cli:
+  dotcms-cli-tool-provider:
     type: SINGLE_JAR
     active: ALWAYS
     stereotype: CLI
     artifacts:
       - path: tools/dotcms-cli/cli/target/dotcms-cli-{{projectVersion}}-runner.jar
         transform: tools/dotcms-cli/cli/target/dotcms-cli-{{projectVersion}}.jar
-#  dotcms-native:
-#    type: BINARY
-#    active: ALWAYS
-#    stereotype: CLI
-#    artifacts:
-#      - path: tools/dotcms-cli/cli/target/dotcms-cli-{{projectVersion}}-runner
-#        transform: tools/dotcms-cli/cli/target/dotcms-cli-{{projectVersion}}
+  dotcms-cli-native:
+    type: BINARY
+    artifacts:
+      - path: 'tools/dotcms-cli/cli/target/distributions/dotcms-cli-{{projectVersion}}-linux-x86_64.zip'
+        platform: 'linux-x86_64'
+#      - path: 'tools/dotcms-cli/cli/target/distributions/dotcms-cli-{{projectVersion}}-linux-x86_64.tar.gz'
+#        platform: 'macos-x86_64'
 
 upload:
   artifactory:
