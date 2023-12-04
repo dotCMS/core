@@ -394,8 +394,6 @@ jobs:
     secrets:
       docker_io_username: ${{ secrets.DOCKER_USERNAME }}
       docker_io_token: ${{ secrets.DOCKER_TOKEN }}
-      ghcr_io_username: ${{ secrets.DOCKER_USERNAME }}
-      ghcr_io_token: ${{ secrets.GHCR_TOKEN }}
 
   finish-release:
     name: Finish Release
