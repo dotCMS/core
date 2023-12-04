@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       multi_arch:
-        description: 'Multi-arch flag, true: linux/amd64,linux/arm64 or false: linux/amd64'
+        description: 'Build Multi-arch'
         required: true
         type: boolean
         default: true
@@ -34,7 +34,7 @@ jobs:
     needs: prepare-build
     uses: ./.github/workflows/maven-build-docker-image.yml
     with:
-      ref: ${{ event.inputs.ref }}
+      ref: master
       docker_platforms: ${{ needs.prepare-build.outputs.docker_platforms }}
       docker_registry: ${{ inputs.docker_registry }}
     secrets:
