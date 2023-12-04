@@ -5,7 +5,7 @@
     <parent>
         <artifactId>dotcms-cli-parent</artifactId>
         <groupId>com.dotcms</groupId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>99.12.31</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -38,13 +38,13 @@
         <dependency>
             <groupId>com.dotcms</groupId>
             <artifactId>dotcms-api-data-model</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>99.12.31</version>
         </dependency>
 
         <dependency>
             <groupId>com.dotcms</groupId>
             <artifactId>dotcms-api-data-model</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>99.12.31</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
