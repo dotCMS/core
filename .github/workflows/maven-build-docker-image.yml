@@ -15,22 +15,24 @@ on:
         description: 'Cache key for the docker context'
         required: true
         type: string
+      docker_registry:
+        description: 'Docker registry to push the image to (DOCKER.IO, GHCR.IO, BOTH)'
+        required: false
+        type: string
+        default: 'DOCKER.IO'
+    secrets:
       docker_io_username:
         description: 'Docker.io username'
         required: false
-        type: string
       docker_io_token:
         description: 'Docker.io token'
         required: false
-        type: string
       ghcr_io_username:
-        description: 'Docker.io username'
+        description: 'GHCR.io username'
         required: false
-        type: string
       ghcr_io_token:
-        description: 'Docker.io token'
+        description: 'GHCR.io token'
         required: false
-        type: string
 jobs:
   build_push_image:
     name: Build and Push Image
@@ -161,17 +163,17 @@ jobs:
       - name: Docker.io login
         uses: docker/login-action@v3.0.0
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-        if: inputs.docker_io_username != '' || inputs.docker_io_token != ''
+          username: ${{ secrets.docker_io_username }}
+          password: ${{ secrets.docker_io_token }}
+        if: inputs.docker_registry == 'DOCKER.IO' || inputs.docker_registry == 'BOTH'
 
       - name: GHCR.io login
         uses: docker/login-action@v3.0.0
         with:
           registry: ghcr.io
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.GHCR_TOKEN }}
-        if: inputs.ghcr_io_username != '' || inputs.ghcr_io_token != ''
+          username: ${{ secrets.ghcr_io_username }}
+          password: ${{ secrets.ghcr_io_token }}
+        if: inputs.docker_registry == 'GHCR.IO' || inputs.docker_registry == 'BOTH'
 
       - name: Docker Metadata
         id: meta
