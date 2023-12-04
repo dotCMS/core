@@ -95,11 +95,7 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
     let spectator: Spectator<DotEditContentFieldComponent>;
     const createComponent = createComponentFactory({
         imports: [HttpClientTestingModule],
-        // Avoid mocking Monaco Editor - It's too complex to mock
-        declarations: [
-            ...(fieldTestBed?.declarations || [])
-            //MockComponent(DotEditContentJsonFieldComponent)
-        ],
+        declarations: [...(fieldTestBed?.declarations || [])],
         component: DotEditContentFieldComponent,
         componentViewProviders: [
             {
@@ -107,13 +103,7 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
                 useValue: createFormGroupDirectiveMock()
             }
         ],
-        providers: [
-            FormGroupDirective,
-            DotEditContentService,
-            ...(fieldTestBed?.providers || [])
-            // mockProvider(DotContentTypeService),
-            // mockProvider(DotWorkflowActionsFireService)
-        ]
+        providers: [FormGroupDirective, DotEditContentService, ...(fieldTestBed?.providers || [])]
     });
 
     beforeEach(async () => {
@@ -154,8 +144,8 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
             const field = spectator.debugElement.query(
                 By.css(`[data-testId="field-${fieldMock.variable}"]`)
             );
-            const fieldType = fieldTestBed.component ? fieldTestBed.component : fieldTestBed;
-            expect(field.componentInstance instanceof fieldType).toBeTruthy();
+            const FIELD_TYPE = fieldTestBed.component ? fieldTestBed.component : fieldTestBed;
+            expect(field.componentInstance instanceof FIELD_TYPE).toBeTruthy();
         });
     });
 });

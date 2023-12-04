@@ -65,9 +65,7 @@ export class DotEditContentCustomFieldComponent implements OnInit {
      */
     onIframeLoad() {
         const iframeWindow = this.iframe.nativeElement.contentWindow as Window;
-        iframeWindow['form'] = this.zone.run(() => {
-            return this.form;
-        });
+        iframeWindow['form'] = this.zone.run(() => this.form);
     }
 
     /**
