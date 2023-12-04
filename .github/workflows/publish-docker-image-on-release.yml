@@ -11,33 +11,36 @@ jobs:
   prepare-build:
     name: Prepare build
     runs-on: ubuntu-latest
+    outputs:
+      build_id: ${{ steps.process-params.outputs.build_id }}
     steps:
       - run: echo 'GitHub context'
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
       - name: Process Params
+        id: process-params
         run: |
           if [[ "${{ github.event_name }}" == 'repository_dispatch' ]]; then
-            BUILD_ID=${{ github.event.client_payload.build_id }}
+            build_id=${{ github.event.client_payload.build_id }}
           else
-            BUILD_ID=$(basename "${{ github.ref }}")
+            build_id=$(basename "${{ github.ref }}")
           fi
 
-          if [[ -z "${BUILD_ID}" ]]; then
-            echo 'Could not resolve BUILD_ID, aborting'
+          if [[ -z "${build_id}" ]]; then
+            echo 'Could not resolve build_id, aborting'
             exit 1
           else
-            echo "Found BUILD_ID: ${BUILD_ID}"
+            echo "Found build_id: ${build_id}"
           fi
 
-          echo "BUILD_ID=${BUILD_ID}" >> $GITHUB_ENV
+          echo "build_id=${build_id}" >> $GITHUB_OUTPUT
 
   build_push_image:
     name: Build/Push Image
     needs: prepare-build
     uses: ./.github/workflows/maven-build-docker-image.yml
     with:
-      ref: ${{ env.BUILD_ID }}
+      ref: ${{ prepare-build.outputs.build_id }}
       docker_platforms: linux/amd64,linux/arm64
       force_snapshot: true
     secrets:
