@@ -68,7 +68,9 @@ upload:
           active: SNAPSHOT
           fileTypes:
             - JAR
+            - ZIP
         - path: 'libs-release-local/com/dotcms/{{projectName}}/{{projectVersion}}/{{artifactFile}}'
           active: RELEASE
           fileTypes:
             - JAR
+            - ZIP
