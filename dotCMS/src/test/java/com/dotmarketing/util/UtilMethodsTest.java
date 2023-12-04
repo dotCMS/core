@@ -7,12 +7,51 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import com.dotcms.UnitTestBase;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import org.junit.Test;
 
 /**
  * Unit test for {@link UtilMethods}
  */
 public class UtilMethodsTest extends UnitTestBase {
+
+	@Test
+	public void test_isSet_with_null_supplier(){
+
+		final Contentlet fakeObject=null;
+		assertTrue(UtilMethods.isEmpty(()->fakeObject.getMap()));
+		assertFalse(UtilMethods.isSet(()->fakeObject.getMap()));
+
+	}
+
+
+
+	@Test
+	public void test_isSet_with_zero_string_supplier(){
+
+		final String emptyString="";
+		assertTrue(UtilMethods.isEmpty(()->emptyString));
+		assertFalse(UtilMethods.isSet(()->emptyString));
+
+	}
+
+	@Test
+	public void test_isSet_with_real_string_supplier(){
+
+		final String emptyString="Not Empty";
+		assertTrue(UtilMethods.isSet(()->emptyString));
+		assertFalse(UtilMethods.isEmpty(()->emptyString));
+
+	}
+
+	@Test
+	public void test_isSet_with_object_supplier(){
+
+		final Contentlet contentlet=new Contentlet();
+		assertTrue(UtilMethods.isSet(()->contentlet.getMap()));
+		assertFalse(UtilMethods.isEmpty(()->contentlet.getMap()));
+
+	}
 
 	@Test
 	public void testIsValidURL_Valid() {

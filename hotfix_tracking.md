@@ -215,3 +215,4 @@ This maintenance release includes the following code fixes:
 178. https://github.com/dotCMS/core/issues/19734 : Export Content doesn't work when all languages are selected #19734
 179. https://github.com/dotCMS/core/issues/21529 : The JSON viewtool does not support valid JSON types, only strings #21529
 180. https://github.com/dotCMS/core/issues/24167 : Relationship fields couldn't update with workflow apis #24167
+181. https://github.com/dotCMS/core/issues/24490 : Content with an invalid detail page fails to render/instanciate #24490
