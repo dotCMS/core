@@ -118,11 +118,24 @@ jobs:
         run: |
           ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }} -am -pl :dotcms-cli
 
-      - name: Package distribution
+      - name: Build uber-jar
+        working-directory: ${{ github.workspace }}
+        run: |
+          ./mvnw package -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=true -pl :dotcms-cli          
+
+      - name: Build Native Image
         working-directory: ${{ github.workspace }}
         run: |
           ./mvnw package -Pnative -Dquarkus.native.container-build=true -DskipTests=true -pl :dotcms-cli
-#          ./mvnw package -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=true -pl :dotcms-cli
+
+      - name: Create distribution
+        working-directory: ${{ github.workspace }}
+        run: |
+          ./mvnw -B -ntp -Pdist package -DskipTests=true -pl :dotcms-cli
+
+      - name: Distribution tree
+        run: |
+          tree target/distributions
 
       - name: Releaser
         env:
