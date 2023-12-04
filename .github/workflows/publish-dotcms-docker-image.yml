@@ -5,7 +5,8 @@ on:
       multi_arch:
         description: 'Multi-arch flag, true: linux/amd64,linux/arm64 or false: linux/amd64'
         required: true
-        default: 'true'
+        type: boolean
+        default: true
       docker_registry:
         description: 'Docker registry to push the image to'
         required: false
@@ -22,7 +23,7 @@ jobs:
     outputs:
       docker_platforms: ${{ steps.get-docker-platforms.outputs.docker_platforms }}
     steps:
-      - name: Resolve Docker PLatforms
+      - name: Resolve Docker Platforms
         id: get-docker-platforms
         run: |
           docker_platforms="${{ github.event.inputs.multi_arch == 'true' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}"
@@ -35,7 +36,7 @@ jobs:
     with:
       ref: ${{ event.inputs.ref }}
       docker_platforms: ${{ needs.prepare-build.outputs.docker_platforms }}
-      docker_registry: ${{ event.inputs.docker_registry }}
+      docker_registry: ${{ inputs.docker_registry }}
     secrets:
       docker_io_username: ${{ secrets.DOCKER_USERNAME }}
       docker_io_token: ${{ secrets.DOCKER_TOKEN }}
