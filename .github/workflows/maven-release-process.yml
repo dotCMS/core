@@ -392,9 +392,9 @@ jobs:
       docker_platforms: linux/amd64,linux/arm64
       docker_context_cache_key: docker-context-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
       docker_io_username: ${{ secrets.DOCKER_USERNAME }}
-      docker_io_password: ${{ secrets.DOCKER_TOKEN }}
+      docker_io_token: ${{ secrets.DOCKER_TOKEN }}
       ghcr_io_username: ${{ secrets.DOCKER_USERNAME }}
-      ghcr_io_password: ${{ secrets.GHCR_TOKEN }}
+      ghcr_io_token: ${{ secrets.GHCR_TOKEN }}
 
   finish-release:
     name: Finish Release

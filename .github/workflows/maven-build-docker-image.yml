@@ -19,16 +19,16 @@ on:
         description: 'Docker.io username'
         required: false
         type: string
-      docker_io_password:
-        description: 'Docker.io password'
+      docker_io_token:
+        description: 'Docker.io token'
         required: false
         type: string
       ghcr_io_username:
         description: 'Docker.io username'
         required: false
         type: string
-      ghcr_io_password:
-        description: 'Docker.io password'
+      ghcr_io_token:
+        description: 'Docker.io token'
         required: false
         type: string
 jobs:
@@ -163,7 +163,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
-        if: inputs.docker_io_username != '' || inputs.docker_io_password == ''
+        if: inputs.docker_io_username != '' || inputs.docker_io_token != ''
 
       - name: GHCR.io login
         uses: docker/login-action@v3.0.0
@@ -171,7 +171,7 @@ jobs:
           registry: ghcr.io
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.GHCR_TOKEN }}
-        if: inputs.ghcr_io_username != '' || inputs.ghcr_io_password == ''
+        if: inputs.ghcr_io_username != '' || inputs.ghcr_io_token != ''
 
       - name: Docker Metadata
         id: meta
