@@ -52,7 +52,7 @@ public class Config {
 
     public static final Map<String, String> testOverrideTracker = new ConcurrentHashMap<>();
 
-    private static Set<String> environmentSetKeys = ConcurrentHashMap.newKeySet();
+    private static final Set<String> environmentSetKeys = ConcurrentHashMap.newKeySet();
 
     private static SystemTableConfigSource systemTableConfigSource = null;
 
