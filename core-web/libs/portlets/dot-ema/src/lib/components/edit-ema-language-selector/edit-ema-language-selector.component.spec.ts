@@ -55,8 +55,8 @@ describe('DotEmaLanguageSelectorComponent', () => {
         });
     });
 
-    describe('store changes', () => {
-        it('should trigger the store when the language changes', () => {
+    describe('events', () => {
+        it('should trigger the languageChange emitter when the language changes', () => {
             const button = spectator.query(byTestId('language-button'));
             const languageChangeSpy = jest.spyOn(component.selected, 'emit');
 
