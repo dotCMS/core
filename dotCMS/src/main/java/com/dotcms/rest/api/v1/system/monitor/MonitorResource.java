@@ -18,7 +18,7 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.util.StringPool;
 
 
-@Path("/v1/system-status")
+@Path("/v1/{a:system-status|probes}")
 public class MonitorResource {
 
     private static final int    INSUFFICIENT_STORAGE        = 507;
