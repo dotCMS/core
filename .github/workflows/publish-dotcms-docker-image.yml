@@ -31,7 +31,7 @@ jobs:
       - name: Resolve Docker Platforms
         id: set-common-vars
         run: |
-          ref=${{ github.event.ref | replace('refs/tags/', '') | replace('refs/heads/', '') }}
+          ref=$(basename ${{ github.event.ref }})
           docker_platforms="${{ github.event.inputs.multi_arch == 'true' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}"
           
           echo "ref=${ref}" >> $GITHUB_OUTPUT
