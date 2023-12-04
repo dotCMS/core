@@ -9,4 +9,8 @@
     data-testId="iframe"
     frameborder="0"></iframe>
 
-<dot-icon *ngIf="isFullscreen" (click)="isFullscreen = false" name="close"></dot-icon>
+<p-button
+    *ngIf="isFullscreen"
+    (click)="isFullscreen = false"
+    icon="pi pi-times"
+    styleClass="p-button-rounded p-button-text" />

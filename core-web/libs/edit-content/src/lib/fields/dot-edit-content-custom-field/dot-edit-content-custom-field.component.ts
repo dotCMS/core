@@ -12,6 +12,8 @@ import {
 } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 
+import { ButtonModule } from 'primeng/button';
+
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotIconModule, SafeUrlPipe } from '@dotcms/ui';
 
@@ -20,7 +22,7 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 @Component({
     selector: 'dot-edit-content-custom-field',
     standalone: true,
-    imports: [SafeUrlPipe, NgStyle, NgClass, DotIconModule, NgIf],
+    imports: [SafeUrlPipe, NgStyle, NgClass, DotIconModule, NgIf, ButtonModule],
     templateUrl: './dot-edit-content-custom-field.component.html',
     styleUrls: ['./dot-edit-content-custom-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
