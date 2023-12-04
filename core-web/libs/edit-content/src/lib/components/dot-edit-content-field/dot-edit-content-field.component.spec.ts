@@ -1,6 +1,6 @@
 import { describe } from '@jest/globals';
 import { mockProvider } from '@ngneat/spectator';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -10,7 +10,7 @@ import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { DotBlockEditorComponent } from '@dotcms/block-editor';
-import { DotLicenseService } from '@dotcms/data-access';
+import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
@@ -26,9 +26,9 @@ import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-t
 import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-text-field/dot-edit-content-text-field.component';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import {
+    createFormGroupDirectiveMock,
     FIELDS_MOCK,
-    FIELDS_WITH_CONTENTLET_MOCK,
-    createFormGroupDirectiveMock
+    FIELDS_WITH_CONTENTLET_MOCK
 } from '../../utils/mocks';
 
 /* We need this declare to dont have import errors from CommandType of Tiptap */
@@ -97,7 +97,8 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
                     useValue: {
                         isEnterprise: () => of(true)
                     }
-                }
+                },
+                mockProvider(DotMessageService)
             ]
         });
     });
