@@ -1,13 +1,9 @@
 <ng-content select="[title]"></ng-content>
 <p-toolbar>
     <div class="p-toolbar-group-left" data-testId="toolbar-left-content">
-        <div class="edit-ema-toolbar-actions__buttons">
-            <ng-content select="[left]"></ng-content>
-        </div>
+        <ng-content select="[left]"></ng-content>
     </div>
     <div class="p-toolbar-group-right" data-testId="toolbar-right-content">
-        <div class="edit-ema-toolbar-actions__buttons">
-            <ng-content select="[right]"></ng-content>
-        </div>
+        <ng-content select="[right]"></ng-content>
     </div>
 </p-toolbar>

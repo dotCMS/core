@@ -8,7 +8,8 @@
     height: fit-content;
 }
 
-.edit-ema-toolbar-actions__buttons {
+.p-toolbar-group-left,
+.p-toolbar-group-right {
     display: flex;
     align-items: center;
     gap: $spacing-2;
