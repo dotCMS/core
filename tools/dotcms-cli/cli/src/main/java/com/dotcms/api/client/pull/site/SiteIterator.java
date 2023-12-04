@@ -1,4 +1,4 @@
-package com.dotcms.api.client.pull.common;
+package com.dotcms.api.client.pull.site;
 
 import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.model.RestClientFactory;

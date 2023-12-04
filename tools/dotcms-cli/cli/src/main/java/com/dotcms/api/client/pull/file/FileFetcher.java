@@ -11,7 +11,7 @@ import com.dotcms.api.AssetAPI;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.pull.ContentFetcher;
-import com.dotcms.api.client.pull.common.SiteIterator;
+import com.dotcms.api.client.pull.site.SiteIterator;
 import com.dotcms.common.LocationUtils;
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.ByPathRequest;
