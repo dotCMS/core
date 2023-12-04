@@ -6,11 +6,11 @@ on:
       - 'main'
       - 'trunk'
       - 'build-and-push-master'
-      - 'issue-24516-slack-notif-master-docker'
+      - 'issue-26748-maven-build-docker-image'
 
 jobs:
   docker:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       -
         name: Checkout
