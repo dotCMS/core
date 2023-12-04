@@ -21,16 +21,20 @@ jobs:
     name: Prepare build
     runs-on: ubuntu-latest
     outputs:
-      docker_platforms: ${{ steps.get-docker-platforms.outputs.docker_platforms }}
+      ref: ${{ steps.set-common-vars.outputs.ref }}
+      docker_platforms: ${{ steps.set-common-vars.outputs.docker_platforms }}
     steps:
       - run: echo 'GitHub context'
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
 
       - name: Resolve Docker Platforms
-        id: get-docker-platforms
+        id: set-common-vars
         run: |
+          ref=${{ github.event.ref } | replace('refs/tags/', '') | replace('refs/heads/', '') }}
           docker_platforms="${{ github.event.inputs.multi_arch == 'true' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}"
+          
+          echo "ref=${ref}" >> $GITHUB_OUTPUT
           echo "docker_platforms=${docker_platforms}" >> $GITHUB_OUTPUT
 
   build_push_image:
@@ -38,7 +42,7 @@ jobs:
     needs: prepare-build
     uses: ./.github/workflows/maven-build-docker-image.yml
     with:
-      ref: ${{ github.event.ref }}
+      ref: ${{ needs.prepare-build.outputs.ref }}
       docker_platforms: ${{ needs.prepare-build.outputs.docker_platforms }}
       docker_registry: ${{ inputs.docker_registry }}
     secrets:

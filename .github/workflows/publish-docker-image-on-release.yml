@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - release-*
-      - issue-26748-maven-build-docker-image
   repository_dispatch:
     types:
       - enterprise-update
