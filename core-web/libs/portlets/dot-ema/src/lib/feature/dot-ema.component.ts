@@ -1,6 +1,6 @@
 import { Subject, fromEvent } from 'rxjs';
 
-import { AsyncPipe, NgFor, NgIf } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -14,10 +14,13 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
+import { ConfirmationService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 
 import { takeUntil } from 'rxjs/operators';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
@@ -26,15 +29,24 @@ import { EditEmaStore } from './store/dot-ema.store';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
-import { AddContentletPayload } from '../shared/models';
+import { AddContentletPayload, DeleteContentletPayload, SetUrlPayload } from '../shared/models';
+import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
 
 @Component({
     selector: 'dot-ema',
     standalone: true,
-    imports: [NgFor, NgIf, AsyncPipe, FormsModule, SafeUrlPipe, DialogModule, DotSpinnerModule],
+    imports: [
+        CommonModule,
+        FormsModule,
+        SafeUrlPipe,
+        DialogModule,
+        DotSpinnerModule,
+        ConfirmDialogModule
+    ],
     providers: [
         EditEmaStore,
         DotPageApiService,
+        ConfirmationService,
         {
             provide: WINDOW,
             useValue: window
@@ -64,7 +76,8 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
     private readonly store = inject(EditEmaStore);
-    private readonly pageApi = inject(DotPageApiService);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly confirmationService = inject(ConfirmationService);
 
     private savePayload: AddContentletPayload;
 
@@ -177,12 +190,19 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                 /* */
             },
             [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
+                const pageContainers = insertContentletInContainer({
+                    pageContainers: this.savePayload.pageContainers,
+                    container: this.savePayload.container,
+                    contentletID: detail.data.identifier
+                });
+
                 this.store.savePage({
-                    ...this.savePayload,
-                    contentletID: detail.data.identifier,
+                    pageContainers,
+                    pageID: this.savePayload.pageID,
                     whenSaved: () => {
                         this.resetDialogIframeData();
                         this.reloadIframe();
+                        this.savePayload = undefined;
                     }
                 }); // Save when selected
             },
@@ -227,6 +247,48 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                 });
 
                 this.savePayload = payload;
+            },
+            [CUSTOMER_ACTIONS.DELETE_CONTENTLET]: () => {
+                const { pageContainers, container, contentletId, pageID } = <
+                    DeleteContentletPayload
+                >data.payload;
+
+                const newPageContainers = deleteContentletFromContainer({
+                    pageContainers: pageContainers,
+                    container: container,
+                    contentletID: contentletId
+                });
+
+                this.confirmationService.confirm({
+                    header: this.dotMessageService.get(
+                        'editpage.content.contentlet.remove.confirmation_message.header'
+                    ),
+                    message: this.dotMessageService.get(
+                        'editpage.content.contentlet.remove.confirmation_message.message'
+                    ),
+                    acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
+                    rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+                    accept: () => {
+                        this.store.savePage({
+                            pageContainers: newPageContainers,
+                            pageID,
+                            whenSaved: () => {
+                                this.resetDialogIframeData();
+                                this.reloadIframe();
+                            }
+                        }); // Save when selected
+                    }
+                });
+            },
+            [CUSTOMER_ACTIONS.SET_URL]: () => {
+                const payload = <SetUrlPayload>data.payload;
+
+                this.router.navigate([], {
+                    queryParams: {
+                        url: payload.url
+                    },
+                    queryParamsHandling: 'merge'
+                });
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */

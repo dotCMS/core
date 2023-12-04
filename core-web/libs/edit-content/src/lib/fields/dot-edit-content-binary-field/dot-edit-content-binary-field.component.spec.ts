@@ -119,10 +119,10 @@ describe('DotEditContentBinaryFieldComponent', () => {
     });
 
     it('should emit temp file', () => {
-        const spyEmit = jest.spyOn(spectator.component.tempFile, 'emit');
+        const spyEmit = jest.spyOn(spectator.component.valueUpdated, 'emit');
         spectator.detectChanges();
         store.setTempFile(TEMP_FILE_MOCK);
-        expect(spyEmit).toHaveBeenCalledWith(TEMP_FILE_MOCK);
+        expect(spyEmit).toHaveBeenCalledWith(TEMP_FILE_MOCK.id);
     });
 
     describe('Dropzone', () => {
@@ -228,7 +228,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 expect(state).toEqual({
                     ...state,
                     status: BinaryFieldStatus.INIT,
-                    tempFile: null,
+                    value: '',
                     file: null
                 });
             });

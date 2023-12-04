@@ -3,7 +3,7 @@ package com.dotcms.api.client.push.site;
 import static com.dotcms.cli.command.site.SitePush.SITE_PUSH_OPTION_FORCE_EXECUTION;
 
 import com.dotcms.api.SiteAPI;
-import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.push.PushHandler;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.CreateUpdateSiteRequest;

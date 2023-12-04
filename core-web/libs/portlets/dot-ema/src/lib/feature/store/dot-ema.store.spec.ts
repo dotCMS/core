@@ -269,7 +269,6 @@ describe('EditEmaStore', () => {
                     contentletsId: [],
                     acceptTypes: 'test'
                 },
-                contentletID: '456',
                 pageID: '789'
             });
 
@@ -281,7 +280,6 @@ describe('EditEmaStore', () => {
                     contentletsId: [],
                     acceptTypes: 'test'
                 },
-                contentletID: '456',
                 pageID: '789'
             });
         });
