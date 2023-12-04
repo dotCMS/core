@@ -18,6 +18,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -271,16 +272,12 @@ abstract class DotCSSCompiler {
         inodes.add(versionInfoMap.get("inode"));
       }
 
-      List<Contentlet> contentletList  = APILocator.getContentletAPI().findContentlets(inodes);
-
-      contentletList = contentletList.stream()
+      List<Contentlet> contentletList  = APILocator.getContentletAPI().findContentlets(inodes).stream()
               .filter(contentlet -> contentlet.getBaseType().get().ordinal()==BaseContentType.FILEASSET.ordinal())
+              .filter(c-> Try.of(()->!c.isArchived()).getOrElse(false))
               .collect(Collectors.toList());
 
       for (final Contentlet con : contentletList) {
-        if(con.isArchived()){
-          continue;
-        }
         final FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(con);
         final File f = new File(
             compDir.getAbsolutePath() + File.separator + inputHost.getHostname() + asset.getPath() + File.separator + asset.getFileName());
@@ -292,8 +289,7 @@ abstract class DotCSSCompiler {
         }
         getAllImportedURI().add(assetUri);
         f.getParentFile().mkdirs();
-        if(UtilMethods.isEmpty(()->asset.getFileAsset())){
-
+        if(UtilMethods.isEmpty(asset::getFileAsset)){
           Logger.warn(this.getClass(),"Unable to find file for asset:" + asset.getURI());
           continue;
         }
