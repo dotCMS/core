@@ -1,10 +1,14 @@
 import { EMPTY, Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
+import { ButtonModule } from 'primeng/button';
+
 import { map, switchMap } from 'rxjs/operators';
+
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
 import { EditContentFormData } from '../../models/dot-edit-content-form.interface';
@@ -13,7 +17,7 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 @Component({
     selector: 'dot-edit-content-form-layout',
     standalone: true,
-    imports: [CommonModule, DotEditContentFormComponent],
+    imports: [NgIf, AsyncPipe, DotMessagePipe, DotEditContentFormComponent, ButtonModule],
     templateUrl: './edit-content.layout.component.html',
     styleUrls: ['./edit-content.layout.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,7 +39,8 @@ export class EditContentLayoutComponent {
                       this.contentType = contentType;
 
                       return this.dotEditContentService.getContentTypeFormData(contentType).pipe(
-                          map(({ layout, fields }) => ({
+                          map(({ tabs, layout, fields }) => ({
+                              tabs,
                               contentlet: { ...contentData },
                               layout,
                               fields
@@ -48,7 +53,7 @@ export class EditContentLayoutComponent {
           )
         : this.dotEditContentService
               .getContentTypeFormData(this.contentType)
-              .pipe(map(({ layout, fields }) => ({ layout, fields })));
+              .pipe(map(({ tabs, layout, fields }) => ({ tabs, layout, fields })));
 
     /**
      * Saves the contentlet with the given values.
@@ -67,5 +72,9 @@ export class EditContentLayoutComponent {
                     setTimeout(() => (this.isContentSaved = false), 3000);
                 }
             });
+    }
+
+    changeValue(_event) {
+        /* WIF*/
     }
 }

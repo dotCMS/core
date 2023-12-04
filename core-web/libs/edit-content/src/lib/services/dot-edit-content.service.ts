@@ -8,14 +8,12 @@ import { map, pluck } from 'rxjs/operators';
 import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import {
     DotCMSContentType,
-    DotCMSContentTypeField,
-    DotCMSContentTypeLayoutRow
+    DotCMSContentTypeLayoutRow,
+    DotCMSContentTypeLayoutTab
 } from '@dotcms/dotcms-models';
 
-interface EditContentFormData {
-    layout: DotCMSContentTypeLayoutRow[];
-    fields: DotCMSContentTypeField[];
-}
+import { TAB_FIELD_CLAZZ } from '../models/dot-edit-content-field.constant';
+import { EditContentFormData } from '../models/dot-edit-content-form.interface';
 
 @Injectable()
 export class DotEditContentService {
@@ -39,10 +37,15 @@ export class DotEditContentService {
      */
     getContentTypeFormData(idOrVar: string): Observable<EditContentFormData> {
         return this.dotContentTypeService.getContentType(idOrVar).pipe(
-            map(({ layout, fields }: EditContentFormData) => ({
-                layout,
-                fields
-            }))
+            map(({ layout, fields }): EditContentFormData => {
+                const tabs = this.getLayoutTabs(layout);
+
+                return {
+                    tabs,
+                    layout,
+                    fields
+                };
+            })
         );
     }
 
@@ -54,5 +57,38 @@ export class DotEditContentService {
      */
     saveContentlet<T>(data: { [key: string]: string }): Observable<T> {
         return this.dotWorkflowActionsFireService.saveContentlet(data);
+    }
+
+    /**
+     * Publishes a contentlet with the provided data.
+     *
+     * @private
+     * @param {DotCMSContentTypeLayoutRow[]} layout
+     * @return {*}  {DotCMSContentTypeLayoutTab[]}
+     * @memberof DotEditContentService
+     */
+    private getLayoutTabs(layout: DotCMSContentTypeLayoutRow[]): DotCMSContentTypeLayoutTab[] {
+        const initialTab = [
+            {
+                title: 'Content', //
+                layout: []
+            }
+        ];
+
+        const tabs = layout.reduce((acc, row) => {
+            const { clazz, name } = row.divider;
+            if (clazz === TAB_FIELD_CLAZZ) {
+                acc.push({
+                    title: name,
+                    layout: []
+                });
+            } else {
+                acc[acc.length - 1].layout.push(row);
+            }
+
+            return acc;
+        }, initialTab);
+
+        return tabs;
     }
 }

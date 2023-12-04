@@ -1,5 +1,9 @@
 <ng-container *ngIf="formData$ | async as formData; else noContent">
-    <dot-edit-content-form [formData]="formData" (formSubmit)="saveContent($event)" />
+    <dot-edit-content-form [formData]="formData" (changeValue)="changeValue($event)" />
+    <aside>
+        <p-button [label]="'Save' | dm" data-testId="button-save"></p-button>
+        <!-- <pre><code>{{form?.value | json}}</code></pre> -->
+    </aside>
     <p *ngIf="isContentSaved">Content saved!</p>
 </ng-container>
 

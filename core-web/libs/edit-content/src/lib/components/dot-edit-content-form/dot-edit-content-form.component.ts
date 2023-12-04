@@ -17,6 +17,7 @@ import {
 } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { TabViewModule } from 'primeng/tabview';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -39,7 +40,8 @@ import { FIELD_TYPES } from '../dot-edit-content-field/utils';
         ReactiveFormsModule,
         DotEditContentFieldComponent,
         ButtonModule,
-        DotMessagePipe
+        DotMessagePipe,
+        TabViewModule
     ],
     templateUrl: './dot-edit-content-form.component.html',
     styleUrls: ['./dot-edit-content-form.component.scss'],
@@ -47,10 +49,14 @@ import { FIELD_TYPES } from '../dot-edit-content-field/utils';
 })
 export class DotEditContentFormComponent implements OnInit {
     @Input() formData!: EditContentFormData;
-    @Output() formSubmit = new EventEmitter();
+    @Output() changeValue = new EventEmitter();
 
     private fb = inject(FormBuilder);
     form!: FormGroup;
+
+    get areMultipleTabs(): boolean {
+        return this.formData.tabs.length > 1;
+    }
 
     ngOnInit() {
         if (this.formData) {
@@ -73,6 +79,10 @@ export class DotEditContentFormComponent implements OnInit {
 
             const fieldControl = this.initializeFormControl(field);
             this.form.addControl(field.variable, fieldControl);
+        });
+
+        this.form.valueChanges.subscribe((value) => {
+            this.onFormChange(value);
         });
     }
 
@@ -109,23 +119,31 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
-     * Saves the content of the form by emitting the form value through the `formSubmit` event.
-     * @returns void
+    /**
+     * Emits the form value through the `formSubmit` event.
+     *
+     * @param {*} value
+     * @memberof DotEditContentFormComponent
      */
-    saveContenlet() {
-        const formValue = this.form.getRawValue();
-        this.formData.fields.forEach((field) => {
+    onFormChange(value) {
+        this.formData.fields.forEach(({ variable, fieldType }) => {
             // Shorthand for conditional assignment
 
-            FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES) &&
-                (formValue[field.variable] = formValue[field.variable]?.join(','));
+            if (FLATTENED_FIELD_TYPES.includes(fieldType as FIELD_TYPES)) {
+                value[variable] = value[variable]?.join(',');
+            }
 
-            CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES) &&
-                (formValue[field.variable] = formValue[field.variable]
+            if (CALENDAR_FIELD_TYPES.includes(fieldType as FIELD_TYPES)) {
+                value[variable] = value[variable]
                     ?.toISOString()
-                    .replace(/T|\.\d{3}Z/g, (match: string) => (match === 'T' ? ' ' : ''))); // To remove the T and .000Z from the date)
+                    .replace(/T|\.\d{3}Z/g, (match: string) => (match === 'T' ? ' ' : '')); // To remove the T and .000Z from the date)
+            }
         });
 
-        this.formSubmit.emit(formValue);
+        this.changeValue.emit(value);
     }
+
+    // private formatData() {
+
+    // }
 }
