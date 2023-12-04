@@ -1,6 +1,6 @@
 import React from 'react';
 
-import GlobalProvider from '@/providers/global';
+import GlobalProvider from '@/lib/providers/global';
 import { DotcmsPage } from '@/components/dotcms-page';
 
 async function getPage({ url, language_id }) {

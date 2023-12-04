@@ -133,7 +133,6 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -160,7 +159,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
@@ -839,7 +837,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param user The user
 	 */
 	@WrapInTransaction
-	private WorkflowScheme deleteSchemeTask(final WorkflowScheme scheme, final User user) {
+	@VisibleForTesting
+	@Override
+	public WorkflowScheme deleteSchemeTask(final WorkflowScheme scheme, final User user) {
 
 		try {
 
@@ -4364,6 +4364,40 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return this.hasActionlet(action, Actionlet::destroy);
 	}
 
+	@CloseDBIfOpened
+	@Override
+	public long countAllSchemasSteps(final User user) throws DotDataException, DotSecurityException {
+		try {
+			this.isUserAllowToModifiedWorkflow(user);
+		} catch (WorkflowPortletAccessException | InvalidLicenseException e) {
+			throw new DotSecurityException(e.getMessage(), e);
+		}
+
+		return workFlowFactory.countAllSchemasSteps();
+	}
+
+	@CloseDBIfOpened
+	public long countAllSchemasActions(final User user) throws DotDataException, DotSecurityException {
+		try {
+			this.isUserAllowToModifiedWorkflow(user);
+		} catch (WorkflowPortletAccessException | InvalidLicenseException e) {
+			throw new DotSecurityException(e.getMessage(), e);
+		}
+
+		return workFlowFactory.countAllSchemasActions();
+	}
+
+	@CloseDBIfOpened
+	public long countAllSchemasSubActions(final User user) throws DotDataException, DotSecurityException {
+		try {
+			this.isUserAllowToModifiedWorkflow(user);
+		} catch (WorkflowPortletAccessException | InvalidLicenseException e) {
+			throw new DotSecurityException(e.getMessage(), e);
+		}
+
+		return workFlowFactory.countAllSchemasSubActions();
+	}
+
 	@Override
 	public WorkflowTask createWorkflowTask(final Contentlet contentlet, final User user,
 									final WorkflowStep workflowStep, final String title, String description) throws DotDataException {
@@ -4435,5 +4469,17 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		return null;
     }
+
+	@Override
+	public int countWorkflowSchemes(final User user) {
+		isUserAllowToModifiedWorkflow(user);
+		return workFlowFactory.countWorkflowSchemes(false);
+	}
+
+	@Override
+	public int countWorkflowSchemesIncludeArchived(final User user) {
+		isUserAllowToModifiedWorkflow(user);
+		return workFlowFactory.countWorkflowSchemes(true);
+	}
 
 }
