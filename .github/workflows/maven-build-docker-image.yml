@@ -224,11 +224,11 @@ jobs:
             dotcms/dotcms
           tags: |
             type=raw,value=${{ steps.set-common-vars.outputs.version }}_{{sha}},enable=true
-            type=raw,value=${{ steps.set-common-vars.outputs.version }}_SNAPSHOT,enable=${{ steps.set-common-vars.outputs.is_snapshot == 'true' }}
-            type=raw,value=${{ steps.set-common-vars.outputs.version }}_latest_SNAPSHOT,enable=${{ steps.set-common-vars.outputs.is_trunk_snapshot == 'true' }}
-            type=raw,value=${{ steps.set-common-vars.outputs.version }},enable=${{ steps.set-common-vars.outputs.is_release == 'true' }}
-            type=raw,value=latest,enable=${{ steps.set-common-vars.outputs.is_latest == 'true' }}
-            type=raw,value={{sha}},enable=${{ steps.set-common-vars.outputs.is_latest == 'true' }}
+            type=raw,value=${{ steps.set-common-vars.outputs.version }}_SNAPSHOT,enable=${{ steps.set-common-vars.outputs.is_snapshot }}
+            type=raw,value=${{ steps.set-common-vars.outputs.version }}_latest_SNAPSHOT,enable=${{ steps.set-common-vars.outputs.is_trunk_snapshot }}
+            type=raw,value=${{ steps.set-common-vars.outputs.version }},enable=${{ steps.set-common-vars.outputs.is_release }}
+            type=raw,value=latest,enable=${{ steps.set-common-vars.outputs.is_latest }}
+            type=raw,value={{sha}},enable=${{ steps.set-common-vars.outputs.is_custom }}
         if: success()
 
       - name: Debug Docker Metadata
