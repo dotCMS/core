@@ -134,10 +134,10 @@ jobs:
           ./mvnw -B -ntp -Pdist package -DskipTests=true -pl :dotcms-cli
 
       - name: Distribution tree
-        working-directory: ${{ github.workspace }}/tools/dotcms-cli
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli/
         run: |
           ls -ltr
-          tree target
+          tree cli
 
       - name: Releaser
         env:
