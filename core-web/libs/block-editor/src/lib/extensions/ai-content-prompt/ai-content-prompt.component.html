@@ -6,11 +6,13 @@
                 [attr.disabled]="vm.loading || null"
                 (keyup.escape)="handleScape($event)"
                 (keydown.escape)="$event.stopPropagation()"
-                formControlName="textPrompt"
-                type="text"
-                pInputText
                 autofocus
-                placeholder="Ask AI to write something" />
+                formControlName="textPrompt"
+                pInputText
+                placeholder="{{
+                    'block-editor.extension.ai-content.ask-ai-to-write-something' | dm
+                }}"
+                type="text" />
 
             <ng-container *ngIf="vm.loading; else submitButton">
                 <span class="pi pi-spin pi-spinner"></span>
@@ -19,9 +21,9 @@
             <ng-template #submitButton>
                 <button
                     class="p-button-rounded p-button-text"
+                    icon="pi pi-send"
                     pButton
-                    type="submit"
-                    icon="pi pi-send"></button>
+                    type="submit"></button>
             </ng-template>
         </span>
     </form>
