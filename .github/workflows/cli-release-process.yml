@@ -137,6 +137,7 @@ jobs:
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
           ls -ltr
+          tree target
 
       - name: Releaser
         env:
