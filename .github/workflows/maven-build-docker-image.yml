@@ -38,6 +38,9 @@ on:
       ghcr_io_token:
         description: 'GHCR.io token'
         required: false
+    outputs:
+      tags: ${{ jobs.build_push_image.outputs.tags }}
+      version: ${{ jobs.build_push_image.outputs.version }}
 jobs:
   build_push_image:
     name: Build/Push Image
@@ -52,6 +55,10 @@ jobs:
       version: ${{ steps.set-common-vars.outputs.version }}
     if: success()
     steps:
+      - run: echo 'GitHub context'
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+
       - name: Checkout core
         uses: actions/checkout@v3
         with:
