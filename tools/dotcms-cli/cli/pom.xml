@@ -241,7 +241,7 @@
                             <outputDirectory>${distribution.directory}</outputDirectory>
                             <workDirectory>${project.build.directory}/assembly/work</workDirectory>
                             <descriptors>
-                                <descriptor>cli/src/assembly/assembly.xml</descriptor>
+                                <descriptor>src/assembly/assembly.xml</descriptor>
                             </descriptors>
                         </configuration>
                         <executions>
