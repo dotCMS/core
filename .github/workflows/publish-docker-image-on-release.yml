@@ -40,7 +40,7 @@ jobs:
     needs: prepare-build
     uses: ./.github/workflows/maven-build-docker-image.yml
     with:
-      ref: ${{ prepare-build.outputs.build_id }}
+      ref: ${{ needs.prepare-build.outputs.build_id }}
       docker_platforms: linux/amd64,linux/arm64
       force_snapshot: true
     secrets:
