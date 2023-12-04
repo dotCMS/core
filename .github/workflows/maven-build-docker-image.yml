@@ -39,8 +39,10 @@ on:
         description: 'GHCR.io token'
         required: false
     outputs:
-      tags: ${{ jobs.build_push_image.outputs.tags }}
-      version: ${{ jobs.build_push_image.outputs.version }}
+      tags:
+        value: ${{ jobs.build_push_image.outputs.tags }}
+      version:
+        value: ${{ jobs.build_push_image.outputs.version }}
 jobs:
   build_push_image:
     name: Build/Push Image
