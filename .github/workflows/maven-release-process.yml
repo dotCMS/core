@@ -369,7 +369,6 @@ jobs:
             git push origin :${release_branch}
           fi
           git checkout -b ${release_branch}
-          gi
           
           for file in $(find . -name build.gradle)
           do
