@@ -448,7 +448,7 @@ jobs:
             tags="${tags}\`${tag}\`"
           done
           
-          echo "tags=${tags}" >> $GITHUB_OUTPUT  
+          echo "tags=${tags}" >> $GITHUB_OUTPUT
 
       - name: Fetch `Next Release` issues
         id: fetch-next-release-issues

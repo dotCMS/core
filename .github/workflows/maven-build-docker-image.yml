@@ -20,6 +20,11 @@ on:
         required: false
         type: string
         default: 'DOCKER.IO'
+      force_snapshot:
+        description: 'Force snapshot'
+        required: false
+        type: boolean
+        default: false
     secrets:
       docker_io_username:
         description: 'Docker.io username'
@@ -44,6 +49,7 @@ jobs:
       DOCKER_BUILD_CONTEXT: /home/runner/work/_temp/core-build
     outputs:
       tags: ${{ steps.meta.outputs.tags }}
+      version: ${{ steps.set-common-vars.outputs.version }}
     if: success()
     steps:
       - name: Checkout core
@@ -94,6 +100,13 @@ jobs:
             exit $rc
           fi
         if: steps.build-status.outputs.rebuild == 'true'
+
+      - name: Setup Context
+        id: setup-docker-context
+        run: |
+          mkdir -p ${DOCKER_BUILD_CONTEXT}/context
+          tar -xvf ${DOCKER_BUILD_CONTEXT}/docker-build.tar -C ${DOCKER_BUILD_CONTEXT}/context
+        if: success() && steps.build-status.outputs.rebuild == 'true'
 
       - name: Set Common Vars
         id: set-common-vars
@@ -150,6 +163,12 @@ jobs:
             version=${build_id}
           fi
           
+          if [[ "${{ inputs.force_snapshot }}" == 'true' ]]; then
+            is_snapshot=true
+            is_release=false
+            is_latest=false
+          fi
+          
           echo "version=${version}" >> $GITHUB_OUTPUT
           echo "build_hash=${build_hash}" >> $GITHUB_OUTPUT
           echo "build_id=${build_id}" >> $GITHUB_OUTPUT
@@ -159,6 +178,7 @@ jobs:
           echo "is_release=${is_release}" >> $GITHUB_OUTPUT
           echo "is_latest=${is_latest}" >> $GITHUB_OUTPUT
           echo "is_custom=${is_custom}" >> $GITHUB_OUTPUT
+        if: success()
 
       - name: Docker.io login
         uses: docker/login-action@v3.0.0
@@ -187,16 +207,20 @@ jobs:
             type=raw,value=${{ steps.set-common-vars.outputs.version }},enable=${{ steps.set-common-vars.outputs.is_release == true }}
             type=raw,value=latest,enable=${{ steps.set-common-vars.outputs.is_latest == true }}
             type=raw,value={{sha}},enable=${{ steps.set-common-vars.outputs.is_latest == true }}
+        if: success()
 
       - name: Debug Docker Metadata
         run: |
           echo "${{ fromJSON(steps.meta.outputs.json) }}"
+        if: success()
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.0.0
         with:
           image: tonistiigi/binfmt:latest
           platforms: ${{ inputs.docker_platforms }}
+        if: success()
+
       - name: Docker Setup Buildx
         id: docker-setup-buildx
         uses: docker/setup-buildx-action@v3.0.0
@@ -205,9 +229,9 @@ jobs:
           platforms: ${{ inputs.docker_platforms }}
           driver-opts: |
             image=moby/buildkit:v0.12.2
+        if: success()
 
-
-      - name: Build Docker Image
+      - name: Build/Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: ${{ env.DOCKER_BUILD_CONTEXT }}/context
