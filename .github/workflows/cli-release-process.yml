@@ -135,7 +135,7 @@ jobs:
 
       - name: Distribution tree
         run: |
-          tree target/distributions
+          ls -ltr
 
       - name: Releaser
         env:
