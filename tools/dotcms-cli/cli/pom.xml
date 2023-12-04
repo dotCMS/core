@@ -13,6 +13,8 @@
     <packaging>jar</packaging>
 
     <properties>
+        <executable-suffix/>
+        <distribution.directory>${project.build.directory}/distributions</distribution.directory>
         <picocli.codegen.version>4.6.3</picocli.codegen.version>
         <testcontainers.version>1.17.6</testcontainers.version>
         <test.failure.ignore>false</test.failure.ignore>
@@ -20,6 +22,8 @@
         <docker.version.tag>${project.version}</docker.version.tag>
         <testcontainers.docker.image>${docker.output.image.name}/${docker.version.tag}</testcontainers.docker.image>
         <java.keytar.version>1.0.0</java.keytar.version>
+        <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
+        <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -118,6 +122,13 @@
     </dependencies>
 
     <build>
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>${os-maven-plugin.version}</version>
+            </extension>
+        </extensions>
         <plugins>
             <plugin>
                 <groupId>${quarkus.platform.group-id}</groupId>
@@ -216,6 +227,48 @@
 
     <profiles>
         <profile>
+            <id>dist</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <version>${maven-assembly-plugin.version}</version>
+                        <configuration>
+                            <attach>false</attach>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <finalName>${project.artifactId}-${project.version}-${os.detected.classifier}</finalName>
+                            <outputDirectory>${distribution.directory}</outputDirectory>
+                            <workDirectory>${project.build.directory}/assembly/work</workDirectory>
+                            <descriptors>
+                                <descriptor>cli/src/assembly/assembly.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>make-distribution</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>dist-windows</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                </os>
+            </activation>
+            <properties>
+                <executable-suffix>.exe</executable-suffix>
+            </properties>
+        </profile>
+        <profile>
             <id>native</id>
             <activation>
                 <property>
@@ -246,6 +299,9 @@
             </build>
             <properties>
                 <quarkus.package.type>native</quarkus.package.type>
+                <quarkus.native.additional-build-args>-H:+RemoveSaturatedTypeFlows</quarkus.native.additional-build-args>
+<!--                <native.image.builder.image>quay.io/quarkus/ubi-quarkus-native-image:22.0-java11</native.image.builder.image>-->
+<!--                <quarkus.native.builder-container-runtime-options>-Xmx6G</quarkus.native.builder-container-runtime-options>-->
             </properties>
         </profile>
     </profiles>
