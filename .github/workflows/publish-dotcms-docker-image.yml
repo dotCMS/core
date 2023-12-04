@@ -38,7 +38,7 @@ jobs:
     needs: prepare-build
     uses: ./.github/workflows/maven-build-docker-image.yml
     with:
-      ref: master
+      ref: ${{ event.ref }}
       docker_platforms: ${{ needs.prepare-build.outputs.docker_platforms }}
       docker_registry: ${{ inputs.docker_registry }}
     secrets:
