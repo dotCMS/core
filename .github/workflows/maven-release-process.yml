@@ -299,15 +299,15 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-#      - name: Deploy Release
-#        run: |
-#          ./mvnw -ntp \
-#            ${JVM_TEST_MAVEN_OPTS} \
-#            -Dprod=true \
-#            -DskipTests=true \
-#            -DskipITs=true \
-#            deploy \
-#            --file dotCMS/pom.xml
+      - name: Deploy Release
+        run: |
+          ./mvnw -ntp \
+            ${JVM_TEST_MAVEN_OPTS} \
+            -Dprod=true \
+            -DskipTests=true \
+            -DskipITs=true \
+            deploy \
+            --file dotCMS/pom.xml
 #
 #      - name: Push Distro
 #        run: |
