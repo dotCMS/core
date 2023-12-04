@@ -9,7 +9,7 @@ on:
       - 'issue-26748-maven-build-docker-image'
 
 jobs:
-  build_push_image:
+  build-push-image:
     name: Build/Push Image
     uses: ./.github/workflows/maven-build-docker-image.yml
     with:
@@ -19,16 +19,16 @@ jobs:
       docker_io_username: ${{ secrets.DOCKER_USERNAME }}
       docker_io_token: ${{ secrets.DOCKER_TOKEN }}
 
-  finish_build_push:
+  finish-build-push:
     name: Finish Build/Push
-    needs: build_push_image
+    needs: build-push-image
     runs-on: ubuntu-latest
     steps:
       - name: Format Tags
         id: format-tags
         run: |
           tags=''
-          tags_arr=( ${{ needs.build_push_image.outputs.tags }} )
+          tags_arr=( ${{ needs.build-push-image.outputs.tags }} )
 
           for tag in "${tags_arr[@]}"
           do
@@ -48,5 +48,5 @@ jobs:
           MSG_MINIMAL: true
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.githubusercontent.com/u/1005263?s=200&v=4
-          SLACK_MESSAGE: "This automated script is happy to announce that a new docker image has been built for *master* with tags: [${{ needs.build_push_image.outputs.tags }}] :docker:"
+          SLACK_MESSAGE: "This automated script is happy to announce that a new docker image has been built for *master* with tags: [${{ steps.format-tags.outputs.tags }}] :docker:"
         if: success()
