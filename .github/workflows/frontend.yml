@@ -121,7 +121,6 @@ jobs:
         working-directory: core-web
 
       - name: Run Nx Affected ${{ matrix.task }}
-        id: ${{ matrix.task }}
         working-directory: core-web
         run: |
           exclude_option=""
