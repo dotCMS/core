@@ -1,8 +1,8 @@
 name: Build/Push dotCMS docker image (on release)
 on:
-  push:
-    branches:
-      - release-*
+#  push:
+#    branches:
+#      - release-*
   repository_dispatch:
     types:
       - enterprise-update

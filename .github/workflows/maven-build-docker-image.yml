@@ -155,7 +155,6 @@ jobs:
           
           if [[ ${version} =~ ^[0-9]{1}.[0-9]{1}.[0-9]{1}-SNAPSHOT$ ]]; then
             is_snapshot=true
-
             if [[ "${is_trunk}" == 'true' ]]; then
               is_trunk_snapshot=true
               version=${build_id}
@@ -226,7 +225,7 @@ jobs:
           tags: |
             type=raw,value=${{ steps.set-common-vars.outputs.version }}_{{sha}},enable=true
             type=raw,value=${{ steps.set-common-vars.outputs.version }}_SNAPSHOT,enable=${{ steps.set-common-vars.outputs.is_snapshot == true }}
-            type=raw,value=master_latest__SNAPSHOT,enable=${{ steps.set-common-vars.outputs.is_trunk_snapshot == true }}
+            type=raw,value=${{ steps.set-common-vars.outputs.version }}_latest_SNAPSHOT,enable=${{ steps.set-common-vars.outputs.is_trunk_snapshot == true }}
             type=raw,value=${{ steps.set-common-vars.outputs.version }},enable=${{ steps.set-common-vars.outputs.is_release == true }}
             type=raw,value=latest,enable=${{ steps.set-common-vars.outputs.is_latest == true }}
             type=raw,value={{sha}},enable=${{ steps.set-common-vars.outputs.is_latest == true }}
