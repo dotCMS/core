@@ -8,12 +8,12 @@ on:
         type: string
       docker_platforms:
         description: 'Docker platforms to build the image on'
-        required: true
+        required: false
         type: string
         default: 'linux/amd64'
       docker_context_cache_key:
         description: 'Cache key for the docker context'
-        required: true
+        required: false
         type: string
       docker_registry:
         description: 'Docker registry to push the image to (DOCKER.IO, GHCR.IO, BOTH)'
