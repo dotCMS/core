@@ -179,8 +179,11 @@ public class VelocityLiveMode extends VelocityModeHandler {
                 if (null != cacheKey && response.getStatus() == 200) {
                     final String trimmedPage = tmpOut.toString().trim();
                     out.write(trimmedPage.getBytes());
-                    synchronized (cacheKey.intern()) {
-                        CacheLocator.getBlockPageCache().add(htmlPage, trimmedPage, cacheParameters);
+                    if(response.getStatus() == 200) {
+                        synchronized (cacheKey.intern()) {
+                            CacheLocator.getBlockPageCache()
+                                    .add(htmlPage, trimmedPage, cacheParameters);
+                        }
                     }
                 }
             }
