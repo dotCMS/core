@@ -218,3 +218,4 @@ This maintenance release includes the following code fixes:
 181. https://github.com/dotCMS/core/issues/24490 : Content with an invalid detail page fails to render/instanciate #24490
 182. https://github.com/dotCMS/core/issues/24885 : Define startup and liveness probes #24885
 183. https://github.com/dotCMS/core/issues/25613 : MonitorResource throws exception if DOT_SYSTEM_STATUS_API_IP_ACL is not set #25613
+184. https://github.com/dotCMS/core/issues/26481 : Pubsub Connection should prefer SSL #26481
