@@ -10,6 +10,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { PromptType } from './ai-image-prompt.models';
 import { DotAiImagePromptStore, VmAiImagePrompt } from './ai-image-prompt.store';
@@ -29,12 +30,13 @@ import { AiImagePromptInputComponent } from './components/ai-image-prompt-input/
         DialogModule,
         AiImagePromptInputComponent,
         AiImagePromptInputComponent,
-        AsyncPipe
+        AsyncPipe,
+        DotMessagePipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AIImagePromptComponent {
-    vm$: Observable<VmAiImagePrompt> = inject(DotAiImagePromptStore).vm$;
+    protected readonly vm$: Observable<VmAiImagePrompt> = inject(DotAiImagePromptStore).vm$;
 
     protected readonly ComponentStatus = ComponentStatus;
     private store = inject(DotAiImagePromptStore);

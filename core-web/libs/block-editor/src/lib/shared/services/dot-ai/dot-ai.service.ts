@@ -21,6 +21,7 @@ const headers = new HttpHeaders({
 
 @Injectable()
 export class DotAiService {
+
     constructor(private http: HttpClient) {}
 
     generateContent(prompt: string): Observable<string> {
