@@ -8,12 +8,11 @@ import static com.dotcms.api.client.pull.file.OptionConstants.NON_RECURSIVE;
 import static com.dotcms.common.LocationUtils.encodePath;
 
 import com.dotcms.api.AssetAPI;
-import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.files.traversal.RemoteTraversalService;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.pull.ContentFetcher;
+import com.dotcms.api.client.pull.common.SiteIterator;
 import com.dotcms.common.LocationUtils;
-import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.ByPathRequest;
 import com.dotcms.model.site.Site;
@@ -45,40 +44,13 @@ public class FileFetcher implements ContentFetcher<FileTraverseResult>, Serializ
     public List<FileTraverseResult> fetch(final Map<String, Object> customOptions) {
 
         // ---
-        // First we need to fetch the all the existing sites
+        // Fetching the all the existing sites
+        final List<Site> allSites = new ArrayList<>();
 
-        final var siteAPI = clientFactory.getClient(SiteAPI.class);
-
-        final int pageSize = 100;
-        int page = 1;
-
-        // Create a list to store all the retrieved sites
-        List<Site> allSites = new ArrayList<>();
-
-        while (true) {
-
-            // Retrieve a page of sites
-            ResponseEntityView<List<Site>> sitesResponse = siteAPI.getSites(
-                    null,
-                    null,
-                    false,
-                    false,
-                    page,
-                    pageSize
-            );
-
-            // Check if the response contains sites
-            if (sitesResponse.entity() != null && !sitesResponse.entity().isEmpty()) {
-
-                // Add the sites from the current page to the list
-                allSites.addAll(sitesResponse.entity());
-
-                // Increment the page number
-                page++;
-            } else {
-                // Handle the case where the response doesn't contain sites or an error occurred
-                break;
-            }
+        final SiteIterator siteIterator = new SiteIterator(clientFactory, 100);
+        while (siteIterator.hasNext()) {
+            List<Site> sites = siteIterator.next();
+            allSites.addAll(sites);
         }
 
         // ---

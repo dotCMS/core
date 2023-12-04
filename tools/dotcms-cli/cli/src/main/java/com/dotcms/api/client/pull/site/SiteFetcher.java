@@ -3,6 +3,7 @@ package com.dotcms.api.client.pull.site;
 import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.pull.ContentFetcher;
+import com.dotcms.api.client.pull.common.SiteIterator;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.GetSiteByNameRequest;
 import com.dotcms.model.site.Site;
@@ -29,38 +30,13 @@ public class SiteFetcher implements ContentFetcher<SiteView>, Serializable {
     @Override
     public List<SiteView> fetch(Map<String, Object> customOptions) {
 
-        final var siteAPI = clientFactory.getClient(SiteAPI.class);
+        // Fetching the all the existing sites
+        final List<Site> allSites = new ArrayList<>();
 
-        final int pageSize = 100;
-        int page = 1;
-
-        // Create a list to store all the retrieved sites
-        List<Site> allSites = new ArrayList<>();
-
-        while (true) {
-
-            // Retrieve a page of sites
-            ResponseEntityView<List<Site>> sitesResponse = siteAPI.getSites(
-                    null,
-                    null,
-                    false,
-                    false,
-                    page,
-                    pageSize
-            );
-
-            // Check if the response contains sites
-            if (sitesResponse.entity() != null && !sitesResponse.entity().isEmpty()) {
-
-                // Add the sites from the current page to the list
-                allSites.addAll(sitesResponse.entity());
-
-                // Increment the page number
-                page++;
-            } else {
-                // Handle the case where the response doesn't contain sites or an error occurred
-                break;
-            }
+        final SiteIterator siteIterator = new SiteIterator(clientFactory, 100);
+        while (siteIterator.hasNext()) {
+            List<Site> sites = siteIterator.next();
+            allSites.addAll(sites);
         }
 
         // Create a ForkJoinPool to process the sites in parallel
