@@ -187,7 +187,7 @@ jobs:
 
       - name: 'List artifacts'
         run: |
-          ls -ltr ${{ github.workspace }}/artifacts
+          ls -R
 
       - name: 'Set up Java'
         uses: actions/setup-java@v3
