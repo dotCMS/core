@@ -52,7 +52,6 @@ export class EditEmaPersonaSelectorComponent implements OnInit {
         this.pageApiService
             .getPersonas({
                 pageID: this.pageID,
-                // TODO: when we update to PrimeNG 17 we can do this async
                 perPage: 5000
             })
             .subscribe(

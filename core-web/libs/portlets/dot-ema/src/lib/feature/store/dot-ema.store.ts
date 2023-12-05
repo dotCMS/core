@@ -127,7 +127,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 this.dotPageApiService.save(payload).pipe(
                     tapResponse(
                         () => {
-                            payload.whenSaved?.(); // TODO: We need to create and editorState for this kind of actions (LOADING | IDLE | SAVED...)
+                            payload.whenSaved?.();
                         },
                         (e) => {
                             console.error(e);
