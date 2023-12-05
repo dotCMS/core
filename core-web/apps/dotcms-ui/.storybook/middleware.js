@@ -12,10 +12,7 @@ module.exports = function expressMiddleware(router) {
             '/api/v1/ai/text/generate',
             createProxyMiddleware({
                 target: 'http://localhost:8080',
-                changeOrigin: true,
-                pathRewrite: {
-                    '^/api/v1/ai/text/generate': '/api/v1/ai/text/generate'
-                }
+                changeOrigin: true
             })
         );
 
@@ -24,10 +21,7 @@ module.exports = function expressMiddleware(router) {
             '/api/v1/ai/image/generate',
             createProxyMiddleware({
                 target: 'http://localhost:8080',
-                changeOrigin: true,
-                pathRewrite: {
-                    '^/api/v1/ai/image/generate': '/api/v1/ai/image/generate'
-                }
+                changeOrigin: true
             })
         );
 
@@ -36,11 +30,24 @@ module.exports = function expressMiddleware(router) {
             '/api/v1/workflow/actions/default/fire/PUBLISH',
             createProxyMiddleware({
                 target: 'http://localhost:8080',
-                changeOrigin: true,
-                pathRewrite: {
-                    '^/api/v1/workflow/actions/default/fire/PUBLISH':
-                        '/api/v1/workflow/actions/default/fire/PUBLISH'
-                }
+                changeOrigin: true
+            })
+        );
+
+        // Route dotAssets to the backend
+        router.use(
+            '/da',
+            createProxyMiddleware({
+                target: 'http://localhost:8080',
+                changeOrigin: true
+            })
+        );
+
+        router.use(
+            '/api/v2/languages/default/keys',
+            createProxyMiddleware({
+                target: 'http://localhost:8080',
+                changeOrigin: true
             })
         );
 

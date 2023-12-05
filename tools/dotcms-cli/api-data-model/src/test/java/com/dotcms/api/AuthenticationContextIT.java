@@ -1,7 +1,7 @@
 package com.dotcms.api;
 
 import com.dotcms.DotCMSITProfile;
-import com.dotcms.api.client.ServiceManager;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
