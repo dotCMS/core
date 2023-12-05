@@ -185,7 +185,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                     });
                 },
                 reject: () => {
-                    this.personaSelector.resetValue();
+                    // this.personaSelector.resetValue();
                 }
             });
         }

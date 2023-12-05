@@ -1,15 +1,28 @@
 @use "variables" as *;
 
-.edit-ema-persona-selector__persona {
-    display: flex;
-    align-items: center;
-    gap: $spacing-2;
-}
-
 ::ng-deep {
-    .p-overlaypanel.edit-ema-persona-selector.p-component {
-        .p-overlaypanel-content {
-            padding: 0;
+    .ema-language__avatar,
+    .ema-language__avatar-selected {
+        width: 1.5rem;
+        height: 1.5rem;
+        flex-shrink: 0;
+
+        .p-avatar-text {
+            font-size: $font-size-md;
         }
     }
+
+    .ema-language__avatar-selected {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+}
+
+.p-button-text.selected:enabled {
+    background-color: $color-palette-primary-200;
+    color: $color-palette-primary-800;
+}
+.pi-tag {
+    color: $color-palette-primary-500;
+    font-size: $font-size-sm;
 }

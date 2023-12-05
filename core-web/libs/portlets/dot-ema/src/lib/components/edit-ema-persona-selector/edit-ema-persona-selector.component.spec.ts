@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -55,34 +55,42 @@ describe('EditEmaPersonaSelectorComponent', () => {
         component = spectator.component;
     });
 
-    it('should call autoComplete selectItem when calling resetValue', () => {
-        const selectItemSpy = jest.spyOn(component.autoComplete, 'selectItem');
-        component.resetValue();
-        expect(selectItemSpy).toHaveBeenCalledWith(component.value);
-    });
-
     describe('events', () => {
         it('should emit the default persona when the selected emits the default persona', () => {
             const selectedSpy = jest.spyOn(component.selected, 'emit');
-            spectator.triggerEventHandler('p-autocomplete', 'onSelect', DEFAULT_PERSONA);
+            const button = spectator.query(byTestId('language-button'));
+
+            spectator.click(button);
+            spectator.detectChanges();
+            spectator.triggerEventHandler('p-listbox', 'onChange', { value: DEFAULT_PERSONA });
+
             expect(selectedSpy).toHaveBeenCalledWith({ ...DEFAULT_PERSONA, pageID: '123' });
         });
 
         it('should not emit the selected persona when it is already selected', () => {
             const selectedSpy = jest.spyOn(component.selected, 'emit');
-            spectator.triggerEventHandler('p-autocomplete', 'onSelect', {
-                identifier: 'some test'
+            const button = spectator.query(byTestId('language-button'));
+
+            spectator.click(button);
+            spectator.detectChanges();
+
+            spectator.triggerEventHandler('p-listbox', 'onChange', {
+                value: {
+                    identifier: 'some test'
+                }
             });
             expect(selectedSpy).not.toHaveBeenCalled();
         });
 
         it('should emit the selected persona when it is personalized', () => {
             const selectedSpy = jest.spyOn(component.selected, 'emit');
+            const button = spectator.query(byTestId('language-button'));
 
-            spectator.triggerEventHandler('p-autocomplete', 'onSelect', {
-                identifier: 'some test 2',
-                personalized: true,
-                pageID: '123'
+            spectator.click(button);
+            spectator.detectChanges();
+
+            spectator.triggerEventHandler('p-listbox', 'onChange', {
+                value: { identifier: 'some test 2', personalized: true, pageID: '123' }
             });
 
             expect(selectedSpy).toHaveBeenCalledWith({
