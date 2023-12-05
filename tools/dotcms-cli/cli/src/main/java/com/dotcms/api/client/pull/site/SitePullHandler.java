@@ -8,7 +8,7 @@ import javax.enterprise.context.Dependent;
 import org.apache.commons.lang3.BooleanUtils;
 
 @Dependent
-public class SitePullHandler implements GeneralPullHandler<SiteView> {
+public class SitePullHandler extends GeneralPullHandler<SiteView> {
 
     @Override
     public String title() {

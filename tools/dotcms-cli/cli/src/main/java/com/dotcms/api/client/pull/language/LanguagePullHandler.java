@@ -7,7 +7,7 @@ import java.util.List;
 import javax.enterprise.context.Dependent;
 
 @Dependent
-public class LanguagePullHandler implements GeneralPullHandler<Language> {
+public class LanguagePullHandler extends GeneralPullHandler<Language> {
 
     @Override
     public String title() {

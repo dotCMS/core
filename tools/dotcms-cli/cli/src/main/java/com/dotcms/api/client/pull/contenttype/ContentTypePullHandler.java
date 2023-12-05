@@ -9,7 +9,7 @@ import javax.enterprise.context.Dependent;
 import org.apache.commons.lang3.StringUtils;
 
 @Dependent
-public class ContentTypePullHandler implements GeneralPullHandler<ContentType> {
+public class ContentTypePullHandler extends GeneralPullHandler<ContentType> {
 
     @Override
     public String title() {

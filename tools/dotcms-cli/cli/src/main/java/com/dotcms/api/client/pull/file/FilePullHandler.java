@@ -5,7 +5,7 @@ import static com.dotcms.api.client.pull.file.OptionConstants.PRESERVE;
 
 import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.model.RestClientFactory;
-import com.dotcms.api.client.pull.CustomPullHandler;
+import com.dotcms.api.client.pull.PullHandler;
 import com.dotcms.api.client.pull.exception.PullException;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodeInfo;
@@ -26,11 +26,12 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jboss.logging.Logger;
 
 /**
- * The FilePullHandler class is responsible for handling the pulling of files. It implements the
- * CustomPullHandler interface allowing to provide custom logic for pulling files.
+ * The FilePullHandler class is responsible for pulling files from dotCMS.
+ * It extends the PullHandler class and handles the pulling of FileTraverseResult objects providing
+ * its own implementation of the pull method.
  */
 @Dependent
-public class FilePullHandler implements CustomPullHandler<FileTraverseResult> {
+public class FilePullHandler extends PullHandler<FileTraverseResult> {
 
     @Inject
     Logger logger;
@@ -86,8 +87,9 @@ public class FilePullHandler implements CustomPullHandler<FileTraverseResult> {
 
     @Override
     @ActivateRequestContext
-    public List<Exception> pull(final FileTraverseResult content, final PullOptions pullOptions,
-            final OutputOptionMixin output) {
+    public boolean pull(List<FileTraverseResult> contents,
+            PullOptions pullOptions,
+            OutputOptionMixin output) throws ExecutionException, InterruptedException {
 
         boolean preserve = false;
         boolean includeEmptyFolders = false;
@@ -99,7 +101,27 @@ public class FilePullHandler implements CustomPullHandler<FileTraverseResult> {
                     getOrDefault(INCLUDE_EMPTY_FOLDERS, false);
         }
 
-        return pullTree(content, pullOptions, output, !preserve, includeEmptyFolders);
+        var failed = false;
+
+        output.info(startPullingHeader(contents));
+
+        for (final var content : contents) {
+
+            var errors = pullTree(
+                    content,
+                    pullOptions,
+                    output,
+                    !preserve,
+                    includeEmptyFolders
+            );
+
+            printErrors(errors, output);
+            if (!errors.isEmpty()) {
+                failed = true;
+            }
+        }
+
+        return failed;
     }
 
     /**
