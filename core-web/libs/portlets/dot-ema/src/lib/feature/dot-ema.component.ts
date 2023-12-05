@@ -35,12 +35,6 @@ import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/e
 import { AddContentletPayload, DeleteContentletPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
 
-const PARAMS_AND_DEFAULT_VALUES = [
-    ['language_id', DEFAULT_LANGUAGE_ID],
-    ['com.dotmarketing.persona.id', DEFAULT_PERSONA_ID],
-    ['url', DEFAULT_URL]
-];
-
 @Component({
     selector: 'dot-ema',
     standalone: true,
@@ -91,28 +85,10 @@ export class DotEmaComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.route.queryParams.subscribe((queryParams: Params) => {
-            const newParams = {};
-
-            PARAMS_AND_DEFAULT_VALUES.forEach(([param, defaultValue]) => {
-                if (!queryParams[param]) {
-                    newParams[param] = defaultValue;
-                } else {
-                    newParams[param] = queryParams[param];
-                }
-            });
-
-            if (Object.keys(newParams).length > 0) {
-                // This maintains all the params in the url updated
-                this.router.navigate([], {
-                    queryParams: newParams,
-                    queryParamsHandling: 'merge'
-                });
-            }
-
             this.store.load({
-                language_id: newParams['language_id'],
-                url: newParams['url'],
-                persona_id: newParams['com.dotmarketing.persona.id']
+                language_id: queryParams['language_id'] ?? DEFAULT_LANGUAGE_ID,
+                url: queryParams['url'] ?? DEFAULT_URL,
+                persona_id: queryParams['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA_ID
             });
         });
 
