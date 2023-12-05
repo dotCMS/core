@@ -8,26 +8,6 @@
     (completeMethod)="onFilter($event)"
     dataKey="title"
     field="title">
-    <ng-template let-persona pTemplate="selectedItem">
-        <div class="edit-ema-persona-selector__persona">
-            <p-avatar
-                *ngIf="
-                    selectedPersona && selectedPersona?.identifier !== 'modes.persona.no.persona'
-                "
-                [text]="selectedPersona?.name"
-                [image]="selectedPersona?.photo"
-                dotAvatar></p-avatar>
-            <p-avatar
-                *ngIf="
-                    selectedPersona && selectedPersona?.identifier === 'modes.persona.no.persona'
-                "
-                [text]="'modes.persona.no.persona' | dm"
-                dotAvatar></p-avatar>
-            <span class="p-button-label">
-                {{ selectedPersona?.title }}
-            </span>
-        </div>
-    </ng-template>
     <ng-template let-persona pTemplate="item">
         <p-avatar
             [text]="persona?.name"
