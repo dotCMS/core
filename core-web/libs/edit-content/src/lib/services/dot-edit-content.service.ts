@@ -23,6 +23,8 @@ export class DotEditContentService {
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly http = inject(HttpClient);
 
+    private _currentContentType?: string;
+
     /**
      * Retrieves the content by its ID.
      * @param id - The ID of the content to retrieve.
@@ -54,5 +56,13 @@ export class DotEditContentService {
      */
     saveContentlet<T>(data: { [key: string]: string }): Observable<T> {
         return this.dotWorkflowActionsFireService.saveContentlet(data);
+    }
+
+    set currentContentType(contentType: string) {
+        this._currentContentType = contentType;
+    }
+
+    get currentContentType() {
+        return this._currentContentType;
     }
 }

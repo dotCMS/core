@@ -3,7 +3,9 @@
         <span class="p-input-icon-right">
             <input
                 #input
-                [disabled]="vm.loading"
+                [attr.disabled]="vm.loading || null"
+                (keyup.escape)="handleScape($event)"
+                (keydown.escape)="$event.stopPropagation()"
                 autofocus
                 formControlName="textPrompt"
                 pInputText
@@ -13,7 +15,7 @@
                 type="text" />
 
             <ng-container *ngIf="vm.loading; else submitButton">
-                <span class="pending-label">{{ 'block-editor.common.pending' | dm }}</span>
+                <span class="pi pi-spin pi-spinner"></span>
             </ng-container>
 
             <ng-template #submitButton>
