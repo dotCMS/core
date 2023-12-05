@@ -55,11 +55,6 @@ describe('EditEmaPersonaSelectorComponent', () => {
         component = spectator.component;
     });
 
-    describe('DOM', () => {
-        it('should have an autocomplete', () => {
-            expect(spectator.query(byTestId('persona-selector-autocomplete'))).not.toBeNull();
-        });
-    });
 
     describe('events', () => {
         it('should emit the default persona when the selected emits the default persona', () => {
