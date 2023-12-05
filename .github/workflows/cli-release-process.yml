@@ -103,8 +103,10 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRO }}
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3          
+      - name: Set up Docker
+        uses: crazy-max/ghaction-setup-docker@v2
+        env:
+          COLIMA_START_ARGS: --cpu 4 --memory 8 --disk 32
 
       - name: 'Cache Maven packages'
         uses: actions/cache@v3
