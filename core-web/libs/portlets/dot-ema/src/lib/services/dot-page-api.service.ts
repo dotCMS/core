@@ -91,19 +91,33 @@ export class DotPageApiService {
         page,
         perPage = 10
     }: GetPersonasParams): Observable<GetPersonasResponse> {
-        return this.http
-            .get(
-                `/api/v1/page/${pageID}/personas?${
-                    filter ? 'filter=' + filter : ''
-                }&per_page=${perPage}${
-                    page ? '&page=' + page : ''
-                }&respectFrontEndRoles=true&variantName=DEFAULT`
-            )
-            .pipe(
-                map((res: { entity: DotPersona[]; pagination: PaginationData }) => ({
-                    data: res.entity,
-                    pagination: res.pagination
-                }))
-            );
+        const url = this.getPersonasURL({ pageID, filter, page, perPage });
+
+        return this.http.get<{ entity: DotPersona[]; pagination: PaginationData }>(url).pipe(
+            map((res: { entity: DotPersona[]; pagination: PaginationData }) => ({
+                data: res.entity,
+                pagination: res.pagination
+            }))
+        );
+    }
+
+    private getPersonasURL({ pageID, filter, page, perPage }: GetPersonasParams): string {
+        const apiUrl = `/api/v1/page/${pageID}/personas?`;
+
+        const queryParams = new URLSearchParams({
+            perper_page: perPage.toString(),
+            respectFrontEndRoles: 'true',
+            variantName: 'DEFAULT'
+        });
+
+        if (filter) {
+            queryParams.set('filter', filter);
+        }
+
+        if (page) {
+            queryParams.set('page', page.toString());
+        }
+
+        return apiUrl + queryParams.toString();
     }
 }
