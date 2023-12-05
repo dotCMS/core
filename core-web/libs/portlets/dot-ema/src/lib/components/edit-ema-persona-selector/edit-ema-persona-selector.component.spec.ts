@@ -62,12 +62,6 @@ describe('EditEmaPersonaSelectorComponent', () => {
     });
 
     describe('events', () => {
-        it('should trigger onSelect when a persona is selected', () => {
-            const onSelect = jest.spyOn(component, 'onSelect');
-            spectator.triggerEventHandler('p-autocomplete', 'onSelect', {});
-            expect(onSelect).toHaveBeenCalled();
-        });
-
         it('should emit the default persona when the selected emits the default persona', () => {
             const selectedSpy = jest.spyOn(component.selected, 'emit');
             spectator.triggerEventHandler('p-autocomplete', 'onSelect', DEFAULT_PERSONA);
