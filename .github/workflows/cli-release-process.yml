@@ -142,7 +142,7 @@ jobs:
       - name: Build Native Image
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw package -Pnative -Dquarkus.native.container-build=true -DskipTests=true -pl :dotcms-cli
+          ./mvnw package -Pnative -DskipTests=true -pl :dotcms-cli
 
       - name: Create distribution
         working-directory: ${{ github.workspace }}
