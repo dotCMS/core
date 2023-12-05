@@ -1,9 +1,7 @@
-import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { ControlContainer, FormControl, FormGroup, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-
-import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 
 import { DotEditContentCustomFieldComponent } from './dot-edit-content-custom-field.component';
 
@@ -30,9 +28,7 @@ describe('DotEditContentCustomFieldComponent', () => {
                 useValue: {
                     currentContentType: 'test'
                 }
-            },
-            mockProvider(DotContentTypeService),
-            mockProvider(DotWorkflowActionsFireService)
+            }
         ]
     });
 

@@ -10,11 +10,7 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotBlockEditorComponent } from '@dotcms/block-editor';
-import {
-    DotContentTypeService,
-    DotLicenseService,
-    DotWorkflowActionsFireService
-} from '@dotcms/data-access';
+import { DotLicenseService } from '@dotcms/data-access';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
@@ -68,10 +64,7 @@ const FIELD_TYPES_COMPONENTS: Record<
     [FIELD_TYPES.BLOCK_EDITOR]: DotBlockEditorComponent,
     [FIELD_TYPES.CUSTOM_FIELD]: {
         component: DotEditContentCustomFieldComponent,
-        providers: [
-            mockProvider(DotContentTypeService),
-            mockProvider(DotWorkflowActionsFireService)
-        ]
+        providers: [mockProvider(DotEditContentService)]
     },
     [FIELD_TYPES.BINARY]: DotEditContentBinaryFieldComponent,
     [FIELD_TYPES.JSON]: {
