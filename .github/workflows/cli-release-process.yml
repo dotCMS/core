@@ -88,7 +88,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ ubuntu-latest, macOS-latest, windows-latest ]
+        os: [ ubuntu-latest, macOS-latest ]
     runs-on: ${{ matrix.os }}
     steps:
       - name: 'Check out repository'
@@ -150,8 +150,8 @@ jobs:
         with:
           name: artifacts
           path: |
-            target/distributions/*.zip
-            target/distributions/*.tar.gz
+            ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
+            ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.tar.gz
 
   release:
     needs: [ precheck, build ]
