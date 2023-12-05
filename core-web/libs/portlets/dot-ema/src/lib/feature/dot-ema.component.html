@@ -1,19 +1,21 @@
 <ng-container *ngIf="vm$ | async as vm">
-    <div class="flex gap-3 toolbar align-items-center">
-        <h4>{{ vm.pageTitle }}</h4>
-
-        <select
-            id="language_id"
-            [ngModel]="vm.language_id"
-            (change)="onChange($event)"
-            data-testId="language_id"
-            aria-label="language_id"
-            name="language_id">
-            <option *ngFor="let language of languages" value="{{ language.value }}">
-                {{ language.name }}
-            </option>
-        </select>
-    </div>
+    <dot-edit-ema-toolbar>
+        <h4 title>{{ vm.pageTitle }}</h4>
+        <ng-container left>
+            <div class="dummy-button"></div>
+            <div class="dummy-button"></div>
+            <div class="dummy-button"></div>
+            <div class="dummy-button"></div>
+        </ng-container>
+        <ng-container right>
+            <div class="dummy-button"></div>
+            <dot-edit-ema-language-selector
+                [language]="vm.editor.viewAs.language"
+                (selected)="onLanguageSelected($event)"
+                data-testId="language-selector" />
+            <div class="dummy-button"></div>
+        </ng-container>
+    </dot-edit-ema-toolbar>
     <div class="iframe-wrapper">
         <iframe
             #iframe
