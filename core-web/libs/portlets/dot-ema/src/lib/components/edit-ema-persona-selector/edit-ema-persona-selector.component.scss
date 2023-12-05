@@ -10,16 +10,6 @@
     .p-overlaypanel.edit-ema-persona-selector.p-component {
         .p-overlaypanel-content {
             padding: 0;
-
-            .p-listbox.p-component {
-                border: none;
-                border-radius: $border-radius-sm;
-
-                .p-listbox-header {
-                    border-top-left-radius: $border-radius-sm;
-                    border-top-right-radius: $border-radius-sm;
-                }
-            }
         }
     }
 }

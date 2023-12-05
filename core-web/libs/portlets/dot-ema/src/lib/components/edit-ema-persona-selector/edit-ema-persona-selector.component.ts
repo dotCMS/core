@@ -1,5 +1,3 @@
-import { tapResponse } from '@ngrx/component-store';
-
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -58,7 +56,7 @@ export class EditEmaPersonaSelectorComponent implements OnInit {
     private personas: DotPersona[];
 
     @Input() pageID: string;
-    @Input() selectedPersona: DotPersona;
+    @Input() value: DotPersona;
 
     @Output() selected: EventEmitter<DotPersona> = new EventEmitter();
 
@@ -71,16 +69,18 @@ export class EditEmaPersonaSelectorComponent implements OnInit {
                 // TODO: when we update to PrimeNG 17 we can do this async
                 perPage: 5000
             })
-            .subscribe((res) => {
+            .subscribe(
+                (res) => {
                     this.personas = res.data;
                 },
                 () => {
                     this.personas = [];
-                });
+                }
+            );
     }
 
     onSelect(value: DotPersona) {
-        if (value.identifier === this.selectedPersona.identifier) return;
+        if (value.identifier === this.value.identifier) return;
 
         if (value.identifier === DEFAULT_PERSONA_ID || value.personalized) {
             this.selected.emit(value);
@@ -98,17 +98,19 @@ export class EditEmaPersonaSelectorComponent implements OnInit {
                     this.personalizeService.personalized(this.pageID, value.keyTag).subscribe(); // This does a take 1 under the hood
                 },
                 reject: () => {
-                    this.selected.emit(this.selectedPersona);
+                    this.selected.emit(this.value);
                 }
             });
         }
     }
 
     onFilter({ query }: { query: string }) {
-        if (!query.length) this.filteredPersonas = [...this.personas];
-        else
+        if (!query.length) {
+            this.filteredPersonas = [...this.personas];
+        } else {
             this.filteredPersonas = this.personas.filter((persona) =>
                 persona.title.toLowerCase().includes(query.toLowerCase())
             );
+        }
     }
 }

@@ -10,7 +10,7 @@ async function getPage(params) {
     const requestUrl = `${
         process.env.NEXT_PUBLIC_DOTCMS_HOST
     }/api/v1/page/render/${url}?language_id=${language_id || '1'}&com.dotmarketing.persona.id=${
-        params['com.dotmarketing.persona.id'] || ' modes.persona.no.persona'
+        params['com.dotmarketing.persona.id'] || 'modes.persona.no.persona'
     }`;
 
     const res = await fetch(requestUrl, {

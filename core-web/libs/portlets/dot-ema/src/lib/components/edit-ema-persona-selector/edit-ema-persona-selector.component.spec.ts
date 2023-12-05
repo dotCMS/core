@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, createComponentFactory } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -44,7 +44,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                selectedPersona: {
+                value: {
                     ...DEFAULT_PERSONA,
                     identifier: 'some test'
                 },
@@ -54,7 +54,6 @@ describe('EditEmaPersonaSelectorComponent', () => {
 
         component = spectator.component;
     });
-
 
     describe('events', () => {
         it('should emit the default persona when the selected emits the default persona', () => {

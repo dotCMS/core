@@ -30,10 +30,16 @@ import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-se
 import { EditEmaPersonaSelectorComponent } from '../components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaToolbarComponent } from '../components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { PARAMS_AND_DEFAULT_VALUES, WINDOW } from '../shared/consts';
+import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA_ID, DEFAULT_URL, WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { AddContentletPayload, DeleteContentletPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
+
+const PARAMS_AND_DEFAULT_VALUES = [
+    ['language_id', DEFAULT_LANGUAGE_ID],
+    ['com.dotmarketing.persona.id', DEFAULT_PERSONA_ID],
+    ['url', DEFAULT_URL]
+];
 
 @Component({
     selector: 'dot-ema',

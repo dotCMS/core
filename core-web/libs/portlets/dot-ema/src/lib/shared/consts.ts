@@ -15,12 +15,6 @@ export const DEFAULT_URL = 'index';
 
 export const DEFAULT_PERSONA_ID = 'modes.persona.no.persona';
 
-export const PARAMS_AND_DEFAULT_VALUES = [
-    ['language_id', DEFAULT_LANGUAGE_ID],
-    ['com.dotmarketing.persona.id', DEFAULT_PERSONA_ID],
-    ['url', DEFAULT_URL]
-];
-
 export const DEFAULT_PERSONA: DotPersona = {
     hostFolder: 'SYSTEM_HOST',
     inode: '',

@@ -14,7 +14,7 @@
                 data-testId="language-selector" />
             <dot-edit-ema-persona-selector
                 [pageID]="vm.editor.page.identifier"
-                [selectedPersona]="vm.selectedPersona"
+                [value]="vm.selectedPersona"
                 (selected)="onPersonaSelected($event)"
                 data-testId="persona-selector" />
             <p-button label="Save" />
