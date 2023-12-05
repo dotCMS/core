@@ -22,6 +22,8 @@ env:
   JAVA_VERSION: 11
   JAVA_DISTRO: temurin
   NEXT_VERSION: '1.0.0-SNAPSHOT'
+  GRAAL_VERSION: '22.3.0'
+
 
 jobs:
   precheck:
@@ -97,16 +99,19 @@ jobs:
           ref: ${{ needs.precheck.outputs.HEAD }}
           fetch-depth: 0
 
-      - name: Setup Java
-        uses: actions/setup-java@v3
+      - name: 'Set up Graal'
+        uses: graalvm/setup-graalvm@v1
         with:
+          version: ${{ env.GRAAL_VERSION }}
           java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRO }}
+          components: 'native-image'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Docker
-        uses: crazy-max/ghaction-setup-docker@v2
-        env:
-          COLIMA_START_ARGS: --cpu 4 --memory 8 --disk 32
+#      - name: Setup Java
+#        uses: actions/setup-java@v3
+#        with:
+#          java-version: ${{ env.JAVA_VERSION }}
+#          distribution: ${{ env.JAVA_DISTRO }}
 
       - name: 'Cache Maven packages'
         uses: actions/cache@v3
