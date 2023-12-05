@@ -10,7 +10,6 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { ConfirmationService } from 'primeng/api';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
@@ -19,12 +18,10 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ListboxModule } from 'primeng/listbox';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { DotPersona } from '@dotcms/dotcms-models';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotPageApiService } from '../../services/dot-page-api.service';
-import { DEFAULT_PERSONA_ID } from '../../shared/consts';
 
 @Component({
     selector: 'dot-edit-ema-persona-selector',
@@ -49,16 +46,13 @@ import { DEFAULT_PERSONA_ID } from '../../shared/consts';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EditEmaPersonaSelectorComponent implements OnInit {
-    private readonly confirmationService = inject(ConfirmationService);
-    private readonly dotMessageService = inject(DotMessageService);
-    private readonly personalizeService = inject(DotPersonalizeService);
     private readonly pageApiService = inject(DotPageApiService);
     private personas: DotPersona[];
 
     @Input() pageID: string;
     @Input() value: DotPersona;
 
-    @Output() selected: EventEmitter<DotPersona> = new EventEmitter();
+    @Output() selected: EventEmitter<DotPersona & { pageID: string }> = new EventEmitter();
 
     filteredPersonas: DotPersona[] = [];
 
@@ -80,27 +74,8 @@ export class EditEmaPersonaSelectorComponent implements OnInit {
     }
 
     onSelect(value: DotPersona) {
-        if (value.identifier === this.value.identifier) return;
-
-        if (value.identifier === DEFAULT_PERSONA_ID || value.personalized) {
-            this.selected.emit(value);
-        } else {
-            this.confirmationService.confirm({
-                header: this.dotMessageService.get('editpage.personalization.confirm.header'),
-                message: this.dotMessageService.get(
-                    'editpage.personalization.confirm.message',
-                    value.name
-                ),
-                acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
-                rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
-                accept: () => {
-                    this.selected.emit(value);
-                    this.personalizeService.personalized(this.pageID, value.keyTag).subscribe(); // This does a take 1 under the hood
-                },
-                reject: () => {
-                    this.selected.emit(this.value);
-                }
-            });
+        if (value.identifier !== this.value.identifier) {
+            this.selected.emit({ ...value, pageID: this.pageID });
         }
     }
 

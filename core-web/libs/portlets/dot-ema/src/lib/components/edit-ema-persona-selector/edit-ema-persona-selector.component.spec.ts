@@ -59,7 +59,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
         it('should emit the default persona when the selected emits the default persona', () => {
             const selectedSpy = jest.spyOn(component.selected, 'emit');
             spectator.triggerEventHandler('p-autocomplete', 'onSelect', DEFAULT_PERSONA);
-            expect(selectedSpy).toHaveBeenCalledWith(DEFAULT_PERSONA);
+            expect(selectedSpy).toHaveBeenCalledWith({ ...DEFAULT_PERSONA, pageID: '123' });
         });
 
         it('should not emit the selected persona when it is already selected', () => {
@@ -70,30 +70,19 @@ describe('EditEmaPersonaSelectorComponent', () => {
             expect(selectedSpy).not.toHaveBeenCalled();
         });
 
-        it("should open a confimation dialog when the selected persona isn't personalized", () => {
-            const confirmationService = spectator.inject(ConfirmationService);
-
-            const confirmationMock = jest.spyOn(confirmationService, 'confirm');
-
-            spectator.triggerEventHandler('p-autocomplete', 'onSelect', {
-                identifier: 'some test 2',
-                personalized: false
-            });
-
-            expect(confirmationMock).toHaveBeenCalled();
-        });
-
         it('should emit the selected persona when it is personalized', () => {
             const selectedSpy = jest.spyOn(component.selected, 'emit');
 
             spectator.triggerEventHandler('p-autocomplete', 'onSelect', {
                 identifier: 'some test 2',
-                personalized: true
+                personalized: true,
+                pageID: '123'
             });
 
             expect(selectedSpy).toHaveBeenCalledWith({
                 identifier: 'some test 2',
-                personalized: true
+                personalized: true,
+                pageID: '123'
             });
         });
     });

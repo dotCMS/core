@@ -184,7 +184,9 @@ describe('DotEmaComponent', () => {
 
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...DEFAULT_PERSONA,
-                    identifier: '123'
+                    identifier: '123',
+                    pageID: '123',
+                    personalized: true
                 });
                 spectator.detectChanges();
 
@@ -192,6 +194,21 @@ describe('DotEmaComponent', () => {
                     queryParams: { 'com.dotmarketing.persona.id': '123' },
                     queryParamsHandling: 'merge'
                 });
+            });
+
+            it("should open a confirmation dialog when selecting a persona that it's not personalized", () => {
+                const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...DEFAULT_PERSONA,
+                    identifier: '123',
+                    pageID: '123',
+                    personalized: false
+                });
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
             });
         });
 

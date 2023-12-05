@@ -75,6 +75,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     private readonly store = inject(EditEmaStore);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
+    private readonly personalizeService = inject(DotPersonalizeService);
 
     private savePayload: AddContentletPayload;
 
@@ -153,13 +154,42 @@ export class DotEmaComponent implements OnInit, OnDestroy {
      * @param {DotPersona} persona
      * @memberof DotEmaComponent
      */
-    onPersonaSelected(persona: DotPersona) {
-        this.router.navigate([], {
-            queryParams: {
-                'com.dotmarketing.persona.id': persona.identifier
-            },
-            queryParamsHandling: 'merge'
-        });
+    onPersonaSelected(persona: DotPersona & { pageID: string }) {
+        if (persona.identifier === DEFAULT_PERSONA_ID || persona.personalized) {
+            this.router.navigate([], {
+                queryParams: {
+                    'com.dotmarketing.persona.id': persona.identifier
+                },
+                queryParamsHandling: 'merge'
+            });
+        } else {
+            this.confirmationService.confirm({
+                header: this.dotMessageService.get('editpage.personalization.confirm.header'),
+                message: this.dotMessageService.get(
+                    'editpage.personalization.confirm.message',
+                    persona.name
+                ),
+                acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
+                rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+                accept: () => {
+                    this.personalizeService
+                        .personalized(persona.pageID, persona.keyTag)
+                        .subscribe(); // This does a take 1 under the hood
+
+                    this.router.navigate([], {
+                        queryParams: {
+                            'com.dotmarketing.persona.id': persona.identifier
+                        },
+                        queryParamsHandling: 'merge'
+                    });
+                },
+                reject: () => {
+                    this.router.navigate([], {
+                        queryParamsHandling: 'merge'
+                    });
+                }
+            });
+        }
     }
 
     /**
