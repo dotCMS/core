@@ -1,10 +1,9 @@
 package com.dotcms.api.client;
 
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.model.annotation.SecuredPassword;
 import com.dotcms.model.config.CredentialsBean;
 import com.dotcms.model.config.ServiceBean;
-import com.starxg.keytar.Keytar;
-import com.starxg.keytar.KeytarException;
 import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
 import java.util.List;

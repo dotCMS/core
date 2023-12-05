@@ -4,6 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
@@ -24,12 +25,7 @@ import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -43,10 +39,10 @@ import java.io.File;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.github.rjeschke.txtmark.Run;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -732,6 +728,181 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 		found = contentTypeFactory.find(contentType.id());
 		Assert.assertNotNull(found);
+	}
+
+	/**
+	 * Method to test: {@link com.dotcms.contenttype.business.ContentTypeFactoryImpl#countContentTypeAssignedToNotSystemWorkflow()}
+	 * When: Call the method and after create a new ContentType and assigned it to a not System_Workflow
+	 * and call the method again
+	 * Should: Got one more the second time when the method is called
+	 *
+	 * @throws DotDataException
+	 */
+	@Test
+	public void whenContentTypeIsAssignedToNotSystemWorkflow() throws DotDataException {
+		final long countBefore = FactoryLocator.getContentTypeFactory()
+				.countContentTypeAssignedToNotSystemWorkflow();
+
+		final WorkflowScheme workflowScheme = new WorkflowDataGen().nextPersisted();
+		final  ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+		final Set<String> schemesIds = new HashSet<>();
+		schemesIds.add(workflowScheme.getId());
+		APILocator.getWorkflowAPI().saveSchemeIdsForContentType(contentType, schemesIds);
+
+		final long countAfter = FactoryLocator.getContentTypeFactory()
+				.countContentTypeAssignedToNotSystemWorkflow();
+
+		assertEquals(countBefore + 1, countAfter);
+
+	}
+
+	/**
+	 * Method to test: {@link com.dotcms.contenttype.business.ContentTypeFactoryImpl#countContentTypeAssignedToNotSystemWorkflow()}
+	 * When: Call the method and after create a new ContentType and assigned it to System_Workflow
+	 * and call the method again
+	 * Should: Got the same value in both called
+	 *
+	 * @throws DotDataException
+	 */
+	@Test
+	public void whenContentTypeIsAssignedToSystemWorkflow() throws DotDataException {
+		final long countBefore = FactoryLocator.getContentTypeFactory()
+				.countContentTypeAssignedToNotSystemWorkflow();
+
+		final WorkflowScheme systemWorkflow = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
+		final  ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+		final Set<String> schemesIds = new HashSet<>();
+		schemesIds.add(systemWorkflow.getId());
+
+		APILocator.getWorkflowAPI().saveSchemeIdsForContentType(contentType, schemesIds);
+
+		final long countAfter = FactoryLocator.getContentTypeFactory()
+				.countContentTypeAssignedToNotSystemWorkflow();
+
+		assertEquals(countBefore, countAfter);
+
+	}
+
+	/**
+	 * Method to test: {@link com.dotcms.contenttype.business.ContentTypeFactoryImpl#countContentTypeAssignedToNotSystemWorkflow()}
+	 * When: Call the method and after create a new ContentType and assigned it to System_Workflow and other Workflow
+	 * and call the method again
+	 * Should: Got one more the second time when the method is called
+	 *
+	 * @throws DotDataException
+	 */
+	@Test
+	public void whenContentTypeIsAssignedToSystemWorkflowAndAnotherWorkflow() throws DotDataException {
+		final long countBefore = FactoryLocator.getContentTypeFactory()
+				.countContentTypeAssignedToNotSystemWorkflow();
+
+		final WorkflowScheme workflowScheme = new WorkflowDataGen().nextPersisted();
+
+		final WorkflowScheme systemWorkflow = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
+		final  ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+		final Set<String> schemesIds = new HashSet<>();
+		schemesIds.add(systemWorkflow.getId());
+		schemesIds.add(workflowScheme.getId());
+
+		APILocator.getWorkflowAPI().saveSchemeIdsForContentType(contentType, schemesIds);
+
+		final long countAfter = FactoryLocator.getContentTypeFactory()
+				.countContentTypeAssignedToNotSystemWorkflow();
+
+		assertEquals(countBefore + 1, countAfter);
+
+	}
+
+	/**
+	 * Method to test: {@link com.dotcms.contenttype.business.ContentTypeFactoryImpl#countContentTypeAssignedToNotSystemWorkflow()}
+	 * When: Call the method and after create a new ContentType and assigned it to two not System Worflow
+	 * and call the method again
+	 * Should: Got one more the second time when the method is called
+	 *
+	 * @throws DotDataException
+	 */
+	@Test
+	public void whenContentTypeIsAssignedToTwoNotSystemWorkflow() throws DotDataException {
+		final long countBefore = FactoryLocator.getContentTypeFactory()
+				.countContentTypeAssignedToNotSystemWorkflow();
+
+		final WorkflowScheme workflowScheme_1 = new WorkflowDataGen().nextPersisted();
+		final WorkflowScheme workflowScheme_2 = new WorkflowDataGen().nextPersisted();
+
+		final  ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+		final Set<String> schemesIds = new HashSet<>();
+		schemesIds.add(workflowScheme_1.getId());
+		schemesIds.add(workflowScheme_2.getId());
+
+		APILocator.getWorkflowAPI().saveSchemeIdsForContentType(contentType, schemesIds);
+
+		final long countAfter = FactoryLocator.getContentTypeFactory()
+				.countContentTypeAssignedToNotSystemWorkflow();
+
+		assertEquals(countBefore + 1, countAfter);
+
+	}
+
+	/**
+	 * Method to test: {@link com.dotcms.contenttype.business.ContentTypeFactoryImpl#countContentTypeAssignedToNotSystemWorkflow()}
+	 * When: Call the method and after create a new ContentType and assigned it to two not System Worflow
+	 * and call the method again
+	 * Should: Got two more the second time when the method is called
+	 *
+	 * @throws DotDataException
+	 */
+	@Test
+	public void whenTwoContentTypeAreAssignedToTwoNotSystemWorkflow() throws DotDataException {
+		final long countBefore = FactoryLocator.getContentTypeFactory()
+				.countContentTypeAssignedToNotSystemWorkflow();
+
+		final WorkflowScheme workflowScheme_1 = new WorkflowDataGen().nextPersisted();
+		final WorkflowScheme workflowScheme_2 = new WorkflowDataGen().nextPersisted();
+
+		final  ContentType contentType_1 = new ContentTypeDataGen().nextPersisted();
+		final  ContentType contentType_2 = new ContentTypeDataGen().nextPersisted();
+
+		final Set<String> schemesIds_1 = new HashSet<>();
+		schemesIds_1.add(workflowScheme_1.getId());
+
+		APILocator.getWorkflowAPI().saveSchemeIdsForContentType(contentType_1, schemesIds_1);
+
+		final Set<String> schemesIds_2 = new HashSet<>();
+		schemesIds_2.add(workflowScheme_2.getId());
+
+		APILocator.getWorkflowAPI().saveSchemeIdsForContentType(contentType_2, schemesIds_2);
+
+		final long countAfter = FactoryLocator.getContentTypeFactory()
+				.countContentTypeAssignedToNotSystemWorkflow();
+
+		assertEquals(countBefore + 2, countAfter);
+
+	}
+
+	/**
+	 * Method to test: {@link com.dotcms.contenttype.business.ContentTypeFactoryImpl#countContentTypeAssignedToNotSystemWorkflow()}
+	 * When: Call the method and after create a new ContentType and not assigned any Worflow
+	 * and call the method again
+	 * Should: get the same count on the two called
+	 *
+	 * @throws DotDataException
+	 */
+	@Test
+	public void whenContentTypeNotHasAnyWorkflow() throws DotDataException {
+		final long countBefore = FactoryLocator.getContentTypeFactory()
+				.countContentTypeAssignedToNotSystemWorkflow();
+
+		final  ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+		final long countAfter = FactoryLocator.getContentTypeFactory()
+				.countContentTypeAssignedToNotSystemWorkflow();
+
+		assertEquals(countBefore, countAfter);
+
 	}
 
 }

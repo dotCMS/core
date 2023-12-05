@@ -1,5 +1,6 @@
 import { describe, expect } from '@jest/globals';
-import { Spectator, byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
+import { SpectatorRouting } from '@ngneat/spectator';
+import { byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -9,12 +10,13 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
+import { DotLanguagesServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEmaComponent } from './dot-ema.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
+import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
@@ -29,7 +31,7 @@ const messagesMock = {
 };
 
 describe('DotEmaComponent', () => {
-    let spectator: Spectator<DotEmaComponent>;
+    let spectator: SpectatorRouting<DotEmaComponent>;
     let store: EditEmaStore;
     let confirmationService: ConfirmationService;
 
@@ -40,15 +42,41 @@ describe('DotEmaComponent', () => {
         componentProviders: [
             EditEmaStore,
             ConfirmationService,
+            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
             {
                 provide: DotPageApiService,
                 useValue: {
-                    get() {
-                        return of({
-                            page: {
-                                title: 'hello world'
-                            }
-                        });
+                    get({ language_id }) {
+                        return {
+                            2: of({
+                                page: {
+                                    title: 'hello world'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 2,
+                                        language: 'Spanish',
+                                        countryCode: 'ES',
+                                        languageCode: 'es',
+                                        country: 'España'
+                                    }
+                                }
+                            }),
+                            1: of({
+                                page: {
+                                    title: 'hello world'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 1,
+                                        language: 'English',
+                                        countryCode: 'US',
+                                        languageCode: 'EN',
+                                        country: 'United States'
+                                    }
+                                }
+                            })
+                        }[language_id];
                     },
                     save() {
                         return of({});
@@ -69,7 +97,7 @@ describe('DotEmaComponent', () => {
     describe('with queryParams', () => {
         beforeEach(() => {
             spectator = createComponent({
-                queryParams: { language_id: '1', url: 'page-one' }
+                queryParams: { language_id: 1, url: 'page-one' }
             });
 
             store = spectator.inject(EditEmaStore, true);
@@ -77,7 +105,7 @@ describe('DotEmaComponent', () => {
         });
 
         it('should initialize with route query parameters', () => {
-            const mockQueryParams = { language_id: '1', url: 'page-one' };
+            const mockQueryParams = { language_id: 1, url: 'page-one' };
 
             jest.spyOn(store, 'load');
 
@@ -86,26 +114,48 @@ describe('DotEmaComponent', () => {
             expect(store.load).toHaveBeenCalledWith(mockQueryParams);
         });
 
-        it('should update store and update the route on page change', () => {
-            const router = spectator.inject(Router);
+        describe('language selector', () => {
+            it('should have a language selector', () => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('language-selector'))).not.toBeNull();
+            });
 
-            jest.spyOn(store, 'setLanguage');
-            jest.spyOn(router, 'navigate');
+            it("should have the current language as label in the language selector's button", () => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('language-button')).textContent).toBe(
+                    'English - US'
+                );
+            });
 
+            it('should call navigate when selecting a language', () => {
+                spectator.detectChanges();
+                const router = spectator.inject(Router);
+
+                jest.spyOn(router, 'navigate');
+
+                spectator.triggerEventHandler(EmaLanguageSelectorComponent, 'selected', 2);
+                spectator.detectChanges();
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: { language_id: 2 },
+                    queryParamsHandling: 'merge'
+                });
+            });
+        });
+
+        it('should update the iframe url when the queryParams changes', () => {
             spectator.detectChanges();
 
-            spectator.triggerEventHandler('select[data-testId="language_id"]', 'change', {
-                target: { name: 'language_id', value: '2' }
+            const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+            spectator.triggerNavigation({
+                url: [],
+                queryParams: { language_id: 2, url: 'my-awesome-route' }
             });
 
-            expect(store.setLanguage).toHaveBeenCalledWith('2');
-            expect(router.navigate).toHaveBeenCalledWith([], {
-                queryParams: { language_id: '2' },
-                queryParamsHandling: 'merge'
-            });
-
-            const iframe = spectator.query(byTestId('iframe'));
-            expect(iframe.getAttribute('src')).toBe('http://localhost:3000/page-one?language_id=2');
+            expect(iframe.nativeElement.src).toBe(
+                'http://localhost:3000/my-awesome-route?language_id=2'
+            );
         });
 
         describe('customer actions', () => {
@@ -548,7 +598,7 @@ describe('DotEmaComponent', () => {
         });
 
         it('should initialize with default value', () => {
-            const mockQueryParams = { language_id: '1', url: 'index' };
+            const mockQueryParams = { language_id: 1, url: 'index' };
 
             jest.spyOn(store, 'load');
 

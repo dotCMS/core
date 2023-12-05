@@ -26,6 +26,16 @@ class RouterMock {
         });
     });
 
+    navigateByUrl = jasmine.createSpy('navigateByUrl').and.callFake(() => {
+        return new Promise((resolve) => {
+            resolve(true);
+        });
+    });
+
+    createUrlTree = jasmine.createSpy('createUrlTree').and.callFake((link) => {
+        return link;
+    });
+
     get events() {
         return this._events.asObservable();
     }
@@ -178,7 +188,9 @@ describe('DotRouterService', () => {
 
     it('should go to edit contentlet', () => {
         service.goToEditContentlet('123');
-        expect(router.navigate).toHaveBeenCalledWith(['/c/hello-world/123']);
+        expect(router.navigate).toHaveBeenCalledWith(['/c/hello-world/123'], {
+            queryParamsHandling: 'preserve'
+        });
     });
 
     it('should go to edit workflow task', () => {
@@ -233,6 +245,25 @@ describe('DotRouterService', () => {
     it('should return true if the currentPortlet is not a custom portlet', () => {
         router.routerState.snapshot.url = '/c/c-testing';
         expect(service.isCustomPortlet('site-browser')).toBe(false);
+    });
+
+    it('should got to porlet by URL', () => {
+        service.gotoPortlet('/c/test');
+        expect(router.createUrlTree).toHaveBeenCalledWith(['/c/test'], { queryParamsHandling: '' });
+        expect(router.navigateByUrl).toHaveBeenCalledWith(['/c/test'], { replaceUrl: false });
+    });
+
+    it('should go to porlet by URL and keep the queryParams', () => {
+        service.gotoPortlet('/c/test?filter="Blog"', {
+            queryParamsHandling: 'preserve',
+            replaceUrl: false
+        });
+        expect(router.createUrlTree).toHaveBeenCalledWith(['/c/test?filter="Blog"'], {
+            queryParamsHandling: 'preserve'
+        });
+        expect(router.navigateByUrl).toHaveBeenCalledWith(['/c/test?filter="Blog"'], {
+            replaceUrl: false
+        });
     });
 
     it('should return the correct  Portlet Id', () => {

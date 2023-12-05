@@ -22,6 +22,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -2505,6 +2506,33 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 		//validate that the content type name didn't appear in the retrieved data
 		assertFalse("Publish date wasn't deleted", structureList.contains(contentType.variable()));
+
+	}
+
+	/**
+	 * Method to test: {@link ContentTypeAPIImpl#countContentTypeAssignedToNotSystemWorkflow()}
+	 * When: Call the method and after create a new ContentType and assigned it to a not System_Workflow
+	 * and call the method again
+	 * Should: Got one more the second time when the method is called
+	 *
+	 * @throws DotDataException
+	 */
+	@Test
+	public void whenContentTypeIsAssignedToNotSystemWorkflow() throws DotDataException {
+		final long countBefore = FactoryLocator.getContentTypeFactory()
+				.countContentTypeAssignedToNotSystemWorkflow();
+
+		final WorkflowScheme workflowScheme = new WorkflowDataGen().nextPersisted();
+		final  ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+		final Set<String> schemesIds = new HashSet<>();
+		schemesIds.add(workflowScheme.getId());
+		APILocator.getWorkflowAPI().saveSchemeIdsForContentType(contentType, schemesIds);
+
+		final long countAfter = APILocator.getContentTypeAPI(APILocator.systemUser())
+				.countContentTypeAssignedToNotSystemWorkflow();
+
+		Assert.assertEquals(countBefore + 1, countAfter);
 
 	}
 

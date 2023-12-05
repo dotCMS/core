@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
-import { NgModule, Injector, DoBootstrap } from '@angular/core';
+import { DoBootstrap, Injector, NgModule } from '@angular/core';
 import { createCustomElement } from '@angular/elements';
 import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
@@ -13,6 +13,7 @@ import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor
 import { DotPropertiesService } from '@dotcms/data-access';
 
 import { AppComponent } from './app.component';
+
 @NgModule({
     declarations: [AppComponent],
     imports: [

@@ -1,5 +1,5 @@
 import { describe } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator, mockProvider } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -7,10 +7,9 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { FactoryProvider, Type } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { ActivatedRoute } from '@angular/router';
 
 import { DotBlockEditorComponent } from '@dotcms/block-editor';
-import { DotLicenseService } from '@dotcms/data-access';
+import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
@@ -28,9 +27,9 @@ import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import {
+    createFormGroupDirectiveMock,
     FIELDS_MOCK,
-    FIELDS_WITH_CONTENTLET_MOCK,
-    createFormGroupDirectiveMock
+    FIELDS_WITH_CONTENTLET_MOCK
 } from '../../utils/mocks';
 
 /* We need this declare to dont have import errors from CommandType of Tiptap */
@@ -42,6 +41,15 @@ declare module '@tiptap/core' {
         };
     }
 }
+
+const dotMessageServiceMock = {
+    init: jest.fn().mockImplementation(() => {
+        // mocking init
+    }),
+    get: jest.fn().mockImplementation(() => {
+        // mocking get
+    })
+};
 
 // This holds the mapping between the field type and the component that should be used to render it.
 // We need to hold this record here, because for some reason the references just fall to undefined.
@@ -112,8 +120,8 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
                     }
                 },
                 {
-                    provide: ActivatedRoute,
-                    useValue: { snapshot: { params: { contentType: 'test' } } }
+                    provide: DotMessageService,
+                    useValue: dotMessageServiceMock
                 }
             ]
         });
