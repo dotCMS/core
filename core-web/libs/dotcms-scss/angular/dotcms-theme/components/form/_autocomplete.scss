@@ -35,7 +35,7 @@ p-autocomplete.p-inputwrapper-focus {
         grid-column-start: 2;
     }
 
-    .p-autocomplete-input {
+    .p-autocomplete-input.p-component {
         all: unset;
         border: none;
         font-family: $font-default;
@@ -43,6 +43,7 @@ p-autocomplete.p-inputwrapper-focus {
         color: $black;
         padding: 0;
         margin: 0;
+        width: 100%;
         height: calc(
             $field-height-md - (2 * $field-border-size)
         ); // This input height is to match the 40px height, 40px - 3px of horizontal borders, because this input does not have borders

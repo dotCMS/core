@@ -1,5 +1,5 @@
 <ng-container *ngIf="vm$ | async as vm">
-    <dot-edit-ema-toolbar>
+    <dot-edit-ema-toolbar *ngIf="vm.editor.page.identifier">
         <h4 title>{{ vm.pageTitle }}</h4>
         <ng-container left>
             <div class="dummy-button"></div>
@@ -13,6 +13,10 @@
                 [language]="vm.editor.viewAs.language"
                 (selected)="onLanguageSelected($event)"
                 data-testId="language-selector" />
+            <dot-edit-ema-persona-selector
+                [pageID]="vm.editor.page.identifier"
+                [selectedPersona]="vm.selectedPersona"
+                (selected)="onPersonaSelected($event)"></dot-edit-ema-persona-selector>
             <div class="dummy-button"></div>
         </ng-container>
     </dot-edit-ema-toolbar>

@@ -10,15 +10,19 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
-import { DotLanguagesServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
+import {
+    DotLanguagesServiceMock,
+    DotPersonalizeServiceMock,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
 
 import { DotEmaComponent } from './dot-ema.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
 import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { WINDOW } from '../shared/consts';
+import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { AddContentletPayload } from '../shared/models';
 
@@ -50,7 +54,8 @@ describe('DotEmaComponent', () => {
                         return {
                             2: of({
                                 page: {
-                                    title: 'hello world'
+                                    title: 'hello world',
+                                    identifier: '123'
                                 },
                                 viewAs: {
                                     language: {
@@ -59,12 +64,14 @@ describe('DotEmaComponent', () => {
                                         countryCode: 'ES',
                                         languageCode: 'es',
                                         country: 'España'
-                                    }
+                                    },
+                                    persona: DEFAULT_PERSONA
                                 }
                             }),
                             1: of({
                                 page: {
-                                    title: 'hello world'
+                                    title: 'hello world',
+                                    identifier: '123'
                                 },
                                 viewAs: {
                                     language: {
@@ -73,13 +80,24 @@ describe('DotEmaComponent', () => {
                                         countryCode: 'US',
                                         languageCode: 'EN',
                                         country: 'United States'
-                                    }
+                                    },
+                                    persona: DEFAULT_PERSONA
                                 }
                             })
                         }[language_id];
                     },
                     save() {
                         return of({});
+                    },
+                    getPersonas() {
+                        return of({
+                            entity: [DEFAULT_PERSONA],
+                            pagination: {
+                                totalEntries: 1,
+                                perPage: 10,
+                                page: 1
+                            }
+                        });
                     }
                 }
             },
@@ -90,6 +108,10 @@ describe('DotEmaComponent', () => {
             {
                 provide: WINDOW,
                 useValue: window
+            },
+            {
+                provide: DotPersonalizeService,
+                useValue: new DotPersonalizeServiceMock()
             }
         ]
     });

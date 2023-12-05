@@ -3,7 +3,7 @@ import { EMPTY, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { catchError, pluck } from 'rxjs/operators';
+import { catchError, map, pluck } from 'rxjs/operators';
 
 import { DotLanguage, DotPersona } from '@dotcms/dotcms-models';
 
@@ -29,6 +29,19 @@ export interface DotPageApiParams {
 export interface GetPersonasParams {
     pageID: string;
     filter?: string;
+    page?: number;
+    perPage?: number;
+}
+
+export interface GetPersonasResponse {
+    data: DotPersona[];
+    pagination: PaginationData;
+}
+
+export interface PaginationData {
+    currentPage: number;
+    perPage: number;
+    totalEntries: number;
 }
 
 @Injectable()
@@ -72,13 +85,25 @@ export class DotPageApiService {
      * @return {*}  {Observable<DotPersona[]>}
      * @memberof DotPageApiService
      */
-    getPersonas({ pageID, filter }: GetPersonasParams): Observable<DotPersona[]> {
+    getPersonas({
+        pageID,
+        filter,
+        page,
+        perPage = 10
+    }: GetPersonasParams): Observable<GetPersonasResponse> {
         return this.http
-            .get<DotPersona[]>(
+            .get(
                 `/api/v1/page/${pageID}/personas?${
                     filter ? 'filter=' + filter : ''
-                }&per_page=10&respectFrontEndRoles=true&variantName=DEFAULT`
+                }&per_page=${perPage}${
+                    page ? '&page=' + page : ''
+                }&respectFrontEndRoles=true&variantName=DEFAULT`
             )
-            .pipe(pluck('entity'));
+            .pipe(
+                map((res: { entity: DotPersona[]; pagination: PaginationData }) => ({
+                    data: res.entity,
+                    pagination: res.pagination
+                }))
+            );
     }
 }

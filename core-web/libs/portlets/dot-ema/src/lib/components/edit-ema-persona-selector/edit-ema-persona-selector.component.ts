@@ -1,15 +1,19 @@
+import { tapResponse } from '@ngrx/component-store';
+
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
     Input,
+    OnInit,
     Output,
     inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
+import { AutoCompleteModule } from 'primeng/autocomplete';
 import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
@@ -21,6 +25,7 @@ import { DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { DotPersona } from '@dotcms/dotcms-models';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 
+import { DotPageApiService } from '../../services/dot-page-api.service';
 import { DEFAULT_PERSONA_ID } from '../../shared/consts';
 
 @Component({
@@ -36,6 +41,8 @@ import { DEFAULT_PERSONA_ID } from '../../shared/consts';
         ListboxModule,
         BadgeModule,
         ConfirmDialogModule,
+        FormsModule,
+        AutoCompleteModule,
         FormsModule
     ],
 
@@ -43,18 +50,40 @@ import { DEFAULT_PERSONA_ID } from '../../shared/consts';
     styleUrls: ['./edit-ema-persona-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EditEmaPersonaSelectorComponent {
+export class EditEmaPersonaSelectorComponent implements OnInit {
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly personalizeService = inject(DotPersonalizeService);
+    private readonly pageApiService = inject(DotPageApiService);
+    private personas: DotPersona[];
 
-    @Input() personas: DotPersona[];
     @Input() pageID: string;
     @Input() selectedPersona: DotPersona;
 
     @Output() selected: EventEmitter<DotPersona> = new EventEmitter();
 
-    onSelect({ value }: { event: Event; value: DotPersona }) {
+    filteredPersonas: DotPersona[] = [];
+
+    ngOnInit(): void {
+        this.pageApiService
+            .getPersonas({
+                pageID: this.pageID,
+                perPage: 5000
+            })
+            .pipe(
+                tapResponse(
+                    (res) => {
+                        this.personas = res.data;
+                    },
+                    () => {
+                        this.personas = [];
+                    }
+                )
+            )
+            .subscribe();
+    }
+
+    onSelect(value: DotPersona) {
         if (value.identifier === this.selectedPersona.identifier) return;
 
         if (value.identifier === DEFAULT_PERSONA_ID || value.personalized) {
@@ -73,9 +102,17 @@ export class EditEmaPersonaSelectorComponent {
                     this.personalizeService.personalized(this.pageID, value.keyTag).subscribe(); // This does a take 1 under the hood
                 },
                 reject: () => {
-                    this.selected.emit(this.selectedPersona); // The styles are not getting updated
+                    this.selected.emit(this.selectedPersona);
                 }
             });
         }
+    }
+
+    onFilter({ query }: { query: string }) {
+        if (!query.length) this.filteredPersonas = [...this.personas];
+        else
+            this.filteredPersonas = this.personas.filter((persona) =>
+                persona.title.toLowerCase().includes(query.toLowerCase())
+            );
     }
 }

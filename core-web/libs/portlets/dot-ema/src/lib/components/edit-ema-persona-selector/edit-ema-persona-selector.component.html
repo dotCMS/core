@@ -1,35 +1,40 @@
-<p-button (onClick)="op.toggle($event)" styleClass="p-button-text">
-    <p-avatar
-        *ngIf="selectedPersona && selectedPersona?.identifier !== 'modes.persona.no.persona'"
-        [text]="selectedPersona?.name"
-        [image]="selectedPersona?.photo"
-        dotAvatar></p-avatar>
-    <p-avatar
-        *ngIf="selectedPersona && selectedPersona?.identifier === 'modes.persona.no.persona'"
-        [text]="'modes.persona.no.persona' | dm"
-        dotAvatar></p-avatar>
-    <span class="p-button-label">
-        {{ selectedPersona?.title }}
-    </span>
-</p-button>
-<p-overlayPanel #op styleClass="edit-ema-persona-selector" data-testId="language-op">
-    <p-listbox
-        [filter]="true"
-        [options]="personas"
-        (onChange)="onSelect($event)"
-        optionLabel="title"
-        data-testId="language-listbox">
-        <ng-template let-persona pTemplate="item">
-            <div class="edit-ema-persona-selector__persona">
-                <p-avatar
-                    [text]="persona?.name"
-                    [image]="persona?.photo"
-                    [badgeDisabled]="!persona?.personalized"
-                    pBadge
-                    dotAvatar></p-avatar>
-                <span>{{ persona.title }}</span>
-            </div>
-        </ng-template>
-        <ng-template let-options filter> </ng-template>
-    </p-listbox>
-</p-overlayPanel>
+<p-autoComplete
+    [ngModel]="selectedPersona"
+    [suggestions]="filteredPersonas"
+    [dropdown]="true"
+    [forceSelection]="true"
+    [completeOnFocus]="true"
+    (onSelect)="onSelect($event)"
+    (completeMethod)="onFilter($event)"
+    dataKey="title"
+    field="title">
+    <ng-template let-persona pTemplate="selectedItem">
+        <div class="edit-ema-persona-selector__persona">
+            <p-avatar
+                *ngIf="
+                    selectedPersona && selectedPersona?.identifier !== 'modes.persona.no.persona'
+                "
+                [text]="selectedPersona?.name"
+                [image]="selectedPersona?.photo"
+                dotAvatar></p-avatar>
+            <p-avatar
+                *ngIf="
+                    selectedPersona && selectedPersona?.identifier === 'modes.persona.no.persona'
+                "
+                [text]="'modes.persona.no.persona' | dm"
+                dotAvatar></p-avatar>
+            <span class="p-button-label">
+                {{ selectedPersona?.title }}
+            </span>
+        </div>
+    </ng-template>
+    <ng-template let-persona pTemplate="item">
+        <p-avatar
+            [text]="persona?.name"
+            [image]="persona?.photo"
+            [badgeDisabled]="!persona?.personalized"
+            pBadge
+            dotAvatar></p-avatar>
+        <span>{{ persona?.title }}</span>
+    </ng-template>
+</p-autoComplete>

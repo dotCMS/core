@@ -5,15 +5,17 @@ import { Injectable } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
-import { DotPersona } from '@dotcms/dotcms-models';
-
 import {
     DotPageApiParams,
     DotPageApiResponse,
-    DotPageApiService,
-    GetPersonasParams
+    DotPageApiService
 } from '../../services/dot-page-api.service';
-import { ADD_CONTENTLET_URL, DEFAULT_PERSONA_ID, EDIT_CONTENTLET_URL } from '../../shared/consts';
+import {
+    ADD_CONTENTLET_URL,
+    DEFAULT_PERSONA,
+    DEFAULT_PERSONA_ID,
+    EDIT_CONTENTLET_URL
+} from '../../shared/consts';
 import { SavePagePayload } from '../../shared/models';
 
 export interface EditEmaState {
@@ -23,7 +25,6 @@ export interface EditEmaState {
     dialogVisible: boolean;
     dialogHeader: string;
     dialogIframeLoading: boolean;
-    personas: DotPersona[];
 }
 
 @Injectable()
@@ -49,8 +50,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             dialogIframeURL: '',
             dialogVisible: false,
             dialogHeader: '',
-            dialogIframeLoading: false,
-            personas: []
+            dialogIframeLoading: false
         });
     }
 
@@ -83,12 +83,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             dialogHeader: state.dialogHeader,
             dialogIframeLoading: state.dialogIframeLoading,
             editor: state.editor,
-            personas: state.personas,
-            selectedPersona: state.personas.find(
-                (persona) =>
-                    persona.identifier ===
-                    (state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA_ID)
-            )
+            selectedPersona: state.editor.viewAs.persona ?? DEFAULT_PERSONA
         };
     });
 
@@ -113,35 +108,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             console.log(e);
                         }
                     }),
-                    catchError(() => EMPTY),
-
-                    switchMap((editor) => {
-                        return this.personasRequest({ pageID: editor.page.identifier });
-                    })
-                )
-            )
-        );
-    });
-
-    /**
-     * Get the personas
-     *
-     * @memberof EditEmaStore
-     */
-    readonly getPersonas = this.effect((params$: Observable<GetPersonasParams>) => {
-        return params$.pipe(
-            switchMap(({ pageID, filter }) =>
-                this.personasRequest({ pageID, filter }).pipe(
-                    tapResponse(
-                        (personas) => {
-                            this.patchState({
-                                personas
-                            });
-                        },
-                        () => {
-                            return EMPTY;
-                        }
-                    )
+                    catchError(() => EMPTY)
                 )
             )
         );
@@ -260,29 +227,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         return ADD_CONTENTLET_URL.replace('*CONTAINER_ID*', containerID).replace(
             '*BASE_TYPES*',
             acceptTypes
-        );
-    }
-
-    /**
-     * Get the personas
-     *
-     * @private
-     * @param {GetPersonasParams} { pageID, filter }
-     * @return {*}  {Observable<DotPersona[]>}
-     * @memberof EditEmaStore
-     */
-    private personasRequest({ pageID, filter }: GetPersonasParams): Observable<DotPersona[]> {
-        return this.dotPageApiService.getPersonas({ pageID, filter }).pipe(
-            tapResponse(
-                (personas) => {
-                    this.patchState({
-                        personas
-                    });
-                },
-                () => {
-                    return EMPTY;
-                }
-            )
         );
     }
 }
