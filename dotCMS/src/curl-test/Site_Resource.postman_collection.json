@@ -1,13 +1,13 @@
 {
 	"info": {
-		"_postman_id": "59470c19-2965-4d11-b142-115797e38fa9",
+		"_postman_id": "a324a1a7-b759-4532-8ea8-cdd63a18223c",
 		"name": "Site Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "27636414"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
-			"name": "Test Site Variables",
+			"name": "Site Variables",
 			"item": [
 				{
 					"name": "Create Test Site",
@@ -16,17 +16,15 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be 200\", function () {",
+									"pm.test(\"HTTP Status code must be 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"var jsonData = pm.response.json();",
-									"",
-									"pm.test(\"Host check\", function () {",
+									"pm.test(\"Checking Site's name and storing 'sitevarId' for subsequent tests\", function () {",
+									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.entity.siteName).to.eql('sitevariables.host.com');",
+									"    pm.collectionVariables.set(\"sitevarId\", jsonData.entity.identifier);",
 									"});",
-									"",
-									"pm.collectionVariables.set(\"sitevarId\", jsonData.entity.identifier);",
 									""
 								],
 								"type": "text/javascript"
@@ -81,17 +79,15 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be 200\", function () {",
+									"pm.test(\"HTTP Status code must be 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"var jsonData = pm.response.json();",
-									"",
-									"pm.test(\"Host check\", function () {",
+									"pm.test(\"Checking that the 'onevar' variable has the expected value\", function () {",
+									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.entity.key).to.eql('onevar');",
+									"    pm.collectionVariables.set(\"sitevariableId\", jsonData.entity.id);",
 									"});",
-									"",
-									"pm.collectionVariables.set(\"sitevariableId\", jsonData.entity.id);",
 									""
 								],
 								"type": "text/javascript"
@@ -147,13 +143,12 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be 200\", function () {",
+									"pm.test(\"HTTP Status code must be 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"var text = pm.response.text();",
-									"",
-									"pm.test(\"Host check\", function () {",
+									"pm.test(\"Checking that the value of the specified Site Variable is correct\", function () {",
+									"    var text = pm.response.text();",
 									"    pm.expect(text).contains(\"onevar-value\")",
 									"});",
 									""
@@ -199,7 +194,7 @@
 			]
 		},
 		{
-			"name": "Test return stopped and live sites",
+			"name": "Stopped and live sites",
 			"item": [
 				{
 					"name": "Create new stopped site",
@@ -223,12 +218,14 @@
 									"",
 									"var jsonData = pm.response.json();",
 									"",
-									"pm.test(\"File name check\", function () {",
+									"pm.test(\"Checking that the stopped Site's name is the expected one\", function () {",
 									"    pm.expect(jsonData.entity.siteName).to.contains('postManTestStopped');",
 									"    pm.expect(jsonData.entity.aliases).to.contains('postManTestStopped');",
 									"});",
 									"",
-									"pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
+									"pm.test(\"Storing the Site's ID for subsequent tests\", function () {",
+									"    pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
+									"});",
 									""
 								],
 								"type": "text/javascript"
@@ -255,7 +252,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"siteName\":\"postManTestStopped{{$randomPhoneNumber}}\",\n    \"aliases\":\"postManTestStopped{{$randomPhoneNumber}}\",\n    \"tagStorage\":\"default\",\n    \"siteThumbnail\":\"{{temporalFileId}}\",\n    \"runDashboard\":true,\n    \"keywords\":\"key1, key2, key3\",\n    \"description\":\"This is a postman host test\",\n    \"googleMap\":\"google-key\",\n    \"googleAnalytics\":\"google-analytics-key\",\n    \"addThis\":\"add-this-key\",\n    \"proxyUrlForEditMode\":\"proxy.postman.host.com\",\n    \"embeddedDashboard\":\"postman.host.com/dashboard\"\n}",
+							"raw": "{\n    \"siteName\":\"postManTestStopped{{$randomPhoneNumber}}\",\n    \"aliases\":\"postManTestStopped{{$randomPhoneNumber}}\",\n    \"tagStorage\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"siteThumbnail\":\"{{temporalFileId}}\",\n    \"runDashboard\":true,\n    \"keywords\":\"key1, key2, key3\",\n    \"description\":\"This is a postman host test\",\n    \"googleMap\":\"google-key\",\n    \"googleAnalytics\":\"google-analytics-key\",\n    \"addThis\":\"add-this-key\",\n    \"proxyUrlForEditMode\":\"proxy.postman.host.com\",\n    \"embeddedDashboard\":\"postman.host.com/dashboard\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -292,18 +289,19 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be 200\", function () {",
+									"pm.test(\"HTTP Status code must be 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"var jsonData = pm.response.json();",
-									"",
-									"pm.test(\"File name check\", function () {",
+									"pm.test(\"Checking that the live Site's name is the expected one\", function () {",
+									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.entity.siteName).to.contains('postManTestLive');",
 									"    pm.expect(jsonData.entity.aliases).to.contains('postManTestLive');",
 									"});",
 									"",
-									"pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
+									"pm.test(\"Storing the Site's ID for subsequent tests\", function () {",
+									"    pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
+									"});",
 									""
 								],
 								"type": "text/javascript"
@@ -330,7 +328,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"siteName\":\"postManTestLive{{$randomPhoneNumber}}\",\n    \"aliases\":\"postManTestLive{{$randomPhoneNumber}}\",\n    \"tagStorage\":\"default\",\n    \"siteThumbnail\":\"{{temporalFileId}}\",\n    \"runDashboard\":true,\n    \"keywords\":\"key1, key2, key3\",\n    \"description\":\"This is a postman host test\",\n    \"googleMap\":\"google-key\",\n    \"googleAnalytics\":\"google-analytics-key\",\n    \"addThis\":\"add-this-key\",\n    \"proxyUrlForEditMode\":\"proxy.postman.host.com\",\n    \"embeddedDashboard\":\"postman.host.com/dashboard\"\n}",
+							"raw": "{\n    \"siteName\":\"postManTestLive{{$randomPhoneNumber}}\",\n    \"aliases\":\"postManTestLive{{$randomPhoneNumber}}\",\n    \"tagStorage\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"siteThumbnail\":\"{{temporalFileId}}\",\n    \"runDashboard\":true,\n    \"keywords\":\"key1, key2, key3\",\n    \"description\":\"This is a postman host test\",\n    \"googleMap\":\"google-key\",\n    \"googleAnalytics\":\"google-analytics-key\",\n    \"addThis\":\"add-this-key\",\n    \"proxyUrlForEditMode\":\"proxy.postman.host.com\",\n    \"embeddedDashboard\":\"postman.host.com/dashboard\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -358,19 +356,20 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be 200\", function () {",
+									"pm.test(\"HTTP Status code must be 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"var jsonData = pm.response.json();",
-									"",
-									"pm.test(\"File name check\", function () {",
+									"pm.test(\"Checking that the previous stopped Site can be published\", function () {",
+									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.entity.siteName).to.contains('postManTestLive');",
 									"    pm.expect(jsonData.entity.aliases).to.contains('postManTestLive');",
 									"    pm.expect(jsonData.entity.live).to.eql(true);",
 									"});",
 									"",
-									"pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
+									"pm.test(\"Storing the Site's ID for subsequent tests\", function () {",
+									"    pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
+									"});",
 									""
 								],
 								"type": "text/javascript"
@@ -418,7 +417,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code should be 200\", function () {",
+									"pm.test(\"HTTP Status code must be 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
@@ -995,13 +994,12 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"var jsonData = pm.response.json();",
-							"",
-							"pm.test(\"File name check\", function () {",
+							"pm.test(\"Checking properties from the recently created Site\", function () {",
+							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData.entity.siteName).to.eql('postman.host1.com');",
 							"    pm.expect(jsonData.entity.aliases).to.eql('postman.host2.com postman.host3.com');",
 							"    pm.expect(jsonData.entity.addThis).to.eql('add-this-key');",
@@ -1013,9 +1011,9 @@
 							"    pm.expect(jsonData.entity.runDashboard).to.eql(true);",
 							"    pm.expect(jsonData.entity.tagStorage).to.eql('default');",
 							"    pm.expect(jsonData.entity.siteThumbnail).to.include('250px-Bocas2.jpg');",
-							"});",
 							"",
-							"pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
+							"    pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
+							"});",
 							""
 						],
 						"type": "text/javascript"
@@ -1042,7 +1040,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"siteName\":\"postman.host1.com\",\n    \"aliases\":\"postman.host2.com postman.host3.com\",\n    \"tagStorage\":\"default\",\n    \"siteThumbnail\":\"{{temporalFileId}}\",\n    \"runDashboard\":true,\n    \"keywords\":\"key1, key2, key3\",\n    \"description\":\"This is a postman host test 2\",\n    \"googleMap\":\"google-key\",\n    \"googleAnalytics\":\"google-analytics-key\",\n    \"addThis\":\"add-this-key\",\n    \"proxyUrlForEditMode\":\"proxy.postman.host.com\",\n    \"embeddedDashboard\":\"postman.host.com/dashboard\"\n}",
+					"raw": "{\n    \"siteName\":\"postman.host1.com\",\n    \"aliases\":\"postman.host2.com postman.host3.com\",\n    \"tagStorage\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"siteThumbnail\":\"{{temporalFileId}}\",\n    \"runDashboard\":true,\n    \"keywords\":\"key1, key2, key3\",\n    \"description\":\"This is a postman host test 2\",\n    \"googleMap\":\"google-key\",\n    \"googleAnalytics\":\"google-analytics-key\",\n    \"addThis\":\"add-this-key\",\n    \"proxyUrlForEditMode\":\"proxy.postman.host.com\",\n    \"embeddedDashboard\":\"postman.host.com/dashboard\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -2839,21 +2837,29 @@
 			"response": []
 		}
 	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
 	"variable": [
 		{
-			"key": "temporaryInode",
-			"value": ""
-		},
-		{
-			"key": "temmporayIdentifier",
-			"value": ""
-		},
-		{
-			"key": "temporalFileId",
-			"value": ""
-		},
-		{
-			"key": "siteInode",
+			"key": "sitevarId",
 			"value": ""
 		},
 		{
@@ -2861,35 +2867,7 @@
 			"value": ""
 		},
 		{
-			"key": "siteIdentifier",
-			"value": ""
-		},
-		{
-			"key": "hostInode",
-			"value": ""
-		},
-		{
-			"key": "amountSitesPreArchive",
-			"value": ""
-		},
-		{
-			"key": "sitevarId",
-			"value": ""
-		},
-		{
-			"key": "sitevariableId",
-			"value": ""
-		},
-		{
-			"key": "stopedAliases",
-			"value": ""
-		},
-		{
-			"key": "liveAliases",
-			"value": ""
-		},
-		{
-			"key": "stoppedAliases",
+			"key": "temporalFileId",
 			"value": ""
 		}
 	]
