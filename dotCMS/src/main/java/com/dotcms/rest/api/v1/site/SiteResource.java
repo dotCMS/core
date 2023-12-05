@@ -1146,33 +1146,30 @@ public class SiteResource implements Serializable {
                 .init().getUser();
 
         if (!UtilMethods.isSet(siteIdentifier)) {
-
             throw new IllegalArgumentException("The id query string parameter can not be null");
         }
 
-        final Host site = siteHelper.getSite(user, siteIdentifier);
-
-        if (null == site) {
+        final Host originalSite = siteHelper.getSite(user, siteIdentifier);
+        if (null == originalSite) {
             throw new NotFoundException(String.format(SITE_DOESNT_EXIST_ERR_MSG, siteIdentifier));
         }
-
-        // we need to clean up mostly the null properties when recovery the by identifier
+        final Host site = new Host(APILocator.getContentletAPI().find(originalSite.getInode()
+                , user, false));
+        // we need to clean up mostly the null properties when retrieving the Site by identifier
         site.cleanup();
 
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
         final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
 
         if (UtilMethods.isNotSet(newSiteForm.getSiteName())) {
-
             throw new IllegalArgumentException("siteName can not be Null");
         }
 
-        Logger.debug(this, ()->"Updating the site: " + siteIdentifier +
+        Logger.debug(this, "Updating the site: " + siteIdentifier +
                 ", with: " + newSiteForm);
 
         //Property need to update the siteName
         site.setProperty("forceExecution",newSiteForm.isForceExecution());
-
         site.setHostname(newSiteForm.getSiteName());
 
         if (UtilMethods.isSet(newSiteForm.getSiteThumbnail())) {
