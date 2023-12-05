@@ -9,6 +9,12 @@ import { CustomNodeTypes, NodeTypes } from '../../extensions';
 const aTagRex = new RegExp(/<a(|\s+[^>]*)>(\s|\n|<img[^>]*src="[^"]*"[^>]*>)*?<\/a>/gm);
 const imgTagRex = new RegExp(/<img[^>]*src="[^"]*"[^>]*>/gm);
 
+export interface DotTiptapNodeInformation {
+    node: Node;
+    from: number;
+    to: number;
+}
+
 /**
  * Get the parent node of the ResolvedPos sent
  * @param selectionStart ResolvedPos
@@ -216,18 +222,20 @@ export const getCursorPosition = (view: EditorView): { from: number; to: number 
 };
 
 /**
- * Replace a node of a specific type in the Tiptap editor with new content.
+ * Replace a node in Tiptap editor with new content.
  *
  * @param {Editor} editor - The Tiptap editor instance.
- * @param {string} nodeType - The type of the node to replace.
- * @param {string} content - The new content to insert.
+ * @param {DotTiptapNodeInformation} tiptapNodeInfo - Information about the Tiptap node to be replaced,
+ * including the node itself, and its start and end positions.
+ * @param {string} content - The new content to replace the existing node.
+ * @returns {void}
  */
-export const replaceNodeOfTypeWithContent = (
+export const replaceNodeWithContent = (
     editor: Editor,
-    nodeType: NodeTypes,
+    tiptapNodeInfo: DotTiptapNodeInformation,
     content: string
 ): void => {
-    const { node, from, to } = findNodeByType(editor, nodeType);
+    const { node, from, to } = tiptapNodeInfo;
 
     // If the node is found, replace it with the new content
     if (node) {
@@ -236,11 +244,11 @@ export const replaceNodeOfTypeWithContent = (
 };
 
 /**
- * Find a node of a specific type in the TipTap editor and determine its position range.
+ * Find the first occurrence of a node of a specific type in the TipTap editor and determine its position range.
  *
- * @param editor - The ProseMirror editor instance.
- * @param nodeType - The type of the node to search for (e.g., 'paragraph').
- * @returns An object containing information about the found node:
+ * @param {Editor} editor - The TipTap editor instance.
+ * @param {NodeTypes} nodeType - The type of the node to search for (e.g., 'paragraph').
+ * @returns {DotTiptapNodeInformation | null} An object containing information about the found node:
  *          - `node`: The found node or `null` if not found.
  *          - `from`: The starting position of the found node in the document or `null` if not found.
  *          - `to`: The ending position (exclusive) of the found node in the document or `null` if not found.
@@ -248,7 +256,7 @@ export const replaceNodeOfTypeWithContent = (
 export const findNodeByType = (
     editor: Editor, // The TipTap editor instance
     nodeType: NodeTypes // The type of the node to search for
-): { node: Node | null; from: number | null; to: number | null } => {
+): DotTiptapNodeInformation | null => {
     let node = null;
     let from = null;
     let to = null;
@@ -265,7 +273,7 @@ export const findNodeByType = (
         }
     });
 
-    return { node, from, to };
+    return node ? { node, from, to } : null;
 };
 
 /**

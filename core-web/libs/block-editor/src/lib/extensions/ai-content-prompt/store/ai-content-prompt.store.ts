@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { catchError, switchMap, tap } from 'rxjs/operators';
+import { catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
 
 import { DotAiService } from '../../../shared';
 
@@ -69,11 +69,19 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     });
 
     /**
-     * Use the last prompt to generate content
-     * @returns void
+     * An effect to trigger the generation of content using the last prompt in the store.
+     *
+     * When this effect is triggered, it uses the latest prompt value from the store's state
+     * to generate content using the `generateContent` effect.
+     *
+     * @param trigger$ - An observable that triggers the effect when it emits a value (e.g., `this.reGenerateContent()`)
+     * @returns An observable representing the triggering of the effect.
      * @memberof AiContentPromptStore
      */
-    reGenerateContent() {
-        this.generateContent(this.prompt$);
-    }
+    readonly reGenerateContent = this.effect((trigger$: Observable<void>) => {
+        return trigger$.pipe(
+            withLatestFrom(this.state$),
+            tap(([_, { prompt }]) => this.generateContent(of(prompt)))
+        );
+    });
 }

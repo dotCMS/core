@@ -10,7 +10,7 @@ import { filter, takeUntil, tap } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
-import { findNodeByType, replaceNodeOfTypeWithContent } from '../../../shared';
+import { DotTiptapNodeInformation, findNodeByType, replaceNodeWithContent } from '../../../shared';
 import { NodeTypes } from '../../bubble-menu/models';
 import { AIContentPromptComponent } from '../ai-content-prompt.component';
 import {
@@ -82,19 +82,12 @@ export class AIContentPromptView {
                 filter((content) => !!content)
             )
             .subscribe((content) => {
-                const { node } = findNodeByType(this.editor, NodeTypes.AI_CONTENT);
-
-                if (node) {
-                    replaceNodeOfTypeWithContent(this.editor, NodeTypes.AI_CONTENT, content);
-                    this.editor.commands.openAIContentActions(DOT_AI_TEXT_CONTENT_KEY);
-                } else {
-                    this.editor
-                        .chain()
-                        .closeAIPrompt()
-                        .insertAINode(content)
-                        .openAIContentActions(DOT_AI_TEXT_CONTENT_KEY)
-                        .run();
-                }
+                this.editor
+                    .chain()
+                    .closeAIPrompt()
+                    .insertAINode(content)
+                    .openAIContentActions(DOT_AI_TEXT_CONTENT_KEY)
+                    .run();
             });
 
         /**
@@ -108,7 +101,11 @@ export class AIContentPromptView {
                 filter((state) => state.acceptContent)
             )
             .subscribe((state) => {
-                replaceNodeOfTypeWithContent(this.editor, NodeTypes.AI_CONTENT, state.content);
+                const nodeInformation: DotTiptapNodeInformation = findNodeByType(
+                    this.editor,
+                    NodeTypes.AI_CONTENT
+                );
+                replaceNodeWithContent(this.editor, nodeInformation, state.content);
 
                 this.componentStore.setAcceptContent(false);
             });
@@ -130,7 +127,18 @@ export class AIContentPromptView {
                 filter((deleteContent) => deleteContent)
             )
             .subscribe(() => {
-                replaceNodeOfTypeWithContent(this.editor, NodeTypes.AI_CONTENT, '');
+                const nodeInformation: DotTiptapNodeInformation = findNodeByType(
+                    this.editor,
+                    NodeTypes.AI_CONTENT
+                );
+
+                if (nodeInformation) {
+                    this.editor.commands.deleteRange({
+                        from: nodeInformation.from,
+                        to: nodeInformation.to
+                    });
+                }
+
                 this.componentStore.setDeleteContent(false);
             });
 
