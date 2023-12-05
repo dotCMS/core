@@ -2774,7 +2774,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     public void test_copy_contentlet() throws DotDataException, DotSecurityException {
         final List<Field> fields = new ArrayList<>();
         fields.add(new FieldDataGen().name("Title").velocityVarName("title").next());
-        fields.add(new FieldDataGen().type(HostFolderField.class).name("Host").velocityVarName("Host").next());
+        fields.add(new FieldDataGen().type(HostFolderField.class)
+                .name(Host.HOST_VELOCITY_VAR_NAME)
+                .velocityVarName(Host.HOST_VELOCITY_VAR_NAME)
+                .next());
         final ContentType cType = new ContentTypeDataGen()
                 .host(APILocator.systemHost())
                 .fields(fields)

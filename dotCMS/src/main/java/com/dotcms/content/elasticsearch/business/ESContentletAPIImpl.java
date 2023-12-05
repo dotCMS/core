@@ -9045,7 +9045,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 //verify if the velocity var name is not Host to avoid override the host
                 if (tempField.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())
-                        && !"Host".equalsIgnoreCase(tempField.getVelocityVarName())) {
+                        && !Host.HOST_VELOCITY_VAR_NAME.equalsIgnoreCase(tempField.getVelocityVarName())) {
                     if (folder != null || host != null) {
                         newContentlet.setStringProperty(tempField.getVelocityVarName(),
                                 folder != null ? folder.getInode() : host.getIdentifier());
