@@ -35,6 +35,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import javax.servlet.ServletContext;
+
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -542,5 +544,26 @@ public class DateUtilTest extends UnitTestBase {
         futureByMinutes.roll(Calendar.MINUTE, 30);
 
         assertTrue(DateUtil.isTimeReach(futureByMinutes.toInstant(), ChronoUnit.HOURS));
+    }
+
+    /**
+     * Method to test: {@link DateUtil#convertDate(Number)}
+     * When: call the method with an unix timestamp
+     * Expect: the date is properly parsed
+     */
+    @Test
+    public void test_convert_date_number(){
+
+        /*
+        Unix Timestamp	1704109512
+        GMT	Mon Jan 01 2024 11:45:12 GMT+0000
+        Your Time Zone	Mon Jan 01 2024 05:45:12 GMT-0600 (Central Standard Time)
+        Relative	in a month
+         */
+
+        final long timestamp = 1704109512;
+        final Date date = DateUtil.convertDate(timestamp);
+        final String dateString = DateUtil.formatDate(date, "yyyy-MM-dd");
+        Assert.assertEquals("2024-01-01", dateString);
     }
 }
