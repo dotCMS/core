@@ -555,15 +555,29 @@ public class DateUtilTest extends UnitTestBase {
     public void test_convert_date_number(){
 
         /*
-        Unix Timestamp	1704109512
+        Unix Timestamp	1704131112000l
         GMT	Mon Jan 01 2024 11:45:12 GMT+0000
         Your Time Zone	Mon Jan 01 2024 05:45:12 GMT-0600 (Central Standard Time)
         Relative	in a month
          */
 
-        final long timestamp = 1704109512;
+        final long timestamp = 1704131112000l;
         final Date date = DateUtil.convertDate(timestamp);
         final String dateString = DateUtil.formatDate(date, "yyyy-MM-dd");
         Assert.assertEquals("2024-01-01", dateString);
+
+        /*
+        Input format: RFC 2822, D-M-Y, M/D/Y, Y-M-D, etc. Strip 'GMT' to convert to local time.
+        Epoch timestamp: 1701787575
+        Timestamp in milliseconds: 1701787575000
+        Date and time (GMT): Tuesday, 5 December 2023 14:46:15
+        Date and time (Your time zone): martes, 5 de diciembre de 2023 8:46:15 GMT-06:00
+         */
+
+        final long timestamp2 = 1701787575000l;
+        final Date date2 = DateUtil.convertDate(timestamp2);
+        final String dateString2 = DateUtil.formatDate(date2, "yyyy-MM-dd HH:mm:ss");
+        Assert.assertEquals("2023-12-05 08:46:15", dateString2);
+
     }
 }
