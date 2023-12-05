@@ -71,7 +71,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
             expect(selectedSpy).not.toHaveBeenCalled();
         });
 
-        it("should open a confimartion dialog when the selected persona isn't personalized", () => {
+        it("should open a confimation dialog when the selected persona isn't personalized", () => {
             const confirmationService = spectator.inject(ConfirmationService);
 
             const confirmationMock = jest.spyOn(confirmationService, 'confirm');
