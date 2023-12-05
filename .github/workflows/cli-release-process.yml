@@ -212,7 +212,8 @@ jobs:
           JRELEASER_SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         working-directory: ${{ github.workspace }}
         run: |
-          tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -DartifactsDir=artifacts -Djreleaser.dry.run=true -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
+          tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
+#          tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -DartifactsDir=artifacts -Djreleaser.dry.run=true -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
 
       - name: Setup git config
         run: |
