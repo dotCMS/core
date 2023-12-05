@@ -11,7 +11,7 @@ import java.util.Map;
 
 /**
  * WorkFlowActionlet use on {@link WorkflowAPITest#countAllWorkflowUniqueSubActions()} ()}
- * NOT USE IT ON ANOTHER TEST
+ * DO NOT USE IT ON ANOTHER TEST
  */
 public class Actionlet_5 extends WorkFlowActionlet {
 

@@ -11,7 +11,7 @@ import java.util.Map;
 
 /**
  * WorkFlowActionlet use on {@link WorkflowFactoryTest#notCountUniqueSubActionsFromArchivedSchema()}
- * NOT USE IT ON ANOTHER TEST
+ * DO NOT USE IT ON ANOTHER TEST
  */
 public class Actionlet_4 extends WorkFlowActionlet {
 
