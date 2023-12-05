@@ -5,12 +5,17 @@ import { Injectable } from '@angular/core';
 
 import { catchError, pluck } from 'rxjs/operators';
 
+import { DotLanguage } from '@dotcms/dotcms-models';
+
 import { SavePagePayload } from '../shared/models';
 
 export interface DotPageApiResponse {
     page: {
         title: string;
         identifier: string;
+    };
+    viewAs: {
+        language: DotLanguage;
     };
 }
 

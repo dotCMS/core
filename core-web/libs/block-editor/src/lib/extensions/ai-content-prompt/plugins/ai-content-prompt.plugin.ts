@@ -1,5 +1,5 @@
 import { Node } from 'prosemirror-model';
-import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
+import { EditorState, Plugin, PluginKey, TextSelection, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { Subject } from 'rxjs';
 import tippy, { Instance, Props } from 'tippy.js';
@@ -100,6 +100,17 @@ export class AIContentPromptView {
                 this.editor.commands.insertContent(state.content);
                 this.componentStore.setAcceptContent(false);
             });
+
+        /**
+         * Subscription to close the tippy since that can happen on escape listener that is in the html
+         * template in ai-content-prompt.component.html
+         */
+        this.componentStore.open$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((open) => !open)
+            )
+            .subscribe(() => this.hide());
     }
 
     update(view: EditorView, prevState?: EditorState) {
@@ -112,10 +123,6 @@ export class AIContentPromptView {
             return;
         }
 
-        if (!next.open) {
-            this.componentStore.setOpen(true);
-        }
-
         this.createTooltip();
 
         next.open ? this.show() : this.hide();
@@ -125,21 +132,37 @@ export class AIContentPromptView {
         const { element: editorElement } = this.editor.options;
         const editorIsAttached = !!editorElement.parentElement;
 
-        if (this.tippy || !editorIsAttached) {
+        if (!editorIsAttached) {
             return;
         }
 
-        this.tippy = tippy(editorElement, {
-            ...TIPPY_OPTIONS,
-            ...this.tippyOptions,
-            content: this.element,
-            onHide: () => {
-                this.editor.commands.closeAIPrompt();
-            },
-            onShow: (instance) => {
-                (instance.popper as HTMLElement).style.width = '100%';
-            }
-        });
+        //The following 4 lines are to attach tippy to where the cursor is when opening.
+        // Get the current editor selection.
+        const { selection } = this.editor.state;
+        if (selection instanceof TextSelection) {
+            // Use `domAtPos` to get the DOM information at the cursor position
+            const { pos } = selection.$cursor;
+            const domAtPos = this.editor.view.domAtPos(pos);
+            const clientTarget = domAtPos.node as Element;
+
+            this.tippy = tippy(editorElement, {
+                ...TIPPY_OPTIONS,
+                ...this.tippyOptions,
+                content: this.element,
+                getReferenceClientRect: clientTarget.getBoundingClientRect.bind(clientTarget),
+                onHide: () => {
+                    this.editor.commands.closeAIPrompt();
+                },
+                onShow: (instance) => {
+                    const popperElement = instance.popper as HTMLElement;
+                    popperElement.style.width = '100%';
+                    // override the top position set by popper. so the prompt is on top of the +. not below it.
+                    setTimeout(() => {
+                        popperElement.style.marginTop = '-40px'; // Use marginTop instead of top
+                    }, 0);
+                }
+            });
+        }
     }
 
     show() {
@@ -147,9 +170,17 @@ export class AIContentPromptView {
         this.componentStore.setOpen(true);
     }
 
-    hide() {
+    /**
+     * Hide the tooltip but ignore store update if coming from ai-content-prompt.component.html keyup event.
+     *
+     * @param notifyStore
+     */
+    hide(notifyStore = true) {
         this.tippy?.hide();
-        this.componentStore.setOpen(false);
+        if (notifyStore) {
+            this.componentStore.setOpen(false);
+        }
+
         this.editor.view.focus();
     }
 

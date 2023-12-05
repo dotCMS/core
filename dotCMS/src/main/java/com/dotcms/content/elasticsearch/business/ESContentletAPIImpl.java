@@ -1,11 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -37,10 +31,6 @@ import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
-
-import com.dotcms.experiments.business.ExperimentFilter;
-
-import com.dotcms.experiments.model.Experiment;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
@@ -52,7 +42,6 @@ import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
@@ -125,7 +114,6 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -226,6 +214,12 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -7324,25 +7318,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentlet.setStringProperty(field.getVelocityVarName(), value.toString());
             }
         } else if (field.getFieldContentlet().startsWith("date")) {
-            if (value instanceof Date) {
-                contentlet.setDateProperty(field.getVelocityVarName(), (Date) value);
-            } else if (value instanceof String) {
-                if (((String) value).trim().length() > 0) {
-                    try {
-                        final String trimmedValue = ((String) value).trim();
-                        contentlet.setDateProperty(field.getVelocityVarName(),
-                                DateUtil.convertDate(trimmedValue, dateFormats));
-                    } catch (Exception e) {
-                        throw new DotContentletStateException(
-                                "Unable to convert string to date " + value);
-                    }
-                } else {
-                    contentlet.setDateProperty(field.getVelocityVarName(), null);
-                }
-            } else if (field.isRequired() && value == null) {
-                throw new DotContentletStateException(
-                        "Date fields must either be of type String or Date");
-            }
+            parseDate(contentlet, field, value, dateFormats);
         } else if (field.getFieldContentlet().startsWith("bool")) {
             if (value instanceof Boolean) {
                 contentlet.setBoolProperty(field.getVelocityVarName(), (Boolean) value);
@@ -7442,6 +7418,50 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         } else {
             throw new DotContentletStateException("Unable to set value : Unknown field type");
+        }
+    }
+
+    /**
+     * This method parse the date value and set it to the contentlet
+     * The value could be a number (translated to an unix timestamp as Date)
+     * A string (translated to a Date using the dateFormats)
+     * Or an actual date (which is just set as it is)
+     * Otherwise throws an exception ({@link DotContentletStateException}).
+     * @param contentlet
+     * @param field
+     * @param value
+     * @param dateFormats
+     */
+    private static void parseDate(final Contentlet contentlet,
+                                  final Field field,
+                                  final Object value,
+                                  final String... dateFormats) {
+        if (value instanceof Number) { // is a timestamp
+            contentlet.setDateProperty(field.getVelocityVarName(),
+                    DateUtil.convertDate(Number.class.cast(value).longValue()));
+        } else if (value instanceof Date) {
+            contentlet.setDateProperty(field.getVelocityVarName(), (Date) value);
+        } else if (value instanceof String) {
+            if (((String) value).trim().length() > 0) {
+                try {
+                    final String trimmedValue = ((String) value).trim();
+                    contentlet.setDateProperty(field.getVelocityVarName(),
+                            DateUtil.convertDate(trimmedValue, dateFormats));
+                } catch (Exception e) {
+
+                    throw new DotContentletStateException(
+                            "Unable to convert string to date " + value + ", field: " +
+                                    field.getVelocityVarName());
+                }
+            } else {
+                
+                contentlet.setDateProperty(field.getVelocityVarName(), null);
+            }
+        } else if (field.isRequired() && value == null) {
+
+            throw new DotContentletStateException(
+                    "Date fields must either be of type String or Date, field: " +
+                            field.getVelocityVarName());
         }
     }
 

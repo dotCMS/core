@@ -4291,9 +4291,153 @@ public class WorkflowAPITest extends IntegrationTestBase {
      * @throws DotDataException
      */
     @Test(expected = DotSecurityException.class)
-    public void countSteosWithLimitedUser() throws DotDataException, DotSecurityException {
+    public void countStepsWithLimitedUser() throws DotDataException, DotSecurityException {
         final User user = new UserDataGen().nextPersisted();
         APILocator.getWorkflowAPI().countAllSchemasSteps(user);
+    }
+
+    /**
+     * Method to test: {@link WorkflowAPIImpl#countAllSchemasActions(User)}
+     * When: create a new Workflow with 4 actions
+     * Should: the count must be 4 more than before
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void countAllWorkflowActions() throws DotDataException, DotSecurityException {
+
+        final long firstCount = APILocator.getWorkflowAPI().countAllSchemasActions(APILocator.systemUser());
+
+        final List<Tuple2<String, List<Tuple3<String, String, Set<WorkflowState>>>>> workflowStepsAndActions = Arrays
+                .asList(
+                        Tuple.of("Editing",
+                                Arrays.asList(
+                                        // First component of the Tuple is the desired Action-Name.
+                                        // The Second Component is The Next-Step we desire to be pointed to by the current action.
+                                        // Third is the show-When definition.
+                                        Tuple.of("Save as Draft", "Current Step", EnumSet.of(EDITING, UNLOCKED, LOCKED, NEW, PUBLISHED, UNPUBLISHED)),
+                                        Tuple.of("Send for Review", "Review",  EnumSet.of(EDITING, UNLOCKED, NEW, UNPUBLISHED))
+                                )
+                        ),
+                        Tuple.of("Review",
+                                Arrays.asList(
+                                        Tuple.of("Save as Draft", "Current Step", EnumSet.of(EDITING, LOCKED, NEW, PUBLISHED, UNPUBLISHED)),
+                                        Tuple.of("Return for Edits", "Editing", EnumSet.of(LISTING, UNLOCKED, NEW, PUBLISHED, UNPUBLISHED))
+                                )
+                        )
+                );
+
+        final WorkflowScheme workflow_1= new WorkflowDataGen()
+                .stepAndAction(workflowStepsAndActions).nextPersistedWithStepsAndActions();
+
+        final long secondCount = APILocator.getWorkflowAPI().countAllSchemasActions(APILocator.systemUser());
+        assertEquals(firstCount + 3, secondCount);
+
+        final WorkflowScheme workflow_2 = new WorkflowDataGen()
+                .stepAndAction(workflowStepsAndActions).nextPersistedWithStepsAndActions();
+
+        final long thirdCount = APILocator.getWorkflowAPI().countAllSchemasActions(APILocator.systemUser());
+        assertEquals(secondCount + 3, thirdCount);
+    }
+
+    /**
+     * Method to test: {@link WorkflowAPIImpl#countAllSchemasActions(User)}
+     * When: Try to count Steos with limited USer
+     * Should: throw a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     */
+    @Test(expected = DotSecurityException.class)
+    public void countActionsWithLimitedUser() throws DotDataException, DotSecurityException {
+        final User user = new UserDataGen().nextPersisted();
+        APILocator.getWorkflowAPI().countAllSchemasActions(user);
+    }
+
+    /**
+     * Method to test: {@link WorkflowAPIImpl#countAllSchemasSubActions(User)}
+     * When: create a new Workflow with 7 Sub actions
+     * Should: the count must be 7 more than before
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void countAllWorkflowSubActions() throws DotDataException, DotSecurityException {
+
+        final String workflow_step_1 = "countAllWorkflowSubActions_step_1_" + System.currentTimeMillis();
+        final String workflow_step_2 = "countAllWorkflowSubActions_step_2_" + System.currentTimeMillis();
+        final String workflow_step_3 = "countAllWorkflowSubActions_step_3_" + System.currentTimeMillis();
+        final String workflow_step_4 = "countAllWorkflowSubActions_step_4_" + System.currentTimeMillis();
+
+        final String workflow_action_1 = "countAllWorkflowSubActions_action_1_" + System.currentTimeMillis();
+        final String workflow_action_2 = "countAllWorkflowSubActions_action_2_" + System.currentTimeMillis();
+        final String workflow_action_3 = "countAllWorkflowSubActions_action_3_" + System.currentTimeMillis();
+        final String workflow_action_4 = "countAllWorkflowSubActions_action_4_" + System.currentTimeMillis();
+        final String workflow_action_5 = "countAllWorkflowSubActions_action_5_" + System.currentTimeMillis();
+        final String workflow_action_6 = "countAllWorkflowSubActions_action_6_" + System.currentTimeMillis();
+        final String workflow_action_7 = "countAllWorkflowSubActions_action_7_" + System.currentTimeMillis();
+        final String workflow_action_8 = "countAllWorkflowSubActions_action_8_" + System.currentTimeMillis();
+
+        final List<Tuple2<String, List<Tuple3<String, String, Set<WorkflowState>>>>> workflowStepsAndActions_1 = Arrays
+                .asList(
+                        Tuple.of(workflow_step_1,
+                                Arrays.asList(
+                                        // First component of the Tuple is the desired Action-Name.
+                                        // The Second Component is The Next-Step we desire to be pointed to by the current action.
+                                        // Third is the show-When definition.
+                                        Tuple.of(workflow_action_1, "Current Step", EnumSet.of(EDITING, UNLOCKED, LOCKED, NEW, PUBLISHED, UNPUBLISHED)),
+                                        Tuple.of(workflow_action_2, workflow_step_2,  EnumSet.of(EDITING, UNLOCKED, NEW, UNPUBLISHED))
+                                )
+                        ),
+                        Tuple.of(workflow_step_2,
+                                Arrays.asList(
+                                        Tuple.of(workflow_action_3, "Current Step", EnumSet.of(EDITING, LOCKED, NEW, PUBLISHED, UNPUBLISHED)),
+                                        Tuple.of(workflow_action_4, workflow_step_1, EnumSet.of(LISTING, UNLOCKED, NEW, PUBLISHED, UNPUBLISHED))
+                                )
+                        )
+                );
+
+        final long firstCount = APILocator.getWorkflowAPI().countAllSchemasSubActions(APILocator.systemUser());
+
+        final WorkflowScheme workflow_1 = new WorkflowDataGen()
+                .stepAndAction(workflowStepsAndActions_1).nextPersistedWithStepsAndActions();
+
+        final List<WorkflowAction> actions_1 = APILocator.getWorkflowAPI().findActions(workflow_1, APILocator.systemUser());
+        new WorkflowActionClassDataGen(actions_1.get(0).getId()).nextPersisted();
+        new WorkflowActionClassDataGen(actions_1.get(0).getId()).nextPersisted();
+        new WorkflowActionClassDataGen(actions_1.get(1).getId()).nextPersisted();
+
+        final long secondCount = APILocator.getWorkflowAPI().countAllSchemasSubActions(APILocator.systemUser());
+        assertEquals(firstCount + 7, secondCount);
+
+        final List<Tuple2<String, List<Tuple3<String, String, Set<WorkflowState>>>>> workflowStepsAndActions_2 = Arrays
+                .asList(
+                        Tuple.of(workflow_step_3,
+                                Arrays.asList(
+                                        // First component of the Tuple is the desired Action-Name.
+                                        // The Second Component is The Next-Step we desire to be pointed to by the current action.
+                                        // Third is the show-When definition.
+                                        Tuple.of(workflow_action_5, "Current Step", EnumSet.of(EDITING, UNLOCKED, LOCKED, NEW, PUBLISHED, UNPUBLISHED)),
+                                        Tuple.of(workflow_action_6, workflow_step_4,  EnumSet.of(EDITING, UNLOCKED, NEW, UNPUBLISHED))
+                                )
+                        ),
+                        Tuple.of(workflow_step_4,
+                                Arrays.asList(
+                                        Tuple.of(workflow_action_7, "Current Step", EnumSet.of(EDITING, LOCKED, NEW, PUBLISHED, UNPUBLISHED)),
+                                        Tuple.of(workflow_action_8, workflow_step_3, EnumSet.of(LISTING, UNLOCKED, NEW, PUBLISHED, UNPUBLISHED))
+                                )
+                        )
+                );
+
+        final WorkflowScheme workflow_2 = new WorkflowDataGen()
+                .stepAndAction(workflowStepsAndActions_2).nextPersistedWithStepsAndActions();
+
+        final List<WorkflowAction> actions_2 = APILocator.getWorkflowAPI().findActions(workflow_2, APILocator.systemUser());
+        new WorkflowActionClassDataGen(actions_2.get(2).getId()).nextPersisted();
+        new WorkflowActionClassDataGen(actions_2.get(2).getId()).nextPersisted();
+        new WorkflowActionClassDataGen(actions_2.get(2).getId()).nextPersisted();
+
+        final long thirdCount = APILocator.getWorkflowAPI().countAllSchemasSubActions(APILocator.systemUser());
+        assertEquals(secondCount + 7, thirdCount);
     }
 
     private static List<Tuple2<String, List<Tuple3<String, String, Set<WorkflowState>>>>> getStepsAndActions() {
