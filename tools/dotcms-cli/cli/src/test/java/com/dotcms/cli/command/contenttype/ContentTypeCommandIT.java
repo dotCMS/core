@@ -6,7 +6,7 @@ import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.ContentTypeAPI;
 import com.dotcms.api.client.MapperService;
-import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.cli.command.CommandTest;

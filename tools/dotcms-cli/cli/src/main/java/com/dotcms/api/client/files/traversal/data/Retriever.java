@@ -2,7 +2,7 @@ package com.dotcms.api.client.files.traversal.data;
 
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.LanguageAPI;
-import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.ByPathRequest;
 import com.dotcms.model.asset.FolderView;

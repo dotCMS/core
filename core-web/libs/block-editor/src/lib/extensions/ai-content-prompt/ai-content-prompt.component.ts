@@ -46,12 +46,26 @@ export class AIContentPromptComponent implements OnInit, OnDestroy {
         this.destroy$.next(true);
         this.destroy$.complete();
     }
-
+    /**
+     *  Handle submit event in the form
+     * @return {*}  {void}
+     * @memberof AIContentPromptComponent
+     */
     onSubmit() {
         const textPrompt = this.form.value.textPrompt;
-
         if (textPrompt) {
             this.aiContentPromptStore.generateContent(textPrompt);
         }
+    }
+
+    /**
+     *  Handle scape key in the prompt input
+     * @param event
+     * @return {*}  {void}
+     * @memberof AIContentPromptComponent
+     */
+    handleScape(event: KeyboardEvent): void {
+        this.aiContentPromptStore.setOpen(false);
+        event.stopPropagation();
     }
 }
