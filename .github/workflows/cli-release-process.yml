@@ -174,8 +174,16 @@ jobs:
           ref: ${{ needs.precheck.outputs.HEAD }}
           fetch-depth: 0
 
+      - name: 'Create artifacts directory'
+        run: |
+          mkdir -p ${{ github.workspace }}/artifacts
+          echo "artifactsDir=${{ github.workspace }}/artifacts" >> "$GITHUB_ENV
+
       - name: 'Download all build artifacts'
         uses: actions/download-artifact@v3
+        with:
+          name: artifacts
+          path: ${{ github.workspace }}/artifacts
 
       - name: 'Set up Java'
         uses: actions/setup-java@v3
