@@ -1,6 +1,5 @@
 <ng-container *ngIf="vm$ | async as vm">
     <dot-edit-ema-toolbar>
-        <h4 title>{{ vm.pageTitle }}</h4>
         <ng-container left>
             <p-button label="Preview" icon="pi pi-desktop" styleClass="p-button-text p-button-sm" />
             <p-button label="Bookmark" icon="pi pi-star" styleClass="p-button-text p-button-sm" />
@@ -18,7 +17,7 @@
                 [value]="vm.selectedPersona"
                 (selected)="onPersonaSelected($event)"
                 data-testId="persona-selector" />
-            <p-button label="Save" />
+            <p-button class="p-button-sm" label="Save" />
         </ng-container>
     </dot-edit-ema-toolbar>
     <div class="iframe-wrapper">
