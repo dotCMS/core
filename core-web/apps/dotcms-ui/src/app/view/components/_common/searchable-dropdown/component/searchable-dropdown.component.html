@@ -3,9 +3,8 @@
         class="searchable-dropdown__data-list-item"
         [class.selected]="item[labelPropertyName] === valueString"
         [class.star]="item.default"
-        (click)="handleClick(item)">
-        <i class="pi pi-check" *ngIf="item.default"></i>
-        {{ item.label }}</span
+        (click)="handleClick(item)"
+        ><i class="pi pi-check" *ngIf="item.default"></i>{{ item.label }}</span
     >
 </ng-template>
 
