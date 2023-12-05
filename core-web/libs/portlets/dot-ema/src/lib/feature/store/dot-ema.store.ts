@@ -71,20 +71,22 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly editor$: Observable<DotPageApiResponse> = this.select((state) => state.editor);
 
     readonly vm$ = this.select((state) => {
-        return {
-            iframeUrl: `http://localhost:3000/${state.url}?language_id=${
-                state.editor.viewAs.language.id
-            }&com.dotmarketing.persona.id=${
-                state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA_ID
-            }`,
-            pageTitle: state.editor.page.title,
-            dialogIframeURL: state.dialogIframeURL,
-            dialogVisible: state.dialogVisible,
-            dialogHeader: state.dialogHeader,
-            dialogIframeLoading: state.dialogIframeLoading,
-            editor: state.editor,
-            selectedPersona: state.editor.viewAs.persona ?? DEFAULT_PERSONA
-        };
+        return state.editor.page.identifier
+            ? {
+                  iframeUrl: `http://localhost:3000/${state.url}?language_id=${
+                      state.editor.viewAs.language.id
+                  }&com.dotmarketing.persona.id=${
+                      state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA_ID
+                  }`,
+                  pageTitle: state.editor.page.title,
+                  dialogIframeURL: state.dialogIframeURL,
+                  dialogVisible: state.dialogVisible,
+                  dialogHeader: state.dialogHeader,
+                  dialogIframeLoading: state.dialogIframeLoading,
+                  editor: state.editor,
+                  selectedPersona: state.editor.viewAs.persona ?? DEFAULT_PERSONA
+              }
+            : null; // Don't return anything unless we have page data
     });
 
     /**
