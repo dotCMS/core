@@ -7,7 +7,8 @@
     (onSelect)="onSelect($event)"
     (completeMethod)="onFilter($event)"
     dataKey="title"
-    field="title">
+    field="title"
+    data-testId="persona-selector-autocomplete">
     <ng-template let-persona pTemplate="item">
         <p-avatar
             [text]="persona?.name"

@@ -21,6 +21,7 @@ import { DotEmaComponent } from './dot-ema.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
 import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaPersonaSelectorComponent } from '../components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
@@ -164,6 +165,31 @@ describe('DotEmaComponent', () => {
 
                 expect(router.navigate).toHaveBeenCalledWith([], {
                     queryParams: { language_id: 2 },
+                    queryParamsHandling: 'merge'
+                });
+            });
+        });
+
+        describe('persona selector', () => {
+            it('should have a persona selector', () => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('persona-selector'))).not.toBeNull();
+            });
+
+            it('should call navigate when selecting a persona', () => {
+                spectator.detectChanges();
+                const router = spectator.inject(Router);
+
+                jest.spyOn(router, 'navigate');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...DEFAULT_PERSONA,
+                    identifier: '123'
+                });
+                spectator.detectChanges();
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: { 'com.dotmarketing.persona.id': '123' },
                     queryParamsHandling: 'merge'
                 });
             });
