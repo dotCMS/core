@@ -1,3 +1,5 @@
+import { Observable, of } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
@@ -17,12 +19,12 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Listbox, ListboxModule } from 'primeng/listbox';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
+import { catchError, map } from 'rxjs/operators';
+
 import { DotPersona } from '@dotcms/dotcms-models';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotPageApiService } from '../../services/dot-page-api.service';
-import { catchError, map } from 'rxjs/operators';
-import { Observable, of } from 'rxjs';
 
 @Component({
     selector: 'dot-edit-ema-persona-selector',
