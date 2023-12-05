@@ -351,6 +351,48 @@ public class ConfigTest {
         field.set(null, value);
     }
 
+    /**
+     * Method to test {@link Config#envKey(String)}
+     * Checks if the method is converting the key to env key successfully.
+     */
+    @Test
+    public void test_envKey_keyWithoutPrefix_returnsEnvKey() {
+        final String MY_ENV_VAR_PROPERTY = "my.env.var.property";
+        final String convertedProperty = Config.envKey(MY_ENV_VAR_PROPERTY);
+
+        assertTrue(convertedProperty.contains("DOT_"));
+        assertFalse(convertedProperty.contains("."));
+    }
+
+    /**
+     * Method to test {@link Config#envKey(String)}
+     * If the key is already an Env Key it doesn't need to be converted.
+     */
+    @Test
+    public void test_envKey_keyWithPrefix_returnsEnvKey() {
+        final String DOT_MY_ENV_VAR_PROPERTY = "DOT_MY_ENV_VAR_PROPERTY";
+        final String convertedProperty = Config.envKey(DOT_MY_ENV_VAR_PROPERTY);
+
+        assertTrue(convertedProperty.contains("DOT_"));
+        assertFalse(convertedProperty.contains("."));
+        assertFalse(convertedProperty.contains("DOT_DOT_"));
+    }
+
+    /**
+     * Method to test {@link Config#subsetContainsAsList(String)}
+     * Pull out all the properties that contains the given string, in this case testSubset.
+     */
+    @Test
+    public void test_subsetContainsAsList(){
+        Config.props.addProperty("DOT_testSubset_anyKey","anyValue");
+        Config.props.addProperty("testSubset.anyKey","anyValue");
+
+        final List<String> properties = Config.subsetContainsAsList("testSubset");
+        assertTrue(properties.size()>=2);
+        assertTrue(properties.contains("DOT_testSubset_anyKey"));
+        assertTrue(properties.contains("testSubset.anyKey"));
+    }
+
 
 
 
