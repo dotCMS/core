@@ -13,6 +13,7 @@
                 (selected)="onLanguageSelected($event)"
                 data-testId="language-selector" />
             <dot-edit-ema-persona-selector
+                #personaSelector
                 [pageID]="vm.editor.page.identifier"
                 [value]="vm.selectedPersona"
                 (selected)="onPersonaSelected($event)"

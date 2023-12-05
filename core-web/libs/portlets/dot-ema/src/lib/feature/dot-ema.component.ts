@@ -67,6 +67,7 @@ import { deleteContentletFromContainer, insertContentletInContainer } from '../u
 export class DotEmaComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
+    @ViewChild('personaSelector') personaSelector!: EditEmaPersonaSelectorComponent;
 
     readonly destroy$ = new Subject<boolean>();
 
@@ -184,9 +185,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                     });
                 },
                 reject: () => {
-                    this.router.navigate([], {
-                        queryParamsHandling: 'merge'
-                    });
+                    this.personaSelector.resetValue();
                 }
             });
         }

@@ -55,6 +55,12 @@ describe('EditEmaPersonaSelectorComponent', () => {
         component = spectator.component;
     });
 
+    it('should call autoComplete selectItem when calling resetValue', () => {
+        const selectItemSpy = jest.spyOn(component.autoComplete, 'selectItem');
+        component.resetValue();
+        expect(selectItemSpy).toHaveBeenCalledWith(component.value);
+    });
+
     describe('events', () => {
         it('should emit the default persona when the selected emits the default persona', () => {
             const selectedSpy = jest.spyOn(component.selected, 'emit');

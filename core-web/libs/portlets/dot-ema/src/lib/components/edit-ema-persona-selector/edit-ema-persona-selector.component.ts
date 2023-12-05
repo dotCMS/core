@@ -1,16 +1,8 @@
 import { CommonModule } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    EventEmitter,
-    Input,
-    OnInit,
-    Output,
-    inject
-} from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { AutoCompleteModule } from 'primeng/autocomplete';
+import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
@@ -42,10 +34,10 @@ import { DotPageApiService } from '../../services/dot-page-api.service';
     ],
 
     templateUrl: './edit-ema-persona-selector.component.html',
-    styleUrls: ['./edit-ema-persona-selector.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ['./edit-ema-persona-selector.component.scss']
 })
 export class EditEmaPersonaSelectorComponent implements OnInit {
+    @ViewChild('autoComplete') autoComplete: AutoComplete;
     private readonly pageApiService = inject(DotPageApiService);
     private personas: DotPersona[];
 
@@ -73,12 +65,27 @@ export class EditEmaPersonaSelectorComponent implements OnInit {
             );
     }
 
+    /**
+     * Handle the change of the persona
+     *
+     * @param {DotPersona} value
+     * @memberof EditEmaPersonaSelectorComponent
+     */
     onSelect(value: DotPersona) {
         if (value.identifier !== this.value.identifier) {
-            this.selected.emit({ ...value, pageID: this.pageID });
+            this.selected.emit({
+                ...value,
+                pageID: this.pageID
+            });
         }
     }
 
+    /**
+     * Filter the personas by the query
+     *
+     * @param {{ query: string }} { query }
+     * @memberof EditEmaPersonaSelectorComponent
+     */
     onFilter({ query }: { query: string }) {
         if (!query.length) {
             this.filteredPersonas = [...this.personas];
@@ -87,5 +94,14 @@ export class EditEmaPersonaSelectorComponent implements OnInit {
                 persona.title.toLowerCase().includes(query.toLowerCase())
             );
         }
+    }
+
+    /**
+     * Reset the value of the autocomplete
+     *
+     * @memberof EditEmaPersonaSelectorComponent
+     */
+    resetValue() {
+        this.autoComplete.selectItem(this.value);
     }
 }
