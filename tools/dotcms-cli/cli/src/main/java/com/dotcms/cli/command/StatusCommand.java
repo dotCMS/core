@@ -2,9 +2,9 @@ package com.dotcms.cli.command;
 
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.UserAPI;
-import com.dotcms.api.client.DotCmsClientConfig;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.api.client.ServiceManager;
+import com.dotcms.api.client.model.DotCmsClientConfig;
+import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.annotation.SecuredPassword;
