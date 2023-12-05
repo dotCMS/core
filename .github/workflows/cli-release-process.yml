@@ -177,7 +177,7 @@ jobs:
       - name: 'Create artifacts directory'
         run: |
           mkdir -p ${{ github.workspace }}/artifacts
-          echo "artifactsDir=${{ github.workspace }}/artifacts" >> "$GITHUB_ENV
+          echo "artifactsDir=${{ github.workspace }}/artifacts" >> "$GITHUB_ENV"
 
       - name: 'Download all build artifacts'
         uses: actions/download-artifact@v3
