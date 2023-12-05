@@ -168,8 +168,15 @@ export class AIContentActionsView {
     }
 
     private deleteContent() {
+        const pluginState: PluginState = this.pluginKey?.getState(this.view.state);
+        switch (pluginState.nodeType) {
+            case DOT_AI_TEXT_CONTENT_KEY:
+                this.aiContentPromptStore.setDeleteContent(true);
+                break;
+        }
+
         this.editor.commands.closeAIContentActions();
-        this.editor.commands.deleteSelection();
+        // this.editor.commands.deleteSelection();
     }
 
     private handleKeyDown(event: KeyboardEvent) {

@@ -216,6 +216,59 @@ export const getCursorPosition = (view: EditorView): { from: number; to: number 
 };
 
 /**
+ * Replace a node of a specific type in the Tiptap editor with new content.
+ *
+ * @param {Editor} editor - The Tiptap editor instance.
+ * @param {string} nodeType - The type of the node to replace.
+ * @param {string} content - The new content to insert.
+ */
+export const replaceNodeOfTypeWithContent = (
+    editor: Editor,
+    nodeType: NodeTypes,
+    content: string
+): void => {
+    const { node, from, to } = findNodeByType(editor, nodeType);
+
+    // If the node is found, replace it with the new content
+    if (node) {
+        editor.chain().deleteRange({ from, to }).insertContentAt(from, content).run();
+    }
+};
+
+/**
+ * Find a node of a specific type in the TipTap editor and determine its position range.
+ *
+ * @param editor - The ProseMirror editor instance.
+ * @param nodeType - The type of the node to search for (e.g., 'paragraph').
+ * @returns An object containing information about the found node:
+ *          - `node`: The found node or `null` if not found.
+ *          - `from`: The starting position of the found node in the document or `null` if not found.
+ *          - `to`: The ending position (exclusive) of the found node in the document or `null` if not found.
+ */
+export const findNodeByType = (
+    editor: Editor, // The TipTap editor instance
+    nodeType: NodeTypes // The type of the node to search for
+): { node: Node | null; from: number | null; to: number | null } => {
+    let node = null;
+    let from = null;
+    let to = null;
+
+    // Traverse the document's descendants
+    editor.state.doc.descendants((currentNode, currentPosition) => {
+        if (currentNode.type.name === nodeType) {
+            node = currentNode;
+            from = currentPosition;
+            to = from + node.nodeSize;
+
+            // Stop traversing once the node is found
+            return false;
+        }
+    });
+
+    return { node, from, to };
+};
+
+/**
  * Check if the text is an image URL.
  *
  * @param {string} text

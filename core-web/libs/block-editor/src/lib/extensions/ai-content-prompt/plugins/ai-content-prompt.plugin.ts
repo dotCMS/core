@@ -6,16 +6,18 @@ import tippy, { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
 
-import { filter, takeUntil } from 'rxjs/operators';
+import { filter, takeUntil, tap } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
+import { findNodeByType, replaceNodeOfTypeWithContent } from '../../../shared';
+import { NodeTypes } from '../../bubble-menu/models';
 import { AIContentPromptComponent } from '../ai-content-prompt.component';
 import {
     AI_CONTENT_PROMPT_PLUGIN_KEY,
     DOT_AI_TEXT_CONTENT_KEY
 } from '../ai-content-prompt.extension';
-import { AiContentPromptStore } from '../store/ai-content-prompt.store';
+import { AiContentPromptState, AiContentPromptStore } from '../store/ai-content-prompt.store';
 import { TIPPY_OPTIONS } from '../utils';
 
 interface AIContentPromptProps {
@@ -53,6 +55,8 @@ export class AIContentPromptView {
 
     private componentStore: AiContentPromptStore;
 
+    private storeSate: AiContentPromptState;
+
     private destroy$ = new Subject<boolean>();
 
     constructor(props: AIContentPromptViewProps) {
@@ -78,13 +82,19 @@ export class AIContentPromptView {
                 filter((content) => !!content)
             )
             .subscribe((content) => {
-                this.editor
-                    .chain()
-                    .closeAIPrompt()
-                    .deleteSelection()
-                    .insertAINode(content)
-                    .openAIContentActions(DOT_AI_TEXT_CONTENT_KEY)
-                    .run();
+                const { node } = findNodeByType(this.editor, NodeTypes.AI_CONTENT);
+
+                if (node) {
+                    replaceNodeOfTypeWithContent(this.editor, NodeTypes.AI_CONTENT, content);
+                    this.editor.commands.openAIContentActions(DOT_AI_TEXT_CONTENT_KEY);
+                } else {
+                    this.editor
+                        .chain()
+                        .closeAIPrompt()
+                        .insertAINode(content)
+                        .openAIContentActions(DOT_AI_TEXT_CONTENT_KEY)
+                        .run();
+                }
             });
 
         /**
@@ -94,10 +104,12 @@ export class AIContentPromptView {
         this.componentStore.vm$
             .pipe(
                 takeUntil(this.destroy$),
+                tap((state) => (this.storeSate = state)),
                 filter((state) => state.acceptContent)
             )
             .subscribe((state) => {
-                this.editor.commands.insertContent(state.content);
+                replaceNodeOfTypeWithContent(this.editor, NodeTypes.AI_CONTENT, state.content);
+
                 this.componentStore.setAcceptContent(false);
             });
 
@@ -110,7 +122,19 @@ export class AIContentPromptView {
                 takeUntil(this.destroy$),
                 filter((open) => !open)
             )
-            .subscribe(() => this.hide());
+            .subscribe(() => this.hide(false));
+
+        this.componentStore.deleteContent$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((deleteContent) => deleteContent)
+            )
+            .subscribe(() => {
+                replaceNodeOfTypeWithContent(this.editor, NodeTypes.AI_CONTENT, '');
+                this.componentStore.setDeleteContent(false);
+            });
+
+        this.editor.view.dom.addEventListener('click', this.handleClick.bind(this));
     }
 
     update(view: EditorView, prevState?: EditorState) {
@@ -166,6 +190,7 @@ export class AIContentPromptView {
     }
 
     show() {
+        this.editor.setEditable(false);
         this.tippy?.show();
         this.componentStore.setOpen(true);
     }
@@ -181,6 +206,8 @@ export class AIContentPromptView {
             this.componentStore.setOpen(false);
         }
 
+        this.editor.setEditable(true);
+
         this.editor.view.focus();
     }
 
@@ -188,6 +215,13 @@ export class AIContentPromptView {
         this.tippy?.destroy();
         this.destroy$.next(true);
         this.destroy$.complete();
+        this.editor.view.dom.removeEventListener('click', this.handleClick.bind(this));
+    }
+
+    handleClick(_event: MouseEvent): void {
+        if (this.storeSate.open && !this.storeSate.loading) {
+            this.hide();
+        }
     }
 }
 

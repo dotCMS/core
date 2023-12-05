@@ -1,5 +1,7 @@
 import { Node } from '@tiptap/core';
 
+import { NodeTypes } from '../../extensions';
+
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         AIContentNode: {
@@ -9,7 +11,7 @@ declare module '@tiptap/core' {
 }
 
 export const AIContentNode = Node.create({
-    name: 'aiContent',
+    name: NodeTypes.AI_CONTENT,
 
     addAttributes() {
         return {

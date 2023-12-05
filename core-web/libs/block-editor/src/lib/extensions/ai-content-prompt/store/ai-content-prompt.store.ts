@@ -13,6 +13,7 @@ export interface AiContentPromptState {
     content: string;
     open: boolean;
     acceptContent: boolean;
+    deleteContent: boolean;
 }
 
 @Injectable({
@@ -20,13 +21,21 @@ export interface AiContentPromptState {
 })
 export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     constructor(private dotAiService: DotAiService) {
-        super({ prompt: '', loading: false, content: '', open: false, acceptContent: false });
+        super({
+            prompt: '',
+            loading: false,
+            content: '',
+            open: false,
+            acceptContent: false,
+            deleteContent: false
+        });
     }
 
     //Selectors
     readonly prompt$ = this.select((state) => state.prompt);
     readonly content$ = this.select((state) => state.content);
     readonly open$ = this.select((state) => state.open);
+    readonly deleteContent$ = this.select((state) => state.deleteContent);
     readonly vm$ = this.select((state) => state);
 
     //Updaters
@@ -34,6 +43,10 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     readonly setAcceptContent = this.updater((state, acceptContent: boolean) => ({
         ...state,
         acceptContent
+    }));
+    readonly setDeleteContent = this.updater((state, deleteContent: boolean) => ({
+        ...state,
+        deleteContent
     }));
 
     // Effects
