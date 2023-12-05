@@ -152,8 +152,8 @@ jobs:
       - name: Distribution tree
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/
         run: |
-          ls -ltr
-          tree cli/target/distributions          
+          ls -ltr cli/target/distributions
+          # tree cli/target/distributions          
 
       - name: 'Upload build artifact'
         uses: actions/upload-artifact@v3
