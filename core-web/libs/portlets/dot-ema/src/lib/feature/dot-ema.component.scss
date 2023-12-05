@@ -10,9 +10,12 @@
         width: 113px;
         height: 40px;
         border-radius: $border-radius-md; // Required for all buttons
-        display: flex;
-        justify-content: center;
-        align-items: center;
+    }
+
+    h4 {
+        margin: 0;
+        padding: 0 $spacing-4;
+        padding-top: $spacing-3;
     }
 
     ::ng-deep {
@@ -34,19 +37,6 @@
             .p-dialog-footer {
                 padding-top: 0;
             }
-        }
-    }
-
-    .ema-header {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        height: fit-content;
-
-        h4 {
-            margin: 0;
-            padding: 0 $spacing-4;
-            padding-top: $spacing-3;
         }
     }
 }

@@ -6,6 +6,7 @@ import { EditEmaToolbarComponent } from './edit-ema-toolbar.component';
 
 @Component({
     template: `<dot-edit-ema-toolbar>
+        <ng-container title><div data-testId="title-content"></div></ng-container>
         <ng-container left><div data-testId="left-content"></div></ng-container>
         <ng-container right><div data-testId="right-content"></div></ng-container>
     </dot-edit-ema-toolbar>`
@@ -36,6 +37,12 @@ describe('EditEmaToolbarComponent', () => {
             const rightContent = spectator.query(byTestId('toolbar-right-content'));
 
             expect(rightContent.querySelector('[data-testId="right-content"]')).not.toBeNull();
+        });
+
+        it('should have title-content on title', () => {
+            const titleContent = spectator.query(byTestId('title-content'));
+
+            expect(titleContent).not.toBeNull();
         });
     });
 });

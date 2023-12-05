@@ -2,14 +2,14 @@
 
 :host {
     border: solid 1px $color-palette-gray-100;
-
-    .toolbar-title {
-        margin: 0;
-        padding: 0 $spacing-4;
-    }
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: fit-content;
 }
 
-.edit-ema-toolbar-actions__buttons {
+.p-toolbar-group-left,
+.p-toolbar-group-right {
     display: flex;
     align-items: center;
     gap: $spacing-2;
