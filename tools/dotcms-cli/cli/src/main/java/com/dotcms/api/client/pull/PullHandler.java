@@ -1,11 +1,15 @@
 package com.dotcms.api.client.pull;
 
-import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
-import com.dotcms.api.client.pull.exception.PullException;
+import com.dotcms.api.client.pull.error.ErrorPrinterStrategy;
+import com.dotcms.api.client.pull.error.strategy.DefaultErrorPrinterStrategy;
+import com.dotcms.api.client.pull.error.strategy.PullErrorPrinterStrategy;
+import com.dotcms.api.client.pull.error.strategy.TraversalTaskErrorPrinterStrategy;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.pull.PullOptions;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import javax.annotation.PostConstruct;
 
 /**
  * This abstract class represents a PullHandler, which is responsible for pulling elements of type T.
@@ -13,6 +17,15 @@ import java.util.concurrent.ExecutionException;
  * @param <T> the type of elements to be pulled
  */
 public abstract class PullHandler<T> {
+
+    private final List<ErrorPrinterStrategy> strategies = new ArrayList<>();
+
+    @PostConstruct
+    public void prepareStrategies() {
+        this.strategies.add(new TraversalTaskErrorPrinterStrategy());
+        this.strategies.add(new PullErrorPrinterStrategy());
+        this.strategies.add(new DefaultErrorPrinterStrategy()); // Default strategy should be last
+    }
 
     /**
      * Returns the title for the T elements being pulled. Used for logging purposes and for console
@@ -61,16 +74,12 @@ public abstract class PullHandler<T> {
                     )
             );
             for (final var error : errors) {
-                if (error instanceof TraversalTaskException || error instanceof PullException) {
-                    output.error(
-                            String.format(
-                                    "%s --- %s",
-                                    error.getMessage(),
-                                    error.getCause().getMessage()
-                            )
-                    );
-                } else {
-                    output.error(error.getMessage());
+
+                for (ErrorPrinterStrategy strategy : strategies) {
+                    if (strategy.isApplicable(error)) {
+                        output.error(strategy.getErrorMessage(error));
+                        break; // As soon as we found an applicable strategy, we break the loop
+                    }
                 }
             }
         }
