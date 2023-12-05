@@ -71,17 +71,12 @@ export class EditEmaPersonaSelectorComponent implements OnInit {
                 // TODO: when we update to PrimeNG 17 we can do this async
                 perPage: 5000
             })
-            .pipe(
-                tapResponse(
-                    (res) => {
-                        this.personas = res.data;
-                    },
-                    () => {
-                        this.personas = [];
-                    }
-                )
-            )
-            .subscribe();
+            .subscribe((res) => {
+                    this.personas = res.data;
+                },
+                () => {
+                    this.personas = [];
+                });
     }
 
     onSelect(value: DotPersona) {
