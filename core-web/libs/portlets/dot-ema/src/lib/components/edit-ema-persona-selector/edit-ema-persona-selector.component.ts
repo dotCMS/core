@@ -92,5 +92,6 @@ export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit {
      */
     resetValue(): void {
         this.listbox.value = this.value;
+        this.listbox.cd.detectChanges();
     }
 }
