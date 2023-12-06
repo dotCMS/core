@@ -153,18 +153,24 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                     .collect(Collectors.toList());
         }
         final String redisSessionEnabled = envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_ENABLED", "false");
-        if (Boolean.parseBoolean(redisSessionEnabled)) {
-            final RedisURI redisURI = RedisURI.builder()
-                    .withHost(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_HOST", "localhost"))
-                    .withPort(Integer.parseInt(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_PORT", "6379")))
-                    .withPassword(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_PASSWORD", "").toCharArray())
-                    .withSsl(Boolean.parseBoolean(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_SSL_ENABLED", "false")))
-                    .withDatabase(Config.getIntProperty("TOMCAT_REDIS_SESSION_DATABASE", 0))
-                    .withTimeout(Duration.ofMillis(Integer.parseInt(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_TIMEOUT", "2000"))))
-                    .build();
-            return List.of(redisURI);
+
+        final RedisURI.Builder builder = RedisURI.builder()
+                .withHost(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_HOST", "localhost"))
+                .withSsl(Boolean.parseBoolean(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_SSL_ENABLED", "false")))
+                .withDatabase(Integer.parseInt(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_DATABASE", "0")))
+                .withTimeout(Duration.ofMillis(Integer.parseInt( envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_TIMEOUT", "2000"))))
+                .withPort(Integer.parseInt(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_PORT", "6379")));
+        if (envVarService.getenv().get("TOMCAT_REDIS_SESSION_USERNAME") != null) {
+            builder.withAuthentication(
+                    envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_USERNAME", ""),
+                    envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_PASSWORD", "").toCharArray());
+        } else {
+            builder.withPassword(envVarService.getenv().getOrDefault("TOMCAT_REDIS_SESSION_PASSWORD", "").toCharArray());
         }
-        return List.of(RedisURI.create("redis://password@oboxturbo"));
+
+        return List.of(builder.build());
+
+
     }
 
     /**

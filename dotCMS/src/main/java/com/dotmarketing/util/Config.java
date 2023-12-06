@@ -81,7 +81,7 @@ public class Config {
 
 
     //Config internal properties
-    private static int refreshInterval = 5; //In minutes, Default 5 can be overridden in the config file as config.refreshinterval int property
+    private static int refreshInterval = Integer.MAX_VALUE; //In minutes, Default 5 can be overridden in the config file as config.refreshinterval int property
     private static Date lastRefreshTime = new Date();
     protected final static PropertiesConfiguration props = new PropertiesConfiguration();
     private static ClassLoader classLoader = null;
@@ -332,13 +332,8 @@ public class Config {
      */
     private static void _refreshProperties() {
 
-        if ((props.isEmpty()) || // if props is null go ahead.
-                (
-                        (!useWatcherMode.get()) &&
-                                // if we are using watcher mode, do not need to check this
-                                (System.currentTimeMillis() > lastRefreshTime.getTime() + (
-                                        refreshInterval * 60 * 1000))
-                )) {
+        if (props.isEmpty()) {
+
             _loadProperties();
         }
     }
@@ -547,6 +542,8 @@ public class Config {
             return valueString.split(StringPool.COMMA);
         }
 
+        _refreshProperties();
+
         return props.containsKey(envKey)
                 ? props.getStringArray(envKey)
                 : props.containsKey(name)
@@ -566,6 +563,8 @@ public class Config {
             return Integer.parseInt(valueString);
         }
 
+        _refreshProperties();
+
         Integer value = Try.of(() -> props.getInt(envKey)).getOrNull();
         if (value != null) {
             return value;
@@ -582,6 +581,7 @@ public class Config {
             return Long.parseLong(valueString);
         }
 
+        _refreshProperties();
         Long value = Try.of(() -> props.getLong(envKey)).getOrNull();
         if (value != null) {
             return value;
@@ -602,6 +602,7 @@ public class Config {
             return Integer.parseInt(valueString);
         }
 
+        _refreshProperties();
         Integer value = Try.of(() -> props.getInt(envKey(name))).getOrNull();
         if (value != null) {
             return value;
@@ -621,6 +622,8 @@ public class Config {
         if (null != valueString) {
             return Float.parseFloat(valueString);
         }
+
+        _refreshProperties();
 
         Float value = Try.of(() -> props.getFloat(envKey)).getOrNull();
         if (value != null) {
@@ -643,6 +646,7 @@ public class Config {
             return Float.parseFloat(valueString);
         }
 
+        _refreshProperties();
         Float value = Try.of(() -> props.getFloat(envKey)).getOrNull();
         if (value != null) {
             return value;
@@ -665,6 +669,7 @@ public class Config {
             return Boolean.parseBoolean(valueString);
         }
 
+        _refreshProperties();
         Boolean value = Try.of(() -> props.getBoolean(envKey)).getOrNull();
         if (value != null) {
             return value;
