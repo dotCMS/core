@@ -32,6 +32,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import org.apache.commons.math3.ml.clustering.Cluster;
 
 /**
  * Redis Cache implementation
@@ -70,8 +71,8 @@ public class RedisCache extends CacheProvider {
     public RedisCache(final Lazy<RedisClient<String,Object>> client) {
 
         this.client           = client;
-        this.REDIS_GROUP_KEY  =  "REDIS_GROUP_KEY";
-        this.REDIS_PREFIX_KEY = "REDIS_PREFIX_KEY";
+        this.REDIS_GROUP_KEY  = ClusterFactory.getClusterId() + "_REDIS_GROUP_KEY";
+        this.REDIS_PREFIX_KEY = ClusterFactory.getClusterId() + "_REDIS_PREFIX_KEY";
     }
 
     public RedisCache() {
@@ -127,14 +128,20 @@ public class RedisCache extends CacheProvider {
 
     String loadPrefixFromRedis() {
 
+        try {
 
+            final String value = (String)this.getClient().get(REDIS_PREFIX_KEY);
+            return null == value? PREFIX_UNSET: value;
+        } catch (Exception e) {
+
+            Logger.debug(this.getClass(), ()-> "unable to get prefix:" + e.getMessage());
             return PREFIX_UNSET;
-
+        }
     }
 
     String generateNewKey() {
 
-        return  Config.getStringProperty("REDIS_KEY_PREFIX", ClusterFactory.getClusterId());
+        return  "cache_" + new SimpleDateFormat(KEY_DATE_FORMAT).format(new Date());
     }
 
     /**
