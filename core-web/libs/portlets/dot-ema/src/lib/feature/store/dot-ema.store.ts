@@ -10,12 +10,7 @@ import {
     DotPageApiResponse,
     DotPageApiService
 } from '../../services/dot-page-api.service';
-import {
-    ADD_CONTENTLET_URL,
-    DEFAULT_PERSONA,
-    DEFAULT_PERSONA_ID,
-    EDIT_CONTENTLET_URL
-} from '../../shared/consts';
+import { ADD_CONTENTLET_URL, DEFAULT_PERSONA, EDIT_CONTENTLET_URL } from '../../shared/consts';
 import { SavePagePayload } from '../../shared/models';
 
 export interface EditEmaState {
@@ -59,7 +54,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             `http://localhost:3000/${url}?language_id=${
                 editor.viewAs.language.id
             }&com.dotmarketing.persona.id=${
-                editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA_ID
+                editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
             }`
     );
     readonly language_id$: Observable<number> = this.select(
@@ -76,7 +71,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                   iframeUrl: `http://localhost:3000/${state.url}?language_id=${
                       state.editor.viewAs.language.id
                   }&com.dotmarketing.persona.id=${
-                      state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA_ID
+                      state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
                   }`,
                   pageTitle: state.editor.page.title,
                   dialogIframeURL: state.dialogIframeURL,

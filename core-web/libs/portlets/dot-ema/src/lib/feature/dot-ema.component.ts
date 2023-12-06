@@ -30,7 +30,7 @@ import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-se
 import { EditEmaPersonaSelectorComponent } from '../components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaToolbarComponent } from '../components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA_ID, DEFAULT_URL, WINDOW } from '../shared/consts';
+import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA, DEFAULT_URL, WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { AddContentletPayload, DeleteContentletPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
@@ -90,7 +90,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
             this.store.load({
                 language_id: queryParams['language_id'] ?? DEFAULT_LANGUAGE_ID,
                 url: queryParams['url'] ?? DEFAULT_URL,
-                persona_id: queryParams['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA_ID
+                persona_id: queryParams['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier
             });
         });
 
@@ -156,7 +156,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     onPersonaSelected(persona: DotPersona & { pageID: string }) {
-        if (persona.identifier === DEFAULT_PERSONA_ID || persona.personalized) {
+        if (persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized) {
             this.router.navigate([], {
                 queryParams: {
                     'com.dotmarketing.persona.id': persona.identifier
@@ -185,7 +185,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                     });
                 },
                 reject: () => {
-                    // this.personaSelector.resetValue();
+                    this.personaSelector.resetValue();
                 }
             });
         }

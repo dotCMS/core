@@ -13,8 +13,6 @@ export const DEFAULT_LANGUAGE_ID = 1;
 
 export const DEFAULT_URL = 'index';
 
-export const DEFAULT_PERSONA_ID = 'modes.persona.no.persona';
-
 export const DEFAULT_PERSONA: DotPersona = {
     hostFolder: 'SYSTEM_HOST',
     inode: '',

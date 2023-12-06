@@ -67,7 +67,7 @@ export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit {
     }
 
     ngAfterViewInit(): void {
-        this.listbox.value = this.value;
+        this.resetValue();
     }
 
     /**
@@ -83,5 +83,14 @@ export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit {
                 pageID: this.pageID
             });
         }
+    }
+
+    /**
+     * Reset the value of the listbox
+     *
+     * @memberof EditEmaPersonaSelectorComponent
+     */
+    resetValue(): void {
+        this.listbox.writeValue(this.value);
     }
 }
