@@ -246,12 +246,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                                 File tempDestBucketFile = null;
                                 final String tempPath = ConfigUtils.getAssetTempPath();
                                 tempDestBucketFile = Paths.get(tempPath, path.toLowerCase()).toFile();
-
-                                if(tempDestBucketFile.exists()) {
-                                    // someone else is already writing it
-                                    throw new IllegalArgumentException("The file: " + path + ", is already being written.");
-                                }
-
                                 final File destBucketFile = Paths.get(groupDir.getCanonicalPath(),path.toLowerCase()).toFile();
 
                                 // someone else already wrote the file meanwhile waiting for the lock
@@ -273,12 +267,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                                     } catch (IOException e) {
                                         Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
                                         throw new DotDataException(e.getMessage(), e);
-                                    } finally {
-
-                                        if (null != tempDestBucketFile) {
-                                            // clean up the temp file older than 1 minute
-                                            tempDestBucketFile.delete();
-                                        }
                                     }
                                 }
 
