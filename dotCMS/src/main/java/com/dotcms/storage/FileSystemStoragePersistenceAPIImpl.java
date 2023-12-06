@@ -10,19 +10,19 @@ import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.FileUtil;
-import java.nio.file.Paths;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
-import org.apache.commons.lang3.mutable.MutableInt;
 
 /**
  * Represents a Storage on the file system The groups here are folder previously registered, you can
@@ -243,9 +243,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                 return lockManager.tryLock(groupName+path,
                         () -> {
 
-                                File tempDestBucketFile = null;
-                                final String tempPath = ConfigUtils.getAssetTempPath();
-                                tempDestBucketFile = Paths.get(tempPath, path.toLowerCase()).toFile();
                                 final File destBucketFile = Paths.get(groupDir.getCanonicalPath(),path.toLowerCase()).toFile();
 
                                 // someone else already wrote the file meanwhile waiting for the lock
@@ -254,6 +251,8 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
                                     try {
 
+                                        final File tempDestBucketFile = com.dotmarketing.util.FileUtil.
+                                                createTemporaryFile(String.valueOf((groupName+path).hashCode()));
                                         final String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
                                         try (OutputStream outputStream = FileUtil.createOutputStream(tempDestBucketFile.toPath(), compressor)) {
                                             writerDelegate.write(outputStream, object);
