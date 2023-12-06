@@ -251,6 +251,7 @@ public class Config {
         String type = "";
         try {
             refreshInterval = props.getInt("config.refreshinterval");
+            Logger.info(Config.class, "Refresh Internal set up to: " + refreshInterval);
             type = "custom";
         } catch (NoSuchElementException e) {
             // Property not present, use default interval value
@@ -288,6 +289,7 @@ public class Config {
             postProperties();
             // check if the configuration for the watcher has changed.
             useWatcherMode.set(getBooleanProperty(DOTCMS_USEWATCHERMODE, false));
+            Logger.info(Config.class, "Watcher mode: " + useWatcherMode.get());
             if (useWatcherMode.get()) {
 
                 registerWatcher(fileToRead);
