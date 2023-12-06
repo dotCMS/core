@@ -150,7 +150,7 @@ public class Config {
      *
      */
     private static void _loadProperties() {
-
+        props.reload(false);
         if (classLoader == null) {
             classLoader = Thread.currentThread().getContextClassLoader();
             Logger.info(Config.class, "Initializing properties reader.");
