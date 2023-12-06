@@ -42,7 +42,7 @@ public class Config {
 
     //Generated File Indicator
     public static final String GENERATED_FILE = "dotGenerated_";
-    public static final AtomicBoolean useWatcherMode = new AtomicBoolean(true);
+    public static final AtomicBoolean useWatcherMode = new AtomicBoolean(false);
     public static final AtomicBoolean isWatching = new AtomicBoolean(false);
 
     public static final Map<String, String> testOverrideTracker = new ConcurrentHashMap<>();
