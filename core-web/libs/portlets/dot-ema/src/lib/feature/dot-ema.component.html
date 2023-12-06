@@ -3,8 +3,23 @@
         <ng-container left>
             <p-button label="Preview" icon="pi pi-desktop" styleClass="p-button-text p-button-sm" />
             <p-button label="Bookmark" icon="pi pi-star" styleClass="p-button-text p-button-sm" />
-            <p-button label="Copy ID" icon="pi pi-copy" styleClass="p-button-text p-button-sm" />
-            <p-button label="API" icon="pi pi-link" styleClass="p-button-text p-button-sm" />
+            <p-button
+                [cdkCopyToClipboard]="vm.iframeUrl"
+                [label]="'editpage.header.copy' | dm"
+                (onClick)="triggerCopyToast()"
+                icon="pi pi-copy"
+                styleClass="p-button-text p-button-sm"
+                data-testId="ema-copy-url" />
+            <a
+                class="p-button-sm p-button-text"
+                [href]="vm.apiURL"
+                [title]="vm.apiURL"
+                pButton
+                target="_blank"
+                data-testId="ema-api-link">
+                <i class="pi pi-link"></i>
+                <span class="p-button-label">API</span>
+            </a>
         </ng-container>
         <ng-container right>
             <dot-edit-ema-language-selector
@@ -62,3 +77,4 @@
         rejectButtonStyleClass="p-button-outlined"
         data-testId="confirm-dialog"></p-confirmDialog>
 </ng-container>
+<p-toast position="top-center" data-testId="ema-toast"></p-toast>

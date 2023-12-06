@@ -1,5 +1,6 @@
 import { Subject, fromEvent } from 'rxjs';
 
+import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -14,15 +15,16 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { ToastModule } from 'primeng/toast';
 
 import { takeUntil } from 'rxjs/operators';
 
 import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotPersona } from '@dotcms/dotcms-models';
-import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaStore } from './store/dot-ema.store';
 
@@ -47,7 +49,10 @@ import { deleteContentletFromContainer, insertContentletInContainer } from '../u
         ConfirmDialogModule,
         EditEmaToolbarComponent,
         EmaLanguageSelectorComponent,
-        EditEmaPersonaSelectorComponent
+        EditEmaPersonaSelectorComponent,
+        ClipboardModule,
+        ToastModule,
+        DotMessagePipe
     ],
     providers: [
         EditEmaStore,
@@ -55,6 +60,7 @@ import { deleteContentletFromContainer, insertContentletInContainer } from '../u
         ConfirmationService,
         DotLanguagesService,
         DotPersonalizeService,
+        MessageService,
         {
             provide: WINDOW,
             useValue: window
@@ -77,6 +83,8 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly personalizeService = inject(DotPersonalizeService);
+
+    private readonly messageService = inject(MessageService);
 
     private savePayload: AddContentletPayload;
 
@@ -189,6 +197,14 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                 }
             });
         }
+    }
+
+    triggerCopyToast() {
+        this.messageService.add({
+            severity: 'success',
+            summary: this.dotMessageService.get('Copied'),
+            life: 3000
+        });
     }
 
     /**

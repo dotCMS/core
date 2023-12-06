@@ -11,6 +11,12 @@
         padding-top: $spacing-3;
     }
 
+    a,
+    a:focus,
+    a:active {
+        text-decoration: none;
+    }
+
     ::ng-deep {
         .p-dialog {
             .p-dialog-content {
