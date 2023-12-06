@@ -1,9 +1,11 @@
 package com.dotcms.storage;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -37,6 +39,8 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
     private final Map<String, File> groups = new ConcurrentHashMap<>();
 
+    private final IdentifierStripedLock lockManager;
+
     /**
      * default constructor
      */
@@ -47,6 +51,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         Logger.debug(FileSystemStoragePersistenceAPIImpl.class, () -> String
                 .format("Default group key is `%s` currently mapped to folder `%s` ", rootGroupKey,
                         rootFolder));
+        lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
     }
 
     /**
@@ -227,7 +232,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         if (!this.existsGroup(groupName)) {
 
             throw new IllegalArgumentException(String.format(
-                    THE_BUCKET_NAME_S_DOES_NOT_HAVE_ANY_FILE_MAPPED,groupName));
+                    THE_BUCKET_NAME_S_DOES_NOT_HAVE_ANY_FILE_MAPPED, groupName));
         }
 
         final File groupDir = groups.get(groupName.toLowerCase());
@@ -235,23 +240,57 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         if (groupDir.canWrite()) {
 
             try {
-                final File destBucketFile = Paths.get(groupDir.getCanonicalPath(),path.toLowerCase()).toFile();
-                this.prepareParent(destBucketFile);
+                return lockManager.tryLock(groupName+path,
+                        () -> {
 
-                final String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
-                try (OutputStream outputStream = FileUtil.createOutputStream(destBucketFile.toPath(), compressor)) {
-                    writerDelegate.write(outputStream, object);
-                    outputStream.flush();
-                }
-            } catch (IOException e) {
-                Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
-                throw new  DotDataException(e.getMessage(),e);
+                                File tempDestBucketFile = null;
+                                final String tempPath = ConfigUtils.getAssetTempPath();
+                                tempDestBucketFile = Paths.get(tempPath, path.toLowerCase()).toFile();
+
+                                if(tempDestBucketFile.exists()) {
+                                    // someone else is already writing it
+                                    throw new IllegalArgumentException("The file: " + path + ", is already being written.");
+                                }
+
+                                final File destBucketFile = Paths.get(groupDir.getCanonicalPath(),path.toLowerCase()).toFile();
+
+                                // someone else already wrote the file meanwhile waiting for the lock
+                                // so, I do not need to write it again
+                                if (!destBucketFile.exists()) {
+
+                                    try {
+
+                                        final String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
+                                        try (OutputStream outputStream = FileUtil.createOutputStream(tempDestBucketFile.toPath(), compressor)) {
+                                            writerDelegate.write(outputStream, object);
+                                            outputStream.flush();
+                                        }
+
+                                        // copy from the temp file to the final destination
+                                        this.prepareParent(destBucketFile);
+
+                                        FileUtil.move(tempDestBucketFile, destBucketFile);
+                                    } catch (IOException e) {
+                                        Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
+                                        throw new DotDataException(e.getMessage(), e);
+                                    } finally {
+
+                                        if (null != tempDestBucketFile) {
+                                            // clean up the temp file older than 1 minute
+                                            tempDestBucketFile.delete();
+                                        }
+                                    }
+                                }
+
+                            return true;
+                        }
+                );
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
             }
         } else {
             throw new IllegalArgumentException("The bucket: " + groupName + " could not write");
         }
-
-        return true;
     }
 
     /**
