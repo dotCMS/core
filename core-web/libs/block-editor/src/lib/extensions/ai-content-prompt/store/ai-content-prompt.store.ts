@@ -14,6 +14,7 @@ export interface AiContentPromptState {
     open: boolean;
     acceptContent: boolean;
     deleteContent: boolean;
+    exit: boolean;
 }
 
 @Injectable({
@@ -27,7 +28,8 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
             content: '',
             open: false,
             acceptContent: false,
-            deleteContent: false
+            deleteContent: false,
+            exit: false
         });
     }
 
@@ -36,10 +38,16 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     readonly content$ = this.select((state) => state.content);
     readonly open$ = this.select((state) => state.open);
     readonly deleteContent$ = this.select((state) => state.deleteContent);
+    readonly exit$ = this.select((state) => state.exit);
     readonly vm$ = this.select((state) => state);
 
     //Updaters
     readonly setOpen = this.updater((state, open: boolean) => ({ ...state, open }));
+    readonly setExit = this.updater((state, exit: boolean) => ({
+        ...state,
+        exit,
+        open: false // Set open to false when exit is updated
+    }));
     readonly setAcceptContent = this.updater((state, acceptContent: boolean) => ({
         ...state,
         acceptContent

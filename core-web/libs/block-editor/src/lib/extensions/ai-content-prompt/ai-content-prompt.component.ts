@@ -65,7 +65,7 @@ export class AIContentPromptComponent implements OnInit, OnDestroy {
      * @memberof AIContentPromptComponent
      */
     handleScape(event: KeyboardEvent): void {
-        this.aiContentPromptStore.setOpen(false);
+        this.aiContentPromptStore.setExit(true);
         event.stopPropagation();
     }
 }

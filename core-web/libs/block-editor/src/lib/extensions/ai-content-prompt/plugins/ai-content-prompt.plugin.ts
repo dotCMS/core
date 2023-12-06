@@ -6,7 +6,7 @@ import tippy, { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
 
-import { filter, takeUntil, tap } from 'rxjs/operators';
+import { filter, skip, takeUntil, tap } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
@@ -36,6 +36,16 @@ export type AIContentPromptViewProps = AIContentPromptProps & {
     view: EditorView;
 };
 
+/**
+ * This class is responsible to create the tippy tooltip and manage the events.
+ *
+ * The Update method is called when editor(Tiptap) state is updated (to often).
+ * there the show() / hide() methods are called if the PluginState property open is true.
+ * the others interactions are done by tippy.hide() and tippy.show() methods.
+ *  - interaction of the click event in the html template.
+ *  - interaction with componentStore.exit$
+ *  - Inside the show() method.
+ */
 export class AIContentPromptView {
     public editor: Editor;
 
@@ -58,6 +68,8 @@ export class AIContentPromptView {
     private storeSate: AiContentPromptState;
 
     private destroy$ = new Subject<boolean>();
+
+    private boundClickHandler = this.handleClick.bind(this);
 
     constructor(props: AIContentPromptViewProps) {
         const { editor, element, view, tippyOptions = {}, pluginKey, component } = props;
@@ -114,15 +126,24 @@ export class AIContentPromptView {
          * Subscription to close the tippy since that can happen on escape listener that is in the html
          * template in ai-content-prompt.component.html
          */
-        this.componentStore.open$
+        this.componentStore.exit$
             .pipe(
+                skip(1),
                 takeUntil(this.destroy$),
-                filter((open) => !open)
+                filter((exit) => exit)
             )
-            .subscribe(() => this.hide(false));
+            .subscribe(() => {
+                this.tippy?.hide();
+                this.componentStore.setExit(false);
+            });
 
+        /**
+         * Subscription to delete AI_CONTENT node.
+         * Fired from the AI Content Actions plugin.
+         */
         this.componentStore.deleteContent$
             .pipe(
+                skip(1),
                 takeUntil(this.destroy$),
                 filter((deleteContent) => deleteContent)
             )
@@ -141,8 +162,6 @@ export class AIContentPromptView {
 
                 this.componentStore.setDeleteContent(false);
             });
-
-        this.editor.view.dom.addEventListener('click', this.handleClick.bind(this));
     }
 
     update(view: EditorView, prevState?: EditorState) {
@@ -155,9 +174,7 @@ export class AIContentPromptView {
             return;
         }
 
-        this.createTooltip();
-
-        next.open ? this.show() : this.hide();
+        next.open ? this.show() : this.hide(this.storeSate.open);
     }
 
     createTooltip() {
@@ -198,38 +215,47 @@ export class AIContentPromptView {
     }
 
     show() {
+        this.createTooltip();
+        this.manageClickListener(true);
         this.editor.setEditable(false);
         this.tippy?.show();
         this.componentStore.setOpen(true);
     }
 
     /**
-     * Hide the tooltip but ignore store update if coming from ai-content-prompt.component.html keyup event.
+     * Hide the tooltip but ignore store update if if open is false already false
+     * this happens when the event comes from ai-content-prompt.component.html escape keyup event.
      *
      * @param notifyStore
      */
     hide(notifyStore = true) {
-        this.tippy?.hide();
+        this.editor.setEditable(true);
+
+        this.editor.view.focus();
         if (notifyStore) {
             this.componentStore.setOpen(false);
         }
 
-        this.editor.setEditable(true);
-
-        this.editor.view.focus();
+        this.manageClickListener(false);
     }
 
     destroy() {
         this.tippy?.destroy();
         this.destroy$.next(true);
         this.destroy$.complete();
-        this.editor.view.dom.removeEventListener('click', this.handleClick.bind(this));
+        this.manageClickListener(false);
     }
 
     handleClick(_event: MouseEvent): void {
         if (this.storeSate.open && !this.storeSate.loading) {
-            this.hide();
+            this.tippy.hide();
         }
+    }
+
+    manageClickListener(addListener: boolean): void {
+        addListener
+            ? this.editor.view.dom.addEventListener('click', this.boundClickHandler)
+            : this.editor.view.dom.removeEventListener('click', this.boundClickHandler);
     }
 }
 
