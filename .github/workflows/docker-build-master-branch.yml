@@ -6,59 +6,38 @@ on:
       - 'main'
       - 'trunk'
       - 'build-and-push-master'
-      - 'issue-24516-slack-notif-master-docker'
 
 jobs:
-  docker:
-    runs-on: ubuntu-20.04
+  build-push-image:
+    name: Build/Push Image
+    uses: ./.github/workflows/maven-build-docker-image.yml
+    with:
+      ref: master
+      docker_platforms: linux/amd64,linux/arm64
+    secrets:
+      docker_io_username: ${{ secrets.DOCKER_USERNAME }}
+      docker_io_token: ${{ secrets.DOCKER_TOKEN }}
+
+  finish-build-push:
+    name: Finish Build/Push
+    needs: build-push-image
+    runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v3
-      -
-        name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          # list of Docker images to use as base name for tags
-          images: |
-            dotcms/dotcms
-          # generate Docker tags based on the following events/attributes
-          tags: |
-            type=sha,enable=true,priority=100,prefix=master_,suffix=_SNAPSHOT,format=short
-            type=raw,value=master_latest_SNAPSHOT
-      -
-        name: Set up QEMU
-        uses: docker/setup-qemu-action@v3.0.0
-      -
-        name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3.0.0
-      -
-        name: Login to Docker Hub
-        uses: docker/login-action@v3.0.0
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-      -
-        name: Pre build
+      - name: Format Tags
+        id: format-tags
         run: |
-          docker system prune --volumes -af
-      - 
-        name: Build and push
-        uses: docker/build-push-action@v5.0.0
-        with:
-          push: true
-          context: docker/dotcms
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta.outputs.tags }}
-          pull: true
-          no-cache: true
-          build-args: |
-            BUILD_ID=${{ github.sha }}
-            BUILD_FROM=COMMIT 
-      -
-        name: Slack Notification
-        if: success()
+          tags=''
+          tags_arr=( ${{ needs.build-push-image.outputs.tags }} )
+
+          for tag in "${tags_arr[@]}"
+          do
+            [[ -n "${tags}" ]] && tags="${tags}, "
+            tags="${tags}\`${tag}\`"
+          done
+
+          echo "tags=${tags}" >> $GITHUB_OUTPUT
+
+      - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.DEVELOPERS_SLACK_WEBHOOK }}
@@ -68,4 +47,5 @@ jobs:
           MSG_MINIMAL: true
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.githubusercontent.com/u/1005263?s=200&v=4
-          SLACK_MESSAGE: "This automated script is happy to announce that a new docker image has been built for *master* with tag: ${{ steps.meta.outputs.tags }} :docker:"
+          SLACK_MESSAGE: "This automated script is happy to announce that a new docker image has been built for *master* with tags: [${{ steps.format-tags.outputs.tags }}] :docker:"
+        if: success()
