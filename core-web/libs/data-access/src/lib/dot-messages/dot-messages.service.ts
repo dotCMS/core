@@ -13,6 +13,7 @@ export interface DotMessageServiceParams {
 }
 
 const DEFAULT_LANG = 'default';
+const LANGUAGE_LOCALSTORAGE_KEY = 'dotMessagesKeys-lang';
 const MESSAGES_LOCALSTORAGE_KEY = 'dotMessagesKeys';
 const BUILDATE_LOCALSTORAGE_KEY = 'buildDate';
 
@@ -66,21 +67,20 @@ export class DotMessageService {
      * @returns {void}
      */
     private getAll(lang: string = DEFAULT_LANG, newBuildDate: string | null = null): void {
-        const currentBuildDate = this.dotLocalstorageService.getItem(BUILDATE_LOCALSTORAGE_KEY);
-        const storedMessages = this.dotLocalstorageService.getItem(MESSAGES_LOCALSTORAGE_KEY) as {
-            [key: string]: string;
-        };
-
-        if (!storedMessages || (newBuildDate && newBuildDate !== currentBuildDate)) {
+        if (this.shouldReloadMessages(lang, newBuildDate)) {
             this.http
                 .get(this.geti18nURL(lang))
                 .pipe(take(1), pluck('entity'))
                 .subscribe((messages) => {
                     this.messageMap = messages as { [key: string]: string };
                     this.dotLocalstorageService.setItem(MESSAGES_LOCALSTORAGE_KEY, this.messageMap);
+                    this.dotLocalstorageService.setItem(LANGUAGE_LOCALSTORAGE_KEY, lang);
+                    this.dotLocalstorageService.setItem(BUILDATE_LOCALSTORAGE_KEY, newBuildDate);
                 });
         } else {
-            this.messageMap = storedMessages;
+            this.messageMap = this.dotLocalstorageService.getItem(MESSAGES_LOCALSTORAGE_KEY) as {
+                [key: string]: string;
+            };
         }
     }
 
@@ -94,5 +94,17 @@ export class DotMessageService {
      */
     private geti18nURL(lang: string): string {
         return `/api/v2/languages/${lang ? lang : 'default'}/keys`;
+    }
+
+    private shouldReloadMessages(lang: string, newBuildDate: string | null): boolean {
+        const currentBuildDate = this.dotLocalstorageService.getItem(BUILDATE_LOCALSTORAGE_KEY);
+        const currentLang = this.dotLocalstorageService.getItem(LANGUAGE_LOCALSTORAGE_KEY);
+        const storedMessages = this.dotLocalstorageService.getItem(MESSAGES_LOCALSTORAGE_KEY);
+
+        return <boolean>(
+            (!storedMessages ||
+                lang !== currentLang ||
+                (newBuildDate && newBuildDate !== currentBuildDate))
+        );
     }
 }
