@@ -90,7 +90,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ ubuntu-latest, macOS-latest ]
+        os: [ ubuntu-latest, macOS-latest, macos-13-arm64 ]
     runs-on: ${{ matrix.os }}
     steps:
       - name: 'Check out repository'
@@ -137,17 +137,17 @@ jobs:
       - name: Build uber-jar
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw package -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=true -pl :dotcms-cli          
+          ./mvnw package -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli          
 
       - name: Build Native Image
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw package -Pnative -DskipTests=true -pl :dotcms-cli
+          ./mvnw package -Pnative -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
 
       - name: Create distribution
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw -B -ntp -Pdist package -DskipTests=true -pl :dotcms-cli
+          ./mvnw -B -ntp -Pdist package -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
 
       - name: Distribution tree
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/
