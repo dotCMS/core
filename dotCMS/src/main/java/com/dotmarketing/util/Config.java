@@ -287,7 +287,7 @@ public class Config {
             Logger.info(Config.class, "dotCMS Properties [" + fileName + "] Loaded");
             postProperties();
             // check if the configuration for the watcher has changed.
-            useWatcherMode.set(getBooleanProperty(DOTCMS_USEWATCHERMODE, true));
+            useWatcherMode.set(getBooleanProperty(DOTCMS_USEWATCHERMODE, false));
             if (useWatcherMode.get()) {
 
                 registerWatcher(fileToRead);
