@@ -287,7 +287,7 @@ public class Config {
             Logger.info(Config.class, "dotCMS Properties [" + fileName + "] Loaded");
             postProperties();
             // check if the configuration for the watcher has changed.
-            useWatcherMode.set(getBooleanProperty(DOTCMS_USEWATCHERMODE, true));
+            useWatcherMode.set(getBooleanProperty(DOTCMS_USEWATCHERMODE, false));
             if (useWatcherMode.get()) {
 
                 registerWatcher(fileToRead);
@@ -547,8 +547,6 @@ public class Config {
             return valueString.split(StringPool.COMMA);
         }
 
-        _refreshProperties();
-
         return props.containsKey(envKey)
                 ? props.getStringArray(envKey)
                 : props.containsKey(name)
@@ -568,8 +566,6 @@ public class Config {
             return Integer.parseInt(valueString);
         }
 
-        _refreshProperties();
-
         Integer value = Try.of(() -> props.getInt(envKey)).getOrNull();
         if (value != null) {
             return value;
@@ -586,7 +582,6 @@ public class Config {
             return Long.parseLong(valueString);
         }
 
-        _refreshProperties();
         Long value = Try.of(() -> props.getLong(envKey)).getOrNull();
         if (value != null) {
             return value;
@@ -607,7 +602,6 @@ public class Config {
             return Integer.parseInt(valueString);
         }
 
-        _refreshProperties();
         Integer value = Try.of(() -> props.getInt(envKey(name))).getOrNull();
         if (value != null) {
             return value;
@@ -627,8 +621,6 @@ public class Config {
         if (null != valueString) {
             return Float.parseFloat(valueString);
         }
-
-        _refreshProperties();
 
         Float value = Try.of(() -> props.getFloat(envKey)).getOrNull();
         if (value != null) {
@@ -651,7 +643,6 @@ public class Config {
             return Float.parseFloat(valueString);
         }
 
-        _refreshProperties();
         Float value = Try.of(() -> props.getFloat(envKey)).getOrNull();
         if (value != null) {
             return value;
@@ -674,7 +665,6 @@ public class Config {
             return Boolean.parseBoolean(valueString);
         }
 
-        _refreshProperties();
         Boolean value = Try.of(() -> props.getBoolean(envKey)).getOrNull();
         if (value != null) {
             return value;
