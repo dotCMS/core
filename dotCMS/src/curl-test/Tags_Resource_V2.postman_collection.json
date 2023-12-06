@@ -1,25 +1,36 @@
 {
 	"info": {
-		"_postman_id": "d24c6acd-94f1-410d-a4e2-40096b329354",
-		"name": "Tags Resource",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"_postman_id": "06743017-e871-4014-81a1-7d902a501d1c",
+		"name": "Tags Resource V2",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
-			"name": "create tags site",
+			"name": "Create test Site for Tags",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"const jsonData = pm.response.json();",
-							"",
-							"pm.collectionVariables.set(\"tagsSiteId\", jsonData.entity.identifier);",
+							"pm.test(\"Retrieve and save the test Site ID where Tags will be saved\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.collectionVariables.set(\"tagsSiteId\", jsonData.entity.identifier);",
+							"});",
 							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set (\"randomNum\", _.random (20,100));"
 						],
 						"type": "text/javascript"
 					}
@@ -45,7 +56,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"siteName\":\"tags.host.com\"\n\n}",
+					"raw": "{\n    \"siteName\":\"tags.host{{randomNum}}.com\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -67,7 +78,7 @@
 			"response": []
 		},
 		{
-			"name": "save-tags",
+			"name": "Save Tags in Site and System Host",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -82,14 +93,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
-							"    const jsonData = pm.response.json();",
-							"    ",
-							"    const tag = jsonData.entity.tags['non-global-tag'];",
-							"    pm.collectionVariables.set(\"tagForUpdateId\", tag.id);",
+							"});",
 							"",
-							"});"
+							"pm.test(\"Retrieve and save the Tag ID to update it later\", function () {",
+							"    const jsonData = pm.response.json();    ",
+							"    const tag = jsonData.entity['non-global-tag-v2'];",
+							"    pm.collectionVariables.set(\"tagForUpdateId\", tag.id);",
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -131,16 +144,16 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n   \"ownerId\":\"dotcms.org.1\",\n   \"tags\":{\n      \"default-site-tag-1\":{\n         \"siteId\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n         \"persona\":false\n      },\n      \"global-tag-1\":{\n         \"siteId\":\"SYSTEM_HOST\",\n         \"persona\":false\n      },\n      \"third-site-tag\":{\n         \"siteId\":\"{{tagsSiteId}}\",\n         \"persona\":false\n      },\n      \"non-global-tag\":{\n         \"siteId\":\"{{tagsSiteId}}\",\n         \"persona\":false\n      }\n   }\n}"
+					"raw": "{\n   \"ownerId\":\"dotcms.org.1\",\n   \"tags\":{\n      \"default-site-tag-1-v2\":{\n         \"siteId\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n         \"persona\":false\n      },\n      \"global-tag-1-v2\":{\n         \"siteId\":\"SYSTEM_HOST\",\n         \"persona\":false\n      },\n      \"third-site-tag-v2\":{\n         \"siteId\":\"{{tagsSiteId}}\",\n         \"persona\":false\n      },\n      \"non-global-tag-v2\":{\n         \"siteId\":\"{{tagsSiteId}}\",\n         \"persona\":false\n      }\n   }\n}"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags/",
+					"raw": "{{serverURL}}/api/v2/tags/",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"v1",
+						"v2",
 						"tags",
 						""
 					]
@@ -150,7 +163,7 @@
 			"response": []
 		},
 		{
-			"name": "update-tag",
+			"name": "Update Tag in test Site",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -165,15 +178,17 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Check that the updated Tag is being returned correctly\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    console.log(jsonData.entity);",
-							"    const tag = jsonData.entity['non-global-tag-changed'];",
-							"    ",
+							"    const tag = jsonData.entity['non-global-tag-v2-changed'];    ",
 							"    pm.expect(tag).not.eql(undefined);",
-							"",
-							"});"
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -215,16 +230,16 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n   \"siteId\":\"{{tagsSiteId}}\",\n   \"tagName\":\"non-global-tag-changed\",\n   \"tagId\":\"{{tagForUpdateId}}\"\n}"
+					"raw": "{\n   \"siteId\":\"{{tagsSiteId}}\",\n   \"tagName\":\"non-global-tag-v2-changed\",\n   \"tagId\":\"{{tagForUpdateId}}\"\n}"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags/",
+					"raw": "{{serverURL}}/api/v2/tags/",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"v1",
+						"v2",
 						"tags",
 						""
 					]
@@ -234,7 +249,7 @@
 			"response": []
 		},
 		{
-			"name": "list-all-tags",
+			"name": "List ALL Tags",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -249,120 +264,125 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
-							"    let jsonData = pm.response.json();",
+							"});",
+							"",
+							"pm.test(\"Verify that ALL four test Tags are listed\", function () {",
+							"    let jsonData = pm.response.json().entity;",
 							"    let size = Object.keys(jsonData).length;",
 							"    pm.expect(size).to.be.greaterThan(0);",
-							"",
 							"    for (const key in jsonData) {",
 							"        let tagObject = jsonData[key];",
-							"        if(\"default-site-tag-1\" === key){           ",
+							"        if(\"default-site-tag-1-v2\" === key){           ",
 							"           pm.collectionVariables.set(\"defaultSiteTag\", tagObject);",
 							"        } ",
-							"        if(\"global-tag-1\" === key) {           ",
+							"        if(\"global-tag-1-v2\" === key) {           ",
 							"           pm.collectionVariables.set(\"globalTag\", tagObject);",
 							"        }",
-							"        if(\"third-site-tag\" === key) {           ",
+							"        if(\"third-site-tag-v2\" === key) {           ",
 							"           pm.collectionVariables.set(\"thirdSiteTag\", tagObject);",
 							"        }",
-							"        if(\"non-global-tag\" === key) {           ",
+							"        if(\"non-global-tag-v2-changed\" === key) {           ",
 							"           pm.collectionVariables.set(\"nonGlobalTag\", tagObject);",
 							"        }",
 							"    }",
-							"        pm.expect(pm.collectionVariables.get(\"defaultSiteTag\")).to.not.eql(undefined);",
-							"        pm.expect(pm.collectionVariables.get(\"globalTag\")).to.not.eql(undefined);",
-							"        pm.expect(pm.collectionVariables.get(\"thirdSiteTag\")).to.not.eql(undefined);",
-							"        pm.expect(pm.collectionVariables.get(\"nonGlobalTag\")).to.not.eql(undefined);",
-							"        ",
+							"    pm.expect(pm.collectionVariables.get(\"defaultSiteTag\")).to.not.eql(undefined);",
+							"    pm.expect(pm.collectionVariables.get(\"globalTag\")).to.not.eql(undefined);",
+							"    pm.expect(pm.collectionVariables.get(\"thirdSiteTag\")).to.not.eql(undefined);",
+							"    pm.expect(pm.collectionVariables.get(\"nonGlobalTag\")).to.not.eql(undefined);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotCMS.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					]
+				},
+				"description": "This tests the endpoint that brings back one specific App given the App-key."
+			},
+			"response": []
+		},
+		{
+			"name": "Get Tag by Name and Site",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
 							"",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotCMS.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [
-					{
-						"key": "Content-Type",
-						"name": "Content-Type",
-						"type": "text",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/tags",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"tags"
-					]
-				},
-				"description": "This tests the endpoint that brings back one specific App given the App-key."
-			},
-			"response": []
-		},
-		{
-			"name": "suggest-tags-by-name-expect-1-match",
-			"event": [
-				{
-					"listen": "prerequest",
-					"script": {
-						"exec": [
+							"pm.test(\"Check that there's at least one Tag matching the name 'default'\", function () {    ",
+							"    let jsonData = pm.response.json();",
+							"    let size = Object.keys(jsonData.entity).length;",
+							"    pm.expect(size).to.be.gte(1);",
+							"});",
 							""
 						],
 						"type": "text/javascript"
 					}
-				},
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);    ",
-							"    let jsonData = pm.response.json();",
-							"    let size = Object.keys(jsonData).length;",
-							"    pm.expect(size).to.be.eq(1);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
 				}
 			],
 			"protocolProfileBehavior": {
@@ -407,106 +427,13 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags?name=global-tag-1",
+					"raw": "{{serverURL}}/api/v2/tags?name=default&siteId=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"v1",
-						"tags"
-					],
-					"query": [
-						{
-							"key": "name",
-							"value": "global-tag-1"
-						},
-						{
-							"key": "siteId",
-							"value": ""
-						}
-					]
-				},
-				"description": "This tests the endpoint that brings back one specific App given the App-key."
-			},
-			"response": []
-		},
-		{
-			"name": "filter-by-tag-name-on-site-where-tag-does-not-exist-expect-no-match",
-			"event": [
-				{
-					"listen": "prerequest",
-					"script": {
-						"exec": [
-							""
-						],
-						"type": "text/javascript"
-					}
-				},
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);    ",
-							"    let jsonData = pm.response.json();",
-							"    let size = Object.keys(jsonData).length;",
-							"    pm.expect(size).to.be.eq(0);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotCMS.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [
-					{
-						"key": "Content-Type",
-						"name": "Content-Type",
-						"type": "text",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/tags?name=default&siteId={{tagsSiteId}}",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
+						"v2",
 						"tags"
 					],
 					"query": [
@@ -516,7 +443,7 @@
 						},
 						{
 							"key": "siteId",
-							"value": "{{tagsSiteId}}"
+							"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
 						}
 					]
 				},
@@ -525,7 +452,7 @@
 			"response": []
 		},
 		{
-			"name": "filter-by-tag-name-on-site-where-tag-belongs-also-expect-global-matches",
+			"name": "Get Tag that does not exist",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -540,12 +467,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);    ",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"There must be not Tag matching the name 'xxx'\", function () {    ",
 							"    let jsonData = pm.response.json();",
-							"    let size = Object.keys(jsonData).length;",
-							"    pm.expect(size).to.be.eq(2); //Returns the global occurrence since the site does not have any match",
-							"});"
+							"    let size = Object.keys(jsonData.entity).length;",
+							"    pm.expect(size).to.be.eq(0);",
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -593,19 +524,19 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags?name=global&siteId={{tagsSiteId}}",
+					"raw": "{{serverURL}}/api/v2/tags?name=xxx&siteId={{tagsSiteId}}",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"v1",
+						"v2",
 						"tags"
 					],
 					"query": [
 						{
 							"key": "name",
-							"value": "global"
+							"value": "xxx"
 						},
 						{
 							"key": "siteId",
@@ -618,7 +549,7 @@
 			"response": []
 		},
 		{
-			"name": "suggest-tags-invalid-sites",
+			"name": "Get Tag from non-existing Site",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -633,9 +564,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 400\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(400);    ",
-							"});"
+							"});",
+							"",
+							"pm.test(\"The 'error' attribute must be present\", function () {    ",
+							"    let jsonData = pm.response.json();",
+							"    let error = jsonData.error;",
+							"    pm.expect(error).to.not.eql(undefined);",
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -683,13 +621,13 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags?name=global&siteId=any-invalid-id",
+					"raw": "{{serverURL}}/api/v2/tags?name=global&siteId=any-invalid-id",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"v1",
+						"v2",
 						"tags"
 					],
 					"query": [
@@ -708,7 +646,7 @@
 			"response": []
 		},
 		{
-			"name": "get-tag-by-user-id",
+			"name": "Get Tags owned by a User ID",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -723,13 +661,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);    ",
+							"});",
+							"",
+							"pm.test(\"There must be at least one Tag owned by 'dotcms.org.1'\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    let size = Object.keys(jsonData.entity).length;",
 							"    pm.expect(size).to.be.greaterThan(0);",
-							"    ",
-							"});"
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -777,13 +718,13 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags/user/dotcms.org.1",
+					"raw": "{{serverURL}}/api/v2/tags/user/dotcms.org.1",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"v1",
+						"v2",
 						"tags",
 						"user",
 						"dotcms.org.1"
@@ -794,7 +735,7 @@
 			"response": []
 		},
 		{
-			"name": "get-tag-by-name",
+			"name": "Get Tag by its name",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -809,8 +750,11 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Return the expected Tag by name and save its ID\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    let size = Object.keys(jsonData.entity).length;",
 							"    pm.expect(size).to.be.greaterThan(0);",
@@ -818,7 +762,8 @@
 							"    const key = keys[0];",
 							"    const id = jsonData.entity[key].id;",
 							"    pm.collectionVariables.set(\"retrievedTagId\", id);",
-							"});"
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -866,15 +811,15 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags/third-site-tag",
+					"raw": "{{serverURL}}/api/v2/tags/third-site-tag-v2",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"v1",
+						"v2",
 						"tags",
-						"third-site-tag"
+						"third-site-tag-v2"
 					]
 				},
 				"description": "This tests the endpoint that brings back one specific App given the App-key."
@@ -882,7 +827,7 @@
 			"response": []
 		},
 		{
-			"name": "get-tag-by-id",
+			"name": "Get Tag by its ID",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -897,16 +842,19 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);    ",
+							"});",
+							"",
+							"pm.test(\"Return the expected Tag by ID\", function () {",
 							"    var jsonData = pm.response.json();",
 							"    let size = Object.keys(jsonData.entity).length;",
 							"    pm.expect(size).to.be.greaterThan(0);",
 							"    const keys = Object.keys(jsonData.entity);",
 							"    const key = keys[0];",
-							"    pm.expect(key).equals(\"third-site-tag\");",
-							"    ",
-							"});"
+							"    pm.expect(key).equals(\"third-site-tag-v2\");",
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -954,13 +902,13 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags/{{retrievedTagId}}",
+					"raw": "{{serverURL}}/api/v2/tags/{{retrievedTagId}}",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"v1",
+						"v2",
 						"tags",
 						"{{retrievedTagId}}"
 					]
@@ -970,7 +918,7 @@
 			"response": []
 		},
 		{
-			"name": "delete tag",
+			"name": "Delete a specific Tag",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -986,9 +934,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
-							"});"
+							"});",
+							"",
+							"pm.test(\"There must be no generated errors\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    let errors = jsonData.errors.length;",
+							"    pm.expect(errors).to.be.eq(0);",
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -1033,13 +988,13 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags/{{tagForUpdateId}}",
+					"raw": "{{serverURL}}/api/v2/tags/{{tagForUpdateId}}",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"v1",
+						"v2",
 						"tags",
 						"{{tagForUpdateId}}"
 					]
@@ -1049,7 +1004,7 @@
 			"response": []
 		},
 		{
-			"name": "delete-tag-invalid-id",
+			"name": "Delet a non-existing Tag",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -1064,9 +1019,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 404\", function () {",
+							"pm.test(\"HTTP Status code must be 404\", function () {",
 							"    pm.response.to.have.status(404);",
-							"});"
+							"});",
+							"",
+							"pm.test(\"The error message must be present\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    let errorMsg = jsonData.message;",
+							"    pm.expect(errorMsg).to.not.eql(undefined);",
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -1111,13 +1073,13 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags/0",
+					"raw": "{{serverURL}}/api/v2/tags/0",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"v1",
+						"v2",
 						"tags",
 						"0"
 					]
@@ -1127,15 +1089,22 @@
 			"response": []
 		},
 		{
-			"name": "import-tags",
+			"name": "Import Tags from CSV file",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test.skip(\"Status code is 200\", function () {",
+							"pm.test.skip(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
-							"});"
+							"});",
+							"",
+							"pm.test(\"There must be no generated errors\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    let errors = jsonData.errors.length;",
+							"    pm.expect(errors).to.be.eq(0);",
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -1193,13 +1162,13 @@
 					]
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags/import",
+					"raw": "{{serverURL}}/api/v2/tags/import",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"v1",
+						"v2",
 						"tags",
 						"import"
 					]
@@ -1209,7 +1178,7 @@
 			"response": []
 		},
 		{
-			"name": "link-inode-tag",
+			"name": "Link a Tag to a specific Inode",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -1224,10 +1193,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
 							"    pm.response.to.have.status(200);",
+							"});",
 							"",
-							"});"
+							"pm.test(\"The 'fieldVarName' must be '1000'\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    let fieldVarName = jsonData.entity[0].fieldVarName;",
+							"    pm.expect(fieldVarName).to.equal(\"1000\");",
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -1272,13 +1247,13 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/tags/tag/{{retrievedTagId}}/inode/1000",
+					"raw": "{{serverURL}}/api/v2/tags/tag/{{retrievedTagId}}/inode/1000",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
-						"v1",
+						"v2",
 						"tags",
 						"tag",
 						"{{retrievedTagId}}",
@@ -1312,60 +1287,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "site_id",
-			"value": ""
-		},
-		{
-			"key": "43333",
-			"value": ""
-		},
-		{
-			"key": "globalTag",
-			"value": ""
-		},
-		{
-			"key": "personaTag",
-			"value": ""
-		},
-		{
-			"key": "siteSpecificTag",
-			"value": ""
-		},
-		{
-			"key": "siteId",
-			"value": ""
-		},
-		{
-			"key": "tagsSiteId",
-			"value": ""
-		},
-		{
-			"key": "defaultSiteTag",
-			"value": ""
-		},
-		{
-			"key": "thirdSiteTag",
-			"value": ""
-		},
-		{
-			"key": "nonGlobalTag",
-			"value": ""
-		},
-		{
-			"key": "deleteTagCandidateId",
-			"value": ""
-		},
-		{
-			"key": "retrievedTagId",
-			"value": ""
-		},
-		{
-			"key": "tagForUpdateId",
-			"value": ""
 		}
 	]
 }

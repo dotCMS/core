@@ -1,4 +1,4 @@
-name: Release Trigger
+name: Label Issues
 
 on:
   workflow_dispatch:
