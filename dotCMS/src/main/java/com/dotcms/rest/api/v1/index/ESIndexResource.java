@@ -380,6 +380,7 @@ public class ESIndexResource {
                     @PathParam("indexName") final String indexName) throws DotDataException {
         
         final InitDataObject init = auth(request, response);
+        Logger.info(this.getClass(),"Index DELETE Call via REST API. Index: " + indexName + " User: " + init.getUser());
 
         if(indexExists(indexName) ){
             return Response.status(404).build();
