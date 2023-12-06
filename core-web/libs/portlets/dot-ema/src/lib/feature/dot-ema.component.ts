@@ -20,14 +20,16 @@ import { DialogModule } from 'primeng/dialog';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaStore } from './store/dot-ema.store';
 
+import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaToolbarComponent } from '../components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { WINDOW } from '../shared/consts';
+import { DEFAULT_LANGUAGE_ID, DEFAULT_URL, WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { AddContentletPayload, DeleteContentletPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
@@ -41,12 +43,15 @@ import { deleteContentletFromContainer, insertContentletInContainer } from '../u
         SafeUrlPipe,
         DialogModule,
         DotSpinnerModule,
-        ConfirmDialogModule
+        ConfirmDialogModule,
+        EditEmaToolbarComponent,
+        EmaLanguageSelectorComponent
     ],
     providers: [
         EditEmaStore,
         DotPageApiService,
         ConfirmationService,
+        DotLanguagesService,
         {
             provide: WINDOW,
             useValue: window
@@ -61,17 +66,6 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
 
     readonly destroy$ = new Subject<boolean>();
-
-    languages = [
-        {
-            name: 'English',
-            value: '1'
-        },
-        {
-            name: 'Spanish',
-            value: '2'
-        }
-    ];
 
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
@@ -91,11 +85,11 @@ export class DotEmaComponent implements OnInit, OnDestroy {
             const queryParams = {};
 
             if (!language_id) {
-                queryParams['language_id'] = '1';
+                queryParams['language_id'] = DEFAULT_LANGUAGE_ID;
             }
 
             if (!url) {
-                queryParams['url'] = 'index';
+                queryParams['url'] = DEFAULT_URL;
             }
 
             if (Object.keys(queryParams).length > 0) {
@@ -106,8 +100,8 @@ export class DotEmaComponent implements OnInit, OnDestroy {
             }
 
             this.store.load({
-                language_id: language_id || '1',
-                url: url || 'index'
+                language_id: language_id || DEFAULT_LANGUAGE_ID,
+                url: url || DEFAULT_URL
             });
         });
 
@@ -143,36 +137,27 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Updates store value and navigates with updated query parameters on select element change event.
-     *
-     * @param {Event} e
-     * @memberof DotEmaComponent
-     */
-    onChange(e: Event) {
-        const name = (e.target as HTMLSelectElement).name;
-        const value = (e.target as HTMLSelectElement).value;
-
-        switch (name) {
-            case 'language_id':
-                this.store.setLanguage(value);
-                break;
-        }
-
-        this.router.navigate([], {
-            queryParams: {
-                [name]: value
-            },
-            queryParamsHandling: 'merge'
-        });
-    }
-
-    /**
      * Handle the dialog close event
      *
      * @memberof DotEmaComponent
      */
     resetDialogIframeData() {
         this.store.resetDialog();
+    }
+
+    /**
+     * Handle the language selection
+     *
+     * @param {number} language_id
+     * @memberof DotEmaComponent
+     */
+    onLanguageSelected(language_id: number) {
+        this.router.navigate([], {
+            queryParams: {
+                language_id
+            },
+            queryParamsHandling: 'merge'
+        });
     }
 
     /**

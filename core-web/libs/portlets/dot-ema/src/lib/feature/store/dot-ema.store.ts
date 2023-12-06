@@ -5,19 +5,17 @@ import { Injectable } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
-import { DotPageApiParams, DotPageApiService } from '../../services/dot-page-api.service';
+import {
+    DotPageApiParams,
+    DotPageApiResponse,
+    DotPageApiService
+} from '../../services/dot-page-api.service';
 import { ADD_CONTENTLET_URL, EDIT_CONTENTLET_URL } from '../../shared/consts';
 import { SavePagePayload } from '../../shared/models';
 
 export interface EditEmaState {
-    language_id: string;
     url: string;
-    editor: {
-        page: {
-            title: string;
-            identifier: string;
-        };
-    };
+    editor: DotPageApiResponse;
     dialogIframeURL: string;
     dialogVisible: boolean;
     dialogHeader: string;
@@ -28,12 +26,20 @@ export interface EditEmaState {
 export class EditEmaStore extends ComponentStore<EditEmaState> {
     constructor(private dotPageApiService: DotPageApiService) {
         super({
-            language_id: '',
             url: '',
             editor: {
                 page: {
                     title: '',
                     identifier: ''
+                },
+                viewAs: {
+                    language: {
+                        id: 1,
+                        language: '',
+                        countryCode: '',
+                        languageCode: '',
+                        country: ''
+                    }
                 }
             },
             dialogIframeURL: '',
@@ -44,22 +50,25 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }
 
     readonly iframeUrl$: Observable<string> = this.select(
-        ({ url, language_id }) => `http://localhost:3000/${url}?language_id=${language_id}`
+        ({ url, editor }) => `http://localhost:3000/${url}?language_id=${editor.viewAs.language.id}`
     );
-    readonly language_id$: Observable<string> = this.select((state) => state.language_id);
+    readonly language_id$: Observable<number> = this.select(
+        (state) => state.editor.viewAs.language.id
+    );
     readonly url$: Observable<string> = this.select((state) => state.url);
     readonly pageTitle$: Observable<string> = this.select((state) => state.editor.page.title);
     readonly editIframeURL$: Observable<string> = this.select((state) => state.dialogIframeURL);
+    readonly editor$: Observable<DotPageApiResponse> = this.select((state) => state.editor);
 
     readonly vm$ = this.select((state) => {
         return {
-            iframeUrl: `http://localhost:3000/${state.url}?language_id=${state.language_id}`,
-            language_id: state.language_id,
+            iframeUrl: `http://localhost:3000/${state.url}?language_id=${state.editor.viewAs.language.id}`,
             pageTitle: state.editor.page.title,
             dialogIframeURL: state.dialogIframeURL,
             dialogVisible: state.dialogVisible,
             dialogHeader: state.dialogHeader,
-            dialogIframeLoading: state.dialogIframeLoading
+            dialogIframeLoading: state.dialogIframeLoading,
+            editor: state.editor
         };
     });
 
@@ -76,7 +85,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                         next: (editor) => {
                             this.patchState({
                                 editor,
-                                language_id,
                                 url
                             });
                         },
@@ -113,11 +121,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             )
         );
     });
-
-    readonly setLanguage = this.updater((state, language_id: string) => ({
-        ...state,
-        language_id
-    }));
 
     readonly setURL = this.updater((state, url: string) => ({
         ...state,

@@ -1,4 +1,4 @@
-package com.dotcms.api.client;
+package com.dotcms.api.client.model;
 
 import io.smallrye.config.ConfigMapping;
 import java.net.URI;

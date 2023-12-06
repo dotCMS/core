@@ -1,9 +1,7 @@
-package com.dotcms.api.client;
+package com.dotcms.api.client.model;
 
-import com.dotcms.ContainerResource;
 import com.dotcms.DotCMSITProfile;
-import io.quarkus.test.common.QuarkusTestResource;
-import io.quarkus.test.junit.QuarkusIntegrationTest;
+import com.dotcms.api.client.model.DotCmsClientConfig;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import javax.inject.Inject;
