@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { APP_INITIALIZER, NgModule } from '@angular/core';
+import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
@@ -30,10 +30,6 @@ import { DotAiService, DotUploadFileService, EditorDirective } from './shared';
 import { PrimengModule } from './shared/primeng.module';
 import { SharedModule } from './shared/shared.module';
 
-const initTranslations = (dotMessageService: DotMessageService) => {
-    return () => dotMessageService.init();
-};
-
 @NgModule({
     imports: [
         CommonModule,
@@ -63,19 +59,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         AIContentPromptComponent,
         AIContentActionsComponent
     ],
-    providers: [
-        DotUploadFileService,
-        LoggerService,
-        StringUtils,
-        DotAiService,
-        DotMessageService,
-        {
-            provide: APP_INITIALIZER,
-            useFactory: initTranslations,
-            deps: [DotMessageService],
-            multi: true
-        }
-    ],
+    providers: [DotUploadFileService, LoggerService, StringUtils, DotAiService, DotMessageService],
     exports: [
         EditorDirective,
         BubbleMenuComponent,

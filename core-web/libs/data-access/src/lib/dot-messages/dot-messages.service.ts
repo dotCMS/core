@@ -12,61 +12,42 @@ export interface DotMessageServiceParams {
     language?: string;
 }
 
+const DEFAULT_LANG = 'default';
+const MESSAGES_LOCALSTORAGE_KEY = 'dotMessagesKeys';
+const BUILDATE_LOCALSTORAGE_KEY = 'buildDate';
+
 @Injectable({
     providedIn: 'root'
 })
 export class DotMessageService {
     private messageMap: { [key: string]: string } = {};
-    private MESSAGES_LOCALSTORAGE_KEY = 'dotMessagesKeys';
-    private BUILDATE_LOCALSTORAGE_KEY = 'buildDate';
 
     constructor(
         private readonly http: HttpClient,
         private readonly dotLocalstorageService: DotLocalstorageService
-    ) {}
-
-    /**
-     * Get all messages keys form endpoint if they are not set in the localStorage.
-     * If a language is passed or if buildDate is different than what is local then
-     * key messages in localStorage are replaced
-     *
-     * @memberof DotMessageService
-     * @param params
-     */
-    init(params?: DotMessageServiceParams): void {
-        if (
-            params &&
-            (this.dotLocalstorageService.getItem(this.BUILDATE_LOCALSTORAGE_KEY) !==
-                params?.buildDate ||
-                params.language)
-        ) {
-            this.getAll(params.language || 'default');
-
-            if (params.buildDate) {
-                this.dotLocalstorageService.setItem(
-                    this.BUILDATE_LOCALSTORAGE_KEY,
-                    params.buildDate
-                );
-            }
-        } else {
-            const keys: { [key: string]: string } = this.dotLocalstorageService.getItem(
-                this.MESSAGES_LOCALSTORAGE_KEY
-            );
-            if (!keys) {
-                this.getAll(params?.language || 'default');
-            } else {
-                this.messageMap = keys;
-            }
-        }
+    ) {
+        this.getAll();
     }
 
     /**
-     * Return the message key value, formatted if more values are passed.
+     * Initializes the DotMessageService.
+     * @param {DotMessageServiceParams} params - The parameters for initialization.
+     * @return {void}
+     */
+    init(params?: DotMessageServiceParams): void {
+        const lang = params?.language || DEFAULT_LANG;
+        const buildDate = params?.buildDate || null;
+
+        this.getAll(lang, buildDate);
+    }
+
+    /**
+     * Retrieves the value associated with the specified key from the message map.
      *
-     * @returns string
-     * @memberof DotMessageService
-     * @param key
-     * @param args
+     * @param {string} key - The key used to retrieve the value from the message map.
+     * @param {...string} args - Optional arguments to be passed to the value, if it is a format string.
+     * @return {string} - The value associated with the key. If the key is not found in the message map,
+     *                    the key itself will be returned.
      */
     get(key: string, ...args: string[]): string {
         return this.messageMap[key]
@@ -76,19 +57,41 @@ export class DotMessageService {
             : key;
     }
 
-    private getAll(lang: string): void {
-        this.http
-            .get(this.geti18nURL(lang))
-            .pipe(take(1), pluck('entity'))
-            .subscribe((messages) => {
-                this.messageMap = messages as { [key: string]: string };
-                this.dotLocalstorageService.setItem(
-                    this.MESSAGES_LOCALSTORAGE_KEY,
-                    this.messageMap
-                );
-            });
+    /**
+     * Retrieves all the messages for a specific language.
+     *
+     * @param {string} lang - The language code for the messages.
+     * @param newBuildDate
+     * @private
+     * @returns {void}
+     */
+    private getAll(lang: string = DEFAULT_LANG, newBuildDate: string | null = null): void {
+        const currentBuildDate = this.dotLocalstorageService.getItem(BUILDATE_LOCALSTORAGE_KEY);
+        const storedMessages = this.dotLocalstorageService.getItem(MESSAGES_LOCALSTORAGE_KEY) as {
+            [key: string]: string;
+        };
+
+        if (!storedMessages || (newBuildDate && newBuildDate !== currentBuildDate)) {
+            this.http
+                .get(this.geti18nURL(lang))
+                .pipe(take(1), pluck('entity'))
+                .subscribe((messages) => {
+                    this.messageMap = messages as { [key: string]: string };
+                    this.dotLocalstorageService.setItem(MESSAGES_LOCALSTORAGE_KEY, this.messageMap);
+                });
+        } else {
+            this.messageMap = storedMessages;
+        }
     }
 
+    /**
+     * Returns the URL for the i18n API endpoint based on the given language.
+     * If no language is provided, the default language is used.
+     *
+     * @param {string} lang - The language code.
+     * @returns {string} The URL for the i18n API endpoint.
+     * @private
+     */
     private geti18nURL(lang: string): string {
         return `/api/v2/languages/${lang ? lang : 'default'}/keys`;
     }
