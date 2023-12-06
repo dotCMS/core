@@ -76,10 +76,10 @@ export class EditContentLayoutComponent {
     /**
      * Set the form value to be saved.
      *
-     * @param {*} event - An object containing the key-value pairs of the contentlet to be saved.
+     * @param {{ [key: string]: string }} formValue - An object containing the key-value pairs of the contentlet to be saved.
      * @memberof EditContentLayoutComponent
      */
-    setFormValue(value) {
-        this.formValue = value;
+    setFormValue(formValue: { [key: string]: string }) {
+        this.formValue = formValue;
     }
 }

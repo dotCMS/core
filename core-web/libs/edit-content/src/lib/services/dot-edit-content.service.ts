@@ -32,12 +32,12 @@ export class DotEditContentService {
      */
     getContentTypeFormData(idOrVar: string): Observable<EditContentFormData> {
         return this.dotContentTypeService.getContentType(idOrVar).pipe(
-            map(({ layout, fields }): EditContentFormData => {
-                return {
+            map(
+                ({ layout, fields }): EditContentFormData => ({
                     layout,
                     fields
-                };
-            })
+                })
+            )
         );
     }
 

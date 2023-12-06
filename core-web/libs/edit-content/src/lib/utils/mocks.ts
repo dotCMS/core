@@ -765,6 +765,31 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
     }
 ];
 
+export const TAB_DIVIDER_MOCK = {
+    divider: {
+        clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+        contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
+        dataType: 'SYSTEM',
+        fieldType: 'Tab_divider',
+        fieldTypeLabel: 'Tab_divider',
+        fieldVariables: [],
+        fixed: false,
+        iDate: 1697051073000,
+        id: 'a31ea895f80eb0a3754e4a2292e09a52',
+        indexed: false,
+        listed: false,
+        modDate: 1697051077000,
+        name: 'New Tab',
+        readOnly: false,
+        required: false,
+        searchable: false,
+        sortOrder: 0,
+        unique: false,
+        variable: 'tab'
+    },
+    columns: []
+};
+
 export const MOCK_DATE = 1699990073562;
 
 export const JUST_FIELDS_MOCKS = getAllFields(LAYOUT_MOCK);

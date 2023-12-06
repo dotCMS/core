@@ -19,6 +19,7 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { TabViewModule } from 'primeng/tabview';
 
+import { DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
@@ -56,7 +57,9 @@ export class DotEditContentFormComponent implements OnInit {
     @Input() formData!: EditContentFormData;
     @Output() changeValue = new EventEmitter();
 
-    private fb = inject(FormBuilder);
+    private readonly fb = inject(FormBuilder);
+    private readonly dotMessageService = inject(DotMessageService);
+
     protected tabs: DotCMSContentTypeLayoutTab[] = [];
     form!: FormGroup;
 
@@ -160,7 +163,7 @@ export class DotEditContentFormComponent implements OnInit {
     ): DotCMSContentTypeLayoutTab[] {
         const initialTab = [
             {
-                title: 'Content',
+                title: this.dotMessageService.get('Content'),
                 layout: []
             }
         ];

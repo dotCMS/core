@@ -14,19 +14,22 @@ import {
     JUST_FIELDS_MOCKS,
     LAYOUT_FIELDS_VALUES_MOCK,
     LAYOUT_MOCK,
-    MOCK_DATE
+    MOCK_DATE,
+    TAB_DIVIDER_MOCK
 } from '../../utils/mocks';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 
 describe('DotFormComponent', () => {
     let spectator: Spectator<DotEditContentFormComponent>;
+    let dotMessageService: DotMessageService;
     const createComponent = createComponentFactory({
         component: DotEditContentFormComponent,
         providers: [
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
-                    Save: 'Save'
+                    Save: 'Save',
+                    Content: 'content'
                 })
             }
         ]
@@ -117,45 +120,24 @@ describe('DotFormComponent', () => {
     describe('with data and multiple tabs', () => {
         beforeEach(() => {
             spectator = createComponent({
+                detectChanges: false,
                 props: {
                     formData: {
                         ...CONTENT_FORM_DATA_MOCK,
-                        layout: [
-                            ...LAYOUT_MOCK,
-                            {
-                                divider: {
-                                    clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
-                                    contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-                                    dataType: 'SYSTEM',
-                                    fieldType: 'tab-divider',
-                                    fieldTypeLabel: 'tab-divider',
-                                    fieldVariables: [],
-                                    fixed: false,
-                                    iDate: 1697051073000,
-                                    id: 'a31ea895f80eb0a3754e4a2292e09a52',
-                                    indexed: false,
-                                    listed: false,
-                                    modDate: 1697051077000,
-                                    name: 'New Tab',
-                                    readOnly: false,
-                                    required: false,
-                                    searchable: false,
-                                    sortOrder: 0,
-                                    unique: false,
-                                    variable: 'tab'
-                                },
-                                columns: []
-                            }
-                        ]
+                        layout: [...LAYOUT_MOCK, TAB_DIVIDER_MOCK]
                     }
                 }
             });
+            dotMessageService = spectator.inject(DotMessageService, true);
         });
 
         it('should have a p-tabView', () => {
+            jest.spyOn(dotMessageService, 'get');
+            spectator.detectChanges();
             const tabViewComponent = spectator.query(TabView);
             expect(tabViewComponent.scrollable).toBeTruthy();
             expect(tabViewComponent).toExist();
+            expect(dotMessageService.get).toHaveBeenCalled();
         });
     });
 });
