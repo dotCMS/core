@@ -40,7 +40,7 @@ export type AIContentPromptViewProps = AIContentPromptProps & {
  * This class is responsible to create the tippy tooltip and manage the events.
  *
  * The Update method is called when editor(Tiptap) state is updated (to often).
- * there the show() / hide() methods are called if the PluginState property open is true.
+ * then the show() / hide() methods are called if the PluginState property open is true.
  * the others interactions are done by tippy.hide() and tippy.show() methods.
  *  - interaction of the click event in the html template.
  *  - interaction with componentStore.exit$
@@ -223,7 +223,7 @@ export class AIContentPromptView {
     }
 
     /**
-     * Hide the tooltip but ignore store update if if open is false already false
+     * Hide the tooltip but ignore store update  if open is false already
      * this happens when the event comes from ai-content-prompt.component.html escape keyup event.
      *
      * @param notifyStore
@@ -246,12 +246,22 @@ export class AIContentPromptView {
         this.manageClickListener(false);
     }
 
-    handleClick(_event: MouseEvent): void {
+    /**
+     * Handles the click event on the editor's DOM. If the AI content prompt is open
+     * and not in a loading state, this function hides the associated Tippy tooltip.
+     */
+    handleClick(): void {
         if (this.storeSate.open && !this.storeSate.loading) {
             this.tippy.hide();
         }
     }
 
+    /**
+     * Manages the click event listener on the editor's DOM based on the specified condition.
+     * If `addListener` is `true`, the click event listener is added; otherwise, it is removed.
+     *
+     * @param addListener - A boolean indicating whether to add or remove the click event listener.
+     */
     manageClickListener(addListener: boolean): void {
         addListener
             ? this.editor.view.dom.addEventListener('click', this.boundClickHandler)

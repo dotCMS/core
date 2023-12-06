@@ -77,8 +77,6 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     });
 
     /**
-     * An effect to trigger the generation of content using the last prompt in the store.
-     *
      * When this effect is triggered, it uses the latest prompt value from the store's state
      * to generate content using the `generateContent` effect.
      *
