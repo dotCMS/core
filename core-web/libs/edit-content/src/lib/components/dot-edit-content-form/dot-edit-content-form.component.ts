@@ -139,11 +139,6 @@ export class DotEditContentFormComponent implements OnInit {
                     .replace(/T|\.\d{3}Z/g, (match: string) => (match === 'T' ? ' ' : '')); // To remove the T and .000Z from the date)
             }
         });
-
         this.changeValue.emit(value);
     }
-
-    // private formatData() {
-
-    // }
 }

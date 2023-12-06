@@ -1,7 +1,7 @@
 <form class="p-fluid" *ngIf="form" [formGroup]="form">
     <!-- Move to the component - Conditional -->
     <ng-container *ngIf="areMultipleTabs; else singleForm">
-        <p-tabView>
+        <p-tabView [scrollable]="true">
             <p-tabPanel *ngFor="let tab of formData.tabs" [header]="tab.title">
                 <ng-container *ngTemplateOutlet="tabTemplate; context: { tab: tab }" />
             </p-tabPanel>

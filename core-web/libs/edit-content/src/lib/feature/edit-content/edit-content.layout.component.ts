@@ -30,6 +30,7 @@ export class EditContentLayoutComponent {
     public identifier = this.activatedRoute.snapshot.params['id'];
 
     private readonly dotEditContentService = inject(DotEditContentService);
+    private formValue: { [key: string]: string };
     isContentSaved = false;
 
     formData$: Observable<EditContentFormData> = this.identifier
@@ -57,12 +58,11 @@ export class EditContentLayoutComponent {
 
     /**
      * Saves the contentlet with the given values.
-     * @param value - An object containing the key-value pairs of the contentlet to be saved.
      */
-    saveContent(value: { [key: string]: string }) {
+    saveContent() {
         this.dotEditContentService
             .saveContentlet({
-                ...value,
+                ...this.formValue,
                 inode: this.identifier,
                 contentType: this.contentType
             })
@@ -74,7 +74,13 @@ export class EditContentLayoutComponent {
             });
     }
 
-    changeValue(_event) {
-        /* WIF*/
+    /**
+     * Set the form value to be saved.
+     *
+     * @param {*} event - An object containing the key-value pairs of the contentlet to be saved.
+     * @memberof EditContentLayoutComponent
+     */
+    setFormValue(value) {
+        this.formValue = value;
     }
 }
