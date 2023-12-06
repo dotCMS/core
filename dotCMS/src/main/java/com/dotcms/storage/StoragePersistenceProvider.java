@@ -5,6 +5,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.io.File;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,9 +43,9 @@ public final class StoragePersistenceProvider {
     }
 
 
-    final static Lazy<String> storageType = Lazy.of(()->{
-        return Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.FILE_SYSTEM.name());
-
+    final static Lazy<StorageType> storageType = Lazy.of(()->{
+        String storageType= Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.FILE_SYSTEM.name());
+        return Try.of(()->StorageType.valueOf(storageType)).getOrElse(StorageType.FILE_SYSTEM);
     });
 
     /**
@@ -52,8 +53,7 @@ public final class StoragePersistenceProvider {
      * @return
      */
     public static StorageType getStorageType(){
-
-        return StorageType.valueOf(storageType.get());
+        return storageType.get();
     }
 
     /**
