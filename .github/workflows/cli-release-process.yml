@@ -90,7 +90,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ ubuntu-latest, macOS-latest, macos-13-arm64 ]
+        os: [ ubuntu-latest, macOS-latest, macos-13-xlarge ]
     runs-on: ${{ matrix.os }}
     steps:
       - name: 'Check out repository'
