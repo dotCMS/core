@@ -44,7 +44,12 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
 
                 return this.dotAiService.generateContent(prompt).pipe(
                     tap((content) => this.patchState({ loading: false, content })),
-                    catchError(() => of(null))
+                    catchError(() => {
+                        //TODO: Notify to handle error in the UI.
+                        this.patchState({ loading: false, content: '' });
+
+                        return of(null);
+                    })
                 );
             })
         );

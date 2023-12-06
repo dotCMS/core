@@ -68,7 +68,7 @@
             <outputDirectory>docs</outputDirectory>
         </fileSet>
     </fileSets>
-    <!--x
+    <!--
     <files>
         <file>
             <source>${project.build.directory}/${project.artifactId}-${project.version}.jar</source>

@@ -3,12 +3,11 @@
         [(visible)]="vm.showDialog"
         [dismissableMask]="true"
         [draggable]="false"
-        [modal]="true"
         [resizable]="false"
         [style]="{ width: '800px' }"
         (onHide)="hideDialog()"
         appendTo="body"
-        header="Generate AI Image">
+        header="{{ 'block-editor.extension.ai-image.dialog-title' | dm }}">
         <div class="dialog-prompts__wrapper grid">
             <dot-ai-image-prompt-input
                 class="col"
@@ -16,7 +15,7 @@
                 [selected]="vm.selectedPromptType === 'input'"
                 (click)="selectType('input', vm.selectedPromptType)"
                 (promptChanged)="generateImage($event)"
-                placeholder="Create a realistic image of a cow in the snow"
+                placeholder="{{ 'block-editor.extension.ai-image.input-text.placeholder' | dm }}"
                 type="input" />
 
             <dot-ai-image-prompt-input
@@ -25,7 +24,7 @@
                 [selected]="vm.selectedPromptType === 'auto'"
                 (click)="selectType('auto', vm.selectedPromptType)"
                 (promptChanged)="generateImage($event)"
-                placeholder="E.g. 1200x800px, vibrant colors, impressionistic, adventurous."
+                placeholder="{{ 'block-editor.extension.ai-image.auto-text.placeholder' | dm }}"
                 type="auto" />
         </div>
     </p-dialog>
