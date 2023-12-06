@@ -10,3 +10,7 @@
         }
     }
 }
+.p-button-text.selected:enabled {
+    background-color: $color-palette-primary-200;
+    color: $color-palette-primary-800;
+}
