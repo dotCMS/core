@@ -3,13 +3,6 @@
     display: flex;
 }
 
-::ng-deep {
-    .p-overlaypanel.edit-ema-language-selector.p-component {
-        .p-overlaypanel-content {
-            padding: 0;
-        }
-    }
-}
 .p-button-text.selected:enabled {
     background-color: $color-palette-primary-200;
     color: $color-palette-primary-800;

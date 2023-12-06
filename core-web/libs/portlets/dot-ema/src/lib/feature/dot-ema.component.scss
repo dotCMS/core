@@ -38,3 +38,12 @@
     margin: $spacing-3;
     border: solid 1px $color-palette-gray-500;
 }
+
+// Selectors overlayPanel
+::ng-deep {
+    .p-overlaypanel.edit-ema-selector.p-component {
+        .p-overlaypanel-content {
+            padding: 0;
+        }
+    }
+}

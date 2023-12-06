@@ -85,7 +85,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
         });
 
         component = spectator.component;
-        button = spectator.query(byTestId('language-button'));
+        button = spectator.query(byTestId('persona-button'));
         selectedSpy = jest.spyOn(component.selected, 'emit');
     });
 
@@ -104,16 +104,16 @@ describe('EditEmaPersonaSelectorComponent', () => {
         });
 
         it('should have a p-overlay', () => {
-            expect(spectator.query(byTestId('language-op'))).not.toBeNull();
+            expect(spectator.query(byTestId('persona-op'))).not.toBeNull();
         });
 
         it('should have p-listbox hidden', () => {
-            expect(spectator.query(byTestId('language-listbox'))).toBeNull();
+            expect(spectator.query(byTestId('persona-listbox'))).toBeNull();
         });
 
         it('should show p-listbox on button click', () => {
             spectator.click(button);
-            expect(spectator.query(byTestId('language-listbox'))).not.toBeNull();
+            expect(spectator.query(byTestId('persona-listbox'))).not.toBeNull();
         });
 
         it('should set the value to the listbox', () => {
