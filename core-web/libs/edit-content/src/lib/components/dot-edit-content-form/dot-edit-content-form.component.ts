@@ -28,22 +28,24 @@ import {
 import { FILTERED_TYPES } from '../../models/dot-edit-content-form.enum';
 import { EditContentFormData } from '../../models/dot-edit-content-form.interface';
 import { getFinalCastedValue } from '../../utils/functions.util';
+import { DotEditContentAsideComponent } from '../dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 import { FIELD_TYPES } from '../dot-edit-content-field/utils';
 
 @Component({
     selector: 'dot-edit-content-form',
     standalone: true,
+    templateUrl: './dot-edit-content-form.component.html',
+    styleUrls: ['./dot-edit-content-form.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         CommonModule,
         ReactiveFormsModule,
         DotEditContentFieldComponent,
         ButtonModule,
-        DotMessagePipe
-    ],
-    templateUrl: './dot-edit-content-form.component.html',
-    styleUrls: ['./dot-edit-content-form.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+        DotMessagePipe,
+        DotEditContentAsideComponent
+    ]
 })
 export class DotEditContentFormComponent implements OnInit {
     @Input() formData!: EditContentFormData;

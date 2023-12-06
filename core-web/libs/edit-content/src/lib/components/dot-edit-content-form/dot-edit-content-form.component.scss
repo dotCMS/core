@@ -7,8 +7,12 @@
     padding: $spacing-4;
     padding-bottom: 0;
     height: 100%;
-    overflow: auto;
+
     position: relative;
+}
+
+form {
+    overflow: auto;
 }
 
 .row {

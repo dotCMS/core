@@ -39,7 +39,8 @@ export class EditContentLayoutComponent implements OnInit {
                           map(({ layout, fields }) => ({
                               contentlet: { ...contentData },
                               layout,
-                              fields
+                              fields,
+                              contentType
                           }))
                       );
                   } else {
@@ -49,7 +50,9 @@ export class EditContentLayoutComponent implements OnInit {
           )
         : this.dotEditContentService
               .getContentTypeFormData(this.contentType)
-              .pipe(map(({ layout, fields }) => ({ layout, fields })));
+              .pipe(
+                  map(({ layout, fields }) => ({ layout, fields, contentType: this.contentType }))
+              );
 
     ngOnInit() {
         if (this.contentType) {

@@ -27,7 +27,6 @@ import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-
 import { DotWorkflowsSelectorFieldModule } from '@components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
 import { IFrameModule } from '@components/_common/iframe';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
@@ -39,6 +38,7 @@ import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.modu
 import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import { DotContentTypesInfoService, DotWorkflowService } from '@dotcms/data-access';
 import {
+    DotApiLinkComponent,
     DotAutofocusDirective,
     DotCopyButtonComponent,
     DotFieldRequiredDirective,
@@ -119,7 +119,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         ContentTypeFieldsAddRowModule,
         DialogModule,
         DotAddToBundleModule,
-        DotApiLinkModule,
+        DotApiLinkComponent,
         DotAutofocusDirective,
         DotBaseTypeSelectorModule,
         DotContentTypeFieldsVariablesModule,

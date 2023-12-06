@@ -3,10 +3,9 @@ import { Component, Inject, Input } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotLinkComponent } from '@components/dot-link/dot-link.component';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
-import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotApiLinkComponent, DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 /**
@@ -24,7 +23,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         CommonModule,
         ButtonModule,
         DotCopyButtonComponent,
-        DotApiLinkModule,
+        DotApiLinkComponent,
         DotPipesModule,
         DotMessagePipe,
         DotLinkComponent

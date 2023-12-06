@@ -1,0 +1,61 @@
+<div class="edit-content-aside--header">
+    <strong style="display: flex; align-items: center; gap: 0.3em">
+        <i class="pi pi-info-circle"></i>
+        Information</strong
+    >
+    <dot-copy-button
+        *ngIf="asideData.contentlet?.inode"
+        [copy]="asideData.contentlet?.inode"
+        [attr.data-testId]="'inode'"
+        [label]="asideData.contentlet?.inode.slice(0, 8)"></dot-copy-button>
+
+    <dot-api-link
+        *ngIf="asideData.contentlet?.stInode"
+        [href]="'api/v1/contenttype/id/' + asideData.contentlet?.stInode"></dot-api-link>
+</div>
+
+<div class="edit-content-aside--item">
+    <span>Content State</span>
+
+    <ng-container [ngSwitch]="true">
+        <p-chip
+            *ngSwitchCase="asideData.contentlet?.live && !asideData.contentlet?.working"
+            [styleClass]="'p-chip-success p-chip-sm'"
+            label="Published"></p-chip>
+        <p-chip
+            *ngSwitchCase="asideData.contentlet?.working && !asideData.contentlet?.live"
+            [styleClass]="'p-chip-sm'"
+            label="Draft"></p-chip>
+        <p-chip
+            *ngSwitchCase="asideData.contentlet?.archived"
+            [styleClass]="'p-chip-gray p-chip-sm'"
+            label="Archived"></p-chip>
+        <p-chip
+            *ngSwitchCase="asideData.contentlet?.working && asideData.contentlet?.live"
+            [styleClass]="'p-chip-pink p-chip-sm'"
+            label="Revision"></p-chip>
+    </ng-container>
+</div>
+
+<div class="edit-content-aside--item">
+    <span>Modified by</span>
+    <span class="font-bold" *ngIf="asideData.contentlet" data-testId="modified-by">{{
+        asideData?.contentlet?.modUserName
+    }}</span>
+</div>
+
+<div class="edit-content-aside--item">
+    <span>Last modified</span>
+    <span class="font-bold" *ngIf="asideData.contentlet" data-testId="last-modified">{{
+        asideData?.contentlet?.modDate | dotRelativeDate
+    }}</span>
+</div>
+
+<div class="edit-content-aside--item">
+    <span>Content Type</span>
+    <a
+        [href]="'#/content-types-angular/edit/' + asideData.contentType"
+        data-testId="content-type"
+        >{{ asideData?.contentType }}</a
+    >
+</div>

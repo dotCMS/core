@@ -53,6 +53,12 @@ p-chip .p-chip {
         color: $color-accessible-text-gray;
     }
 
+    &.p-chip-pink {
+        // TODO: Place on the colors variables, but with what name?
+        background: #c336e514;
+        color: #c234e5;
+    }
+
     &.p-chip-sm {
         gap: $spacing-0;
         padding: 0 $spacing-1;
