@@ -78,7 +78,7 @@ public class SystemEnvDataSourceStrategy implements DotDataSourceStrategy {
                 Integer.parseInt(
                         systemEnvironmentProperties.getVariable(CONNECTION_DB_CONNECTION_TIMEOUT) != null
                                 ? systemEnvironmentProperties.getVariable(CONNECTION_DB_CONNECTION_TIMEOUT)
-                                : "30")
+                                : "5")
                         * 1000);
 
         config.setMaxLifetime(Integer.parseInt(
