@@ -2,6 +2,8 @@ import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/j
 
 import { Validators } from '@angular/forms';
 
+import { TabView } from 'primeng/tabview';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -11,6 +13,7 @@ import {
     CONTENT_FORM_DATA_MOCK,
     JUST_FIELDS_MOCKS,
     LAYOUT_FIELDS_VALUES_MOCK,
+    LAYOUT_MOCK,
     MOCK_DATE
 } from '../../utils/mocks';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
@@ -81,13 +84,21 @@ describe('DotFormComponent', () => {
         });
 
         it('should emit the form value through the `formSubmit` event', () => {
-            jest.spyOn(spectator.component.formSubmit, 'emit');
-            const button = spectator.query(byTestId('button-save'));
-            spectator.click(button);
+            jest.spyOn(spectator.component.changeValue, 'emit');
 
-            expect(spectator.component.formSubmit.emit).toHaveBeenCalledWith(
-                LAYOUT_FIELDS_VALUES_MOCK
-            );
+            spectator.component.form.controls['name1'].setValue('New Value');
+
+            expect(spectator.component.changeValue.emit).toHaveBeenCalledWith({
+                ...LAYOUT_FIELDS_VALUES_MOCK,
+                name1: 'New Value'
+            });
+        });
+
+        it('should not have multiple tabs', () => {
+            const tabViewComponent = spectator.query(TabView);
+            const formRow = spectator.query(byTestId('row'));
+            expect(tabViewComponent).toBeNull();
+            expect(formRow).toExist();
         });
     });
 
@@ -100,6 +111,51 @@ describe('DotFormComponent', () => {
             jest.spyOn(spectator.component, 'initilizeForm');
             expect(spectator.component.form).toEqual(undefined);
             expect(spectator.component.initilizeForm).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('with data and multiple tabs', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                props: {
+                    formData: {
+                        ...CONTENT_FORM_DATA_MOCK,
+                        layout: [
+                            ...LAYOUT_MOCK,
+                            {
+                                divider: {
+                                    clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+                                    contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
+                                    dataType: 'SYSTEM',
+                                    fieldType: 'tab-divider',
+                                    fieldTypeLabel: 'tab-divider',
+                                    fieldVariables: [],
+                                    fixed: false,
+                                    iDate: 1697051073000,
+                                    id: 'a31ea895f80eb0a3754e4a2292e09a52',
+                                    indexed: false,
+                                    listed: false,
+                                    modDate: 1697051077000,
+                                    name: 'New Tab',
+                                    readOnly: false,
+                                    required: false,
+                                    searchable: false,
+                                    sortOrder: 0,
+                                    unique: false,
+                                    variable: 'tab'
+                                },
+                                columns: []
+                            }
+                        ]
+                    }
+                }
+            });
+        });
+
+        it('should have a p-tabView', () => {
+            const tabViewComponent = spectator.query(TabView);
+            expect(tabViewComponent.scrollable).toBeTruthy();
+            expect(tabViewComponent).toExist();
         });
     });
 });

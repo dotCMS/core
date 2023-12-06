@@ -40,8 +40,7 @@ export class EditContentLayoutComponent {
                       this.contentType = contentType;
 
                       return this.dotEditContentService.getContentTypeFormData(contentType).pipe(
-                          map(({ tabs, layout, fields }) => ({
-                              tabs,
+                          map(({ layout, fields }) => ({
                               contentlet: { ...contentData },
                               layout,
                               fields
@@ -54,7 +53,7 @@ export class EditContentLayoutComponent {
           )
         : this.dotEditContentService
               .getContentTypeFormData(this.contentType)
-              .pipe(map(({ tabs, layout, fields }) => ({ tabs, layout, fields })));
+              .pipe(map(({ layout, fields }) => ({ layout, fields })));
 
     /**
      * Saves the contentlet with the given values.

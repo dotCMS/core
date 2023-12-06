@@ -1,15 +1,15 @@
 <form class="p-fluid" *ngIf="form" [formGroup]="form">
     <!-- Move to the component - Conditional -->
     <ng-container *ngIf="areMultipleTabs; else singleForm">
-        <p-tabView [scrollable]="true">
-            <p-tabPanel *ngFor="let tab of formData.tabs" [header]="tab.title">
+        <p-tabView [scrollable]="true" data-testId="edit-content-multiple-tabs">
+            <p-tabPanel *ngFor="let tab of tabs" [header]="tab.title">
                 <ng-container *ngTemplateOutlet="tabTemplate; context: { tab: tab }" />
             </p-tabPanel>
         </p-tabView>
     </ng-container>
 
     <ng-template #singleForm>
-        <ng-container *ngTemplateOutlet="tabTemplate; context: { tab: formData.tabs[0] }" />
+        <ng-container *ngTemplateOutlet="tabTemplate; context: { tab: tabs[0] }" />
     </ng-template>
 
     <ng-template #tabTemplate let-tab="tab">
