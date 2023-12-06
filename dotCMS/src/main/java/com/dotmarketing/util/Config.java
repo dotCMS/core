@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.MapConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.IOUtils;
 
@@ -83,7 +84,7 @@ public class Config {
     //Config internal properties
     private static int refreshInterval = Integer.MAX_VALUE; //In minutes, Default 5 can be overridden in the config file as config.refreshinterval int property
     private static Date lastRefreshTime = new Date();
-    protected final static PropertiesConfiguration props = new PropertiesConfiguration();
+    protected final static MapConfiguration props = new MapConfiguration(new ConcurrentHashMap<>());
     private static ClassLoader classLoader = null;
     protected static URL dotmarketingPropertiesUrl = null;
     protected static URL clusterPropertiesUrl = null;
@@ -150,7 +151,7 @@ public class Config {
      *
      */
     private static void _loadProperties() {
-        props.reload(false);
+
         if (classLoader == null) {
             classLoader = Thread.currentThread().getContextClassLoader();
             Logger.info(Config.class, "Initializing properties reader.");
@@ -284,7 +285,13 @@ public class Config {
 
 
             propsInputStream = Files.newInputStream(fileToRead.toPath());
-            props.load(new InputStreamReader(propsInputStream));
+
+            PropertiesConfiguration pconfig = new PropertiesConfiguration();
+            pconfig.load(new InputStreamReader(propsInputStream));
+            pconfig.getKeys().forEachRemaining(k->{
+                props.addProperty(k, pconfig.getProperty(k));
+            });
+
             Logger.info(Config.class, "dotCMS Properties [" + fileName + "] Loaded");
             postProperties();
             // check if the configuration for the watcher has changed.
