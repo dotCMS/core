@@ -11,11 +11,13 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Objects;
 import com.liferay.util.StringPool;
 import io.lettuce.core.ScriptOutputType;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+
 import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -32,20 +34,21 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
- * Redis Cache implementation Notes: 1) This redis implementation does not have the clusted id, b/c redis handles each
- * member, key, hash, incr and channel by using the cluster id so it is not need to repeat it here.
- * <p>
- * The cache handles a ttl, one global by default REDIS_SERVER_DEFAULT_TTL, but can prefix a group to the same key in
- * order to have a specific ttl for a section.
- * <p>
- * 2) When a call is running on transaction to avoid dirty saves or fetches, the cache does not put or retrieve
- * anything.
- * <p>
- * 3) Since the information is being stored as a java byte (binary) only can use serializable values, non-serializable
- * objects will be skipped from the cache.
- * <p>
- * 4) Objects that implements {@link DotCloneable}, the cache will returns a Clone of the object stored on the cache
- * instead of the actual copy on the cache this will helps
+ * Redis Cache implementation
+ * Notes:
+ * 1) This redis implementation does not have the clusted id, b/c redis handles each member, key, hash, incr and channel by using the cluster id
+ * so it is not need to repeat it here.
+ *
+ * The cache handles a ttl, one global by default REDIS_SERVER_DEFAULT_TTL, but can prefix a group to the same key in order to have a specific
+ * ttl for a section.
+ *
+ * 2) When a call is running on transaction to avoid dirty saves or fetches, the cache does not put or retrieve anything.
+ *
+ * 3) Since the information is being stored as a java byte (binary) only can use serializable values, non-serializable objects will be skipped from the cache.
+ *
+ * 4) Objects that implements {@link DotCloneable}, the cache will returns a Clone of the object stored on the cache instead of the actual copy on the cache
+ * this will helps
+ *
  */
 public class RedisCache extends CacheProvider {
 
@@ -53,27 +56,21 @@ public class RedisCache extends CacheProvider {
 
     private static final Long ZERO = 0L;
     private static final String KEY_DATE_FORMAT = "yyyy-MM-dd_hh:mm:ss.S";
-    private static final String PREFIX_UNSET = "PREFIX_UNSET";
-    final static AtomicReference<String> prefixKey = new AtomicReference(PREFIX_UNSET);
-    final static Lazy<String> lazyPrefix = Lazy.of(() -> {
-                String key = Config.getStringProperty("REDIS_KEY_PREFIX", PREFIX_UNSET);
-                if (PREFIX_UNSET.equals(key)) {
-                    key = ClusterFactory.getClusterId();
-                }
-                return key;
-            }
-    );
+    private static final String PREFIX_UNSET    = "PREFIX_UNSET";
+
     private final String REDIS_GROUP_KEY;
     private final String REDIS_PREFIX_KEY;
     private final Lazy<RedisClient<String, Object>> client;
-    private final int keyBatchingSize = Config.getIntProperty("REDIS_SERVER_KEY_BATCH_SIZE", 1000);
-    private final long defaultTTL = Config.getLongProperty("REDIS_SERVER_DEFAULT_TTL", -1);
-    private final Map<String, Long> groupTTLMap = new ConcurrentHashMap<>();
 
-    public RedisCache(final Lazy<RedisClient<String, Object>> client) {
+    private final int  keyBatchingSize = Config.getIntProperty( "REDIS_SERVER_KEY_BATCH_SIZE", 1000);
+    private final long defaultTTL      = Config.getLongProperty("REDIS_SERVER_DEFAULT_TTL", -1);
+    final static AtomicReference<String> prefixKey = new AtomicReference(PREFIX_UNSET);
+    private final Map<String, Long> groupTTLMap    = new ConcurrentHashMap<>();
 
-        this.client = client;
-        this.REDIS_GROUP_KEY = "REDIS_GROUP_KEY";
+    public RedisCache(final Lazy<RedisClient<String,Object>> client) {
+
+        this.client           = client;
+        this.REDIS_GROUP_KEY  =  "REDIS_GROUP_KEY";
         this.REDIS_PREFIX_KEY = "REDIS_PREFIX_KEY";
     }
 
@@ -96,25 +93,48 @@ public class RedisCache extends CacheProvider {
         return true;
     }
 
-    protected RedisClient<String, Object> getClient() {
+    protected RedisClient<String,Object> getClient() {
 
         return client.get();
     }
 
     /**
-     * all key values that are put into redis are prefixed by a random key. When a flushall is called, this key is
-     * cycled, which basically invalidates all cached entries. The prefix key is stored in redis itself so multiple
-     * servers in the cluster can read it. When the key is cycled, we send a CYCLE_KEY event to cluster to refresh the
-     * key across cluster
+     * all key values that are put into redis are prefixed by a random key. When a flushall is called,
+     * this key is cycled, which basically invalidates all cached entries. The prefix key is stored in
+     * redis itself so multiple servers in the cluster can read it. When the key is cycled, we send a
+     * CYCLE_KEY event to cluster to refresh the key across cluster
      */
     @VisibleForTesting
     String loadPrefix() {
-        return lazyPrefix.get();
+
+        String key = prefixKey.get();
+        if(!PREFIX_UNSET.equals(key)) {
+            return key;
+        }
+        if (PREFIX_UNSET.equals(key)) {
+            key = this.loadPrefixFromRedis();
+        }
+        if (PREFIX_UNSET.equals(key)) {
+            key = setOrGet();
+        }
+        if (PREFIX_UNSET.equals(key)) {
+            Logger.warn(this.getClass(), "unable to determine key prefix");
+            key = PREFIX_UNSET;
+        }
+        prefixKey.set(key);
+        return key;
+    }
+
+    String loadPrefixFromRedis() {
+
+
+            return PREFIX_UNSET;
+
     }
 
     String generateNewKey() {
 
-        return "cache_" + new SimpleDateFormat(KEY_DATE_FORMAT).format(new Date());
+        return  Config.getStringProperty("REDIS_KEY_PREFIX", ClusterFactory.getClusterId());
     }
 
     /**
@@ -136,15 +156,23 @@ public class RedisCache extends CacheProvider {
     }
 
     /**
-     * This checks if there is a prefix key in redis. If so, it will return the value stored in redis, otherwise, it
-     * will set redis to the value of the newKey and return it.
+     * This checks if there is a prefix key in redis. If so, it will return the value stored in redis,
+     * otherwise, it will set redis to the value of the newKey and return it.
      *
      * @return
      */
     @VisibleForTesting
     String setOrGet() {
 
-        return lazyPrefix.get();
+        final String newKey    = this.generateNewKey();
+        final SetResult result = getClient().setIfAbsent(REDIS_PREFIX_KEY, newKey);
+
+        if (SetResult.NO_CONN == result) {
+            return PREFIX_UNSET;
+        }
+
+        return SetResult.SUCCESS == result?
+                newKey : this.loadPrefixFromRedis();
     }
 
     /**
@@ -157,13 +185,13 @@ public class RedisCache extends CacheProvider {
     @VisibleForTesting
     String cacheKey(final String group, final String key) {
         return loadPrefix() +
-                (
-                        group != null && key != null ?
+                        (
+                                group != null && key != null ?
                                 "." + group + "." + key :
-                                group != null ?
-                                        "." + group + "." :
-                                        "."
-                );
+                                      group != null ?
+                                                "." + group + "." :
+                                                "."
+                        );
     }
 
     @VisibleForTesting
@@ -181,7 +209,7 @@ public class RedisCache extends CacheProvider {
     }
 
     @Override
-    public boolean isInitialized() {
+    public boolean isInitialized()  {
 
         return !PREFIX_UNSET.equals(prefixKey.get());
     }
@@ -192,7 +220,7 @@ public class RedisCache extends CacheProvider {
         // this avoid mutability and dirty cache issues
         if (DbConnectionFactory.inTransaction()) {
 
-            Logger.debug(this, () -> "In Transaction, Skipping the put to Redis cache for group: "
+            Logger.debug(this, ()-> "In Transaction, Skipping the put to Redis cache for group: "
                     + group + "key: " + key);
         } else if (key != null && group != null) {
 
@@ -218,20 +246,20 @@ public class RedisCache extends CacheProvider {
                 }
             } else {
 
-                Logger.debug(this, () -> "The content: " + (null != content ? content.getClass() : "unknown") +
+                Logger.debug(this, ()-> "The content: " + (null != content?content.getClass():"unknown") +
                         " is not serialize, Skipping the put to Redis cache for group: "
-                        + group + "key: " + key);
+                        + group + "key: " + key );
             }
         }
     }
 
-    private long getTTL(final String group) {
+    private long getTTL (final String group) {
 
         // try to figured out if any time out by group, otherwise uses the default ttl
         final String groupTTLKey = group + "_REDIS_SERVER_DEFAULT_TTL";
         final long ttl = this.groupTTLMap.computeIfAbsent(groupTTLKey,
                 k -> Config.getLongProperty(group + "_REDIS_SERVER_DEFAULT_TTL", -1));
-        return -1 == ttl ? this.defaultTTL : ttl;
+        return -1 == ttl? this.defaultTTL : ttl;
     }
 
     @Override
@@ -240,7 +268,7 @@ public class RedisCache extends CacheProvider {
         // this avoid mutability and dirty cache issues
         if (DbConnectionFactory.inTransaction()) {
 
-            Logger.debug(this, () -> "In Transaction, Skipping the get to Redis cache for group: "
+            Logger.debug(this, ()-> "In Transaction, Skipping the get to Redis cache for group: "
                     + group + "key" + key);
         } else if (null != key && null != group) {
 
@@ -259,15 +287,15 @@ public class RedisCache extends CacheProvider {
         return null;
     }
 
-    private Object extractObject(final Object o) {
+    private Object extractObject (final Object o) {
 
-        return o != null && o instanceof DotCloneable ?
-                this.extractObject(DotCloneable.class.cast(o)) : o;
+        return o != null && o instanceof DotCloneable?
+                this.extractObject(DotCloneable.class.cast(o)): o;
     }
 
-    private Object extractObject(final DotCloneable o) {
+    private Object extractObject (final DotCloneable o) {
 
-        return Try.of(() -> o.clone()).getOrElse(o);
+        return Try.of(()-> o.clone()).getOrElse(o);
     }
 
 
@@ -306,7 +334,7 @@ public class RedisCache extends CacheProvider {
     @Override
     public void removeAll() {
 
-        final String prefix = loadPrefix() + "." + StringPool.STAR;
+        final String prefix = loadPrefix() + "." +  StringPool.STAR;
         this.cycleKey();
         // Getting all the keys for the given groups
         DotConcurrentFactory.getInstance().getSingleSubmitter
@@ -316,8 +344,8 @@ public class RedisCache extends CacheProvider {
     @Override
     public Set<String> getKeys(final String group) {
 
-        final String prefix = this.cacheKey(group);
-        final String matchesPattern = prefix + StringPool.STAR;
+        final String prefix    = this.cacheKey(group);
+        final String matchesPattern = prefix  + StringPool.STAR;
         final Set<String> keys = new LinkedHashSet<>();
         this.getClient().scanKeys(matchesPattern, this.keyBatchingSize, //keys::addAll);
                 redisKeys -> redisKeys.stream().map(redisKey ->  // we remove the prefix in order to have the real key
@@ -342,13 +370,11 @@ public class RedisCache extends CacheProvider {
      */
     private long keyCount(final String group) {
 
-        final String prefix = LettuceAdapter.getMasterReplicaLettuceClient(this.getClient())
-                .wrapKey(this.cacheKey(group) + StringPool.STAR);
+        final String prefix = LettuceAdapter.getMasterReplicaLettuceClient(this.getClient()).wrapKey(this.cacheKey(group) + StringPool.STAR);
         final String script = "return #redis.pcall('keys', '" + prefix + "')";
-        Object keyCount = ZERO;
+        Object keyCount     = ZERO;
 
-        try (StatefulRedisConnection<String, Object> conn = LettuceAdapter.getStatefulRedisConnection(
-                this.getClient())) {
+        try (StatefulRedisConnection<String,Object> conn = LettuceAdapter.getStatefulRedisConnection(this.getClient())) {
 
             if (conn.isOpen()) {
 
@@ -358,6 +384,7 @@ public class RedisCache extends CacheProvider {
 
         return (Long) keyCount;
     }
+
 
 
     @Override
@@ -374,8 +401,8 @@ public class RedisCache extends CacheProvider {
         final CacheProviderStats cacheProviderStats = new CacheProviderStats(providerStats, getName());
         String memoryStats = null;
 
-        try (StatefulRedisConnection<String, Object> conn =
-                LettuceAdapter.getStatefulRedisConnection(this.getClient())) {
+        try (StatefulRedisConnection<String,Object> conn =
+                     LettuceAdapter.getStatefulRedisConnection(this.getClient())) {
 
             if (!conn.isOpen()) {
 
@@ -420,8 +447,8 @@ public class RedisCache extends CacheProvider {
     }
 
     /**
-     * Reads and parses the string report generated for the INFO Redis command in order to return any specific required
-     * property.
+     * Reads and parses the string report generated for the INFO Redis command in order to return any
+     * specific required property.
      *
      * @param redisReport
      * @return Map
@@ -449,20 +476,20 @@ public class RedisCache extends CacheProvider {
 
         final String prefix;
 
-        public CacheWiper(final String prefix) {
-            this.prefix = prefix;
-        }
-
         @Override
         public String toString() {
             return "CacheWiper prefix:" + prefix;
+        }
+
+        public CacheWiper(final String prefix) {
+            this.prefix = prefix;
         }
 
         @Override
         public void run() {
 
             RedisCache.this.getClient().scanKeys(this.prefix, keyBatchingSize,
-                    keyCollections -> removeKeys(keyCollections.toArray(new String[0])));
+                    keyCollections ->  removeKeys(keyCollections.toArray(new String[0])));
         }
     }
 
@@ -471,6 +498,12 @@ public class RedisCache extends CacheProvider {
         @Override
         public void run() {
 
+            final String ourPrefix =  prefixKey.get();
+            final String redisPrefix = loadPrefixFromRedis();
+            // force a reload if needed
+            if(!Objects.equal(ourPrefix, redisPrefix)) {
+                prefixKey.set(PREFIX_UNSET);
+            }
         }
     }
 }
