@@ -181,7 +181,7 @@ public class PopulateContentletAsJSONUtil {
         while (true) {
 
             CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() ->
-                    populateWrapper(assetSubtype, excludingAssetSubtype, allVersions, totalRecordsAffected));
+                    populateWrapper(assetSubtype, excludingAssetSubtype,  Config.getBooleanProperty("CONVERT_ALL_OLD_VERSIONS_TO_JSON",allVersions), totalRecordsAffected));
 
             try {
                 Boolean foundRecords = future.get();
@@ -195,7 +195,7 @@ public class PopulateContentletAsJSONUtil {
 
         // Log task completion status
         Logger.info(this, "---- Records processed: " + totalRecordsAffected.intValue());
-        if (allVersions) {
+        if (Config.getBooleanProperty("CONVERT_ALL_OLD_VERSIONS_TO_JSON",allVersions)) {
 
             Logger.info(this, "Contentlet as JSON migration task DONE for all versions");
         } else if (!Strings.isNullOrEmpty(assetSubtype)) {
