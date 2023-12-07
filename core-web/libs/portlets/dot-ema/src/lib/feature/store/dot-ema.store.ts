@@ -182,6 +182,19 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
+    // This method is called when the user clicks on the edit button
+    readonly initActionCreate = this.updater(
+        (state, payload: { contentType: string; url: string }) => {
+            return {
+                ...state,
+                dialogVisible: true,
+                dialogHeader: payload.contentType,
+                dialogIframeLoading: true,
+                dialogIframeURL: payload.url
+            };
+        }
+    );
+
     /**
      * Create the url to edit a contentlet
      *

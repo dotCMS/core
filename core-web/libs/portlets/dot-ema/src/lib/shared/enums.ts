@@ -14,5 +14,6 @@ export enum NOTIFY_CUSTOMER {
 export enum NG_CUSTOM_EVENTS {
     EDIT_CONTENTLET_LOADED = 'edit-contentlet-loaded',
     CONTENT_SEARCH_SELECT = 'select-contentlet',
-    CONTENTLET_UPDATED = 'save-page'
+    CREATE_CONTENTLET = 'create-contentlet-from-edit-page',
+    SAVE_CONTENTLET = 'save-page'
 }

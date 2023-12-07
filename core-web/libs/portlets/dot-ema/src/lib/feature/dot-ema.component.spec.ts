@@ -320,7 +320,7 @@ describe('DotEmaComponent', () => {
                     dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                         new CustomEvent('ng-event', {
                             detail: {
-                                name: NG_CUSTOM_EVENTS.CONTENTLET_UPDATED
+                                name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET
                             }
                         })
                     );
@@ -387,7 +387,7 @@ describe('DotEmaComponent', () => {
                 dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                     new CustomEvent('ng-event', {
                         detail: {
-                            name: NG_CUSTOM_EVENTS.CONTENTLET_UPDATED,
+                            name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
                             data: {
                                 identifier: '123'
                             }
@@ -561,7 +561,7 @@ describe('DotEmaComponent', () => {
                 dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                     new CustomEvent('ng-event', {
                         detail: {
-                            name: NG_CUSTOM_EVENTS.CONTENTLET_UPDATED,
+                            name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
                             data: {
                                 identifier: '123'
                             }
