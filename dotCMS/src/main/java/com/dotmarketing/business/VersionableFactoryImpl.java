@@ -14,6 +14,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -458,11 +459,15 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	protected List<ContentletVersionInfo> findAllContentletVersionInfos(final String identifier)
 			throws DotDataException, DotStateException {
 
+		if(identifier==null){
+			throw new DotRuntimeException("identifier cannot be null");
+		}
+
 		List<ContentletVersionInfo> infos = icache.getContentVersionInfos(identifier);
 		if (infos != null) {
 			return infos;
 		}
-		synchronized (identifier) {
+		synchronized (identifier.intern()) {
 			infos = icache.getContentVersionInfos(identifier);
 			if (infos != null) {
 				return infos;
