@@ -1,10 +1,7 @@
 package com.dotmarketing.portlets.workflows.model;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
-import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.UtilMethods;
@@ -12,10 +9,21 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vavr.control.Try;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Objects;
 
+/**
+ * Defines a Workflow Scheme in dotCMS. In enterprise instances, users can define their own
+ * Workflows. In dotCMS Community Edition, only the System Workflow is available.
+ * <p>Custom Workflows allow you to specify how content moves through your system, from initial
+ * creation, through to publishing, and even to archival, deletion or other final disposition. A
+ * Workflow is composed of one or more Workflow Steps.</p>
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class WorkflowScheme implements Serializable, ManifestItem {
 
