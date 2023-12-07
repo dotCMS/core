@@ -8,7 +8,7 @@ on:
         required: true
       applying_labels:
         description: 'Labels to apply to issues'
-        required: true
+        required: false
       operation:
         description: 'Operation to apply to issues'
         type: choice
