@@ -15,7 +15,7 @@ function Activity({ title, description, image, urlTitle }) {
                 src={
                     image
                         ? `${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}?language_id=${language.id}`
-                        : ''
+                        : `https://placehold.co/1000x1000/png?text=${title}`
                 }
                 width={100}
                 height={100}
