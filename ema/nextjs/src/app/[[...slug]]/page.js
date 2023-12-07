@@ -3,11 +3,15 @@ import React from 'react';
 import GlobalProvider from '@/lib/providers/global';
 import { DotcmsPage } from '@/components/dotcms-page';
 
-async function getPage({ url, language_id }) {
+async function getPage(params) {
+    const { url, language_id } = params;
+
     // TODO: Check why /json is not getting the page correctly
     const requestUrl = `${
         process.env.NEXT_PUBLIC_DOTCMS_HOST
-    }/api/v1/page/render/${url}?language_id=${language_id || '1'}`;
+    }/api/v1/page/render/${url}?language_id=${language_id || '1'}&com.dotmarketing.persona.id=${
+        params['com.dotmarketing.persona.id'] || 'modes.persona.no.persona'
+    }`;
 
     const res = await fetch(requestUrl, {
         headers: {
@@ -56,7 +60,8 @@ export async function generateMetadata({ params, searchParams }) {
 export default async function Home({ searchParams, params }) {
     const data = await getPage({
         url: params?.slug ? params.slug.join('/') : 'index',
-        language_id: searchParams.language_id
+        language_id: searchParams.language_id,
+        'com.dotmarketing.persona.id': searchParams['com.dotmarketing.persona.id']
     });
 
     const nav = await getNav();

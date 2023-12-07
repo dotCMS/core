@@ -1,33 +1,25 @@
 package com.dotcms.api.client.pull;
 
-import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.pull.exception.PullException;
-import com.dotcms.api.client.pull.task.PullTask;
-import com.dotcms.api.client.pull.task.PullTaskParams;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
-import com.dotcms.cli.common.ConsoleProgressBar;
-import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.pull.PullOptions;
 import io.quarkus.arc.DefaultBean;
-import java.io.File;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import org.jboss.logging.Logger;
 
+/**
+ * PullServiceImpl is a class that implements the PullService interface. It provides methods for
+ * pulling content from a provider and handling the pulled content.
+ */
 @DefaultBean
 @Dependent
 public class PullServiceImpl implements PullService {
-
-    @Inject
-    MapperService mapperService;
 
     @Inject
     Logger logger;
@@ -37,24 +29,12 @@ public class PullServiceImpl implements PullService {
      */
     @ActivateRequestContext
     @Override
-    public <T> void pull(File destination, PullOptions options, OutputOptionMixin output,
-            ContentFetcher<T> provider, PullHandler<T> pullHandler) {
-
-        pull(destination, options, output, provider, pullHandler, new HashMap<>());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @ActivateRequestContext
-    @Override
-    public <T> void pull(File destination, PullOptions options, OutputOptionMixin output,
-            ContentFetcher<T> provider, PullHandler<T> pullHandler,
-            Map<String, Object> customOptions) {
+    public <T> void pull(PullOptions options, OutputOptionMixin output, ContentFetcher<T> provider,
+            PullHandler<T> pullHandler) {
 
         // ---
         // Fetching the contents
-        var contents = fetch(options, output, provider, pullHandler, customOptions);
+        var contents = fetch(options, output, provider, pullHandler);
 
         var outputBuilder = new StringBuilder();
 
@@ -63,76 +43,68 @@ public class PullServiceImpl implements PullService {
 
         if (!contents.isEmpty()) {
 
-            outputBuilder.append(String.format("@|bold [%d]|@ %s to pull",
-                    contents.size(),
-                    pullHandler.title()
-            ));
-
-            output.info(outputBuilder.toString());
-
             if (options.isShortOutput()) {
 
                 // ---
                 // Just print the short format
-                pullToConsole(contents, output, pullHandler);
+                pullToConsole(contents, options, output, pullHandler);
             } else {
 
                 // ---
                 // Storing the contents to disk
-                pullToDisk(destination, contents, options, output, pullHandler);
+                pullToDisk(contents, options, output, pullHandler);
 
-                output.info(String.format("%n%n Output has been written to [%s].",
-                        destination.getAbsolutePath()));
+                output.info(String.format("%n%n Output has been written to [%s].%n%n",
+                        options.destination().getAbsolutePath()));
             }
 
         } else {
-            outputBuilder.append(String.format(" No %s to pull", pullHandler.title()));
+            outputBuilder.append(String.format("%n%n No %s to pull", pullHandler.title()));
             output.info(outputBuilder.toString());
         }
-
     }
 
     /**
      * This method fetches content using the specified options, output, provider, pullHandler, and
      * customOptions. It can fetch a specific content identified by contentKey or all contents.
      *
-     * @param options       The pull options.
-     * @param output        The output option mixin.
-     * @param provider      The content fetcher.
-     * @param pullHandler   The pull handler.
-     * @param customOptions The custom options.
-     * @param <T>           The type of content to fetch.
+     * @param pullOptions The pull options.
+     * @param output      The output option mixin.
+     * @param provider    The content fetcher.
+     * @param pullHandler The pull handler.
+     * @param <T>         The type of content to fetch.
      * @return The list of fetched contents.
      * @throws PullException If an error occurs while fetching the contents.
      */
     private <T> List<T> fetch(
-            final PullOptions options,
+            final PullOptions pullOptions,
             final OutputOptionMixin output,
             final ContentFetcher<T> provider,
-            final PullHandler<T> pullHandler,
-            final Map<String, Object> customOptions) {
+            final PullHandler<T> pullHandler) {
 
         CompletableFuture<List<T>>
                 fetcherServiceFuture = CompletableFuture.supplyAsync(
                 () -> {
 
                     // Looking for a specific content
-                    if (options.contentKey().isPresent()) {
+                    if (pullOptions.contentKey().isPresent()) {
 
                         logger.debug(String.format(
                                 "Fetching %s by key [%s].",
                                 pullHandler.title(),
-                                options.contentKey().get()
+                                pullOptions.contentKey().get()
                         ));
 
-                        var foundContent = provider.fetchByKey(options.contentKey().get(),
-                                customOptions);
+                        var foundContent = provider.fetchByKey(
+                                pullOptions.contentKey().get(),
+                                pullOptions.customOptions().orElse(null)
+                        );
                         return List.of(foundContent);
                     }
 
                     // Fetching all contents
                     logger.debug(String.format("Fetching all %s.", pullHandler.title()));
-                    return provider.fetch(customOptions);
+                    return provider.fetch(pullOptions.customOptions().orElse(null));
                 });
 
         // ConsoleLoadingAnimation instance to handle the waiting "animation"
@@ -169,80 +141,96 @@ public class PullServiceImpl implements PullService {
      * pullHandler.
      *
      * @param contents    The contents to be pulled to the console.
+     * @param pullOptions The pull options.
      * @param output      The output option mixin.
      * @param pullHandler The pull handler.
      * @param <T>         The type of the contents.
      */
     private <T> void pullToConsole(List<T> contents,
+            final PullOptions pullOptions,
             final OutputOptionMixin output,
             final PullHandler<T> pullHandler) {
 
-        for (var content : contents) {
-            final String shortFormat = pullHandler.shortFormat(content);
+        output.info(pullHandler.startPullingHeader(contents));
+
+        for (final var content : contents) {
+            final String shortFormat = pullHandler.shortFormat(content, pullOptions);
             output.info(shortFormat);
         }
 
+        output.info(String.format("%n%n"));
     }
 
     /**
-     * This method pulls the contents to disk using the specified destination, contents, options,
-     * output, and pullHandler. It handles the pull progress and updates the progress bar
+     * This method pulls the contents to disk using the specified contents, pullOptions, output,
+     * pullHandler and customOptions. It handles the pull progress and updates the progress bar
      * accordingly.
      *
-     * @param destination The destination file to save the pulled contents.
      * @param contents    The list of contents to pull.
-     * @param options     The pull options.
+     * @param pullOptions The pull options.
      * @param output      The output option mixin.
      * @param pullHandler The pull handler for handling each content.
-     * @param <T>         The type of content to pull.
-     * @throws PullException If an error occurs while pulling the contents.
      */
-    private <T> void pullToDisk(File destination,
-            List<T> contents,
-            final PullOptions options,
+    private <T> void pullToDisk(List<T> contents,
+            final PullOptions pullOptions,
             final OutputOptionMixin output,
             final PullHandler<T> pullHandler) {
 
-        // ConsoleProgressBar instance to handle the push progress bar
-        ConsoleProgressBar progressBar = new ConsoleProgressBar(output);
-        // Calculating the total number of steps
-        progressBar.setTotalSteps(
-                contents.size()
-        );
+        var maxRetryAttempts = pullOptions.maxRetryAttempts();
+        var failed = false;
+        var retryAttempts = 0;
 
-        CompletableFuture<Void> pullFuture = CompletableFuture.supplyAsync(
-                () -> {
+        do {
 
-                    final var format = InputOutputFormat.valueOf(options.outputFormat());
+            if (retryAttempts > 0) {
+                output.info(
+                        String.format(
+                                "%n↺ Retrying pull process [%d of %d]...",
+                                retryAttempts,
+                                maxRetryAttempts
+                        )
+                );
+            }
 
-                    var forkJoinPool = ForkJoinPool.commonPool();
-                    var task = new PullTask<>(PullTaskParams.<T>builder().
-                            destination(destination).
-                            contents(contents).
-                            format(format).
-                            pullHandler(pullHandler).
-                            mapperService(mapperService).
-                            output(output).
-                            logger(logger).
-                            progressBar(progressBar).build()
-                    );
-                    forkJoinPool.invoke(task);
-                    return null;
-                });
-        progressBar.setFuture(pullFuture);
+            var foundErrors = performPull(
+                    contents,
+                    pullOptions,
+                    output,
+                    pullHandler,
+                    retryAttempts,
+                    maxRetryAttempts
+            );
+            if (foundErrors) {
+                failed = true;
+            }
 
-        CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(
-                progressBar
-        );
+        } while (failed && retryAttempts++ < maxRetryAttempts);
+    }
+
+    /**
+     * This method performs the pull operation for the specified contents using the given
+     * pullOptions, output and pullHandler.
+     *
+     * @param contents         The list of contents to pull.
+     * @param pullOptions      The pull options.
+     * @param output           The output option mixin.
+     * @param pullHandler      The pull handler for handling each content.
+     * @param retryAttempts    The number of retry attempts made during the pull process.
+     * @param maxRetryAttempts The maximum number of retry attempts allowed.
+     * @return True if errors were found during the pull process, false otherwise.
+     * @throws PullException        If an error occurs while pulling the contents.
+     */
+    private <T> boolean performPull(List<T> contents, final PullOptions pullOptions,
+            final OutputOptionMixin output, final PullHandler<T> pullHandler,
+            int retryAttempts, int maxRetryAttempts) {
 
         try {
 
-            // Waits for the completion of both the push process and console progress bar animation tasks.
-            // This line blocks the current thread until both CompletableFuture instances
-            // (pullFuture and animationFuture) have completed.
-            CompletableFuture.allOf(pullFuture, animationFuture).join();
-
-            pullFuture.get();
+            return pullHandler.pull(
+                    contents,
+                    pullOptions,
+                    output
+            );
 
         } catch (InterruptedException | ExecutionException e) {
 
@@ -250,6 +238,16 @@ public class PullServiceImpl implements PullService {
                     e.getMessage());
             logger.error(errorMessage, e);
             throw new PullException(errorMessage, e);
+        } catch (Exception e) { // Fail fast
+
+            if (retryAttempts + 1 <= maxRetryAttempts) {
+                output.info("\n\nFound errors during the pull process:");
+                output.error(e.getMessage());
+
+                return true;
+            } else {
+                throw e;
+            }
         }
     }
 

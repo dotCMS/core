@@ -3,18 +3,18 @@
 .p-listbox {
     background: $white;
     color: $black;
-    border: 1px solid $input-border-color;
-    border-radius: $border-radius-xs;
+    border: none;
+    border-radius: $border-radius-sm;
 }
 
-.p-listbox .p-listbox-header {
+.p-listbox.p-component .p-listbox-header {
     padding: $spacing-2;
     border-bottom: 1px solid $color-palette-black-op-10;
     color: $black;
     background: $white;
     margin: 0;
-    border-top-right-radius: $border-radius-xs;
-    border-top-left-radius: $border-radius-xs;
+    border-top-right-radius: $border-radius-sm;
+    border-top-left-radius: $border-radius-sm;
 }
 
 .p-listbox .p-listbox-header .p-listbox-filter {
@@ -36,7 +36,7 @@
 
 .p-listbox .p-listbox-list .p-listbox-item {
     margin: 0;
-    padding: $spacing-2 $spacing-2;
+    padding: $spacing-1 $spacing-2;
     border: 0 none;
     color: $black;
     transition: none;

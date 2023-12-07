@@ -10,7 +10,7 @@ import {
     DotPageApiResponse,
     DotPageApiService
 } from '../../services/dot-page-api.service';
-import { ADD_CONTENTLET_URL, EDIT_CONTENTLET_URL } from '../../shared/consts';
+import { ADD_CONTENTLET_URL, DEFAULT_PERSONA, EDIT_CONTENTLET_URL } from '../../shared/consts';
 import { SavePagePayload } from '../../shared/models';
 
 export interface EditEmaState {
@@ -50,7 +50,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }
 
     readonly iframeUrl$: Observable<string> = this.select(
-        ({ url, editor }) => `http://localhost:3000/${url}?language_id=${editor.viewAs.language.id}`
+        ({ url, editor }) =>
+            `http://localhost:3000/${url}?language_id=${
+                editor.viewAs.language.id
+            }&com.dotmarketing.persona.id=${
+                editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
+            }`
     );
     readonly language_id$: Observable<number> = this.select(
         (state) => state.editor.viewAs.language.id
@@ -61,15 +66,22 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly editor$: Observable<DotPageApiResponse> = this.select((state) => state.editor);
 
     readonly vm$ = this.select((state) => {
-        return {
-            iframeUrl: `http://localhost:3000/${state.url}?language_id=${state.editor.viewAs.language.id}`,
-            pageTitle: state.editor.page.title,
-            dialogIframeURL: state.dialogIframeURL,
-            dialogVisible: state.dialogVisible,
-            dialogHeader: state.dialogHeader,
-            dialogIframeLoading: state.dialogIframeLoading,
-            editor: state.editor
-        };
+        return state.editor.page.identifier
+            ? {
+                  iframeUrl: `http://localhost:3000/${state.url}?language_id=${
+                      state.editor.viewAs.language.id
+                  }&com.dotmarketing.persona.id=${
+                      state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
+                  }`,
+                  pageTitle: state.editor.page.title,
+                  dialogIframeURL: state.dialogIframeURL,
+                  dialogVisible: state.dialogVisible,
+                  dialogHeader: state.dialogHeader,
+                  dialogIframeLoading: state.dialogIframeLoading,
+                  editor: state.editor,
+                  selectedPersona: state.editor.viewAs.persona ?? DEFAULT_PERSONA
+              }
+            : null; // Don't return anything unless we have page data
     });
 
     /**
@@ -79,8 +91,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      */
     readonly load = this.effect((params$: Observable<DotPageApiParams>) => {
         return params$.pipe(
-            switchMap(({ language_id, url }) =>
-                this.dotPageApiService.get({ language_id, url }).pipe(
+            switchMap(({ language_id, url, persona_id }) =>
+                this.dotPageApiService.get({ language_id, url, persona_id }).pipe(
                     tap({
                         next: (editor) => {
                             this.patchState({
@@ -110,7 +122,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 this.dotPageApiService.save(payload).pipe(
                     tapResponse(
                         () => {
-                            payload.whenSaved?.(); // TODO: We need to create and editorState for this kind of actions (LOADING | IDLE | SAVED...)
+                            payload.whenSaved?.();
                         },
                         (e) => {
                             console.error(e);
