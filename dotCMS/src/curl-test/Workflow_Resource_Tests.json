@@ -4,7 +4,8 @@
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "5403727",
+		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-214cded5-3144-4394-b9e4-15431e29b76e?action=share&source=collection_link&creator=5403727"
 	},
 	"item": [
 		{
@@ -12821,6 +12822,7 @@
 									"    ",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.environment.set(\"genericContentletInode\", jsonData.entity.inode);",
 									"});",
 									""
 								],
@@ -16541,18 +16543,11 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"fields check\", function () {",
+									"pm.test(\"Check that the test Content Type has the expected information\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.entity[0].fields.length).to.eql(1);",
-									"",
-									"    pm.collectionVariables.set(\"contentTypeID\", jsonData.entity[0].id);",
-									"    pm.collectionVariables.set(\"contentTypeVAR\", jsonData.entity[0].variable);",
-									"    pm.collectionVariables.set(\"contentTypeFieldID\", jsonData.entity[0].fields[0].id);",
-									"});",
-									"",
-									"pm.test(\"description check\", function () {",
-									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.entity[0].description).to.eql('THE DESCRIPTION');",
+									"    pm.collectionVariables.set(\"contentTypeVar\", jsonData.entity[0].variable);",
 									"});",
 									""
 								],
@@ -16641,7 +16636,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"{{contentTypeVAR}}\",\n\t\t\"title\": \"Test contentlet Workflow Status\"\n\t}\n}"
+							"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"{{contentTypeVar}}\",\n\t\t\"title\": \"Test contentlet Workflow Status\"\n\t}\n}"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
