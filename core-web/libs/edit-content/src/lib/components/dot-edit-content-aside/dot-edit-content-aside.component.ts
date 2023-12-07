@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 import { ChipModule } from 'primeng/chip';
 
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
     DotApiLinkComponent,
     DotCopyButtonComponent,
@@ -10,7 +11,7 @@ import {
     DotRelativeDatePipe
 } from '@dotcms/ui';
 
-import { EditContentFormData } from '../../models/dot-edit-content-form.interface';
+import { ContentletStatusPipe } from '../../pipes/contentlet-status.pipe';
 
 @Component({
     selector: 'dot-edit-content-aside',
@@ -28,9 +29,11 @@ import { EditContentFormData } from '../../models/dot-edit-content-form.interfac
         DotRelativeDatePipe,
         ChipModule,
         DotMessagePipe,
-        SlicePipe
+        SlicePipe,
+        ContentletStatusPipe
     ]
 })
 export class DotEditContentAsideComponent {
-    @Input() asideData!: EditContentFormData;
+    @Input() contentLet!: DotCMSContentlet;
+    @Input() contentType!: string;
 }

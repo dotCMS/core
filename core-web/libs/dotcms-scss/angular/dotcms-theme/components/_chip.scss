@@ -54,9 +54,8 @@ p-chip .p-chip {
     }
 
     &.p-chip-pink {
-        // TODO: Place on the colors variables, but with what name?
-        background: #c336e514;
-        color: #c234e5;
+        background: $color-alert-fuchsia;
+        color: $color-accessible-text-fuchsia;
     }
 
     &.p-chip-sm {

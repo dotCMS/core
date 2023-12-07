@@ -13,7 +13,9 @@
 </form>
 
 <aside>
-    <dot-edit-content-aside [asideData]="formData" />
+    <dot-edit-content-aside
+        [contentLet]="formData.contentlet"
+        [contentType]="formData.contentType" />
     <p-button [label]="'Save' | dm" (click)="saveContenlet()" data-testId="button-save"></p-button>
     <pre><code>{{form?.value | json}}</code></pre>
 </aside>

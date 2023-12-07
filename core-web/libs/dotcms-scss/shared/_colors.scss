@@ -90,6 +90,7 @@ $color-alert-green: #3ed97a;
 $color-alert-green-light: #f5fdf8;
 $color-alert-red: #f65446;
 $color-alert-red-light: #fff6f6;
+$color-alert-fuchsia: hsla(288, 77%, 55%, 0.08);
 
 $color-accessible-text-red: #d82b2e;
 $color-accessible-text-red-bg: $color-alert-red-light;
@@ -110,6 +111,8 @@ $color-accessible-text-yellow-bg: $color-alert-yellow-light;
 
 $color-accessible-text-gray: $color-palette-gray-600;
 $color-accessible-text-gray-bg: $color-palette-gray-100;
+
+$color-accessible-text-fuchsia: hsla(288, 77%, 48%, 1);
 
 // LEGACY COLORS
 $brand-background: var(--color-palette-primary-800);

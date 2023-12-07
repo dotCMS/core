@@ -31,7 +31,8 @@ describe('DotEditContentAsideComponent', () => {
     });
 
     it('should render aside info', () => {
-        spectator.setInput('asideData', CONTENT_FORM_DATA_MOCK);
+        spectator.setInput('contentLet', CONTENT_FORM_DATA_MOCK.contentlet);
+        spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType);
         spectator.detectChanges();
         expect(spectator.query(byTestId('modified-by'))).toBeTruthy();
         expect(spectator.query(byTestId('last-modified'))).toBeTruthy();
@@ -41,7 +42,8 @@ describe('DotEditContentAsideComponent', () => {
     it('should not render aside info', () => {
         const CONTENT_WITHOUT_CONTENTLET = CONTENT_FORM_DATA_MOCK;
         delete CONTENT_WITHOUT_CONTENTLET.contentlet;
-        spectator.setInput('asideData', CONTENT_WITHOUT_CONTENTLET);
+        spectator.setInput('contentLet', CONTENT_WITHOUT_CONTENTLET.contentlet);
+        spectator.setInput('contentType', CONTENT_WITHOUT_CONTENTLET.contentType);
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('modified-by'))).toBeFalsy();
