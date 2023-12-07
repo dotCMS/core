@@ -1,8 +1,5 @@
 package com.dotcms.workflow.helper;
 
-import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
-import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
@@ -11,6 +8,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.v1.workflow.BulkActionView;
@@ -60,6 +58,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.DateUtil;
@@ -76,6 +75,16 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.lang.time.StopWatch;
+import org.apache.velocity.context.Context;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.aggregations.Aggregation;
+import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -90,21 +99,16 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.lang.time.StopWatch;
-import org.apache.velocity.context.Context;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.aggregations.Aggregation;
-import org.elasticsearch.search.aggregations.Aggregations;
-import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
-
+import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
+import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 
 /**
- * Helper for Workflow Actions
+ * This helper class provides utility methods for interacting with Workflow Actions. This is meant
+ * to keep the REST classes as "clean" as possible.
+ *
  * @author jsanca
+ * @since Dec 6th, 2017
  */
 public class WorkflowHelper {
 
@@ -2033,4 +2037,28 @@ public class WorkflowHelper {
         final DotContentletTransformer transformer = new DotTransformerBuilder().defaultOptions().content(contentlet).build();
         return transformer.toMaps().stream().findFirst().orElse(Collections.emptyMap());
     }
+
+    /**
+     * Takes the existing Workflow Task object, and replaces the {@code assignedTo} field in the
+     * form of a UUID with the actual name of the User or Role to which the task is assigned.
+     *
+     * @param wfTask The {@link WorkflowTask} object to be modified.
+     *
+     * @return The modified {@link WorkflowTask} object.
+     */
+    public WorkflowTask handleWorkflowTaskData(final WorkflowTask wfTask) {
+        if (null == wfTask || UtilMethods.isNotSet(wfTask.getId())) {
+            return null;
+        }
+        try {
+            final String assignedUserName =
+                    APILocator.getRoleAPI().loadRoleById(wfTask.getAssignedTo()).getName();
+            wfTask.setAssignedTo(assignedUserName);
+        } catch (final DotDataException e) {
+            Logger.warn(this.getClass(), String.format("Could not load role with ID '%s': %s",
+                    wfTask.getAssignedTo(), ExceptionUtil.getErrorMessage(e)));
+        }
+        return wfTask;
+    }
+
 } // E:O:F:WorkflowHelper.

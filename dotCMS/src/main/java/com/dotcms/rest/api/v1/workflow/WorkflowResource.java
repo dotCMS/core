@@ -3207,15 +3207,15 @@ public class WorkflowResource {
         WorkflowTask wfTask = new WorkflowTask();
         try {
             final Contentlet contentlet = this.contentletAPI.find(contentletInode, user, false);
-            final List<WorkflowStep> stepsByContentlet =
-                    this.workflowAPI.findStepsByContentlet(contentlet);
-            if (null != stepsByContentlet && stepsByContentlet.size() == 1) {
-                wfStep = stepsByContentlet.get(0);
+            final Optional<WorkflowStep> stepOpt = this.workflowAPI.findCurrentStep(contentlet);
+            if (stepOpt.isPresent()) {
+                wfStep = stepOpt.get();
                 scheme = this.workflowAPI.findScheme(wfStep.getSchemeId());
             }
             final WorkflowTask originalTask = this.workflowAPI.findTaskByContentlet(contentlet);
             if (null != originalTask) {
                 BeanUtils.copyProperties(wfTask, originalTask);
+                wfTask = this.workflowHelper.handleWorkflowTaskData(wfTask);
             }
         } catch (final DotDataException e) {
             Logger.error(this, String.format("Contentlet Inode '%s' was not found",
