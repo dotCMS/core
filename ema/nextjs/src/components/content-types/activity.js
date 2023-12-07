@@ -12,7 +12,11 @@ function Activity({ title, description, image, urlTitle }) {
         <article className="p-4 overflow-hidden bg-white rounded shadow-lg">
             <Image
                 className="w-full"
-                src={`${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}?language_id=${language.id}`}
+                src={
+                    image
+                        ? `${process.env.NEXT_PUBLIC_DOTCMS_HOST}${image}?language_id=${language.id}`
+                        : ''
+                }
                 width={100}
                 height={100}
                 alt="Activity Image"
