@@ -13,7 +13,7 @@ import com.dotmarketing.startup.StartupTask;
  * @author Jose Castro
  * @since Oct 10th, 2023
  */
-public class Task231009AddMetadataColumnToWorkflowAction implements StartupTask {
+public class Task231207AddMetadataColumnToWorkflowAction implements StartupTask {
 
     @Override
     public boolean forceRun() {
