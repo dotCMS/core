@@ -11,6 +11,7 @@ import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -295,16 +296,41 @@ public class IdentifierCacheImpl extends IdentifierCache {
     public void removeContentletVersionInfoToCache(String identifier, long lang) {
         String key = getKey(identifier, lang);
         cache.remove(getVersionInfoGroup()+key, getVersionInfoGroup());
+		cache.remove(getVersionInfoGroup() + "all_" + identifier ,getVersionInfoGroup());
     }
 
 	@Override
 	public void removeContentletVersionInfoToCache(String identifier, long lang, final String variantId) {
 		String key = getKey(identifier, lang, variantId);
 		cache.remove(getVersionInfoGroup() + key , getVersionInfoGroup());
+		cache.remove(getVersionInfoGroup() + "all_" + identifier ,getVersionInfoGroup());
 	}
 
     @Override
     protected void removeVersionInfoFromCache(String identifier) {
         cache.remove(getVersionInfoGroup()+identifier, getVersionInfoGroup());
+		cache.remove(getVersionInfoGroup() + "all_" + identifier ,getVersionInfoGroup());
     }
+
+
+
+	@Override
+	public List<ContentletVersionInfo> getContentVersionInfos(String identifier){
+		// we don't read from cache in transactions
+		if(DbConnectionFactory.inTransaction()){
+			return null;
+		}
+		return (List<ContentletVersionInfo>) cache.getNoThrow(getVersionInfoGroup() + "all_" + identifier , getVersionInfoGroup());
+	}
+
+	@Override
+	public void putContentVersionInfos(String identifier, List<ContentletVersionInfo> versionInfos){
+		if(DbConnectionFactory.inTransaction()){
+			return;
+		}
+		cache.put(getVersionInfoGroup() + "all_" + identifier ,versionInfos, getVersionInfoGroup());
+	}
+
+
+
 }

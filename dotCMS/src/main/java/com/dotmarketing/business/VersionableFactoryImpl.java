@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtils;
 
 /**
@@ -390,81 +391,60 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	@Override
 	public Optional<ContentletVersionInfo> findAnyContentletVersionInfo(final String identifier, final boolean deleted)
 			throws DotDataException {
-		final DotConnect dotConnect = new DotConnect()
-				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=  ? AND deleted = ? "
-						+ "AND variant_id = '"+DEFAULT_VARIANT.name()+"'")
-				.addParam(identifier)
-				.addParam(deleted)
-				.setMaxRows(1);
-
-		final List<ContentletVersionInfo> versionInfos = TransformerLocator
-				.createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
-
-		return versionInfos == null || versionInfos.isEmpty()
-				? Optional.empty()
-				: Optional.of(versionInfos.get(0));
+		return findContentletVersionInfos(identifier, null, 0).stream().filter(cvi->!cvi.isDeleted() || deleted ).findAny();
 	}
 
 	@Override
 	public Optional<ContentletVersionInfo> findAnyContentletVersionInfoAnyVariant(final String identifier, final boolean deleted)
 			throws DotDataException {
-		final DotConnect dotConnect = new DotConnect()
-				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=  ? AND deleted = ?")
-				.addParam(identifier)
-				.addParam(deleted)
-				.setMaxRows(1);
-
-		final List<ContentletVersionInfo> versionInfos = TransformerLocator
-				.createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
-
-		return versionInfos == null || versionInfos.isEmpty()
-				? Optional.empty()
-				: Optional.of(versionInfos.get(0));
+		return findContentletVersionInfos(identifier, null, 0).stream().filter(cvi->!cvi.isDeleted() || deleted ).findAny();
 	}
 
 	@Override
 	public Optional<ContentletVersionInfo> findAnyContentletVersionInfo(final String identifier,
 			final String variant, final boolean deleted)
 			throws DotDataException {
-		final DotConnect dotConnect = new DotConnect()
-				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=  ? AND deleted = ? "
-						+ "AND variant_id = ?")
-				.addParam(identifier)
-				.addParam(deleted)
-				.addParam(variant)
-				.setMaxRows(1);
-
-		final List<ContentletVersionInfo> versionInfos = TransformerLocator
-				.createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
-
-		return versionInfos == null || versionInfos.isEmpty()
-				? Optional.empty()
-				: Optional.of(versionInfos.get(0));
+			return findContentletVersionInfos(identifier, variant, 0).stream().filter(cvi->!cvi.isDeleted() || deleted ).findAny();
 	}
 
-	private List<ContentletVersionInfo> findContentletVersionInfos(final String identifier,
-			final int maxResults) throws DotDataException, DotStateException {
-		return 	findContentletVersionInfos(identifier, null, maxResults);
-	}
 
+	/**
+	 * finds by all version infos by variant
+	 * @param identifier
+	 * @param variantName
+	 * @param maxResults
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 */
 	private List<ContentletVersionInfo> findContentletVersionInfos(final String identifier, final String variantName,
 			final int maxResults) throws DotDataException, DotStateException {
-		final DotConnect dotConnect = new DotConnect();
+
+		List<ContentletVersionInfo> infos = findAllContentletVersionInfos(identifier);
 
 		if (UtilMethods.isSet(variantName)) {
-			dotConnect.setSQL(
-							"SELECT * FROM contentlet_version_info WHERE identifier=? AND variant_id = ?")
-					.addParam(identifier)
-					.addParam(variantName);
-		} else {
-			dotConnect.setSQL(
-							"SELECT * FROM contentlet_version_info WHERE identifier=?")
-					.addParam(identifier);
+			infos = infos.stream().filter(i-> variantName.equals(i.getVariant())).collect(Collectors.toList());
 		}
 
-		if (maxResults > 0) {
-			dotConnect.setMaxRows(maxResults);
+		if (maxResults > 0 && infos.size() > maxResults) {
+			infos = infos.subList(0, maxResults);
 		}
+		return infos;
+
+	}
+
+	/**
+	 * this will return ALL CVIs from the database
+	 * @param identifier
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 */
+	private List<ContentletVersionInfo> findContentletVersionInfosInDB(final String identifier) throws DotDataException, DotStateException {
+
+		DotConnect dotConnect = new DotConnect().setSQL(
+						"SELECT * FROM contentlet_version_info WHERE identifier=?")
+				.addParam(identifier);
 
 		final List<ContentletVersionInfo> versionInfos = TransformerLocator
 				.createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
@@ -477,7 +457,20 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	@Override
 	protected List<ContentletVersionInfo> findAllContentletVersionInfos(final String identifier)
 			throws DotDataException, DotStateException {
-		return findContentletVersionInfos(identifier, -1);
+
+		List<ContentletVersionInfo> infos = icache.getContentVersionInfos(identifier);
+		if (infos != null) {
+			return infos;
+		}
+		synchronized (identifier) {
+			infos = icache.getContentVersionInfos(identifier);
+			if (infos != null) {
+				return infos;
+			}
+			infos = findContentletVersionInfosInDB(identifier);
+			icache.putContentVersionInfos(identifier, infos);
+			return infos;
+		}
 	}
 
 	@Override
