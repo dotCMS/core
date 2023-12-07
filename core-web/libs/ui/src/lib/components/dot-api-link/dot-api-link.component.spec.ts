@@ -25,9 +25,9 @@ describe('DotApiLinkComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotApiLinkComponent],
+            declarations: [TestHostComponent],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
-            imports: [DotLinkComponent]
+            imports: [DotLinkComponent, DotApiLinkComponent]
         }).compileComponents();
     }));
 
