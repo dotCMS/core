@@ -12,7 +12,7 @@ declare module '@tiptap/core' {
 }
 
 export const AIContentNode = Node.create({
-    name: NodeTypes.AI_CONTENT,
+    name: 'aiContent',
 
     addAttributes() {
         return {
