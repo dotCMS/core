@@ -123,18 +123,18 @@ export class AIContentPromptView {
             });
 
         /**
-         * Subscription to close the tippy since that can happen on escape listener that is in the html
+         * Subscription to "exit" the tippy since that can happen on escape listener that is in the html
          * template in ai-content-prompt.component.html
          */
-        this.componentStore.exit$
+
+        this.componentStore.status$
             .pipe(
                 skip(1),
                 takeUntil(this.destroy$),
-                filter((exit) => exit)
+                filter((status) => status === 'exit')
             )
             .subscribe(() => {
                 this.tippy?.hide();
-                this.componentStore.setExit(false);
             });
 
         /**
@@ -174,7 +174,9 @@ export class AIContentPromptView {
             return;
         }
 
-        next.open ? this.show() : this.hide(this.storeSate.open);
+        next.open
+            ? this.show()
+            : this.hide(this.storeSate.status === 'open' || this.storeSate.status === 'loaded');
     }
 
     createTooltip() {
@@ -219,7 +221,7 @@ export class AIContentPromptView {
         this.manageClickListener(true);
         this.editor.setEditable(false);
         this.tippy?.show();
-        this.componentStore.setOpen(true);
+        this.componentStore.setStatus('open');
     }
 
     /**
@@ -233,7 +235,7 @@ export class AIContentPromptView {
 
         this.editor.view.focus();
         if (notifyStore) {
-            this.componentStore.setOpen(false);
+            this.componentStore.setStatus('close');
         }
 
         this.manageClickListener(false);
@@ -247,11 +249,11 @@ export class AIContentPromptView {
     }
 
     /**
-     * Handles the click event on the editor's DOM. If the AI content prompt is open
+     * Handles the click event on the editor's DOM. If the AI content prompt is open or loaded.
      * and not in a loading state, this function hides the associated Tippy tooltip.
      */
     handleClick(): void {
-        if (this.storeSate.open && !this.storeSate.loading) {
+        if (this.storeSate.status === 'open' || this.storeSate.status === 'loaded') {
             this.tippy.hide();
         }
     }

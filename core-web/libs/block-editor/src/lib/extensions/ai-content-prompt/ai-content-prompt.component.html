@@ -3,7 +3,7 @@
         <span class="p-input-icon-right">
             <input
                 #input
-                [attr.disabled]="vm.loading || null"
+                [attr.disabled]="vm.status === 'loading' || null"
                 (keyup.escape)="handleScape($event)"
                 (keydown.escape)="$event.stopPropagation()"
                 autofocus
@@ -14,7 +14,7 @@
                 }}"
                 type="text" />
 
-            <ng-container *ngIf="vm.loading; else submitButton">
+            <ng-container *ngIf="vm.status === 'loading'; else submitButton">
                 <span class="pi pi-spin pi-spinner"></span>
             </ng-container>
 

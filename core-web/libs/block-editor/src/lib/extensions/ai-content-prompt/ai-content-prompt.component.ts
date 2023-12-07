@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 
-import { takeUntil } from 'rxjs/operators';
+import { filter, takeUntil } from 'rxjs/operators';
 
 import { AiContentPromptState, AiContentPromptStore } from './store/ai-content-prompt.store';
 
@@ -37,9 +37,15 @@ export class AIContentPromptComponent implements OnInit, OnDestroy {
     constructor(private readonly aiContentPromptStore: AiContentPromptStore) {}
 
     ngOnInit() {
-        this.aiContentPromptStore.open$.pipe(takeUntil(this.destroy$)).subscribe((open) => {
-            open ? this.input.nativeElement.focus() : this.form.reset();
-        });
+        this.aiContentPromptStore.status$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((status) => status === 'open')
+            )
+            .subscribe(() => {
+                this.form.reset();
+                this.input.nativeElement.focus();
+            });
     }
 
     ngOnDestroy(): void {
@@ -65,7 +71,7 @@ export class AIContentPromptComponent implements OnInit, OnDestroy {
      * @memberof AIContentPromptComponent
      */
     handleScape(event: KeyboardEvent): void {
-        this.aiContentPromptStore.setExit(true);
+        this.aiContentPromptStore.setStatus('exit');
         event.stopPropagation();
     }
 }

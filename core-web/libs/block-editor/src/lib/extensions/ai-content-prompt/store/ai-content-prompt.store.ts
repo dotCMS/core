@@ -9,12 +9,10 @@ import { DotAiService } from '../../../shared';
 
 export interface AiContentPromptState {
     prompt: string;
-    loading: boolean;
     content: string;
-    open: boolean;
     acceptContent: boolean;
     deleteContent: boolean;
-    exit: boolean;
+    status: 'loading' | 'loaded' | 'open' | 'exit' | 'close';
 }
 
 @Injectable({
@@ -24,30 +22,26 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     constructor(private dotAiService: DotAiService) {
         super({
             prompt: '',
-            loading: false,
             content: '',
-            open: false,
             acceptContent: false,
             deleteContent: false,
-            exit: false
+            status: 'close'
         });
     }
 
     //Selectors
     readonly prompt$ = this.select((state) => state.prompt);
     readonly content$ = this.select((state) => state.content);
-    readonly open$ = this.select((state) => state.open);
     readonly deleteContent$ = this.select((state) => state.deleteContent);
-    readonly exit$ = this.select((state) => state.exit);
+    readonly status$ = this.select((state) => state.status);
     readonly vm$ = this.select((state) => state);
 
     //Updaters
-    readonly setOpen = this.updater((state, open: boolean) => ({ ...state, open }));
-    readonly setExit = this.updater((state, exit: boolean) => ({
+    readonly setStatus = this.updater((state, status: AiContentPromptState['status']) => ({
         ...state,
-        exit,
-        open: false // Set open to false when exit is updated
+        status
     }));
+
     readonly setAcceptContent = this.updater((state, acceptContent: boolean) => ({
         ...state,
         acceptContent
@@ -61,13 +55,13 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     readonly generateContent = this.effect((prompt$: Observable<string>) => {
         return prompt$.pipe(
             switchMap((prompt) => {
-                this.patchState({ loading: true, prompt });
+                this.patchState({ status: 'loading', prompt });
 
                 return this.dotAiService.generateContent(prompt).pipe(
-                    tap((content) => this.patchState({ loading: false, content })),
+                    tap((content) => this.patchState({ status: 'loaded', content })),
                     catchError(() => {
                         //TODO: Notify to handle error in the UI.
-                        this.patchState({ loading: false, content: '' });
+                        this.patchState({ status: 'loaded', content: '' });
 
                         return of(null);
                     })

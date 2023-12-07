@@ -22,9 +22,9 @@ describe('AiContentPromptStore', () => {
     });
 
     it('should set open state', (done) => {
-        spectator.service.setOpen(true);
+        spectator.service.setStatus('open');
         store.state$.subscribe((state) => {
-            expect(state.open).toBe(true);
+            expect(state.status).toBe('open');
             done();
         });
     });
@@ -49,7 +49,7 @@ describe('AiContentPromptStore', () => {
 
         // Check if state is updated correctly
         store.state$.subscribe((state) => {
-            expect(state.loading).toBe(false);
+            expect(state.status).toBe('loaded');
             expect(state.content).toBe(content);
             done();
         });
