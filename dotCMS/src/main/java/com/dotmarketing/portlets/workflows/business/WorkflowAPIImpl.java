@@ -4377,6 +4377,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@CloseDBIfOpened
+	@Override
 	public long countAllSchemasActions(final User user) throws DotDataException, DotSecurityException {
 		try {
 			this.isUserAllowToModifiedWorkflow(user);
@@ -4388,6 +4389,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	}
 
 	@CloseDBIfOpened
+	@Override
 	public long countAllSchemasSubActions(final User user) throws DotDataException, DotSecurityException {
 		try {
 			this.isUserAllowToModifiedWorkflow(user);
@@ -4396,6 +4398,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		return workFlowFactory.countAllSchemasSubActions();
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public long countAllSchemasUniqueSubActions(final User user) throws DotDataException, DotSecurityException {
+		try {
+			this.isUserAllowToModifiedWorkflow(user);
+		} catch (WorkflowPortletAccessException | InvalidLicenseException e) {
+			throw new DotSecurityException(e.getMessage(), e);
+		}
+
+		return workFlowFactory.countAllSchemasUniqueSubActions();
 	}
 
 	@Override

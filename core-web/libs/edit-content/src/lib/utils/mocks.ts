@@ -466,6 +466,30 @@ export const BINARY_FIELD_MOCK: DotCMSContentTypeField = {
     variable: 'Binary'
 };
 
+export const CUSTOM_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableCustomField',
+    contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
+    dataType: 'LONG_TEXT',
+    fieldType: 'Custom-Field',
+    fieldTypeLabel: 'Custom Field',
+    fieldVariables: [],
+    fixed: false,
+    iDate: 1700516848000,
+    id: '64d5c84f04df900c79a94e087c6fed05',
+    indexed: false,
+    listed: false,
+    modDate: 1700622670000,
+    hint: 'A hint text',
+    name: 'custom',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 4,
+    unique: false,
+    values: '<script>\r\nfunction searchClicked() {\r\n    console.log("Yoo")\r\n    form.get(\'select\').setValue("three");\r\n    form.get(\'title\').setValue("From Dojo!");\r\n}\r\n</script>\r\n\r\n<button dojoType="dijit.form.Button" onClick="searchClicked()" iconClass="searchIcon">Search</button>',
+    variable: 'custom'
+};
+
 export const JSON_FIELD_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableJSONField',
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
@@ -509,6 +533,7 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     MULTI_SELECT_FIELD_MOCK,
     BLOCK_EDITOR_FIELD_MOCK,
     BINARY_FIELD_MOCK,
+    CUSTOM_FIELD_MOCK,
     JSON_FIELD_MOCK
 ];
 
