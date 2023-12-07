@@ -392,7 +392,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	@Override
 	public Optional<ContentletVersionInfo> findAnyContentletVersionInfo(final String identifier, final boolean deleted)
 			throws DotDataException {
-		return findContentletVersionInfos(identifier, null, 0).stream().filter(cvi->!cvi.isDeleted() || deleted ).findAny();
+		return findContentletVersionInfos(identifier, DEFAULT_VARIANT.name(), 0).stream().filter(cvi->!cvi.isDeleted() || deleted ).findAny();
 	}
 
 	@Override
