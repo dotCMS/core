@@ -183,14 +183,14 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                 accept: () => {
                     this.personalizeService
                         .personalized(persona.pageID, persona.keyTag)
-                        .subscribe(); // This does a take 1 under the hood
-
-                    this.router.navigate([], {
-                        queryParams: {
-                            'com.dotmarketing.persona.id': persona.identifier
-                        },
-                        queryParamsHandling: 'merge'
-                    });
+                        .subscribe(() => {
+                            this.router.navigate([], {
+                                queryParams: {
+                                    'com.dotmarketing.persona.id': persona.identifier
+                                },
+                                queryParamsHandling: 'merge'
+                            });
+                        }); // This does a take 1 under the hood
                 },
                 reject: () => {
                     this.personaSelector.resetValue();
