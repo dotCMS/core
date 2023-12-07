@@ -267,9 +267,6 @@ export const findNodeByType = (
             node = currentNode;
             from = currentPosition;
             to = from + node.nodeSize;
-
-            // Stop traversing once the node is found
-            return false;
         }
     });
 
