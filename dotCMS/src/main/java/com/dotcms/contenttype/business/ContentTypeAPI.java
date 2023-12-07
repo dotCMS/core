@@ -397,4 +397,10 @@ public interface ContentTypeAPI {
      */
     boolean isContentTypeAllowed(ContentType contentType);
 
+  /**
+   * Return the count of {@link ContentType} assigned to not SYSTEM_WORFLOW
+   * @return
+   */
+  long countContentTypeAssignedToNotSystemWorkflow() throws DotDataException;
+
 }

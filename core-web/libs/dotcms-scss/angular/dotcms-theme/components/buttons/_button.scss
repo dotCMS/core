@@ -47,6 +47,10 @@
     &.p-button-outlined {
         @extend #button-disabled-outlined;
     }
+
+    &.p-button-text {
+        @extend #button-disabled-text;
+    }
 }
 
 // Severity for basic button
@@ -55,14 +59,15 @@
 .p-button.p-fileupload-choose {
     @extend #main-primary-severity;
 
-    &.p-button-secondary {
-        @extend #main-secondary-severity;
-    }
-
     // Button Links
     &.p-button-link {
         color: $color-palette-primary;
         background: transparent;
+        border: transparent;
+    }
+
+    &.p-button-link.p-button-secondary {
+        @extend #outlined-secondary-severity;
         border: transparent;
     }
 }
@@ -103,11 +108,13 @@ a.p-button.p-button-text {
 .p-button-icon-only:not(.p-splitbutton-menubutton) {
     height: $field-height-md;
     width: $field-height-md;
+    min-width: $field-height-md;
     border: none;
 
     &.p-button-sm {
         height: $field-height-sm;
         width: $field-height-sm;
+        min-width: $field-height-sm;
     }
 }
 

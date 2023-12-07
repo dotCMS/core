@@ -1,15 +1,22 @@
 package com.dotmarketing.util;
 
+import com.dotcms.config.SystemTableConfigSource;
 import com.dotcms.repackage.com.google.common.base.Supplier;
 import com.dotcms.util.ConfigurationInterpolator;
 import com.dotcms.util.FileWatcherAPI;
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.SystemEnvironmentConfigurationInterpolator;
+import com.dotcms.util.ThreadContextUtil;
 import com.dotcms.util.transform.StringToEntityTransformer;
 import com.dotmarketing.business.APILocator;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.io.IOUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,20 +24,19 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.io.IOUtils;
+import java.util.stream.Collectors;
 
 /**
  * This class provides access to the system configuration parameters that are set through the
  * {@code dotmarketing-config.properties}, and the {@code dotcms-config-cluster.properties} files.
+ *
+ * The order of the properties resolution is:
+ * 1) any property set by environmet variable
+ * 2) any property set by the system table (could be on runtime)
+ * 3) any property set by the property files
  *
  * @author root
  * @version 1.0
@@ -41,11 +47,21 @@ public class Config {
 
     //Generated File Indicator
     public static final String GENERATED_FILE = "dotGenerated_";
-    public static final String RENDITION_FILE = "dotRendition_";
     public static final AtomicBoolean useWatcherMode = new AtomicBoolean(true);
     public static final AtomicBoolean isWatching = new AtomicBoolean(false);
 
     public static final Map<String, String> testOverrideTracker = new ConcurrentHashMap<>();
+
+    private static final Set<String> environmentSetKeys = ConcurrentHashMap.newKeySet();
+
+    private static SystemTableConfigSource systemTableConfigSource = null;
+
+    @VisibleForTesting
+    public static boolean enableSystemTableConfigSource = "true".equalsIgnoreCase(EnvironmentVariablesService.getInstance().getenv().getOrDefault("DOT_ENABLE_SYSTEM_TABLE_CONFIG_SOURCE", "true"));
+
+    public static void initSystemTableConfigSource() {
+        systemTableConfigSource = new SystemTableConfigSource();
+    }
 
 
     /**
@@ -68,7 +84,6 @@ public class Config {
 
     //Object Config properties      n
     public static javax.servlet.ServletContext CONTEXT = null;
-    public static String CONTEXT_PATH = null;
 
 
     //Config internal properties
@@ -319,6 +334,15 @@ public class Config {
     }
 
     /**
+     * Force the refresh properties, only for testing
+     */
+    @VisibleForTesting
+    protected static void refreshProperties() {
+
+       _loadProperties();
+    }
+
+    /**
      *
      */
     private static void _refreshProperties() {
@@ -340,19 +364,83 @@ public class Config {
     private static void readEnvironmentVariables() {
         synchronized (Config.class) {
             EnvironmentVariablesService.getInstance().getenv().entrySet().stream().filter(e -> e.getKey().startsWith(ENV_PREFIX))
-                    .forEach(e -> props.setProperty(e.getKey(), e.getValue()));
+                    .forEach(e -> {
+                        environmentSetKeys.add(e.getKey());
+                        props.setProperty(e.getKey(), e.getValue());
+                    });
         }
     }
 
 
-    private static String envKey(final String theKey) {
+    public static String envKey(final String theKey) {
 
-        String envKey = ENV_PREFIX + theKey.toUpperCase().replace(".", "_");
-        while (envKey.contains("__")) {
-            envKey = envKey.replace("__", "_");
+        if(!theKey.startsWith(ENV_PREFIX)) {
+            String envKey = ENV_PREFIX + theKey.toUpperCase().replace(".", "_").replace("-","_");
+            while (envKey.contains("__")) {
+                envKey = envKey.replace("__", "_");
+            }
+            return envKey.endsWith("_") ? envKey.substring(0, envKey.length() - 1) : envKey;
         }
-        return envKey.endsWith("_") ? envKey.substring(0, envKey.length() - 1) : envKey;
+        return theKey;
 
+    }
+
+    /**
+     * Returns a list of properties that contains the given String.
+     * Also gives priority to the System Env over the ones in the properties file.
+     * @param containsString
+     * @return list of properties
+     */
+    public static List<String> subsetContainsAsList(final String containsString){
+        final List<String> fullListProps = new ArrayList<String>();
+        props.getKeys().forEachRemaining(fullListProps::add);
+
+        //List with all system env props that contains the pattern
+        final String envContainsString = envKey(containsString);
+        final List<String> propList = fullListProps.stream().filter(prop -> prop.contains(envContainsString)).collect(Collectors.toList());
+
+        //List with all props with . (dotmarketing.properties) that contains the pattern
+        final List<String> configList = fullListProps.stream().filter(prop -> prop.contains(containsString)).collect(Collectors.toList());
+
+        //Final list union of the env list + configList which aren't set by envList
+        for(final String prop : configList){
+            final String keyRefactor = envKey(prop);
+            if(!propList.contains(keyRefactor)){
+                propList.add(prop);
+            }
+        }
+
+        return propList;
+    }
+
+    private static String getSystemTableValue(final String ...names) {
+
+        if (null != names && null != systemTableConfigSource && enableSystemTableConfigSource) {
+
+            final String tag = ThreadContextUtil.getOrCreateContext().getTag();
+            if (UtilMethods.isSet(tag) && "ConfigSystemTable".equals(tag)) {
+                // we are already in the system table, so do not need to check inner system table calls (avoid recursion)
+                return null;
+            }
+
+            try {
+
+                ThreadContextUtil.getOrCreateContext().setTag("ConfigSystemTable");
+
+                for (final String name : names) {
+                    final String value = Try.of(() -> systemTableConfigSource.getValue(name)).getOrNull();
+                    if (null != value) {
+                        return value;
+                    }
+                }
+
+            } finally {
+                // the result is done, do not need more the barrier tag
+                ThreadContextUtil.getOrCreateContext().setTag(null);
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -472,13 +560,29 @@ public class Config {
      * @return
      */
     public static String[] getStringArrayProperty(final String name, final String[] defaultValue) {
-        _refreshProperties();
 
-        return props.containsKey(envKey(name))
-                ? props.getStringArray(envKey(name))
-                : props.containsKey(name)
-                        ? props.getStringArray(name)
-                        : defaultValue;
+        final String envKey = envKey(name);
+
+        final Supplier<String[]> propsSupplier = () -> {
+
+            _refreshProperties();
+            return props.containsKey(envKey)
+                    ? props.getStringArray(envKey)
+                    : props.containsKey(name)
+                    ? props.getStringArray(name)
+                    : defaultValue;
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
+        }
+
+        final String valueString = getSystemTableValue(envKey, name);
+        if (null != valueString) {
+            return valueString.split(StringPool.COMMA);
+        }
+
+        return propsSupplier.get();
     }
 
     /**
@@ -486,23 +590,58 @@ public class Config {
      */
     @Deprecated
     public static int getIntProperty(final String name) {
-        _refreshProperties();
 
-        Integer value = Try.of(() -> props.getInt(envKey(name))).getOrNull();
-        if (value != null) {
-            return value;
+        final String envKey = envKey(name);
+
+        final Supplier<Integer> propsSupplier = () -> {
+
+            _refreshProperties();
+
+            Integer value = Try.of(() -> props.getInt(envKey)).getOrNull();
+            if (value != null) {
+                return value;
+            }
+
+            return props.getInt(name);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
         }
 
-        return props.getInt(name);
+        final String valueString = getSystemTableValue(envKey, name);
+        if (null != valueString) {
+            return Integer.parseInt(valueString);
+        }
+
+        return propsSupplier.get();
     }
 
     public static long getLongProperty(final String name, final long defaultVal) {
-        _refreshProperties();
-        Long value = Try.of(() -> props.getLong(envKey(name))).getOrNull();
-        if (value != null) {
-            return value;
+
+        final String envKey = envKey(name);
+
+        final Supplier<Long> propsSupplier = () -> {
+
+            _refreshProperties();
+
+            Long value = Try.of(() -> props.getLong(envKey)).getOrNull();
+            if (value != null) {
+                return value;
+            }
+            return props.getLong(name, defaultVal);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
         }
-        return props.getLong(name, defaultVal);
+
+        final String valueString = getSystemTableValue(envKey, name);
+        if (null != valueString) {
+            return Long.parseLong(valueString);
+        }
+
+        return propsSupplier.get();
     }
 
     /**
@@ -511,13 +650,31 @@ public class Config {
      * @return
      */
     public static int getIntProperty(final String name, final int defaultVal) {
-        _refreshProperties();
-        Integer value = Try.of(() -> props.getInt(envKey(name))).getOrNull();
-        if (value != null) {
-            return value;
+
+        final String envKey = envKey(name);
+
+        final Supplier<Integer> propsSupplier = () -> {
+
+            _refreshProperties();
+
+            Integer value = Try.of(() -> props.getInt(envKey(name))).getOrNull();
+            if (value != null) {
+                return value;
+            }
+
+            return props.getInt(name, defaultVal);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
         }
 
-        return props.getInt(name, defaultVal);
+        final String valueString = getSystemTableValue(envKey, name);
+        if (null != valueString) {
+            return Integer.parseInt(valueString);
+        }
+
+        return propsSupplier.get();
     }
 
     /**
@@ -525,14 +682,31 @@ public class Config {
      */
     @Deprecated
     public static float getFloatProperty(final String name) {
-        _refreshProperties();
 
-        Float value = Try.of(() -> props.getFloat(envKey(name))).getOrNull();
-        if (value != null) {
-            return value;
+        final String envKey = envKey(name);
+
+        final Supplier<Float> propsSupplier = () -> {
+
+            _refreshProperties();
+
+            Float value = Try.of(() -> props.getFloat(envKey)).getOrNull();
+            if (value != null) {
+                return value;
+            }
+
+            return props.getFloat(name);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
         }
 
-        return props.getFloat(name);
+        final String valueString = getSystemTableValue(envKey, name);
+        if (null != valueString) {
+            return Float.parseFloat(valueString);
+        }
+
+        return propsSupplier.get();
     }
 
     /**
@@ -541,26 +715,64 @@ public class Config {
      * @return
      */
     public static float getFloatProperty(final String name, final float defaultVal) {
-        _refreshProperties();
-        Float value = Try.of(() -> props.getFloat(envKey(name))).getOrNull();
-        if (value != null) {
-            return value;
+
+        final String envKey = envKey(name);
+
+        final Supplier<Float> propsSupplier = () -> {
+
+            _refreshProperties();
+
+            Float value = Try.of(() -> props.getFloat(envKey)).getOrNull();
+            if (value != null) {
+                return value;
+            }
+            return props.getFloat(name, defaultVal);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
         }
-        return props.getFloat(name, defaultVal);
+
+        final String valueString = getSystemTableValue(envKey, name);
+        if (null != valueString) {
+            return Float.parseFloat(valueString);
+        }
+
+        return propsSupplier.get();
     }
+
+
 
     /**
      * @deprecated Use getBooleanProperty(String name, boolean default) and set an intelligent
      * default
      */
     @Deprecated
-    public static boolean getBooleanProperty(String name) {
-        _refreshProperties();
-        Boolean value = Try.of(() -> props.getBoolean(envKey(name))).getOrNull();
-        if (value != null) {
-            return value;
+    public static boolean getBooleanProperty(final String name) {
+
+        final String envKey = envKey(name);
+
+        final Supplier<Boolean> propsSupplier = () -> {
+
+            _refreshProperties();
+
+            Boolean value = Try.of(() -> props.getBoolean(envKey)).getOrNull();
+            if (value != null) {
+                return value;
+            }
+            return props.getBoolean(name);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
         }
-        return props.getBoolean(name);
+
+        final String valueString = getSystemTableValue(envKey, name);
+        if (null != valueString) {
+            return Boolean.parseBoolean(valueString);
+        }
+
+        return propsSupplier.get();
     }
 
     /**
@@ -569,13 +781,32 @@ public class Config {
      * @return
      */
     public static boolean getBooleanProperty(String name, boolean defaultVal) {
-        final Boolean value =
-                props.containsKey(envKey(name)) ? Try.of(() -> props.getBoolean(envKey(name)))
-                        .getOrNull() : null;
-        if (null != value) {
-            return value;
+
+        final String envKey = envKey(name);
+
+        final Supplier<Boolean> propsSupplier = () -> {
+
+            _refreshProperties();
+            
+            final Boolean value =
+                    props.containsKey(envKey) ? Try.of(() -> props.getBoolean(envKey))
+                            .getOrNull() : null;
+            if (null != value) {
+                return value;
+            }
+            return props.getBoolean(name, defaultVal);
+        };
+
+        if (environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name)) {
+            return propsSupplier.get();
         }
-        return props.getBoolean(name, defaultVal);
+
+        final String valueString = getSystemTableValue(envKey, name);
+        if (null != valueString) {
+            return Boolean.parseBoolean(valueString);
+        }
+
+        return propsSupplier.get();
     }
 
     /**
@@ -625,6 +856,7 @@ public class Config {
     @SuppressWarnings("unchecked")
     public static Iterator<String> getKeys() {
         _refreshProperties();
+        // note: I do not think we need the system table keys here by now
         return ImmutableSet.copyOf(props.getKeys()).iterator();
     }
 
@@ -635,6 +867,7 @@ public class Config {
     @SuppressWarnings("unchecked")
     public static Iterator<String> subset(String prefix) {
         _refreshProperties();
+        // note: I do not think we need the system table keys here by now
         return ImmutableSet.copyOf(props.subset(prefix).getKeys()).iterator();
     }
 
@@ -646,7 +879,6 @@ public class Config {
      */
     public static void setMyApp(javax.servlet.ServletContext myApp) {
         CONTEXT = myApp;
-        CONTEXT_PATH = myApp.getRealPath("/");
     }
 
 

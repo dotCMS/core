@@ -1,0 +1,115 @@
+import {
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow,
+    DotCMSContentTypeLayoutTab
+} from '@dotcms/dotcms-models';
+
+import {
+    CALENDAR_FIELD_TYPES,
+    FLATTENED_FIELD_TYPES,
+    TAB_FIELD_CLAZZ,
+    UNCASTED_FIELD_TYPES
+} from '../models/dot-edit-content-field.constant';
+import {
+    DotEditContentFieldSingleSelectableDataType,
+    FIELD_TYPES
+} from '../models/dot-edit-content-field.enum';
+import { DotEditContentFieldSingleSelectableDataTypes } from '../models/dot-edit-content-field.type';
+
+// This function is used to cast the value to a correct type for the Angular Form if the field is a single selectable field
+export const castSingleSelectableValue = (
+    value: string,
+    type: string
+): DotEditContentFieldSingleSelectableDataTypes | null => {
+    if (!value) {
+        return null;
+    }
+
+    if (type === DotEditContentFieldSingleSelectableDataType.BOOL) {
+        return value.toLowerCase().trim() === 'true';
+    }
+
+    if (
+        type === DotEditContentFieldSingleSelectableDataType.INTEGER ||
+        type === DotEditContentFieldSingleSelectableDataType.FLOAT
+    ) {
+        return Number(value);
+    }
+
+    return value;
+};
+
+// This function creates the model for the Components that use the Single Selectable Field, like the Select, Radio Button and Checkbox
+export const getSingleSelectableFieldOptions = (
+    options: string,
+    dataType: string
+): { label: string; value: DotEditContentFieldSingleSelectableDataTypes }[] => {
+    const lines = (options?.split('\r\n') ?? []).filter((line) => line.trim() !== '');
+
+    return lines?.map((line) => {
+        const [label, value = label] = line.split('|').map((value) => value.trim());
+
+        return { label, value: castSingleSelectableValue(value, dataType) };
+    });
+};
+
+// This function is used to cast the value to a correct type for the Angular Form
+export const getFinalCastedValue = (
+    value: object | string | undefined,
+    field: DotCMSContentTypeField
+) => {
+    if (CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
+        const parseResult = new Date(value as string);
+
+        // When we create a field, we can set the default value to "now" so, it will cast to Invalid Date. But an undefined value can also be casted to Invalid Date.
+        // So if the getTime() method returns NaN that means the value is invalid and it's either undefined or "now". Otherwise just return the parsed date.
+        return isNaN(parseResult.getTime()) ? value && new Date() : parseResult;
+    }
+
+    if (FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
+        return (value as string)?.split(',').map((value) => value.trim());
+    }
+
+    if (value === undefined || UNCASTED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
+        return value;
+    }
+
+    if (field.fieldType === FIELD_TYPES.JSON) {
+        return JSON.stringify(value, null, 2); // This is a workaround to avoid the Monaco Editor to show the value as a string and keep the formatting
+    }
+
+    return castSingleSelectableValue(value as string, field.dataType);
+};
+
+export const transformLayoutToTabs = (
+    firstTabTitle: string,
+    layout: DotCMSContentTypeLayoutRow[]
+): DotCMSContentTypeLayoutTab[] => {
+    const initialTab = [
+        {
+            title: firstTabTitle,
+            layout: []
+        }
+    ];
+
+    // Reduce the layout into tabs
+    const tabs = layout.reduce((acc, row) => {
+        const { clazz, name } = row.divider || {};
+        const lastTabIndex = acc.length - 1;
+
+        // If the class indicates a tab field, create a new tab
+        if (clazz === TAB_FIELD_CLAZZ) {
+            acc.push({
+                title: name,
+                layout: []
+            });
+        } else {
+            // Otherwise, add the row to the layout of the last tab
+            acc[lastTabIndex].layout.push(row);
+        }
+
+        return acc;
+    }, initialTab);
+
+    return tabs;
+};

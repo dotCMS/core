@@ -237,7 +237,8 @@ import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFiel
 import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTables;
 import com.dotmarketing.startup.runonce.Task230707CreateSystemTable;
 import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSize;
-import com.dotmarketing.startup.runonce.Task231009AddMetadataColumnToWorkflowAction;
+import com.dotmarketing.startup.runonce.Task231109AddPublishDateToContentletVersionInfo;
+import com.dotmarketing.startup.runonce.Task231030DropReleaseTable;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -549,7 +550,8 @@ public class TaskLocatorUtil {
 		.add(Task230701AddHashIndicesToWorkflowTables.class)
 		.add(Task230707CreateSystemTable.class)
 		.add(Task230713IncreaseDisabledWysiwygColumnSize.class)
-		.add(Task231009AddMetadataColumnToWorkflowAction.class)
+		.add(Task231030DropReleaseTable.class)
+		.add(Task231109AddPublishDateToContentletVersionInfo.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}

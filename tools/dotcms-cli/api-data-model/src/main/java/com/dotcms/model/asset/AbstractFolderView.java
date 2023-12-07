@@ -4,12 +4,12 @@ import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import org.immutables.value.Value;
-
-import javax.annotation.Nullable;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nullable;
+import org.immutables.value.Value;
+import org.immutables.value.Value.Auxiliary;
 
 @ValueType
 @Value.Immutable
@@ -75,12 +75,6 @@ public interface AbstractFolderView {
     @Nullable
     List<FolderView> subFolders();
 
-    Optional<Boolean> markForPush();
-
-    Optional<Boolean> markForDelete();
-
-    Optional<String> localStatus();
-
-    Optional<String> localLanguage();
-
+    @Auxiliary
+    Optional<FolderSync> sync();
 }

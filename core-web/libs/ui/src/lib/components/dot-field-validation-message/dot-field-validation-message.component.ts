@@ -20,11 +20,12 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
-type DefaultsNGValidatorsTypes = 'maxlength' | 'required';
+type DefaultsNGValidatorsTypes = 'maxlength' | 'required' | 'pattern';
 
 const NG_DEFAULT_VALIDATORS_ERRORS_MSG: Record<DefaultsNGValidatorsTypes, string> = {
     maxlength: 'error.form.validator.maxlength',
-    required: 'error.form.validator.required'
+    required: 'error.form.validator.required',
+    pattern: 'error.form.validator.pattern'
 };
 
 @Component({
@@ -35,6 +36,9 @@ const NG_DEFAULT_VALIDATORS_ERRORS_MSG: Record<DefaultsNGValidatorsTypes, string
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotFieldValidationMessageComponent implements OnDestroy {
+    @Input()
+    patternErrorMessage: string;
+
     defaultMessage: string;
     errorMsg = '';
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -100,12 +104,19 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
         Object.entries(errors).forEach(([key, value]) => {
             if (key in NG_DEFAULT_VALIDATORS_ERRORS_MSG) {
                 let errorTranslated = '';
-                const { requiredLength } = value;
+                const { requiredLength, requiredPattern } = value;
                 switch (key) {
                     case 'maxlength':
                         errorTranslated = this.dotMessageService.get(
                             NG_DEFAULT_VALIDATORS_ERRORS_MSG[key],
                             requiredLength
+                        );
+                        break;
+
+                    case 'pattern':
+                        errorTranslated = this.dotMessageService.get(
+                            this.patternErrorMessage || NG_DEFAULT_VALIDATORS_ERRORS_MSG[key],
+                            requiredPattern
                         );
                         break;
 

@@ -2,7 +2,18 @@ package com.dotcms.util;
 
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.VelocityUtil;
+import com.liferay.portal.struts.MultiMessageResources;
+import com.liferay.portal.struts.MultiMessageResourcesFactory;
+import com.liferay.portal.util.WebAppPool;
+import com.liferay.util.FileUtil;
+import org.mockito.Matchers;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
+import javax.servlet.ServletContext;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -10,20 +21,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import java.util.Objects;
-import javax.servlet.ServletContext;
-
-import com.liferay.util.FileUtil;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
-import com.dotmarketing.util.Config;
-import com.liferay.portal.struts.MultiMessageResources;
-import com.liferay.portal.struts.MultiMessageResourcesFactory;
-import com.liferay.portal.util.WebAppPool;
 
 /**
  * Sets configuration and environment details used for Integration Tests
@@ -50,6 +47,8 @@ public class ConfigTestHelper extends Config {
             WebAppPool.put("dotcms.org", Globals.MESSAGES_KEY, messages);
             Mockito.when(context.getAttribute(Globals.MESSAGES_KEY)).thenReturn(messages);
 
+            // make sure the tmp dir is there before running
+            new File(System.getProperty("java.io.tmpdir")).mkdirs();
             final String topPath = Files.createTempDirectory("config_test_helper").toAbsolutePath().toString();
 
             final String velocityPath = VelocityUtil.getVelocityRootPath();
@@ -83,7 +82,6 @@ public class ConfigTestHelper extends Config {
 
 
             Config.CONTEXT = context;
-            Config.CONTEXT_PATH = context.getRealPath("/");
 
         }
 

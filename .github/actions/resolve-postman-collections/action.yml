@@ -34,11 +34,7 @@ inputs:
             },
             {
               "name": "experiment",
-              "collections": [
-                "ExperimentResource.postman_collection",
-                "Experiments.postman_collection",
-                "UserExperimentResource.postman_collection"
-              ]
+              "collections": ["Experiments_Resource.postman_collection", "Experiment_Result.postman_collection"]
             },
             {
               "name": "pp",

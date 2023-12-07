@@ -76,6 +76,7 @@ export interface VmReportExperiment {
 }
 
 const NOT_ENOUGH_DATA_LABEL = 'experiments.reports.not.enough.data';
+const CONVERSION_RATE_RANGE_SEPARATOR_LABEL = 'to';
 
 @Injectable()
 export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsReportsState> {
@@ -94,9 +95,9 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     );
 
     readonly getSuggestedWinner$: Observable<DotResultVariant | null> = this.select(({ results }) =>
-        BayesianNoWinnerStatus.includes(results?.bayesianResult.suggestedWinner)
+        BayesianNoWinnerStatus.includes(results?.bayesianResult?.suggestedWinner)
             ? null
-            : results?.goals.primary.variants[results?.bayesianResult.suggestedWinner]
+            : results?.goals.primary.variants[results?.bayesianResult?.suggestedWinner]
     );
 
     readonly getPromotedVariant$: Observable<Variant | null> = this.select(({ experiment }) =>
@@ -116,7 +117,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                 const { datasets } = chartData;
 
                 return (
-                    results.bayesianResult.suggestedWinner != BayesianStatusResponse.NONE &&
+                    results.bayesianResult?.suggestedWinner != BayesianStatusResponse.NONE &&
                     datasets.every((dataset) => dataset.data.length > 0)
                 );
             }
@@ -157,15 +158,19 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
 
     readonly getDetailData$: Observable<DotExperimentVariantDetail[]> = this.select(
         ({ experiment, results }) => {
-            const noData = this.dotMessageService.get(NOT_ENOUGH_DATA_LABEL);
+            const noDataLabel = this.dotMessageService.get(NOT_ENOUGH_DATA_LABEL);
+            const separatorLabel = this.dotMessageService.get(
+                CONVERSION_RATE_RANGE_SEPARATOR_LABEL
+            );
 
-            return results
+            return results && results.bayesianResult
                 ? Object.values(results.goals.primary.variants).map((variant) => {
                       return this.getDotExperimentVariantDetail(
                           experiment,
                           results,
                           variant,
-                          noData
+                          noDataLabel,
+                          separatorLabel
                       );
                   })
                 : [];
@@ -357,7 +362,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         experiment: DotExperiment,
         results: DotExperimentResults,
         variant: DotResultVariant,
-        noDataLabel: string
+        noDataLabel: string,
+        separatorLabel: string
     ): DotExperimentVariantDetail {
         const variantBayesianResult = getBayesianVariantResult(
             variant.variantName,
@@ -374,7 +380,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             ),
             conversionRateRange: getConversionRateRage(
                 variantBayesianResult?.credibilityInterval,
-                noDataLabel
+                noDataLabel,
+                separatorLabel
             ),
             sessions: results.sessions.variants[variant.variantName],
             probabilityToBeBest: getProbabilityToBeBest(

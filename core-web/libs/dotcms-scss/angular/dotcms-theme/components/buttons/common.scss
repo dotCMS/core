@@ -152,6 +152,10 @@
     background-color: transparent;
     color: $black;
 
+    &.p-button-semi-transparent {
+        background-color: rgba(255, 255, 255, 0.65);
+    }
+
     .p-button-label {
         color: inherit;
     }
@@ -159,6 +163,13 @@
     .p-button-icon,
     .pi {
         color: $color-palette-secondary;
+    }
+
+    &.p-button-icon-only {
+        .p-button-icon,
+        .pi {
+            color: $black;
+        }
     }
 
     &:hover {
@@ -211,4 +222,9 @@
 
 #button-disabled-outlined {
     border: $field-border-size solid $color-palette-gray-300;
+}
+
+#button-disabled-text {
+    border: none;
+    background-color: transparent;
 }

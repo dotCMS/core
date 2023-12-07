@@ -580,6 +580,60 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     }
 
     @Override
+    public long countAllSchemasSteps() throws DotDataException {
+        final DotConnect db = new DotConnect();
+        db.setSQL("SELECT COUNT(*) FROM workflow_step " +
+                "INNER JOIN workflow_scheme ON workflow_scheme.id=workflow_step.scheme_id " +
+                "WHERE archived = false");
+        final Map results = (Map) db.loadResults().get(0);
+
+        return Long.parseLong((String) results.get("count"));
+
+    }
+
+    @Override
+    public long countAllSchemasActions() throws DotDataException {
+        final DotConnect db = new DotConnect();
+        db.setSQL("SELECT COUNT(*) FROM workflow_action " +
+                "INNER JOIN workflow_scheme ON workflow_scheme.id=workflow_action.scheme_id " +
+                "WHERE archived = false");
+        final List<Map<String, Object>> results = (List<Map<String, Object>>) db.loadResults();
+        final Map<String, Object> result = results.get(0);
+
+        return Long.parseLong((String) result.get("count"));
+    }
+
+    @Override
+    public long countAllSchemasSubActions() throws DotDataException {
+        final DotConnect db = new DotConnect();
+        db.setSQL("SELECT COUNT(*) " +
+                "FROM workflow_action_class " +
+                "INNER JOIN workflow_action ON workflow_action.id=workflow_action_class.action_id " +
+                "INNER JOIN workflow_scheme ON workflow_scheme.id=workflow_action.scheme_id " +
+                "WHERE archived = false");
+
+        final List<Map<String, Object>> results = (List<Map<String, Object>>) db.loadResults();
+        final Map<String, Object> result = results.get(0);
+
+        return Long.parseLong((String) result.get("count"));
+    }
+
+    @Override
+    public long countAllSchemasUniqueSubActions() throws DotDataException {
+        final DotConnect db = new DotConnect();
+        db.setSQL("SELECT COUNT(distinct workflow_action_class.name) " +
+                "FROM workflow_action_class " +
+                "INNER JOIN workflow_action ON workflow_action.id=workflow_action_class.action_id " +
+                "INNER JOIN workflow_scheme ON workflow_scheme.id=workflow_action.scheme_id " +
+                "WHERE archived = false");
+
+        final List<Map<String, Object>> results = (List<Map<String, Object>>) db.loadResults();
+        final Map<String, Object> result = results.get(0);
+
+        return Long.parseLong((String) result.get("count"));
+    }
+
+    @Override
     public void deleteWorkflowTaskByLanguage(final Language language) throws DotDataException {
 
         final List<WorkflowTask> tasksToClearFromCache = this
@@ -2683,4 +2737,22 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             throw new DotDataException(e.getMessage(), e);
         }
     }
+
+    @Override
+    public int countWorkflowSchemes(final boolean includeArchived) {
+        DotConnect dc = new DotConnect();
+        final StringBuilder query = new StringBuilder("SELECT count(*) as mycount FROM workflow_scheme ");
+
+        if(!includeArchived) {
+            query.append(" WHERE archived != ? ");
+        }
+        dc.setSQL(query.toString());
+
+        if(!includeArchived) {
+            dc.addParam(true);
+        }
+        return dc.getInt("mycount");
+    }
+
+
 }

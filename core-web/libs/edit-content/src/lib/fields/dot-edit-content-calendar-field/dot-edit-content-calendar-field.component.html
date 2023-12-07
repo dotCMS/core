@@ -1,0 +1,9 @@
+<p-calendar
+    [formControlName]="field.variable"
+    [timeOnly]="calendarOptions[field.fieldType].timeOnly"
+    [showTime]="calendarOptions[field.fieldType].showTime"
+    [id]="'calendar-id-' + field.variable"
+    [inputId]="field.variable"
+    [attr.data-testId]="field.variable"
+    [showIcon]="true"
+    [icon]="calendarOptions[field.fieldType].icon"></p-calendar>

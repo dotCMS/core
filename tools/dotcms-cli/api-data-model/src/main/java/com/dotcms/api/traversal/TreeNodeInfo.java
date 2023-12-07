@@ -8,6 +8,7 @@ import java.util.Set;
  */
 public class TreeNodeInfo {
 
+    private String site;
     private Set<String> languages;
     private Set<String> liveLanguages;
     private Set<String> workingLanguages;
@@ -17,12 +18,23 @@ public class TreeNodeInfo {
     /**
      * Constructs a new TreeNodeInfo object.
      */
-    public TreeNodeInfo() {
+    public TreeNodeInfo(final String site) {
         this.languages = new HashSet<>();
         this.liveLanguages = new HashSet<>();
         this.workingLanguages = new HashSet<>();
         this.assetsCount = 0;
         this.foldersCount = 0;
+
+        this.site = site;
+    }
+
+    /**
+     * Returns the site associated with this TreeNodeInfo object.
+     *
+     * @return the site
+     */
+    public String site() {
+        return this.site;
     }
 
     /**

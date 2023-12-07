@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 import picocli.CommandLine;
 
@@ -49,10 +48,13 @@ public class PushCommand implements Callable<Integer>, DotCommand {
     @Inject
     protected WorkspaceManager workspaceManager;
 
+    @Inject
+    Instance<DotPush> pushCommands;
+
+
     @Override
     public Integer call() throws Exception {
         // Find the instances of all push subcommands
-        Instance<DotPush> pushCommands = CDI.current().select(DotPush.class);
 
         // Checking for unmatched arguments
         output.throwIfUnmatchedArguments(spec.commandLine());

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.dotcms</groupId>
-        <artifactId>build-parent</artifactId>
+        <artifactId>dotcms-build-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../build-parent/pom.xml</relativePath>
     </parent>
@@ -25,18 +25,6 @@
         <it.test.fork-folder>${it.test.fork-folder.prefix}</it.test.fork-folder>
         <cleanup.before.tests>true</cleanup.before.tests>
     </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.dotcms</groupId>
-                <artifactId>application-bom</artifactId>
-                <version>${project.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <build>
         <plugins>
@@ -147,4 +135,3 @@
     </repositories>
 
 </project>
-

@@ -9,7 +9,9 @@ const hideBubbleMenuOn: HideBubbleMenuExtensions = {
     tableCell: true,
     table: true,
     youtube: true,
-    dotVideo: true
+    dotVideo: true,
+    aiContent: true,
+    loader: true
 };
 
 /**
@@ -161,6 +163,11 @@ const alignmentMarks: Array<BubbleMenuItem> = [
     {
         icon: 'format_align_right',
         markAction: 'right',
+        active: false
+    },
+    {
+        icon: 'format_align_justify',
+        markAction: 'justify',
         active: false,
         divider: true
     }

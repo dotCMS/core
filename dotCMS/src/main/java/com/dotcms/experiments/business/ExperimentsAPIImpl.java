@@ -20,7 +20,6 @@ import com.dotcms.analytics.bayesian.model.BayesianResult;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 
 import com.dotcms.analytics.helper.BayesianHelper;
-import com.dotcms.analytics.metrics.AbstractCondition.Operator;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
@@ -33,12 +32,9 @@ import com.dotcms.cube.CubeJSClientFactory;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
+import com.dotcms.cube.filters.SimpleFilter;
 import com.dotcms.enterprise.rules.RulesAPI;
-import com.dotcms.experiments.business.result.BrowserSession;
-import com.dotcms.experiments.business.result.Event;
-import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
-import com.dotcms.experiments.business.result.ExperimentResults;
-import com.dotcms.experiments.business.result.ExperimentResultsQueryFactory;
+import com.dotcms.experiments.business.result.*;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Goal;
@@ -94,6 +90,7 @@ import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -103,14 +100,7 @@ import io.vavr.control.Try;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -183,9 +173,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         if(experiment.goals().isPresent()) {
             final Goals goals = experiment.goals().orElseThrow();
             MetricsUtil.INSTANCE.validateGoals(goals);
-
-            addConditionIfIsNeed(goals,
-                    APILocator.getHTMLPageAssetAPI().fromContentlet(htmlPageAsset), builder);
         }
 
         if(experiment.targetingConditions().isPresent()) {
@@ -220,7 +207,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     ORIGINAL_VARIANT, user));
         }
 
-        return savedExperiment.get();
+        final Experiment toReturn = savedExperiment.get();
+
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been saved by User" +
+                " ID '%s'", toReturn.name(), toReturn.id(), user.getUserId()));
+
+        return toReturn;
     }
 
     private void validatePermissionToEdit(Experiment experiment, User user, Contentlet pageAsContent)
@@ -243,73 +235,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             Optional<Experiment> existingExperiment) {
         return !existingExperiment.get().scheduling().
                 equals(experimentToSave.scheduling());
-    }
-
-    private void addConditionIfIsNeed(final Goals goals, final HTMLPageAsset page,
-            final Builder builder) {
-
-        if (isExitOrBounceRate(goals) && !hasCondition(goals, "url")) {
-            addUrlCondition(page, builder, goals);
-        } else if (isUrlParameterOrReachPage(goals) && !hasCondition(goals, "visitBefore")) {
-            addVisitBeforeCondition(page, builder, goals);
-        }
-    }
-
-    private static boolean isUrlParameterOrReachPage(Goals goals) {
-        final MetricType metricType = goals.primary().getMetric().type();
-        return metricType == MetricType.URL_PARAMETER || metricType == MetricType.REACH_PAGE;
-    }
-
-    private static boolean isExitOrBounceRate(Goals goals) {
-        final MetricType metricType = goals.primary().getMetric().type();
-        return metricType == MetricType.EXIT_RATE || metricType == MetricType.BOUNCE_RATE;
-    }
-
-    private void addVisitBeforeCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
-
-        final com.dotcms.analytics.metrics.Condition visitBefore = com.dotcms.analytics.metrics.Condition.builder()
-                .parameter("visitBefore")
-                .operator(Operator.REGEX)
-                .value(ExperimentUrlPatternCalculator.INSTANCE.calculateUrlRegexPattern(page))
-                .build();
-
-        final Goals newGoal = createNewGoals(goals, visitBefore);
-        builder.goals(newGoal);
-    }
-
-    private void addUrlCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
-
-        final com.dotcms.analytics.metrics.Condition refererCondition = createConditionWithUrlValue(
-                page, "url");
-
-        final Goals newGoal = createNewGoals(goals, refererCondition);
-        builder.goals(newGoal);
-    }
-
-    @NotNull
-    private static Goals createNewGoals(final Goals oldGoals,
-            final com.dotcms.analytics.metrics.Condition newConditionToAdd) {
-        final Metric newMetric = Metric.builder().from(oldGoals.primary().getMetric())
-                .addConditions(newConditionToAdd).build();
-        final Goal newGoal = GoalFactory.create(newMetric);
-        return Goals.builder().from(oldGoals).primary(newGoal).build();
-    }
-
-    private boolean hasCondition(final Goals goals, final String conditionName){
-        return goals.primary().getMetric().conditions()
-                .stream()
-                .anyMatch(condition ->conditionName .equals(condition.parameter()));
-    }
-    private com.dotcms.analytics.metrics.Condition createConditionWithUrlValue(
-            final HTMLPageAsset page,
-            final String conditionName) {
-
-            return com.dotcms.analytics.metrics.Condition.builder()
-                    .parameter(conditionName)
-                    .operator(Operator.REGEX)
-                    .value(ExperimentUrlPatternCalculator.INSTANCE.calculateUrlRegexPattern(page))
-                    .build();
-
     }
 
     private void saveTargetingConditions(final Experiment experiment, final User user)
@@ -441,12 +366,21 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 "You don't have permission to archive the Experiment. "
                         + "Experiment Id: " + persistedExperiment.get().id());
 
+        if(persistedExperiment.get().status()==ARCHIVED) {
+            return persistedExperiment.get();
+        }
+
         DotPreconditions.isTrue(persistedExperiment.get().status()==ENDED,
                 ()-> "Only ENDED experiments can be archived",
                 DotStateException.class);
 
         final Experiment archived = persistedExperiment.get().withStatus(ARCHIVED);
-        return save(archived, user);
+        final Experiment afterSave = save(archived, user);
+
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been archived by User" +
+                " ID '%s'", afterSave.name(), afterSave.id(), user.getUserId()));
+
+        return afterSave;
     }
 
     @Override
@@ -496,6 +430,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .forEach(variant -> deleteVariant(variant));
 
         factory.delete(persistedExperiment);
+
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been deleted by User" +
+                " ID '%s'", persistedExperiment.name(), persistedExperiment.id(), user.getUserId()));
     }
 
     private void deleteVariant(ExperimentVariant variant) {
@@ -826,10 +763,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 ? Experiment.builder().from(persistedExperiment).runningIds(getRunningIds(persistedExperiment)).build()
                 : persistedExperiment;
 
-        Experiment running = save(experimentToSave, user);
+        final Experiment running = save(experimentToSave, user);
         cacheRunningExperiments();
         publishExperimentPage(running, user);
         publishContentOnExperimentVariants(user, running);
+
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been started by User" +
+                " ID '%s'", running.name(), running.id(), user.getUserId()));
 
         return running;
     }
@@ -900,6 +840,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final Experiment saved = save(ended, user);
 
             cacheRunningExperiments();
+
+            SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been ended by User" +
+                    " ID '%s'", saved.name(), saved.id(), user.getUserId()));
 
             return saved;
         } catch (DotSecurityException e) {
@@ -1075,9 +1018,22 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final TrafficProportion weightedTraffic = persistedExperiment.trafficProportion()
                 .withVariants(weightedVariants);
         final Experiment withUpdatedTraffic = persistedExperiment.withTrafficProportion(weightedTraffic);
-        final Experiment fromDB = save(withUpdatedTraffic, user);
+        Experiment fromDB = save(withUpdatedTraffic, user);
         variantAPI.archive(toDelete.name());
         variantAPI.delete(toDelete.name());
+
+        if(withUpdatedTraffic.trafficProportion().variants().size()==1
+                && VariantAPI.DEFAULT_VARIANT.name()
+                .equals(withUpdatedTraffic.trafficProportion().variants().first().id())) {
+            final TrafficProportion currentTrafficProportion = withUpdatedTraffic.trafficProportion();
+            final TrafficProportion splitEvenlyTrafficProportion = TrafficProportion.builder()
+                    .from(currentTrafficProportion).type(Type.SPLIT_EVENLY).build();
+
+            fromDB = save(withUpdatedTraffic.withTrafficProportion(splitEvenlyTrafficProportion),
+                    user);
+        }
+
+
         return fromDB;
 
     }
@@ -1196,13 +1152,83 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             RESULTS_QUERY_VALID_STATUSES.contains(experimentFromDataBase.status()),
             "The Experiment must be RUNNING or ENDED to get results");
 
-        final List<BrowserSession> events = getEvents(experimentFromDataBase, user);
-        final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(
-                experimentFromDataBase, events);
+        final CubeJSResultSet totalSessions = getTotalSessions(experimentFromDataBase, user);
+        final CubeJSResultSet summarize = getSummary(experimentFromDataBase, user);
+        return getResults(experimentFromDataBase, totalSessions, summarize);
+    }
 
-        experimentResults.setBayesianResult(calcBayesian(experimentResults, null));
+    private ExperimentResults getResults(final Experiment experiment, final CubeJSResultSet totalSessions,
+                                         final CubeJSResultSet summarize) {
+
+        final Goals goals = experiment.goals()
+                .orElseThrow(() -> new IllegalArgumentException("The Experiment must have a Goal"));
+
+        final Goal primaryGoal = goals.primary();
+        final SortedSet<ExperimentVariant> variants = experiment.trafficProportion().variants();
+
+        final  ExperimentResults.Builder builder = new ExperimentResults.Builder(variants);
+        builder.addPrimaryGoal(primaryGoal);
+        builder.trafficProportion(experiment.trafficProportion());
+
+        for (final ResultSetItem totalSession : totalSessions) {
+            final String variantName = totalSession.get("Events.variant").orElseThrow().toString();
+            final long total = Long.parseLong(totalSession.get("Events.totalSessions").orElseThrow().toString());
+            final float convertionRate = getConvertionRate(totalSession);
+            final long success = getSuccess(totalSession);
+
+            builder.addTotalSession(variantName, total);
+
+            final VariantResults.UniqueBySessionResume uniqueBySessionResume =
+                    new VariantResults.UniqueBySessionResume(success, convertionRate);
+            builder.goal(primaryGoal).uniqueBySession(variantName, uniqueBySessionResume);
+        }
+
+        for (final ResultSetItem resultSetItem : summarize) {
+            final Map<String, Object> attributes = resultSetItem.getAll();
+
+            long totalSessionsByDate = Long.parseLong(attributes.get("Events.totalSessions").toString());
+            long success = getSuccess(resultSetItem);
+            float convertionRate = getConvertionRate(resultSetItem);
+
+            final String day = resultSetItem.get("Events.day").orElseThrow().toString().replace("T00:00:00.000", "");
+            final String variantName = resultSetItem.get("Events.variant").orElseThrow().toString();
+
+            final VariantResults.ResultResumeItem resultResumeItem = new VariantResults.ResultResumeItem(success,
+                    totalSessionsByDate, convertionRate);
+
+            builder.goal(primaryGoal).add(variantName, day, resultResumeItem);
+
+        }
+
+        final ExperimentResults experimentResults = builder.build();
+
+        if (experimentResults.getSessions().getVariants().size() >= 2) {
+            experimentResults.setBayesianResult(calcBayesian(experimentResults, null));
+        }
 
         return experimentResults;
+    }
+
+    private static float getConvertionRate(final ResultSetItem resultSetItem) {
+        final Map<String, Object> attributes = resultSetItem.getAll();
+
+        final String convertionRateAttributeName = attributes.keySet().stream()
+                .filter(attributeName -> attributeName.endsWith("ConvertionRate"))
+                .limit(1)
+                .findFirst()
+                .orElseThrow();
+        return  Float.parseFloat(resultSetItem.get(convertionRateAttributeName).orElseThrow().toString());
+    }
+
+    private static long getSuccess(final ResultSetItem resultSetItem) {
+        final Map<String, Object> attributes = resultSetItem.getAll();
+
+        final String successesAttributeName = attributes.keySet().stream()
+                .filter(attributeName -> attributeName.endsWith("Successes"))
+                .limit(1)
+                .findFirst()
+                .orElseThrow();
+        return Long.parseLong(resultSetItem.get(successesAttributeName).orElseThrow().toString());
     }
 
     @CloseDBIfOpened
@@ -1234,58 +1260,17 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return bayesianAPI.doBayesian(bayesianInput);
     }
 
-    @Override
-    public List<BrowserSession> getEvents(final Experiment experiment,
-                                          final User user) throws DotDataException, DotSecurityException {
-        final TimeMetric timeMetric = TimeMetric.mark(getClass().getSimpleName() + ".getEvents()");
-
+    public CubeJSResultSet getSummary(final Experiment experiment,
+                                             final User user) throws DotDataException, DotSecurityException {
         final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
-        final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
-                .create(experiment);
-        final CubeJSResultSet cubeJSResultSet = cubeClient.sendWithPagination(cubeJSQuery);
+        final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE.createWithDayGranularity(experiment);
+        return cubeClient.send(cubeJSQuery);
+    }
 
-        String previousLookBackWindow = null;
-        final List<Event> currentEvents = new ArrayList<>();
-        final List<BrowserSession> sessions = new ArrayList<>();
-
-        try {
-            for (final ResultSetItem resultSetItem : cubeJSResultSet) {
-                final String currentLookBackWindow = resultSetItem.get("Events.lookBackWindow")
-                        .map(Object::toString)
-                        .orElse(StringPool.BLANK);
-
-                if (!currentLookBackWindow.equals(previousLookBackWindow)) {
-                    if (!currentEvents.isEmpty()) {
-                        sessions.add(new BrowserSession(previousLookBackWindow,
-                                new ArrayList<>(currentEvents)));
-                        currentEvents.clear();
-                    }
-                }
-
-                currentEvents.add(new Event(resultSetItem.getAll(),
-                        EventType.get(resultSetItem.get("Events.eventType")
-                                .map(Object::toString)
-                                .orElseThrow(() -> new IllegalStateException(
-                                        "Type into Event is expected")))
-                ));
-
-                previousLookBackWindow = currentLookBackWindow;
-            }
-
-            if (!currentEvents.isEmpty()) {
-                sessions.add(
-                        new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
-            }
-
-            return sessions;
-        } catch (final Exception e) {
-            final String message = String.format("Error getting result for Experiment %s: %s", experiment.name(),
-                    e.getMessage());
-            Logger.error(this, message, e);
-            throw new DotDataException(message, e);
-        } finally {
-            timeMetric.stop();
-        }
+    public CubeJSResultSet getTotalSessions(final Experiment experiment, final User user) throws DotDataException, DotSecurityException {
+        final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
+        final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE.create(experiment);
+        return cubeClient.send(cubeJSQuery);
     }
 
     @Override
@@ -1438,7 +1423,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .withStatus(DRAFT)
                 .withScheduling(Scheduling.builder().build());
 
-        return save(experimentCanceled, user);
+        final Experiment afterSave = save(experimentCanceled, user);
+
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been canceled by User" +
+                " ID '%s'", afterSave.name(), afterSave.id(), user.getUserId()));
+
+        return afterSave;
     }
 
     private static boolean canBeCanceled(final Experiment experimentFromFactory) {

@@ -100,6 +100,21 @@
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.immutables</groupId>
+            <artifactId>value</artifactId>
+            <version>${immutables.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>${google.findbugs.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -179,6 +194,7 @@
                         <argument>com.dotcms.cli.command.InstanceCommand</argument>
                         <argument>com.dotcms.cli.command.LoginCommand</argument>
                         <argument>com.dotcms.cli.command.PushCommand</argument>
+                        <argument>com.dotcms.cli.command.PullCommand</argument>
                         <argument>com.dotcms.cli.command.StatusCommand</argument>
                         <argument>com.dotcms.cli.command.contenttype.ContentTypeCommand</argument>
                         <argument>com.dotcms.cli.command.files.FilesCommand</argument>

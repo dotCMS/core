@@ -1,32 +1,38 @@
 import { CommonModule } from '@angular/common';
-import { NgModule } from '@angular/core';
+import { APP_INITIALIZER, NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
+import { DotMessageService } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 //Editor
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import {
+    AIContentActionsComponent,
     AIContentPromptComponent,
+    AIImagePromptComponent,
+    BubbleFormComponent,
     BubbleLinkFormComponent,
     BubbleMenuButtonComponent,
     BubbleMenuComponent,
     DragHandlerComponent,
+    FloatingButtonComponent,
     FormActionsComponent,
     SuggestionPageComponent,
     UploadPlaceholderComponent
 } from './extensions';
 import { AssetFormModule } from './extensions/asset-form/asset-form.module';
-import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.component';
-import { FloatingButtonComponent } from './extensions/floating-button/floating-button.component';
 import { ContentletBlockComponent } from './nodes';
-import { AiContentService, DotUploadFileService } from './shared';
-import { EditorDirective } from './shared/directives';
+import { DotAiService, DotUploadFileService, EditorDirective } from './shared';
 import { PrimengModule } from './shared/primeng.module';
 import { SharedModule } from './shared/shared.module';
+
+const initTranslations = (dotMessageService: DotMessageService) => {
+    return () => dotMessageService.init();
+};
 
 @NgModule({
     imports: [
@@ -37,7 +43,9 @@ import { SharedModule } from './shared/shared.module';
         PrimengModule,
         AssetFormModule,
         DotFieldRequiredDirective,
-        UploadPlaceholderComponent
+        UploadPlaceholderComponent,
+        AIImagePromptComponent,
+        DotMessagePipe
     ],
     declarations: [
         EditorDirective,
@@ -52,9 +60,22 @@ import { SharedModule } from './shared/shared.module';
         DotBlockEditorComponent,
         DotEditorCountBarComponent,
         FloatingButtonComponent,
-        AIContentPromptComponent
+        AIContentPromptComponent,
+        AIContentActionsComponent
     ],
-    providers: [DotUploadFileService, LoggerService, StringUtils, AiContentService],
+    providers: [
+        DotUploadFileService,
+        LoggerService,
+        StringUtils,
+        DotAiService,
+        DotMessageService,
+        {
+            provide: APP_INITIALIZER,
+            useFactory: initTranslations,
+            deps: [DotMessageService],
+            multi: true
+        }
+    ],
     exports: [
         EditorDirective,
         BubbleMenuComponent,
@@ -63,7 +84,9 @@ import { SharedModule } from './shared/shared.module';
         SharedModule,
         BubbleFormComponent,
         DotBlockEditorComponent,
-        AIContentPromptComponent
+        AIContentPromptComponent,
+        AIContentActionsComponent,
+        AIImagePromptComponent
     ]
 })
 export class BlockEditorModule {}

@@ -1,0 +1,49 @@
+@use "variables" as *;
+
+:host {
+    display: grid;
+    grid-template-rows: min-content 1fr;
+    height: 100%;
+
+    h4 {
+        margin: 0;
+        padding: 0 $spacing-4;
+        padding-top: $spacing-3;
+    }
+
+    ::ng-deep {
+        .p-dialog {
+            .p-dialog-content {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 0;
+                overflow: hidden;
+            }
+        }
+
+        .p-confirm-dialog {
+            .p-dialog-content {
+                padding: 0 $spacing-6 $spacing-6 $spacing-6;
+            }
+
+            .p-dialog-footer {
+                padding-top: 0;
+            }
+        }
+    }
+}
+
+.iframe-wrapper {
+    margin: $spacing-3;
+    border: solid 1px $color-palette-gray-500;
+}
+
+// Selectors overlayPanel
+::ng-deep {
+    .p-overlaypanel.edit-ema-selector.p-component {
+        .p-overlaypanel-content {
+            padding: 0;
+        }
+    }
+}

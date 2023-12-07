@@ -12,28 +12,35 @@
 // tag::picocli-generated-man-section-name[]
 == Name
 
-site-pull - *Retrieves a site descriptor from a name or Id.*
+site-pull - *Retrieves sites descriptors*
 
 // end::picocli-generated-man-section-name[]
 
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*site pull* [*-h*] [*-fmt*=_<inputOutputFormat>_] [*--workspace*=_<file>_] _idOrName_
+*site pull* [*-h*] [*-ff*] [*-fmt*=_<inputOutputFormat>_]
+          [*--retry-attempts*=_<retryAttempts>_] [*--workspace*=_<file>_] [_idOrName_]
 
 // end::picocli-generated-man-section-synopsis[]
 
 // tag::picocli-generated-man-section-description[]
 == Description
 
-  This retrieves Sites info.
-  The Site info will be retrieved and saved to a file.
-  The file name will be the Site's host name.
-  if a file is pulled more than once
-  the file gets override.
-  By default files are saved to the current directory. in json format.
-  The format can be changed using the --format option.
-  format can be either JSON or YAML.
+  This command fetches and saves the descriptor information
+  for sites within the dotCMS instance. By default, it 
+  retrieves descriptors for all sites, unless a specific site's
+  name or ID is provided as an argument. The descriptors are
+  saved into files named after each site's hostname.
+
+  When a site is pulled more than once, the existing descriptor file
+  is overwritten. All descriptor files are saved within the 'sites'
+  folder located in the dotCMS workspace, which is created in the
+  current directory by default, unless an alternative workspace is specified.
+
+  The output format for the descriptor files is JSON by default. However,
+  you can specify the YAML format using the --format option
+  if YAML is preferred.
 
 
 // end::picocli-generated-man-section-description[]
@@ -41,11 +48,19 @@ site-pull - *Retrieves a site descriptor from a name or Id.*
 // tag::picocli-generated-man-section-options[]
 == Options
 
+*-ff, --fail-fast*::
+  Stop at first failure and exit the command. By default, this option is disabled, and the command will continue on error.
+
 *-fmt, --format*=_<inputOutputFormat>_::
-  Enum values: JSON, YAML, YML
+  Format for the pulled descriptor files. 
++
+Supported values: JSON, YAML, YML
 
 *-h*, *--help*::
   Display this help message.
+
+*--retry-attempts*=_<retryAttempts>_::
+  Number of retry attempts on errors. By default, this option is disabled, and the command will not retry on error.
 
 *--workspace*=_<file>_::
   The workspace directory.
@@ -57,7 +72,7 @@ Current directory is used if not specified
 // tag::picocli-generated-man-section-arguments[]
 == Arguments
 
-_idOrName_::
+[_idOrName_]::
   Site name or Id.
 
 // end::picocli-generated-man-section-arguments[]

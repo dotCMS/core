@@ -4,6 +4,7 @@ import static com.dotcms.cli.command.files.TreePrinter.COLOR_DELETED;
 import static com.dotcms.cli.command.files.TreePrinter.COLOR_MODIFIED;
 import static com.dotcms.cli.command.files.TreePrinter.COLOR_NEW;
 
+import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.push.exception.PushException;
 import com.dotcms.api.client.push.task.PushTask;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
@@ -272,7 +273,7 @@ public class PushServiceImpl implements PushService {
                             errors.size()));
                     long count = errors.stream().filter(PushException.class::isInstance).count();
                     int c = 0;
-                    for (var error : errors) {
+                    for (final var error : errors) {
                         c++;
                         output.handleCommandException(error,
                                 String.format("%s %n", error.getMessage()), c == count);

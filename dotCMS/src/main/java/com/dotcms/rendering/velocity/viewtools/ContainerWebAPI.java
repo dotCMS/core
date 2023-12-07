@@ -115,12 +115,8 @@ public class ContainerWebAPI implements ViewTool {
 	 */
     public List<String> getPersonalizedContentList(String pageId, String containerId, String uuid) {
 
-		final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
-
-		final IHTMLPage htmlPageAsset = getHtmlPageAsset(pageId);
-
 		Set<String> availablePersonalizations = UtilMethods.isSet(pageId)
-                        ? Try.of(() -> APILocator.getMultiTreeAPI().getPersonalizationsForPage(htmlPageAsset, currentVariantId))
+                        ? Try.of(() -> getPageById(pageId))
                                         .getOrElse(ImmutableSet.of(MultiTree.DOT_PERSONALIZATION_DEFAULT))
                         : ImmutableSet.of(MultiTree.DOT_PERSONALIZATION_DEFAULT);
 
@@ -160,6 +156,14 @@ public class ContainerWebAPI implements ViewTool {
         
         return new ArrayList<>();
     }
+
+	private Set<String> getPageById(final String pageId) throws DotDataException {
+		final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
+
+		final IHTMLPage htmlPageAsset = getHtmlPageAsset(pageId);
+
+		return APILocator.getMultiTreeAPI().getPersonalizationsForPage(htmlPageAsset, currentVariantId);
+	}
 
 	private static HTMLPageAsset getHtmlPageAsset(String pageId)  {
 		try {

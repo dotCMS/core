@@ -131,7 +131,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     }
 
     /* @Overrrider */
-    update(view: EditorView, oldState?: EditorState) {
+    override update(view: EditorView, oldState?: EditorState) {
         const { state, composing } = view;
         const { doc, selection } = state;
 
@@ -194,7 +194,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     }
 
     /* @Overrrider */
-    destroy() {
+    override destroy() {
         this.tippy?.destroy();
         this.tippyChangeTo?.destroy();
 
@@ -216,7 +216,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     updateComponent() {
         const { items } = this.component.instance;
         const { activeItem } = this.getActiveNode();
-        const activeMarks = this.getActiveMarks(['left', 'center', 'right']);
+        const activeMarks = this.getActiveMarks(['justify', 'left', 'center', 'right']);
 
         // Update
         this.component.instance.selected = activeItem?.label;
@@ -274,6 +274,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         this.selectionNode = node;
         this.component.instance.items = getBubbleMenuItem(type);
+        this.component.changeDetectorRef.detectChanges();
     }
 
     openImageProperties() {
@@ -325,19 +326,23 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         const { markAction: action, active } = item;
         switch (action) {
             case 'bold':
-                this.editor.commands.toggleBold();
+                this.editor.commands.toggleBold?.();
                 break;
 
             case 'italic':
-                this.editor.commands.toggleItalic();
+                this.editor.commands.toggleItalic?.();
                 break;
 
             case 'strike':
-                this.editor.commands.toggleStrike();
+                this.editor.commands.toggleStrike?.();
                 break;
 
             case 'underline':
-                this.editor.commands.toggleUnderline();
+                this.editor.commands.toggleUnderline?.();
+                break;
+
+            case 'justify':
+                this.toggleTextAlign(action, active);
                 break;
 
             case 'left':
@@ -353,11 +358,11 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 break;
 
             case 'bulletList':
-                this.editor.commands.toggleBulletList();
+                this.editor.commands.toggleBulletList?.();
                 break;
 
             case 'orderedList':
-                this.editor.commands.toggleOrderedList();
+                this.editor.commands.toggleOrderedList?.();
                 break;
 
             case 'indent':
@@ -397,24 +402,24 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 break;
 
             case 'clearAll':
-                this.editor.commands.unsetAllMarks();
-                this.editor.commands.clearNodes();
+                this.editor.commands?.unsetAllMarks();
+                this.editor.commands?.clearNodes();
                 break;
 
             case 'superscript':
-                this.editor.commands.toggleSuperscript();
+                this.editor.commands?.toggleSuperscript?.();
                 break;
 
             case 'subscript':
-                this.editor.commands.toggleSubscript();
+                this.editor.commands?.toggleSubscript?.();
                 break;
         }
     }
 
     toggleTextAlign(alignment, active) {
         active
-            ? this.editor.commands.unsetTextAlign()
-            : this.editor.commands.setTextAlign(alignment);
+            ? this.editor.commands?.unsetTextAlign?.()
+            : this.editor.commands?.setTextAlign?.(alignment);
     }
 
     changeToItems() {
@@ -452,16 +457,16 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 this.editor.chain().focus().clearNodes().run();
             },
             orderedList: () => {
-                this.editor.chain().focus().clearNodes().toggleOrderedList().run();
+                this.editor.chain().focus().clearNodes().toggleOrderedList?.().run();
             },
             bulletList: () => {
-                this.editor.chain().focus().clearNodes().toggleBulletList().run();
+                this.editor.chain().focus().clearNodes().toggleBulletList?.().run();
             },
             blockquote: () => {
-                this.editor.chain().focus().clearNodes().toggleBlockquote().run();
+                this.editor.chain().focus().clearNodes().toggleBlockquote?.().run();
             },
             codeBlock: () => {
-                this.editor.chain().focus().clearNodes().toggleCodeBlock().run();
+                this.editor.chain().focus().clearNodes().toggleCodeBlock?.().run();
             }
         };
 
@@ -527,13 +532,19 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     }
 
     toggleChangeTo() {
-        const { changeToIsOpen } = this.editor?.storage.bubbleMenu || {};
-        changeToIsOpen ? this.tippyChangeTo?.hide() : this.tippyChangeTo?.show();
+        this.tippyChangeTo?.state.isVisible
+            ? this.tippyChangeTo?.hide()
+            : this.tippyChangeTo?.show();
     }
 
-    hanlderScroll() {
-        if (this.tippyChangeTo?.state.isVisible) {
-            this.tippyChangeTo?.hide();
+    private hanlderScroll(e: Event) {
+        const element = e.target as HTMLElement;
+        const suggestionElement = this.changeTo.instance.listElement?.nativeElement;
+
+        if (!this.tippy?.state.isMounted || element === suggestionElement) {
+            return;
         }
+
+        this.tippyChangeTo?.hide();
     }
 }

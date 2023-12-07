@@ -18,8 +18,19 @@ import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { CoreWebService, DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
-import { DotIconModule, DotMessagePipe, DotRelativeDatePipe, DotStringFormatPipe } from "@dotcms/ui";
+import {
+    CoreWebService,
+    DotcmsConfigService,
+    LoggerService,
+    LoginService,
+    StringUtils
+} from '@dotcms/dotcms-js';
+import {
+    DotIconModule,
+    DotMessagePipe,
+    DotRelativeDatePipe,
+    DotStringFormatPipe
+} from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
@@ -162,6 +173,10 @@ describe('DotListingDataTableComponent', () => {
                                 offset: -21600000
                             })
                     }
+                },
+                {
+                    provide: LoginService,
+                    useValue: { currentUserLanguageId: 'en-US' }
                 }
             ]
         });

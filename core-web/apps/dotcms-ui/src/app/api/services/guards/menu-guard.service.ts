@@ -6,6 +6,7 @@ import { ActivatedRouteSnapshot, CanActivate, RouterStateSnapshot } from '@angul
 import { map } from 'rxjs/operators';
 
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
+import { DotSessionStorageService } from '@dotcms/data-access';
 
 import { DotMenuService } from '../dot-menu.service';
 import { DotRouterService } from '../dot-router/dot-router.service';
@@ -18,18 +19,19 @@ export class MenuGuardService implements CanActivate {
     constructor(
         private dotMenuService: DotMenuService,
         private dotRouterService: DotRouterService,
-        private dotNavigationService: DotNavigationService
+        private dotNavigationService: DotNavigationService,
+        private dotSessionStorageService: DotSessionStorageService
     ) {}
 
     canActivate(_route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
-        return this.canAccessPortlet(this.dotRouterService.getPortletId(state.url));
+        return this.canAccessPortlet(state.url);
     }
 
     canActivateChild(
         _route: ActivatedRouteSnapshot,
         state: RouterStateSnapshot
     ): Observable<boolean> {
-        return this.canAccessPortlet(this.dotRouterService.getPortletId(state.url));
+        return this.canAccessPortlet(state.url);
     }
 
     /**
@@ -39,9 +41,13 @@ export class MenuGuardService implements CanActivate {
      * @returns boolean
      */
     private canAccessPortlet(url: string): Observable<boolean> {
-        return this.dotMenuService.isPortletInMenu(url).pipe(
+        const id = this.dotRouterService.getPortletId(url);
+        const checkJSPPortlet = this.dotRouterService.isJSPPortletURL(url);
+
+        return this.dotMenuService.isPortletInMenu(id, checkJSPPortlet).pipe(
             map((isValidPortlet) => {
                 if (!isValidPortlet) {
+                    this.dotSessionStorageService.removeVariantId();
                     this.dotNavigationService.goToFirstPortlet();
                 }
 

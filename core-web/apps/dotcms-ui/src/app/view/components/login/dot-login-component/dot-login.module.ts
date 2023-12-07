@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { RouterModule, Routes } from '@angular/router';
+import { RouterLink, RouterModule, Routes } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -41,7 +41,8 @@ const routes: Routes = [
         ReactiveFormsModule,
         DotFieldValidationMessageComponent,
         DotAutofocusDirective,
-        DotFieldRequiredDirective
+        DotFieldRequiredDirective,
+        RouterLink
     ],
     declarations: [DotLoginComponent]
 })

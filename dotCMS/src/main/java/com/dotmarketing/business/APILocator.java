@@ -26,7 +26,18 @@ import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
-import com.dotcms.contenttype.business.*;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.ContentTypeAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeDestroyAPI;
+import com.dotcms.contenttype.business.ContentTypeDestroyAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPI;
+import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPIImpl;
+import com.dotcms.contenttype.business.DotAssetAPI;
+import com.dotcms.contenttype.business.DotAssetAPIImpl;
+import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.business.FieldAPIImpl;
+import com.dotcms.contenttype.business.StoryBlockAPI;
+import com.dotcms.contenttype.business.StoryBlockAPIImpl;
 import com.dotcms.device.DeviceAPI;
 import com.dotcms.device.DeviceAPIImpl;
 import com.dotcms.dotpubsub.DotPubSubProvider;
@@ -51,6 +62,8 @@ import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.languagevariable.business.LanguageVariableAPIImpl;
 import com.dotcms.mail.MailAPI;
 import com.dotcms.mail.MailAPIImpl;
+import com.dotcms.analytics.metrics.MetricsAPI;
+import com.dotcms.analytics.metrics.MetricsAPIImpl;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.notifications.business.NotificationAPIImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsAPI;
@@ -189,7 +202,7 @@ public class APILocator extends Locator<APIIndex> {
 			return;
 		}
 
-		String apiLocatorClass = Config.getStringProperty("API_LOCATOR_IMPLEMENTATION", null);
+		final String apiLocatorClass = Config.getStringProperty("API_LOCATOR_IMPLEMENTATION", null);
 		if (apiLocatorClass != null) {
 			instance = (APILocator) ReflectionUtils.newInstance(apiLocatorClass);
 		}
@@ -1126,6 +1139,14 @@ public class APILocator extends Locator<APIIndex> {
 		return (AnalyticsAPI) getInstance(APIIndex.ANALYTICS_API);
 	}
 
+	/**
+	 * Creates a single instance of the {@link MetricsAPI} class.
+	 * @return
+	 */
+	public static MetricsAPI getMetricsAPI() {
+		return (MetricsAPI) getInstance(APIIndex.METRICS_API);
+	}
+
 	public static ContentTypeDestroyAPI getContentTypeDestroyAPI() {
 		return (ContentTypeDestroyAPI) getInstance(APIIndex.CONTENT_TYPE_DESTROY_API);
 	}
@@ -1290,6 +1311,7 @@ enum APIIndex
 	EXPERIMENTS_API,
 	BAYESIAN_API,
 	ANALYTICS_API,
+	METRICS_API,
 	CONTENT_TYPE_DESTROY_API,
 
 	SYSTEM_API;
@@ -1381,6 +1403,7 @@ enum APIIndex
 			case EXPERIMENTS_API: return new ExperimentsAPIImpl();
 			case BAYESIAN_API: return new BayesianAPIImpl();
 			case ANALYTICS_API: return new AnalyticsAPIImpl();
+			case METRICS_API: return new MetricsAPIImpl();
 			case CONTENT_TYPE_DESTROY_API: return new ContentTypeDestroyAPIImpl();
 			case SYSTEM_API: return new SystemAPIImpl();
 		}

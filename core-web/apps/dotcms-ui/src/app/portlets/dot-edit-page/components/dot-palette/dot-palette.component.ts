@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { animate, AnimationEvent, state, style, transition, trigger } from '@angular/animations';
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, ViewChild } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
 
@@ -32,22 +32,19 @@ import { DotPaletteState, DotPaletteStore } from './store/dot-palette.store';
         ])
     ]
 })
-export class DotPaletteComponent implements OnInit {
+export class DotPaletteComponent {
     @Input() set allowedContent(items: string[]) {
         this.store.setAllowedContent(items);
     }
-    @Input() languageId: string;
+    @Input() set languageId(languageId: string) {
+        this.store.switchLanguage(languageId);
+    }
     vm$: Observable<DotPaletteState> = this.store.vm$;
 
     @ViewChild('contentlets') contentlets: DotPaletteContentletsComponent;
     @ViewChild('contentTypes') contentTypes: DotPaletteContentTypeComponent;
 
     constructor(private store: DotPaletteStore) {}
-
-    ngOnInit(): void {
-        this.store.setLanguageId(this.languageId);
-        this.store.getContenttypesData();
-    }
 
     /**
      * Sets value on store to show/hide components on the UI

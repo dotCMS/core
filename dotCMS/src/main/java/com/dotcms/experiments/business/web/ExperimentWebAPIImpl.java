@@ -4,6 +4,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.util.FileUtil.getFileContentFromResourceContext;
 
+import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.ExperimentUrlPatternCalculator;
 import com.dotcms.experiments.model.Experiment;
@@ -119,7 +120,9 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
                     .map(runningId -> runningId.id())
                     .orElse(null);
 
-            return new SelectedExperiment.Builder()
+            final Metric metric = experiment.goals().orElseThrow().primary().getMetric();
+
+            final SelectedExperiment.Builder builder = new SelectedExperiment.Builder()
                     .id(experiment.id().orElse(StringPool.BLANK))
                     .name(experiment.name())
                     .pageUrl(htmlPageAsset.getURI())
@@ -127,8 +130,17 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
                     .lookBackWindow(nextLookBackWindow())
                     .expireTime(experiment.lookBackWindowExpireTime())
                     .runningId(currentRunningId)
-                    .redirectPattern(ExperimentUrlPatternCalculator.INSTANCE.calculateUrlRegexPattern(htmlPageAsset))
-                    .build();
+                    .experimentPagePattern(ExperimentUrlPatternCalculator.INSTANCE
+                            .calculatePageUrlRegexPattern(experiment));
+
+            final Optional<String> targetPageUrlPattern = ExperimentUrlPatternCalculator.INSTANCE
+                    .calculateTargetPageUrlPattern(htmlPageAsset, metric);
+
+            if (targetPageUrlPattern.isPresent()) {
+                builder.targetPagePattern(targetPageUrlPattern.get());
+            }
+
+            return builder.build();
         } catch (DotDataException e) {
             throw new DotRuntimeException(e);
         }

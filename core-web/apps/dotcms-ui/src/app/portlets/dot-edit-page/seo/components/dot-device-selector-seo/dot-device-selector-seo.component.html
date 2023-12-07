@@ -1,3 +1,8 @@
+<div
+    class="dot-device-selector-mask"
+    *ngIf="deviceSelector.overlayVisible"
+    data-testId="selector-mask"></div>
+
 <p-overlayPanel
     #deviceSelector
     (onHide)="onHideDeviceSelector()"
@@ -33,6 +38,7 @@
                         </button>
                     </li>
                 </ul>
+                <p-divider [align]="'center'" layout="vertical"></p-divider>
                 <ul class="device-list">
                     <li
                         class="device-list-item"

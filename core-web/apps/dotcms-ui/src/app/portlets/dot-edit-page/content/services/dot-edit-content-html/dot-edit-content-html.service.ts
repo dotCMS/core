@@ -1,7 +1,8 @@
 import { fromEvent, Observable, of, Subject, Subscription } from 'rxjs';
 
+import { DOCUMENT } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ElementRef, Injectable, NgZone } from '@angular/core';
+import { ElementRef, Inject, Injectable, NgZone } from '@angular/core';
 
 import { catchError, filter, finalize, map, switchMap, take, tap } from 'rxjs/operators';
 
@@ -49,6 +50,7 @@ import { DotCopyContentModalService } from '../dot-copy-content-modal/dot-copy-c
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
+import { DotSeoMetaTagsUtilService } from '../html/dot-seo-meta-tags-util.service';
 import { DotSeoMetaTagsService } from '../html/dot-seo-meta-tags.service';
 import { getEditPageCss } from '../html/libraries/iframe-edit-mode.css';
 
@@ -98,6 +100,7 @@ export class DotEditContentHtmlService {
     private remoteRendered: boolean;
     private askToCopy = true;
 
+    private readonly origin: string = '';
     private readonly docClickHandlers;
 
     get pagePersonalization() {
@@ -124,7 +127,9 @@ export class DotEditContentHtmlService {
         private dotCopyContentModalService: DotCopyContentModalService,
         private dotCopyContentService: DotCopyContentService,
         private dotLoadingIndicatorService: DotLoadingIndicatorService,
-        private dotSeoMetaTagsService: DotSeoMetaTagsService
+        private dotSeoMetaTagsService: DotSeoMetaTagsService,
+        private dotSeoMetaTagsUtilService: DotSeoMetaTagsUtilService,
+        @Inject(DOCUMENT) private document: Document
     ) {
         this.contentletEvents$.subscribe(
             (
@@ -143,6 +148,8 @@ export class DotEditContentHtmlService {
             this.docClickHandlers = {};
             this.setGlobalClickHandlers();
         }
+
+        this.origin = this.document.location.origin;
     }
 
     /**
@@ -442,12 +449,14 @@ export class DotEditContentHtmlService {
     getMetaTags(): SeoMetaTags {
         const pageDocument = this.getEditPageDocument();
 
-        return this.dotSeoMetaTagsService.getMetaTags(pageDocument);
+        return this.dotSeoMetaTagsUtilService.getMetaTags(pageDocument);
     }
 
     private setMaterialIcons(): void {
         const doc = this.getEditPageDocument();
-        const link = this.dotDOMHtmlUtilService.createLinkElement(MATERIAL_ICONS_PATH);
+        const link = this.dotDOMHtmlUtilService.createLinkElement(
+            this.origin + MATERIAL_ICONS_PATH
+        );
         doc.head.appendChild(link);
     }
 
@@ -596,7 +605,7 @@ export class DotEditContentHtmlService {
         const editModeNodes = doc.querySelectorAll('[data-mode]');
 
         if (editModeNodes.length) {
-            const TINYMCE = `/html/js/tinymce/js/tinymce/tinymce.min.js`;
+            const TINYMCE = `${this.origin}/html/js/tinymce/js/tinymce/tinymce.min.js`;
             const tinyMceScript = this.dotDOMHtmlUtilService.creatExternalScriptElement(TINYMCE);
             const tinyMceInitScript: HTMLScriptElement =
                 this.dotDOMHtmlUtilService.createInlineScriptElement(INLINE_TINYMCE_SCRIPTS);
@@ -931,7 +940,7 @@ export class DotEditContentHtmlService {
         const href = url.split('/');
         href.pop();
 
-        base.href = href.join('/') + '/';
+        base.href = this.origin + href.join('/') + '/';
 
         return base;
     }
@@ -947,7 +956,7 @@ export class DotEditContentHtmlService {
     private setEditContentletStyles(): void {
         const timeStampId = `iframeId_${Math.floor(Date.now() / 100).toString()}`;
         const style = this.dotDOMHtmlUtilService.createStyleElement(
-            getEditPageCss(`#${timeStampId}`)
+            getEditPageCss(`#${timeStampId}`, this.origin)
         );
 
         const doc = this.getEditPageDocument();

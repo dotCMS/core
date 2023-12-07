@@ -35,6 +35,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import javax.servlet.ServletContext;
+
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -241,68 +243,71 @@ public class DateUtilTest extends UnitTestBase {
 
         this.initMessages();
         Config.CONTEXT = context;
+        try {
+            when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
 
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+            final SimpleDateFormat format = new SimpleDateFormat("yyyy/MMM/dd");
 
-        final SimpleDateFormat format = new SimpleDateFormat("yyyy/MMM/dd");
+            format.setLenient(true);
 
-        format.setLenient(true);
+            final Date toDate    = format.parse("2016/Apr/01");
+            Date date    = format.parse("2015/Mar/01");
 
-        final Date toDate    = format.parse("2016/Apr/01");
-        Date date    = format.parse("2015/Mar/01");
+            String prettyDate = DateUtil.prettyDateSince(date, new Locale.Builder().setLanguage("en").setRegion("US").build(), toDate);
 
-        String prettyDate = DateUtil.prettyDateSince(date, new Locale.Builder().setLanguage("en").setRegion("US").build(), toDate);
+            assertNotNull(prettyDate);
+            assertEquals("more-than-a-year-ago", prettyDate);
 
-        assertNotNull(prettyDate);
-        assertEquals("more-than-a-year-ago", prettyDate);
+            //////////******************
+            date    = format.parse("2016/Feb/25");
+            prettyDate = DateUtil.prettyDateSince(date, new Locale.Builder().setLanguage("en").setRegion("US").build(), toDate);
 
-        //////////******************
-        date    = format.parse("2016/Feb/25");
-        prettyDate = DateUtil.prettyDateSince(date, new Locale.Builder().setLanguage("en").setRegion("US").build(), toDate);
+            System.out.println(MessageFormat.format("Pretty Date: {0}, from {1} to {2}", prettyDate, date, toDate));
+            assertNotNull(prettyDate);
+            assertEquals("last-month", prettyDate);
 
-        System.out.println(MessageFormat.format("Pretty Date: {0}, from {1} to {2}", prettyDate, date, toDate));
-        assertNotNull(prettyDate);
-        assertEquals("last-month", prettyDate);
+            //////////******************
+            date    = format.parse("2016/Mar/04");
+            prettyDate = DateUtil.prettyDateSince(date, new Locale.Builder().setLanguage("en").setRegion("US").build(), toDate);
 
-        //////////******************
-        date    = format.parse("2016/Mar/04");
-        prettyDate = DateUtil.prettyDateSince(date, new Locale.Builder().setLanguage("en").setRegion("US").build(), toDate);
+            System.out.println(MessageFormat.format("Pretty Date: {0}, from {1} to {2}", prettyDate, date, toDate));
+            assertNotNull(prettyDate);
+            assertEquals("x-weeks-ago", prettyDate);
 
-        System.out.println(MessageFormat.format("Pretty Date: {0}, from {1} to {2}", prettyDate, date, toDate));
-        assertNotNull(prettyDate);
-        assertEquals("x-weeks-ago", prettyDate);
+            //////////******************
+            date    = format.parse("2016/Jan/04");
+            prettyDate = DateUtil.prettyDateSince(date, new Locale.Builder().setLanguage("en").setRegion("US").build(), toDate);
 
-        //////////******************
-        date    = format.parse("2016/Jan/04");
-        prettyDate = DateUtil.prettyDateSince(date, new Locale.Builder().setLanguage("en").setRegion("US").build(), toDate);
+            System.out.println(MessageFormat.format("Pretty Date: {0}, from {1} to {2}", prettyDate, date, toDate));
+            assertNotNull(prettyDate);
+            assertEquals("x-months-ago", prettyDate);
 
-        System.out.println(MessageFormat.format("Pretty Date: {0}, from {1} to {2}", prettyDate, date, toDate));
-        assertNotNull(prettyDate);
-        assertEquals("x-months-ago", prettyDate);
+            //////////******************
+            date    = format.parse("2016/Mar/20");
+            prettyDate = DateUtil.prettyDateSince(date, new Locale.Builder().setLanguage("en").setRegion("US").build(), toDate);
 
-        //////////******************
-        date    = format.parse("2016/Mar/20");
-        prettyDate = DateUtil.prettyDateSince(date, new Locale.Builder().setLanguage("en").setRegion("US").build(), toDate);
+            System.out.println(MessageFormat.format("Pretty Date: {0}, from {1} to {2}", prettyDate, date, toDate));
+            assertNotNull(prettyDate);
+            assertEquals("last-week", prettyDate);
 
-        System.out.println(MessageFormat.format("Pretty Date: {0}, from {1} to {2}", prettyDate, date, toDate));
-        assertNotNull(prettyDate);
-        assertEquals("last-week", prettyDate);
+            //////////******************
+            date    = format.parse("2016/Mar/27");
+            prettyDate = DateUtil.prettyDateSince(date, new Locale.Builder().setLanguage("en").setRegion("US").build(), toDate);
 
-        //////////******************
-        date    = format.parse("2016/Mar/27");
-        prettyDate = DateUtil.prettyDateSince(date, new Locale.Builder().setLanguage("en").setRegion("US").build(), toDate);
+            System.out.println(MessageFormat.format("Pretty Date: {0}, from {1} to {2}", prettyDate, date, toDate));
+            assertNotNull(prettyDate);
+            assertEquals("x-days-ago", prettyDate);
 
-        System.out.println(MessageFormat.format("Pretty Date: {0}, from {1} to {2}", prettyDate, date, toDate));
-        assertNotNull(prettyDate);
-        assertEquals("x-days-ago", prettyDate);
+            //////////******************
+            date    = format.parse("2016/Mar/31");
+            prettyDate = DateUtil.prettyDateSince(date, new Locale.Builder().setLanguage("en").setRegion("US").build(), toDate);
 
-        //////////******************
-        date    = format.parse("2016/Mar/31");
-        prettyDate = DateUtil.prettyDateSince(date, new Locale.Builder().setLanguage("en").setRegion("US").build(), toDate);
-
-        System.out.println(MessageFormat.format("Pretty Date: {0}, from {1} to {2}", prettyDate, date, toDate));
-        assertNotNull(prettyDate);
-        assertEquals("yesterday", prettyDate);
+            System.out.println(MessageFormat.format("Pretty Date: {0}, from {1} to {2}", prettyDate, date, toDate));
+            assertNotNull(prettyDate);
+            assertEquals("yesterday", prettyDate);
+        } finally {
+            Config.CONTEXT = null;
+        }
 
     }
 
@@ -539,5 +544,26 @@ public class DateUtilTest extends UnitTestBase {
         futureByMinutes.roll(Calendar.MINUTE, 30);
 
         assertTrue(DateUtil.isTimeReach(futureByMinutes.toInstant(), ChronoUnit.HOURS));
+    }
+
+    /**
+     * Method to test: {@link DateUtil#convertDate(Number)}
+     * When: call the method with an unix timestamp
+     * Expect: the date is properly parsed
+     */
+    @Test
+    public void test_convert_date_number(){
+
+        /*
+        Unix Timestamp	1704109512
+        GMT	Mon Jan 01 2024 11:45:12 GMT+0000
+        Your Time Zone	Mon Jan 01 2024 05:45:12 GMT-0600 (Central Standard Time)
+        Relative	in a month
+         */
+
+        final long timestamp = 1704109512;
+        final Date date = DateUtil.convertDate(timestamp);
+        final String dateString = DateUtil.formatDate(date, "yyyy-MM-dd");
+        Assert.assertEquals("2024-01-01", dateString);
     }
 }

@@ -212,4 +212,12 @@ describe('DotDeviceSelectorSeoComponent', () => {
         component.onHideDeviceSelector();
         expect(component.hideOverlayPanel.emit).toHaveBeenCalled();
     });
+
+    it('should have the mask to being able to close when the user click outside', () => {
+        fixtureHost.detectChanges();
+
+        const selectorMask: DebugElement = de.query(By.css('[data-testId="selector-mask"]'));
+
+        expect(selectorMask).toBeDefined();
+    });
 });

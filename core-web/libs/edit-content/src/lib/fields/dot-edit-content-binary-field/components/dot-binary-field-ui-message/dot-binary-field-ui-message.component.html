@@ -1,0 +1,10 @@
+<div class="icon-container" [ngClass]="uiMessage.severity" data-testId="ui-message-icon-container">
+    <i
+        [ngClass]="uiMessage.icon"
+        data-testId="ui-message-icon"
+        style="font-size: 2rem; width: auto"></i>
+</div>
+<div class="text">
+    <span [innerHTML]="uiMessage.message | dm : uiMessage.args" data-testId="ui-message-span"></span
+    ><ng-content></ng-content>
+</div>

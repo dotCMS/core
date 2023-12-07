@@ -125,14 +125,6 @@ create table PortletPreferences (
 	primary key (portletId, userId, layoutId)
 );
 
-create table Release_ (
-	releaseId varchar(100) not null primary key,
-	createDate timestamptz null,
-	modifiedDate timestamptz null,
-	buildNumber integer null,
-	buildDate timestamptz null
-);
-
 create table User_ (
 	userId varchar(100) not null primary key,
 	companyId varchar(100) not null,
@@ -561,6 +553,7 @@ create table contentlet_version_info (
    locked_on timestamptz,
    version_ts timestamptz not null,
    variant_id varchar(255) default 'DEFAULT' not null,
+   publish_date timestamptz,
    primary key (identifier, lang, variant_id)
 );
 create table fixes_audit (

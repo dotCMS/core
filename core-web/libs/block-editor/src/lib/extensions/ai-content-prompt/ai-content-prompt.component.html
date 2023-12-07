@@ -1,27 +1,30 @@
-<form
-    id="ai-text-prompt"
-    *ngIf="form"
-    [formGroup]="form"
-    (ngSubmit)="onSubmit()"
-    autocomplete="off">
-    <span class="p-input-icon-right">
-        <input
-            #input
-            formControlName="textPrompt"
-            type="text"
-            pInputText
-            placeholder="Ask AI to write something" />
+<ng-container *ngIf="vm$ | async as vm">
+    <form id="ai-text-prompt" [formGroup]="form" (ngSubmit)="onSubmit()" autocomplete="off">
+        <span class="p-input-icon-right">
+            <input
+                #input
+                [attr.disabled]="vm.loading || null"
+                (keyup.escape)="handleScape($event)"
+                (keydown.escape)="$event.stopPropagation()"
+                autofocus
+                formControlName="textPrompt"
+                pInputText
+                placeholder="{{
+                    'block-editor.extension.ai-content.ask-ai-to-write-something' | dm
+                }}"
+                type="text" />
 
-        <ng-container *ngIf="isFormSubmitting; else submitButton">
-            <span class="pending-label">Pending</span>
-        </ng-container>
+            <ng-container *ngIf="vm.loading; else submitButton">
+                <span class="pi pi-spin pi-spinner"></span>
+            </ng-container>
 
-        <ng-template #submitButton>
-            <button
-                class="p-button-rounded p-button-text"
-                pButton
-                type="submit"
-                icon="pi pi-send"></button>
-        </ng-template>
-    </span>
-</form>
+            <ng-template #submitButton>
+                <button
+                    class="p-button-rounded p-button-text"
+                    icon="pi pi-send"
+                    pButton
+                    type="submit"></button>
+            </ng-template>
+        </span>
+    </form>
+</ng-container>

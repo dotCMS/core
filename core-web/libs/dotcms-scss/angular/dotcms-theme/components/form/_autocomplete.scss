@@ -1,17 +1,41 @@
 @use "variables" as *;
 @import "common";
 
+p-autocomplete.p-inputwrapper-focus {
+    .p-autocomplete {
+        @extend #form-field-focus;
+    }
+}
+
+.p-fluid .p-autocomplete.p-component, // To override the default behavior
+.p-autocomplete.p-component {
+    display: grid;
+    align-items: center;
+    grid-template-columns: auto repeat(3, max-content); // This will make the grid to remove the columns that are not in the grid
+}
+
 .p-autocomplete {
     @extend #form-field-extend;
     height: auto;
     padding-right: 0;
 
-    .p-autocomplete-loader {
-        right: $spacing-2;
+    .p-autocomplete-loader,
+    .p-autocomplete-clear-icon {
+        position: unset;
         color: $color-palette-primary;
+        margin: 0 $spacing-0;
     }
 
-    .p-autocomplete-input {
+    .p-autocomplete-clear-icon {
+        grid-column-start: 3;
+        grid-row-start: 1;
+    }
+
+    .p-autocomplete-loader {
+        grid-column-start: 2;
+    }
+
+    .p-autocomplete-input.p-component {
         all: unset;
         border: none;
         font-family: $font-default;
@@ -19,13 +43,15 @@
         color: $black;
         padding: 0;
         margin: 0;
+        width: 100%;
         height: calc(
             $field-height-md - (2 * $field-border-size)
         ); // This input height is to match the 40px height, 40px - 3px of horizontal borders, because this input does not have borders
     }
 
     &.p-autocomplete-dd {
-        .p-autocomplete-loader {
+        .p-autocomplete-loader,
+        .p-autocomplete-clear-icon {
             right: $spacing-7;
         }
     }
@@ -103,7 +129,7 @@ p-autocomplete.ng-dirty.ng-invalid > .p-autocomplete > .p-inputtext {
 
 .p-autocomplete-dropdown.p-element.p-button {
     @extend #field-trigger;
-    height: inherit;
+    grid-column-start: 4;
 
     .p-button-icon {
         @extend #field-trigger-icon;

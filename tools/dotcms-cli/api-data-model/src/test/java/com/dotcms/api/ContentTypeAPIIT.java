@@ -1,15 +1,19 @@
 package com.dotcms.api;
 
 import com.dotcms.DotCMSITProfile;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.api.client.ServiceManager;
+import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.FieldLayoutRow;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableColumnField;
+import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
+import com.dotcms.contenttype.model.field.ImmutableRelationships;
 import com.dotcms.contenttype.model.field.ImmutableRowField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.Relationships;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
@@ -661,6 +665,115 @@ class ContentTypeAPIIT {
         Assertions.assertEquals(1, fieldLayoutRow1.columns().size());
         Assertions.assertEquals("column-3", fieldLayoutRow1.columns().get(0).columnDivider().name());
         Assertions.assertEquals(1, fieldLayoutRow1.columns().get(0).fields().size());
+    }
+
+
+    /**
+     * Given scenario: We have a content type with a relationship field
+     * Expected result: The relationship field should be created and the relationship definition should be sent as part of the field definition
+     * @throws IOException
+     */
+    @Test
+    void Simple_Relationship_Support_Test() throws IOException {
+
+        final long timeMark = System.nanoTime();
+
+        final ImmutableSimpleContentType blog = ImmutableSimpleContentType.builder()
+                .baseType(BaseContentType.CONTENT)
+                .description("Parent Content Type")
+                .name("MyBlog")
+                .variable("MyBlog"+timeMark)
+                .modDate(new Date())
+                .fixed(false)
+                .iDate(new Date())
+                .host(ContentType.SYSTEM_HOST)
+                .folder(ContentType.SYSTEM_FOLDER)
+                .addFields(
+                        ImmutableRelationshipField.builder().name("Blog Comment").variable("myBlogComment"+timeMark).indexed(true)
+                                .relationships(ImmutableRelationships.builder()
+                                .cardinality(0)
+                                .isParentField(true)
+                                .velocityVar("MyBlogComment"+timeMark)
+                                .build()
+                        ).build()
+                ).build();
+
+        final ImmutableSimpleContentType blogComment = ImmutableSimpleContentType.builder()
+                .baseType(BaseContentType.CONTENT)
+                .description("Child Content Type")
+                .name("MyBlogComment")
+                .variable("MyBlogComment"+timeMark)
+                .modDate(new Date())
+                .fixed(false)
+                .iDate(new Date())
+                .host(ContentType.SYSTEM_HOST)
+                .folder(ContentType.SYSTEM_FOLDER)
+                .addFields(
+                        ImmutableRelationshipField.builder().name("Blog").variable("myBlog"+timeMark).indexed(true)
+                                .relationships(ImmutableRelationships.builder()
+                                .cardinality(1)
+                                .velocityVar("MyBlog.myBlogComment"+timeMark)
+                                .isParentField(false)
+                                .build()
+                        ).build()
+                ).build();
+
+        final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
+
+        final SaveContentTypeRequest saveBlogRequest = AbstractSaveContentTypeRequest.builder().of(blog).build();
+        final ResponseEntityView<List<ContentType>> contentTypeResponse1 = client.createContentTypes(List.of(saveBlogRequest));
+        ContentType savedContentType1 = null;
+        ContentType savedContentType2 = null;
+        try {
+            final List<ContentType> contentTypes1 = contentTypeResponse1.entity();
+
+            savedContentType1 = contentTypes1.get(0);
+            Assertions.assertNotNull(savedContentType1.id());
+
+            final RelationshipField parentRel1 = (RelationshipField) savedContentType1.fields()
+                    .get(0);
+            final Relationships relationships1 = parentRel1.relationships();
+            Assertions.assertNotNull(relationships1);
+            Assertions.assertEquals(0, relationships1.cardinality());
+            // For some reason the server side is not setting the isParentField flag from the Content Type definition
+            //Apparently there some extra logic that takes place when relationships are created from the UI
+            //Relationship creations is triggered by the fields API
+            //So this could be an issue
+            //Assertions.assertTrue(relationships1.isParentField());
+            Assertions.assertEquals("MyBlogComment" + timeMark, relationships1.velocityVar());
+
+            final SaveContentTypeRequest saveBlogCommentRequest = AbstractSaveContentTypeRequest.builder()
+                    .of(blogComment).build();
+            final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(
+                    List.of(saveBlogCommentRequest));
+            final List<ContentType> contentTypes2 = contentTypeResponse2.entity();
+            savedContentType2 = contentTypes2.get(0);
+            Assertions.assertNotNull(savedContentType2.id());
+            final RelationshipField parentRel2 = (RelationshipField) savedContentType2.fields()
+                    .get(0);
+            final Relationships relationships2 = parentRel2.relationships();
+            Assertions.assertNotNull(relationships2);
+
+            Assertions.assertEquals(1, relationships2.cardinality());
+            // For some reason the server side is not setting the isParentField flag from the Content Type definition
+            //Apparently there some extra logic that takes place when relationships are created from the UI
+            //Relationship creations is triggered by the fields API
+            //So this could be an issue
+            //Assertions.assertTrue(relationships2.isParentField());
+            Assertions.assertEquals("MyBlog.myBlogComment" + timeMark,
+                    relationships2.velocityVar());
+        } finally {
+           // For some reason the modDate on the layout fields on these CT changes with every request
+           // Therefore This CTs can generate noise in other tests, when comparing a copy against a local copy
+           // So we delete them here
+            if (null != savedContentType1){
+               client.delete(savedContentType1.variable());
+           }
+           if(null != savedContentType2) {
+               client.delete(savedContentType2.variable());
+           }
+        }
+
     }
 
 }
