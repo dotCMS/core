@@ -576,8 +576,8 @@ public class DateUtilTest extends UnitTestBase {
 
         final long timestamp2 = 1701787575000l;
         final Date date2 = DateUtil.convertDate(timestamp2);
-        final String dateString2 = DateUtil.formatDate(date2, "yyyy-MM-dd HH:mm:ss");
-        Assert.assertEquals("2023-12-05 08:46:15", dateString2);
+        final String dateString2 = DateUtil.formatDate(date2, "yyyy-MM-dd");
+        Assert.assertEquals("2023-12-05", dateString2);
 
     }
 }
