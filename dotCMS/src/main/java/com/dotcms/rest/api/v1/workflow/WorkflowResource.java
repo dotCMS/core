@@ -3188,15 +3188,24 @@ public class WorkflowResource {
      * @param contentletInode The inode of the Contentlet whose status will be checked.
      *
      * @return The status information of the Contentlet in the Workflow it is assigned to.
+     *
+     * @throws DotDataException          The specified Contentlet Inode was not found.
+     * @throws DotSecurityException      The User calling this endpoint does not have required
+     *                                   permissions to do so.
+     * @throws InvocationTargetException Failed to transform the {@link WorkflowTask} data for this
+     *                                   view.
+     * @throws IllegalAccessException    Failed to transform the {@link WorkflowTask} data for this
+     *                                   view.
      */
     @GET
     @Path("/status/{contentletInode}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response getStatusForContentlet(@Context final HttpServletRequest request,
-                                                 @Context final HttpServletResponse response,
-                                                 @PathParam("contentletInode") final String contentletInode) {
+    public final ResponseContentletWorkflowStatusView getStatusForContentlet(@Context final HttpServletRequest request,
+                                                                             @Context final HttpServletResponse response,
+                                                                             @PathParam("contentletInode") final String contentletInode)
+            throws DotDataException, DotSecurityException, InvocationTargetException, IllegalAccessException {
         Logger.debug(this, String.format("Retrieving Workflow status for Contentlet with Inode " +
                 "'%s'", contentletInode));
         final InitDataObject initDataObject = this.webResource.init
@@ -3205,33 +3214,19 @@ public class WorkflowResource {
         WorkflowStep wfStep = null;
         WorkflowScheme scheme = null;
         WorkflowTask wfTask = new WorkflowTask();
-        try {
-            final Contentlet contentlet = this.contentletAPI.find(contentletInode, user, false);
-            final Optional<WorkflowStep> stepOpt = this.workflowAPI.findCurrentStep(contentlet);
-            if (stepOpt.isPresent()) {
-                wfStep = stepOpt.get();
-                scheme = this.workflowAPI.findScheme(wfStep.getSchemeId());
-            }
-            final WorkflowTask originalTask = this.workflowAPI.findTaskByContentlet(contentlet);
-            if (null != originalTask) {
-                BeanUtils.copyProperties(wfTask, originalTask);
-                wfTask = this.workflowHelper.handleWorkflowTaskData(wfTask);
-            }
-        } catch (final DotDataException e) {
-            Logger.error(this, String.format("Contentlet Inode '%s' was not found",
-                    contentletInode), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        } catch (final DotSecurityException e) {
-            Logger.error(this, String.format("User '%s' does not have the required permissions to" +
-             " look for Contentlet Inode '%s'", user.getUserId(), contentletInode), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        } catch (final IllegalAccessException | InvocationTargetException e) {
-            Logger.error(this, String.format("Failed to copy Workflow Task data for Contentlet " +
-                    "Inode '%s'", contentletInode), e);
-            return ResponseUtil.mapExceptionResponse(e);
+        final Contentlet contentlet = this.contentletAPI.find(contentletInode, user, false);
+        final Optional<WorkflowStep> stepOpt = this.workflowAPI.findCurrentStep(contentlet);
+        if (stepOpt.isPresent()) {
+            wfStep = stepOpt.get();
+            scheme = this.workflowAPI.findScheme(wfStep.getSchemeId());
         }
-        return Response.ok(new ResponseEntityView<>(new ContentletWorkflowStatusView(scheme,
-                wfStep, wfTask))).build();
+        final WorkflowTask originalTask = this.workflowAPI.findTaskByContentlet(contentlet);
+        if (null != originalTask) {
+            BeanUtils.copyProperties(wfTask, originalTask);
+            wfTask = this.workflowHelper.handleWorkflowTaskData(wfTask);
+        }
+        return new ResponseContentletWorkflowStatusView(new ContentletWorkflowStatusView(scheme,
+                wfStep, wfTask));
     }
 
 } // E:O:F:WorkflowResource.
