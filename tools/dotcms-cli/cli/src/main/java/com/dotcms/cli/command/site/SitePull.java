@@ -5,6 +5,7 @@ import com.dotcms.api.client.pull.site.SiteFetcher;
 import com.dotcms.api.client.pull.site.SitePullHandler;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPull;
+import com.dotcms.cli.common.FullPullOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PullMixin;
 import com.dotcms.common.WorkspaceManager;
@@ -47,7 +48,7 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer>, 
     static final String SITE_PULL_MIXIN = "sitePullMixin";
 
     @CommandLine.Mixin
-    PullMixin pullMixin;
+    FullPullOptionsMixin pullMixin;
 
     @CommandLine.Mixin(name = SITE_PULL_MIXIN)
     SitePullMixin sitePullMixin;
@@ -95,13 +96,15 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer>, 
             );
         }
 
-        // Execute the push
+        // Execute the pull
         pullService.pull(
-                sitesFolder,
                 PullOptions.builder().
+                        destination(sitesFolder).
                         contentKey(Optional.ofNullable(sitePullMixin.siteNameOrId)).
                         outputFormat(pullMixin.inputOutputFormat().toString()).
                         isShortOutput(pullMixin.shortOutputOption().isShortOutput()).
+                        failFast(pullMixin.failFast).
+                        maxRetryAttempts(pullMixin.retryAttempts).
                         build(),
                 output,
                 siteProvider,
