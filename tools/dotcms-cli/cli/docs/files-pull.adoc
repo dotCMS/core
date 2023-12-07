@@ -21,14 +21,29 @@ files-pull - *dotCMS Files pull*
 
 *files pull* [*-hp*] [*-ff*] [*-ie*] [*-nr*] [*-ea*=_patterns_] [*-ef*=_patterns_] [*-ia*=_patterns_]
            [*-if*=_patterns_] [*--retry-attempts*=_<retryAttempts>_]
-           [*--workspace*=_<file>_] _path_
+           [*--workspace*=_<file>_] [_path_]
 
 // end::picocli-generated-man-section-synopsis[]
 
 // tag::picocli-generated-man-section-description[]
 == Description
 
- This command pulls files from the server and saves them to the specified destination.
+  This command pulls files from the dotCMS instance.
+  By default, without a specified 'path' parameter, it retrieves files from
+  all the sites within the dotCMS instance.
+
+  Providing a 'path' parameter you can pull files from a specific site,
+  directory or file.
+  The format for the 'path' parameter is:
+  //site - //site/folder - //site/folder/file.
+
+  The pulled files are saved withing the 'files' folder located in the dotCMS
+  workspace, which is created in the current directory by default, unless an
+  alternative workspace is specified.
+
+  *Note:* Omitting the 'path' parameter triggers the pulling of all
+  files from all sites, which can be a very resource-intensive and
+  time-consuming process.
 
 
 // end::picocli-generated-man-section-description[]
@@ -76,8 +91,12 @@ Current directory is used if not specified
 // tag::picocli-generated-man-section-arguments[]
 == Arguments
 
-_path_::
-  dotCMS path to the directory or file to pull - Format: //{site}/{folder} or //{site}/{folder}/{file}
+[_path_]::
+  dotCMS path to a specific site, directory or file to pull. 
++
+Format: //{site} - //{site}/{folder} - //{site}/{folder}/{file}.
++
+If no path is provided, all files across all sites will be pulled, which can be a resource-intensive operation.
 
 // end::picocli-generated-man-section-arguments[]
 
