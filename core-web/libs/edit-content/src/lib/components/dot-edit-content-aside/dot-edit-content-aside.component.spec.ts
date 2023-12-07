@@ -18,7 +18,7 @@ describe('DotEditContentAsideComponent', () => {
                 provide: DotMessageService,
                 useValue: {
                     get() {
-                        return 'Copy';
+                        return 'Sample';
                     }
                 }
             },

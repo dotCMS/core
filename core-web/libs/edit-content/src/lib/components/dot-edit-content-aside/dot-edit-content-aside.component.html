@@ -1,13 +1,13 @@
 <div class="edit-content-aside--header">
     <strong style="display: flex; align-items: center; gap: 0.3em">
         <i class="pi pi-info-circle"></i>
-        Information</strong
+        {{ 'Information' | dm }}</strong
     >
     <dot-copy-button
         *ngIf="asideData.contentlet?.inode"
         [copy]="asideData.contentlet?.inode"
         [attr.data-testId]="'inode'"
-        [label]="asideData.contentlet?.inode.slice(0, 8)"></dot-copy-button>
+        [label]="asideData.contentlet?.inode | slice : 0 : 8"></dot-copy-button>
 
     <dot-api-link
         *ngIf="asideData.contentlet?.stInode"
@@ -15,7 +15,7 @@
 </div>
 
 <div class="edit-content-aside--item">
-    <span>Content State</span>
+    <span>{{ 'Content State' | dm }}</span>
 
     <ng-container [ngSwitch]="true">
         <p-chip
@@ -38,21 +38,21 @@
 </div>
 
 <div class="edit-content-aside--item">
-    <span>Modified by</span>
+    <span>{{ 'Modified by' | dm }}</span>
     <span class="font-bold" *ngIf="asideData.contentlet" data-testId="modified-by">{{
         asideData?.contentlet?.modUserName
     }}</span>
 </div>
 
 <div class="edit-content-aside--item">
-    <span>Last modified</span>
+    <span>{{ 'Last modified' | dm }}</span>
     <span class="font-bold" *ngIf="asideData.contentlet" data-testId="last-modified">{{
         asideData?.contentlet?.modDate | dotRelativeDate
     }}</span>
 </div>
 
 <div class="edit-content-aside--item">
-    <span>Content Type</span>
+    <span>{{ 'Content Type' | dm }}</span>
     <a
         [href]="'#/content-types-angular/edit/' + asideData.contentType"
         data-testId="content-type"
