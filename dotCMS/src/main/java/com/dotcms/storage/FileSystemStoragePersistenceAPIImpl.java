@@ -395,8 +395,9 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                     throw new IllegalArgumentException("The file: " + path + ", does not exists.");
                 }
             } catch (IOException e) {
-                Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
-                throw new DotRuntimeException(e);
+                final String msg = "error getting: (" + groupName + '|' + path + "), msg:" + e.getMessage();
+                Logger.error(FileSystemStoragePersistenceAPIImpl.class, msg, e);
+                throw new DotRuntimeException(msg, e);
             }
         } else {
             throw new IllegalArgumentException(String.format("The folder: `%s` mapped by the bucket: `%s` could not be read.",groupDir.getAbsolutePath(), groupName));
