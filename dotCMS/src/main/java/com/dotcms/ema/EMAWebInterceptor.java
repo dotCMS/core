@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.liferay.util.StringPool.BLANK;
+
 /**
  * Intercepts a content managers's request to dotCMS EDIT_MODE in the admin of dotCMS,
  * transparently POSTs the dotCMS page API data to the remote site/server (hosted elsewhere) and
@@ -47,6 +49,8 @@ public class EMAWebInterceptor implements WebInterceptor {
     @Deprecated(forRemoval = true)
     public static final String INCLUDE_RENDERED_VAR = "includeRendered";
     public static final String AUTHENTICATION_TOKEN_VAR = "authenticationToken";
+    public static final String PAGE_DATA_PARAM = "dotPageData";
+    public static final String DEPTH_PARAM = "depth";
     private static final String API_CALL = "/api/v1/page/render";
     public static final String EMA_APP_CONFIG_KEY = "dotema-config";
     private static final ProxyTool proxy = new ProxyTool();
@@ -94,7 +98,11 @@ public class EMAWebInterceptor implements WebInterceptor {
                 final String postJson                      = new String(mockResponse.getBytes());
                 final String authToken =
                         emaConfig.map(emaConfigurationEntry -> emaConfigurationEntry.getHeader(AUTHENTICATION_TOKEN_VAR)).orElse(null);
-                final Map<String, String> params           = ImmutableMap.of("dotPageData", postJson);
+                final String depth =
+                        emaConfig.map(emaConfigurationEntry -> emaConfigurationEntry.getHeader(DEPTH_PARAM)).orElse(BLANK);
+                final Map<String, String> params = ImmutableMap.of(
+                        PAGE_DATA_PARAM, postJson,
+                        DEPTH_PARAM, depth);
                 
                 Logger.info(this.getClass(), "Proxying Request --> " + proxyUrl);
 
@@ -169,9 +177,11 @@ public class EMAWebInterceptor implements WebInterceptor {
             final String proxyURLParamValue = request.getParameter(PROXY_EDIT_MODE_URL_VAR);
             proxyURL = UtilMethods.isSet(proxyURLParamValue)?Optional.of(proxyURLParamValue):Optional.empty();
             if (null != request.getSession(false)) {
-                if (UtilMethods.isSet(proxyURLParamValue)) { // if the proxy is set, stores in the session
+                if (UtilMethods.isSet(proxyURLParamValue)) {
+                    // If the proxy is set, store it in the session
                     request.getSession(false).setAttribute(PROXY_EDIT_MODE_URL_VAR, proxyURLParamValue);
-                } else { // if it is set but it is empty or null, remove it
+                } else {
+                    // If it's set, but it's empty or null, just remove it
                     request.getSession(false).removeAttribute(PROXY_EDIT_MODE_URL_VAR);
                 }
             }
@@ -240,7 +250,7 @@ public class EMAWebInterceptor implements WebInterceptor {
     }
 
     /**
-     * Generates the HTTP Response with specific contents that will be returned to the User.
+     * Generates the HTTP Response with specific information that will be returned to the User.
      *
      * @param contents The HTML response.
      * @param postJson The JSON response from the EMA Server.
@@ -250,6 +260,7 @@ public class EMAWebInterceptor implements WebInterceptor {
      */
     protected void sendHttpResponse(final String contents, final String postJson, final HttpServletResponse response) throws IOException {
         final JSONObject json = new JSONObject(postJson);
+        Logger.error(this, "An error occurred with EMA: dotPageData = " + json);
         json.getJSONObject("entity").getJSONObject("page").put("rendered", contents);
         json.getJSONObject("entity").getJSONObject("page").put("remoteRendered", true);
         response.setContentType(MediaType.APPLICATION_JSON);
