@@ -765,7 +765,32 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
     }
 ];
 
-export const TAB_DIVIDER_MOCK = {
+export const TAB_SINGLE_ROW_MOCK: DotCMSContentTypeLayoutRow = {
+    divider: {
+        clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+        contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
+        dataType: 'SYSTEM',
+        fieldType: 'Row',
+        fieldTypeLabel: 'Row',
+        fieldVariables: [],
+        fixed: false,
+        iDate: 1697051073000,
+        id: 'a31ea895f80eb0a3754e4a2292e09a52',
+        indexed: false,
+        listed: false,
+        modDate: 1697051077000,
+        name: 'fields-0',
+        readOnly: false,
+        required: false,
+        searchable: false,
+        sortOrder: 0,
+        unique: false,
+        variable: 'fields0'
+    },
+    columns: []
+};
+
+export const TAB_DIVIDER_MOCK: DotCMSContentTypeLayoutRow = {
     divider: {
         clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
         contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
@@ -789,6 +814,11 @@ export const TAB_DIVIDER_MOCK = {
     },
     columns: []
 };
+
+export const MULTIPLE_TABS_MOCK: DotCMSContentTypeLayoutRow[] = [
+    TAB_SINGLE_ROW_MOCK,
+    TAB_DIVIDER_MOCK
+];
 
 export const MOCK_DATE = 1699990073562;
 

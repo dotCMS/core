@@ -20,21 +20,16 @@ import { ButtonModule } from 'primeng/button';
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotMessageService } from '@dotcms/data-access';
-import {
-    DotCMSContentTypeField,
-    DotCMSContentTypeLayoutRow,
-    DotCMSContentTypeLayoutTab
-} from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotCMSContentTypeLayoutTab } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import {
     CALENDAR_FIELD_TYPES,
-    FLATTENED_FIELD_TYPES,
-    TAB_FIELD_CLAZZ
+    FLATTENED_FIELD_TYPES
 } from '../../models/dot-edit-content-field.constant';
 import { FILTERED_TYPES } from '../../models/dot-edit-content-form.enum';
 import { EditContentFormData } from '../../models/dot-edit-content-form.interface';
-import { getFinalCastedValue } from '../../utils/functions.util';
+import { getFinalCastedValue, transformLayoutToTabs } from '../../utils/functions.util';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 import { FIELD_TYPES } from '../dot-edit-content-field/utils';
 
@@ -70,6 +65,7 @@ export class DotEditContentFormComponent implements OnInit {
     ngOnInit() {
         if (this.formData) {
             this.initilizeForm();
+            this.setLayoutTabs();
         }
     }
 
@@ -79,7 +75,6 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     initilizeForm() {
-        this.tabs = this.transformLayoutToTabs(this.formData.layout); // Transform the layout into tabs
         this.form = this.fb.group({});
 
         this.formData.fields.forEach((field) => {
@@ -153,40 +148,15 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
-     * Transforms a layout into tabs.
+     * Sets the layout tabs based on the `formData.layout` property.
      *
-     * @param layout The layout to transform.
-     * @returns The transformed tabs.
+     * @private
+     * @memberof DotEditContentFormComponent
      */
-    private transformLayoutToTabs(
-        layout: DotCMSContentTypeLayoutRow[]
-    ): DotCMSContentTypeLayoutTab[] {
-        const initialTab = [
-            {
-                title: this.dotMessageService.get('Content'),
-                layout: []
-            }
-        ];
-
-        // Reduce the layout into tabs
-        const tabs = layout.reduce((acc, row) => {
-            const { clazz, name } = row.divider || {};
-            const lastTabIndex = acc.length - 1;
-
-            // If the class indicates a tab field, create a new tab
-            if (clazz === TAB_FIELD_CLAZZ) {
-                acc.push({
-                    title: name,
-                    layout: []
-                });
-            } else {
-                // Otherwise, add the row to the layout of the last tab
-                acc[lastTabIndex].layout.push(row);
-            }
-
-            return acc;
-        }, initialTab);
-
-        return tabs;
+    private setLayoutTabs() {
+        this.tabs = transformLayoutToTabs(
+            this.dotMessageService.get('Content'),
+            this.formData.layout
+        );
     }
 }
