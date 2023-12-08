@@ -2785,7 +2785,8 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         assertEquals(textOver255Chars,vanityURLCheckout.getURI());
         assertEquals(textOver255Chars,vanityURLCheckout.getForwardTo());
     }
-  
+
+    /*
      * Method to test: {@link ESContentletAPIImpl#copyContentlet(Contentlet, User, boolean)}
      * Given Scenario:
      * Unable to copy a contentlet with Host/Folder field. Error is thrown when the field name is "Host"
