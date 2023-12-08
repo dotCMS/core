@@ -2,7 +2,6 @@ import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotFormatDateService } from '@dotcms/ui';
-import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
 
 import { DotEditContentAsideComponent } from './dot-edit-content-aside.component';
 
@@ -22,7 +21,14 @@ describe('DotEditContentAsideComponent', () => {
                     }
                 }
             },
-            { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
+            {
+                provide: DotFormatDateService,
+                useValue: {
+                    differenceInCalendarDays: () => 10,
+                    format: () => '11/07/2023',
+                    getUTC: () => new Date()
+                }
+            }
         ]
     });
 
@@ -34,9 +40,11 @@ describe('DotEditContentAsideComponent', () => {
         spectator.setInput('contentLet', CONTENT_FORM_DATA_MOCK.contentlet);
         spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType);
         spectator.detectChanges();
-        expect(spectator.query(byTestId('modified-by'))).toBeTruthy();
-        expect(spectator.query(byTestId('last-modified'))).toBeTruthy();
-        expect(spectator.query(byTestId('inode'))).toBeTruthy();
+        expect(spectator.query(byTestId('modified-by')).textContent.trim()).toBe('Admin User');
+        expect(spectator.query(byTestId('last-modified')).textContent.trim()).toBe('11/07/2023');
+        expect(spectator.query(byTestId('inode')).textContent.trim()).toBe(
+            CONTENT_FORM_DATA_MOCK.contentlet.inode.slice(0, 8)
+        );
     });
 
     it('should not render aside info', () => {
