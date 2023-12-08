@@ -1,16 +1,5 @@
 @use "variables" as *;
 
-:host {
-    display: grid;
-    grid-template-columns: 1fr 16rem;
-    gap: $spacing-4;
-    padding: $spacing-4;
-    padding-bottom: 0;
-    height: 100%;
-    overflow: auto;
-    position: relative;
-}
-
 .row {
     display: grid;
     grid-auto-flow: column;
@@ -23,10 +12,4 @@
     display: flex;
     flex-direction: column;
     gap: $spacing-4;
-}
-
-code {
-    // Added temporaly. Only to show the form value.
-    display: block;
-    overflow: scroll;
 }
