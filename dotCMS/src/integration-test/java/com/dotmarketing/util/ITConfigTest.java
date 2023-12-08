@@ -100,7 +100,6 @@ public class ITConfigTest extends IntegrationTestBase {
         EnvironmentVariablesService.getInstance().put("DOT_ONLY_ENV_PROP", "ENV_VALUE");
         APILocator.getSystemAPI().getSystemTable().set("DOT_ONLY_ENV_PROP", "NEW_VALUE_FROM_SYSTEM_TABLE");
         APILocator.getSystemAPI().getSystemTable().set("DOT_ONLY_SYSTEM_TABLE", "NEW_VALUE_FROM_SYSTEM_TABLE");
-        Config.forceRefresh();
         Config.refreshProperties();
 
 
