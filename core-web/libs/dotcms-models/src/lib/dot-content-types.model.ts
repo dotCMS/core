@@ -60,6 +60,11 @@ export interface DotCMSContentTypeField {
     variable: string;
 }
 
+export interface DotCMSContentTypeLayoutTab {
+    title: string;
+    layout: DotCMSContentTypeLayoutRow[];
+}
+
 export interface DotCMSContentTypeLayoutRow {
     columns?: DotCMSContentTypeLayoutColumn[];
     divider: DotCMSContentTypeField;

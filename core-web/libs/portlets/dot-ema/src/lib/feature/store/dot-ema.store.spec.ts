@@ -29,15 +29,20 @@ describe('EditEmaStore', () => {
                         countryCode: '',
                         languageCode: '',
                         country: ''
+                    },
+                    persona: {
+                        identifier: '123'
                     }
                 }
             };
             dotPageApiService.get.andReturn(of(mockResponse));
 
-            spectator.service.load({ language_id: '1', url: 'test-url' });
+            spectator.service.load({ language_id: '1', url: 'test-url', persona_id: '123' });
 
             spectator.service.iframeUrl$.subscribe((url) => {
-                expect(url).toEqual('http://localhost:3000/test-url?language_id=1');
+                expect(url).toEqual(
+                    'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=123'
+                );
                 done();
             });
         });
@@ -349,7 +354,7 @@ describe('EditEmaStore', () => {
             };
             dotPageApiService.get.andReturn(of(mockResponse));
 
-            spectator.service.load({ language_id: 'en', url: 'test-url' });
+            spectator.service.load({ language_id: 'en', url: 'test-url', persona_id: '123' });
 
             spectator.service.state$.subscribe((state) => {
                 expect(state).toEqual({
@@ -387,7 +392,7 @@ describe('EditEmaStore', () => {
             };
             dotPageApiService.get.andReturn(of(mockResponse));
 
-            spectator.service.load({ language_id: 'en', url: 'test-url' });
+            spectator.service.load({ language_id: 'en', url: 'test-url', persona_id: '123' });
             spectator.service.savePage({
                 pageContainers: [],
                 container: {
