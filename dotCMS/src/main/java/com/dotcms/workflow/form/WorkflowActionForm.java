@@ -188,7 +188,7 @@ public class WorkflowActionForm extends Validated {
 
         @Deprecated
         @JsonProperty(required = true)
-        private boolean       requiresCheckout;
+        private boolean       requiresCheckout = false;
         @JsonProperty(required = true)
         private boolean       actionRoleHierarchyForAssign;
         @JsonProperty(required = true)
@@ -296,7 +296,6 @@ public class WorkflowActionForm extends Validated {
             this.actionName(WorkflowAction.SEPARATOR);
             this.actionAssignable(false);
             this.actionCommentable(false);
-            this.requiresCheckout(false);
             this.actionRoleHierarchyForAssign(false);
             this.actionNextStep(WorkflowAction.CURRENT_STEP);
             this.actionNextAssign(Try.of(() -> APILocator.getRoleAPI().loadRoleByKey(Role.CMS_ANONYMOUS_ROLE).getId())

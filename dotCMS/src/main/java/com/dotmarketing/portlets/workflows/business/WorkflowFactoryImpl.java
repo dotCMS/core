@@ -140,10 +140,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         row.put("requiresCheckout", row.get(WA_REQUIRES_CHECKOUT_COLUMN));
         row.put("showOn", WorkflowState.toSet(row.get(WA_SHOW_ON_COLUMN)));
         row.put("roleHierarchyForAssign", row.get(WA_USE_ROLE_HIERARCHY_ASSIGN_COLUMN));
-        if (null != row.get(WA_METADATA_COLUMN)) {
-            row.put(WA_METADATA_COLUMN, Try.of(() -> JSON_MAPPER.readValue(((PGobject) row.get(WA_METADATA_COLUMN)).getValue(),
-                    Map.class)).getOrElse(new HashMap<String, Object>()));
-        }
+        row.computeIfPresent(WA_METADATA_COLUMN, (k, o) -> Try.of(() -> JSON_MAPPER.readValue(((PGobject) row.get(WA_METADATA_COLUMN)).getValue(),
+                Map.class)).getOrElse(new HashMap<String, Object>()));
         BeanUtils.copyProperties(action, row);
         action.setPushPublishActionlet(ActionletUtil.hasPushPublishActionlet(action));
         return action;
