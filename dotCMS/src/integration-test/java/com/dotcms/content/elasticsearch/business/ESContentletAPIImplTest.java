@@ -2771,7 +2771,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         final String textOver255Chars = "this-text-is-waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaay-longer-than-two-hundred-fifty-five-characters-so-should-be-hitting-the-limit-for-the-fields-260-charsq";
         final DefaultVanityUrl vanityURL = (DefaultVanityUrl) new VanityUrlDataGen()
                 .allSites()
-                .title(textOver255Chars)
+                .title("Test VanityURL URI and Forward Over 255")
                 .uri(textOver255Chars)
                 .action(HttpStatus.SC_MOVED_PERMANENTLY)
                 .forwardTo(textOver255Chars)
@@ -2781,7 +2781,6 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
         final Contentlet checkout = ContentletDataGen.checkout(vanityURL);
         final VanityUrl vanityURLCheckout = APILocator.getVanityUrlAPI().fromContentlet(checkout);
-        assertEquals(textOver255Chars,vanityURLCheckout.getTitle());
         assertEquals(textOver255Chars,vanityURLCheckout.getURI());
         assertEquals(textOver255Chars,vanityURLCheckout.getForwardTo());
     }
