@@ -18,7 +18,11 @@ public abstract class RelationshipField extends Field {
 
     @Nullable
     public abstract Relationships relationships();
+
+    @Value.Default
     @Nullable
-    public abstract Boolean skipRelationshipCreation();
+    public Boolean skipRelationshipCreation() {
+        return false;
+    }
 
 }
