@@ -165,7 +165,9 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
             switchMap((file) => {
                 const { url, mimeType } = file;
                 // TODO: This should be done in the serverside
-                const obs$ = mimeType?.includes('text') ? this.getFileContent(url) : of('');
+                const obs$ = this.shouldGetFileContent(mimeType)
+                    ? this.getFileContent(url)
+                    : of('');
 
                 return obs$.pipe(
                     tap((content) => {
@@ -187,6 +189,10 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     setMaxFileSize(bytes: number): void {
         // Convert bytes to MB
         this._maxFileSizeInMB = bytes / (1024 * 1024);
+    }
+
+    private shouldGetFileContent(mimeType: string): boolean {
+        return mimeType.includes('text') || mimeType.includes('json');
     }
 
     /**

@@ -1,19 +1,23 @@
 <ng-container *ngIf="vm$ | async as vm">
     <dot-edit-ema-toolbar>
-        <h4 title>{{ vm.pageTitle }}</h4>
         <ng-container left>
-            <div class="dummy-button"></div>
-            <div class="dummy-button"></div>
-            <div class="dummy-button"></div>
-            <div class="dummy-button"></div>
+            <p-button label="Preview" icon="pi pi-desktop" styleClass="p-button-text p-button-sm" />
+            <p-button label="Bookmark" icon="pi pi-star" styleClass="p-button-text p-button-sm" />
+            <p-button label="Copy ID" icon="pi pi-copy" styleClass="p-button-text p-button-sm" />
+            <p-button label="API" icon="pi pi-link" styleClass="p-button-text p-button-sm" />
         </ng-container>
         <ng-container right>
-            <div class="dummy-button"></div>
             <dot-edit-ema-language-selector
                 [language]="vm.editor.viewAs.language"
                 (selected)="onLanguageSelected($event)"
                 data-testId="language-selector" />
-            <div class="dummy-button"></div>
+            <dot-edit-ema-persona-selector
+                #personaSelector
+                [pageID]="vm.editor.page.identifier"
+                [value]="vm.selectedPersona"
+                (selected)="onPersonaSelected($event)"
+                data-testId="persona-selector" />
+            <p-button class="p-button-sm" label="Save" />
         </ng-container>
     </dot-edit-ema-toolbar>
     <div class="iframe-wrapper">
