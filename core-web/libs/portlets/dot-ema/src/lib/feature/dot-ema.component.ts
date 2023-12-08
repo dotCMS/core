@@ -208,9 +208,9 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                             this.savePayload = undefined;
                         }
                     }); // Save when created
+                } else {
+                    this.reloadIframe(); // We still need to reload the iframe because the contentlet is not in the container yet
                 }
-
-                this.reloadIframe(); // We still need to reload the iframe because the contentlet is not in the container yet
             },
             [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
                 this.store.initActionCreate({

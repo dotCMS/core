@@ -129,7 +129,6 @@
             data: {
                 url,
 				contentType,
-                isNew: true
             }
         });
 
