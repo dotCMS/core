@@ -9,9 +9,8 @@
 .edit-content-aside--item {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    align-items: center;
-    height: $spacing-5;
-    margin-bottom: $spacing-1;
+    gap: $spacing-1;
+    grid-auto-rows: $spacing-5;
 
     p {
         color: $color-palette-gray-800;

@@ -3,37 +3,58 @@ import { Pipe, PipeTransform, inject } from '@angular/core';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
+import { DotEditContentStatus } from '../models/dot-edit-content-status.enum';
+
 @Pipe({
     name: 'contentletStatus',
     standalone: true
 })
 export class ContentletStatusPipe implements PipeTransform {
     private readonly dotMessage = inject(DotMessageService);
-    transform(contentlet: DotCMSContentlet): { label: string; classes: string } {
-        switch (true) {
-            case contentlet?.live && !contentlet?.working:
-                return {
-                    label: this.dotMessage.get('Published'),
-                    classes: 'p-chip-success p-chip-sm'
-                };
-
-            case contentlet.working && !contentlet.live:
-                return { label: this.dotMessage.get('Draft'), classes: 'p-chip-sm' };
-
-            case contentlet?.archived:
-                return {
-                    label: this.dotMessage.get('Archived'),
-                    classes: 'p-chip-gray p-chip-sm'
-                };
-
-            case contentlet?.working && contentlet?.live:
-                return {
-                    label: this.dotMessage.get('Revision'),
-                    classes: 'p-chip-pink p-chip-sm'
-                };
-
-            default:
-                return { label: '', classes: 'p-chip-sm' };
+    transform(contentlet?: DotCMSContentlet): { label: string; classes: string } {
+        if (!contentlet) {
+            return null;
         }
+
+        const contentletStatus = this.getContentletStatus(contentlet);
+
+        return (
+            {
+                [DotEditContentStatus.PUBLISHED]: {
+                    label: this.dotMessage.get('Published'),
+                    classes: 'p-chip-success'
+                },
+                [DotEditContentStatus.DRAFT]: {
+                    label: this.dotMessage.get('Draft'),
+                    classes: ''
+                },
+                [DotEditContentStatus.REVISION]: {
+                    label: this.dotMessage.get('Revision'),
+                    classes: 'p-chip-pink'
+                },
+                [DotEditContentStatus.ARCHIVED]: {
+                    label: this.dotMessage.get('Archived'),
+                    classes: 'p-chip-gray'
+                },
+                [DotEditContentStatus.UNKNOWN]: {
+                    label: this.dotMessage.get(''),
+                    classes: ''
+                }
+            } as Record<DotEditContentStatus, { label: string; classes: string }>
+        )[contentletStatus];
+    }
+
+    getContentletStatus(contentlet) {
+        if (contentlet.archived) {
+            return DotEditContentStatus.ARCHIVED;
+        } else if (contentlet.live && contentlet.working) {
+            return DotEditContentStatus.REVISION;
+        } else if (contentlet.live && !contentlet.working) {
+            return DotEditContentStatus.PUBLISHED;
+        } else if (contentlet.working && !contentlet.live) {
+            return DotEditContentStatus.DRAFT;
+        }
+
+        return DotEditContentStatus.UNKNOWN;
     }
 }

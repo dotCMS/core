@@ -17,27 +17,27 @@
 <dl class="edit-content-aside--item">
     <dt>{{ 'Content State' | dm }}</dt>
 
-    <p-chip
-        *ngIf="contentLet"
-        [styleClass]="(contentLet | contentletStatus).classes"
-        [label]="(contentLet | contentletStatus).label"></p-chip>
-</dl>
+    <dd>
+        <p-chip
+            *ngIf="contentLet | contentletStatus as status"
+            [styleClass]="'p-chip-sm ' + status.classes"
+            [label]="status.label" />
+    </dd>
 
-<dl class="edit-content-aside--item">
     <dt>{{ 'Modified by' | dm }}</dt>
-    <dd class="font-bold" *ngIf="contentLet" data-testId="modified-by">
-        {{ contentLet?.modUserName }}
+    <dd class="font-bold" data-testId="modified-by">
+        <ng-container *ngIf="contentLet">
+            {{ contentLet?.modUserName }}
+        </ng-container>
     </dd>
-</dl>
 
-<dl class="edit-content-aside--item">
     <dt>{{ 'Last modified' | dm }}</dt>
-    <dd class="font-bold" *ngIf="contentLet" data-testId="last-modified">
-        {{ contentLet?.modDate | dotRelativeDate }}
+    <dd class="font-bold" data-testId="last-modified">
+        <ng-container *ngIf="contentLet">
+            {{ contentLet?.modDate | dotRelativeDate }}
+        </ng-container>
     </dd>
-</dl>
 
-<dl class="edit-content-aside--item">
     <dt>{{ 'Content Type' | dm }}</dt>
     <a [href]="'#/content-types-angular/edit/' + contentType" data-testId="content-type">{{
         contentType

@@ -54,8 +54,8 @@ describe('DotEditContentAsideComponent', () => {
         spectator.setInput('contentType', CONTENT_WITHOUT_CONTENTLET.contentType);
         spectator.detectChanges();
 
-        expect(spectator.query(byTestId('modified-by'))).toBeFalsy();
-        expect(spectator.query(byTestId('last-modified'))).toBeFalsy();
+        expect(spectator.query(byTestId('modified-by')).textContent).toBe('');
+        expect(spectator.query(byTestId('last-modified')).textContent).toBe('');
         expect(spectator.query(byTestId('inode'))).toBeFalsy();
     });
 });

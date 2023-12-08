@@ -24,7 +24,7 @@ describe('ContentletStatusPipe', () => {
         const result = pipe.transform(contentlet);
 
         expect(result.label).toBe('Published');
-        expect(result.classes).toBe('p-chip-success p-chip-sm');
+        expect(result.classes).toBe('p-chip-success');
     });
 
     it('should transform contentlet status to "Draft"', () => {
@@ -33,7 +33,7 @@ describe('ContentletStatusPipe', () => {
         const result = pipe.transform(contentlet);
 
         expect(result.label).toBe('Draft');
-        expect(result.classes).toBe('p-chip-sm');
+        expect(result.classes).toBe('');
     });
 
     it('should transform contentlet status to "Archived"', () => {
@@ -42,7 +42,7 @@ describe('ContentletStatusPipe', () => {
         const result = pipe.transform(contentlet);
 
         expect(result.label).toBe('Archived');
-        expect(result.classes).toBe('p-chip-gray p-chip-sm');
+        expect(result.classes).toBe('p-chip-gray');
     });
 
     it('should transform contentlet status to "Revision"', () => {
@@ -51,7 +51,7 @@ describe('ContentletStatusPipe', () => {
         const result = pipe.transform(contentlet);
 
         expect(result.label).toBe('Revision');
-        expect(result.classes).toBe('p-chip-pink p-chip-sm');
+        expect(result.classes).toBe('p-chip-pink');
     });
 
     it('should transform contentlet status to empty label and default classes', () => {
@@ -60,6 +60,6 @@ describe('ContentletStatusPipe', () => {
         const result = pipe.transform(contentlet);
 
         expect(result.label).toBe('');
-        expect(result.classes).toBe('p-chip-sm');
+        expect(result.classes).toBe('');
     });
 });
