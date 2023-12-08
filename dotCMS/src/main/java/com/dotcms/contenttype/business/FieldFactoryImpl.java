@@ -23,9 +23,11 @@ import com.dotcms.contenttype.transform.field.DbFieldTransformer;
 import com.dotcms.contenttype.transform.field.DbFieldVariableTransformer;
 import com.dotcms.graphql.business.ContentAPIGraphQLTypesProvider;
 import com.dotcms.rendering.velocity.services.FieldLoader;
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
@@ -44,6 +46,48 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang.time.DateUtils;
 
 public class FieldFactoryImpl implements FieldFactory {
+
+  //List of reserved field variables
+  final public Set<String> RESERVED_FIELD_VARS= ImmutableSet.of(
+          Contentlet.INODE_KEY.toLowerCase(),
+          Contentlet.LANGUAGEID_KEY.toLowerCase(),
+          Contentlet.LOCKED_KEY.toLowerCase(),
+          Contentlet.LIVE_KEY.toLowerCase(),
+          Contentlet.MOD_DATE_KEY.toLowerCase(),
+          Contentlet.MOD_USER_KEY.toLowerCase(),
+          Contentlet.OWNER_KEY.toLowerCase(),
+          Contentlet.IDENTIFIER_KEY.toLowerCase(),
+          Contentlet.HOST_KEY.toLowerCase(),
+          Contentlet.FOLDER_KEY.toLowerCase(),
+          Contentlet.CLASS_NAME_KEY.toLowerCase(),
+          Contentlet.CON_FOLDER_KEY.toLowerCase(),
+          Contentlet.CON_HOST_KEY.toLowerCase(),
+          Contentlet.DELETED_KEY.toLowerCase(),
+          Contentlet.FILE_KEY.toLowerCase(),
+          Contentlet.FORM_KEY.toLowerCase(),
+          Contentlet.IDENTIFIER_KEY.toLowerCase(),
+          Contentlet.INODE_KEY.toLowerCase(),
+          Contentlet.MOD_DATE_KEY.toLowerCase(),
+          Contentlet.MOD_USER_KEY.toLowerCase(),
+          Contentlet.OWNER_KEY.toLowerCase(),
+          Contentlet.NUMBER_KEY.toLowerCase(),
+          Contentlet.STRING_KEY.toLowerCase(),
+          Contentlet.OWNER_CAN_PUBLISH_KEY.toLowerCase(),
+          Contentlet.OWNER_CAN_WRITE_KEY.toLowerCase(),
+          Contentlet.OWNER_CAN_READ_KEY.toLowerCase(),
+          Contentlet.PERMISSIONS_KEY.toLowerCase(),
+          Contentlet.STRUCTURE_INODE_KEY.toLowerCase(),
+          Contentlet.TYPE_KEY.toLowerCase(),
+          Contentlet.WEBSITE_KEY.toLowerCase(),
+          Contentlet.WORKING_KEY.toLowerCase(),
+          Contentlet.TITTLE_KEY.toLowerCase(),
+          Contentlet.STRUCTURE_INODE_KEY.toLowerCase(),
+          Contentlet.DISABLED_WYSIWYG_KEY.toLowerCase(),
+          Contentlet.ARCHIVED_KEY.toLowerCase(),
+          Contentlet.SORT_ORDER_KEY.toLowerCase(),
+          Contentlet.BASE_TYPE_KEY.toLowerCase(),
+          Contentlet.CONTENT_TYPE_KEY.toLowerCase()
+  );
 
   final FieldSql sql;
 
@@ -635,7 +679,7 @@ public String suggestVelocityVar( String tryVar, Field field, List<String> taken
 
     final List<String> forbiddenFieldVariables = new ArrayList<>(takenFieldsVariables);
 
-    if(! ContentAPIGraphQLTypesProvider.INSTANCE.isFieldVariableGraphQLCompatible(tryVar, field)) {
+    if(! ContentAPIGraphQLTypesProvider.INSTANCE.isFieldVariableGraphQLCompatible(tryVar, field) || RESERVED_FIELD_VARS.contains(tryVar.toLowerCase()) ) {
       forbiddenFieldVariables.add(tryVar);
     }
 

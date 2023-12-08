@@ -5,7 +5,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
+import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.business.FieldFactory;
 import com.dotcms.contenttype.business.sql.FieldSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -29,10 +31,13 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotmarketing.beans.Host;
@@ -51,15 +56,45 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import graphql.Assert;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.mockito.Mockito;
 
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@RunWith(DataProviderRunner.class)
 public class FieldFactoryImplTest extends ContentTypeBaseTest {
+
+	public static class TestCaseVelSuggestion {
+		String fieldVarName;
+		String baseExpectedSuggestion;
+
+		public TestCaseVelSuggestion(final String fieldVarName, final String baseExpectedSuggestion) {
+			this.fieldVarName = fieldVarName;
+			this.baseExpectedSuggestion = baseExpectedSuggestion;
+		}
+	}
+
+	@DataProvider
+	public static Object[] testCaseVelSuggestion(){
+		return new Object[] {
+				new TestCaseVelSuggestion("Host", Contentlet.HOST_KEY.toLowerCase()),
+				new TestCaseVelSuggestion("CONFolder", Contentlet.CON_FOLDER_KEY.toLowerCase()),
+				new TestCaseVelSuggestion("LANGUAGEid", Contentlet.LANGUAGEID_KEY.toLowerCase()),
+				new TestCaseVelSuggestion("OWNER", Contentlet.OWNER_KEY.toLowerCase()),
+				new TestCaseVelSuggestion("ModUser", Contentlet.MOD_USER_KEY.toLowerCase()),
+				new TestCaseVelSuggestion("ArchivED", Contentlet.ARCHIVED_KEY.toLowerCase()),
+				new TestCaseVelSuggestion("sortOrder", Contentlet.SORT_ORDER_KEY.toLowerCase()),
+				new TestCaseVelSuggestion("BaseType", Contentlet.BASE_TYPE_KEY.toLowerCase())
+
+		};
+	}
 
 	final static String TEST_VAR_PREFIX = "testField";
 
@@ -286,7 +321,6 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 	    assertThat("field2 text data type", field2.dataType() == DataTypes.TEXT);
 	    assertThat("field2 text db column", field2.dbColumn().matches("text[0-9]+"));
 	}
-	
 
 
     @Test
@@ -781,16 +815,93 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 	 * @throws DotDataException
 	 */
 	@Test
-	public void test_suggestVelocityVar_shouldRespectReservedWords() throws DotDataException {
+	@UseDataProvider("testCaseVelSuggestion")
+	public void test_suggestVelocityVar_shouldRespectReservedWords(final TestCaseVelSuggestion testCase) throws DotDataException {
+		//fill an array with number from 1 to 10
+		final ArrayList<String> numbers = new ArrayList<>();
+		for (int i = 1; i <= 10; i++) {
+			numbers.add(String.valueOf(i));
+		}
 
-		final Field field = new FieldDataGen()
-				.name("Host")
-				.velocityVarName("Host")
+		//create binary field
+		Field field = new FieldDataGen()
+				.name(testCase.fieldVarName)
+				.velocityVarName(testCase.fieldVarName)
 				.type(BinaryField.class)
 				.next();
+		assertEquals(field.type().getName(), BinaryField.class.getName());
+
+		//get suggestion
+		String suggestion = fieldFactory.suggestVelocityVar(field.name(), field, ImmutableList.of());
+		//the suggestion length should larger than the field name
+		Assert.assertTrue(testCase.fieldVarName.length() < suggestion.length());
+
+		String lastChar = String.valueOf(suggestion.charAt(suggestion.length() - 1));
+		//the suggestion should have a number at the var name
+		Assert.assertTrue(numbers.contains(lastChar));
+		Assert.assertTrue("Var expected to be "+testCase.baseExpectedSuggestion + lastChar+" but was: "+suggestion,
+				suggestion.equalsIgnoreCase(testCase.baseExpectedSuggestion + lastChar));
+
+		//create text field
+		field = new FieldDataGen()
+				.name(testCase.fieldVarName)
+				.velocityVarName(testCase.fieldVarName)
+				.type(TextField.class)
+				.next();
+		assertEquals(field.type().getName(), TextField.class.getName());
+
+		suggestion = fieldFactory.suggestVelocityVar(field.name(), field, ImmutableList.of());
+		Assert.assertTrue(testCase.fieldVarName.length() < suggestion.length());
+
+		lastChar = String.valueOf(suggestion.charAt(suggestion.length() - 1));
+		Assert.assertTrue(numbers.contains(lastChar));
+		Assert.assertTrue("Var expected to be "+testCase.baseExpectedSuggestion+lastChar+" but was: "+suggestion ,suggestion.equalsIgnoreCase(testCase.baseExpectedSuggestion + lastChar));
+
+	}
+
+	/**
+	 * Method to test: {@link com.dotcms.contenttype.business.FieldFactoryImpl#suggestVelocityVar(String, Field, List)}
+	 * Given Scenario: Users should be able to create a content type with a suggested velocity var
+	 * ExpectedResult: Contentlet should be created
+	 * @throws DotDataException
+	 */
+	@Test
+	public void test_suggestVelocityVar_userMustBeAbleToAddContent() throws DotDataException, DotSecurityException {
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+		final FieldAPI contentTypeFieldAPI = APILocator.getContentTypeFieldAPI();
+
+		final ContentType ctTest = contentTypeAPI.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
+						FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("VelVar" + System.currentTimeMillis())
+				.owner(user.getUserId()).build());
+
+		final String fieldVarName = "Host";
+		//Create Text Fields
+		Field field = new FieldDataGen()
+				.name(fieldVarName)
+				.velocityVarName(fieldVarName)
+				.type(TextField.class)
+				.contentTypeId(ctTest.id())
+				.next();
+
 		final String suggestion = fieldFactory.suggestVelocityVar(field.name(), field, ImmutableList.of());
+		//assign the suggested var
+		field = new FieldDataGen()
+				.name(suggestion)
+				.velocityVarName(suggestion)
+				.type(TextField.class)
+				.contentTypeId(ctTest.id())
+				.next();
+		contentTypeFieldAPI.save(field, user);
 
-		Assert.assertTrue("host1".equals(suggestion));
+		//create contentlet
+		final Contentlet content = new ContentletDataGen(ctTest.id()).nextPersisted();
 
+		final ContentType contentType =  APILocator.getContentTypeAPI(user).find(ctTest.inode());
+		//validate if contentType has the suggested var
+		assertEquals(contentType.fields().get(0).variable(), field.variable());
+
+		assertEquals(content.getContentType().name(), ctTest.name());
+		Assert.assertTrue(content.getContentType().fields().size() > 0);
+		assertEquals(content.getContentType().fields().get(0).variable(), field.variable());
 	}
 }
