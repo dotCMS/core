@@ -19,9 +19,9 @@ public class Task231207AddInodeAndIdentifierLeftIndexes implements StartupTask {
 
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
-        new DotConnect().setSQL("CREATE INDEX if not exists inode_inode_leading_idx ON inode(inode text_pattern_ops);").loadResult();
+        new DotConnect().setSQL("CREATE INDEX if not exists inode_inode_leading_idx ON inode(inode  COLLATE \"C\");").loadResult();
 
-        new DotConnect().setSQL("CREATE INDEX if not exists identifier_id_leading_idx ON identifier(id text_pattern_ops);").loadResult();
+        new DotConnect().setSQL("CREATE INDEX if not exists identifier_id_leading_idx ON identifier(id  COLLATE \"C\");").loadResult();
 
     }
 
