@@ -781,12 +781,15 @@ public class ContentUtils {
 		if (addRelationshipsOnPage &&
 				Objects.nonNull(response) &&
 				Objects.nonNull(request) &&
-				Objects.nonNull(user) &&
-				Objects.nonNull(request.getParameter(WebKeys.HTMLPAGE_DEPTH))
-			) {
-
-			final int depth = ConversionUtils.toInt(request.getParameter(WebKeys.HTMLPAGE_DEPTH), -1);
-			addRelationships(contentlet, user, mode, languageId, depth, request, response);
+				Objects.nonNull(user)) {
+			final String depthParam =
+					Objects.nonNull(request.getParameter(WebKeys.HTMLPAGE_DEPTH)) ?
+							request.getParameter(WebKeys.HTMLPAGE_DEPTH) :
+							(String) request.getAttribute(WebKeys.HTMLPAGE_DEPTH);
+			if (Objects.nonNull(depthParam)) {
+				final int depth = ConversionUtils.toInt(depthParam, -1);
+				addRelationships(contentlet, user, mode, languageId, depth, request, response);
+			}
 		}
 	}
 
