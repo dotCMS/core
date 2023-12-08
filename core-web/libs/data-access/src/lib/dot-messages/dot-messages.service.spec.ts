@@ -6,17 +6,19 @@ import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { getTestBed, TestBed } from '@angular/core/testing';
 
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
-
 import { DotMessageService } from './dot-messages.service';
 
 import { DotLocalstorageService } from '../dot-localstorage/dot-localstorage.service';
+
+const DEFAULT_LANG = 'default';
+const LANGUAGE_LOCALSTORAGE_KEY = 'dotMessagesKeys-lang';
+const MESSAGES_LOCALSTORAGE_KEY = 'dotMessagesKeys';
+const BUILDATE_LOCALSTORAGE_KEY = 'buildDate';
 
 describe('DotMessageService', () => {
     let dotMessageService: DotMessageService;
     let http: HttpClient;
     let dotLocalstorageService: DotLocalstorageService;
-    const MESSAGES_LOCALSTORAGE_KEY = 'dotMessagesKeys';
     let injector: TestBed;
 
     const messages = {
@@ -40,11 +42,7 @@ describe('DotMessageService', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotMessageService,
-                DotLocalstorageService
-            ]
+            providers: [DotMessageService, DotLocalstorageService]
         });
         injector = getTestBed();
         dotMessageService = injector.inject(DotMessageService);
@@ -87,6 +85,8 @@ describe('DotMessageService', () => {
         it('should read messages from local storage', () => {
             jest.spyOn(dotLocalstorageService, 'getItem');
             dotLocalstorageService.setItem(MESSAGES_LOCALSTORAGE_KEY, messages);
+            dotLocalstorageService.setItem(LANGUAGE_LOCALSTORAGE_KEY, DEFAULT_LANG);
+            dotLocalstorageService.setItem(BUILDATE_LOCALSTORAGE_KEY, '2020-01-01');
             dotMessageService.init();
             expect(dotLocalstorageService.getItem).toHaveBeenCalledWith('dotMessagesKeys');
             expect(http.get).not.toHaveBeenCalled();
