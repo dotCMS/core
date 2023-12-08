@@ -237,12 +237,8 @@ import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentlet
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentField;
 import com.dotmarketing.startup.runonce.Task230707CreateSystemTable;
 import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSize;
-<<<<<<< Updated upstream
 import com.dotmarketing.startup.runonce.Task231109AddPublishDateToContentletVersionInfo;
 import com.dotmarketing.startup.runonce.Task231030DropReleaseTable;
-=======
-import com.dotmarketing.startup.runonce.Task231207AddInodeAndIdentifierLeftIndexes;
->>>>>>> Stashed changes
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -554,11 +550,8 @@ public class TaskLocatorUtil {
 		.add(Task230701AddHashIndicesToWorkflowTables.class)
 		.add(Task230707CreateSystemTable.class)
 		.add(Task230713IncreaseDisabledWysiwygColumnSize.class)
-		//.add(Task231030DropReleaseTable.class)   This breaks backward compatibility
+		.add(Task231030DropReleaseTable.class)
 		.add(Task231109AddPublishDateToContentletVersionInfo.class)
-		.add(Task231207AddInodeAndIdentifierLeftIndexes.class)
-
-
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
