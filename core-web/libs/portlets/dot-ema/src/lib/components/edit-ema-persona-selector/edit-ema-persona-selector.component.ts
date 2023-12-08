@@ -3,6 +3,7 @@ import { Observable, of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
+    ChangeDetectionStrategy,
     Component,
     EventEmitter,
     Input,
@@ -41,7 +42,8 @@ import { DotPageApiService } from '../../services/dot-page-api.service';
         FormsModule
     ],
     templateUrl: './edit-ema-persona-selector.component.html',
-    styleUrls: ['./edit-ema-persona-selector.component.scss']
+    styleUrls: ['./edit-ema-persona-selector.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit {
     @ViewChild('listbox') listbox: Listbox;

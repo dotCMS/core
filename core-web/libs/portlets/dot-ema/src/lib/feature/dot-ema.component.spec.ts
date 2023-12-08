@@ -23,7 +23,7 @@ import { EditEmaStore } from './store/dot-ema.store';
 import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from '../components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
+import { DEFAULT_PERSONA, HOST, WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { AddContentletPayload } from '../shared/models';
 
@@ -152,7 +152,7 @@ describe('DotEmaComponent', () => {
 
                 const button = spectator.debugElement.query(By.css('[data-testId="ema-copy-url"]'));
 
-                spectator.triggerEventHandler(button, 'onClick', {});
+                spectator.triggerEventHandler(button, 'cdkCopyToClipboardCopied', {});
 
                 expect(messageServiceSpy).toHaveBeenCalledWith({
                     severity: 'success',
@@ -166,7 +166,7 @@ describe('DotEmaComponent', () => {
 
                 const button = spectator.debugElement.query(By.css('[data-testId="ema-copy-url"]'));
 
-                spectator.triggerEventHandler(button, 'onClick', {});
+                spectator.triggerEventHandler(button, 'cdkCopyToClipboardCopied', {});
 
                 const toastItem = spectator.query('p-toastitem');
 
@@ -181,7 +181,7 @@ describe('DotEmaComponent', () => {
                 const button = spectator.debugElement.query(By.css('[data-testId="ema-api-link"]'));
 
                 expect(button.nativeElement.href).toBe(
-                    'http://localhost/api/v1/page/render/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                    'http://localhost/api/v1/page/json/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
                 );
             });
 
@@ -276,7 +276,8 @@ describe('DotEmaComponent', () => {
             });
 
             expect(iframe.nativeElement.src).toBe(
-                'http://localhost:3000/my-awesome-route?language_id=2&com.dotmarketing.persona.id=modes.persona.no.persona'
+                HOST +
+                    '/my-awesome-route?language_id=2&com.dotmarketing.persona.id=modes.persona.no.persona'
             );
         });
 
@@ -291,7 +292,7 @@ describe('DotEmaComponent', () => {
 
                     window.dispatchEvent(
                         new MessageEvent('message', {
-                            origin: 'http://localhost:3000',
+                            origin: HOST,
                             data: {
                                 action: 'delete-contentlet',
                                 payload: {
@@ -345,7 +346,7 @@ describe('DotEmaComponent', () => {
 
                     window.dispatchEvent(
                         new MessageEvent('message', {
-                            origin: 'http://localhost:3000',
+                            origin: HOST,
                             data: {
                                 action: 'add-contentlet',
                                 payload: {
@@ -414,7 +415,7 @@ describe('DotEmaComponent', () => {
 
                     window.dispatchEvent(
                         new MessageEvent('message', {
-                            origin: 'http://localhost:3000',
+                            origin: HOST,
                             data: {
                                 action: 'edit-contentlet',
                                 payload: {
@@ -487,7 +488,7 @@ describe('DotEmaComponent', () => {
 
                 window.dispatchEvent(
                     new MessageEvent('message', {
-                        origin: 'http://localhost:3000',
+                        origin: HOST,
                         data: {
                             action: 'edit-contentlet',
                             payload: {
@@ -534,7 +535,7 @@ describe('DotEmaComponent', () => {
 
                 window.dispatchEvent(
                     new MessageEvent('message', {
-                        origin: 'http://localhost:3000',
+                        origin: HOST,
                         data: {
                             action: 'edit-contentlet',
                             payload: {
@@ -555,7 +556,7 @@ describe('DotEmaComponent', () => {
 
                 window.dispatchEvent(
                     new MessageEvent('message', {
-                        origin: 'http://localhost:3000',
+                        origin: HOST,
                         data: {
                             action: 'edit-contentlet',
                             payload: {
@@ -589,7 +590,7 @@ describe('DotEmaComponent', () => {
 
                 window.dispatchEvent(
                     new MessageEvent('message', {
-                        origin: 'http://localhost:3000',
+                        origin: HOST,
                         data: {
                             action: 'edit-contentlet',
                             payload: {
@@ -640,7 +641,7 @@ describe('DotEmaComponent', () => {
 
                 window.dispatchEvent(
                     new MessageEvent('message', {
-                        origin: 'http://localhost:3000',
+                        origin: HOST,
                         data: {
                             action: 'set-url',
                             payload: {
@@ -661,7 +662,7 @@ describe('DotEmaComponent', () => {
 
                 window.dispatchEvent(
                     new MessageEvent('message', {
-                        origin: 'http://localhost:3000',
+                        origin: HOST,
                         data: {
                             action: 'edit-contentlet',
                             payload: {

@@ -10,7 +10,12 @@ import {
     DotPageApiResponse,
     DotPageApiService
 } from '../../services/dot-page-api.service';
-import { ADD_CONTENTLET_URL, DEFAULT_PERSONA, EDIT_CONTENTLET_URL } from '../../shared/consts';
+import {
+    ADD_CONTENTLET_URL,
+    DEFAULT_PERSONA,
+    EDIT_CONTENTLET_URL,
+    HOST
+} from '../../shared/consts';
 import { SavePagePayload } from '../../shared/models';
 
 export interface EditEmaState {
@@ -49,47 +54,39 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         });
     }
 
-    readonly iframeUrl$: Observable<string> = this.select(
-        ({ url, editor }) =>
-            `http://localhost:3000/${this.createPageURL({
-                url,
-                language_id: editor.viewAs.language.id.toString(),
-                persona_id: editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
-            })}`
-    );
-    readonly language_id$: Observable<number> = this.select(
-        (state) => state.editor.viewAs.language.id
-    );
-    readonly url$: Observable<string> = this.select((state) => state.url);
-    readonly pageTitle$: Observable<string> = this.select((state) => state.editor.page.title);
-    readonly editIframeURL$: Observable<string> = this.select((state) => state.dialogIframeURL);
-    readonly editor$: Observable<DotPageApiResponse> = this.select((state) => state.editor);
+    readonly editorState$ = this.select((state) => {
+        const pageURL = this.createPageURL({
+            url: state.url,
+            language_id: state.editor.viewAs.language.id.toString(),
+            persona_id: state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
+        });
 
-    readonly vm$ = this.select((state) => {
         return state.editor.page.identifier
             ? {
-                  iframeUrl: `http://localhost:3000/${this.createPageURL({
-                      url: state.url,
-                      language_id: state.editor.viewAs.language.id.toString(),
-                      persona_id:
-                          state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
-                  })}`,
-                  pageTitle: state.editor.page.title,
-                  dialogIframeURL: state.dialogIframeURL,
-                  dialogVisible: state.dialogVisible,
-                  dialogHeader: state.dialogHeader,
-                  dialogIframeLoading: state.dialogIframeLoading,
-                  editor: state.editor,
-                  selectedPersona: state.editor.viewAs.persona ?? DEFAULT_PERSONA,
-                  apiURL: `${window.location.origin}/api/v1/page/render/${this.createPageURL({
-                      url: state.url,
-                      language_id: state.editor.viewAs.language.id.toString(),
-                      persona_id:
-                          state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
-                  })}`
+                  apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
+                  iframeURL: `${HOST}/${pageURL}`,
+                  editor: {
+                      ...state.editor,
+                      viewAs: {
+                          ...state.editor.viewAs,
+                          persona: state.editor.viewAs.persona ?? DEFAULT_PERSONA
+                      }
+                  }
               }
             : null; // Don't return anything unless we have page data
     });
+
+    readonly dialogState$ = this.select(
+        (state) =>
+            state.editor.page.identifier
+                ? {
+                      dialogIframeURL: state.dialogIframeURL,
+                      dialogVisible: state.dialogVisible,
+                      dialogHeader: state.dialogHeader,
+                      dialogIframeLoading: state.dialogIframeLoading
+                  }
+                : null // Don't return anything unless we have page data
+    );
 
     /**
      * Load the page editor

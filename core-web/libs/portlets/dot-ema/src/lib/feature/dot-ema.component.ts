@@ -32,7 +32,7 @@ import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-se
 import { EditEmaPersonaSelectorComponent } from '../components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaToolbarComponent } from '../components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA, DEFAULT_URL, WINDOW } from '../shared/consts';
+import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA, DEFAULT_URL, HOST, WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { AddContentletPayload, DeleteContentletPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
@@ -83,13 +83,14 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly personalizeService = inject(DotPersonalizeService);
-
     private readonly messageService = inject(MessageService);
 
-    private savePayload: AddContentletPayload;
+    readonly dialogState$ = this.store.dialogState$;
+    readonly editorState$ = this.store.editorState$;
 
-    readonly host = 'http://localhost:3000';
-    readonly vm$ = this.store.vm$;
+    readonly host = HOST;
+
+    private savePayload: AddContentletPayload;
 
     constructor(@Inject(WINDOW) private window: Window) {}
 
