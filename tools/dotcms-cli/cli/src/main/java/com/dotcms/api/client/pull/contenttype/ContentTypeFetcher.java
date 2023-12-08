@@ -38,9 +38,9 @@ public class ContentTypeFetcher implements ContentFetcher<ContentType>, Serializ
         }
 
         // Create a ForkJoinPool to process the content types in parallel
-        // We need this extra logic because the site API returns when calling all content types an
-        // object that is not equal to the one returned when calling by id or by var name, it is a
-        // reduced, so we need to call the API for each content type to get the full object.
+        // We need this extra logic because the content type API returns when calling all content
+        // types an object that is not equal to the one returned when calling by id or by var name,
+        // it is a reduced, so we need to call the API for each content type to get the full object.
         var forkJoinPool = ForkJoinPool.commonPool();
         var task = new HttpRequestTask(allContentTypes, this);
         return forkJoinPool.invoke(task);
