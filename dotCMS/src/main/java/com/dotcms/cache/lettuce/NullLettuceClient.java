@@ -101,6 +101,11 @@ public class NullLettuceClient<K, V> implements RedisClient {
     }
 
     @Override
+    public Future<Long> deleteNonBlockingRawKeys(Object[] keys) {
+        return null;
+    }
+
+    @Override
     public void scanEachKey(String matchesPattern, int keyBatchingSize, Consumer keyConsumer) {
 
     }

@@ -51,6 +51,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -522,6 +523,19 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
         return ConcurrentUtils.constantFuture(0l);
     }
 
+    @Override
+    public Future<Long>  deleteNonBlockingRawKeys(final K... keys) {
+
+        try (StatefulRedisConnection<String,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                return conn.async().unlink(ConversionUtils.INSTANCE.convertToArray(Objects::toString, String.class, keys));
+            }
+        }
+
+        return ConcurrentUtils.constantFuture(0l);
+    }
     /// HASHES
 
     @Override

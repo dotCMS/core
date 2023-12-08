@@ -167,6 +167,13 @@ public interface RedisClient<K, V> {
     Future<Long> deleteNonBlocking(final K... keys);
 
     /**
+     * Non Blocking Deletes one of more keys, returns the number of keys already deleted
+     * @param keys Array of K (the keys will be not unwrapped or anything will be taken as they are)
+     * @return Future Long number of keys deletes
+     */
+    Future<Long> deleteNonBlockingRawKeys(final K... keys);
+
+    /**
      * Scan each the key (one by one, the results are consumed by keyConsumer
      * @param matchesPattern {@link String} matches pattern
      * @param keyBatchingSize {@link Integer} how many records do you want to fetch by iteration

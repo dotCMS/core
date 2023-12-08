@@ -64,8 +64,8 @@ public class RedisCache extends CacheProvider {
     public RedisCache(final Lazy<RedisClient<String, Object>> client) {
 
         this.client = client;
-        this.REDIS_GROUP_KEY = ClusterFactory.getClusterId() + "_GROUP_KEY";
-        this.REDIS_PREFIX_KEY = ClusterFactory.getClusterId() + "_PREFIX_KEY";
+        this.REDIS_GROUP_KEY = ClusterFactory.getClusterId().hashCode() + "_GROUP_KEY";
+        this.REDIS_PREFIX_KEY = ClusterFactory.getClusterId().hashCode() + "_PREFIX_KEY";
     }
 
     public RedisCache() {
@@ -233,6 +233,19 @@ public class RedisCache extends CacheProvider {
         }
     }
 
+    /**
+     * removes cache keys async and resets the get timer that reenables get functions
+     *
+     * @param keys
+     */
+    private void removeKeysRaw(final String... keys) {
+
+        if (UtilMethods.isSet(keys)) {
+
+            this.getClient().deleteNonBlocking(keys);
+        }
+    }
+
     @Override
     public void remove(final String group, final String key) {
 
@@ -245,7 +258,7 @@ public class RedisCache extends CacheProvider {
 
         if (!UtilMethods.isEmpty(group)) {
 
-            final String prefix = cacheKey(group) + StringPool.STAR;
+            final String prefix =  StringPool.STAR + cacheKey(group) + StringPool.STAR;
             // Getting all the keys for the given groups
             DotConcurrentFactory.getInstance().getSingleSubmitter
                     (CacheWiper.class.getSimpleName()).submit(new CacheWiper(prefix));
@@ -255,7 +268,7 @@ public class RedisCache extends CacheProvider {
     @Override
     public void removeAll() {
 
-        final String prefix = this.REDIS_PREFIX_KEY + "." + StringPool.STAR;
+        final String prefix = StringPool.STAR + this.REDIS_PREFIX_KEY + "." + StringPool.STAR;
         // Getting all the keys for the given groups
         DotConcurrentFactory.getInstance().getSingleSubmitter
                 (CacheWiper.class.getSimpleName()).submit(new CacheWiper(prefix));
@@ -410,7 +423,7 @@ public class RedisCache extends CacheProvider {
         public void run() {
 
             RedisCache.this.getClient().scanKeys(this.prefix, keyBatchingSize,
-                    keyCollections -> removeKeys(keyCollections.toArray(new String[0])));
+                    keyCollections -> removeKeysRaw(keyCollections.toArray(new String[0])));
         }
     }
 
