@@ -161,14 +161,15 @@ public class IdentifierCacheImpl extends IdentifierCache {
 			return;
 		}
 		
-		if(InodeUtils.isSet(id.getId())) {
+		if(UtilMethods.isSet(id::getId)) {
 		    final String key = getPrimaryGroup() + id.getId();
             cache.remove(key,  getPrimaryGroup());
 		    cache.remove(key,  get404Group());
+			cache.remove(allInfosKey(id.getId()), getVersionInfoGroup());
 		}
 		
 		final String uri = id.getURI();
-		if(UtilMethods.isSet(id.getHostId()) && UtilMethods.isSet(uri)) {
+		if(UtilMethods.isSet(id::getHostId) && UtilMethods.isSet(uri)) {
     		final String key = getPrimaryGroup() + id.getHostId() + "-" + uri;
     		cache.remove(key, getPrimaryGroup());
     		cache.remove(key, get404Group());
@@ -202,6 +203,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 		
 		removeFromCacheByIdentifier(id);
 
+
 	}
 	
 
@@ -215,6 +217,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 		}
 		else {
 		    removeFromCacheByIdentifier(id);
+
 		}
 
 	}
@@ -227,6 +230,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	 
 	 public void removeFromCacheByInode(String inode) {
 		 cache.remove(getVersionGroup() + inode, getVersionGroup());
+		 cache.remove(allInfosKey(inode), getVersionInfoGroup());
 	 }
 	
 	
@@ -296,22 +300,25 @@ public class IdentifierCacheImpl extends IdentifierCache {
     public void removeContentletVersionInfoToCache(String identifier, long lang) {
         String key = getKey(identifier, lang);
         cache.remove(getVersionInfoGroup()+key, getVersionInfoGroup());
-		cache.remove(getVersionInfoGroup() + "all_" + identifier ,getVersionInfoGroup());
+		cache.remove( allInfosKey(identifier) ,getVersionInfoGroup());
     }
 
 	@Override
 	public void removeContentletVersionInfoToCache(String identifier, long lang, final String variantId) {
 		String key = getKey(identifier, lang, variantId);
 		cache.remove(getVersionInfoGroup() + key , getVersionInfoGroup());
-		cache.remove(getVersionInfoGroup() + "all_" + identifier ,getVersionInfoGroup());
+		cache.remove( allInfosKey(identifier) ,getVersionInfoGroup());
 	}
 
     @Override
     protected void removeVersionInfoFromCache(String identifier) {
         cache.remove(getVersionInfoGroup()+identifier, getVersionInfoGroup());
-		cache.remove(getVersionInfoGroup() + "all_" + identifier ,getVersionInfoGroup());
+		cache.remove( allInfosKey(identifier) ,getVersionInfoGroup());
     }
 
+	private String allInfosKey(String... vals){
+		return "all-"+ String.join("-", vals);
+	}
 
 
 	@Override
@@ -320,15 +327,16 @@ public class IdentifierCacheImpl extends IdentifierCache {
 		if(DbConnectionFactory.inTransaction()){
 			return null;
 		}
-		return (List<ContentletVersionInfo>) cache.getNoThrow(getVersionInfoGroup() + "all_" + identifier , getVersionInfoGroup());
+		return (List<ContentletVersionInfo>) cache.getNoThrow(allInfosKey(identifier) , getVersionInfoGroup());
 	}
 
 	@Override
 	public void putContentVersionInfos(String identifier, List<ContentletVersionInfo> versionInfos){
+		// we don't write cache in transactions
 		if(DbConnectionFactory.inTransaction()){
 			return;
 		}
-		cache.put(getVersionInfoGroup() + "all_" + identifier ,versionInfos, getVersionInfoGroup());
+		cache.put(allInfosKey(identifier) ,versionInfos, getVersionInfoGroup());
 	}
 
 
