@@ -106,6 +106,11 @@ public class NullLettuceClient<K, V> implements RedisClient {
     }
 
     @Override
+    public void deleteFromPattern(final String pattern) {
+
+    }
+
+    @Override
     public void scanEachKey(String matchesPattern, int keyBatchingSize, Consumer keyConsumer) {
 
     }

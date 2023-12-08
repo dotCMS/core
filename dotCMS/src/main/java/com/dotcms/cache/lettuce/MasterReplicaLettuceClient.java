@@ -60,6 +60,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static io.lettuce.core.ScriptOutputType.STATUS;
+
 /**
  * Master replica implementation of redis cache. It works as a replicator when there is more than 1 URIs as part of the
  * {@code REDIS_LETTUCECLIENT_URLS} config. This implementation wraps keys, members and channels by prefixing them with
@@ -536,6 +538,20 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
         return ConcurrentUtils.constantFuture(0l);
     }
+
+    @Override
+    public void deleteFromPattern(final String pattern) {
+
+        try (StatefulRedisConnection<String,V> conn = this.getConn()) {
+
+            if (this.isOpen(conn)) {
+
+                conn.async().eval("return redis.call('del', unpack(redis.call('keys', '" + pattern + "')))",
+                        STATUS, new String[0]);
+            }
+        }
+    }
+
     /// HASHES
 
     @Override

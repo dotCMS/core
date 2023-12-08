@@ -258,10 +258,13 @@ public class RedisCache extends CacheProvider {
 
         if (!UtilMethods.isEmpty(group)) {
 
+            // todo: this should be a wildcard deletion instead of keys scan
+
             final String prefix =  StringPool.STAR + cacheKey(group) + StringPool.STAR;
             // Getting all the keys for the given groups
-            DotConcurrentFactory.getInstance().getSingleSubmitter
-                    (CacheWiper.class.getSimpleName()).submit(new CacheWiper(prefix));
+            /*DotConcurrentFactory.getInstance().getSingleSubmitter
+                    (CacheWiper.class.getSimpleName()).submit(new CacheWiper(prefix));*/
+            this.getClient().deleteFromPattern(prefix);
         }
     }
 
@@ -270,8 +273,9 @@ public class RedisCache extends CacheProvider {
 
         final String prefix = StringPool.STAR + this.REDIS_PREFIX_KEY + "." + StringPool.STAR;
         // Getting all the keys for the given groups
-        DotConcurrentFactory.getInstance().getSingleSubmitter
-                (CacheWiper.class.getSimpleName()).submit(new CacheWiper(prefix));
+        /*DotConcurrentFactory.getInstance().getSingleSubmitter
+                (CacheWiper.class.getSimpleName()).submit(new CacheWiper(prefix));*/
+        this.getClient().deleteFromPattern(prefix);
     }
 
     @Override
