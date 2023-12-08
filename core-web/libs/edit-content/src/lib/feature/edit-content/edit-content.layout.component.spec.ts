@@ -1,8 +1,12 @@
-import { Spectator, createComponentFactory, SpyObject } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
+import { MockPipe } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { EditContentLayoutComponent } from './edit-content.layout.component';
 
@@ -13,13 +17,14 @@ import { CONTENT_TYPE_MOCK, JUST_FIELDS_MOCKS, LAYOUT_MOCK } from '../../utils/m
 const createEditContentLayoutComponent = (params: { contentType?: string; id?: string }) => {
     return createComponentFactory({
         component: EditContentLayoutComponent,
-        imports: [HttpClientTestingModule],
+        imports: [HttpClientTestingModule, MockPipe(DotMessagePipe)],
         componentProviders: [
             {
                 provide: ActivatedRoute,
                 useValue: { snapshot: { params } }
             }
-        ]
+        ],
+        providers: [mockProvider(DotMessageService)]
     });
 };
 
@@ -32,6 +37,7 @@ describe('EditContentLayoutComponent with identifier', () => {
     beforeEach(async () => {
         spectator = createComponent({
             detectChanges: false,
+
             providers: [
                 {
                     provide: DotEditContentService,
@@ -45,7 +51,8 @@ describe('EditContentLayoutComponent with identifier', () => {
                         getContentById: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK)),
                         saveContentlet: jest.fn().mockReturnValue(of({}))
                     }
-                }
+                },
+                mockProvider(DotMessageService)
             ]
         });
 

@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { mockProvider } from '@ngneat/spectator';
 import { throwError } from 'rxjs';
 
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
@@ -8,7 +9,7 @@ import { ConfirmationService } from 'primeng/api';
 
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { DotApps, DotAppsImportConfiguration, DotAppsSaveData } from '@dotcms/dotcms-models';
 import { DotFormatDateService } from '@dotcms/ui';
@@ -69,7 +70,8 @@ describe('DotAppsService', () => {
                 ConfirmationService,
                 DotAlertConfirmService,
                 DotAppsService,
-                DotHttpErrorManagerService
+                DotHttpErrorManagerService,
+                mockProvider(DotMessageService)
             ]
         });
         injector = getTestBed();

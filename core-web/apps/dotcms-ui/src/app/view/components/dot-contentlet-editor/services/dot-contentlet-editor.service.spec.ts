@@ -1,3 +1,4 @@
+import { mockProvider } from '@ngneat/spectator';
 import { of as observableOf } from 'rxjs';
 
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
@@ -10,7 +11,7 @@ import { DotMessageDisplayService } from '@components/dot-message-display/servic
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotFormatDateService } from '@dotcms/ui';
@@ -49,7 +50,8 @@ describe('DotContentletEditorService', () => {
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
-                }
+                },
+                mockProvider(DotMessageService)
             ]
         });
 
