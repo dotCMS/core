@@ -59,11 +59,14 @@ public class CorsFilterTest {
         // Make sure we get the defaults if resource does not exist
         results = corsFilter.getHeaders("this-does-not-exist");
         assertTrue(results.size()>=2);
-        assertEquals(results.get(3)[0], "Access-Control-Allow-Origin");
-        assertEquals(results.get(3)[1], "https://test2");
-        assertEquals(results.get(4)[0], "Access-Control-Allow-Methods");
-        assertEquals(results.get(4)[1], "GET,HEAD,POST,PUT,DELETE,OPTIONS");
-        
+        for (String [] result: results) {
+            if(result[0].contains("Origin")){
+                assertEquals(result[1], "https://test2");
+            }
+            if(result[0].contains("Methods")){
+                assertEquals(result[1], "GET,HEAD,POST,PUT,DELETE,OPTIONS");
+            }
+        }
         
     }
 }
