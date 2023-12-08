@@ -1,5 +1,6 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Validators } from '@angular/forms';
 
 import { TabView } from 'primeng/tabview';
@@ -24,6 +25,7 @@ describe('DotFormComponent', () => {
     let dotMessageService: DotMessageService;
     const createComponent = createComponentFactory({
         component: DotEditContentFormComponent,
+        imports: [HttpClientTestingModule],
         providers: [
             {
                 provide: DotMessageService,
