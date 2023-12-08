@@ -1,4 +1,4 @@
-package com.dotcms.analytics.metrics;
+package com.dotcms.analytics.experience.metric;
 
 /**
  * Metrics sender interface.

@@ -1,6 +1,6 @@
 package com.dotcms.metrics;
 
-import com.dotcms.analytics.metrics.AnalyticsAppPayload;
+import com.dotcms.analytics.experience.metric.AnalyticsAppPayload;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotConcurrentFactory.SubmitterConfig;
 import com.dotcms.concurrent.DotSubmitter;

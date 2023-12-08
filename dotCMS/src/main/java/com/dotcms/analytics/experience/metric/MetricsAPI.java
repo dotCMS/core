@@ -1,6 +1,8 @@
-package com.dotcms.analytics.metrics;
+package com.dotcms.analytics.experience.metric;
 
 import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotmarketing.exception.DotSecurityException;
+import com.liferay.portal.model.User;
 
 import java.io.Serializable;
 
@@ -33,6 +35,12 @@ public interface MetricsAPI {
      * @param payload payload to send
      */
     void sendMetrics(final AnalyticsApp analyticsApp, final String payload);
+
+    /**
+     * Return the current Metric values, it means that each value is get directly from the DataBase
+     * @return
+     */
+    MetricResult getHotResults(final User user) throws DotSecurityException;
 
     /**
      * Creates an {@link AnalyticsAppPayload} instance based on the given parameters.

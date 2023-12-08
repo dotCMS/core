@@ -1,4 +1,4 @@
-package com.dotcms.analytics.metrics;
+package com.dotcms.analytics.experience.metric;
 
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
