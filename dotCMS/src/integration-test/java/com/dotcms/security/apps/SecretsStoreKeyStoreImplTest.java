@@ -231,7 +231,6 @@ public class SecretsStoreKeyStoreImplTest {
             //Now we change the password.
             Config.setProperty(SECRETS_KEYSTORE_PASSWORD_KEY,
                     RandomStringUtils.randomAlphanumeric(10));
-            Config.forceRefresh();
             secretsStore.flushCache();
             //it's a brand new store so do not expect the old key to be there.
             final Optional<char[]> valueInStore = secretsStore.getValue(anyKey);
