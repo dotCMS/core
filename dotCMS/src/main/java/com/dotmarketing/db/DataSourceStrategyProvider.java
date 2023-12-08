@@ -22,7 +22,7 @@ public class DataSourceStrategyProvider {
     static final String CONNECTION_DB_MAX_WAIT = "DB_MAXWAIT";
     static final String CONNECTION_DB_MAX_TOTAL = "DB_MAX_TOTAL";
     static final String CONNECTION_DB_MIN_IDLE = "DB_MIN_IDLE";
-
+    static final String CONNECTION_DB_CONNECTION_TIMEOUT = "DB_CONNECTION_TIMEOUT";
     static final String CONNECTION_DB_IDLE_TIMEOUT = "DB_IDLE_TIMEOUT";
     static final String CONNECTION_DB_VALIDATION_QUERY = "DB_VALIDATION_QUERY";
     static final String CONNECTION_DB_LEAK_DETECTION_THRESHOLD = "DB_LEAK_DETECTION_THRESHOLD";
