@@ -837,7 +837,8 @@ export const CONTENT_FORM_DATA_MOCK: EditContentFormData = {
         __icon__: 'contentIcon',
         contentTypeIcon: 'event_note',
         variant: 'DEFAULT'
-    }
+    },
+    contentType: 'Test'
 };
 
 /* CONTENT TYPE MOCKS */

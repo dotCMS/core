@@ -14,32 +14,32 @@
         [href]="'api/v1/contenttype/id/' + contentLet?.stInode"></dot-api-link>
 </div>
 
-<div class="edit-content-aside--item">
-    <span>{{ 'Content State' | dm }}</span>
+<dl class="edit-content-aside--item">
+    <dt>{{ 'Content State' | dm }}</dt>
 
     <p-chip
         *ngIf="contentLet"
         [styleClass]="(contentLet | contentletStatus).classes"
         [label]="(contentLet | contentletStatus).label"></p-chip>
-</div>
+</dl>
 
-<div class="edit-content-aside--item">
-    <span>{{ 'Modified by' | dm }}</span>
-    <span class="font-bold" *ngIf="contentLet" data-testId="modified-by">{{
-        contentLet?.modUserName
-    }}</span>
-</div>
+<dl class="edit-content-aside--item">
+    <dt>{{ 'Modified by' | dm }}</dt>
+    <dd class="font-bold" *ngIf="contentLet" data-testId="modified-by">
+        {{ contentLet?.modUserName }}
+    </dd>
+</dl>
 
-<div class="edit-content-aside--item">
-    <span>{{ 'Last modified' | dm }}</span>
-    <span class="font-bold" *ngIf="contentLet" data-testId="last-modified">{{
-        contentLet?.modDate | dotRelativeDate
-    }}</span>
-</div>
+<dl class="edit-content-aside--item">
+    <dt>{{ 'Last modified' | dm }}</dt>
+    <dd class="font-bold" *ngIf="contentLet" data-testId="last-modified">
+        {{ contentLet?.modDate | dotRelativeDate }}
+    </dd>
+</dl>
 
-<div class="edit-content-aside--item">
-    <span>{{ 'Content Type' | dm }}</span>
+<dl class="edit-content-aside--item">
+    <dt>{{ 'Content Type' | dm }}</dt>
     <a [href]="'#/content-types-angular/edit/' + contentType" data-testId="content-type">{{
         contentType
     }}</a>
-</div>
+</dl>

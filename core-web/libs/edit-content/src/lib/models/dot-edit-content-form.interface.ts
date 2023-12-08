@@ -8,5 +8,5 @@ export interface EditContentFormData {
     layout: DotCMSContentTypeLayoutRow[];
     fields: DotCMSContentTypeField[];
     contentlet?: DotCMSContentlet;
-    contentType?: string;
+    contentType: string;
 }
