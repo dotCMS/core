@@ -26,9 +26,7 @@ export class DotMessageService {
     constructor(
         private readonly http: HttpClient,
         private readonly dotLocalstorageService: DotLocalstorageService
-    ) {
-        this.getAll();
-    }
+    ) {}
 
     /**
      * Initializes the DotMessageService.
