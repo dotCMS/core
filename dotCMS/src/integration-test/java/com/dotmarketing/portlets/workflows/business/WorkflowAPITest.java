@@ -21,8 +21,8 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.TestWorkflowUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.WorkflowActionClassDataGen;
 import com.dotcms.datagen.WorkflowDataGen;
-import com.dotcms.datagen.*;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -77,13 +77,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
-import io.vavr.control.Try;
-
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
-
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -97,6 +93,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -106,9 +103,14 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.SYSTEM_WORKFLOW;
 import static com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest.createContentTypeAndAssignPermissions;
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.*;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.ARCHIVED;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.EDITING;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.LISTING;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.LOCKED;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.NEW;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.PUBLISHED;
+import static com.dotmarketing.portlets.workflows.model.WorkflowState.UNLOCKED;
 import static com.dotmarketing.portlets.workflows.model.WorkflowState.UNPUBLISHED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
