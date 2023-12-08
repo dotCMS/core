@@ -1,0 +1,21 @@
+@use "variables" as *;
+
+:host {
+    display: grid;
+    grid-template-columns: 1fr 16rem;
+    gap: $spacing-4;
+    padding: $spacing-4;
+    padding-bottom: 0;
+    height: 100%;
+    width: 100%;
+    overflow: auto;
+}
+
+code {
+    display: block;
+    overflow: scroll;
+}
+
+dot-edit-content-form {
+    min-width: 0; // Make it shrinkable
+}

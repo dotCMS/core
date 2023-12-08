@@ -2,6 +2,8 @@ import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/j
 
 import { Validators } from '@angular/forms';
 
+import { TabView } from 'primeng/tabview';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -11,19 +13,23 @@ import {
     CONTENT_FORM_DATA_MOCK,
     JUST_FIELDS_MOCKS,
     LAYOUT_FIELDS_VALUES_MOCK,
-    MOCK_DATE
+    LAYOUT_MOCK,
+    MOCK_DATE,
+    TAB_DIVIDER_MOCK
 } from '../../utils/mocks';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 
 describe('DotFormComponent', () => {
     let spectator: Spectator<DotEditContentFormComponent>;
+    let dotMessageService: DotMessageService;
     const createComponent = createComponentFactory({
         component: DotEditContentFormComponent,
         providers: [
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
-                    Save: 'Save'
+                    Save: 'Save',
+                    Content: 'content'
                 })
             }
         ]
@@ -81,13 +87,21 @@ describe('DotFormComponent', () => {
         });
 
         it('should emit the form value through the `formSubmit` event', () => {
-            jest.spyOn(spectator.component.formSubmit, 'emit');
-            const button = spectator.query(byTestId('button-save'));
-            spectator.click(button);
+            jest.spyOn(spectator.component.changeValue, 'emit');
 
-            expect(spectator.component.formSubmit.emit).toHaveBeenCalledWith(
-                LAYOUT_FIELDS_VALUES_MOCK
-            );
+            spectator.component.form.controls['name1'].setValue('New Value');
+
+            expect(spectator.component.changeValue.emit).toHaveBeenCalledWith({
+                ...LAYOUT_FIELDS_VALUES_MOCK,
+                name1: 'New Value'
+            });
+        });
+
+        it('should not have multiple tabs', () => {
+            const tabViewComponent = spectator.query(TabView);
+            const formRow = spectator.query(byTestId('row'));
+            expect(tabViewComponent).toBeNull();
+            expect(formRow).toExist();
         });
     });
 
@@ -100,6 +114,30 @@ describe('DotFormComponent', () => {
             jest.spyOn(spectator.component, 'initilizeForm');
             expect(spectator.component.form).toEqual(undefined);
             expect(spectator.component.initilizeForm).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('with data and multiple tabs', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                detectChanges: false,
+                props: {
+                    formData: {
+                        ...CONTENT_FORM_DATA_MOCK,
+                        layout: [...LAYOUT_MOCK, TAB_DIVIDER_MOCK]
+                    }
+                }
+            });
+            dotMessageService = spectator.inject(DotMessageService, true);
+        });
+
+        it('should have a p-tabView', () => {
+            jest.spyOn(dotMessageService, 'get');
+            spectator.detectChanges();
+            const tabViewComponent = spectator.query(TabView);
+            expect(tabViewComponent.scrollable).toBeTruthy();
+            expect(tabViewComponent).toExist();
+            expect(dotMessageService.get).toHaveBeenCalled();
         });
     });
 });
