@@ -14,7 +14,8 @@ import { Container, ContainerActionPayload } from '../shared/models';
 export function insertContentletInContainer({
     pageContainers,
     container,
-    contentletID
+    contentletID,
+    personaTag
 }: ContainerActionPayload): Container[] {
     return pageContainers.map((currentContainer) => {
         if (
@@ -23,6 +24,8 @@ export function insertContentletInContainer({
         ) {
             currentContainer.contentletsId.push(contentletID);
         }
+
+        currentContainer.personaTag = personaTag;
 
         return currentContainer;
     });
@@ -42,13 +45,15 @@ export function insertContentletInContainer({
 export function deleteContentletFromContainer({
     pageContainers,
     container,
-    contentletID
+    contentletID,
+    personaTag
 }: ContainerActionPayload): Container[] {
     return pageContainers.map((currentContainer) => {
         if (areContainersEquals(currentContainer, container)) {
             return {
                 ...currentContainer,
-                contentletsId: currentContainer.contentletsId.filter((id) => id !== contentletID)
+                contentletsId: currentContainer.contentletsId.filter((id) => id !== contentletID),
+                personaTag
             };
         }
 

@@ -1,4 +1,4 @@
-name: Release Trigger
+name: Label Issues
 
 on:
   workflow_dispatch:
@@ -6,12 +6,17 @@ on:
       labels:
         description: 'Labels to fetch issues by'
         required: true
+      applying_labels:
+        description: 'Labels to apply to issues'
+        required: true
       operation:
         description: 'Operation to apply to issues'
         type: choice
         options:
           - ADD
           - REMOVE
+          - NONE
+        default: 'NONE'
         required: true
 
 jobs:
@@ -21,17 +26,19 @@ jobs:
     steps:
       - name: Checkout core
         uses: actions/checkout@v3
-      - name: Fetch `Next Release` issues
+
+      - name: Fetch issues
         id: fetch-next-release-issues
         uses: ./.github/actions/issue-fetcher
         with:
           fetch_operation: 'WITH_LABELS'
           fetch_value: ${{ github.event.inputs.labels }}
           github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+
       - name: Apply label operation
         uses: ./.github/actions/issue-labeler
         with:
           issues_json: ${{ steps.fetch-next-release-issues.outputs.issues }}
-          labels: ${{ github.event.inputs.labels }}
-          operation: ${{ github.event.inputs.labels }}
+          labels: ${{ github.event.inputs.applying_labels }}
+          operation: ${{ github.event.inputs.operation }}
           github_token: ${{ secrets.CICD_GITHUB_TOKEN }}

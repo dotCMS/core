@@ -6,16 +6,9 @@ import { Injectable, inject } from '@angular/core';
 import { map, pluck } from 'rxjs/operators';
 
 import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
-import {
-    DotCMSContentType,
-    DotCMSContentTypeField,
-    DotCMSContentTypeLayoutRow
-} from '@dotcms/dotcms-models';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
 
-interface EditContentFormData {
-    layout: DotCMSContentTypeLayoutRow[];
-    fields: DotCMSContentTypeField[];
-}
+import { EditContentFormData } from '../models/dot-edit-content-form.interface';
 
 @Injectable()
 export class DotEditContentService {
@@ -41,10 +34,13 @@ export class DotEditContentService {
      */
     getContentTypeFormData(idOrVar: string): Observable<EditContentFormData> {
         return this.dotContentTypeService.getContentType(idOrVar).pipe(
-            map(({ layout, fields }: EditContentFormData) => ({
-                layout,
-                fields
-            }))
+            map(
+                ({ layout, fields, contentType }): EditContentFormData => ({
+                    layout,
+                    fields,
+                    contentType
+                })
+            )
         );
     }
 

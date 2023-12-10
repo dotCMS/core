@@ -1,28 +1,32 @@
-import { Spectator, createComponentFactory, SpyObject } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
+import { MockPipe } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotFormatDateService } from '@dotcms/ui';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotFormatDateService, DotMessagePipe } from '@dotcms/ui';
 import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
 
 import { EditContentLayoutComponent } from './edit-content.layout.component';
 
+import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { CONTENT_TYPE_MOCK, JUST_FIELDS_MOCKS, LAYOUT_MOCK } from '../../utils/mocks';
 
 const createEditContentLayoutComponent = (params: { contentType?: string; id?: string }) => {
     return createComponentFactory({
         component: EditContentLayoutComponent,
-        imports: [HttpClientTestingModule],
+        imports: [HttpClientTestingModule, MockPipe(DotMessagePipe)],
         componentProviders: [
             {
                 provide: ActivatedRoute,
                 useValue: { snapshot: { params } }
             },
             { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
-        ]
+        ],
+        providers: [mockProvider(DotMessageService)]
     });
 };
 
@@ -35,6 +39,7 @@ describe('EditContentLayoutComponent with identifier', () => {
     beforeEach(async () => {
         spectator = createComponent({
             detectChanges: false,
+
             providers: [
                 {
                     provide: DotEditContentService,
@@ -48,7 +53,8 @@ describe('EditContentLayoutComponent with identifier', () => {
                         getContentById: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK)),
                         saveContentlet: jest.fn().mockReturnValue(of({}))
                     }
-                }
+                },
+                mockProvider(DotMessageService)
             ]
         });
 
@@ -62,13 +68,14 @@ describe('EditContentLayoutComponent with identifier', () => {
 
     it('should call getContentById and getContentTypeFormData with contentType if identifier is present', () => {
         spectator.detectChanges();
-
         expect(dotEditContentService.getContentById).toHaveBeenCalledWith('1');
     });
 
     it('should call dotEditContentService.saveContentlet with the correct parameters - Using contentType from getContentById', () => {
         spectator.detectChanges();
-        spectator.component.saveContent({ key: 'value' });
+        const formComponent = spectator.query(DotEditContentFormComponent);
+        formComponent.changeValue.emit({ key: 'value' });
+        spectator.component.saveContent();
         expect(dotEditContentService.saveContentlet).toHaveBeenCalledWith({
             key: 'value',
             inode: '1',
@@ -114,6 +121,7 @@ describe('EditContentLayoutComponent without identifier', () => {
         });
 
         dotEditContentService = spectator.inject(DotEditContentService, true);
+        spectator.detectChanges();
     });
 
     it('should set contentType from activatedRoute - Identifier undefined.', () => {
@@ -122,7 +130,6 @@ describe('EditContentLayoutComponent without identifier', () => {
     });
 
     it('should call getContentById and getContentTypeFormData with contentType if identifier is NOT present', () => {
-        spectator.detectChanges();
         expect(dotEditContentService.getContentById).not.toHaveBeenCalled();
         expect(dotEditContentService.getContentTypeFormData).toHaveBeenCalledWith('test');
     });

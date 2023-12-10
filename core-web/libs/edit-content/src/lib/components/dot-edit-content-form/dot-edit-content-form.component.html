@@ -1,6 +1,18 @@
 <form class="p-fluid" *ngIf="form" [formGroup]="form">
-    <ng-container *ngFor="let row of formData.layout">
-        <div class="row" data-testId="row">
+    <ng-container *ngIf="areMultipleTabs; else singleForm">
+        <p-tabView [scrollable]="true" data-testId="edit-content-multiple-tabs">
+            <p-tabPanel *ngFor="let tab of tabs" [header]="tab.title">
+                <ng-container *ngTemplateOutlet="tabTemplate; context: { tab: tab }" />
+            </p-tabPanel>
+        </p-tabView>
+    </ng-container>
+
+    <ng-template #singleForm>
+        <ng-container *ngTemplateOutlet="tabTemplate; context: { tab: tabs[0] }" />
+    </ng-template>
+
+    <ng-template #tabTemplate let-tab="tab">
+        <div class="row" *ngFor="let row of tab.layout" data-testId="row">
             <div class="column" *ngFor="let column of row.columns" data-testId="column">
                 <dot-edit-content-field
                     *ngFor="let field of column.fields"
@@ -9,13 +21,5 @@
                     data-testId="field" />
             </div>
         </div>
-    </ng-container>
+    </ng-template>
 </form>
-
-<aside>
-    <dot-edit-content-aside
-        [contentLet]="formData.contentlet"
-        [contentType]="formData.contentType" />
-    <p-button [label]="'Save' | dm" (click)="saveContenlet()" data-testId="button-save"></p-button>
-    <pre><code>{{form?.value | json}}</code></pre>
-</aside>

@@ -19,7 +19,8 @@ content-type-pull - *Retrieves Content-types descriptors*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*content-type pull* [*-h*] [*-fmt*=_<inputOutputFormat>_] [*--workspace*=_<file>_]
+*content-type pull* [*-h*] [*-ff*] [*-fmt*=_<inputOutputFormat>_]
+                  [*--retry-attempts*=_<retryAttempts>_] [*--workspace*=_<file>_]
                   [_idOrName_]
 
 // end::picocli-generated-man-section-synopsis[]
@@ -49,11 +50,19 @@ content-type-pull - *Retrieves Content-types descriptors*
 // tag::picocli-generated-man-section-options[]
 == Options
 
+*-ff, --fail-fast*::
+  Stop at first failure and exit the command. By default, this option is disabled, and the command will continue on error.
+
 *-fmt, --format*=_<inputOutputFormat>_::
-  Enum values: JSON, YAML, YML
+  Format for the pulled descriptor files. 
++
+Supported values: JSON, YAML, YML
 
 *-h*, *--help*::
   Display this help message.
+
+*--retry-attempts*=_<retryAttempts>_::
+  Number of retry attempts on errors. By default, this option is disabled, and the command will not retry on error.
 
 *--workspace*=_<file>_::
   The workspace directory.
