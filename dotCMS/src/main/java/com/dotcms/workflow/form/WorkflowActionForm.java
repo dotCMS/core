@@ -186,6 +186,11 @@ public class WorkflowActionForm extends Validated {
         @JsonProperty(required = true)
         private boolean       actionCommentable;
 
+       /**
+        * @deprecated This attribute is not necessary as a single workflow action can be available
+        * for locked and/or unlocked content now. See
+        * <a href="https://github.com/dotCMS/core/issues/13287">#13287</a>
+        */
         @Deprecated
         @JsonProperty(required = true)
         private boolean       requiresCheckout = false;
