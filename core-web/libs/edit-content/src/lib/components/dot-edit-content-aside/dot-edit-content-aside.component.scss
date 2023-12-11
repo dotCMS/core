@@ -4,6 +4,12 @@
     display: flex;
     justify-content: space-between;
     margin-bottom: $spacing-1;
+
+    strong {
+        display: flex;
+        align-items: center;
+        gap: 0.3em;
+    }
 }
 
 .edit-content-aside--item {
