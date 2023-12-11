@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { DotCustomTimeModule } from '@components/_common/dot-custom-time.component/dot-custom-time.module';
 import { DotDropdownModule } from '@components/_common/dot-dropdown-component/dot-dropdown.module';
@@ -13,6 +14,7 @@ import {
     DotNotificationsListComponent
 } from './components/dot-notifications/dot-notifications.component';
 import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.component';
+import { DividerModule } from 'primeng/divider';
 
 @NgModule({
     imports: [
@@ -21,7 +23,9 @@ import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.co
         ButtonModule,
         DotCustomTimeModule,
         DotPipesModule,
-        DotMessagePipe
+        DotMessagePipe,
+        OverlayPanelModule,
+        DividerModule
     ],
     exports: [DotToolbarNotificationsComponent],
     declarations: [

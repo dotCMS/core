@@ -2,6 +2,15 @@
     notificationsUnreadCount
 }}</span>
 
+<p-overlayPanel #op>
+    <p-divider></p-divider>
+</p-overlayPanel>
+
+<p-button
+    (click)="op.toggle($event)"
+    icon="pi pi-megaphone"
+    styleClass="p-button-rounded p-button-text"></p-button>
+
 <dot-dropdown-component
     id="dot-toolbar-notifications"
     [disabled]="!notifications.length"
