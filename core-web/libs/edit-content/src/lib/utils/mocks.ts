@@ -466,6 +466,30 @@ export const BINARY_FIELD_MOCK: DotCMSContentTypeField = {
     variable: 'Binary'
 };
 
+export const CUSTOM_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableCustomField',
+    contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
+    dataType: 'LONG_TEXT',
+    fieldType: 'Custom-Field',
+    fieldTypeLabel: 'Custom Field',
+    fieldVariables: [],
+    fixed: false,
+    iDate: 1700516848000,
+    id: '64d5c84f04df900c79a94e087c6fed05',
+    indexed: false,
+    listed: false,
+    modDate: 1700622670000,
+    hint: 'A hint text',
+    name: 'custom',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 4,
+    unique: false,
+    values: '<script>\r\nfunction searchClicked() {\r\n    console.log("Yoo")\r\n    form.get(\'select\').setValue("three");\r\n    form.get(\'title\').setValue("From Dojo!");\r\n}\r\n</script>\r\n\r\n<button dojoType="dijit.form.Button" onClick="searchClicked()" iconClass="searchIcon">Search</button>',
+    variable: 'custom'
+};
+
 export const JSON_FIELD_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableJSONField',
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
@@ -509,6 +533,7 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     MULTI_SELECT_FIELD_MOCK,
     BLOCK_EDITOR_FIELD_MOCK,
     BINARY_FIELD_MOCK,
+    CUSTOM_FIELD_MOCK,
     JSON_FIELD_MOCK
 ];
 
@@ -763,6 +788,61 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
             }
         ]
     }
+];
+
+export const TAB_SINGLE_ROW_MOCK: DotCMSContentTypeLayoutRow = {
+    divider: {
+        clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+        contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
+        dataType: 'SYSTEM',
+        fieldType: 'Row',
+        fieldTypeLabel: 'Row',
+        fieldVariables: [],
+        fixed: false,
+        iDate: 1697051073000,
+        id: 'a31ea895f80eb0a3754e4a2292e09a52',
+        indexed: false,
+        listed: false,
+        modDate: 1697051077000,
+        name: 'fields-0',
+        readOnly: false,
+        required: false,
+        searchable: false,
+        sortOrder: 0,
+        unique: false,
+        variable: 'fields0'
+    },
+    columns: []
+};
+
+export const TAB_DIVIDER_MOCK: DotCMSContentTypeLayoutRow = {
+    divider: {
+        clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+        contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
+        dataType: 'SYSTEM',
+        fieldType: 'Tab_divider',
+        fieldTypeLabel: 'Tab_divider',
+        fieldVariables: [],
+        fixed: false,
+        iDate: 1697051073000,
+        id: 'a31ea895f80eb0a3754e4a2292e09a52',
+        indexed: false,
+        listed: false,
+        modDate: 1697051077000,
+        name: 'New Tab',
+        readOnly: false,
+        required: false,
+        searchable: false,
+        sortOrder: 0,
+        unique: false,
+        variable: 'tab'
+    },
+    columns: []
+};
+
+export const MULTIPLE_TABS_MOCK: DotCMSContentTypeLayoutRow[] = [
+    TAB_SINGLE_ROW_MOCK,
+    TAB_DIVIDER_MOCK
 ];
 
 export const MOCK_DATE = 1699990073562;

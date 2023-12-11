@@ -16,6 +16,7 @@ params:
               \"includeRendered\":false,
               \"headers\": {
                 \"authenticationToken\": \"123\",
+                \"depth\": 2,
                 \"X-CONTENT-APP\": \"dotCMS\"
               }
             },
@@ -25,6 +26,7 @@ params:
               \"includeRendered\":false,
               \"headers\": {
                 \"authenticationToken\": \"456\",
+                \"depth\": 2,
                 \"X-CONTENT-APP\": \"dotCMS\"
               }
             }

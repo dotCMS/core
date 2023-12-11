@@ -1,8 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import {
+    AfterViewInit,
+    Component,
+    EventEmitter,
+    Input,
+    Output,
+    ViewChild,
+    inject
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
-import { ListboxModule } from 'primeng/listbox';
+import { Listbox, ListboxModule } from 'primeng/listbox';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { map } from 'rxjs/operators';
@@ -21,7 +29,8 @@ interface DotLanguageWithLabel extends DotLanguage {
     templateUrl: './edit-ema-language-selector.component.html',
     styleUrls: ['./edit-ema-language-selector.component.scss']
 })
-export class EmaLanguageSelectorComponent {
+export class EmaLanguageSelectorComponent implements AfterViewInit {
+    @ViewChild('listbox') listbox: Listbox;
     @Output() selected: EventEmitter<number> = new EventEmitter();
     @Input() language: DotLanguage;
 
@@ -42,6 +51,11 @@ export class EmaLanguageSelectorComponent {
                 }))
             )
         );
+
+    ngAfterViewInit(): void {
+        this.listbox.value = this.selectedLanguage;
+        this.listbox.cd.detectChanges();
+    }
 
     /**
      * Handle the change of the language

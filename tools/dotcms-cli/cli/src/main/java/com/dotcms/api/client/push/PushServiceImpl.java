@@ -273,7 +273,7 @@ public class PushServiceImpl implements PushService {
                             errors.size()));
                     long count = errors.stream().filter(PushException.class::isInstance).count();
                     int c = 0;
-                    for (var error : errors) {
+                    for (final var error : errors) {
                         c++;
                         output.handleCommandException(error,
                                 String.format("%s %n", error.getMessage()), c == count);
