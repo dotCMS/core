@@ -295,7 +295,7 @@
             </activation>
             <properties>
                 <nx.build.options>--prod</nx.build.options>
-                <yarn.install.cmd>ci --no-progress</yarn.install.cmd>
+                <yarn.install.cmd>--frozen-lockfile --silent</yarn.install.cmd>
             </properties>
             <build>
             </build>
