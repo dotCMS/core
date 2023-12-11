@@ -1,18 +1,21 @@
 package com.dotmarketing.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UUIDGenerator;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 public class IdentifierCacheImplTest {
 
@@ -72,5 +75,78 @@ public class IdentifierCacheImplTest {
 
         assertNotNull(contentletVersionInfoFromCache);
         assertEquals(contentletVersionInfo, contentletVersionInfoFromCache);
+    }
+
+    /**
+     * Method to test: {@link IdentifierCacheImpl#putContentVersionInfos(String, List)} and  {@link IdentifierCacheImpl#getContentVersionInfos(String)}
+     * When: Add a list of {@link ContentletVersionInfo} is added to cache
+     * Should: get it with {@link IdentifierCacheImpl#getContentVersionInfos(String)}
+     */
+    @Test
+    public void putContentVersionInfos_and_getContentVersionInfos_successfully(){
+        final String id = UUIDGenerator.generateUuid();
+        final Language language1 = new LanguageDataGen().nextPersisted();
+        final Language language2 = new LanguageDataGen().nextPersisted();
+        final List<ContentletVersionInfo> listContentletVersionInfo = new ArrayList<>();
+
+        ContentletVersionInfo contentletVersionInfo = new ContentletVersionInfo();
+        contentletVersionInfo.setIdentifier(id);
+        contentletVersionInfo.setLang(language1.getId());
+        contentletVersionInfo.setVariant(VariantAPI.DEFAULT_VARIANT.name());
+        listContentletVersionInfo.add(contentletVersionInfo);
+
+        contentletVersionInfo = new ContentletVersionInfo();
+        contentletVersionInfo.setIdentifier(id);
+        contentletVersionInfo.setLang(language2.getId());
+        contentletVersionInfo.setVariant(VariantAPI.DEFAULT_VARIANT.name());
+        listContentletVersionInfo.add(contentletVersionInfo);
+
+        CacheLocator.getIdentifierCache().putContentVersionInfos(id,listContentletVersionInfo);
+
+        final List<ContentletVersionInfo> listContentletVersionInfoFromCache = CacheLocator.getIdentifierCache()
+                        .getContentVersionInfos(id);
+
+        assertNotNull(listContentletVersionInfoFromCache);
+        assertEquals(listContentletVersionInfo.size(), listContentletVersionInfoFromCache.size());
+    }
+
+
+    /**
+     * Method to test: {@link IdentifierCacheImpl#removeFromCacheByIdentifier(Identifier)}
+     * When: Add a list of {@link ContentletVersionInfo} is added to cache and removed by the identifier
+     * Should: all versions should be removed.
+     */
+    @Test
+    public void removeFromCacheByIdentifier_successfully(){
+        final String id = UUIDGenerator.generateUuid();
+        final Language language1 = new LanguageDataGen().nextPersisted();
+        final Language language2 = new LanguageDataGen().nextPersisted();
+        final List<ContentletVersionInfo> listContentletVersionInfo = new ArrayList<>();
+
+        ContentletVersionInfo contentletVersionInfo = new ContentletVersionInfo();
+        contentletVersionInfo.setIdentifier(id);
+        contentletVersionInfo.setLang(language1.getId());
+        contentletVersionInfo.setVariant(VariantAPI.DEFAULT_VARIANT.name());
+        listContentletVersionInfo.add(contentletVersionInfo);
+
+        contentletVersionInfo = new ContentletVersionInfo();
+        contentletVersionInfo.setIdentifier(id);
+        contentletVersionInfo.setLang(language2.getId());
+        contentletVersionInfo.setVariant(VariantAPI.DEFAULT_VARIANT.name());
+        listContentletVersionInfo.add(contentletVersionInfo);
+
+        CacheLocator.getIdentifierCache().putContentVersionInfos(id,listContentletVersionInfo);
+
+        List<ContentletVersionInfo> listContentletVersionInfoFromCache = CacheLocator.getIdentifierCache()
+                .getContentVersionInfos(id);
+
+        assertNotNull(listContentletVersionInfoFromCache);
+        assertEquals(listContentletVersionInfo.size(), listContentletVersionInfoFromCache.size());
+
+        CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(id);
+
+        listContentletVersionInfoFromCache = CacheLocator.getIdentifierCache()
+                .getContentVersionInfos(id);
+        assertNull(listContentletVersionInfoFromCache);
     }
 }
