@@ -4,6 +4,9 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
+
 import java.io.File;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,6 +19,10 @@ public final class StoragePersistenceProvider {
 
     public static final String DEFAULT_STORAGE_TYPE = "DEFAULT_STORAGE_TYPE";
     public static final String METADATA_GROUP_NAME = "METADATA_GROUP_NAME";
+    final static Lazy<StorageType> storageType = Lazy.of(()->{
+        String storageType= Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.FILE_SYSTEM.name());
+        return Try.of(()->StorageType.valueOf(storageType)).getOrElse(StorageType.FILE_SYSTEM);
+    });
 
     private final Map<StorageType, StoragePersistenceAPI> storagePersistenceInstances = new ConcurrentHashMap<>();
     
@@ -45,8 +52,7 @@ public final class StoragePersistenceProvider {
      * @return
      */
     public static StorageType getStorageType(){
-        final String storageType = Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.FILE_SYSTEM.name());
-        return StorageType.valueOf(storageType);
+        return storageType.get();
     }
 
     /**

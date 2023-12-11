@@ -11,3 +11,4 @@ This maintenance release includes the following code fixes:
 5. https://github.com/dotCMS/core/issues/26897 : Make DB connectionTimeout configurable #26897
 6. https://github.com/dotCMS/core/issues/26934 : Add Catalina Log Back #26934
 7. https://github.com/dotCMS/core/issues/26896 : Avoid Refreshing Properties #26896
+8. https://github.com/dotCMS/core/issues/26933 : StorageProvider should load lazily #26933
