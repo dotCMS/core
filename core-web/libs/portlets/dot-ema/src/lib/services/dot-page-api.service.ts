@@ -85,8 +85,13 @@ export class DotPageApiService {
      * @return {*}  {Observable<DotPersona[]>}
      * @memberof DotPageApiService
      */
-    getPersonas(personaParams: GetPersonasParams): Observable<GetPersonasResponse> {
-        const url = this.getPersonasURL(personaParams);
+    getPersonas({
+        pageID,
+        filter,
+        page,
+        perPage = 10
+    }: GetPersonasParams): Observable<GetPersonasResponse> {
+        const url = this.getPersonasURL({ pageID, filter, page, perPage });
 
         return this.http.get<{ entity: DotPersona[]; pagination: PaginationData }>(url).pipe(
             map((res: { entity: DotPersona[]; pagination: PaginationData }) => ({
@@ -96,7 +101,7 @@ export class DotPageApiService {
         );
     }
 
-    private getPersonasURL({ pageID, filter, page, perPage = 10 }: GetPersonasParams): string {
+    private getPersonasURL({ pageID, filter, page, perPage }: GetPersonasParams): string {
         const apiUrl = `/api/v1/page/${pageID}/personas?`;
 
         const queryParams = new URLSearchParams({
