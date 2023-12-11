@@ -88,4 +88,25 @@ public class ITConfigTest extends IntegrationTestBase {
         value = Config.getStringProperty("THIRD_PROPERTY", "DEFAULT_VALUE");
         Assert.assertEquals("Should return default value since the property has been removed", "DEFAULT_VALUE", value);
     }
+
+    /**
+     * Method to test: {@link Config#getStringProperty(String, String)}
+     * Given Scenario: This will add two properties, one is set only on the system table, the other is set on the system table and on the environment variables
+     * ExpectedResult: The one set on the environment variables should have priority over the one set on the system table
+     */
+    @Test
+    public void test_property_order_resolution () {
+
+        EnvironmentVariablesService.getInstance().put("DOT_ONLY_ENV_PROP", "ENV_VALUE");
+        APILocator.getSystemAPI().getSystemTable().set("DOT_ONLY_ENV_PROP", "NEW_VALUE_FROM_SYSTEM_TABLE");
+        APILocator.getSystemAPI().getSystemTable().set("DOT_ONLY_SYSTEM_TABLE", "NEW_VALUE_FROM_SYSTEM_TABLE");
+        Config.forceRefresh();
+        Config.refreshProperties();
+
+
+        String value = Config.getStringProperty("DOT_ONLY_ENV_PROP", "DEFAULT_VALUE");
+        Assert.assertEquals("Should return the value from the environment", "ENV_VALUE", value);
+        value = Config.getStringProperty("DOT_ONLY_SYSTEM_TABLE", "DEFAULT_VALUE");
+        Assert.assertEquals("Should return the value from the system table", "NEW_VALUE_FROM_SYSTEM_TABLE", value);
+    }
 }

@@ -1,4 +1,4 @@
-package com.dotcms.api.client.files;
+package com.dotcms.api.client.pull.file;
 
 import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.model.RestClientFactory;
@@ -8,30 +8,28 @@ import com.dotcms.api.traversal.TreeNodeInfo;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.FilesUtils;
 import com.dotcms.model.language.Language;
-import org.jboss.logging.Logger;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.io.File;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
 
-public class PullBase {
-
-    @Inject
-    protected Logger logger;
+@ApplicationScoped
+public class Puller implements Serializable {
 
     @Inject
     LocalTraversalService traversalService;
 
     @Inject
-    protected RestClientFactory clientFactory;
+    RestClientFactory clientFactory;
 
     /**
-     * Processes the file tree by retrieving languages, checking the base structure,
-     * and invoking the appropriate methods for processing the tree by status.
+     * Pulls the file tree by retrieving languages, checking the base structure, and invoking the
+     * appropriate methods for processing the tree by status.
      *
      * @param tree                 the tree node representing the file structure
      * @param treeNodeInfo         the collected information about the tree
@@ -42,13 +40,13 @@ public class PullBase {
      * @param progressBar          the progress bar for tracking the pull progress
      */
     @ActivateRequestContext
-    protected List<Exception> processTree(final TreeNode tree,
-                                          final TreeNodeInfo treeNodeInfo,
-                                          final File destination,
-                                          final boolean overwrite,
-                                          final boolean generateEmptyFolders,
-                                          final boolean failFast,
-                                          final ConsoleProgressBar progressBar) {
+    public List<Exception> pull(final TreeNode tree,
+            final TreeNodeInfo treeNodeInfo,
+            final File destination,
+            final boolean overwrite,
+            final boolean generateEmptyFolders,
+            final boolean failFast,
+            final ConsoleProgressBar progressBar) {
 
         // Preparing the languages for the tree
         var treeLanguages = prepareLanguages(treeNodeInfo);
@@ -66,12 +64,14 @@ public class PullBase {
         Collections.sort(sortedWorkingLanguages);
 
         // Process the live tree
-        var errors = processTreeByStatus(true, sortedLiveLanguages, tree, destination.getAbsolutePath(),
+        var errors = processTreeByStatus(true, sortedLiveLanguages, tree,
+                destination.getAbsolutePath(),
                 overwrite, generateEmptyFolders, failFast, progressBar);
         var foundErrors = new ArrayList<>(errors);
 
         // Process the working tree
-        errors = processTreeByStatus(false, sortedWorkingLanguages, tree, destination.getAbsolutePath(),
+        errors = processTreeByStatus(false, sortedWorkingLanguages, tree,
+                destination.getAbsolutePath(),
                 overwrite, generateEmptyFolders, failFast, progressBar);
         foundErrors.addAll(errors);
 
@@ -90,11 +90,11 @@ public class PullBase {
      * @param failFast             true to fail fast, false to continue on error
      * @param progressBar          the progress bar for tracking the pull progress
      */
-    @ActivateRequestContext
-    protected List<Exception> processTreeByStatus(boolean isLive, List<String> languages, TreeNode rootNode,
-                                                  final String destination, final boolean overwrite,
-                                                  final boolean generateEmptyFolders, final boolean failFast,
-                                                  final ConsoleProgressBar progressBar) {
+    private List<Exception> processTreeByStatus(boolean isLive, List<String> languages,
+            TreeNode rootNode,
+            final String destination, final boolean overwrite,
+            final boolean generateEmptyFolders, final boolean failFast,
+            final ConsoleProgressBar progressBar) {
 
         var foundErrors = new ArrayList<Exception>();
 
@@ -103,7 +103,8 @@ public class PullBase {
         }
 
         for (String lang : languages) {
-            var errors = traversalService.pullTreeNode(rootNode, destination, isLive, lang, overwrite,
+            var errors = traversalService.pullTreeNode(rootNode, destination, isLive, lang,
+                    overwrite,
                     generateEmptyFolders, failFast, progressBar);
             foundErrors.addAll(errors);
         }
@@ -112,14 +113,15 @@ public class PullBase {
     }
 
     /**
-     * Prepares the languages used in the tree node.
-     * If there are no unique live languages or working languages specified in the given `treeNodeInfo`,
-     * it fallbacks to the default language available in the list of all languages.
+     * Prepares the languages used in the tree node. If there are no unique live languages or
+     * working languages specified in the given `treeNodeInfo`, it fallbacks to the default language
+     * available in the list of all languages.
      *
      * @param treeNodeInfo the collected information about the tree node
-     * @return an instance of the {@link NodeLanguages} class containing the set of live languages and working languages
+     * @return an instance of the {@link NodeLanguages} class containing the set of live languages
+     * and working languages
      */
-    protected NodeLanguages prepareLanguages(TreeNodeInfo treeNodeInfo) {
+    private NodeLanguages prepareLanguages(TreeNodeInfo treeNodeInfo) {
 
         // We need to retrieve the languages
         final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
@@ -137,7 +139,7 @@ public class PullBase {
         return new NodeLanguages(uniqueLiveLanguages, uniqueWorkingLanguages);
     }
 
-    protected static class NodeLanguages {
+    private static class NodeLanguages {
 
         public final Set<String> liveLanguages;
         public final Set<String> workingLanguages;

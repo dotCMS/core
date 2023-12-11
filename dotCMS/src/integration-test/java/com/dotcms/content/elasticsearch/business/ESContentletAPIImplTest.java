@@ -11,6 +11,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -28,6 +29,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
@@ -2757,6 +2759,36 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         } finally {
             APILocator.getExperimentsAPI().end(experiment.id().orElseThrow(), APILocator.systemUser());
         }
+
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#copyContentlet(Contentlet, User, boolean)}
+     * Given Scenario:
+     * Unable to copy a contentlet with Host/Folder field. Error is thrown when the field name is "Host"
+     * ExpectedResult: Copy action should execute successfully without null-pointer error.
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void test_copy_contentlet() throws DotDataException, DotSecurityException {
+        final List<Field> fields = new ArrayList<>();
+        fields.add(new FieldDataGen().name("Title").velocityVarName("title").next());
+        fields.add(new FieldDataGen().type(HostFolderField.class)
+                .name(Host.HOST_VELOCITY_VAR_NAME)
+                .velocityVarName(Host.HOST_VELOCITY_VAR_NAME)
+                .next());
+        final ContentType cType = new ContentTypeDataGen()
+                .host(APILocator.systemHost())
+                .fields(fields)
+                .nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(cType.id())
+                .host(APILocator.systemHost())
+                .nextPersisted();
+        final Contentlet respCont =  contentletAPI.copyContentlet(contentlet, user, false);
+
+        assertNotEquals(respCont.getIdentifier(), contentlet.getIdentifier());
+        assertEquals(respCont.getHost(), APILocator.systemHost().getIdentifier());
 
     }
 }

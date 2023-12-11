@@ -2,9 +2,20 @@
 
 :host {
     display: grid;
-    flex-direction: column;
-    grid-template-rows: 48px 1fr;
+    grid-template-rows: min-content 1fr;
     height: 100%;
+
+    h4 {
+        margin: 0;
+        padding: 0 $spacing-4;
+        padding-top: $spacing-3;
+    }
+
+    a,
+    a:focus,
+    a:active {
+        text-decoration: none;
+    }
 
     ::ng-deep {
         .p-dialog {
@@ -29,12 +40,16 @@
     }
 }
 
-.toolbar {
-    border: solid 1px $color-palette-gray-500;
-    padding: 0 $spacing-3;
-}
-
 .iframe-wrapper {
     margin: $spacing-3;
     border: solid 1px $color-palette-gray-500;
+}
+
+// Selectors overlayPanel
+::ng-deep {
+    .p-overlaypanel.edit-ema-selector.p-component {
+        .p-overlaypanel-content {
+            padding: 0;
+        }
+    }
 }

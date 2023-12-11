@@ -490,9 +490,32 @@ public interface WorkFlowFactory {
 	int countWorkflowSchemes(boolean includeArchived);
 
 	/**
-	 * Return the count of Steps in all Schemas
+	 * Return the count of Steps in all not archived  Schemas
 	 *
 	 * @return
 	 */
 	long countAllSchemasSteps() throws DotDataException;
+
+	/**
+	 * Return the count of Action in all not archived Schemas
+	 *
+	 * @return
+	 */
+	long countAllSchemasActions() throws DotDataException;
+
+	/**
+	 * Return the count of SubAction in all Action
+	 *
+	 * @return
+	 */
+	long countAllSchemasSubActions() throws DotDataException;
+
+
+	/**
+	 * Return the count of unique subaction in all Workflow Actiona
+	 *
+	 * @return the count of unique subactions
+	 */
+	long countAllSchemasUniqueSubActions() throws DotDataException;
+
 }

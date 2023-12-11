@@ -1,5 +1,6 @@
 import { describe, expect } from '@jest/globals';
-import { Spectator, byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
+import { SpectatorRouting } from '@ngneat/spectator';
+import { byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -7,16 +8,22 @@ import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
+import {
+    DotLanguagesServiceMock,
+    DotPersonalizeServiceMock,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
 
 import { DotEmaComponent } from './dot-ema.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
+import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaPersonaSelectorComponent } from '../components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { WINDOW } from '../shared/consts';
+import { DEFAULT_PERSONA, HOST, WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { AddContentletPayload } from '../shared/models';
 
@@ -29,7 +36,7 @@ const messagesMock = {
 };
 
 describe('DotEmaComponent', () => {
-    let spectator: Spectator<DotEmaComponent>;
+    let spectator: SpectatorRouting<DotEmaComponent>;
     let store: EditEmaStore;
     let confirmationService: ConfirmationService;
 
@@ -38,20 +45,61 @@ describe('DotEmaComponent', () => {
         imports: [RouterTestingModule, HttpClientTestingModule],
         detectChanges: false,
         componentProviders: [
+            MessageService,
             EditEmaStore,
             ConfirmationService,
+            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
             {
                 provide: DotPageApiService,
                 useValue: {
-                    get() {
-                        return of({
-                            page: {
-                                title: 'hello world'
-                            }
-                        });
+                    get({ language_id }) {
+                        return {
+                            2: of({
+                                page: {
+                                    title: 'hello world',
+                                    identifier: '123'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 2,
+                                        language: 'Spanish',
+                                        countryCode: 'ES',
+                                        languageCode: 'es',
+                                        country: 'España'
+                                    },
+                                    persona: DEFAULT_PERSONA
+                                }
+                            }),
+                            1: of({
+                                page: {
+                                    title: 'hello world',
+                                    identifier: '123'
+                                },
+                                viewAs: {
+                                    language: {
+                                        id: 1,
+                                        language: 'English',
+                                        countryCode: 'US',
+                                        languageCode: 'EN',
+                                        country: 'United States'
+                                    },
+                                    persona: DEFAULT_PERSONA
+                                }
+                            })
+                        }[language_id];
                     },
                     save() {
                         return of({});
+                    },
+                    getPersonas() {
+                        return of({
+                            entity: [DEFAULT_PERSONA],
+                            pagination: {
+                                totalEntries: 1,
+                                perPage: 10,
+                                page: 1
+                            }
+                        });
                     }
                 }
             },
@@ -62,6 +110,10 @@ describe('DotEmaComponent', () => {
             {
                 provide: WINDOW,
                 useValue: window
+            },
+            {
+                provide: DotPersonalizeService,
+                useValue: new DotPersonalizeServiceMock()
             }
         ]
     });
@@ -69,7 +121,7 @@ describe('DotEmaComponent', () => {
     describe('with queryParams', () => {
         beforeEach(() => {
             spectator = createComponent({
-                queryParams: { language_id: '1', url: 'page-one' }
+                queryParams: { language_id: 1, url: 'page-one' }
             });
 
             store = spectator.inject(EditEmaStore, true);
@@ -77,7 +129,11 @@ describe('DotEmaComponent', () => {
         });
 
         it('should initialize with route query parameters', () => {
-            const mockQueryParams = { language_id: '1', url: 'page-one' };
+            const mockQueryParams = {
+                language_id: 1,
+                url: 'page-one',
+                persona_id: 'modes.persona.no.persona'
+            };
 
             jest.spyOn(store, 'load');
 
@@ -86,26 +142,143 @@ describe('DotEmaComponent', () => {
             expect(store.load).toHaveBeenCalledWith(mockQueryParams);
         });
 
-        it('should update store and update the route on page change', () => {
-            const router = spectator.inject(Router);
+        describe('toast', () => {
+            it('should trigger messageService when clicking on ema-copy-url', () => {
+                spectator.detectChanges();
 
-            jest.spyOn(store, 'setLanguage');
-            jest.spyOn(router, 'navigate');
+                const messageService = spectator.inject(MessageService, true);
+                const messageServiceSpy = jest.spyOn(messageService, 'add');
+                spectator.detectChanges();
 
+                const button = spectator.debugElement.query(By.css('[data-testId="ema-copy-url"]'));
+
+                spectator.triggerEventHandler(button, 'cdkCopyToClipboardCopied', {});
+
+                expect(messageServiceSpy).toHaveBeenCalledWith({
+                    severity: 'success',
+                    summary: 'Copied',
+                    life: 3000
+                });
+            });
+
+            it("should open a toast when messageService's add is called", () => {
+                spectator.detectChanges();
+
+                const button = spectator.debugElement.query(By.css('[data-testId="ema-copy-url"]'));
+
+                spectator.triggerEventHandler(button, 'cdkCopyToClipboardCopied', {});
+
+                const toastItem = spectator.query('p-toastitem');
+
+                expect(toastItem).not.toBeNull();
+            });
+        });
+
+        describe('API URL', () => {
+            it('should have the url setted with the current language and persona', () => {
+                spectator.detectChanges();
+
+                const button = spectator.debugElement.query(By.css('[data-testId="ema-api-link"]'));
+
+                expect(button.nativeElement.href).toBe(
+                    'http://localhost/api/v1/page/json/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                );
+            });
+
+            it('should open a new tab', () => {
+                spectator.detectChanges();
+
+                const button = spectator.debugElement.query(By.css('[data-testId="ema-api-link"]'));
+
+                expect(button.nativeElement.target).toBe('_blank');
+            });
+        });
+
+        describe('language selector', () => {
+            it('should have a language selector', () => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('language-selector'))).not.toBeNull();
+            });
+
+            it("should have the current language as label in the language selector's button", () => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('language-button')).textContent).toBe(
+                    'English - US'
+                );
+            });
+
+            it('should call navigate when selecting a language', () => {
+                spectator.detectChanges();
+                const router = spectator.inject(Router);
+
+                jest.spyOn(router, 'navigate');
+
+                spectator.triggerEventHandler(EmaLanguageSelectorComponent, 'selected', 2);
+                spectator.detectChanges();
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: { language_id: 2 },
+                    queryParamsHandling: 'merge'
+                });
+            });
+        });
+
+        describe('persona selector', () => {
+            it('should have a persona selector', () => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('persona-selector'))).not.toBeNull();
+            });
+
+            it('should call navigate when selecting a persona', () => {
+                spectator.detectChanges();
+                const router = spectator.inject(Router);
+
+                jest.spyOn(router, 'navigate');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...DEFAULT_PERSONA,
+                    identifier: '123',
+                    pageID: '123',
+                    personalized: true
+                });
+                spectator.detectChanges();
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: { 'com.dotmarketing.persona.id': '123' },
+                    queryParamsHandling: 'merge'
+                });
+            });
+
+            it("should open a confirmation dialog when selecting a persona that it's not personalized", () => {
+                const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...DEFAULT_PERSONA,
+                    identifier: '123',
+                    pageID: '123',
+                    personalized: false
+                });
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+            });
+        });
+
+        it('should update the iframe url when the queryParams changes', () => {
             spectator.detectChanges();
 
-            spectator.triggerEventHandler('select[data-testId="language_id"]', 'change', {
-                target: { name: 'language_id', value: '2' }
+            const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+            spectator.triggerNavigation({
+                url: [],
+                queryParams: { language_id: 2, url: 'my-awesome-route' }
             });
 
-            expect(store.setLanguage).toHaveBeenCalledWith('2');
-            expect(router.navigate).toHaveBeenCalledWith([], {
-                queryParams: { language_id: '2' },
-                queryParamsHandling: 'merge'
-            });
-
-            const iframe = spectator.query(byTestId('iframe'));
-            expect(iframe.getAttribute('src')).toBe('http://localhost:3000/page-one?language_id=2');
+            expect(iframe.nativeElement.src).toBe(
+                HOST +
+                    '/my-awesome-route?language_id=2&com.dotmarketing.persona.id=modes.persona.no.persona'
+            );
         });
 
         describe('customer actions', () => {
@@ -119,7 +292,7 @@ describe('DotEmaComponent', () => {
 
                     window.dispatchEvent(
                         new MessageEvent('message', {
-                            origin: 'http://localhost:3000',
+                            origin: HOST,
                             data: {
                                 action: 'delete-contentlet',
                                 payload: {
@@ -173,7 +346,7 @@ describe('DotEmaComponent', () => {
 
                     window.dispatchEvent(
                         new MessageEvent('message', {
-                            origin: 'http://localhost:3000',
+                            origin: HOST,
                             data: {
                                 action: 'add-contentlet',
                                 payload: {
@@ -242,7 +415,7 @@ describe('DotEmaComponent', () => {
 
                     window.dispatchEvent(
                         new MessageEvent('message', {
-                            origin: 'http://localhost:3000',
+                            origin: HOST,
                             data: {
                                 action: 'edit-contentlet',
                                 payload: {
@@ -315,7 +488,7 @@ describe('DotEmaComponent', () => {
 
                 window.dispatchEvent(
                     new MessageEvent('message', {
-                        origin: 'http://localhost:3000',
+                        origin: HOST,
                         data: {
                             action: 'edit-contentlet',
                             payload: {
@@ -362,7 +535,7 @@ describe('DotEmaComponent', () => {
 
                 window.dispatchEvent(
                     new MessageEvent('message', {
-                        origin: 'http://localhost:3000',
+                        origin: HOST,
                         data: {
                             action: 'edit-contentlet',
                             payload: {
@@ -383,7 +556,7 @@ describe('DotEmaComponent', () => {
 
                 window.dispatchEvent(
                     new MessageEvent('message', {
-                        origin: 'http://localhost:3000',
+                        origin: HOST,
                         data: {
                             action: 'edit-contentlet',
                             payload: {
@@ -417,7 +590,7 @@ describe('DotEmaComponent', () => {
 
                 window.dispatchEvent(
                     new MessageEvent('message', {
-                        origin: 'http://localhost:3000',
+                        origin: HOST,
                         data: {
                             action: 'edit-contentlet',
                             payload: {
@@ -468,7 +641,7 @@ describe('DotEmaComponent', () => {
 
                 window.dispatchEvent(
                     new MessageEvent('message', {
-                        origin: 'http://localhost:3000',
+                        origin: HOST,
                         data: {
                             action: 'set-url',
                             payload: {
@@ -489,7 +662,7 @@ describe('DotEmaComponent', () => {
 
                 window.dispatchEvent(
                     new MessageEvent('message', {
-                        origin: 'http://localhost:3000',
+                        origin: HOST,
                         data: {
                             action: 'edit-contentlet',
                             payload: {
@@ -548,7 +721,11 @@ describe('DotEmaComponent', () => {
         });
 
         it('should initialize with default value', () => {
-            const mockQueryParams = { language_id: '1', url: 'index' };
+            const mockQueryParams = {
+                language_id: 1,
+                url: 'index',
+                persona_id: 'modes.persona.no.persona'
+            };
 
             jest.spyOn(store, 'load');
 

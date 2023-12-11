@@ -1,21 +1,24 @@
 # dotCMS CLI 
 The dotCMS CLI is a command-line tool that you can use to populate and modify your dotCMS instances from a command shell.
 
-## Installing the dotCMS CLI
-The dotCMS CLI is delivered as an uber jar that can be downloaded from [here](https://repo.dotcms.com/artifactory/libs-snapshot-local/com/dotcms/dotcms-cli/).
+## Quick start
+1. Download the CLI: The dotCMS CLI is delivered as an uber jar that can be downloaded from [here](https://repo.dotcms.com/artifactory/libs-snapshot-local/com/dotcms/dotcms-cli/).
  Once downloaded, you just need to run it with: 
 
 ```shell script
-java -jar dotcms-cli.jar
+java -jar dotcli.jar
 ```
 
-## Using the dotCMS CLI from a docker installation
-In case you are using dotCMS installed in docker, you can run the CLI directly from the docker container with:
+2. Configure the dotCMS instances you want to connect to using a dot-service.yml file. More details on how to do it [on this section](## CLI Instance Configuration). Make sure you make a site active in the yml file, otherwise you will have to active one using the [`instance` command](## Available Commands)
+
+3. Log in to the selected instance
 ```shell script
-TODO: include here the command to be executed
+java -jar dotcli.jar login --user={USER} --password  
 ```
 
-## Available commands
+
+
+## Available Commands
 
 | Command                                    | Description                                                                         |
 |--------------------------------------------|-------------------------------------------------------------------------------------|
@@ -49,15 +52,16 @@ instance --list
 instance --activate demo
 ```
 4. Get info of the current instance running
-```shell script
-#Just run the status command
-status
+```shell
 
+status
+	
 #You will get an output similar to:
 2023-02-22 11:25:29,499 INFO  [com.dot.api.cli.HybridServiceManagerImpl] (Quarkus Main Thread) Service [default] is missing credentials.
 2023-02-22 11:25:29,500 INFO  [com.dot.api.cli.HybridServiceManagerImpl] (Quarkus Main Thread) Service [demo] is missing credentials.
 Active instance is [demo] API is [https://demo.dotcms.com/api] No active user Use login Command.
 ```
+
 5. Pull a content type
 ```shell script
 content-type pull FileAsset
@@ -202,19 +206,20 @@ dotcms.client.servers.default=http://localhost:8080/api
 dotcms.client.servers.demo=https://demo.dotcms.com/api
 ```
 
-Notice how the `dotcms.client.servers` property has a postfix matching the profile name in the `dot-service.yml` file.
+Notice how the `dotcms.client.servers` property has a suffix matching the profile name in the `dot-service.yml` file.
 
 Therefore, in order to add a new instance profile, you need to add a new entry in the `dot-service.yml` file and a new property extending the `application.properties` file.
-Application properties can be extended via system properties, environment variables, `.evn` file or in `$PWD/config/application.properties` file.
+Application properties can be extended via system properties, environment variables, `.env` file or in `$PWD/config/application.properties` file.
+
 To learn more about how to extend the `application.properties` file see the Quarkus configuration guide [Here](https://es.quarkus.io/guides/config-reference#application-properties-file) 
 
 In future versions this process will be facilitated by the CLI itself.
 
-## Workspace
+### Workspace
 
 The CLI needs a workspace to be able to pull and push content to a dotCMS instance. 
 The workspace is basically a set of directories and files used to house and organize the different type of assets that can be managed by the CLI.
-And a marker file called `.dot-workspace.yml` that indicates the CLI that the current directory is a valid workspace.
+Additionally, a marker file called `.dot-workspace.yml` indicates to the CLI that the current directory is a valid workspace.
 In the following table you can see the different directories and files that conform a workspace.
 
 | File/Directory       | Type | Description             |
@@ -225,7 +230,7 @@ In the following table you can see the different directories and files that conf
 | `sites/`             | Dir  | Sites Directory         |
 | `.dot-workspace.yml` | File | CLI workspace marker    |
 
-## GitHub Actions integration
+## GitHub Actions Integration
 We provide support for GitHub Actions to be able to run the CLI as part of your CI/CD pipeline. 
 
 The following example shows how to create a brand-new repository and seed it with a CLI workspace.
@@ -237,12 +242,14 @@ In order to incorporate the CLI into your GitHub Actions workflow, you need to:
   -  Workflow Permissions : Read and Write permissions 
 - In Your repository General Settings, Secrets and variables, Actions
   - Create a new variable called `DOT_API_URL` and set the value to a valid dotCMS URL. e.g. `https://demo.dotcms.com/api`
-  - Create a new secret called `DOT_TOKEN` and set the value to a valid dotCMS CLI token.  
--  Seed you local repository with a CLI workspace. 
-  -  A cli workspace can be created by running any pull command e.g. `java -jar dotcms-cli.jar files pull //demo.dotcms.com`  
-  -  Run any pull command from the root of your project see [examples](#examples) section.
-  -  A valid CLI workspace should contain a `.dot-worspace` file in the root of your project. Make sure to commit this file to your repository and the others that conform your workspace see the [workspace](#workspace) section. 
-  -  Commit and push the changes to your repository. 
+  ![How to create a variable](doc_images/create_variable.png)
+  - Create a new secret called `DOT_TOKEN` and set the value to a valid dotCMS CLI token. 
+  ![How to create a secret](doc_images/create_secret.png)
+-  Seed your local repository with a CLI workspace
+    * A cli workspace can be created by running any pull command e.g. `java -jar dotcli.jar files pull //demo.dotcms.com`  
+    * Run any pull command from the root of your project see [examples](#examples) section.
+    * A valid CLI workspace should contain a `.dot-workspace` file in the root of your project. Make sure to commit this file to your repository and the others that conform your workspace see the [workspace](#workspace) section. 
+    * Commit and push the changes to your repository. 
 
 - Now if the integration is successful, you should see a new commits made into your repository reflect in you dotCMS instance.
 

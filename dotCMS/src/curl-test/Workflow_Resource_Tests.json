@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "db565cd2-753d-472c-bf5c-ed73de913fb6",
+		"_postman_id": "214cded5-3144-4394-b9e4-15431e29b76e",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -12821,6 +12821,7 @@
 									"    ",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.environment.set(\"genericContentletInode\", jsonData.entity.inode);",
 									"});",
 									""
 								],
@@ -16365,11 +16366,12 @@
 							"request": {
 								"auth": {
 									"type": "basic",
-									"basic": {
-										"password": "admin",
-										"username": "admin@dotcms.com",
-										"showPassword": false
-									}
+									"basic": [
+										{
+											"key": "undefined",
+											"type": "any"
+										}
+									]
 								},
 								"method": "POST",
 								"header": [
@@ -16384,7 +16386,17 @@
 									"mode": "raw",
 									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\", \n    \"defaultType\": false, \n    \"name\": \"Content Type Test\", \n    \"description\": \"THE DESCRIPTION\", \n    \"host\": \"SYSTEM_HOST\", \n    \"owner\": \"dotcms.org.1\", \n    \"fixed\": false, \n    \"system\": false, \n    \"folder\": \"SYSTEM_FOLDER\",\n    \"fields\": [\n            {\n                \"dataType\": \"LONG_TEXT\",\n                \"dbColumn\": \"text_area2\",\n                \"fieldVariables\": [],\n                \"fixed\": false,\n                \"iDate\": 1453474468000,\n                \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                \"indexed\": true,\n                \"listed\": false,\n                \"modDate\": 1478557845000,\n                \"name\": \"Title\",\n                \"readOnly\": false,\n                \"required\": false,\n                \"searchable\": true,\n                \"sortOrder\": 3,\n                \"unique\": false,\n                \"variable\": \"title\"\n            }],\n            \"workflow\": [\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}\n"
 								},
-								"url": "{{serverURL}}/api/v1/contenttype",
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
 								"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
 							},
 							"response": []
@@ -16412,10 +16424,12 @@
 							"request": {
 								"auth": {
 									"type": "basic",
-									"basic": {
-										"password": "admin",
-										"username": "admin@dotcms.com"
-									}
+									"basic": [
+										{
+											"key": "undefined",
+											"type": "any"
+										}
+									]
 								},
 								"method": "PUT",
 								"header": [
@@ -16430,7 +16444,23 @@
 									"mode": "raw",
 									"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"{{contentTypeVAR}}\",\n\t\t\"title\": \"test contentlet\"\n\t}\n}"
 								},
-								"url": "http://localhost:8080/api/v1/workflow/actions/default/fire/NEW"
+								"url": {
+									"raw": "http://localhost:8080/api/v1/workflow/actions/default/fire/NEW",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"NEW"
+									]
+								}
 							},
 							"response": []
 						},
@@ -16460,11 +16490,12 @@
 							"request": {
 								"auth": {
 									"type": "basic",
-									"basic": {
-										"password": "admin",
-										"username": "admin@dotcms.com",
-										"showPassword": false
-									}
+									"basic": [
+										{
+											"key": "undefined",
+											"type": "any"
+										}
+									]
 								},
 								"method": "PUT",
 								"header": [],
@@ -16477,13 +16508,212 @@
 										}
 									}
 								},
-								"url": "{{serverURL}}/api/v1/workflow/actions/fire"
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/fire",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"fire"
+									]
+								}
 							},
 							"response": []
 						}
 					]
 				}
 			]
+		},
+		{
+			"name": "Get Status of Content in Workflow",
+			"item": [
+				{
+					"name": "Create test Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check that the test Content Type has the expected information\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity[0].fields.length).to.eql(1);",
+									"    pm.expect(jsonData.entity[0].description).to.eql('THE DESCRIPTION');",
+									"    pm.collectionVariables.set(\"contentTypeVar\", jsonData.entity[0].variable);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "undefined",
+									"type": "any"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\", \n    \"defaultType\": false, \n    \"name\": \"Content Type Test {{$randomInt}}\", \n    \"description\": \"THE DESCRIPTION\", \n    \"host\": \"SYSTEM_HOST\", \n    \"owner\": \"dotcms.org.1\", \n    \"fixed\": false, \n    \"system\": false, \n    \"folder\": \"SYSTEM_FOLDER\",\n    \"fields\": [\n            {\n                \"dataType\": \"LONG_TEXT\",\n                \"dbColumn\": \"text_area2\",\n                \"fieldVariables\": [],\n                \"fixed\": false,\n                \"iDate\": 1453474468000,\n                \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                \"indexed\": true,\n                \"listed\": false,\n                \"modDate\": 1478557845000,\n                \"name\": \"Title\",\n                \"readOnly\": false,\n                \"required\": false,\n                \"searchable\": true,\n                \"sortOrder\": 3,\n                \"unique\": false,\n                \"variable\": \"title\"\n            }],\n            \"workflow\": [\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}\n"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						},
+						"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+					},
+					"response": []
+				},
+				{
+					"name": "Save test Contentlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check that the Contentlet's title is the expected one\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.title).to.eql(\"Test contentlet Workflow Status\");",
+									"    pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "undefined",
+									"type": "any"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"{{contentTypeVar}}\",\n\t\t\"title\": \"Test contentlet Workflow Status\"\n\t}\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"NEW"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Workflow Status from test Contentlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check that the Contentlet's Workflow Status is the expected one\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.scheme.name).to.eql(\"System Workflow\");",
+									"    pm.expect(jsonData.entity.step.name).to.eql(\"Draft\");",
+									"    pm.expect(jsonData.entity.task.assignedTo).to.eql(\"Admin User\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/status/{{contentletInode}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"status",
+								"{{contentletInode}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Provides the current status of a given Contentlet within the current Step of the Worklow that it's going through. This is used by the Angular UI to show this data to the logged-in User."
 		}
 	],
 	"event": [
@@ -16504,116 +16734,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "serverURL",
-			"value": "http://localhost:8080"
-		},
-		{
-			"key": "actionId",
-			"value": "47c38af4-209b-499a-9628-b2a8409cf03c"
-		},
-		{
-			"key": "schemeId",
-			"value": "2e96562e-495c-4a29-8cd1-0410608e9a65"
-		},
-		{
-			"key": "schemeIdShorty",
-			"value": "2e96562e49"
-		},
-		{
-			"key": "stepId",
-			"value": "1c156cd2-eb58-4b57-986b-dc728cc3ea09"
-		},
-		{
-			"key": "stepIdShorty",
-			"value": "1c156cd2eb"
-		},
-		{
-			"key": "actionIdShorty",
-			"value": "47c38af420"
-		},
-		{
-			"key": "contentletIdentifier",
-			"value": "6f88e2ed-71cb-49ad-90a4-8c74d906c3fe"
-		},
-		{
-			"key": "contentletInode",
-			"value": "94926188-341a-40a3-8422-03af9e3a3634"
-		},
-		{
-			"key": "contentletIdShorty",
-			"value": "14c31e4294"
-		},
-		{
-			"key": "fireActionLanguageKey",
-			"value": "SucessRequest1615939422"
-		},
-		{
-			"key": "genericContentletInode",
-			"value": "811e3dda-049f-48d9-a96c-10f0dc341047"
-		},
-		{
-			"key": "folderId",
-			"value": ""
-		},
-		{
-			"key": "pageOneToMoveIdentifier",
-			"value": ""
-		},
-		{
-			"key": "pageTwoToMoveIdentifier",
-			"value": ""
-		},
-		{
-			"key": "temporalFileId",
-			"value": ""
-		},
-		{
-			"key": "temporalFileTwoId",
-			"value": ""
-		},
-		{
-			"key": "temporalFileOneId",
-			"value": ""
-		},
-		{
-			"key": "contentletID",
-			"value": ""
-		},
-		{
-			"key": "contentTypeID",
-			"value": ""
-		},
-		{
-			"key": "contentTypeVAR",
-			"value": ""
-		},
-		{
-			"key": "contentTypeFieldID",
-			"value": ""
-		},
-		{
-			"key": "identifier21482",
-			"value": ""
-		},
-		{
-			"key": "role1",
-			"value": ""
-		},
-		{
-			"key": "role2",
-			"value": ""
-		},
-		{
-			"key": "identifier",
-			"value": ""
-		},
-		{
-			"key": "identifier22756",
-			"value": ""
 		}
 	]
 }
