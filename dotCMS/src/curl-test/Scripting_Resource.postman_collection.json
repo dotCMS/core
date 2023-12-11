@@ -16,7 +16,18 @@
 							"script": {
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
+									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);",
+									"",
+									"// Test 1: File Name Uniqueness",
+									"pm.test(\"File already exists or invalid\", function () {",
+									"  pm.response.to.have.status(400);",
+									"  pm.response.to.have.jsonBody({",
+									"    // Example error message for duplicate file name",
+									"    \"message\": \"File already exists in the selected Site or folder\\nList of non valid fields\\nBADTYPE: hostFolder/Host Or Folder\\n\\n\"",
+									"  });",
+									"});",
+									"",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -110,7 +121,24 @@
 									"    pm.expect($(\"#title\").text()).to.be.eql(\"fear.jpg\");",
 									"    pm.expect($(\"#path\").text()).not.equal(null);",
 									"",
-									"});"
+									"});",
+									"",
+									"// XSS detection test using regular expressions",
+									"pm.test(\"Body does not contain potential XSS patterns\", function () {",
+									"    const responseBody = pm.response.text();",
+									"",
+									"    // Common XSS patterns in regular expressions",
+									"    const xssPatterns = [",
+									"        /<script\\b[^<]*(?:(?!<\\/script>)<[^<]*)*<\\/script>/gi,",
+									"        /on\\w+=\"[^\"]*\"/gi,",
+									"        // Add more patterns as needed",
+									"    ];",
+									"",
+									"    xssPatterns.forEach(function (pattern) {",
+									"        pm.expect(responseBody).to.not.match(pattern);",
+									"    });",
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
