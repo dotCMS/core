@@ -2,9 +2,8 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotApiLinkComponent, DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditPageInfoSeoComponent } from './dot-edit-page-info-seo.component';
 
@@ -30,7 +29,7 @@ describe('DotEditPageInfoSeoComponent', () => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent],
             imports: [
-                DotApiLinkModule,
+                DotApiLinkComponent,
                 DotCopyButtonComponent,
                 DotMessagePipe,
                 DotEditPageInfoSeoComponent
