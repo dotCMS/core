@@ -9,3 +9,4 @@ This maintenance release includes the following code fixes:
 3. https://github.com/dotCMS/core/issues/26374 : Use of Png filter on images results in a 404 #26374
 4. https://github.com/dotCMS/core/issues/26391 : custom REST CORS header configuration is not applied to responses #26391
 5. https://github.com/dotCMS/core/issues/26897 : Make DB connectionTimeout configurable #26897
+6. https://github.com/dotCMS/core/issues/26934 : Add Catalina Log Back #26934
