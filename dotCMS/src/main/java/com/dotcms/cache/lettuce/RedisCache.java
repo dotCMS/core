@@ -64,8 +64,8 @@ public class RedisCache extends CacheProvider {
     public RedisCache(final Lazy<RedisClient<String, Object>> client) {
 
         this.client = client;
-        this.REDIS_GROUP_KEY = ClusterFactory.getClusterId().hashCode() + "_GROUP_KEY";
-        this.REDIS_PREFIX_KEY = ClusterFactory.getClusterId().hashCode() + "_PREFIX_KEY";
+        this.REDIS_GROUP_KEY = "GROUP_KEY";
+        this.REDIS_PREFIX_KEY = "PREFIX_KEY";
     }
 
     public RedisCache() {
