@@ -7,7 +7,6 @@ import { ActivatedRoute } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotFormatDateService, DotMessagePipe } from '@dotcms/ui';
-import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
 
 import { EditContentLayoutComponent } from './edit-content.layout.component';
 
@@ -24,7 +23,7 @@ const createEditContentLayoutComponent = (params: { contentType?: string; id?: s
                 provide: ActivatedRoute,
                 useValue: { snapshot: { params } }
             },
-            { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
+            mockProvider(DotFormatDateService)
         ],
         providers: [mockProvider(DotMessageService)]
     });

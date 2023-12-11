@@ -1,4 +1,7 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { mockProvider } from '@ngneat/spectator/jest';
+
+import { ActivatedRoute } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotFormatDateService } from '@dotcms/ui';
@@ -13,6 +16,7 @@ describe('DotEditContentAsideComponent', () => {
         component: DotEditContentAsideComponent,
         detectChanges: false,
         providers: [
+            mockProvider(ActivatedRoute), // Needed, use RouterLink
             {
                 provide: DotMessageService,
                 useValue: {

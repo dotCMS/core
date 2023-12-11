@@ -1,5 +1,6 @@
 import { NgIf, NgSwitch, NgSwitchCase, SlicePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { ChipModule } from 'primeng/chip';
 
@@ -29,8 +30,8 @@ import { ContentletStatusPipe } from '../../pipes/contentlet-status.pipe';
         DotRelativeDatePipe,
         ChipModule,
         DotMessagePipe,
-        SlicePipe,
-        ContentletStatusPipe
+        ContentletStatusPipe,
+        RouterLink
     ]
 })
 export class DotEditContentAsideComponent {

@@ -39,7 +39,7 @@
     </dd>
 
     <dt>{{ 'Content Type' | dm }}</dt>
-    <a [href]="'#/content-types-angular/edit/' + contentType" data-testId="content-type">{{
+    <a [routerLink]="'/content-types-angular/edit/' + contentType" data-testId="content-type">{{
         contentType
     }}</a>
 </dl>
