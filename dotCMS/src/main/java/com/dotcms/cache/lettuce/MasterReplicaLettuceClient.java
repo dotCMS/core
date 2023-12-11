@@ -166,7 +166,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                     .build();
             return List.of(redisURI);
         }
-        return List.of(RedisURI.create("redis://password@oboxturbo"));
+        return List.of(RedisURI.create("redis://localhost"));
     }
 
     /**
