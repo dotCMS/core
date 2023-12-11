@@ -48,7 +48,7 @@ import org.apache.commons.lang.time.DateUtils;
 public class FieldFactoryImpl implements FieldFactory {
 
   //List of reserved field variables
-  final public Set<String> RESERVED_FIELD_VARS= ImmutableSet.of(
+  final static public Set<String> RESERVED_FIELD_VARS= ImmutableSet.of(
           Contentlet.INODE_KEY.toLowerCase(),
           Contentlet.LANGUAGEID_KEY.toLowerCase(),
           Contentlet.LOCKED_KEY.toLowerCase(),
