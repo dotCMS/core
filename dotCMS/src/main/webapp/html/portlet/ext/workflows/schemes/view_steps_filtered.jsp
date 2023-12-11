@@ -108,7 +108,7 @@
                 }
             %>
             <div class="btn-flat btn-primary showPointer" onclick="addSeparator('<%=scheme.getId()%>', '<%=step.getId()%>');">
-                <i class="fa fa-plus" aria-hidden="true"></i> Add Separator
+                <i class="fa fa-plus" aria-hidden="true"></i> Divider
             </div>
             <div class="btn-flat btn-primary showPointer" onclick="actionAdmin.addOrAssociatedAction('<%=scheme.getId()%>', '<%=step.getId()%>', 'step-action-<%=step.getId()%>');">
                 <i class="fa fa-plus" aria-hidden="true"></i> Add
