@@ -1,6 +1,9 @@
 <ng-container *ngIf="formData$ | async as formData; else noContent">
     <dot-edit-content-form [formData]="formData" (changeValue)="setFormValue($event)" />
     <aside>
+        <dot-edit-content-aside
+            [contentLet]="formData.contentlet"
+            [contentType]="formData.contentType" />
         <p-button
             [label]="'Save' | dm"
             (click)="saveContent()"

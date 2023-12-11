@@ -53,6 +53,11 @@ p-chip .p-chip {
         color: $color-accessible-text-gray;
     }
 
+    &.p-chip-pink {
+        background: $color-alert-fuchsia;
+        color: $color-accessible-text-fuchsia;
+    }
+
     &.p-chip-sm {
         gap: $spacing-0;
         padding: 0 $spacing-1;
