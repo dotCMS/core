@@ -36,10 +36,10 @@ jobs:
       - name: Set up GraalVM
         run: |
           export GRAALVM_VERSION=jdk-21.0.1
-          xattr -r -d com.apple.quarantine graalvm-community-$GRAALVM_VERSION_macos-aarch64_bin.tar.gz
-          wget https://github.com/graalvm/graalvm-ce-builds/releases/download/$GRAALVM_VERSION/graalvm-community-$GRAALVM_VERSION_macos-aarch64_bin.tar.gz
-          tar -xzf graalvm-community-$GRAALVM_VERSION_macos-aarch64_bin.tar.gz
-          export GRAALVM_HOME=$PWD/graalvm-community-$GRAALVM_VERSION_macos-aarch64_bin
+          xattr -r -d com.apple.quarantine graalvm-community-${GRAALVM_VERSION}_macos-aarch64_bin.tar.gz
+          wget https://github.com/graalvm/graalvm-ce-builds/releases/download/${GRAALVM_VERSION}/graalvm-community-${GRAALVM_VERSION}_macos-aarch64_bin.tar.gz
+          tar -xzf graalvm-community-${GRAALVM_VERSION}_macos-aarch64_bin.tar.gz
+          export GRAALVM_HOME=$PWD/graalvm-community-${GRAALVM_VERSION}_macos-aarch64_bin
           export PATH=$GRAALVM_HOME/bin:$PATH
           gu install native-image
 
