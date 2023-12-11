@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.FileUtil;
@@ -384,8 +385,11 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         final File groupDir = groups.get(groupName.toLowerCase());
 
         if (groupDir.canRead()) {
+
+            File file = null;
+
             try {
-                final File file = Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile();
+                file = Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile();
                 if (file.exists()) {
                     final String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
                     try (InputStream input = FileUtil.createInputStream(file.toPath(), compressor)) {
@@ -394,6 +398,15 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                 } else {
                     throw new IllegalArgumentException("The file: " + path + ", does not exists.");
                 }
+            } catch (MismatchedInputException e) {
+                final String msg = "error getting: (" + groupName + '|' + path +
+                        "), probably the file is zero length or corrupted, msg:" + e.getMessage();
+                Logger.error(FileSystemStoragePersistenceAPIImpl.class, msg, e);
+                if (null != file && file.exists()) {
+                    Logger.info(this, "Deleting the file:" + file + ", because it is corrupted.");
+                    file.delete();
+                }
+                object = Map.of(); // no object
             } catch (IOException e) {
                 final String msg = "error getting: (" + groupName + '|' + path + "), msg:" + e.getMessage();
                 Logger.error(FileSystemStoragePersistenceAPIImpl.class, msg, e);
