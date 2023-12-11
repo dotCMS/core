@@ -68,7 +68,6 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         LoggerService,
         StringUtils,
         DotAiService,
-        DotMessageService,
         {
             provide: APP_INITIALIZER,
             useFactory: initTranslations,

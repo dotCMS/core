@@ -168,8 +168,19 @@ export class AIContentActionsView {
     }
 
     private deleteContent() {
+        const pluginState: PluginState = this.pluginKey?.getState(this.view.state);
+        switch (pluginState.nodeType) {
+            case DOT_AI_TEXT_CONTENT_KEY:
+                this.aiContentPromptStore.setDeleteContent(true);
+                break;
+
+            case DOT_AI_IMAGE_CONTENT_KEY:
+                //TODO: this need to change since we need to delete the image node, and can't trust in selection.
+                this.editor.commands.deleteSelection();
+                break;
+        }
+
         this.editor.commands.closeAIContentActions();
-        this.editor.commands.deleteSelection();
     }
 
     private handleKeyDown(event: KeyboardEvent) {

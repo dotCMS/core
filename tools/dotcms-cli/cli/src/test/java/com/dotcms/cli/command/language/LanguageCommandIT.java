@@ -224,16 +224,25 @@ class LanguageCommandIT extends CommandTest {
      * <b>Expected Result:</b> The language returned should be Spanish
      */
     @Test
-    void Test_Command_Language_Push_byIsoCode() {
+    void Test_Command_Language_Push_byIsoCode() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byIso", "es-VE");
+            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
+                    "--byIso", "es-VE", workspace.languages().toFile().getAbsolutePath());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.contains("Spanish"));
+        } finally {
+            deleteTempDirectory(tempFolder);
         }
+
     }
 
     /**
@@ -242,13 +251,18 @@ class LanguageCommandIT extends CommandTest {
      * <b>Expected Result:</b> The language returned should be French
      */
     @Test
-    void Test_Command_Language_Push_byIsoCodeWithoutCountry() {
+    void Test_Command_Language_Push_byIsoCodeWithoutCountry() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final int status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
-                    "--byIso", "fr");
+                    "--byIso", "fr", workspace.languages().toFile().getAbsolutePath());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
             // Checking we pushed the language correctly
@@ -267,7 +281,10 @@ class LanguageCommandIT extends CommandTest {
             } catch (Exception e) {
                 // Ignoring
             }
+        } finally {
+            deleteTempDirectory(tempFolder);
         }
+
     }
 
     /**

@@ -1,5 +1,6 @@
 import { Subject, fromEvent } from 'rxjs';
 
+import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -14,22 +15,24 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { ToastModule } from 'primeng/toast';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
+import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotPersona } from '@dotcms/dotcms-models';
+import { DotMessagePipe, DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaStore } from './store/dot-ema.store';
 
 import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaPersonaSelectorComponent } from '../components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaToolbarComponent } from '../components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_LANGUAGE_ID, DEFAULT_URL, WINDOW } from '../shared/consts';
+import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA, DEFAULT_URL, HOST, WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { AddContentletPayload, DeleteContentletPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
@@ -45,13 +48,19 @@ import { deleteContentletFromContainer, insertContentletInContainer } from '../u
         DotSpinnerModule,
         ConfirmDialogModule,
         EditEmaToolbarComponent,
-        EmaLanguageSelectorComponent
+        EmaLanguageSelectorComponent,
+        EditEmaPersonaSelectorComponent,
+        ClipboardModule,
+        ToastModule,
+        DotMessagePipe
     ],
     providers: [
         EditEmaStore,
         DotPageApiService,
         ConfirmationService,
         DotLanguagesService,
+        DotPersonalizeService,
+        MessageService,
         {
             provide: WINDOW,
             useValue: window
@@ -64,6 +73,7 @@ import { deleteContentletFromContainer, insertContentletInContainer } from '../u
 export class DotEmaComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
+    @ViewChild('personaSelector') personaSelector!: EditEmaPersonaSelectorComponent;
 
     readonly destroy$ = new Subject<boolean>();
 
@@ -72,36 +82,24 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     private readonly store = inject(EditEmaStore);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
+    private readonly personalizeService = inject(DotPersonalizeService);
+    private readonly messageService = inject(MessageService);
+
+    readonly dialogState$ = this.store.dialogState$;
+    readonly editorState$ = this.store.editorState$;
+
+    readonly host = HOST;
 
     private savePayload: AddContentletPayload;
-
-    readonly host = 'http://localhost:3000';
-    readonly vm$ = this.store.vm$;
 
     constructor(@Inject(WINDOW) private window: Window) {}
 
     ngOnInit(): void {
-        this.route.queryParams.subscribe(({ language_id, url }: Params) => {
-            const queryParams = {};
-
-            if (!language_id) {
-                queryParams['language_id'] = DEFAULT_LANGUAGE_ID;
-            }
-
-            if (!url) {
-                queryParams['url'] = DEFAULT_URL;
-            }
-
-            if (Object.keys(queryParams).length > 0) {
-                this.router.navigate([], {
-                    queryParams,
-                    queryParamsHandling: 'merge'
-                });
-            }
-
+        this.route.queryParams.subscribe((queryParams: Params) => {
             this.store.load({
-                language_id: language_id || DEFAULT_LANGUAGE_ID,
-                url: url || DEFAULT_URL
+                language_id: queryParams['language_id'] ?? DEFAULT_LANGUAGE_ID,
+                url: queryParams['url'] ?? DEFAULT_URL,
+                persona_id: queryParams['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier
             });
         });
 
@@ -161,6 +159,56 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Handle the persona selection
+     *
+     * @param {DotPersona} persona
+     * @memberof DotEmaComponent
+     */
+    onPersonaSelected(persona: DotPersona & { pageID: string }) {
+        if (persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized) {
+            this.router.navigate([], {
+                queryParams: {
+                    'com.dotmarketing.persona.id': persona.identifier
+                },
+                queryParamsHandling: 'merge'
+            });
+        } else {
+            this.confirmationService.confirm({
+                header: this.dotMessageService.get('editpage.personalization.confirm.header'),
+                message: this.dotMessageService.get(
+                    'editpage.personalization.confirm.message',
+                    persona.name
+                ),
+                acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
+                rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+                accept: () => {
+                    this.personalizeService
+                        .personalized(persona.pageID, persona.keyTag)
+                        .subscribe(() => {
+                            this.router.navigate([], {
+                                queryParams: {
+                                    'com.dotmarketing.persona.id': persona.identifier
+                                },
+                                queryParamsHandling: 'merge'
+                            });
+                        }); // This does a take 1 under the hood
+                },
+                reject: () => {
+                    this.personaSelector.resetValue();
+                }
+            });
+        }
+    }
+
+    triggerCopyToast() {
+        this.messageService.add({
+            severity: 'success',
+            summary: this.dotMessageService.get('Copied'),
+            life: 3000
+        });
+    }
+
+    /**
      * Handle the custom events from the iframe
      *
      * @private
@@ -178,7 +226,8 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                 const pageContainers = insertContentletInContainer({
                     pageContainers: this.savePayload.pageContainers,
                     container: this.savePayload.container,
-                    contentletID: detail.data.identifier
+                    contentletID: detail.data.identifier,
+                    personaTag: this.savePayload.personaTag
                 });
 
                 this.store.savePage({
@@ -234,14 +283,14 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                 this.savePayload = payload;
             },
             [CUSTOMER_ACTIONS.DELETE_CONTENTLET]: () => {
-                const { pageContainers, container, contentletId, pageID } = <
-                    DeleteContentletPayload
-                >data.payload;
+                const { pageContainers, container, contentletId, pageID, personaTag } =
+                    data.payload as DeleteContentletPayload;
 
                 const newPageContainers = deleteContentletFromContainer({
                     pageContainers: pageContainers,
                     container: container,
-                    contentletID: contentletId
+                    contentletID: contentletId,
+                    personaTag
                 });
 
                 this.confirmationService.confirm({
