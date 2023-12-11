@@ -9,12 +9,8 @@ import { AutoCompleteModule } from 'primeng/autocomplete';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotSelectItemDirective } from '@dotcms/ui';
 
+import { AutoCompleteCompleteEvent } from '../../models/dot-edit-content-tag.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
-
-interface AutoCompleteCompleteEvent {
-    originalEvent: Event;
-    query: string;
-}
 
 @Component({
     selector: 'dot-edit-content-tag-field',
@@ -42,8 +38,7 @@ export class DotEditContentTagFieldComponent {
      * Retrieves tags based on the provided query.
      * @param event - The AutoCompleteCompleteEvent object containing the query.
      */
-    getTags(event: AutoCompleteCompleteEvent) {
-        const query = event.query;
+    getTags({ query }: AutoCompleteCompleteEvent) {
         if (query.length < 3) {
             return;
         }
