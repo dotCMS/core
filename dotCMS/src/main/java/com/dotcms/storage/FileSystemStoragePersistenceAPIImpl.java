@@ -401,7 +401,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
             } catch (MismatchedInputException e) {
                 final String msg = "error getting: (" + groupName + '|' + path +
                         "), probably the file is zero length or corrupted, msg:" + e.getMessage();
-                Logger.error(FileSystemStoragePersistenceAPIImpl.class, msg, e);
+                Logger.warn(FileSystemStoragePersistenceAPIImpl.class, msg, e);
                 if (null != file && file.exists()) {
                     Logger.info(this, "Deleting the file:" + file + ", because it is corrupted.");
                     file.delete();
