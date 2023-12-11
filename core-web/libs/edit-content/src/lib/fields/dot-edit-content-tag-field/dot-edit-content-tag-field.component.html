@@ -4,7 +4,7 @@
     [id]="'tag-id-' + field.variable"
     [inputId]="field.variable"
     [attr.data-testId]="field.variable"
-    [suggestions]="options | async"
+    [suggestions]="options$ | async"
     [multiple]="true"
     [unique]="true"
     [showClear]="true"

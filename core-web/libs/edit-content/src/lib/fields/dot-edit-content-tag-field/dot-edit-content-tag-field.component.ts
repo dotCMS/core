@@ -32,7 +32,7 @@ export class DotEditContentTagFieldComponent {
     private readonly editContentService = inject(DotEditContentService);
     private readonly controlContainer = inject(ControlContainer);
 
-    options!: Observable<string[]>;
+    options$!: Observable<string[]>;
 
     /**
      * Retrieves tags based on the provided query.
@@ -43,7 +43,7 @@ export class DotEditContentTagFieldComponent {
             return;
         }
 
-        this.options = this.editContentService.getTags(query);
+        this.options$ = this.editContentService.getTags(query);
     }
 
     /**
