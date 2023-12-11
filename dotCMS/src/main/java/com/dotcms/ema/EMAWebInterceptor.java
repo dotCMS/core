@@ -29,8 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.liferay.util.StringPool.BLANK;
-
 /**
  * Intercepts a content managers's request to dotCMS EDIT_MODE in the admin of dotCMS,
  * transparently POSTs the dotCMS page API data to the remote site/server (hosted elsewhere) and
@@ -67,13 +65,13 @@ public class EMAWebInterceptor implements WebInterceptor {
 
     @Override
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) {
-        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        final Host currentSite = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
 
-        if (!this.existsConfiguration(currentHost.getIdentifier())) {
+        if (!this.existsConfiguration(currentSite.getIdentifier())) {
             return Result.NEXT;
         }
 
-        final Optional<String> proxyUrl = proxyUrl(currentHost, request);
+        final Optional<String> proxyUrl = proxyUrl(currentSite, request);
         final PageMode mode             = PageMode.get(request);
 
         if (proxyUrl.isEmpty() || mode == PageMode.LIVE) {
@@ -82,6 +80,12 @@ public class EMAWebInterceptor implements WebInterceptor {
 
         Logger.info(this.getClass(), "GOT AN EMA Call --> " + request.getRequestURI());
         request.setAttribute(EMA_REQUEST_ATTR, true);
+        final Optional<EMAConfigurationEntry> emaConfig = this.getEmaConfigByURL(currentSite, request.getRequestURI());
+        final String depth =
+                emaConfig.map(emaConfigurationEntry -> emaConfigurationEntry.getHeader(DEPTH_PARAM)).orElse(null);
+        if (UtilMethods.isSet(depth)) {
+            request.setAttribute(DEPTH_PARAM, depth);
+        }
         return new Result.Builder().wrap(new MockHttpCaptureResponse(response)).next().build();
     }
 
@@ -98,11 +102,7 @@ public class EMAWebInterceptor implements WebInterceptor {
                 final String postJson                      = new String(mockResponse.getBytes());
                 final String authToken =
                         emaConfig.map(emaConfigurationEntry -> emaConfigurationEntry.getHeader(AUTHENTICATION_TOKEN_VAR)).orElse(null);
-                final String depth =
-                        emaConfig.map(emaConfigurationEntry -> emaConfigurationEntry.getHeader(DEPTH_PARAM)).orElse(BLANK);
-                final Map<String, String> params = ImmutableMap.of(
-                        PAGE_DATA_PARAM, postJson,
-                        DEPTH_PARAM, depth);
+                final Map<String, String> params = ImmutableMap.of(PAGE_DATA_PARAM, postJson);
                 
                 Logger.info(this.getClass(), "Proxying Request --> " + proxyUrl);
 
@@ -110,12 +110,12 @@ public class EMAWebInterceptor implements WebInterceptor {
                 final String authTokenFromEma = this.getHeaderValue(pResponse.getHeaders(), EMA_AUTH_HEADER);
                 if (UtilMethods.isSet(authToken) && (UtilMethods.isNotSet(authTokenFromEma) || (UtilMethods.isSet(authToken) && !authToken.equals(authTokenFromEma)))) {
                     this.sendHttpResponse(this.generateErrorPage("Invalid Authentication Token",
-                            proxyUrl, pResponse), postJson, response);
+                            proxyUrl, pResponse), postJson, response, true);
                 } else if (pResponse.getResponseCode() != HttpStatus.SC_OK) {
                     this.sendHttpResponse(this.generateErrorPage("Unable to connect with the rendering engine",
-                            proxyUrl, pResponse), postJson, response);
+                            proxyUrl, pResponse), postJson, response, true);
                 } else {
-                    this.sendHttpResponse(new String(pResponse.getResponse(), StandardCharsets.UTF_8), postJson, response);
+                    this.sendHttpResponse(new String(pResponse.getResponse(), StandardCharsets.UTF_8), postJson, response, false);
                 }
             }
         } catch (final Exception e) {
@@ -255,12 +255,15 @@ public class EMAWebInterceptor implements WebInterceptor {
      * @param contents The HTML response.
      * @param postJson The JSON response from the EMA Server.
      * @param response The current {@link HttpServletResponse} object.
+     * @param isError  If {@code true}, the JSON POST will be printed in the log.
      *
      * @throws IOException An error occurred when writing to the Response object.
      */
-    protected void sendHttpResponse(final String contents, final String postJson, final HttpServletResponse response) throws IOException {
+    protected void sendHttpResponse(final String contents, final String postJson, final HttpServletResponse response, final boolean isError) throws IOException {
         final JSONObject json = new JSONObject(postJson);
-        Logger.error(this, "An error occurred with EMA: dotPageData = " + json);
+        if (isError) {
+            Logger.error(this, "An error occurred with EMA: dotPageData = " + json);
+        }
         json.getJSONObject("entity").getJSONObject("page").put("rendered", contents);
         json.getJSONObject("entity").getJSONObject("page").put("remoteRendered", true);
         response.setContentType(MediaType.APPLICATION_JSON);

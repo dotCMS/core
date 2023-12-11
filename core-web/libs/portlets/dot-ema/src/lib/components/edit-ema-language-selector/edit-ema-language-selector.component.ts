@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
+    ChangeDetectionStrategy,
     Component,
     EventEmitter,
     Input,
@@ -27,7 +28,8 @@ interface DotLanguageWithLabel extends DotLanguage {
     standalone: true,
     imports: [CommonModule, OverlayPanelModule, ListboxModule, ButtonModule],
     templateUrl: './edit-ema-language-selector.component.html',
-    styleUrls: ['./edit-ema-language-selector.component.scss']
+    styleUrls: ['./edit-ema-language-selector.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmaLanguageSelectorComponent implements AfterViewInit {
     @ViewChild('listbox') listbox: Listbox;

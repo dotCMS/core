@@ -7,6 +7,8 @@ export const EDIT_CONTENTLET_URL =
 
 export const ADD_CONTENTLET_URL = `/html/ng-contentlet-selector.jsp?ng=true&container_id=*CONTAINER_ID*&add=*BASE_TYPES*`;
 
+export const HOST = 'http://localhost:3000';
+
 export const WINDOW = new InjectionToken<Window>('WindowToken');
 
 export const DEFAULT_LANGUAGE_ID = 1;
