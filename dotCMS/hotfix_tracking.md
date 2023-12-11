@@ -10,3 +10,4 @@ This maintenance release includes the following code fixes:
 4. https://github.com/dotCMS/core/issues/26391 : custom REST CORS header configuration is not applied to responses #26391
 5. https://github.com/dotCMS/core/issues/26897 : Make DB connectionTimeout configurable #26897
 6. https://github.com/dotCMS/core/issues/26934 : Add Catalina Log Back #26934
+7. https://github.com/dotCMS/core/issues/26896 : Avoid Refreshing Properties #26896
