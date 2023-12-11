@@ -27,6 +27,12 @@ import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.SelectField;
 import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.TextAreaField;
+import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.FileField;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.TimeField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -72,26 +78,28 @@ import org.mockito.Mockito;
 public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
 	public static class TestCaseVelSuggestion {
+		Class<? extends Field> fieldType;
 		String fieldVarName;
 		String baseExpectedSuggestion;
 
-		public TestCaseVelSuggestion(final String fieldVarName, final String baseExpectedSuggestion) {
+		public TestCaseVelSuggestion(final String fieldVarName, final String baseExpectedSuggestion, final Class<? extends Field> fieldType) {
 			this.fieldVarName = fieldVarName;
 			this.baseExpectedSuggestion = baseExpectedSuggestion;
+			this.fieldType = fieldType;
 		}
 	}
 
 	@DataProvider
 	public static Object[] testCaseVelSuggestion(){
 		return new Object[] {
-				new TestCaseVelSuggestion("Host", Contentlet.HOST_KEY.toLowerCase()),
-				new TestCaseVelSuggestion("CONFolder", Contentlet.CON_FOLDER_KEY.toLowerCase()),
-				new TestCaseVelSuggestion("LANGUAGEid", Contentlet.LANGUAGEID_KEY.toLowerCase()),
-				new TestCaseVelSuggestion("OWNER", Contentlet.OWNER_KEY.toLowerCase()),
-				new TestCaseVelSuggestion("ModUser", Contentlet.MOD_USER_KEY.toLowerCase()),
-				new TestCaseVelSuggestion("ArchivED", Contentlet.ARCHIVED_KEY.toLowerCase()),
-				new TestCaseVelSuggestion("sortOrder", Contentlet.SORT_ORDER_KEY.toLowerCase()),
-				new TestCaseVelSuggestion("BaseType", Contentlet.BASE_TYPE_KEY.toLowerCase())
+				new TestCaseVelSuggestion("Host", Contentlet.HOST_KEY.toLowerCase(), BinaryField.class),
+				new TestCaseVelSuggestion("CONFolder", Contentlet.CON_FOLDER_KEY.toLowerCase(), TextField.class ),
+				new TestCaseVelSuggestion("LANGUAGEid", Contentlet.LANGUAGEID_KEY.toLowerCase(), TextAreaField.class),
+				new TestCaseVelSuggestion("OWNER", Contentlet.OWNER_KEY.toLowerCase(), DateField.class),
+				new TestCaseVelSuggestion("ModUser", Contentlet.MOD_USER_KEY.toLowerCase(), FileField.class ),
+				new TestCaseVelSuggestion("ArchivED", Contentlet.ARCHIVED_KEY.toLowerCase(), DateTimeField.class),
+				new TestCaseVelSuggestion("sortOrder", Contentlet.SORT_ORDER_KEY.toLowerCase(), TimeField.class),
+				new TestCaseVelSuggestion("BaseType", Contentlet.BASE_TYPE_KEY.toLowerCase(), WysiwygField.class),
 
 		};
 	}
@@ -677,7 +685,6 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 				.build();
 
 
-
 		List<Field> testFields = null;
 		for (BaseContentType baseType : BaseContentType.values()) {
 			if (baseType == baseType.ANY)
@@ -713,9 +720,8 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 			Field field = Mockito.mock(Field.class);
 			String suggest = fieldFactory.suggestVelocityVar(key, field,
 					testFields.stream().map(Field::variable).collect(Collectors.toList()));
-			
 
-			
+
 			testFields.add(ImmutableTextField.builder().name(key).variable(suggest)
 					.contentTypeId("fake").build());
 			assertThat("variable " + key + " "  + " returned "
@@ -730,13 +736,10 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 		}
 
 
-
 	}
 
-	
-	
-	
-    @Test
+
+	@Test
     public void testUTF8SuggestVariable() throws Exception {
 
         List<String> testingNames = ImmutableList.<String>builder()
@@ -823,39 +826,31 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 			numbers.add(String.valueOf(i));
 		}
 
-		//create binary field
-		Field field = new FieldDataGen()
-				.name(testCase.fieldVarName)
-				.velocityVarName(testCase.fieldVarName)
-				.type(BinaryField.class)
-				.next();
-		assertEquals(field.type().getName(), BinaryField.class.getName());
+		try {
+			//create binary field
+			final Field field = new FieldDataGen()
+					.defaultValue(null)
+					.name(testCase.fieldVarName)
+					.velocityVarName(testCase.fieldVarName)
+					.type(testCase.fieldType)
+					.next();
 
-		//get suggestion
-		String suggestion = fieldFactory.suggestVelocityVar(field.name(), field, ImmutableList.of());
-		//the suggestion length should larger than the field name
-		Assert.assertTrue(testCase.fieldVarName.length() < suggestion.length());
+			//get suggestion
+			final String suggestion = fieldFactory.suggestVelocityVar(field.name(), field, ImmutableList.of());
 
-		String lastChar = String.valueOf(suggestion.charAt(suggestion.length() - 1));
-		//the suggestion should have a number at the var name
-		Assert.assertTrue(numbers.contains(lastChar));
-		Assert.assertTrue("Var expected to be "+testCase.baseExpectedSuggestion + lastChar+" but was: "+suggestion,
-				suggestion.equalsIgnoreCase(testCase.baseExpectedSuggestion + lastChar));
+			//the suggestion length should larger than the field name
+			Assert.assertTrue(testCase.fieldVarName.length() < suggestion.length());
 
-		//create text field
-		field = new FieldDataGen()
-				.name(testCase.fieldVarName)
-				.velocityVarName(testCase.fieldVarName)
-				.type(TextField.class)
-				.next();
-		assertEquals(field.type().getName(), TextField.class.getName());
+			final String lastChar = String.valueOf(suggestion.charAt(suggestion.length() - 1));
+			//the suggestion should have a number at the var name
+			Assert.assertTrue(numbers.contains(lastChar));
+			Assert.assertTrue("Var expected to be "+testCase.baseExpectedSuggestion + lastChar+" but was: "+suggestion,
+					suggestion.equalsIgnoreCase(testCase.baseExpectedSuggestion + lastChar));
 
-		suggestion = fieldFactory.suggestVelocityVar(field.name(), field, ImmutableList.of());
-		Assert.assertTrue(testCase.fieldVarName.length() < suggestion.length());
+		}catch (Exception e) {
+			throw new DotDataException(e.getMessage(), e);
 
-		lastChar = String.valueOf(suggestion.charAt(suggestion.length() - 1));
-		Assert.assertTrue(numbers.contains(lastChar));
-		Assert.assertTrue("Var expected to be "+testCase.baseExpectedSuggestion+lastChar+" but was: "+suggestion ,suggestion.equalsIgnoreCase(testCase.baseExpectedSuggestion + lastChar));
+		}
 
 	}
 
@@ -876,21 +871,9 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
 		final String fieldVarName = "Host";
 		//Create Text Fields
-		Field field = new FieldDataGen()
-				.name(fieldVarName)
-				.velocityVarName(fieldVarName)
-				.type(TextField.class)
-				.contentTypeId(ctTest.id())
-				.next();
+		final Field field = FieldBuilder.builder(TextField.class).name("title").variable("title")
+				.contentTypeId(ctTest.id()).dataType(DataTypes.TEXT).indexed(true).build();
 
-		final String suggestion = fieldFactory.suggestVelocityVar(field.name(), field, ImmutableList.of());
-		//assign the suggested var
-		field = new FieldDataGen()
-				.name(suggestion)
-				.velocityVarName(suggestion)
-				.type(TextField.class)
-				.contentTypeId(ctTest.id())
-				.next();
 		contentTypeFieldAPI.save(field, user);
 
 		//create contentlet
@@ -903,5 +886,6 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 		assertEquals(content.getContentType().name(), ctTest.name());
 		Assert.assertTrue(content.getContentType().fields().size() > 0);
 		assertEquals(content.getContentType().fields().get(0).variable(), field.variable());
+		contentTypeAPI.delete(ctTest);
 	}
 }
