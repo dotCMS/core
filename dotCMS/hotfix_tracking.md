@@ -12,3 +12,4 @@ This maintenance release includes the following code fixes:
 6. https://github.com/dotCMS/core/issues/26934 : Add Catalina Log Back #26934
 7. https://github.com/dotCMS/core/issues/26896 : Avoid Refreshing Properties #26896
 8. https://github.com/dotCMS/core/issues/26933 : StorageProvider should load lazily #26933
+9. https://github.com/dotCMS/core/issues/26926 : Add left indexes to inode.inode and identifier.id #26926
