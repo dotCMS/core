@@ -1,5 +1,6 @@
 import { Subject, fromEvent } from 'rxjs';
 
+import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -14,15 +15,16 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { ToastModule } from 'primeng/toast';
 
 import { takeUntil } from 'rxjs/operators';
 
 import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotPersona } from '@dotcms/dotcms-models';
-import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaStore } from './store/dot-ema.store';
 
@@ -30,7 +32,7 @@ import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-se
 import { EditEmaPersonaSelectorComponent } from '../components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaToolbarComponent } from '../components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA, DEFAULT_URL, WINDOW } from '../shared/consts';
+import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA, DEFAULT_URL, HOST, WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { AddContentletPayload, DeleteContentletPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
@@ -47,7 +49,10 @@ import { deleteContentletFromContainer, insertContentletInContainer } from '../u
         ConfirmDialogModule,
         EditEmaToolbarComponent,
         EmaLanguageSelectorComponent,
-        EditEmaPersonaSelectorComponent
+        EditEmaPersonaSelectorComponent,
+        ClipboardModule,
+        ToastModule,
+        DotMessagePipe
     ],
     providers: [
         EditEmaStore,
@@ -55,6 +60,7 @@ import { deleteContentletFromContainer, insertContentletInContainer } from '../u
         ConfirmationService,
         DotLanguagesService,
         DotPersonalizeService,
+        MessageService,
         {
             provide: WINDOW,
             useValue: window
@@ -77,11 +83,14 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly personalizeService = inject(DotPersonalizeService);
+    private readonly messageService = inject(MessageService);
+
+    readonly dialogState$ = this.store.dialogState$;
+    readonly editorState$ = this.store.editorState$;
+
+    readonly host = HOST;
 
     private savePayload: AddContentletPayload;
-
-    readonly host = 'http://localhost:3000';
-    readonly vm$ = this.store.vm$;
 
     constructor(@Inject(WINDOW) private window: Window) {}
 
@@ -189,6 +198,14 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                 }
             });
         }
+    }
+
+    triggerCopyToast() {
+        this.messageService.add({
+            severity: 'success',
+            summary: this.dotMessageService.get('Copied'),
+            life: 3000
+        });
     }
 
     /**
