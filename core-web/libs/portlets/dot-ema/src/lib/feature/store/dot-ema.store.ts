@@ -183,7 +183,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     // This method is called when the user clicks on the edit button
     readonly initActionAdd = this.updater(
-        (state, payload: { containerID: string; acceptTypes: string }) => {
+        (state, payload: { containerID: string; acceptTypes: string; language_id: string }) => {
             return {
                 ...state,
                 dialogVisible: true,
@@ -229,14 +229,15 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      */
     private createAddContentletUrl({
         containerID,
-        acceptTypes
+        acceptTypes,
+        language_id
     }: {
         containerID: string;
         acceptTypes: string;
+        language_id: string;
     }): string {
-        return ADD_CONTENTLET_URL.replace('*CONTAINER_ID*', containerID).replace(
-            '*BASE_TYPES*',
-            acceptTypes
-        );
+        return ADD_CONTENTLET_URL.replace('*CONTAINER_ID*', containerID)
+            .replace('*BASE_TYPES*', acceptTypes)
+            .replace('*LANGUAGE_ID*', language_id);
     }
 }

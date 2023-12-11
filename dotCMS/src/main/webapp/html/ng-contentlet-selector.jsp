@@ -183,10 +183,6 @@
             var obj = window.location.href;
 
             const filter = "language_id=";
-
-            if (obj.indexOf(filter) === -1) {
-                return getSelectedLanguageId();
-            }
             const filteredUrl = obj.substring(obj.indexOf(filter));
             return filteredUrl.replace(filter, "");
         }

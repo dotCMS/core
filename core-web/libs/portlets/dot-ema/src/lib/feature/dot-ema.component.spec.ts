@@ -434,7 +434,8 @@ describe('DotEmaComponent', () => {
                                         uuid: 'test',
                                         contentletsId: []
                                     },
-                                    pageID: 'test'
+                                    pageID: 'test',
+                                    language_id: 'test'
                                 } as AddContentletPayload
                             }
                         })
@@ -446,7 +447,8 @@ describe('DotEmaComponent', () => {
                     expect(dialog.getAttribute('ng-reflect-visible')).toBe('true');
                     expect(initAddIframeDialogMock).toHaveBeenCalledWith({
                         containerID: 'test',
-                        acceptTypes: 'test'
+                        acceptTypes: 'test',
+                        language_id: 'test'
                     });
 
                     const dialogIframe = spectator.debugElement.query(

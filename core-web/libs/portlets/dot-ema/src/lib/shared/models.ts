@@ -4,6 +4,7 @@ export interface AddContentletPayload {
     pageContainers: Container[];
     pageID: string;
     personaTag?: string;
+    language_id?: string;
 }
 
 // This is the payload we recieve from the iframe for delete action

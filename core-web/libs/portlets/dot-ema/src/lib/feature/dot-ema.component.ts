@@ -284,7 +284,8 @@ export class DotEmaComponent implements OnInit, OnDestroy {
 
                 this.store.initActionAdd({
                     containerID: payload.container.identifier,
-                    acceptTypes: payload.container.acceptTypes ?? '*'
+                    acceptTypes: payload.container.acceptTypes ?? '*',
+                    language_id: payload.language_id
                 });
 
                 this.savePayload = payload;

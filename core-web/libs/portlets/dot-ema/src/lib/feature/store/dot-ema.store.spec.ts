@@ -269,7 +269,8 @@ describe('EditEmaStore', () => {
         it('should initialize addAction properties', (done) => {
             spectator.service.initActionAdd({
                 containerID: '123',
-                acceptTypes: 'test'
+                acceptTypes: 'test',
+                language_id: '1'
             });
 
             spectator.service.state$.subscribe((state) => {
@@ -291,7 +292,7 @@ describe('EditEmaStore', () => {
                     },
                     url: '',
                     dialogIframeURL:
-                        '/html/ng-contentlet-selector.jsp?ng=true&container_id=123&add=test',
+                        '/html/ng-contentlet-selector.jsp?ng=true&container_id=123&add=test&language_id=1',
                     dialogIframeLoading: true,
                     dialogHeader: 'Search Content',
                     dialogVisible: true
