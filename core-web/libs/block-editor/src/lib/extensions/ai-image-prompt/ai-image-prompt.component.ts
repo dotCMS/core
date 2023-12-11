@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -36,10 +36,9 @@ import { AiImagePromptInputComponent } from './components/ai-image-prompt-input/
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AIImagePromptComponent {
-    protected readonly vm$: Observable<VmAiImagePrompt> = this.store.vm$;
-
+    protected readonly vm$: Observable<VmAiImagePrompt> = inject(DotAiImagePromptStore).vm$;
     protected readonly ComponentStatus = ComponentStatus;
-    constructor(private store: DotAiImagePromptStore) {}
+    private store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
 
     /**
      * Hides the dialog.
