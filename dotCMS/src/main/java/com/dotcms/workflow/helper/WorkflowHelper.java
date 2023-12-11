@@ -58,6 +58,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.DateUtil;
@@ -102,10 +103,12 @@ import java.util.stream.Collectors;
 import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
 import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 
-
 /**
- * Helper for Workflow Actions
+ * This helper class provides utility methods for interacting with Workflow Actions. This is meant
+ * to keep the REST classes as "clean" as possible.
+ *
  * @author jsanca
+ * @since Dec 6th, 2017
  */
 public class WorkflowHelper {
 
@@ -2041,4 +2044,28 @@ public class WorkflowHelper {
         final DotContentletTransformer transformer = new DotTransformerBuilder().defaultOptions().content(contentlet).build();
         return transformer.toMaps().stream().findFirst().orElse(Collections.emptyMap());
     }
+
+    /**
+     * Takes the existing Workflow Task object, and replaces the {@code assignedTo} field in the
+     * form of a UUID with the actual name of the User or Role to which the task is assigned.
+     *
+     * @param wfTask The {@link WorkflowTask} object to be modified.
+     *
+     * @return The modified {@link WorkflowTask} object.
+     */
+    public WorkflowTask handleWorkflowTaskData(final WorkflowTask wfTask) {
+        if (null == wfTask || UtilMethods.isNotSet(wfTask.getId())) {
+            return null;
+        }
+        try {
+            final String assignedUserName =
+                    APILocator.getRoleAPI().loadRoleById(wfTask.getAssignedTo()).getName();
+            wfTask.setAssignedTo(assignedUserName);
+        } catch (final DotDataException e) {
+            Logger.warn(this.getClass(), String.format("Could not load role with ID '%s': %s",
+                    wfTask.getAssignedTo(), ExceptionUtil.getErrorMessage(e)));
+        }
+        return wfTask;
+    }
+
 } // E:O:F:WorkflowHelper.
