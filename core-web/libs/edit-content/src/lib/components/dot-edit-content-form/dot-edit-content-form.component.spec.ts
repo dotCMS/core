@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator, mockProvider } from '@ngneat/spectator/jest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Validators } from '@angular/forms';
@@ -10,6 +10,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
+import { DotEditContentService } from '../../services/dot-edit-content.service';
 import {
     CONTENT_FORM_DATA_MOCK,
     JUST_FIELDS_MOCKS,
@@ -33,7 +34,8 @@ describe('DotFormComponent', () => {
                     Save: 'Save',
                     Content: 'content'
                 })
-            }
+            },
+            mockProvider(DotEditContentService)
         ]
     });
 
