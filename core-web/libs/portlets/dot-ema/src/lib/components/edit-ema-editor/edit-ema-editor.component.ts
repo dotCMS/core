@@ -58,7 +58,6 @@ import { EditEmaToolbarComponent } from '../edit-ema-toolbar/edit-ema-toolbar.co
         ToastModule,
         DotMessagePipe
     ],
-
     templateUrl: './edit-ema-editor.component.html',
     styleUrls: ['./edit-ema-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
