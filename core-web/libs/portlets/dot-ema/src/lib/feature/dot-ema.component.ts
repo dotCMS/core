@@ -121,7 +121,6 @@ export class DotEmaComponent implements OnInit {
 
     executeAction(event: NavigationBarItem): void {
         this.actionsMap[event.key]();
-
         // Neither seo tools nor edit content has route, so we need to set the currentRoute here
     }
 }
