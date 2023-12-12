@@ -747,7 +747,7 @@ public class HostFactoryImpl implements HostFactory {
      */
     @VisibleForTesting
     protected Optional<List<Host>> search(final String siteNameFilter, final String condition, final boolean
-            showSystemHost, final int limit, final int offset, final User user, final boolean respectFrontendRoles, final List<Host> hostList) {
+            showSystemHost, final int limit, final int offset, final User user, final boolean respectFrontendRoles, List<Host> hostList) {
         final DotConnect dc = new DotConnect();
         final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE);
         sqlQuery.append(WHERE);
@@ -792,6 +792,7 @@ public class HostFactoryImpl implements HostFactory {
             }
             hostList.addAll(APILocator.getPermissionAPI().filterCollection(siteList, PermissionAPI
                     .PERMISSION_READ, respectFrontendRoles, user));
+            hostList = hostList.stream().limit(limit).collect(Collectors.toList());
             if(hostList.size()==limit || siteList.size() < limit){//user is admin or reach the amount of sites requested or there is no anymore sites
                 return Optional.of(hostList);
             }else{
