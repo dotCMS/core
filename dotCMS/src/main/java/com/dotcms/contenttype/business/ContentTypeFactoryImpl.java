@@ -887,6 +887,13 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	 cache.remove(type);
  }
 
+    @Override
+ public long countContentTypeAssignedToNotSystemWorkflow() throws DotDataException {
+        DotConnect dc = new DotConnect();
+        dc.setSQL(this.contentTypeSql.COUNT_CONTENT_TYPES_USING_NOT_SYSTEM_WORKFLOW);
+        final Map results = (Map) dc.loadResults().get(0);
+        return Long.valueOf(results.get("count").toString());
+ }
  private void dbUpdateModDate(ContentType type) throws DotDataException{
 	 DotConnect dc = new DotConnect();
 	 dc.setSQL(this.contentTypeSql.UPDATE_TYPE_MOD_DATE_BY_INODE);

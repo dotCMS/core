@@ -3,20 +3,45 @@ import { EMPTY, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { catchError, pluck } from 'rxjs/operators';
+import { catchError, map, pluck } from 'rxjs/operators';
 
-import { Container, SavePagePayload } from '../shared/models';
+import { DotLanguage, DotPersona } from '@dotcms/dotcms-models';
+
+import { SavePagePayload } from '../shared/models';
 
 export interface DotPageApiResponse {
     page: {
         title: string;
         identifier: string;
     };
+    viewAs: {
+        language: DotLanguage;
+        persona?: DotPersona;
+    };
 }
 
 export interface DotPageApiParams {
     url: string;
     language_id: string;
+    persona_id: string;
+}
+
+export interface GetPersonasParams {
+    pageID: string;
+    filter?: string;
+    page?: number;
+    perPage?: number;
+}
+
+export interface GetPersonasResponse {
+    data: DotPersona[];
+    pagination: PaginationData;
+}
+
+export interface PaginationData {
+    currentPage: number;
+    perPage: number;
+    totalEntries: number;
 }
 
 @Injectable()
@@ -30,8 +55,8 @@ export class DotPageApiService {
      * @return {*}  {Observable<DotPageApiResponse>}
      * @memberof DotPageApiService
      */
-    get({ url, language_id }: DotPageApiParams): Observable<DotPageApiResponse> {
-        const apiUrl = `/api/v1/page/json/${url}?language_id=${language_id}`;
+    get({ url, language_id, persona_id }: DotPageApiParams): Observable<DotPageApiResponse> {
+        const apiUrl = `/api/v1/page/json/${url}?language_id=${language_id}&com.dotmarketing.persona.id=${persona_id}`;
 
         return this.http
             .get<{
@@ -47,58 +72,52 @@ export class DotPageApiService {
      * @return {*}
      * @memberof DotPageApiService
      */
-    save({
-        pageContainers,
-        container,
-        contentletID,
-        pageID
-    }: SavePagePayload): Observable<unknown> {
-        const newPage = this.insertContentletInContainer({
-            pageContainers,
-            container,
-            contentletID
-        });
-
+    save({ pageContainers, pageID }: SavePagePayload): Observable<unknown> {
         return this.http
-            .post(`/api/v1/page/${pageID}/content`, newPage)
+            .post(`/api/v1/page/${pageID}/content`, pageContainers)
             .pipe(catchError(() => EMPTY));
     }
 
     /**
-     * Insert a contentlet in a container
+     * Get the personas from the Page API
      *
-     * @private
-     * @param {{
-     *         pageContainers: Container[];
-     *         container: Container;
-     *         contentletID: string;
-     *     }} {
-     *         pageContainers,
-     *         container,
-     *         contentletID
-     *     }
-     * @return {*}
+     * @param null {}
+     * @return {*}  {Observable<DotPersona[]>}
      * @memberof DotPageApiService
      */
-    private insertContentletInContainer({
-        pageContainers,
-        container,
-        contentletID
-    }: {
-        pageContainers: Container[];
-        container: Container;
-        contentletID: string;
-    }): Container[] {
-        return pageContainers.map((currentContainer) => {
-            if (
-                container.identifier === currentContainer.identifier &&
-                container.uuid === currentContainer.uuid
-            ) {
-                !currentContainer.contentletsId.find((id) => id === contentletID) &&
-                    currentContainer.contentletsId.push(contentletID);
-            }
+    getPersonas({
+        pageID,
+        filter,
+        page,
+        perPage = 10
+    }: GetPersonasParams): Observable<GetPersonasResponse> {
+        const url = this.getPersonasURL({ pageID, filter, page, perPage });
 
-            return currentContainer;
+        return this.http.get<{ entity: DotPersona[]; pagination: PaginationData }>(url).pipe(
+            map((res: { entity: DotPersona[]; pagination: PaginationData }) => ({
+                data: res.entity,
+                pagination: res.pagination
+            }))
+        );
+    }
+
+    private getPersonasURL({ pageID, filter, page, perPage }: GetPersonasParams): string {
+        const apiUrl = `/api/v1/page/${pageID}/personas?`;
+
+        const queryParams = new URLSearchParams({
+            perper_page: perPage.toString(),
+            respectFrontEndRoles: 'true',
+            variantName: 'DEFAULT'
         });
+
+        if (filter) {
+            queryParams.set('filter', filter);
+        }
+
+        if (page) {
+            queryParams.set('page', page.toString());
+        }
+
+        return apiUrl + queryParams.toString();
     }
 }

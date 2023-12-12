@@ -24,7 +24,8 @@ import java.util.concurrent.Future;
 
 /**
  * Implements a storage based on Redis This implementation is on remote cache and has a filter to
- * avoid to store objects with certain size.
+ * avoid to store objects with certain size. This provider can only be used with an Enterprise
+ * License.
  *
  * @author jsanca
  */
@@ -246,6 +247,13 @@ public class RedisStoragePersistenceAPI implements StoragePersistenceAPI {
         return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
                 () -> this.pullObject(groupName, path, readerDelegate)
         );
+    }
+
+    @Override
+    public String toString() {
+        return "RedisStoragePersistenceAPI{" +
+                "groups=" + groups +
+                '}';
     }
 
 }

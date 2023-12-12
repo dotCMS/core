@@ -147,7 +147,9 @@ describe('DotContentletsComponent', () => {
     it('should go current portlet and reload data when modal closed', () => {
         const edit = de.query(By.css('dot-edit-contentlet'));
         edit.triggerEventHandler('shutdown', {});
-        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('this/is/an');
+        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('this/is/an', {
+            queryParamsHandling: 'preserve'
+        });
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('123-567');
     });
 

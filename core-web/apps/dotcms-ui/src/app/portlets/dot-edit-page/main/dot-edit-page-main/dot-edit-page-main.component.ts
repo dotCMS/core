@@ -68,8 +68,6 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
         );
 
         this.subscribeIframeCloseAction();
-
-        this.dotSessionStorageService.removeVariantId();
     }
 
     ngOnDestroy(): void {

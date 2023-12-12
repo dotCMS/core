@@ -461,9 +461,11 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @return
      */
     private Map<String, Serializable> filterNonBasicMetadataFields(final Map<String, Serializable> originalMap) {
-        return originalMap.entrySet().stream().filter(entry -> basicMetadataKeySet.get()
+        return null != originalMap ?
+                originalMap.entrySet().stream().filter(entry -> basicMetadataKeySet.get()
                 .contains(entry.getKey()) || entry.getKey().startsWith(Metadata.CUSTOM_PROP_PREFIX) ).collect(
-                Collectors.toMap(Entry::getKey, Entry::getValue));
+                Collectors.toMap(Entry::getKey, Entry::getValue))
+                : Map.of();
     }
 
     /**
@@ -472,8 +474,10 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @return
      */
     private Map<String, Serializable> filterNonCustomMetadataFields(final Map<String, Serializable> originalMap) {
-        return originalMap.entrySet().stream().filter(entry -> entry.getKey().startsWith(Metadata.CUSTOM_PROP_PREFIX) ).collect(
-                Collectors.toMap(Entry::getKey, Entry::getValue));
+        return null != originalMap ?
+                originalMap.entrySet().stream().filter(entry -> entry.getKey().startsWith(Metadata.CUSTOM_PROP_PREFIX) ).collect(
+                Collectors.toMap(Entry::getKey, Entry::getValue))
+                : Map.of();
     }
 
     /**

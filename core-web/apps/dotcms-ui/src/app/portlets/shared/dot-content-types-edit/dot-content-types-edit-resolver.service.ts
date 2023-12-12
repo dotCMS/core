@@ -53,7 +53,9 @@ export class DotContentTypeEditResolver implements Resolve<DotCMSContentType> {
                 return this.dotHttpErrorManagerService.handle(err).pipe(
                     map((res: DotHttpErrorHandled) => {
                         if (!res.redirected) {
-                            this.dotRouterService.gotoPortlet('/content-types-angular', true);
+                            this.dotRouterService.gotoPortlet('/content-types-angular', {
+                                replaceUrl: true
+                            });
                         }
 
                         return null;

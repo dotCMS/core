@@ -1,6 +1,7 @@
 package com.dotcms.api.client;
 
 import com.dotcms.api.client.SecurePasswordStore.StoreSecureException;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.model.annotation.SecuredPassword;
 import com.dotcms.model.config.CredentialsBean;
 import com.dotcms.model.config.ServiceBean;

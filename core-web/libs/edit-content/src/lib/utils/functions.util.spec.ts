@@ -3,7 +3,7 @@ import { it, describe, expect } from '@jest/globals';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import * as functionsUtil from './functions.util';
-import { CALENDAR_FIELD_TYPES } from './mocks';
+import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './mocks';
 
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
 import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
@@ -384,6 +384,67 @@ describe('Utils Functions', () => {
 
             const res = getFinalCastedValue(value, field);
             expect(res).toEqual(value);
+        });
+
+        describe('JSON Field', () => {
+            it('should return a JSON value as string keeping the format', () => {
+                const value = {
+                    value1: 'value1',
+                    value2: 'value2',
+                    value3: 'value3'
+                };
+
+                const field = {
+                    fieldType: JSON_FIELD_MOCK.fieldType
+                } as DotCMSContentTypeField;
+
+                const res = getFinalCastedValue(value, field);
+                const formattedValue = JSON.stringify(value, null, 2);
+                expect(res).toBe(formattedValue);
+            });
+        });
+
+        describe('Form Tabs', () => {
+            it('should transform layout to tabs', () => {
+                const expected = [
+                    {
+                        title: 'first tab',
+                        layout: [
+                            {
+                                divider: {
+                                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                                    contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
+                                    dataType: 'SYSTEM',
+                                    fieldType: 'Row',
+                                    fieldTypeLabel: 'Row',
+                                    fieldVariables: [],
+                                    fixed: false,
+                                    iDate: 1697051073000,
+                                    id: 'a31ea895f80eb0a3754e4a2292e09a52',
+                                    indexed: false,
+                                    listed: false,
+                                    modDate: 1697051077000,
+                                    name: 'fields-0',
+                                    readOnly: false,
+                                    required: false,
+                                    searchable: false,
+                                    sortOrder: 0,
+                                    unique: false,
+                                    variable: 'fields0'
+                                },
+                                columns: []
+                            }
+                        ]
+                    },
+                    {
+                        title: 'New Tab',
+                        layout: []
+                    }
+                ];
+                const res = functionsUtil.transformLayoutToTabs('first tab', MULTIPLE_TABS_MOCK);
+
+                expect(res).toEqual(expected);
+            });
         });
     });
 });

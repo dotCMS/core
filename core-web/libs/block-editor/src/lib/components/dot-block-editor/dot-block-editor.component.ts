@@ -489,17 +489,11 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     private setFieldVariable() {
-        const {
-            allowedContentTypes,
-            styles: customStyles,
-            displayCountBar,
-            charLimit,
-            customBlocks,
-            allowedBlocks
-        } = this.getFieldVariables();
+        const { contentTypes, styles, displayCountBar, charLimit, customBlocks, allowedBlocks } =
+            this.getFieldVariables();
 
-        this.allowedContentTypes = allowedContentTypes;
-        this.customStyles = customStyles;
+        this.allowedContentTypes = contentTypes;
+        this.customStyles = styles;
         this.displayCountBar = displayCountBar;
         this.charLimit = Number(charLimit);
         this.customBlocks = customBlocks;

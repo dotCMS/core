@@ -18,13 +18,13 @@
             // regenerate option
             &:nth-child(2) {
                 padding: $spacing-3;
-                background-color: $white !important;
+                background-color: $white;
             }
 
             // delete option
             &:last-child {
                 border-top: 1px solid $color-palette-gray-300;
-                background-color: $white !important;
+                background-color: $white;
             }
 
             &:hover {

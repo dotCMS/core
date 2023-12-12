@@ -109,4 +109,7 @@ public abstract class ContentTypeSql {
 
 	public static final String MARK_FOR_DELETION = "update structure set marked_for_deletion = "+DbConnectionFactory.getDBTrue()+" where inode = ?";
 
+	public static String COUNT_CONTENT_TYPES_USING_NOT_SYSTEM_WORKFLOW = "select count(distinct structure_id) from workflow_scheme_x_structure " +
+			"INNER JOIN workflow_scheme ON workflow_scheme.id=workflow_scheme_x_structure.scheme_id " +
+			"where name != 'System Workflow'";
 }

@@ -32,6 +32,15 @@ public class ChainableStoragePersistenceAPIBuilder implements Supplier<StoragePe
     }
 
     /**
+     * Returns the list of Storage Persistence APIs that have been added to the builder so far.
+     *
+     * @return The list of the current {@link StoragePersistenceAPI} objects.
+     */
+    public List<StoragePersistenceAPI> list() {
+        return this.storagePersistenceAPIs;
+    }
+
+    /**
      * Builds a new {@link ChainableStoragePersistenceAPI}
      * @return CompositeStoragePersistenceAPI
      */
