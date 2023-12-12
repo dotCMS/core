@@ -442,13 +442,119 @@ describe('EditEmaEditorComponent', () => {
                     dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                         new CustomEvent('ng-event', {
                             detail: {
-                                name: NG_CUSTOM_EVENTS.CONTENTLET_UPDATED
+                                name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET
                             }
                         })
                     );
                     spectator.detectChanges();
 
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+                    iframe.nativeElement.contentWindow.addEventListener(
+                        'message',
+                        (event: MessageEvent) => {
+                            expect(event).toBeTruthy();
+                            done();
+                        }
+                    );
+                });
+            });
+
+            describe('create', () => {
+                it('should open a dialog, trigger a save from the store and send a post message when saving a contentlet', (done) => {
+                    spectator.detectChanges();
+
+                    const initAddIframeDialogMock = jest.spyOn(store, 'initActionAdd');
+                    const savePageMock = jest.spyOn(store, 'savePage');
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: 'http://localhost:3000',
+                            data: {
+                                action: 'add-contentlet',
+                                payload: {
+                                    pageContainers: [
+                                        {
+                                            identifier: 'test',
+                                            acceptTypes: 'test',
+                                            uuid: 'test',
+                                            contentletsId: []
+                                        }
+                                    ],
+                                    container: {
+                                        identifier: 'test',
+                                        acceptTypes: 'test',
+                                        uuid: 'test',
+                                        contentletsId: []
+                                    },
+                                    pageID: 'test',
+                                    language_id: 'test'
+                                } as AddContentletPayload
+                            }
+                        })
+                    );
+
+                    spectator.detectChanges();
+                    const dialog = spectator.query(byTestId('dialog'));
+
+                    expect(dialog.getAttribute('ng-reflect-visible')).toBe('true');
+                    expect(initAddIframeDialogMock).toHaveBeenCalledWith({
+                        containerID: 'test',
+                        acceptTypes: 'test',
+                        language_id: 'test'
+                    });
+
+                    const dialogIframe = spectator.debugElement.query(
+                        By.css('[data-testId="dialog-iframe"]')
+                    );
+
+                    spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
+
+                    dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
+                        new CustomEvent('ng-event', {
+                            detail: {
+                                name: NG_CUSTOM_EVENTS.CREATE_CONTENTLET,
+                                data: {
+                                    url: 'test/url',
+                                    contentType: 'test'
+                                }
+                            }
+                        })
+                    );
+
+                    spectator.detectChanges();
+
+                    expect(dialogIframe.nativeElement.src).toBe('http://localhost/test/url');
+
+                    spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
+
+                    dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
+                        new CustomEvent('ng-event', {
+                            detail: {
+                                name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
+                                payload: {
+                                    contentletIdentifier: '123'
+                                }
+                            }
+                        })
+                    );
+
+                    spectator.detectChanges();
+
+                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+                    expect(savePageMock).toHaveBeenCalledWith({
+                        pageContainers: [
+                            {
+                                acceptTypes: 'test',
+                                contentletsId: ['123'],
+                                identifier: 'test',
+                                uuid: 'test'
+                            }
+                        ],
+                        pageID: 'test',
+                        whenSaved: expect.any(Function)
+                    });
 
                     iframe.nativeElement.contentWindow.addEventListener(
                         'message',
@@ -491,7 +597,8 @@ describe('EditEmaEditorComponent', () => {
                         data: {
                             action: 'edit-contentlet',
                             payload: {
-                                inode: '123'
+                                inode: '123',
+                                title: 'some title'
                             }
                         }
                     })
@@ -509,7 +616,7 @@ describe('EditEmaEditorComponent', () => {
                 dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                     new CustomEvent('ng-event', {
                         detail: {
-                            name: NG_CUSTOM_EVENTS.CONTENTLET_UPDATED,
+                            name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
                             data: {
                                 identifier: '123'
                             }
@@ -683,7 +790,7 @@ describe('EditEmaEditorComponent', () => {
                 dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                     new CustomEvent('ng-event', {
                         detail: {
-                            name: NG_CUSTOM_EVENTS.CONTENTLET_UPDATED,
+                            name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
                             data: {
                                 identifier: '123'
                             }
@@ -715,21 +822,16 @@ describe('EditEmaEditorComponent', () => {
             spectator = createComponent({
                 queryParams: { language_id: undefined, url: undefined }
             });
-
             store = spectator.inject(EditEmaStore, true);
         });
-
         it('should initialize with default value', () => {
             const mockQueryParams = {
                 language_id: 1,
                 url: 'index',
                 persona_id: 'modes.persona.no.persona'
             };
-
             jest.spyOn(store, 'load');
-
             spectator.detectChanges();
-
             expect(store.load).toHaveBeenCalledWith(mockQueryParams);
         });
     });
