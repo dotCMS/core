@@ -11,4 +11,15 @@ export class DotAiServiceMock {
             `
         ).pipe(delay(DEFAULT_DELAY));
     }
+
+    generateAndPublishImage() {
+        return of({
+            originalPrompt: 'cow in the snow',
+            response: 'temp_3839a0f05f',
+            revised_prompt:
+                "A well-fed, adult cow, with a dark, almost black coat standing majestically in a snowy landscape. The sun is low in the sky, casting a warm, pinkish light that contrasts with the cold whiteness of the snow. The cow's breath freezes in the cold air, creating a visible puff of steam. Snowflakes delicately drift from the sky, settling on the cow's back and in its fur, creating a beautiful winter scene. The cow, unbothered by the snow, looks ahead with a calm, steady gaze resulting in an image of tranquillity and resilience in the face of nature's stark beauty.",
+            tempFileName: 'cow_20231211_040442.png',
+            url: 'https://oaidalleapiprodscus.blob.core.windows.net/private/org-qZnNeZvyp7uFUh2EX8AJA6gw/user-3adfuZcoiVNCPk2q6ZAVoT5u/img-FHDDQywCgDYdyzKCk3f1ybZi.png?st=2023-12-11T15%3A04%3A42Z&se=2023-12-11T17%3A04%3A42Z&sp=r&sv=2021-08-06&sr=b&rscd=inline&rsct=image/png&skoid=6aaadede-4fb3-4698-a8f6-684d7786b067&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2023-12-10T23%3A17%3A53Z&ske=2023-12-11T23%3A17%3A53Z&sks=b&skv=2021-08-06&sig=hAOg7fmzNvmEk5pL/IR2Bzsy3WR0ww6NYnqr/92ybaU%3D'
+        }).pipe(delay(DEFAULT_DELAY));
+    }
 }
