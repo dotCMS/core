@@ -118,6 +118,10 @@ ol.wfStepsList li{padding:8px 16px;margin:0 10px; list-style:decimal;  list-styl
 	cursor: pointer;
 }
 
+.showDefaultCursor{
+	cursor: default;
+}
+
 .showPointer h2 {
     max-width: 220px;
     white-space: nowrap;

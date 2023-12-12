@@ -92,7 +92,7 @@
             %>
             <div class="wf-action-wrapper x<%=action.getId()%>" data-wfaction-id="<%=action.getId()%>" onmouseover="colorMe('x<%=action.getId()%>')" onmouseout="colorMeNot('x<%=action.getId()%>')" >
                 <div class="handles"></div>
-                <div class="wf-action <%= isSeparator ? "" : "showPointer" %>"">
+                <div class="wf-action <%= isSeparator ? "showDefaultCursor" : "showPointer" %>"">
                     <div class="pull-right showPointer" onclick="actionAdmin.deleteActionForStep(this, <%=stepIndex%>)"><span class="deleteIcon"></span></div>
                     <div class="pull-left" <% if(!isSeparator) { %>onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '<%=action.getId() %>');" <% } %>>
                        <%=action.getName() %> <span style="color:#a6a6a6">&#8227; <%=(WorkflowAction.CURRENT_STEP.equals(action.getNextStep())) ?  WorkflowAction.CURRENT_STEP : wapi.findStep(action.getNextStep()).getName() %></span>
