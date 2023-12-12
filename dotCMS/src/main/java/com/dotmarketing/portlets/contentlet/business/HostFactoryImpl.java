@@ -790,9 +790,12 @@ public class HostFactoryImpl implements HostFactory {
                 return Optional.of(hostList);
             }
             final List<Host> siteList = convertDbResultsToSites(dbResults);
+            if(user.isAdmin()){
+                return Optional.of(siteList);
+            }
             hostList.addAll(APILocator.getPermissionAPI().filterCollection(siteList, PermissionAPI
                     .PERMISSION_READ, respectFrontendRoles, user));
-            if(user.isAdmin() || hostList.size()==limit || siteList.size() < limit){//user is admin or reach the amount of sites requested or there is no anymore sites
+            if(hostList.size()==limit || siteList.size() < limit){//user is admin or reach the amount of sites requested or there is no anymore sites
                 return Optional.of(hostList);
             }else{
                 return search(siteNameFilter,condition,showSystemHost,limit,offset+limit,user,respectFrontendRoles,hostList);
