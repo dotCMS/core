@@ -238,7 +238,7 @@ public class DateUtil {
 	 */
 	public static Date convertDate(final Number unixTimeStamp)  {
 
-		return new Date(TimeUnit.MILLISECONDS.convert(unixTimeStamp.longValue(), TimeUnit.SECONDS));
+		return new Date(unixTimeStamp.longValue());
 	}
 
 
