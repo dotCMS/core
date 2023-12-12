@@ -55,7 +55,8 @@ public class WorkflowActionForm extends Validated {
     private final String        actionNextStep;
     private final String        actionNextAssign;
     private final String        actionCondition;
-    private Map<String, Object> metadata;
+    private static final String METADATA_SUBTYPE_ATTR = "subtype";
+    private final Map<String, Object> metadata;
 
     public String getStepId() {
         return stepId;
@@ -164,7 +165,7 @@ public class WorkflowActionForm extends Validated {
         this.checkValid();
     }
 
-       public static final class Builder {
+    public static final class Builder {
 
         @JsonProperty()
         private String        actionId;
@@ -279,22 +280,30 @@ public class WorkflowActionForm extends Validated {
             return this;
         }
 
+        /**
+         * Sets the metadata for this Workflow Action. This is a Map of key/value pairs that may
+         * include different custom properties that define the behavior of an action.
+         *
+         * @param metadata Different custom properties for this action.
+         *
+         * @return The current {@link Builder} instance.
+         */
         public Builder metadata(final Map<String, Object> metadata) {
            this.metadata = metadata;
            return this;
         }
 
-           /**
-            * Marks this Workflow Action as a Separator. This is a special type of action that does
-            * not execute any sub-actions at all, as it simply groups X number of actions together
-            * in the UI. The result of this may be seen as the differentiation between Primary and
-            * Secondary Actions.
-            *
-            * @param schemeId The ID of the Workflow Scheme that this action belongs to.
-            * @param stepId   The ID of the Workflow Step that this action belongs to.
-            *
-            * @return The current {@link Builder} instance.
-            */
+       /**
+        * Marks this Workflow Action as a Separator. This is a special type of action that does
+        * not execute any sub-actions at all, as it simply groups X number of actions together
+        * in the UI. The result of this may be seen as the differentiation between Primary and
+        * Secondary Actions.
+        *
+        * @param schemeId The ID of the Workflow Scheme that this action belongs to.
+        * @param stepId   The ID of the Workflow Step that this action belongs to.
+        *
+        * @return The current {@link Builder} instance.
+        */
         public Builder separator(final String schemeId, final String stepId) {
             this.schemeId(schemeId);
             this.stepId(stepId);
@@ -304,13 +313,13 @@ public class WorkflowActionForm extends Validated {
             this.actionRoleHierarchyForAssign(false);
             this.actionNextStep(WorkflowAction.CURRENT_STEP);
             this.actionNextAssign(Try.of(() -> APILocator.getRoleAPI().loadRoleByKey(Role.CMS_ANONYMOUS_ROLE).getId())
-                    .getOrElseThrow(e -> new DotRuntimeException("Anonymous Role ID not found", e)));
+                    .getOrElseThrow(e -> new DotRuntimeException("Anonymous Role ID not found in the database", e)));
             this.actionCondition(WorkflowAction.SEPARATOR);
-            this.showOn(Arrays.stream(WorkflowState.values()).collect(java.util.stream.Collectors.toSet()));
+            this.showOn(Arrays.stream(WorkflowState.values()).filter(state -> state != WorkflowState.LISTING).collect(java.util.stream.Collectors.toSet()));
             if (null == this.metadata) {
                 this.metadata = new HashMap<>();
             }
-            this.metadata.put("subtype", WorkflowAction.SEPARATOR);
+            this.metadata.put(METADATA_SUBTYPE_ATTR, WorkflowAction.SEPARATOR);
             return this;
         }
 
