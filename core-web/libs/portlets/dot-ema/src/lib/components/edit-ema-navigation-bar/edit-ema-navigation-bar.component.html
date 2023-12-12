@@ -2,7 +2,7 @@
     <li
         class="edit-ema-nav-bar__item"
         *ngFor="let item of items"
-        [ngClass]="{ 'edit-ema-nav-bar__item--active': item.key === selected }"
+        [ngClass]="{ 'edit-ema-nav-bar__item--active': item.key === selectedKey }"
         (click)="onClick(item)"
         data-testId="menuListItems">
         <ng-container
@@ -21,5 +21,5 @@
 <ng-template #iconURL let-item="item">
     <img
         class="item__image"
-        [src]="item.key === selected ? item.iconURLActive ?? item.iconURL : item.iconURL" />
+        [src]="item.key === selectedKey ? item.iconURLActive ?? item.iconURL : item.iconURL" />
 </ng-template>
