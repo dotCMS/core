@@ -1,6 +1,6 @@
 import { EMPTY, Observable } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
@@ -10,6 +10,7 @@ import { map, switchMap } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotEditContentAsideComponent } from '../../components/dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
 import { EditContentFormData } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
@@ -17,7 +18,15 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 @Component({
     selector: 'dot-edit-content-form-layout',
     standalone: true,
-    imports: [NgIf, AsyncPipe, DotMessagePipe, DotEditContentFormComponent, ButtonModule],
+    imports: [
+        NgIf,
+        AsyncPipe,
+        DotMessagePipe,
+        DotEditContentFormComponent,
+        ButtonModule,
+        DotEditContentAsideComponent,
+        JsonPipe
+    ],
     templateUrl: './edit-content.layout.component.html',
     styleUrls: ['./edit-content.layout.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,7 +53,8 @@ export class EditContentLayoutComponent implements OnInit {
                           map(({ layout, fields }) => ({
                               contentlet: { ...contentData },
                               layout,
-                              fields
+                              fields,
+                              contentType
                           }))
                       );
                   } else {
@@ -54,7 +64,9 @@ export class EditContentLayoutComponent implements OnInit {
           )
         : this.dotEditContentService
               .getContentTypeFormData(this.contentType)
-              .pipe(map(({ layout, fields }) => ({ layout, fields })));
+              .pipe(
+                  map(({ layout, fields }) => ({ layout, fields, contentType: this.contentType }))
+              );
 
     ngOnInit() {
         if (this.contentType) {

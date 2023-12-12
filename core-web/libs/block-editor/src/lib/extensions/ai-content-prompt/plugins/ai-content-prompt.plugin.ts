@@ -6,16 +6,18 @@ import tippy, { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
 
-import { filter, takeUntil } from 'rxjs/operators';
+import { filter, skip, takeUntil, tap } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
+import { DotTiptapNodeInformation, findNodeByType, replaceNodeWithContent } from '../../../shared';
+import { NodeTypes } from '../../bubble-menu/models';
 import { AIContentPromptComponent } from '../ai-content-prompt.component';
 import {
     AI_CONTENT_PROMPT_PLUGIN_KEY,
     DOT_AI_TEXT_CONTENT_KEY
 } from '../ai-content-prompt.extension';
-import { AiContentPromptStore } from '../store/ai-content-prompt.store';
+import { AiContentPromptState, AiContentPromptStore } from '../store/ai-content-prompt.store';
 import { TIPPY_OPTIONS } from '../utils';
 
 interface AIContentPromptProps {
@@ -34,6 +36,16 @@ export type AIContentPromptViewProps = AIContentPromptProps & {
     view: EditorView;
 };
 
+/**
+ * This class is responsible to create the tippy tooltip and manage the events.
+ *
+ * The Update method is called when editor(Tiptap) state is updated (to often).
+ * then the show() / hide() methods are called if the PluginState property open is true.
+ * the others interactions are done by tippy.hide() and tippy.show() methods.
+ *  - interaction of the click event in the html template.
+ *  - interaction with componentStore.exit$
+ *  - Inside the show() method.
+ */
 export class AIContentPromptView {
     public editor: Editor;
 
@@ -53,7 +65,11 @@ export class AIContentPromptView {
 
     private componentStore: AiContentPromptStore;
 
+    private storeSate: AiContentPromptState;
+
     private destroy$ = new Subject<boolean>();
+
+    private boundClickHandler = this.handleClick.bind(this);
 
     constructor(props: AIContentPromptViewProps) {
         const { editor, element, view, tippyOptions = {}, pluginKey, component } = props;
@@ -81,7 +97,6 @@ export class AIContentPromptView {
                 this.editor
                     .chain()
                     .closeAIPrompt()
-                    .deleteSelection()
                     .insertAINode(content)
                     .openAIContentActions(DOT_AI_TEXT_CONTENT_KEY)
                     .run();
@@ -94,23 +109,59 @@ export class AIContentPromptView {
         this.componentStore.vm$
             .pipe(
                 takeUntil(this.destroy$),
+                tap((state) => (this.storeSate = state)),
                 filter((state) => state.acceptContent)
             )
             .subscribe((state) => {
-                this.editor.commands.insertContent(state.content);
+                const nodeInformation: DotTiptapNodeInformation = findNodeByType(
+                    this.editor,
+                    NodeTypes.AI_CONTENT
+                );
+                replaceNodeWithContent(this.editor, nodeInformation, state.content);
+
                 this.componentStore.setAcceptContent(false);
             });
 
         /**
-         * Subscription to close the tippy since that can happen on escape listener that is in the html
+         * Subscription to "exit" the tippy since that can happen on escape listener that is in the html
          * template in ai-content-prompt.component.html
          */
-        this.componentStore.open$
+
+        this.componentStore.status$
             .pipe(
+                skip(1),
                 takeUntil(this.destroy$),
-                filter((open) => !open)
+                filter((status) => status === 'exit')
             )
-            .subscribe(() => this.hide());
+            .subscribe(() => {
+                this.tippy?.hide();
+            });
+
+        /**
+         * Subscription to delete AI_CONTENT node.
+         * Fired from the AI Content Actions plugin.
+         */
+        this.componentStore.deleteContent$
+            .pipe(
+                skip(1),
+                takeUntil(this.destroy$),
+                filter((deleteContent) => deleteContent)
+            )
+            .subscribe(() => {
+                const nodeInformation: DotTiptapNodeInformation = findNodeByType(
+                    this.editor,
+                    NodeTypes.AI_CONTENT
+                );
+
+                if (nodeInformation) {
+                    this.editor.commands.deleteRange({
+                        from: nodeInformation.from,
+                        to: nodeInformation.to
+                    });
+                }
+
+                this.componentStore.setDeleteContent(false);
+            });
     }
 
     update(view: EditorView, prevState?: EditorState) {
@@ -123,9 +174,9 @@ export class AIContentPromptView {
             return;
         }
 
-        this.createTooltip();
-
-        next.open ? this.show() : this.hide();
+        next.open
+            ? this.show()
+            : this.hide(this.storeSate.status === 'open' || this.storeSate.status === 'loaded');
     }
 
     createTooltip() {
@@ -166,28 +217,57 @@ export class AIContentPromptView {
     }
 
     show() {
+        this.createTooltip();
+        this.manageClickListener(true);
+        this.editor.setEditable(false);
         this.tippy?.show();
-        this.componentStore.setOpen(true);
+        this.componentStore.setStatus('open');
     }
 
     /**
-     * Hide the tooltip but ignore store update if coming from ai-content-prompt.component.html keyup event.
+     * Hide the tooltip but ignore store update  if open is false already
+     * this happens when the event comes from ai-content-prompt.component.html escape keyup event.
      *
      * @param notifyStore
      */
     hide(notifyStore = true) {
-        this.tippy?.hide();
-        if (notifyStore) {
-            this.componentStore.setOpen(false);
-        }
+        this.editor.setEditable(true);
 
         this.editor.view.focus();
+        if (notifyStore) {
+            this.componentStore.setStatus('close');
+        }
+
+        this.manageClickListener(false);
     }
 
     destroy() {
         this.tippy?.destroy();
         this.destroy$.next(true);
         this.destroy$.complete();
+        this.manageClickListener(false);
+    }
+
+    /**
+     * Handles the click event on the editor's DOM. If the AI content prompt is open or loaded.
+     * and not in a loading state, this function hides the associated Tippy tooltip.
+     */
+    handleClick(): void {
+        if (this.storeSate.status === 'open' || this.storeSate.status === 'loaded') {
+            this.tippy.hide();
+        }
+    }
+
+    /**
+     * Manages the click event listener on the editor's DOM based on the specified condition.
+     * If `addListener` is `true`, the click event listener is added; otherwise, it is removed.
+     *
+     * @param addListener - A boolean indicating whether to add or remove the click event listener.
+     */
+    manageClickListener(addListener: boolean): void {
+        addListener
+            ? this.editor.view.dom.addEventListener('click', this.boundClickHandler)
+            : this.editor.view.dom.removeEventListener('click', this.boundClickHandler);
     }
 }
 
