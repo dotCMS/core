@@ -86,14 +86,17 @@
             <div class="clear"></div>
         </div>
         <div class="wfActionList" id="jsNode<%=step.getId()  %>"  data-wfstep-id="<%=step.getId()%>">
-            <%for(WorkflowAction action : actions){ %>
+            <%for(WorkflowAction action : actions) {
+                String subtype = action.getMetadata() != null ? String.valueOf(action.getMetadata().get("subtype")) : "";
+                boolean isSeparator = "SEPARATOR".equals(subtype);
+            %>
             <div class="wf-action-wrapper x<%=action.getId()%>" data-wfaction-id="<%=action.getId()%>" onmouseover="colorMe('x<%=action.getId()%>')" onmouseout="colorMeNot('x<%=action.getId()%>')" >
                 <div class="handles"></div>
-                <div class="wf-action showPointer">
+                <div class="wf-action <%= isSeparator ? "" : "showPointer" %>"">
                     <div class="pull-right showPointer" onclick="actionAdmin.deleteActionForStep(this, <%=stepIndex%>)"><span class="deleteIcon"></span></div>
-                    <div  class="pull-left showPointer" onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '<%=action.getId() %>');">
-                        <%=action.getName() %> <span style="color:#a6a6a6">&#8227; <%=(WorkflowAction.CURRENT_STEP.equals(action.getNextStep())) ?  WorkflowAction.CURRENT_STEP : wapi.findStep(action.getNextStep()).getName() %></span>
-                    </div>
+                    <div class="pull-left" <% if(!isSeparator) { %>onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '<%=action.getId() %>');" <% } %>>
+                       <%=action.getName() %> <span style="color:#a6a6a6">&#8227; <%=(WorkflowAction.CURRENT_STEP.equals(action.getNextStep())) ?  WorkflowAction.CURRENT_STEP : wapi.findStep(action.getNextStep()).getName() %></span>
+                   </div>
                 </div>
             </div>
             <%} %>
