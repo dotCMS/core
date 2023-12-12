@@ -196,6 +196,8 @@
 	-webkit-font-smoothing: antialiased;
 	}
 
+    body {background: white}
+
   </style>
 
 </head>
