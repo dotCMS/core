@@ -1,10 +1,12 @@
 package com.dotcms.storage;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.FileUtil;
@@ -37,6 +39,8 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
     private final Map<String, File> groups = new ConcurrentHashMap<>();
 
+    private final IdentifierStripedLock lockManager;
+
     /**
      * default constructor
      */
@@ -47,6 +51,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         Logger.debug(FileSystemStoragePersistenceAPIImpl.class, () -> String
                 .format("Default group key is `%s` currently mapped to folder `%s` ", rootGroupKey,
                         rootFolder));
+        lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
     }
 
     /**
@@ -235,23 +240,44 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         if (groupDir.canWrite()) {
 
             try {
-                final File destBucketFile = Paths.get(groupDir.getCanonicalPath(),path.toLowerCase()).toFile();
-                this.prepareParent(destBucketFile);
+                return lockManager.tryLock(groupName+path,
+                        () -> {
 
-                final String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
-                try (OutputStream outputStream = FileUtil.createOutputStream(destBucketFile.toPath(), compressor)) {
-                    writerDelegate.write(outputStream, object);
-                    outputStream.flush();
-                }
-            } catch (IOException e) {
-                Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
-                throw new  DotDataException(e.getMessage(),e);
+                            final File destBucketFile = Paths.get(groupDir.getCanonicalPath(),path.toLowerCase()).toFile();
+
+                            // someone else already wrote the file meanwhile waiting for the lock
+                            // so, I do not need to write it again
+                            if (!destBucketFile.exists()) {
+
+                                try {
+
+                                    final File tempDestBucketFile = com.dotmarketing.util.FileUtil.
+                                            createTemporaryFile(String.valueOf((groupName+path).hashCode()));
+                                    final String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
+                                    try (OutputStream outputStream = FileUtil.createOutputStream(tempDestBucketFile.toPath(), compressor)) {
+                                        writerDelegate.write(outputStream, object);
+                                        outputStream.flush();
+                                    }
+
+                                    // copy from the temp file to the final destination
+                                    this.prepareParent(destBucketFile);
+
+                                    FileUtil.move(tempDestBucketFile, destBucketFile);
+                                } catch (IOException e) {
+                                    Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
+                                    throw new DotDataException(e.getMessage(), e);
+                                }
+                            }
+
+                            return true;
+                        }
+                );
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
             }
         } else {
             throw new IllegalArgumentException("The bucket: " + groupName + " could not write");
         }
-
-        return true;
     }
 
     /**
@@ -358,8 +384,9 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         final File groupDir = groups.get(groupName.toLowerCase());
 
         if (groupDir.canRead()) {
+            File file = null;
             try {
-                final File file = Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile();
+                file = Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile();
                 if (file.exists()) {
                     final String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
                     try (InputStream input = FileUtil.createInputStream(file.toPath(), compressor)) {
@@ -368,9 +395,19 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                 } else {
                     throw new IllegalArgumentException("The file: " + path + ", does not exists.");
                 }
+            } catch (MismatchedInputException e) {
+                final String msg = "error getting: (" + groupName + '|' + path +
+                        "), probably the file is zero length or corrupted, msg:" + e.getMessage();
+                Logger.warn(FileSystemStoragePersistenceAPIImpl.class, msg, e);
+                if (null != file && file.exists()) {
+                    Logger.info(this, "Deleting the file:" + file + ", because it is corrupted.");
+                    file.delete();
+                }
+                object = Map.of(); // no object
             } catch (IOException e) {
-                Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
-                throw new DotRuntimeException(e);
+                final String msg = "error getting: (" + groupName + '|' + path + "), msg:" + e.getMessage();
+                Logger.error(FileSystemStoragePersistenceAPIImpl.class, msg, e);
+                throw new DotRuntimeException(msg, e);
             }
         } else {
             throw new IllegalArgumentException(String.format("The folder: `%s` mapped by the bucket: `%s` could not be read.",groupDir.getAbsolutePath(), groupName));

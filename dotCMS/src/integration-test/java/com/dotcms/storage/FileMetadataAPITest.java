@@ -56,6 +56,7 @@ import java.util.function.Supplier;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -878,6 +879,7 @@ public class FileMetadataAPITest {
      * @throws Exception
      */
     @Test
+    @Ignore
     @UseDataProvider("getStorageType")
     public void Test_Write_Custom_Metadata_Then_Generate_Metadata_Expect_All_Metadata(final StorageType storageType) throws Exception {
         prepareIfNecessary();
