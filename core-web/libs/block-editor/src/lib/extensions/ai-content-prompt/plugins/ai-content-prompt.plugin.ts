@@ -133,8 +133,12 @@ export class AIContentPromptView {
                 takeUntil(this.destroy$),
                 filter((status) => status === 'exit')
             )
-            .subscribe(() => {
-                this.tippy?.hide();
+            .subscribe((status) => {
+                if (status === 'exit') {
+                    this.tippy?.hide();
+                } else if (status === 'loading') {
+                    this.editor.commands.setLoadingAIContentNode(true);
+                }
             });
 
         /**

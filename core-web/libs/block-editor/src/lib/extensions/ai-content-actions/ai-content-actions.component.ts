@@ -59,5 +59,6 @@ export class AIContentActionsComponent implements OnInit {
 
     private emitAction(action: ACTIONS) {
         this.actionEmitter.emit(action);
+        this.actionOptions.forEach((option) => (option.selectedOption = false));
     }
 }

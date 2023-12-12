@@ -278,6 +278,17 @@
                     }
                 }
             }
+
+            .ai-loading {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-width: 100%;
+                padding: 0.5rem;
+                border-radius: 0.5rem;
+                border: 1px solid $color-palette-gray-400;
+                color: $color-palette-primary;
+            }
         }
 
         .video-container {

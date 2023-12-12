@@ -1,4 +1,4 @@
-import { ResolvedPos } from 'prosemirror-model';
+import { ResolvedPos, Node } from 'prosemirror-model';
 import { SelectionRange, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 
