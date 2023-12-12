@@ -324,7 +324,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	public List<ContentletVersionInfo> getContentVersionInfos(final String identifier){
 		// we don't read from cache in transactions
 		if(DbConnectionFactory.inTransaction()){
-			return Collections.emptyList();
+			return null;
 		}
 		return (List<ContentletVersionInfo>) cache.getNoThrow(allInfosKey(identifier) , getVersionInfoGroup());
 	}
