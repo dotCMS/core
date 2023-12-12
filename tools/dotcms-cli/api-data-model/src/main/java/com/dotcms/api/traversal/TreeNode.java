@@ -8,7 +8,6 @@ import com.dotcms.model.asset.AssetSync;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderSync;
 import com.dotcms.model.asset.FolderView;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -159,15 +158,19 @@ public class TreeNode {
 
         // Clone children without assets and apply filtering conditions
         for (final TreeNode child : this.children) {
-            if (childShouldBeIncluded(child, showEmptyFolders, filterForPushChanges)) {
-                final TreeNode clonedChild = child.cloneAndFilterAssets(live, language, showEmptyFolders, filterForPushChanges);
+            final TreeNode clonedChild = child.cloneAndFilterAssets(
+                    live,
+                    language,
+                    showEmptyFolders,
+                    filterForPushChanges
+            );
+            if (childShouldBeIncluded(clonedChild, showEmptyFolders, filterForPushChanges)) {
                 newNode.addChild(clonedChild);
             }
         }
 
         return newNode;
     }
-
 
     /**
      * Clones the current TreeNode and filters its assets based on the provided status and language.
@@ -181,18 +184,18 @@ public class TreeNode {
             return false;
         }
         if (filterForPushChanges) {
-            return showEmptyFolders
+            return (showEmptyFolders
                     || !child.assets.isEmpty()
-                    || isMarkedForPush(child.folder())
-                    || isMarkedForDelete(child.folder())
+                    || (isMarkedForPush(child.folder())
+                    || isMarkedForDelete(child.folder()))
                     || hasAssetsWithChangesInSubtree(child)
-                    || hasFolderWithChangesInSubtree(child)
-                    || (child.folder.implicitGlobInclude() || hasIncludeInSubtree(child));
+                    || hasFolderWithChangesInSubtree(child))
+                    && (child.folder.implicitGlobInclude() || hasIncludeInSubtree(child));
         } else {
-            return showEmptyFolders
+            return (showEmptyFolders
                     || !child.assets.isEmpty()
-                    || hasAssetsInSubtree(child)
-                    || (child.folder.implicitGlobInclude() || hasIncludeInSubtree(child));
+                    || hasAssetsInSubtree(child))
+                    && (child.folder.implicitGlobInclude() || hasIncludeInSubtree(child));
         }
     }
 
@@ -219,7 +222,7 @@ public class TreeNode {
      */
     public TreeNodeInfo collectUniqueStatusAndLanguage(final boolean showEmptyFolders) {
 
-        TreeNodeInfo nodeInfo = new TreeNodeInfo();
+        TreeNodeInfo nodeInfo = new TreeNodeInfo(this.folder().host());
         internalCollectUniqueStatusAndLanguage(nodeInfo, showEmptyFolders);
         return nodeInfo;
     }

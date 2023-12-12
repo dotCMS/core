@@ -44,6 +44,7 @@ public class SystemEnvDataSourceStrategyTest {
         properties.put("connection_db_username", testDatasource.getUsername());
         properties.put("connection_db_password", testDatasource.getPassword());
         properties.put("connection_db_max_total", "60");
+        properties.put("connection_db_connection_timeout", "5000");
         properties.put("connection_db_max_idle", "10");
         properties.put("connection_db_max_wait", "60000");
         //properties.put("connection_db_validation_query", testDatasource.getConnectionTestQuery());
@@ -76,6 +77,8 @@ public class SystemEnvDataSourceStrategyTest {
         assertEquals(properties.get("connection_db_password"), dataSource.getPassword());
         assertEquals(Integer.parseInt(properties.get("connection_db_max_total")),
                 dataSource.getMaximumPoolSize());
+        assertEquals(Integer.parseInt(properties.get("connection_db_connection_timeout")),
+                dataSource.getConnectionTimeout());
         assertEquals(Integer.parseInt(properties.get("connection_db_max_idle")) * 1000,
                 dataSource.getIdleTimeout());
         assertEquals(Integer.parseInt(properties.get("connection_db_max_wait")),

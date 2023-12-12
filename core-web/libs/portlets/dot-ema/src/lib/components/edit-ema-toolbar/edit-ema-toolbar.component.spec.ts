@@ -1,22 +1,48 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Spectator, createComponentFactory, byTestId } from '@ngneat/spectator';
+
+import { Component } from '@angular/core';
 
 import { EditEmaToolbarComponent } from './edit-ema-toolbar.component';
 
+@Component({
+    template: `<dot-edit-ema-toolbar>
+        <ng-container title><div data-testId="title-content"></div></ng-container>
+        <ng-container left><div data-testId="left-content"></div></ng-container>
+        <ng-container right><div data-testId="right-content"></div></ng-container>
+    </dot-edit-ema-toolbar>`
+})
+class TestHostComponent {}
+
 describe('EditEmaToolbarComponent', () => {
-    let component: EditEmaToolbarComponent;
-    let fixture: ComponentFixture<EditEmaToolbarComponent>;
+    let spectator: Spectator<TestHostComponent>;
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [EditEmaToolbarComponent]
-        }).compileComponents();
-
-        fixture = TestBed.createComponent(EditEmaToolbarComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+    const createComponent = createComponentFactory({
+        component: TestHostComponent,
+        imports: [EditEmaToolbarComponent],
+        providers: []
     });
 
-    it('should create', () => {
-        expect(component).toBeTruthy();
+    beforeEach(() => {
+        spectator = createComponent();
+    });
+
+    describe('DOM', () => {
+        it('should have left-content on left', () => {
+            const leftContent = spectator.query(byTestId('toolbar-left-content'));
+
+            expect(leftContent.querySelector('[data-testId="left-content"]')).not.toBeNull();
+        });
+
+        it('should have right-content on right', () => {
+            const rightContent = spectator.query(byTestId('toolbar-right-content'));
+
+            expect(rightContent.querySelector('[data-testId="right-content"]')).not.toBeNull();
+        });
+
+        it('should have title-content on title', () => {
+            const titleContent = spectator.query(byTestId('title-content'));
+
+            expect(titleContent).not.toBeNull();
+        });
     });
 });

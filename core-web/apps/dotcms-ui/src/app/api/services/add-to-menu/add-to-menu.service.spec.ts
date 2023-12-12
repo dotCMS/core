@@ -1,3 +1,4 @@
+import { mockProvider } from '@ngneat/spectator';
 import { throwError } from 'rxjs';
 
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
@@ -7,7 +8,7 @@ import { ConfirmationService } from 'primeng/api';
 
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { DotFormatDateService } from '@dotcms/ui';
 import {
@@ -50,7 +51,8 @@ describe('DotAddToMenuService', () => {
                 ConfirmationService,
                 DotAddToMenuService,
                 DotAlertConfirmService,
-                DotHttpErrorManagerService
+                DotHttpErrorManagerService,
+                mockProvider(DotMessageService)
             ]
         });
         injector = getTestBed();

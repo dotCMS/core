@@ -1,8 +1,8 @@
 import { expect, describe } from '@jest/globals';
-import { SpectatorService, createServiceFactory } from '@ngneat/spectator';
+import { HttpMethod, SpectatorService, createServiceFactory } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 
 import { skip } from 'rxjs/operators';
 
@@ -40,6 +40,7 @@ export const TEMP_FILE_MOCK: DotCMSTempFile = {
 describe('DotBinaryFieldStore', () => {
     let spectator: SpectatorService<DotBinaryFieldStore>;
     let store: DotBinaryFieldStore;
+    let httpMock: HttpTestingController;
 
     let dotUploadService: DotUploadService;
     let initialState;
@@ -73,6 +74,7 @@ describe('DotBinaryFieldStore', () => {
         spectator = createStoreService();
         store = spectator.inject(DotBinaryFieldStore);
         dotUploadService = spectator.inject(DotUploadService);
+        httpMock = spectator.inject(HttpTestingController);
 
         store.setState(INITIAL_STATE);
         store.state$.subscribe((state) => {
@@ -180,6 +182,45 @@ describe('DotBinaryFieldStore', () => {
                         maxSize: '1MB',
                         signal: null
                     });
+                    done();
+                });
+            });
+        });
+    });
+
+    describe('Effects', () => {
+        describe('setFileAndContent', () => {
+            const mimeTypeTestCases = [
+                { mimeType: 'text/plain', name: 'name.txt' },
+                { mimeType: 'application/json', name: 'name.json' }
+            ];
+
+            mimeTypeTestCases.forEach(({ mimeType, name }) => {
+                it(`should get content if mimeType is ${mimeType}`, (done) => {
+                    store.setFileAndContent({
+                        mimeType,
+                        name,
+                        fileSize: 12312,
+                        url: 'test-url'
+                    });
+
+                    store.state$.subscribe(() => {
+                        httpMock.expectOne('test-url', HttpMethod.GET);
+                        done();
+                    });
+                });
+            });
+
+            it('should not get content if mimeType is not `text` or `json`', (done) => {
+                store.setFileAndContent({
+                    mimeType: 'image/png',
+                    name: 'name.png',
+                    fileSize: 12312,
+                    url: 'test-url'
+                });
+
+                store.state$.subscribe(() => {
+                    httpMock.expectNone('test-url', HttpMethod.GET);
                     done();
                 });
             });

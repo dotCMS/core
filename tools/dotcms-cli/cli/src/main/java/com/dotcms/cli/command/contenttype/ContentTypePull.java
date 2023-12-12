@@ -5,6 +5,7 @@ import com.dotcms.api.client.pull.contenttype.ContentTypeFetcher;
 import com.dotcms.api.client.pull.contenttype.ContentTypePullHandler;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPull;
+import com.dotcms.cli.common.FullPullOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PullMixin;
 import com.dotcms.common.WorkspaceManager;
@@ -49,7 +50,7 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
     static final String CONTENT_TYPE_PULL_MIXIN = "contentTypePullMixin";
 
     @CommandLine.Mixin
-    PullMixin pullMixin;
+    FullPullOptionsMixin pullMixin;
 
     @CommandLine.Mixin(name = CONTENT_TYPE_PULL_MIXIN)
     ContentTypePullMixin contentTypePullMixin;
@@ -92,13 +93,15 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
             );
         }
 
-        // Execute the push
+        // Execute the pull
         pullService.pull(
-                contentTypesFolder,
                 PullOptions.builder().
+                        destination(contentTypesFolder).
                         contentKey(Optional.ofNullable(contentTypePullMixin.idOrVar)).
                         outputFormat(pullMixin.inputOutputFormat().toString()).
                         isShortOutput(pullMixin.shortOutputOption().isShortOutput()).
+                        failFast(pullMixin.failFast).
+                        maxRetryAttempts(pullMixin.retryAttempts).
                         build(),
                 output,
                 contentTypeProvider,
