@@ -9441,7 +9441,7 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"setTimeout(function(){}, 3000);"
+									"setTimeout(function(){}, 20000);"
 								],
 								"type": "text/javascript"
 							}
@@ -9600,7 +9600,7 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"setTimeout(function(){}, [5000]);"
+									"setTimeout(function(){}, 20000);"
 								],
 								"type": "text/javascript"
 							}
