@@ -9458,7 +9458,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/graphql",
+							"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=-1",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -9466,6 +9466,12 @@
 								"api",
 								"v1",
 								"graphql"
+							],
+							"query": [
+								{
+									"key": "dotcachettl",
+									"value": "-1"
+								}
 							]
 						},
 						"description": "checks if the correct values were pulled via GraphQL.\n- Render should bring html code\n- Json should not bring render code."
@@ -9623,7 +9629,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/graphql",
+							"raw": "{{serverURL}}/api/v1/graphql?dotcachettl=-1",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -9631,6 +9637,12 @@
 								"api",
 								"v1",
 								"graphql"
+							],
+							"query": [
+								{
+									"key": "dotcachettl",
+									"value": "-1"
+								}
 							]
 						}
 					},
