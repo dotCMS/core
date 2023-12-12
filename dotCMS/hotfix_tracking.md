@@ -14,3 +14,5 @@ This maintenance release includes the following code fixes:
 8. https://github.com/dotCMS/core/issues/26933 : StorageProvider should load lazily #26933
 9. https://github.com/dotCMS/core/issues/26926 : Add left indexes to inode.inode and identifier.id #26926
 10. https://github.com/dotCMS/core/issues/26970 : GraphQL Cache not working #26970
+11. https://github.com/dotCMS/core/issues/26931 : Add Cache when getting Versionable info #26931
+12. https://github.com/dotCMS/core/issues/26980: SiteSelector not showing all possible sites for limited user #26980
