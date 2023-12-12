@@ -46,6 +46,9 @@
             height="100%"></iframe>
     </div>
 </ng-container>
+<dot-edit-ema-navigation-bar
+    [items]="items"
+    [selectedKey]="items[0].key"></dot-edit-ema-navigation-bar>
 <ng-container *ngIf="dialogState$ | async as ds">
     <p-dialog
         #dialog

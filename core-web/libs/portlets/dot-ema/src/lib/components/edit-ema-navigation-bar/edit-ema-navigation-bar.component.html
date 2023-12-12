@@ -1,0 +1,25 @@
+<ul class="edit-ema-nav-bar">
+    <li
+        class="edit-ema-nav-bar__item"
+        *ngFor="let item of items"
+        [ngClass]="{ 'edit-ema-nav-bar__item--active': item.key === selected }"
+        (click)="onClick(item)"
+        data-testId="menuListItems">
+        <ng-container
+            [ngTemplateOutlet]="item.icon ? icon : iconURL"
+            [ngTemplateOutletContext]="{ item: item }">
+        </ng-container>
+        <span class="item__label">
+            {{ item.label }}
+        </span>
+    </li>
+</ul>
+
+<ng-template #icon let-item="item">
+    <i [class]="'pi ' + item.icon"></i>
+</ng-template>
+<ng-template #iconURL let-item="item">
+    <img
+        class="item__image"
+        [src]="item.key === selected ? item.iconURLActive ?? item.iconURL : item.iconURL" />
+</ng-template>

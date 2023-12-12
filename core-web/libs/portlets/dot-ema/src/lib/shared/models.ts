@@ -37,3 +37,11 @@ export interface ContainerActionPayload {
     contentletID: string;
     personaTag?: string;
 }
+
+export interface NavigationBarItem {
+    icon?: string;
+    iconURL?: string;
+    iconURLActive?: string;
+    label: string;
+    key: string;
+}

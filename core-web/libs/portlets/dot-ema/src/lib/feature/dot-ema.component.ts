@@ -29,12 +29,26 @@ import { DotMessagePipe, DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 import { EditEmaStore } from './store/dot-ema.store';
 
 import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaNavigationBarComponent } from '../components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { EditEmaPersonaSelectorComponent } from '../components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaToolbarComponent } from '../components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA, DEFAULT_URL, HOST, WINDOW } from '../shared/consts';
+import {
+    DEFAULT_LANGUAGE_ID,
+    DEFAULT_PERSONA,
+    DEFAULT_URL,
+    EXPERIMENTS_ACTIVE_ICON,
+    EXPERIMENTS_ICON,
+    HOST,
+    WINDOW
+} from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
-import { AddContentletPayload, DeleteContentletPayload, SetUrlPayload } from '../shared/models';
+import {
+    AddContentletPayload,
+    DeleteContentletPayload,
+    NavigationBarItem,
+    SetUrlPayload
+} from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
 
 @Component({
@@ -52,7 +66,8 @@ import { deleteContentletFromContainer, insertContentletInContainer } from '../u
         EditEmaPersonaSelectorComponent,
         ClipboardModule,
         ToastModule,
-        DotMessagePipe
+        DotMessagePipe,
+        EditEmaNavigationBarComponent
     ],
     providers: [
         EditEmaStore,
@@ -91,6 +106,40 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     readonly host = HOST;
 
     private savePayload: AddContentletPayload;
+
+    items: NavigationBarItem[] = [
+        {
+            icon: 'pi-file',
+            label: 'Content',
+            key: 'content'
+        },
+        {
+            icon: 'pi-table',
+            label: 'Layout',
+            key: 'layout'
+        },
+        {
+            icon: 'pi-sliders-h',
+            label: 'Rules',
+            key: 'rules'
+        },
+        {
+            iconURLActive: EXPERIMENTS_ACTIVE_ICON,
+            iconURL: EXPERIMENTS_ICON,
+            label: 'A/B',
+            key: 'experiments'
+        },
+        {
+            icon: 'pi-th-large',
+            label: 'Page Tools',
+            key: 'page-tools'
+        },
+        {
+            icon: 'pi-ellipsis-v',
+            label: 'Properties',
+            key: 'edit-content'
+        }
+    ];
 
     constructor(@Inject(WINDOW) private window: Window) {}
 
