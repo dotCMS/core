@@ -6,6 +6,7 @@ import { ActivatedRouteSnapshot, CanActivate, RouterStateSnapshot } from '@angul
 import { map } from 'rxjs/operators';
 
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
+import { DotSessionStorageService } from '@dotcms/data-access';
 
 import { DotMenuService } from '../dot-menu.service';
 import { DotRouterService } from '../dot-router/dot-router.service';
@@ -18,7 +19,8 @@ export class MenuGuardService implements CanActivate {
     constructor(
         private dotMenuService: DotMenuService,
         private dotRouterService: DotRouterService,
-        private dotNavigationService: DotNavigationService
+        private dotNavigationService: DotNavigationService,
+        private dotSessionStorageService: DotSessionStorageService
     ) {}
 
     canActivate(_route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
@@ -45,6 +47,7 @@ export class MenuGuardService implements CanActivate {
         return this.dotMenuService.isPortletInMenu(id, checkJSPPortlet).pipe(
             map((isValidPortlet) => {
                 if (!isValidPortlet) {
+                    this.dotSessionStorageService.removeVariantId();
                     this.dotNavigationService.goToFirstPortlet();
                 }
 

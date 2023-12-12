@@ -1,8 +1,13 @@
-import { Observable } from 'rxjs';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    inject,
+    OnInit,
+    Output
+} from '@angular/core';
 
-import { Component, EventEmitter, Output, OnInit } from '@angular/core';
-
-import { AiContentService } from '../../shared/services/ai-content/ai-content.service';
+import { DotMessageService } from '@dotcms/data-access';
 
 interface ActionOption {
     label: string;
@@ -20,32 +25,31 @@ export enum ACTIONS {
 @Component({
     selector: 'dot-ai-content-actions',
     templateUrl: './ai-content-actions.component.html',
-    styleUrls: ['./ai-content-actions.component.scss']
+    styleUrls: ['./ai-content-actions.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AIContentActionsComponent implements OnInit {
     @Output() actionEmitter = new EventEmitter<ACTIONS>();
-
     actionOptions!: ActionOption[];
     tooltipContent = 'Describe the size, color palette, style, mood, etc.';
-
-    constructor(private aiContentService: AiContentService) {}
+    private dotMessageService: DotMessageService = inject(DotMessageService);
 
     ngOnInit() {
         this.actionOptions = [
             {
-                label: 'Accept',
+                label: this.dotMessageService.get('block-editor.common.accept'),
                 icon: 'pi pi-check',
                 callback: () => this.emitAction(ACTIONS.ACCEPT),
                 selectedOption: true
             },
             {
-                label: 'Regenerate',
+                label: this.dotMessageService.get('block-editor.common.regenerate'),
                 icon: 'pi pi-sync',
                 callback: () => this.emitAction(ACTIONS.REGENERATE),
                 selectedOption: false
             },
             {
-                label: 'Delete',
+                label: this.dotMessageService.get('block-editor.common.delete'),
                 icon: 'pi pi-trash',
                 callback: () => this.emitAction(ACTIONS.DELETE),
                 selectedOption: false
@@ -55,13 +59,5 @@ export class AIContentActionsComponent implements OnInit {
 
     private emitAction(action: ACTIONS) {
         this.actionEmitter.emit(action);
-    }
-
-    getLatestContent(): string {
-        return this.aiContentService.getLatestContent();
-    }
-
-    getNewContent(contentType: string): Observable<string> {
-        return this.aiContentService.getNewContent(contentType);
     }
 }

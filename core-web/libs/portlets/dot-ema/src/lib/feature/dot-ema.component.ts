@@ -1,6 +1,7 @@
 import { Subject, fromEvent } from 'rxjs';
 
-import { AsyncPipe, NgFor, NgIf } from '@angular/common';
+import { ClipboardModule } from '@angular/cdk/clipboard';
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -14,27 +15,52 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { ToastModule } from 'primeng/toast';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
+import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotPersona } from '@dotcms/dotcms-models';
+import { DotMessagePipe, DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaStore } from './store/dot-ema.store';
 
+import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaPersonaSelectorComponent } from '../components/edit-ema-persona-selector/edit-ema-persona-selector.component';
+import { EditEmaToolbarComponent } from '../components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { WINDOW } from '../shared/consts';
+import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA, DEFAULT_URL, HOST, WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
-import { AddContentletPayload } from '../shared/models';
+import { AddContentletPayload, DeleteContentletPayload, SetUrlPayload } from '../shared/models';
+import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
 
 @Component({
     selector: 'dot-ema',
     standalone: true,
-    imports: [NgFor, NgIf, AsyncPipe, FormsModule, SafeUrlPipe, DialogModule, DotSpinnerModule],
+    imports: [
+        CommonModule,
+        FormsModule,
+        SafeUrlPipe,
+        DialogModule,
+        DotSpinnerModule,
+        ConfirmDialogModule,
+        EditEmaToolbarComponent,
+        EmaLanguageSelectorComponent,
+        EditEmaPersonaSelectorComponent,
+        ClipboardModule,
+        ToastModule,
+        DotMessagePipe
+    ],
     providers: [
         EditEmaStore,
         DotPageApiService,
+        ConfirmationService,
+        DotLanguagesService,
+        DotPersonalizeService,
+        MessageService,
         {
             provide: WINDOW,
             useValue: window
@@ -47,54 +73,33 @@ import { AddContentletPayload } from '../shared/models';
 export class DotEmaComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
+    @ViewChild('personaSelector') personaSelector!: EditEmaPersonaSelectorComponent;
 
     readonly destroy$ = new Subject<boolean>();
-
-    languages = [
-        {
-            name: 'English',
-            value: '1'
-        },
-        {
-            name: 'Spanish',
-            value: '2'
-        }
-    ];
 
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
     private readonly store = inject(EditEmaStore);
-    private readonly pageApi = inject(DotPageApiService);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly confirmationService = inject(ConfirmationService);
+    private readonly personalizeService = inject(DotPersonalizeService);
+    private readonly messageService = inject(MessageService);
+
+    readonly dialogState$ = this.store.dialogState$;
+    readonly editorState$ = this.store.editorState$;
+
+    readonly host = HOST;
 
     private savePayload: AddContentletPayload;
-
-    readonly host = 'http://localhost:3000';
-    readonly vm$ = this.store.vm$;
 
     constructor(@Inject(WINDOW) private window: Window) {}
 
     ngOnInit(): void {
-        this.route.queryParams.subscribe(({ language_id, url }: Params) => {
-            const queryParams = {};
-
-            if (!language_id) {
-                queryParams['language_id'] = '1';
-            }
-
-            if (!url) {
-                queryParams['url'] = 'index';
-            }
-
-            if (Object.keys(queryParams).length > 0) {
-                this.router.navigate([], {
-                    queryParams,
-                    queryParamsHandling: 'merge'
-                });
-            }
-
+        this.route.queryParams.subscribe((queryParams: Params) => {
             this.store.load({
-                language_id: language_id || '1',
-                url: url || 'index'
+                language_id: queryParams['language_id'] ?? DEFAULT_LANGUAGE_ID,
+                url: queryParams['url'] ?? DEFAULT_URL,
+                persona_id: queryParams['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier
             });
         });
 
@@ -130,36 +135,77 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Updates store value and navigates with updated query parameters on select element change event.
-     *
-     * @param {Event} e
-     * @memberof DotEmaComponent
-     */
-    onChange(e: Event) {
-        const name = (e.target as HTMLSelectElement).name;
-        const value = (e.target as HTMLSelectElement).value;
-
-        switch (name) {
-            case 'language_id':
-                this.store.setLanguage(value);
-                break;
-        }
-
-        this.router.navigate([], {
-            queryParams: {
-                [name]: value
-            },
-            queryParamsHandling: 'merge'
-        });
-    }
-
-    /**
      * Handle the dialog close event
      *
      * @memberof DotEmaComponent
      */
     resetDialogIframeData() {
         this.store.resetDialog();
+    }
+
+    /**
+     * Handle the language selection
+     *
+     * @param {number} language_id
+     * @memberof DotEmaComponent
+     */
+    onLanguageSelected(language_id: number) {
+        this.router.navigate([], {
+            queryParams: {
+                language_id
+            },
+            queryParamsHandling: 'merge'
+        });
+    }
+
+    /**
+     * Handle the persona selection
+     *
+     * @param {DotPersona} persona
+     * @memberof DotEmaComponent
+     */
+    onPersonaSelected(persona: DotPersona & { pageID: string }) {
+        if (persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized) {
+            this.router.navigate([], {
+                queryParams: {
+                    'com.dotmarketing.persona.id': persona.identifier
+                },
+                queryParamsHandling: 'merge'
+            });
+        } else {
+            this.confirmationService.confirm({
+                header: this.dotMessageService.get('editpage.personalization.confirm.header'),
+                message: this.dotMessageService.get(
+                    'editpage.personalization.confirm.message',
+                    persona.name
+                ),
+                acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
+                rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+                accept: () => {
+                    this.personalizeService
+                        .personalized(persona.pageID, persona.keyTag)
+                        .subscribe(() => {
+                            this.router.navigate([], {
+                                queryParams: {
+                                    'com.dotmarketing.persona.id': persona.identifier
+                                },
+                                queryParamsHandling: 'merge'
+                            });
+                        }); // This does a take 1 under the hood
+                },
+                reject: () => {
+                    this.personaSelector.resetValue();
+                }
+            });
+        }
+    }
+
+    triggerCopyToast() {
+        this.messageService.add({
+            severity: 'success',
+            summary: this.dotMessageService.get('Copied'),
+            life: 3000
+        });
     }
 
     /**
@@ -177,12 +223,20 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                 /* */
             },
             [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
-                this.store.savePage({
-                    ...this.savePayload,
+                const pageContainers = insertContentletInContainer({
+                    pageContainers: this.savePayload.pageContainers,
+                    container: this.savePayload.container,
                     contentletID: detail.data.identifier,
+                    personaTag: this.savePayload.personaTag
+                });
+
+                this.store.savePage({
+                    pageContainers,
+                    pageID: this.savePayload.pageID,
                     whenSaved: () => {
                         this.resetDialogIframeData();
                         this.reloadIframe();
+                        this.savePayload = undefined;
                     }
                 }); // Save when selected
             },
@@ -227,6 +281,48 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                 });
 
                 this.savePayload = payload;
+            },
+            [CUSTOMER_ACTIONS.DELETE_CONTENTLET]: () => {
+                const { pageContainers, container, contentletId, pageID, personaTag } =
+                    data.payload as DeleteContentletPayload;
+
+                const newPageContainers = deleteContentletFromContainer({
+                    pageContainers: pageContainers,
+                    container: container,
+                    contentletID: contentletId,
+                    personaTag
+                });
+
+                this.confirmationService.confirm({
+                    header: this.dotMessageService.get(
+                        'editpage.content.contentlet.remove.confirmation_message.header'
+                    ),
+                    message: this.dotMessageService.get(
+                        'editpage.content.contentlet.remove.confirmation_message.message'
+                    ),
+                    acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
+                    rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+                    accept: () => {
+                        this.store.savePage({
+                            pageContainers: newPageContainers,
+                            pageID,
+                            whenSaved: () => {
+                                this.resetDialogIframeData();
+                                this.reloadIframe();
+                            }
+                        }); // Save when selected
+                    }
+                });
+            },
+            [CUSTOMER_ACTIONS.SET_URL]: () => {
+                const payload = <SetUrlPayload>data.payload;
+
+                this.router.navigate([], {
+                    queryParams: {
+                        url: payload.url
+                    },
+                    queryParamsHandling: 'merge'
+                });
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */

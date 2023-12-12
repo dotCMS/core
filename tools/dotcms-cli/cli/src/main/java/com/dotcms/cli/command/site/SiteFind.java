@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
 import com.dotcms.cli.common.Prompt;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -51,6 +52,9 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer>, 
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
+    @ConfigProperty(name = "site.pageSize", defaultValue = "25")
+    Integer pageSize;
+
     @Override
     public Integer call() {
 
@@ -68,7 +72,6 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer>, 
     private int list() {
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
 
-        final int pageSize = 10;
         int page = 1;
 
         while (true) {

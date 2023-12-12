@@ -80,6 +80,7 @@ public class DockerSecretDataSourceStrategyTest {
         dockerSecretsMap.put("connection_db_username", "username");
         dockerSecretsMap.put("connection_db_password", "password");
         dockerSecretsMap.put("connection_db_max_total", "60");
+        dockerSecretsMap.put("connection_db_connection_timeout", "5000");
         dockerSecretsMap.put("connection_db_max_idle", "10");
         dockerSecretsMap.put("connection_db_max_wait", "60000");
         dockerSecretsMap.put("connection_db_validation_query", "SELECT 1");
@@ -105,6 +106,8 @@ public class DockerSecretDataSourceStrategyTest {
         assertEquals(dockerSecretsMap.get("connection_db_password"), config.getPassword());
         assertEquals(Integer.parseInt(dockerSecretsMap.get("connection_db_max_total")),
                 config.getMaximumPoolSize());
+        assertEquals(Integer.parseInt(dockerSecretsMap.get("connection_db_connection_timeout")),
+                config.getConnectionTimeout());
         assertEquals(Integer.parseInt(dockerSecretsMap.get("connection_db_max_idle")) * 1000,
                 config.getIdleTimeout());
         assertEquals(Integer.parseInt(dockerSecretsMap.get("connection_db_max_wait")),

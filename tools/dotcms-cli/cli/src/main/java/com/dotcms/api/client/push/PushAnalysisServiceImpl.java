@@ -1,9 +1,11 @@
 package com.dotcms.api.client.push;
 
 import com.dotcms.api.client.MapperService;
+import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.cli.common.HiddenFileFilter;
 import com.dotcms.model.push.PushAction;
 import com.dotcms.model.push.PushAnalysisResult;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.arc.DefaultBean;
 import java.io.File;
 import java.util.ArrayList;
@@ -98,6 +100,7 @@ public class PushAnalysisServiceImpl implements PushAnalysisService {
 
                 var action = PushAction.NO_ACTION;
                 if (!comparator.contentEquals(localContent, matchingServerContent.get())) {
+                    logger.warn("Local file " + localFile + " has differences from server");
                     action = PushAction.UPDATE;
                 }
 

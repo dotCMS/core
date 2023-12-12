@@ -5,7 +5,7 @@ import static com.dotcms.common.AssetsUtils.buildRemoteAssetURL;
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.FolderAPI;
 import com.dotcms.api.SiteAPI;
-import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.asset.ByPathRequest;
 import com.dotcms.model.asset.FileUploadData;

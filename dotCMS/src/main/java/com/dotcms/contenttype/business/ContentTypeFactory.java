@@ -105,4 +105,9 @@ public interface ContentTypeFactory {
 	 */
 	void markForDeletion(ContentType type) throws DotDataException;
 
+	/**
+	 * Return the count of {@link ContentType} assigned to not SYSTEM_WORFLOW
+	 * @return
+	 */
+	long countContentTypeAssignedToNotSystemWorkflow() throws DotDataException;
 }

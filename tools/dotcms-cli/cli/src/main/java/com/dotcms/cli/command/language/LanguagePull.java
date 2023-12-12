@@ -5,6 +5,7 @@ import com.dotcms.api.client.pull.language.LanguageFetcher;
 import com.dotcms.api.client.pull.language.LanguagePullHandler;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPull;
+import com.dotcms.cli.common.FullPullOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PullMixin;
 import com.dotcms.common.WorkspaceManager;
@@ -49,7 +50,7 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
     static final String LANGUAGE_PULL_MIXIN = "languagePullMixin";
 
     @CommandLine.Mixin
-    PullMixin pullMixin;
+    FullPullOptionsMixin pullMixin;
 
     @CommandLine.Mixin(name = LANGUAGE_PULL_MIXIN)
     LanguagePullMixin languagePullMixin;
@@ -92,13 +93,15 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
             );
         }
 
-        // Execute the push
+        // Execute the pull
         pullService.pull(
-                languagesFolder,
                 PullOptions.builder().
+                        destination(languagesFolder).
                         contentKey(Optional.ofNullable(languagePullMixin.languageIdOrIso)).
                         outputFormat(pullMixin.inputOutputFormat().toString()).
                         isShortOutput(pullMixin.shortOutputOption().isShortOutput()).
+                        failFast(pullMixin.failFast).
+                        maxRetryAttempts(pullMixin.retryAttempts).
                         build(),
                 output,
                 languageProvider,

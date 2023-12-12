@@ -4,7 +4,7 @@ import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.MapperService;
-import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.cli.command.CommandTest;
 import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.common.WorkspaceManager;

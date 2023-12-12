@@ -43,7 +43,7 @@
         "pretty-quick": "pretty-quick",
         "prepare": "cd .. && node core-web/prepare.js",
         "test:dotcms-ui": "nx run dotcms-ui:test",
-        "test:dotcms": "nx run-many --target=test --projects=dotcms-ui,data-access,dotcdn",
+        "test:dotcms": "nx run-many --target=test --projects=dotcms-ui,portlets-dot-experiments-portlet,edit-content,dotcms-binary-field-builder,data-access,portlets-dot-experiments-data-access,template-builder,portlets-dot-ema,ui,dotcdn",
         "update": "nx migrate latest",
         "workspace-generator": "nx workspace-generator",
         "help": "nx help"

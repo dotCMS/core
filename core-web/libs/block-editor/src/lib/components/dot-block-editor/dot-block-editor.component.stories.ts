@@ -11,7 +11,7 @@ import { OrderListModule } from 'primeng/orderlist';
 
 import { debounceTime, delay, tap } from 'rxjs/operators';
 
-import { DotPropertiesService } from '@dotcms/data-access';
+import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 
 import { DotBlockEditorComponent } from './dot-block-editor.component';
 
@@ -24,9 +24,9 @@ import {
 } from '../../extensions';
 import { ContentletBlockComponent } from '../../nodes';
 import {
-    AiContentService,
     ASSET_MOCK,
     CONTENTLETS_MOCK,
+    DotAiService,
     DotLanguageService,
     DotUploadFileService,
     FileStatus,
@@ -34,7 +34,8 @@ import {
     SuggestionsComponent,
     SuggestionsService
 } from '../../shared';
-import { AiContentServiceMock } from '../../shared/services/ai-content/ai-content.service.mock';
+import { DotMessageServiceMock } from '../../shared/mocks/dot-message.service.mock';
+import { DotAiServiceMock } from '../../shared/services/dot-ai/dot-ai-service.mock';
 
 export default {
     title: 'Library/Block Editor'
@@ -192,9 +193,15 @@ export const primary = () => ({
                 }
             },
             {
-                provide: AiContentService,
+                provide: DotAiService,
+                useClass: process.env.USE_MIDDLEWARE === 'true' ? DotAiService : DotAiServiceMock
+            },
+            {
+                provide: DotMessageService,
                 useClass:
-                    process.env.USE_MIDDLEWARE === 'true' ? AiContentService : AiContentServiceMock
+                    process.env.USE_MIDDLEWARE === 'true'
+                        ? DotMessageService
+                        : DotMessageServiceMock
             }
         ],
         // We need these here because they are dynamically rendered

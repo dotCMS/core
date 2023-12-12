@@ -179,6 +179,11 @@ public class TempFileAPI {
       while ((read = inputStream.read(bytes)) != -1) {
         out.write(bytes, 0, read);
       }
+
+      if (dotTempFile.metadata == null && dotTempFile.file.exists()) {
+
+        return new DotTempFile(dotTempFile.id, dotTempFile.file);
+      }
       return dotTempFile;
     } catch (IOException e) {
       final String message = APILocator.getLanguageAPI().getStringKey(WebAPILocator.getLanguageWebAPI().getLanguage(request), "temp.file.max.file.size.error").replace("{0}", UtilMethods.prettyByteify(maxLength));
@@ -250,7 +255,7 @@ public class TempFileAPI {
               urlGetter.doOut(out);
       }
 
-      if (FileAsset.UNKNOWN_MIME_TYPE.equals(dotTempFile.mimeType) && dotTempFile.file.exists()) {
+      if (dotTempFile.metadata == null && dotTempFile.file.exists()) {
 
         return new DotTempFile(dotTempFile.id, dotTempFile.file);
       }

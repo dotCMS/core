@@ -4,7 +4,9 @@ import com.dotcms.api.client.pull.exception.PullException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.RecursiveAction;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.RecursiveTask;
 import org.jboss.logging.Logger;
 
 /**
@@ -12,7 +14,7 @@ import org.jboss.logging.Logger;
  *
  * @param <T> the type of content being pulled and processed
  */
-public class PullTask<T> extends RecursiveAction {
+public class PullTask<T> extends RecursiveTask<List<Exception>> {
 
     private final PullTaskParams<T> params;
 
@@ -29,7 +31,9 @@ public class PullTask<T> extends RecursiveAction {
      * Computes the contents to pull
      */
     @Override
-    protected void compute() {
+    protected List<Exception> compute() {
+
+        var errors = new ArrayList<Exception>();
 
         if (this.params.contents().size() <= THRESHOLD) {
 
@@ -37,6 +41,12 @@ public class PullTask<T> extends RecursiveAction {
             for (var content : this.params.contents()) {
                 try {
                     toDiskContent(content);
+                } catch (Exception e) {
+                    if (this.params.failFast()) {
+                        throw e;
+                    } else {
+                        errors.add(e);
+                    }
                 } finally {
                     this.params.progressBar().incrementStep();
                 }
@@ -60,11 +70,13 @@ public class PullTask<T> extends RecursiveAction {
             task1.fork();
 
             // Start and wait for the second subtask to finish
-            task2.compute();
+            errors.addAll(task2.compute());
 
             // Wait for the first subtask to finish
-            task1.join();
+            errors.addAll(task1.join());
         }
+
+        return errors;
     }
 
     /**

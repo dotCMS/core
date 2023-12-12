@@ -9,8 +9,7 @@
     (wasOpen)="iframeOverlayService.show()"
     (toggle)="toggleNotifications()"
     icon="pi pi-bell"
-    position="right"
->
+    position="right">
     <div class="toolbar-notifications">
         <div class="toolbar-notifications__heading">
             <h3 class="toolbar-notifications__title" id="dot-toolbar-notifications-title">
@@ -19,16 +18,15 @@
             <p-button
                 id="dot-toolbar-notifications-button-dismiss-all"
                 (click)="dismissAllNotifications()"
+                label="{{ 'notifications_clear_all' | dm }}"
                 icon="pi pi-trash"
-                styleClass="p-button-rounded p-button-text p-button-sm p-button-danger"
-            ></p-button>
+                styleClass="p-button-rounded p-button-text p-button-sm p-button-primary"></p-button>
         </div>
         <div class="toolbar-notifications__content" id="dot-toolbar-notifications-content">
             <dot-notifications-list
                 id="dot-notifications-list"
                 [notifications]="notifications"
-                (dismissNotification)="onDismissNotification($event)"
-            ></dot-notifications-list>
+                (dismissNotification)="onDismissNotification($event)"></dot-notifications-list>
         </div>
         <div class="toolbar-notifications__footer" id="dot-toolbar-notifications-footer">
             <button
@@ -38,8 +36,7 @@
                 (click)="loadMore()"
                 riple
                 pButton
-                label="{{ 'notifications_load_more' | dm }}"
-            ></button>
+                label="{{ 'notifications_load_more' | dm }}"></button>
         </div>
     </div>
 </dot-dropdown-component>
