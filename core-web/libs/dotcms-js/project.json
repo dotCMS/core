@@ -7,9 +7,6 @@
     "targets": {
         "lint": {
             "executor": "@nx/eslint:lint",
-            "options": {
-                "lintFilePatterns": ["libs/dotcms-js/src/**/*.ts", "libs/dotcms-js/src/**/*.html"]
-            },
             "outputs": ["{options.outputFile}"]
         },
         "test": {

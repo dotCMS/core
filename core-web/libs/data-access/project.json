@@ -14,10 +14,7 @@
             }
         },
         "lint": {
-            "executor": "@nx/eslint:lint",
-            "options": {
-                "lintFilePatterns": ["libs/data-access/**/*.ts", "libs/data-access/**/*.html"]
-            }
+            "executor": "@nx/eslint:lint"
         }
     },
     "tags": []

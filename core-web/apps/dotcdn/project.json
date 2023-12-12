@@ -83,9 +83,6 @@
         },
         "lint": {
             "executor": "@nx/eslint:lint",
-            "options": {
-                "lintFilePatterns": ["apps/dotcdn/src/**/*.ts", "apps/dotcdn/src/**/*.html"]
-            },
             "outputs": ["{options.outputFile}"]
         },
         "test": {

@@ -6,7 +6,7 @@
     "prefix": "dot",
     "targets": {
         "build": {
-            "executor": "@angular-devkit/build-angular:browser",
+            "executor": "@nx/angular:browser-esbuild",
             "options": {
                 "baseHref": "./",
                 "outputPath": "dist/apps/dotcms-ui",
@@ -113,9 +113,6 @@
         },
         "lint": {
             "executor": "@nx/eslint:lint",
-            "options": {
-                "lintFilePatterns": ["apps/dotcms-ui/src/**/*.ts", "apps/dotcms-ui/src/**/*.html"]
-            },
             "outputs": ["{options.outputFile}"]
         },
         "test": {

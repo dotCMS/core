@@ -6,7 +6,7 @@
     "prefix": "dotcms",
     "targets": {
         "build": {
-            "executor": "@angular-devkit/build-angular:browser",
+            "executor": "@nx/angular:browser-esbuild",
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "dist/apps/dotcms-binary-field-builder",
@@ -87,13 +87,7 @@
         },
         "lint": {
             "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"],
-            "options": {
-                "lintFilePatterns": [
-                    "apps/dotcms-binary-field-builder/**/*.ts",
-                    "apps/dotcms-binary-field-builder/**/*.html"
-                ]
-            }
+            "outputs": ["{options.outputFile}"]
         },
         "test": {
             "executor": "@nx/jest:jest",

@@ -19,9 +19,6 @@
         },
         "lint": {
             "executor": "@nx/eslint:lint",
-            "options": {
-                "lintFilePatterns": ["apps/dotcms-block-editor-e2e/**/*.{js,ts}"]
-            },
             "outputs": ["{options.outputFile}"]
         }
     },

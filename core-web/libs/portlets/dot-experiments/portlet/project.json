@@ -19,13 +19,7 @@
         },
         "lint": {
             "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"],
-            "options": {
-                "lintFilePatterns": [
-                    "libs/portlets/dot-experiments/portlet/**/*.ts",
-                    "libs/portlets/dot-experiments/portlet/**/*.html"
-                ]
-            }
+            "outputs": ["{options.outputFile}"]
         }
     },
     "tags": ["type:feature", "scope:dotcms-ui", "portlet:experiments"]

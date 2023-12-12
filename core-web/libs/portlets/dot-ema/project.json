@@ -14,13 +14,7 @@
         },
         "lint": {
             "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"],
-            "options": {
-                "lintFilePatterns": [
-                    "libs/portlets/dot-ema/**/*.ts",
-                    "libs/portlets/dot-ema/**/*.html"
-                ]
-            }
+            "outputs": ["{options.outputFile}"]
         }
     },
     "tags": []

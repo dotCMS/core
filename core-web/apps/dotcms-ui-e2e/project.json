@@ -19,9 +19,6 @@
         },
         "lint": {
             "executor": "@nx/eslint:lint",
-            "options": {
-                "lintFilePatterns": ["apps/dotcms-ui-e2e/**/*.{js,ts}"]
-            },
             "outputs": ["{options.outputFile}"]
         }
     },

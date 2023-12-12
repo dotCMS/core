@@ -7,12 +7,6 @@
     "targets": {
         "lint": {
             "executor": "@nx/eslint:lint",
-            "options": {
-                "lintFilePatterns": [
-                    "libs/dot-layout-grid/src/**/*.ts",
-                    "libs/dot-layout-grid/src/**/*.html"
-                ]
-            },
             "outputs": ["{options.outputFile}"]
         },
         "test": {

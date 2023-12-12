@@ -6,7 +6,7 @@
     "prefix": "dotcms",
     "targets": {
         "build": {
-            "executor": "@angular-devkit/build-angular:browser",
+            "executor": "@nx/angular:browser-esbuild",
             "options": {
                 "outputPath": "dist/apps/dotcms-block-editor",
                 "index": "apps/dotcms-block-editor/src/index.html",
@@ -93,12 +93,6 @@
         },
         "lint": {
             "executor": "@nx/eslint:lint",
-            "options": {
-                "lintFilePatterns": [
-                    "apps/dotcms-block-editor/src/**/*.ts",
-                    "apps/dotcms-block-editor/src/**/*.html"
-                ]
-            },
             "outputs": ["{options.outputFile}"]
         },
         "test": {
