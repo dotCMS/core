@@ -50,8 +50,18 @@
 .edit-ema-nav-bar__item--active {
     background-color: $white;
     border: 1px solid $color-palette-primary-300;
-    border-left: 1px solid $white;
-    width: 81px; // This makes the illusion of blend with the background because it covers the border of the container
+    border-left: none;
+    position: relative;
+
+    &::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        margin-left: -1px;
+        width: 1px;
+        height: 100%;
+        background-color: $white;
+    }
 
     .pi,
     .item__label {
