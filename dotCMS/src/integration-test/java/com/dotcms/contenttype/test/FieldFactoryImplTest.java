@@ -98,7 +98,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 				new TestCaseVelSuggestion("OWNER", Contentlet.OWNER_KEY.toLowerCase(), DateField.class),
 				new TestCaseVelSuggestion("ModUser", Contentlet.MOD_USER_KEY.toLowerCase(), FileField.class ),
 				new TestCaseVelSuggestion("ArchivED", Contentlet.ARCHIVED_KEY.toLowerCase(), DateTimeField.class),
-				new TestCaseVelSuggestion("sortOrder", Contentlet.SORT_ORDER_KEY.toLowerCase(), TimeField.class),
+				new TestCaseVelSuggestion("inode", Contentlet.INODE_KEY.toLowerCase(), TimeField.class),
 				new TestCaseVelSuggestion("BaseType", Contentlet.BASE_TYPE_KEY.toLowerCase(), WysiwygField.class),
 
 		};
@@ -869,9 +869,9 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 						FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("VelVar" + System.currentTimeMillis())
 				.owner(user.getUserId()).build());
 
-		final String fieldVarName = "Host";
+		final String fieldVarName = "Identifier";
 		//Create Text Fields
-		final Field field = FieldBuilder.builder(TextField.class).name("title").variable("title")
+		final Field field = FieldBuilder.builder(TextField.class).name(fieldVarName).variable(fieldVarName)
 				.contentTypeId(ctTest.id()).dataType(DataTypes.TEXT).indexed(true).build();
 
 		contentTypeFieldAPI.save(field, user);
