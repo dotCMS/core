@@ -8,11 +8,15 @@ import {
     OnInit,
     ViewChild
 } from '@angular/core';
-import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 
 import { filter, takeUntil } from 'rxjs/operators';
 
-import { AiContentPromptState, AiContentPromptStore } from './store/ai-content-prompt.store';
+import {
+    AiContentPromptState,
+    AiContentPromptStatus,
+    AiContentPromptStore
+} from './store/ai-content-prompt.store';
 
 interface AIContentForm {
     textPrompt: FormControl<string>;
@@ -71,7 +75,7 @@ export class AIContentPromptComponent implements OnInit, OnDestroy {
      * @memberof AIContentPromptComponent
      */
     handleScape(event: KeyboardEvent): void {
-        this.aiContentPromptStore.setStatus('exit');
+        this.aiContentPromptStore.setStatus(AiContentPromptStatus.EXIT);
         event.stopPropagation();
     }
 }

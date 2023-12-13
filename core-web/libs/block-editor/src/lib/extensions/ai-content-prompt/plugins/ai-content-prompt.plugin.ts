@@ -17,7 +17,11 @@ import {
     AI_CONTENT_PROMPT_PLUGIN_KEY,
     DOT_AI_TEXT_CONTENT_KEY
 } from '../ai-content-prompt.extension';
-import { AiContentPromptState, AiContentPromptStore } from '../store/ai-content-prompt.store';
+import {
+    AiContentPromptState,
+    AiContentPromptStatus,
+    AiContentPromptStore
+} from '../store/ai-content-prompt.store';
 import { TIPPY_OPTIONS } from '../utils';
 
 interface AIContentPromptProps {
@@ -29,7 +33,7 @@ interface AIContentPromptProps {
 }
 
 interface PluginState {
-    open: boolean;
+    aIContentPromptOpen: boolean;
 }
 
 export type AIContentPromptViewProps = AIContentPromptProps & {
@@ -164,15 +168,20 @@ export class AIContentPromptView {
 
     update(view: EditorView, prevState?: EditorState) {
         const next = this.pluginKey?.getState(view.state);
-        const prev = prevState ? this.pluginKey?.getState(prevState) : { open: false };
+        const prev = prevState
+            ? this.pluginKey?.getState(prevState)
+            : { aIContentPromptOpen: false };
 
-        if (next?.open === prev?.open) {
+        if (next?.aIContentPromptOpen === prev?.aIContentPromptOpen) {
             return;
         }
 
-        next.open
+        next.aIContentPromptOpen
             ? this.show()
-            : this.hide(this.storeSate.status === 'open' || this.storeSate.status === 'loaded');
+            : this.hide(
+                  this.storeSate.status === AiContentPromptStatus.OPEN ||
+                      this.storeSate.status === AiContentPromptStatus.LOADED
+              );
     }
 
     createTooltip() {
@@ -217,7 +226,7 @@ export class AIContentPromptView {
         this.manageClickListener(true);
         this.editor.setEditable(false);
         this.tippy?.show();
-        this.componentStore.setStatus('open');
+        this.componentStore.setStatus(AiContentPromptStatus.OPEN);
     }
 
     /**
@@ -232,7 +241,7 @@ export class AIContentPromptView {
 
         this.editor.view.focus();
         if (notifyStore) {
-            this.componentStore.setStatus('close');
+            this.componentStore.setStatus(AiContentPromptStatus.CLOSE);
         }
 
         this.manageClickListener(false);
@@ -250,7 +259,10 @@ export class AIContentPromptView {
      * and not in a loading state, this function hides the associated Tippy tooltip.
      */
     handleClick(): void {
-        if (this.storeSate.status === 'open' || this.storeSate.status === 'loaded') {
+        if (
+            this.storeSate.status === AiContentPromptStatus.OPEN ||
+            this.storeSate.status === AiContentPromptStatus.LOADED
+        ) {
             this.tippy.hide();
         }
     }
@@ -275,7 +287,7 @@ export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
         state: {
             init(): PluginState {
                 return {
-                    open: false
+                    aIContentPromptOpen: false
                 };
             },
 
@@ -284,11 +296,12 @@ export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
                 value: PluginState,
                 oldState: EditorState
             ): PluginState {
-                const { open } = transaction.getMeta(AI_CONTENT_PROMPT_PLUGIN_KEY) || {};
+                const { aIContentPromptOpen } =
+                    transaction.getMeta(AI_CONTENT_PROMPT_PLUGIN_KEY) || {};
                 const state = AI_CONTENT_PROMPT_PLUGIN_KEY.getState(oldState);
 
-                if (typeof open === 'boolean') {
-                    return { open };
+                if (typeof aIContentPromptOpen === 'boolean') {
+                    return { aIContentPromptOpen };
                 }
 
                 // keep the old state in case we do not receive a new one.
