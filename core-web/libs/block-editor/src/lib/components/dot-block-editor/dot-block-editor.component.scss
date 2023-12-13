@@ -284,8 +284,8 @@
                 justify-content: center;
                 align-items: center;
                 min-width: 100%;
-                padding: 0.5rem;
-                border-radius: 0.5rem;
+                padding: $spacing-1;
+                border-radius: $spacing-1;
                 border: 1px solid $color-palette-gray-400;
                 color: $color-palette-primary;
             }
