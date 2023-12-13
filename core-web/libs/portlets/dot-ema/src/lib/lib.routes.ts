@@ -1,10 +1,6 @@
 import { Route } from '@angular/router';
 
 import { DotEmaComponent } from './dot-ema-shell/dot-ema.component';
-import { EditEmaEditorComponent } from './edit-ema-editor/edit-ema-editor.component';
-import { EditEmaExperimentsComponent } from './edit-ema-experiments/edit-ema-experiments.component';
-import { EditEmaLayoutComponent } from './edit-ema-layout/edit-ema-layout.component';
-import { EditEmaRulesComponent } from './edit-ema-rules/edit-ema-rules.component';
 
 export const DotEmaRoutes: Route[] = [
     {
@@ -14,19 +10,31 @@ export const DotEmaRoutes: Route[] = [
         children: [
             {
                 path: 'content',
-                component: EditEmaEditorComponent
+                loadComponent: () =>
+                    import('./edit-ema-editor/edit-ema-editor.component').then(
+                        (mod) => mod.EditEmaEditorComponent
+                    )
             },
             {
                 path: 'layout',
-                component: EditEmaLayoutComponent
+                loadComponent: () =>
+                    import('./edit-ema-layout/edit-ema-layout.component').then(
+                        (mod) => mod.EditEmaLayoutComponent
+                    )
             },
             {
                 path: 'rules',
-                component: EditEmaRulesComponent
+                loadComponent: () =>
+                    import('./edit-ema-rules/edit-ema-rules.component').then(
+                        (mod) => mod.EditEmaRulesComponent
+                    )
             },
             {
                 path: 'experiments',
-                component: EditEmaExperimentsComponent
+                loadComponent: () =>
+                    import('./edit-ema-experiments/edit-ema-experiments.component').then(
+                        (mod) => mod.EditEmaExperimentsComponent
+                    )
             },
             {
                 path: '**',
