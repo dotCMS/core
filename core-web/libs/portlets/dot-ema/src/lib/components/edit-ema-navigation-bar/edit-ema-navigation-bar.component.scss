@@ -12,49 +12,49 @@
     height: 100%;
     background-color: $color-palette-primary-100;
     border-left: 1px solid $color-palette-primary-300;
+}
 
-    .edit-ema-nav-bar__item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        height: 88px;
-        width: 100%;
-        gap: $spacing-0;
-        padding: 0 $spacing-0;
-        text-decoration: none;
-        color: $black;
+.edit-ema-nav-bar__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    height: 88px;
+    width: 100%;
+    gap: $spacing-0;
+    padding: 0 $spacing-0;
+    text-decoration: none;
+    color: $black;
 
-        .pi {
-            font-size: $font-size-xl;
-            color: $color-palette-gray-800;
-        }
-
-        .item__image {
-            -webkit-user-drag: none;
-            user-select: none;
-            -moz-user-select: none;
-            -webkit-user-select: none;
-            -ms-user-select: none;
-        }
-
-        .item__label {
-            text-align: center;
-            text-wrap: wrap;
-            font-size: $font-size-sm;
-        }
+    .pi {
+        font-size: $font-size-xl;
+        color: $color-palette-gray-800;
     }
+}
 
-    .edit-ema-nav-bar__item--active {
-        background-color: $white;
-        border: 1px solid $color-palette-primary-300;
-        border-left: 1px solid $white;
-        width: 81px; // This makes the illusion of blend with the background because it covers the border of the container
+.item__image {
+    -webkit-user-drag: none;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+}
 
-        .pi,
-        .item__label {
-            color: $color-palette-primary-500;
-        }
+.item__label {
+    text-align: center;
+    text-wrap: wrap;
+    font-size: $font-size-sm;
+}
+
+.edit-ema-nav-bar__item--active {
+    background-color: $white;
+    border: 1px solid $color-palette-primary-300;
+    border-left: 1px solid $white;
+    width: 81px; // This makes the illusion of blend with the background because it covers the border of the container
+
+    .pi,
+    .item__label {
+        color: $color-palette-primary-500;
     }
 }
