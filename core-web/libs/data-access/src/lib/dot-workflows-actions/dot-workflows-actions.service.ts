@@ -1,10 +1,10 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSWorkflowAction, DotCMSWorkflow } from '@dotcms/dotcms-models';
 
 export enum DotRenderMode {
@@ -14,7 +14,8 @@ export enum DotRenderMode {
 
 @Injectable()
 export class DotWorkflowsActionsService {
-    constructor(private coreWebService: CoreWebService) {}
+    private readonly BASE_URL = '/api/v1/workflow';
+    private readonly httpClient = inject(HttpClient);
 
     /**
      * Return a list of actions based on the workflows received
@@ -24,13 +25,9 @@ export class DotWorkflowsActionsService {
      * @memberof DotWorkflowsActionsService
      */
     getByWorkflows(workflows: DotCMSWorkflow[] = []): Observable<DotCMSWorkflowAction[]> {
-        return this.coreWebService
-            .requestView({
-                method: 'POST',
-                url: '/api/v1/workflow/schemes/actions/NEW',
-                body: {
-                    schemes: workflows.map(this.getWorkFlowId)
-                }
+        return this.httpClient
+            .post(`${this.BASE_URL}/schemes/actions/NEW`, {
+                schemes: workflows.map(this.getWorkFlowId)
             })
             .pipe(pluck('entity'));
     }
@@ -46,10 +43,8 @@ export class DotWorkflowsActionsService {
     getByInode(inode: string, renderMode?: DotRenderMode): Observable<DotCMSWorkflowAction[]> {
         const renderModeQuery = renderMode ? `?renderMode=${renderMode}` : '';
 
-        return this.coreWebService
-            .requestView({
-                url: `v1/workflow/contentlet/${inode}/actions${renderModeQuery}`
-            })
+        return this.httpClient
+            .get(`${this.BASE_URL}/contentlet/${inode}/actions${renderModeQuery}`)
             .pipe(pluck('entity'));
     }
 

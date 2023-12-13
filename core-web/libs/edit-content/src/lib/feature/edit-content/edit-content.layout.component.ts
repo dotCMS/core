@@ -5,8 +5,6 @@ import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/cor
 import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
-import { SplitButtonModule } from 'primeng/splitbutton';
-import { ToolbarModule } from 'primeng/toolbar';
 
 import { map, switchMap } from 'rxjs/operators';
 
@@ -14,6 +12,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentAsideComponent } from '../../components/dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
+import { DotEditContentToolbarComponent } from '../../components/dot-edit-content-toolbar/dot-edit-content-toolbar.component';
 import { EditContentFormData } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 
@@ -22,14 +21,13 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
     standalone: true,
     imports: [
         NgIf,
+        JsonPipe,
         AsyncPipe,
         DotMessagePipe,
         DotEditContentFormComponent,
         ButtonModule,
         DotEditContentAsideComponent,
-        JsonPipe,
-        ToolbarModule,
-        SplitButtonModule
+        DotEditContentToolbarComponent
     ],
     templateUrl: './edit-content.layout.component.html',
     styleUrls: ['./edit-content.layout.component.scss'],

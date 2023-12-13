@@ -23,6 +23,7 @@ export interface DotCMSWorkflowAction {
     schemeId: string;
     showOn: string[];
     actionInputs: DotCMSWorkflowInput[];
+    metadata?: Record<string, string>;
 }
 
 export enum DotCMSSystemActionType {
