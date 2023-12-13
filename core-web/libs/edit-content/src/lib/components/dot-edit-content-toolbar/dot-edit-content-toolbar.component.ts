@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -8,11 +8,13 @@ import {
     inject
 } from '@angular/core';
 
-import { MenuItem } from 'primeng/api';
+import { MenuItem, MessageService } from 'primeng/api';
 import { SplitButtonModule } from 'primeng/splitbutton';
+import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import {
+    DotMessageService,
     DotRenderMode,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService
@@ -22,8 +24,8 @@ import { DotCMSActionSubtype, DotCMSWorkflowAction } from '@dotcms/dotcms-models
 @Component({
     selector: 'dot-edit-content-toolbar',
     standalone: true,
-    imports: [CommonModule, ToolbarModule, SplitButtonModule],
-    providers: [DotWorkflowsActionsService],
+    imports: [CommonModule, ToolbarModule, SplitButtonModule, ToastModule],
+    providers: [DotWorkflowsActionsService, DotMessageService, MessageService],
     templateUrl: './dot-edit-content-toolbar.component.html',
     styleUrls: ['./dot-edit-content-toolbar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -33,9 +35,18 @@ export class DotEditContentToolbarComponent implements OnInit {
     @Input() formValue: Record<string, string>;
 
     private _grouppedActions: MenuItem[][] = [];
+
+    // Angular Build-in services
+    private readonly cdRef = inject(ChangeDetectorRef);
+    private readonly location = inject(Location);
+
+    // PrimeNG services
+    private readonly messageService = inject(MessageService);
+
+    // DotCMS services
     private readonly workflowActionService = inject(DotWorkflowsActionsService);
     private readonly WorkflowActionsFireService = inject(DotWorkflowActionsFireService);
-    private readonly cdRef = inject(ChangeDetectorRef);
+    private readonly dotMessageService = inject(DotMessageService);
 
     get groupedActions(): MenuItem[][] {
         return this._grouppedActions;
@@ -75,6 +86,23 @@ export class DotEditContentToolbarComponent implements OnInit {
             contentlet: {
                 ...this.formValue
             }
-        }).subscribe();
+        }).subscribe(
+            (contentlet) => {
+                this.inode = contentlet.inode;
+                this.location.replaceState(`/content/${this.inode}`); // Replace the URL with the new inode without reloading the page
+                this.messageService.add({
+                    severity: 'success',
+                    summary: this.dotMessageService.get('dot.common.message.success'),
+                    detail: action.name
+                });
+            },
+            (error) => {
+                this.messageService.add({
+                    severity: 'error',
+                    summary: this.dotMessageService.get('dot.common.message.error'),
+                    detail: error.message
+                });
+            }
+        );
     }
 }
