@@ -267,7 +267,7 @@ describe('EditEmaStore', () => {
             });
         });
 
-        it('should initialize editIframe properties', (done) => {
+        it('should initialize editAction properties', (done) => {
             spectator.service.initActionEdit({
                 inode: '123',
                 title: 'test'
@@ -292,6 +292,74 @@ describe('EditEmaStore', () => {
                     },
                     url: '',
                     dialogIframeURL: EDIT_CONTENTLET_URL + '123',
+                    dialogIframeLoading: true,
+                    dialogHeader: 'test',
+                    dialogVisible: true
+                });
+                done();
+            });
+        });
+
+        it('should initialize addAction properties', (done) => {
+            spectator.service.initActionAdd({
+                containerID: '123',
+                acceptTypes: 'test',
+                language_id: '1'
+            });
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state).toEqual({
+                    editor: {
+                        page: {
+                            title: '',
+                            identifier: ''
+                        },
+                        viewAs: {
+                            language: {
+                                id: 1,
+                                language: '',
+                                countryCode: '',
+                                languageCode: '',
+                                country: ''
+                            }
+                        }
+                    },
+                    url: '',
+                    dialogIframeURL:
+                        '/html/ng-contentlet-selector.jsp?ng=true&container_id=123&add=test&language_id=1',
+                    dialogIframeLoading: true,
+                    dialogHeader: 'Search Content',
+                    dialogVisible: true
+                });
+                done();
+            });
+        });
+
+        it('should initialize createAction properties', (done) => {
+            spectator.service.initActionCreate({
+                contentType: 'test',
+                url: 'some/really/long/url'
+            });
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state).toEqual({
+                    editor: {
+                        page: {
+                            title: '',
+                            identifier: ''
+                        },
+                        viewAs: {
+                            language: {
+                                id: 1,
+                                language: '',
+                                countryCode: '',
+                                languageCode: '',
+                                country: ''
+                            }
+                        }
+                    },
+                    url: '',
+                    dialogIframeURL: 'some/really/long/url',
                     dialogIframeLoading: true,
                     dialogHeader: 'test',
                     dialogVisible: true

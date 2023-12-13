@@ -4,7 +4,7 @@ import static javax.ws.rs.core.HttpHeaders.CONTENT_LENGTH;
 import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 
 import com.dotcms.analytics.helper.AnalyticsHelper;
-import com.dotcms.analytics.metrics.MetricsAPI;
+import com.dotcms.analytics.experience.metric.MetricsAPI;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.metrics.MetricsSenderSubmitter;
