@@ -99,8 +99,11 @@ export const ImageNode = Image.extend({
                     const { head } = selection;
                     const node = {
                         attrs: getImageAttr(attrs),
-                        type: ImageNode.name
+                        type: ImageNode.name,
+                        storage: { aiStatus: 'pending' }
                     };
+
+                    console.log('insertImage', position);
 
                     return chain()
                         .insertContentAt(position ?? head, node)

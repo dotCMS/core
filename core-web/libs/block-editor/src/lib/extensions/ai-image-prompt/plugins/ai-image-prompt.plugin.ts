@@ -10,6 +10,8 @@ import { filter, skip, takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
+import { findNodeByType } from '../../../shared';
+import { NodeTypes } from '../../bubble-menu/models';
 import { AIImagePromptComponent } from '../ai-image-prompt.component';
 import { AI_IMAGE_PROMPT_PLUGIN_KEY, DOT_AI_IMAGE_CONTENT_KEY } from '../ai-image-prompt.extension';
 import { DotAiImagePromptStore } from '../ai-image-prompt.store';
@@ -104,12 +106,34 @@ export class AIImagePromptView {
             .subscribe((contentlets) => {
                 const data = Object.values(contentlets[0])[0];
 
-                this.editor
-                    .chain()
-                    .deleteSelection()
-                    .insertImage(data)
-                    .openAIContentActions(DOT_AI_IMAGE_CONTENT_KEY)
-                    .run();
+                const loaderNode = findNodeByType(this.editor, NodeTypes.LOADER);
+
+                // this.editor.commands.deleteRange({
+                //     from: loaderNode.from,
+                //     to: loaderNode.to
+                // });
+
+                // this.editor.commands.setNodeSelection(loaderNode.from);
+                //
+                // this.editor
+                //     .chain()
+                //     .insertImage(data, loaderNode.from)
+                //     .openAIContentActions(DOT_AI_IMAGE_CONTENT_KEY)
+                //     .run();
+
+                // this.editor.commands.setNodeSelection(loaderNode.from);
+
+                console.log('loaderNode', loaderNode);
+
+                this.editor.commands.deleteRange({ from: loaderNode.from, to: loaderNode.to });
+                this.editor.commands.insertImage(data, loaderNode.from);
+                this.editor.commands.openAIPrompt();
+                //
+                // this.editor
+                //     .chain()
+                //     .insertImage(data, loaderNode.from)
+                //     .openAIContentActions(DOT_AI_IMAGE_CONTENT_KEY)
+                //     .run();
             });
     }
 

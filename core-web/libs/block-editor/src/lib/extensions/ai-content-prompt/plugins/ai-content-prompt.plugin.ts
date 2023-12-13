@@ -29,7 +29,7 @@ interface AIContentPromptProps {
 }
 
 interface PluginState {
-    open: boolean;
+    aiContentPromptOpen: boolean;
 }
 
 export type AIContentPromptViewProps = AIContentPromptProps & {
@@ -168,11 +168,15 @@ export class AIContentPromptView {
         const next = this.pluginKey?.getState(view.state);
         const prev = prevState ? this.pluginKey?.getState(prevState) : { open: false };
 
-        if (next?.open === prev?.open) {
-            this.tippy?.popperInstance?.forceUpdate();
+        if (next?.aiContentPromptOpen === prev?.aiContentPromptOpen) {
+            console.log('no change');
 
             return;
         }
+
+        console.log('next', next);
+        console.log('prev', prev);
+        console.log('update', next?.open, prev?.open);
 
         next.open
             ? this.show()
@@ -217,6 +221,7 @@ export class AIContentPromptView {
     }
 
     show() {
+        console.log('show');
         this.createTooltip();
         this.manageClickListener(true);
         this.editor.setEditable(false);
@@ -231,6 +236,7 @@ export class AIContentPromptView {
      * @param notifyStore
      */
     hide(notifyStore = true) {
+        console.log('hide');
         this.editor.setEditable(true);
 
         this.editor.view.focus();
@@ -253,6 +259,7 @@ export class AIContentPromptView {
      * and not in a loading state, this function hides the associated Tippy tooltip.
      */
     handleClick(): void {
+        console.log('handleClick', this.storeSate.status);
         if (this.storeSate.status === 'open' || this.storeSate.status === 'loaded') {
             this.tippy.hide();
         }
@@ -278,7 +285,7 @@ export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
         state: {
             init(): PluginState {
                 return {
-                    open: false
+                    aiContentPromptOpen: false
                 };
             },
 
@@ -287,15 +294,24 @@ export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
                 value: PluginState,
                 oldState: EditorState
             ): PluginState {
-                const { open } = transaction.getMeta(AI_CONTENT_PROMPT_PLUGIN_KEY) || {};
+                const { aiContentPromptOpen } =
+                    transaction.getMeta(AI_CONTENT_PROMPT_PLUGIN_KEY) || {};
                 const state = AI_CONTENT_PROMPT_PLUGIN_KEY.getState(oldState);
 
-                if (typeof open === 'boolean') {
-                    return { open };
+                console.log('aiContentPromptOpen', aiContentPromptOpen);
+
+                if (typeof aiContentPromptOpen === 'boolean') {
+                    return { aiContentPromptOpen };
                 }
 
-                // keep the old state in case we do not receive a new one.
-                return state || value;
+                console.log('value', value);
+                console.log('state', state);
+
+                state.aiContentPromptOpen = !!aiContentPromptOpen;
+
+                console.log('state changed', state);
+
+                return state;
             }
         }
     });
