@@ -5,22 +5,16 @@ import { Injectable } from '@angular/core';
 
 import { catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
 
-import { DotAiService } from '../../../shared';
+import { ComponentStatus } from '@dotcms/dotcms-models';
 
-export enum AiContentPromptStatus {
-    LOADING = 'loading',
-    LOADED = 'loaded',
-    OPEN = 'open',
-    EXIT = 'exit',
-    CLOSE = 'close'
-}
+import { DotAiService } from '../../../shared';
 
 export interface AiContentPromptState {
     prompt: string;
     content: string;
     acceptContent: boolean;
     deleteContent: boolean;
-    status: AiContentPromptStatus;
+    status: ComponentStatus;
 }
 
 @Injectable({
@@ -33,7 +27,7 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
             content: '',
             acceptContent: false,
             deleteContent: false,
-            status: AiContentPromptStatus.CLOSE
+            status: ComponentStatus.INIT
         });
     }
 
@@ -45,7 +39,7 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     readonly vm$ = this.select((state) => state);
 
     //Updaters
-    readonly setStatus = this.updater((state, status: AiContentPromptStatus) => ({
+    readonly setStatus = this.updater((state, status: ComponentStatus) => ({
         ...state,
         status
     }));
@@ -63,15 +57,13 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
     readonly generateContent = this.effect((prompt$: Observable<string>) => {
         return prompt$.pipe(
             switchMap((prompt) => {
-                this.patchState({ status: AiContentPromptStatus.LOADING, prompt });
+                this.patchState({ status: ComponentStatus.LOADING, prompt });
 
                 return this.dotAiService.generateContent(prompt).pipe(
-                    tap((content) =>
-                        this.patchState({ status: AiContentPromptStatus.LOADED, content })
-                    ),
+                    tap((content) => this.patchState({ status: ComponentStatus.LOADED, content })),
                     catchError(() => {
                         //TODO: Notify to handle error in the UI.
-                        this.patchState({ status: AiContentPromptStatus.LOADED, content: '' });
+                        this.patchState({ status: ComponentStatus.LOADED, content: '' });
 
                         return of(null);
                     })

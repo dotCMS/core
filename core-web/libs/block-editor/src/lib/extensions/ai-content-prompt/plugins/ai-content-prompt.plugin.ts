@@ -10,6 +10,8 @@ import { filter, skip, takeUntil, tap } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
+import { ComponentStatus } from '@dotcms/dotcms-models';
+
 import { DotTiptapNodeInformation, findNodeByType, replaceNodeWithContent } from '../../../shared';
 import { NodeTypes } from '../../bubble-menu/models';
 import { AIContentPromptComponent } from '../ai-content-prompt.component';
@@ -17,11 +19,7 @@ import {
     AI_CONTENT_PROMPT_PLUGIN_KEY,
     DOT_AI_TEXT_CONTENT_KEY
 } from '../ai-content-prompt.extension';
-import {
-    AiContentPromptState,
-    AiContentPromptStatus,
-    AiContentPromptStore
-} from '../store/ai-content-prompt.store';
+import { AiContentPromptState, AiContentPromptStore } from '../store/ai-content-prompt.store';
 import { TIPPY_OPTIONS } from '../utils';
 
 interface AIContentPromptProps {
@@ -132,9 +130,9 @@ export class AIContentPromptView {
          */
 
         this.componentStore.status$.pipe(skip(1), takeUntil(this.destroy$)).subscribe((status) => {
-            if (status === 'exit') {
+            if (status === ComponentStatus.INIT) {
                 this.tippy?.hide();
-            } else if (status === 'loading') {
+            } else if (status === ComponentStatus.LOADING) {
                 this.editor.commands.setLoadingAIContentNode(true);
             }
         });
@@ -179,8 +177,8 @@ export class AIContentPromptView {
         next.aIContentPromptOpen
             ? this.show()
             : this.hide(
-                  this.storeSate.status === AiContentPromptStatus.OPEN ||
-                      this.storeSate.status === AiContentPromptStatus.LOADED
+                  this.storeSate.status === ComponentStatus.IDLE ||
+                      this.storeSate.status === ComponentStatus.LOADED
               );
     }
 
@@ -226,7 +224,7 @@ export class AIContentPromptView {
         this.manageClickListener(true);
         this.editor.setEditable(false);
         this.tippy?.show();
-        this.componentStore.setStatus(AiContentPromptStatus.OPEN);
+        this.componentStore.setStatus(ComponentStatus.IDLE);
     }
 
     /**
@@ -241,7 +239,7 @@ export class AIContentPromptView {
 
         this.editor.view.focus();
         if (notifyStore) {
-            this.componentStore.setStatus(AiContentPromptStatus.CLOSE);
+            this.componentStore.setStatus(ComponentStatus.INIT);
         }
 
         this.manageClickListener(false);
@@ -260,8 +258,8 @@ export class AIContentPromptView {
      */
     handleClick(): void {
         if (
-            this.storeSate.status === AiContentPromptStatus.OPEN ||
-            this.storeSate.status === AiContentPromptStatus.LOADED
+            this.storeSate.status === ComponentStatus.IDLE ||
+            this.storeSate.status === ComponentStatus.LOADED
         ) {
             this.tippy.hide();
         }
