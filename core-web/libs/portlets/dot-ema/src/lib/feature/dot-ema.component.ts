@@ -240,8 +240,32 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                     }
                 }); // Save when selected
             },
-            [NG_CUSTOM_EVENTS.CONTENTLET_UPDATED]: () => {
-                this.reloadIframe();
+            [NG_CUSTOM_EVENTS.SAVE_CONTENTLET]: () => {
+                if (this.savePayload) {
+                    const pageContainers = insertContentletInContainer({
+                        pageContainers: this.savePayload.pageContainers,
+                        container: this.savePayload.container,
+                        contentletID: detail.payload.contentletIdentifier
+                    }); // This won't add anything if the contentlet is already on the container, so is safe to call it even when we just edited a contentlet
+
+                    this.store.savePage({
+                        pageContainers,
+                        pageID: this.savePayload.pageID,
+                        whenSaved: () => {
+                            this.resetDialogIframeData();
+                            this.reloadIframe();
+                            this.savePayload = undefined;
+                        }
+                    }); // Save when created
+                } else {
+                    this.reloadIframe(); // We still need to reload the iframe because the contentlet is not in the container yet
+                }
+            },
+            [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
+                this.store.initActionCreate({
+                    contentType: detail.data.contentType,
+                    url: detail.data.url
+                });
             }
         })[detail.name];
     }
@@ -277,7 +301,8 @@ export class DotEmaComponent implements OnInit, OnDestroy {
 
                 this.store.initActionAdd({
                     containerID: payload.container.identifier,
-                    acceptTypes: payload.container.acceptTypes ?? '*'
+                    acceptTypes: payload.container.acceptTypes ?? '*',
+                    language_id: payload.language_id
                 });
 
                 this.savePayload = payload;

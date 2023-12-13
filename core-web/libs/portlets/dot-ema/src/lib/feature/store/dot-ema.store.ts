@@ -187,13 +187,26 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     // This method is called when the user clicks on the edit button
     readonly initActionAdd = this.updater(
-        (state, payload: { containerID: string; acceptTypes: string }) => {
+        (state, payload: { containerID: string; acceptTypes: string; language_id: string }) => {
             return {
                 ...state,
                 dialogVisible: true,
                 dialogHeader: 'Search Content', // Does this need translation?
                 dialogIframeLoading: true,
                 dialogIframeURL: this.createAddContentletUrl(payload)
+            };
+        }
+    );
+
+    // This method is called when the user clicks on the edit button
+    readonly initActionCreate = this.updater(
+        (state, payload: { contentType: string; url: string }) => {
+            return {
+                ...state,
+                dialogVisible: true,
+                dialogHeader: payload.contentType,
+                dialogIframeLoading: true,
+                dialogIframeURL: payload.url
             };
         }
     );
@@ -220,15 +233,16 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      */
     private createAddContentletUrl({
         containerID,
-        acceptTypes
+        acceptTypes,
+        language_id
     }: {
         containerID: string;
         acceptTypes: string;
+        language_id: string;
     }): string {
-        return ADD_CONTENTLET_URL.replace('*CONTAINER_ID*', containerID).replace(
-            '*BASE_TYPES*',
-            acceptTypes
-        );
+        return ADD_CONTENTLET_URL.replace('*CONTAINER_ID*', containerID)
+            .replace('*BASE_TYPES*', acceptTypes)
+            .replace('*LANGUAGE_ID*', language_id);
     }
 
     private createPageURL({ url, language_id, persona_id }: DotPageApiParams): string {
