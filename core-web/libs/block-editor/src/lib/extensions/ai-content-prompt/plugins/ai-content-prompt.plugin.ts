@@ -127,19 +127,13 @@ export class AIContentPromptView {
          * template in ai-content-prompt.component.html
          */
 
-        this.componentStore.status$
-            .pipe(
-                skip(1),
-                takeUntil(this.destroy$),
-                filter((status) => status === 'exit')
-            )
-            .subscribe((status) => {
-                if (status === 'exit') {
-                    this.tippy?.hide();
-                } else if (status === 'loading') {
-                    this.editor.commands.setLoadingAIContentNode(true);
-                }
-            });
+        this.componentStore.status$.pipe(skip(1), takeUntil(this.destroy$)).subscribe((status) => {
+            if (status === 'exit') {
+                this.tippy?.hide();
+            } else if (status === 'loading') {
+                this.editor.commands.setLoadingAIContentNode(true);
+            }
+        });
 
         /**
          * Subscription to delete AI_CONTENT node.
@@ -173,8 +167,6 @@ export class AIContentPromptView {
         const prev = prevState ? this.pluginKey?.getState(prevState) : { open: false };
 
         if (next?.open === prev?.open) {
-            this.tippy?.popperInstance?.forceUpdate();
-
             return;
         }
 
@@ -235,6 +227,7 @@ export class AIContentPromptView {
      * @param notifyStore
      */
     hide(notifyStore = true) {
+        this.tippy?.hide();
         this.editor.setEditable(true);
 
         this.editor.view.focus();

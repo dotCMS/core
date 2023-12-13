@@ -158,7 +158,6 @@ export class AIContentActionsView {
 
         switch (pluginState.nodeType) {
             case DOT_AI_TEXT_CONTENT_KEY:
-                this.editor.commands.setLoadingAIContentNode(true);
                 this.aiContentPromptStore.reGenerateContent();
                 break;
 

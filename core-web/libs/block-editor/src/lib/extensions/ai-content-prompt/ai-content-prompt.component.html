@@ -6,7 +6,6 @@
                 [attr.disabled]="vm.status === 'loading' || null"
                 (keyup.escape)="handleScape($event)"
                 (keydown.escape)="$event.stopPropagation()"
-                autofocus
                 formControlName="textPrompt"
                 pInputText
                 placeholder="{{
