@@ -1,5 +1,8 @@
 package com.dotcms.cli.command.files;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.client.files.PushService;
@@ -7,12 +10,6 @@ import com.dotcms.cli.command.CommandTest;
 import com.dotcms.common.WorkspaceManager;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
-import org.junit.jupiter.api.*;
-import org.mockito.InjectMocks;
-import org.mockito.Mockito;
-import picocli.CommandLine;
-
-import javax.inject.Inject;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -23,9 +20,13 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collections;
 import java.util.UUID;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
+import javax.inject.Inject;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mockito;
+import picocli.CommandLine;
 
 @QuarkusTest
 @TestProfile(DotCMSITProfile.class)
@@ -75,6 +76,57 @@ class FilesPushCommandIT extends CommandTest {
             }
         } finally {
             deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * This method tests the behavior of pushing files with no specified path and a valid
+     * workspace.
+     *
+     * @throws IOException If an I/O error occurs.
+     */
+    @Test
+    void testPushNoPath() throws IOException {
+
+        // Create a workspace in the current directory
+        workspaceManager.getOrCreate();
+
+        final CommandLine commandLine = createCommand();
+
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(
+                    FilesCommand.NAME, FilesPush.NAME, "--dry-run"
+            );
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+        }
+    }
+
+    /**
+     * This method tests the behavior of pushing files with no specified path and an invalid
+     * workspace.
+     *
+     * @throws IOException If an I/O error occurs.
+     */
+    @Test
+    void testPushNoPathInvalidWorkspace() throws IOException {
+
+        // Cleaning up old traces of a possible workspace created in the current directory
+        // by other tests
+        var workspace = workspaceManager.findWorkspace();
+        if (workspace.isPresent()) {
+            workspaceManager.destroy(workspace.get());
+        }
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(
+                    FilesCommand.NAME, FilesPush.NAME
+            );
+            Assertions.assertEquals(CommandLine.ExitCode.USAGE, status);
         }
     }
 
