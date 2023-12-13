@@ -16,15 +16,15 @@ import {
     DotPersonalizeServiceMock
 } from '@dotcms/utils-testing';
 
+import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
-import { EditEmaStore } from '../../feature/store/dot-ema.store';
-import { DotPageApiService } from '../../services/dot-page-api.service';
-import { DEFAULT_PERSONA, WINDOW, HOST } from '../../shared/consts';
-import { NG_CUSTOM_EVENTS } from '../../shared/enums';
-import { AddContentletPayload } from '../../shared/models';
-import { EmaLanguageSelectorComponent } from '../edit-ema-language-selector/edit-ema-language-selector.component';
-import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/edit-ema-persona-selector.component';
+import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
+import { DotPageApiService } from '../services/dot-page-api.service';
+import { DEFAULT_PERSONA, WINDOW, HOST } from '../shared/consts';
+import { NG_CUSTOM_EVENTS } from '../shared/enums';
+import { AddContentletPayload } from '../shared/models';
 
 const messagesMock = {
     'editpage.content.contentlet.remove.confirmation_message.header': 'Deleting Content',
@@ -212,7 +212,7 @@ describe('EditEmaEditorComponent', () => {
 
                 jest.spyOn(router, 'navigate');
 
-                spectator.triggerEventHandler(EmaLanguageSelectorComponent, 'selected', 2);
+                spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 2);
                 spectator.detectChanges();
 
                 expect(router.navigate).toHaveBeenCalledWith([], {

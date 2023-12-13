@@ -3,7 +3,6 @@ import { SpectatorRouting, createRoutingFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -16,14 +15,6 @@ import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
-
-class ActivatedRouteMock {
-    snapshot = {
-        firstChild: {
-            url: [{ path: 'content', queryParams: { test: 'test' } }]
-        }
-    };
-}
 
 describe('DotEmaComponent', () => {
     let spectator: SpectatorRouting<DotEmaComponent>;
@@ -87,17 +78,12 @@ describe('DotEmaComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            providers: [
-                {
-                    provide: ActivatedRoute,
-                    useClass: ActivatedRouteMock
-                }
-            ]
-        });
+        spectator = createComponent();
     });
 
-    it('should exist', () => {
-        expect(spectator.component).toBeTruthy();
+    describe('DOM', () => {
+        it('should have a navigation bar', () => {
+            expect(spectator.query('dot-edit-ema-navigation-bar')).not.toBeNull();
+        });
     });
 });

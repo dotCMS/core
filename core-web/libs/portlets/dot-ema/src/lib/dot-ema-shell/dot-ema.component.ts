@@ -12,7 +12,7 @@ import { EditEmaStore } from './store/dot-ema.store';
 
 import { EditEmaNavigationBarComponent } from '../components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { EXPERIMENTS_ACTIVE_ICON, EXPERIMENTS_ICON, WINDOW } from '../shared/consts';
+import { WINDOW, EXPERIMENTS_ACTIVE_ICON, EXPERIMENTS_ICON } from '../shared/consts';
 import { NavigationBarItem } from '../shared/models';
 
 @Component({
