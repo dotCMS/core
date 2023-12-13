@@ -699,7 +699,7 @@ public class MapToContentletPopulator  {
                 String query = queryEntry.getValue();
 
                 if (UtilMethods.isSet(query)) {
-
+                    Logger.debug(this, "Query To Related Content: " + query);
                     try {
 
                         final List<Contentlet> contentlets = RelationshipUtil

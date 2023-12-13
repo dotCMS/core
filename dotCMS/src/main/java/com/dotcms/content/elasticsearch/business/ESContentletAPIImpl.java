@@ -6440,6 +6440,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 .filter(field -> field instanceof RelationshipField)
                 .collect(Collectors.toList());
 
+        Logger.debug(this, "Contentlet Identifier: " + (UtilMethods.isSet(contentlet.getIdentifier())?contentlet.getIdentifier() : "Unknown"));
+        Logger.debug(this, "Contentlet Inode: " + (UtilMethods.isSet(contentlet.getInode())?contentlet.getInode() : "Unknown"));
+        Logger.debug(this, "Contentlet ContentTypeId: " + contentlet.getContentTypeId());
+
         if (contentlet.getMap() != null) {
             //verify if the contentlet map contains related content for each relationship field
             //and add it to the ContentletRelationships to be persisted
@@ -6452,10 +6456,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if (contentRelationships == null) {
                         contentRelationships = new ContentletRelationships(contentlet);
                     }
+                    Logger.debug(this, "fieldId: " + field.id());
+                    Logger.debug(this, "Contentlet Field Data: " + contentlet.get(field.variable()));
                     final ContentletRelationshipRecords relationshipRecords = contentRelationships.new ContentletRelationshipRecords(
                             relationship, hasParent);
                     relationshipRecords.getRecords()
-                            .addAll((List<Contentlet>) contentlet.get(field.variable()));
+                            .addAll((List<Contentlet>) contentlet.get(field.variable()));//Here the error is thrown
 
                     contentRelationships.getRelationshipsRecords().add(relationshipRecords);
                 }
