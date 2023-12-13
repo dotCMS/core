@@ -5,6 +5,8 @@ import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/cor
 import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
+import { SplitButtonModule } from 'primeng/splitbutton';
+import { ToolbarModule } from 'primeng/toolbar';
 
 import { map, switchMap } from 'rxjs/operators';
 
@@ -25,7 +27,9 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
         DotEditContentFormComponent,
         ButtonModule,
         DotEditContentAsideComponent,
-        JsonPipe
+        JsonPipe,
+        ToolbarModule,
+        SplitButtonModule
     ],
     templateUrl: './edit-content.layout.component.html',
     styleUrls: ['./edit-content.layout.component.scss'],
