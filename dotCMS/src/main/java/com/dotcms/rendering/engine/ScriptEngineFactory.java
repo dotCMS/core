@@ -5,6 +5,10 @@ import com.dotcms.rendering.js.JsEngine;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * This Factory provides the Velocity or Javascript engine implementations
+ * @author jsanca
+ */
 public class ScriptEngineFactory {
 
     public static final String VELOCITY_ENGINE = "velocity";

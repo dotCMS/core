@@ -354,6 +354,10 @@ public class CircuitBreakerUrl {
         }
     }
 
+    /**
+     * Retrieve the response headers
+     * @return Header
+     */
     public Header[] getResponseHeaders() {
         return responseHeaders;
     }

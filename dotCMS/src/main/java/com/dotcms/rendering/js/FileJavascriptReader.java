@@ -25,11 +25,11 @@ import java.io.Reader;
  * <p>
  * File name convention (case-insensitive):
  * <ul>
- * <li>GET HTTP Method: get.jstl
- * <li>POST HTTP Method: post.jstl
- * <li>PUT HTTP Method: put.jstl
- * <li>PATCH HTTP Method: patch.jstl
- * <li>DELETE HTTP Method: delete.jstl
+ * <li>GET HTTP Method: get.js
+ * <li>POST HTTP Method: post.js
+ * <li>PUT HTTP Method: put.js
+ * <li>PATCH HTTP Method: patch.js
+ * <li>DELETE HTTP Method: delete.js
  * </ul>
  */
 public class FileJavascriptReader implements JavascriptReader {

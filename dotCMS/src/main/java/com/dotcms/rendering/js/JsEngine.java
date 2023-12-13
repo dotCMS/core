@@ -19,6 +19,7 @@ import com.dotcms.rendering.js.viewtools.UserJsViewTool;
 import com.dotcms.rendering.js.viewtools.WorkflowJsViewTool;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ReflectionUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -110,7 +111,7 @@ public class JsEngine implements ScriptEngine {
         }
     }
 
-    private void initApplicationView(final JsViewTool jsViewToolInstance) {
+    private void initApplicationView() {
 
         this.jsAplicationViewToolMap.entrySet().forEach(entry -> {
 
@@ -121,6 +122,14 @@ public class JsEngine implements ScriptEngine {
                 JsApplicationContextAware.class.cast(instance).setContext(Config.CONTEXT);
             }
         });
+    }
+
+    private void initApplicationView(final JsViewTool jsViewToolInstance) {
+
+        if (jsViewToolInstance instanceof JsApplicationContextAware) {
+
+            JsApplicationContextAware.class.cast(jsViewToolInstance).setContext(Config.CONTEXT);
+        }
     }
 
     /**
@@ -249,9 +258,15 @@ public class JsEngine implements ScriptEngine {
 
     private List<Source> getDotSources() throws IOException {
 
-        final List<Source> sources = new ArrayList<>();
-        addFunctions(sources);
-        addModules(sources);
+        List<Source> sources = (List<Source>)APILocator.getSystemAPI().getSystemCache().get("jsdotsources");
+        if (Objects.isNull(sources)) {
+
+            sources = new ArrayList<>();
+            addFunctions(sources);
+            addModules(sources);
+            APILocator.getSystemAPI().getSystemCache().put("jsdotsources", sources);
+        }
+
         return sources;
     }
 
@@ -264,12 +279,12 @@ public class JsEngine implements ScriptEngine {
                 path -> path.getFileName().toString().endsWith(".mjs"), path -> {
 
                     final String absolutePath = path.toString();
-                    Logger.info(this, "Loading: " + absolutePath);
+                    Logger.debug(this, "Loading: " + absolutePath);
                     final Source source = toModuleSource(absolutePath,
                             StringUtils.remove(absolutePath, absoluteWebInfPath), path.toFile());
                     if (Objects.nonNull(source)) {
                         sources.add(source);
-                        Logger.info(this, "Loaded: " + absolutePath);
+                        Logger.debug(this, "Loaded: " + absolutePath);
                     }
                 });
     }

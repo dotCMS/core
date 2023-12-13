@@ -3,7 +3,7 @@ package com.dotcms.rendering.js;
 import javax.servlet.ServletContext;
 
 /**
- * Implement this class to get the response into the {@link javax.servlet.ServletContext}
+ * Implement this class to get the context ({@link javax.servlet.ServletContext}) into the class.
  * @author jsanca
  */
 public interface JsApplicationContextAware {
