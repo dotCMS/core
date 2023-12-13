@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { pluck, take } from 'rxjs/operators';
@@ -29,6 +29,9 @@ enum ActionToFire {
 export class DotWorkflowActionsFireService {
     private readonly BASE_URL = '/api/v1/workflow';
     private readonly httpClient = inject(HttpClient);
+    private readonly defaultHeaders = new HttpHeaders()
+        .set('Accept', '*/*')
+        .set('Content-Type', 'application/json');
 
     /**
      * Fire a workflow action over a contentlet
@@ -47,7 +50,8 @@ export class DotWorkflowActionsFireService {
         return this.httpClient
             .put(
                 `${this.BASE_URL}/actions/${actionId}/fire?inode=${inode}&indexPolicy=WAIT_FOR`,
-                data
+                data,
+                { headers: this.defaultHeaders }
             )
             .pipe(pluck('entity'));
     }
@@ -61,7 +65,9 @@ export class DotWorkflowActionsFireService {
      */
     bulkFire(data: DotActionBulkRequestOptions): Observable<DotActionBulkResult> {
         return this.httpClient
-            .put(`${this.BASE_URL}/contentlet/actions/bulk/fire`, data)
+            .put(`${this.BASE_URL}/contentlet/actions/bulk/fire`, data, {
+                headers: this.defaultHeaders
+            })
             .pipe(pluck('entity'));
     }
 
@@ -171,7 +177,8 @@ export class DotWorkflowActionsFireService {
                 `${this.BASE_URL}/actions/default/fire/${action}${
                     data['inode'] ? `?inode=${data['inode']}` : ''
                 }`,
-                bodyRequest
+                bodyRequest,
+                { headers: this.defaultHeaders }
             )
             .pipe(take(1), pluck('entity'));
     }

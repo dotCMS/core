@@ -1,5 +1,7 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
+import { HttpHeaders } from '@angular/common/http';
+
 import { DotActionBulkRequestOptions, DotActionBulkResult } from '@dotcms/dotcms-models';
 import { dotcmsContentletMock } from '@dotcms/utils-testing';
 
@@ -30,6 +32,9 @@ const mockBulkOptions: DotActionBulkRequestOptions = {
 describe('DotWorkflowActionsFireService', () => {
     let spectator: SpectatorHttp<DotWorkflowActionsFireService>;
     const createHttp = createHttpFactory(DotWorkflowActionsFireService);
+    const defaultHeaders = new HttpHeaders()
+        .set('Accept', '*/*')
+        .set('Content-Type', 'application/json');
 
     beforeEach(() => (spectator = createHttp()));
 
@@ -56,6 +61,7 @@ describe('DotWorkflowActionsFireService', () => {
         );
 
         expect(req.request.body).toEqual(requestBody);
+        expect(req.request.headers).toEqual(defaultHeaders);
 
         req.flush({
             entity: [mockResult]
@@ -124,7 +130,10 @@ describe('DotWorkflowActionsFireService', () => {
             '/api/v1/workflow/actions/default/fire/PUBLISH',
             HttpMethod.PUT
         );
+
         expect(req.request.body).toEqual(requestBody);
+        expect(req.request.headers).toEqual(defaultHeaders);
+
         req.flush({
             entity: [mockResult]
         });
@@ -153,7 +162,10 @@ describe('DotWorkflowActionsFireService', () => {
             '/api/v1/workflow/actions/default/fire/PUBLISH',
             HttpMethod.PUT
         );
+
         expect(req.request.body).toEqual(requestBody);
+        expect(req.request.headers).toEqual(defaultHeaders);
+
         req.flush({
             entity: [mockResult]
         });
@@ -188,7 +200,10 @@ describe('DotWorkflowActionsFireService', () => {
             '/api/v1/workflow/actions/default/fire/PUBLISH',
             HttpMethod.PUT
         );
+
         expect(req.request.body).toEqual(requestBody);
+        expect(req.request.headers).toEqual(defaultHeaders);
+
         req.flush({
             entity: [mockResult]
         });

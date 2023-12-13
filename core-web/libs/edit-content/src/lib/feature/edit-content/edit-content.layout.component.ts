@@ -41,7 +41,7 @@ export class EditContentLayoutComponent implements OnInit {
     public identifier = this.activatedRoute.snapshot.params['id'];
 
     private readonly dotEditContentService = inject(DotEditContentService);
-    private formValue: Record<string, string>;
+    formValue: Record<string, string>;
     isContentSaved = false;
 
     formData$: Observable<EditContentFormData> = this.identifier

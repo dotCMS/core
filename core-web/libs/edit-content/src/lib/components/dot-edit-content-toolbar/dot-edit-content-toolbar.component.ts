@@ -30,6 +30,7 @@ import { DotCMSActionSubtype, DotCMSWorkflowAction } from '@dotcms/dotcms-models
 })
 export class DotEditContentToolbarComponent implements OnInit {
     @Input() inode: string;
+    @Input() formValue: Record<string, string>;
 
     private _grouppedActions: MenuItem[][] = null;
     private readonly workflowActionService = inject(DotWorkflowsActionsService);
@@ -50,24 +51,30 @@ export class DotEditContentToolbarComponent implements OnInit {
     }
 
     private groupActions(actions: DotCMSWorkflowAction[]): MenuItem[][] {
-        return actions.reduce(
-            (acc, action) => {
-                if (action?.metadata?.subtype === DotCMSActionSubtype.SEPARATOR) {
-                    acc.push([]);
-                } else {
-                    acc[acc.length - 1].push({
-                        label: action.name,
-                        command: () => this.fireAction(action)
-                    });
-                }
+        return actions
+            .reduce(
+                (acc, action) => {
+                    if (action?.metadata?.subtype === DotCMSActionSubtype.SEPARATOR) {
+                        acc.push([]);
+                    } else {
+                        acc[acc.length - 1].push({
+                            label: action.name,
+                            command: () => this.fireAction(action)
+                        });
+                    }
 
-                return acc;
-            },
-            [[]]
-        );
+                    return acc;
+                },
+                [[]]
+            )
+            .filter((group) => group.length);
     }
 
     private fireAction(action: DotCMSWorkflowAction): void {
-        this.WorkflowActionsFireService.fireTo(this.inode, action.id).subscribe();
+        this.WorkflowActionsFireService.fireTo(this.inode, action.id, {
+            contentlet: {
+                ...this.formValue
+            }
+        }).subscribe();
     }
 }

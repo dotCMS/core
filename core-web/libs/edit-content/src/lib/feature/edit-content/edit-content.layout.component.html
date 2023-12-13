@@ -1,4 +1,7 @@
-<dot-edit-content-toolbar class="header" [inode]="identifier"></dot-edit-content-toolbar>
+<dot-edit-content-toolbar
+    class="header"
+    [inode]="identifier"
+    [formValue]="formValue"></dot-edit-content-toolbar>
 
 <ng-container *ngIf="formData$ | async as formData; else noContent">
     <dot-edit-content-form
@@ -9,10 +12,6 @@
         <dot-edit-content-aside
             [contentLet]="formData.contentlet"
             [contentType]="formData.contentType" />
-        <p-button
-            [label]="'Save' | dm"
-            (click)="saveContent()"
-            data-testId="button-save"></p-button>
     </aside>
     <p *ngIf="isContentSaved">Content saved!</p>
 </ng-container>
