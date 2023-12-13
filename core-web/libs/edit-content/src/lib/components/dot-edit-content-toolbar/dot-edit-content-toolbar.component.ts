@@ -17,7 +17,7 @@ import {
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { DotCMSActionSubtype, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-edit-content-toolbar',
@@ -52,12 +52,7 @@ export class DotEditContentToolbarComponent implements OnInit {
     private groupActions(actions: DotCMSWorkflowAction[]): MenuItem[][] {
         return actions.reduce(
             (acc, action) => {
-                /*
-                 *   Real Condition
-                 *   if (action.metada?.subtype === 'SEPARATOR') {
-                 */
-
-                if (action?.name === 'SEPARATOR') {
+                if (action?.metadata?.subtype === DotCMSActionSubtype.SEPARATOR) {
                     acc.push([]);
                 } else {
                     acc[acc.length - 1].push({

@@ -37,6 +37,10 @@ export enum DotCMSSystemActionType {
     ARCHIVE = 'ARCHIVE'
 }
 
+export enum DotCMSActionSubtype {
+    SEPARATOR = 'SEPARATOR'
+}
+
 export interface DotCMSSystemActionMappings {
     [key: string]: DotCMSSystemAction | string;
 }

@@ -55,11 +55,6 @@ class ActivatedRouteMock {
     snapshot = {
         queryParams: {
             hello: 'world'
-        },
-        firstChild: {
-            snapshot: {
-                url: [{ path: 'content', queryParams: { test: 'test' } }]
-            }
         }
     };
 }
