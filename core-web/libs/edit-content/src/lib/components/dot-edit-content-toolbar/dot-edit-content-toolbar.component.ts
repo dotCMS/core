@@ -32,7 +32,7 @@ export class DotEditContentToolbarComponent implements OnInit {
     @Input() inode: string;
     @Input() formValue: Record<string, string>;
 
-    private _grouppedActions: MenuItem[][] = null;
+    private _grouppedActions: MenuItem[][] = [];
     private readonly workflowActionService = inject(DotWorkflowsActionsService);
     private readonly WorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly cdRef = inject(ChangeDetectorRef);
