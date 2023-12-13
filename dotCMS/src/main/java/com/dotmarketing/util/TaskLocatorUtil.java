@@ -227,18 +227,19 @@ import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuPropert
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperiment;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKey;
 import com.dotmarketing.startup.runonce.Task221018CreateVariantFieldInMultiTree;
-import com.dotmarketing.startup.runonce.Task230119MigrateContentToProperPersonaTagAndRemoveDupTags;
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseType;
-import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumn;
+import com.dotmarketing.startup.runonce.Task230119MigrateContentToProperPersonaTagAndRemoveDupTags;
 import com.dotmarketing.startup.runonce.Task230320FixMissingContentletAsJSON;
+import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumn;
 import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByCol;
-import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTables;
 import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentlet;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentField;
+import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTables;
 import com.dotmarketing.startup.runonce.Task230707CreateSystemTable;
 import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSize;
-import com.dotmarketing.startup.runonce.Task231109AddPublishDateToContentletVersionInfo;
 import com.dotmarketing.startup.runonce.Task231030DropReleaseTable;
+import com.dotmarketing.startup.runonce.Task231109AddPublishDateToContentletVersionInfo;
+import com.dotmarketing.startup.runonce.Task231207AddMetadataColumnToWorkflowAction;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -552,6 +553,7 @@ public class TaskLocatorUtil {
 		.add(Task230713IncreaseDisabledWysiwygColumnSize.class)
 		.add(Task231030DropReleaseTable.class)
 		.add(Task231109AddPublishDateToContentletVersionInfo.class)
+		.add(Task231207AddMetadataColumnToWorkflowAction.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
