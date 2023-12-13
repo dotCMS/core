@@ -23,7 +23,7 @@
 <ng-template #iconURL let-item="item">
     <img
         class="item__image"
-        #img
         [src]="item.active ? item.iconURLActive ?? item.iconURL : item.iconURL"
+        [alt]="item.label"
         data-testId="nav-bar-item-image" />
 </ng-template>
