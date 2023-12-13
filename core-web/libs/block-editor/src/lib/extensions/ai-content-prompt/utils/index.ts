@@ -5,7 +5,7 @@ export const TIPPY_OPTIONS: Partial<Props> = {
     interactive: true,
     maxWidth: '100%',
     trigger: 'manual',
-    hideOnClick: true,
+    hideOnClick: false,
     placement: 'bottom-start',
     popperOptions: {
         modifiers: [

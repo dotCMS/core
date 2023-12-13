@@ -2254,18 +2254,6 @@ public class ContentletAjax {
 				clearBinary = false;
 			}
 
-			if (ve.hasLengthErrors()) {
-				final List<Field> reqs = ve.getNotValidFields()
-						.get(DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH);
-				for (Field field : reqs) {
-					String errorString = LanguageUtil.get(user, "message.contentlet.maxlength");
-					errorString = errorString.replace("{0}", field.getFieldName());
-					errorString = errorString.replace("{1}", "255");
-					saveContentErrors.add(errorString);
-				}
-				clearBinary = false;
-			}
-
 			if (ve.hasPatternErrors()) {
 				List<Field> reqs = ve.getNotValidFields()
 						.get(DotContentletValidationException.VALIDATION_FAILED_PATTERN);
@@ -2490,16 +2478,6 @@ public class ContentletAjax {
 					for (Field field : reqs) {
 						String errorString = LanguageUtil.get(user,"message.contentlet.required");
 						errorString = errorString.replace("{0}", field.getFieldName());
-						saveContentErrors.add(errorString);
-					}
-				}
-
-				if(ve.hasLengthErrors()){
-					List<Field> reqs = ve.getNotValidFields().get(DotContentletValidationException.VALIDATION_FAILED_MAXLENGTH);
-					for (Field field : reqs) {
-						String errorString = LanguageUtil.get(user,"message.contentlet.maxlength");
-						errorString = errorString.replace("{0}", field.getFieldName());
-						errorString = errorString.replace("{1}", "255");
 						saveContentErrors.add(errorString);
 					}
 				}

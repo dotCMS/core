@@ -4485,12 +4485,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     }
 
 	@Override
+	@CloseDBIfOpened
 	public int countWorkflowSchemes(final User user) {
 		isUserAllowToModifiedWorkflow(user);
 		return workFlowFactory.countWorkflowSchemes(false);
 	}
 
 	@Override
+	@CloseDBIfOpened
 	public int countWorkflowSchemesIncludeArchived(final User user) {
 		isUserAllowToModifiedWorkflow(user);
 		return workFlowFactory.countWorkflowSchemes(true);
