@@ -12,7 +12,7 @@ import { EditEmaStore } from './store/dot-ema.store';
 
 import { EditEmaNavigationBarComponent } from '../components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { WINDOW, EXPERIMENTS_ACTIVE_ICON, EXPERIMENTS_ICON } from '../shared/consts';
+import { WINDOW } from '../shared/consts';
 import { NavigationBarItem } from '../shared/models';
 
 @Component({
@@ -60,8 +60,7 @@ export class DotEmaComponent {
             href: 'rules'
         },
         {
-            iconURLActive: EXPERIMENTS_ACTIVE_ICON,
-            iconURL: EXPERIMENTS_ICON,
+            iconURL: 'experiments',
             label: 'A/B',
             href: 'experiments'
         },

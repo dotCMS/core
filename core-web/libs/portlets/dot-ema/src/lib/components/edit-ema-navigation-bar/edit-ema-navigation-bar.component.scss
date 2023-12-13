@@ -33,12 +33,15 @@
     }
 }
 
-.item__image {
-    -webkit-user-drag: none;
+.item__image,
+use {
+    width: 24px;
+    height: 24px;
     user-select: none;
-    -moz-user-select: none;
-    -webkit-user-select: none;
-    -ms-user-select: none;
+    -webkit-user-drag: none;
+    display: flex;
+    justify-content: center;
+    color: $color-palette-gray-800;
 }
 
 .item__label {
@@ -64,7 +67,8 @@
     }
 
     .pi,
-    .item__label {
+    .item__label,
+    .item__image use {
         color: $color-palette-primary-500;
     }
 }

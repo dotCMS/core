@@ -2,9 +2,8 @@
     <a
         class="edit-ema-nav-bar__item"
         *ngFor="let item of items"
-        [attr.data-testId]="item._active ? 'nav-bar-item-active' : 'nav-bar-item'"
         [routerLink]="item.href"
-        (isActiveChange)="item._active = $event"
+        data-testId="'nav-bar-item"
         routerLinkActive="edit-ema-nav-bar__item--active"
         queryParamsHandling="merge">
         <ng-container
@@ -21,9 +20,7 @@
     <i [class]="'pi ' + item.icon" data-testId="nav-bar-item-icon"></i>
 </ng-template>
 <ng-template #iconURL let-item="item">
-    <img
-        class="item__image"
-        [src]="item._active ? item.iconURLActive ?? item.iconURL : item.iconURL"
-        [alt]="item.label"
-        data-testId="nav-bar-item-image" />
+    <svg class="item__image" fill="currentColor">
+        <use attr.xlink:href="./assets/dot-ema/{{ item.iconURL }}.svg#{{ item.iconURL }}"></use>
+    </svg>
 </ng-template>
