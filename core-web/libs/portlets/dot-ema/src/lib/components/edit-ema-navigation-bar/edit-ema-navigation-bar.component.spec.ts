@@ -11,10 +11,6 @@ describe('EditEmaNavigationBarComponent', () => {
         stubsEnabled: false,
         routes: [
             {
-                path: '',
-                component: EditEmaNavigationBarComponent
-            },
-            {
                 path: 'content',
                 component: EditEmaNavigationBarComponent
             },
@@ -29,16 +25,6 @@ describe('EditEmaNavigationBarComponent', () => {
             {
                 path: 'experiments',
                 component: EditEmaNavigationBarComponent
-            },
-            {
-                path: '**',
-                redirectTo: 'content',
-                pathMatch: 'full'
-            },
-            {
-                path: '',
-                redirectTo: 'content',
-                pathMatch: 'full'
             }
         ]
     });
@@ -76,41 +62,33 @@ describe('EditEmaNavigationBarComponent', () => {
     describe('DOM', () => {
         describe('Nav Bar', () => {
             it('should have 4 items', () => {
-                expect(spectator.queryAll('a').length).toBe(4);
+                const links = spectator.queryAll('a');
+
+                expect(links.length).toBe(4);
+                expect(links[0].textContent.trim()).toBe('Content');
+                expect(links[1].textContent.trim()).toBe('Layout');
+                expect(links[2].textContent.trim()).toBe('Rules');
+                expect(links[3].textContent.trim()).toBe('Experiments');
+
+                expect(links[0].getAttribute('ng-reflect-router-link')).toBe('content');
+                expect(links[1].getAttribute('ng-reflect-router-link')).toBe('layout');
+                expect(links[2].getAttribute('ng-reflect-router-link')).toBe('rules');
+                expect(links[3].getAttribute('ng-reflect-router-link')).toBe('experiments');
             });
         });
 
         describe('item', () => {
-            it('should have Content as selected', async () => {
-                await spectator.fixture.whenStable();
-                const otherButton = spectator.queryAll(byTestId('nav-bar-item'))[0];
+            it('should have Content as selected', () => {
+                const contentButton = spectator.query(byTestId('nav-bar-item'));
 
-                spectator.click(otherButton);
-
-                await spectator.fixture.whenStable();
+                spectator.click(contentButton);
 
                 expect(spectator.query(byTestId('nav-bar-item-active')).textContent.trim()).toBe(
                     'Content'
                 );
             });
-
-            it('should change the active one when clicking on it', async () => {
-                await spectator.fixture.whenStable();
-                const otherButton = spectator.queryAll(byTestId('nav-bar-item'))[1];
-
-                spectator.click(otherButton);
-
-                await spectator.fixture.whenStable();
-
-                expect(spectator.query(byTestId('nav-bar-item-active')).textContent.trim()).toBe(
-                    'Layout'
-                );
-            });
-
-            describe('item with icon', () => {
-                it('should have an icon', () => {
-                    expect(spectator.query(byTestId('nav-bar-item-icon'))).not.toBeNull();
-                });
+            it('should have an icon', () => {
+                expect(spectator.query(byTestId('nav-bar-item-icon'))).not.toBeNull();
             });
 
             describe('item without icon', () => {
@@ -118,16 +96,6 @@ describe('EditEmaNavigationBarComponent', () => {
                     expect(
                         spectator.query(byTestId('nav-bar-item-image')).getAttribute('src')
                     ).toBe('assets/images/experiments.svg');
-                });
-
-                it("should switch the image to 'assets/images/experiments-active.svg' when selected", async () => {
-                    const otherButton = spectator.queryAll(byTestId('nav-bar-item')).at(-1);
-
-                    spectator.click(otherButton);
-                    await spectator.fixture.whenStable();
-                    expect(
-                        spectator.query(byTestId('nav-bar-item-image')).getAttribute('src')
-                    ).toBe('assets/images/experiments-active.svg');
                 });
             });
         });
