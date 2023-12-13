@@ -27,6 +27,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
+import org.apache.commons.lang3.tuple.Pair;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -69,40 +70,18 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
             output.throwIfUnmatchedArguments(spec.commandLine());
         }
 
-        // Make sure the path is within a workspace
-        final Optional<Workspace> workspace = workspaceManager.findWorkspace(
-                this.getPushMixin().path()
-        );
-        if (workspace.isEmpty()) {
-            throw new IllegalArgumentException(
-                    String.format("No valid workspace found at path: [%s]",
-                            this.getPushMixin().path.toPath()));
-        }
+        // Validating and resolving the workspace and path
+        var resolvedWorkspaceAndPath = resolveWorkspaceAndPath();
 
-        File inputFile = this.getPushMixin().path().toFile();
-        if (!inputFile.isAbsolute()) {
-            // If the path is not absolute, we assume it is relative to the files folder
-            inputFile = Path.of(
-                    workspace.get().files().toString(), inputFile.getPath()
-            ).toFile();
-        }
-        if (!inputFile.exists() || !inputFile.canRead()) {
-            throw new IOException(String.format(
-                    "Unable to access the path [%s] check that it does exist and that you have "
-                            + "read permissions on it.", inputFile)
-            );
-        }
-
-        File finalInputFile = inputFile;
-
+        File finalInputFile = resolvedWorkspaceAndPath.getRight();
         CompletableFuture<List<TraverseResult>>
                 folderTraversalFuture = CompletableFuture.supplyAsync(
                 () ->
                         // Service to handle the traversal of the folder
                         pushService.traverseLocalFolders(
-                                output, workspace.get().root().toFile(), finalInputFile,
-                                filesPushMixin.removeAssets, filesPushMixin.removeFolders,
-                                false, true)
+                                output, resolvedWorkspaceAndPath.getLeft().root().toFile(),
+                                finalInputFile, filesPushMixin.removeAssets,
+                                filesPushMixin.removeFolders, false, true)
         );
 
         // ConsoleLoadingAnimation instance to handle the waiting "animation"
@@ -166,7 +145,8 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
                         pushService.processTreeNodes(output, treeNodePushInfo,
                                 PushTraverseParams.builder()
                                         .workspacePath(
-                                                workspace.get().root().toFile().getAbsolutePath()
+                                                resolvedWorkspaceAndPath.getLeft().root().toFile()
+                                                        .getAbsolutePath()
                                         )
                                         .rootNode(treeNode)
                                         .localPaths(localPaths)
@@ -193,6 +173,43 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
         }
 
         return CommandLine.ExitCode.OK;
+    }
+
+    /**
+     * Resolves the workspace and path for the current operation.
+     *
+     * @return A Pair object containing the Workspace and File objects representing the resolved
+     * workspace and path, respectively.
+     * @throws IOException If there is an error accessing the path or if no valid workspace is
+     *                     found.
+     */
+    private Pair<Workspace, File> resolveWorkspaceAndPath() throws IOException {
+
+        // Make sure the path is within a workspace
+        final Optional<Workspace> workspace = workspaceManager.findWorkspace(
+                this.getPushMixin().path()
+        );
+        if (workspace.isEmpty()) {
+            throw new IllegalArgumentException(
+                    String.format("No valid workspace found at path: [%s]",
+                            this.getPushMixin().path.toPath()));
+        }
+
+        File inputFile = this.getPushMixin().path().toFile();
+        if (!inputFile.isAbsolute()) {
+            // If the path is not absolute, we assume it is relative to the files folder
+            inputFile = Path.of(
+                    workspace.get().files().toString(), inputFile.getPath()
+            ).toFile();
+        }
+        if (!inputFile.exists() || !inputFile.canRead()) {
+            throw new IOException(String.format(
+                    "Unable to access the path [%s] check that it does exist and that you have "
+                            + "read permissions on it.", inputFile)
+            );
+        }
+
+        return Pair.of(workspace.get(), inputFile);
     }
 
     private void header(int count, LocalPathStructure localPaths,
