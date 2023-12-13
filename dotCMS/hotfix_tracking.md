@@ -17,3 +17,4 @@ This maintenance release includes the following code fixes:
 11. https://github.com/dotCMS/core/issues/26931 : Add Cache when getting Versionable info #26931
 12. https://github.com/dotCMS/core/issues/26980: SiteSelector not showing all possible sites for limited user #26980
 13. https://github.com/dotCMS/core/issues/26915 : Metadata Generation locks system start up #26915
+14. https://github.com/dotCMS/core/issues/26840 : "Edit Content" screen slow - Unnecessary SQL queries #26840
