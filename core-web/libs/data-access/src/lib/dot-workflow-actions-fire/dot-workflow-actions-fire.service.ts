@@ -1,10 +1,10 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck, take } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkRequestOptions,
     DotCMSContentlet,
@@ -27,7 +27,8 @@ enum ActionToFire {
 
 @Injectable()
 export class DotWorkflowActionsFireService {
-    constructor(private coreWebService: CoreWebService) {}
+    private readonly BASE_URL = '/api/v1/workflow';
+    private readonly httpClient = inject(HttpClient);
 
     /**
      * Fire a workflow action over a contentlet
@@ -43,12 +44,11 @@ export class DotWorkflowActionsFireService {
         actionId: string,
         data?: T
     ): Observable<DotCMSContentlet> {
-        return this.coreWebService
-            .requestView({
-                body: data,
-                method: 'PUT',
-                url: `v1/workflow/actions/${actionId}/fire?inode=${inode}&indexPolicy=WAIT_FOR`
-            })
+        return this.httpClient
+            .put(
+                `${this.BASE_URL}/actions/${actionId}/fire?inode=${inode}&indexPolicy=WAIT_FOR`,
+                data
+            )
             .pipe(pluck('entity'));
     }
 
@@ -60,12 +60,8 @@ export class DotWorkflowActionsFireService {
      * @memberof DotWorkflowActionsFireService
      */
     bulkFire(data: DotActionBulkRequestOptions): Observable<DotActionBulkResult> {
-        return this.coreWebService
-            .requestView({
-                body: data,
-                method: 'PUT',
-                url: `/api/v1/workflow/contentlet/actions/bulk/fire`
-            })
+        return this.httpClient
+            .put(`${this.BASE_URL}/contentlet/actions/bulk/fire`, data)
             .pipe(pluck('entity'));
     }
 
@@ -170,14 +166,13 @@ export class DotWorkflowActionsFireService {
             ? { contentlet, individualPermissions }
             : { contentlet };
 
-        return this.coreWebService
-            .requestView({
-                method: 'PUT',
-                url: `v1/workflow/actions/default/fire/${action}${
-                    data.inode ? `?inode=${data.inode}` : ''
+        return this.httpClient
+            .put(
+                `${this.BASE_URL}/actions/default/fire/${action}${
+                    data['inode'] ? `?inode=${data['inode']}` : ''
                 }`,
-                body: bodyRequest
-            })
+                bodyRequest
+            )
             .pipe(take(1), pluck('entity'));
     }
 }

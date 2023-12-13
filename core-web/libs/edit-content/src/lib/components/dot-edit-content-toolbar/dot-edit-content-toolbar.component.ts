@@ -1,10 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    Input,
+    OnInit,
+    inject
+} from '@angular/core';
 
+import { MenuItem } from 'primeng/api';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotRenderMode, DotWorkflowsActionsService } from '@dotcms/data-access';
+import {
+    DotRenderMode,
+    DotWorkflowActionsFireService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
 import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 
 @Component({
@@ -17,47 +29,50 @@ import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentToolbarComponent implements OnInit {
-    public items = [
-        {
-            label: 'Update',
-            icon: 'pi pi-refresh',
-            command: () => {
-                /* this.update(); */
-            }
-        },
-        {
-            label: 'Delete',
-            icon: 'pi pi-times',
-            command: () => {
-                /* this.update(); */
-            }
-        }
-    ];
-
     @Input() inode: string;
 
+    private _grouppedActions: MenuItem[][] = null;
     private readonly workflowActionService = inject(DotWorkflowsActionsService);
+    private readonly WorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    private readonly cdRef = inject(ChangeDetectorRef);
+
+    get groupedActions(): MenuItem[][] {
+        return this._grouppedActions;
+    }
 
     ngOnInit(): void {
         this.workflowActionService
             .getByInode(this.inode, DotRenderMode.EDITING)
-            .subscribe((_actions) => {
-                /* this.items = this.groupActions(actions); */
+            .subscribe((actions) => {
+                this._grouppedActions = this.groupActions(actions);
+                this.cdRef.markForCheck();
             });
     }
 
-    private groupActions(actions: DotCMSWorkflowAction[]) {
-        return actions.reduce((acc, action) => {
-            if (action.metadata.subtype === 'SEPARATOR') {
-                acc.push([]);
-            }
+    private groupActions(actions: DotCMSWorkflowAction[]): MenuItem[][] {
+        return actions.reduce(
+            (acc, action) => {
+                /*
+                 *   Real Condition
+                 *   if (action.metada?.subtype === 'SEPARATOR') {
+                 */
 
-            const lastGroup = acc[acc.length - 1];
-            lastGroup.push(action);
+                if (action?.name === 'SEPARATOR') {
+                    acc.push([]);
+                } else {
+                    acc[acc.length - 1].push({
+                        label: action.name,
+                        command: () => this.fireAction(action)
+                    });
+                }
 
-            return acc;
-        }, []);
+                return acc;
+            },
+            [[]]
+        );
+    }
 
-        // console.log(groupedActions);
+    private fireAction(action: DotCMSWorkflowAction): void {
+        this.WorkflowActionsFireService.fireTo(this.inode, action.id).subscribe();
     }
 }
