@@ -36,7 +36,8 @@ function Container({ containerRef }) {
                             acceptTypes
                         },
                         personaTag: viewAs.persona?.keyTag,
-                        pageContainers
+                        pageContainers,
+                        language_id: viewAs.language.id
                     }
                 }}>
                 +

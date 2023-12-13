@@ -65,7 +65,7 @@ describe('DotEditPageInfoSeoComponent', () => {
         });
 
         it('should have copy button', () => {
-            const button: DebugElement = de.query(By.css('dot-copy-button '));
+            const button: DebugElement = de.query(By.css('[data-testId="copy-button"]'));
             expect(button.componentInstance.copy).toBe('http://demo.dotcms.com:9876/an/url/test');
             expect(button.componentInstance.tooltipText).toBe('Copy url page');
         });
@@ -74,6 +74,13 @@ describe('DotEditPageInfoSeoComponent', () => {
             const previewLink: DebugElement = de.query(By.css('dot-link[icon="pi-eye"]'));
 
             expect(previewLink).toBeNull();
+        });
+
+        it('should have api link', () => {
+            const apiLink: DebugElement = de.query(By.css('[data-testId="api-link"]'));
+            expect(apiLink.componentInstance.href).toBe(
+                'api/v1/page/render/an/url/test?language_id=1'
+            );
         });
     });
 
