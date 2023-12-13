@@ -28,7 +28,10 @@
 
         <div class="flex gap-1">
             <p class="text-center">
-                {{ 'block-editor.extension.ai-image.input-text.title' | dm }}
+                <span
+                    innerHTML="{{
+                        'block-editor.extension.ai-image.input-text.title' | dm
+                    }}"></span>
                 <i
                     class="pi pi-info-circle"
                     pTooltip="{{ 'block-editor.extension.ai-image.input-text.tooltip' | dm }}"
@@ -84,7 +87,8 @@
 
         <div class="flex gap-1">
             <p class="text-center">
-                {{ 'block-editor.extension.ai-image.auto-text.title' | dm }}
+                <span
+                    innerHTML="{{ 'block-editor.extension.ai-image.auto-text.title' | dm }}"></span>
                 <i
                     class="pi pi-info-circle"
                     pTooltip="{{ 'block-editor.extension.ai-image.auto-text.tooltip' | dm }}"

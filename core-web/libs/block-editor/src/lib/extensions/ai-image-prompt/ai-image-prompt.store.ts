@@ -41,15 +41,15 @@ const initialState: DotAiImagePromptComponentState = {
 
 @Injectable({ providedIn: 'root' })
 export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptComponentState> {
+    //Selectors
     readonly isOpenDialog$ = this.select(this.state$, ({ showDialog }) => showDialog);
-
     readonly isLoading$ = this.select(
         this.state$,
         ({ status }) => status === ComponentStatus.LOADING
     );
-
     readonly getContentlets$ = this.select(this.state$, ({ contentlets }) => contentlets);
 
+    //Updaters
     readonly setPromptType = this.updater((state, selectedPromptType: PromptType) => ({
         ...state,
         selectedPromptType
@@ -77,6 +77,8 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         })
     );
 
+    // Effects
+
     /**
      * The `generateImage` variable is a function that generates an image based on a given prompt.
      *
@@ -93,6 +95,7 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                     selectedPromptType === 'auto' && editorContent
                         ? `${cleanPrompt} to illustrate the following content: ${editorContent}`
                         : cleanPrompt;
+
                 this.patchState({ status: ComponentStatus.LOADING, prompt: finalPrompt });
 
                 return this.dotAiService.generateAndPublishImage(finalPrompt).pipe(
@@ -105,6 +108,9 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                         },
                         () => {
                             this.patchState({ status: ComponentStatus.IDLE });
+
+                            //TODO: Notify to handle error in the UI.
+                            return of(null);
                         }
                     )
                 );
