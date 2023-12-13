@@ -44,5 +44,6 @@ export interface NavigationBarItem {
     iconURL?: string;
     iconURLActive?: string;
     label: string;
-    key: string;
+    href: string;
+    _active?: boolean;
 }

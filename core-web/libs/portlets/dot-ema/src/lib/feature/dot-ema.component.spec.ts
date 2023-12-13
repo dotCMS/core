@@ -3,6 +3,7 @@ import { SpectatorRouting, createRoutingFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -13,9 +14,16 @@ import { DotLanguagesServiceMock, DotPersonalizeServiceMock } from '@dotcms/util
 import { DotEmaComponent } from './dot-ema.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
-import { EditEmaEditorComponent } from '../components/edit-ema-editor/edit-ema-editor.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
+
+class ActivatedRouteMock {
+    snapshot = {
+        firstChild: {
+            url: [{ path: 'content', queryParams: { test: 'test' } }]
+        }
+    };
+}
 
 describe('DotEmaComponent', () => {
     let spectator: SpectatorRouting<DotEmaComponent>;
@@ -24,12 +32,6 @@ describe('DotEmaComponent', () => {
         component: DotEmaComponent,
         imports: [RouterTestingModule, HttpClientTestingModule],
         detectChanges: false,
-        routes: [
-            {
-                path: 'content',
-                component: EditEmaEditorComponent
-            }
-        ],
         componentProviders: [
             MessageService,
             EditEmaStore,
@@ -85,7 +87,14 @@ describe('DotEmaComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({});
+        spectator = createComponent({
+            providers: [
+                {
+                    provide: ActivatedRoute,
+                    useClass: ActivatedRouteMock
+                }
+            ]
+        });
     });
 
     it('should exist', () => {

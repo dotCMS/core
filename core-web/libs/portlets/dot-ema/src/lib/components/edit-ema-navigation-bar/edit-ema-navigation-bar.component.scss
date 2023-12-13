@@ -10,8 +10,6 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    padding: 0;
-    margin: 0;
     background-color: $color-palette-primary-100;
     border-left: 1px solid $color-palette-primary-300;
 
@@ -25,6 +23,8 @@
         width: 100%;
         gap: $spacing-0;
         padding: 0 $spacing-0;
+        text-decoration: none;
+        color: $black;
 
         .pi {
             font-size: $font-size-xl;
@@ -50,7 +50,7 @@
         background-color: $white;
         border: 1px solid $color-palette-primary-300;
         border-left: 1px solid $white;
-        width: 81px;
+        width: 81px; // This makes the illusion of blend with the background because it covers the border of the container
 
         .pi,
         .item__label {

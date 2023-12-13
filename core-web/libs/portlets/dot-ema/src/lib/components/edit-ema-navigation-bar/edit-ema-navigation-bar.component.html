@@ -1,25 +1,29 @@
-<ul class="edit-ema-nav-bar">
-    <li
+<nav class="edit-ema-nav-bar">
+    <a
         class="edit-ema-nav-bar__item"
         *ngFor="let item of items"
-        [ngClass]="{ 'edit-ema-nav-bar__item--active': item.key === selectedKey }"
-        (click)="onClick(item)"
-        data-testId="menuListItems">
+        [attr.data-testId]="item._active ? 'nav-bar-item-active' : 'nav-bar-item'"
+        [routerLink]="item.href"
+        (isActiveChange)="item._active = $event"
+        routerLinkActive="edit-ema-nav-bar__item--active"
+        queryParamsHandling="merge">
         <ng-container
             [ngTemplateOutlet]="item.icon ? icon : iconURL"
             [ngTemplateOutletContext]="{ item: item }">
         </ng-container>
-        <span class="item__label">
+        <span class="item__label" data-testId="nav-bar-item-label">
             {{ item.label }}
         </span>
-    </li>
-</ul>
+    </a>
+</nav>
 
 <ng-template #icon let-item="item">
-    <i [class]="'pi ' + item.icon"></i>
+    <i [class]="'pi ' + item.icon" data-testId="nav-bar-item-icon"></i>
 </ng-template>
 <ng-template #iconURL let-item="item">
     <img
         class="item__image"
-        [src]="item.key === selectedKey ? item.iconURLActive ?? item.iconURL : item.iconURL" />
+        #img
+        [src]="item.active ? item.iconURLActive ?? item.iconURL : item.iconURL"
+        data-testId="nav-bar-item-image" />
 </ng-template>
