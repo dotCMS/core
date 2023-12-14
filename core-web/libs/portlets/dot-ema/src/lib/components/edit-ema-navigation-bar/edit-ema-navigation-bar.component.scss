@@ -35,13 +35,12 @@
 
 .item__image,
 use {
-    width: 24px;
-    height: 24px;
     user-select: none;
     -webkit-user-drag: none;
-    display: flex;
-    justify-content: center;
     color: $color-palette-gray-800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .item__label {

@@ -20,7 +20,10 @@
     <i [class]="'pi ' + item.icon" data-testId="nav-bar-item-icon"></i>
 </ng-template>
 <ng-template #iconURL let-item="item">
-    <svg class="item__image" fill="currentColor">
-        <use attr.xlink:href="./assets/dot-ema/{{ item.iconURL }}.svg#{{ item.iconURL }}"></use>
+    <svg class="item__image" fill="currentColor" viewBox="0 0 24 24" width="24px" height="24px">
+        <use
+            attr.href="./assets/dot-ema/{{ item.iconURL }}.svg#{{ item.iconURL }}"
+            width="24px"
+            height="24px"></use>
     </svg>
 </ng-template>
