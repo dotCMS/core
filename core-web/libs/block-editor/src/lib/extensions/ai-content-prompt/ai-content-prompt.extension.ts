@@ -47,7 +47,7 @@ export const AIContentPromptExtension = (viewContainerRef: ViewContainerRef) => 
                         return chain()
                             .command(({ tr }) => {
                                 tr.setMeta(AI_CONTENT_PROMPT_PLUGIN_KEY, {
-                                    aiContentPromptOpen: true
+                                    aIContentPromptOpen: true
                                 });
 
                                 return true;
@@ -61,7 +61,7 @@ export const AIContentPromptExtension = (viewContainerRef: ViewContainerRef) => 
                         return chain()
                             .command(({ tr }) => {
                                 tr.setMeta(AI_CONTENT_PROMPT_PLUGIN_KEY, {
-                                    aiContentPromptOpen: false
+                                    aIContentPromptOpen: false
                                 });
 
                                 return true;
