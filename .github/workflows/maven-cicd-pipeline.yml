@@ -41,7 +41,7 @@ jobs:
       cli: ${{ steps.filter.outputs.cli }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v2
+      - uses: dorny/paths-filter@v2.11.1
         id: filter
         with:
           filters: .github/filters.yaml
