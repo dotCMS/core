@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 :host {
-    width: 80px;
+    width: 5rem;
     height: 100%;
 }
 .edit-ema-nav-bar {
@@ -20,7 +20,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    height: 88px;
+    height: 5.5rem;
     width: 100%;
     gap: $spacing-0;
     padding: 0 $spacing-0;
