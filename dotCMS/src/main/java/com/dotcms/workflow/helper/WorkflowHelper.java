@@ -1536,11 +1536,16 @@ public class WorkflowHelper {
     }
 
     /**
-     * Save a WorkflowActionForm returning the WorkflowAction created.
-     * A WorkflowActionForm can send a stepId in that case the Action will be associated to the Step in the same transaction.
-     * @param actionId When present an update operation takes place otherwise an insert is executed
-     * @param workflowActionForm WorkflowActionForm
-     * @return WorkflowAction (workflow action created)
+     * Saves a Workflow Action. A {@link WorkflowActionForm} object can send a Step ID, in which
+     * case the Action will be associated to the Step in the same transaction.
+     *
+     * @param actionId           If present, an update operation takes place. Otherwise, an insert
+     *                           is executed.
+     * @param workflowActionForm The {@link WorkflowActionForm} object with the Workflow Action data
+     *                           that will be saved.
+     * @param user               The {@link User} that is performing this action.
+     *
+     * @return The {@link WorkflowAction} object that was created.
      */
     @WrapInTransaction
     public WorkflowAction saveAction(final String actionId, final WorkflowActionForm workflowActionForm, final User user) {
@@ -1564,7 +1569,7 @@ public class WorkflowHelper {
         newAction.setRequiresCheckout(false);
         newAction.setShowOn(workflowActionForm.getShowOn());
         newAction.setRoleHierarchyForAssign(workflowActionForm.isRoleHierarchyForAssign());
-
+        newAction.setMetadata(workflowActionForm.getMetadata());
         try {
 
             newAction.setNextAssign(this.resolveRole(actionNextAssign).getId());
@@ -1607,17 +1612,19 @@ public class WorkflowHelper {
                         workflowActionClass.setName(NotifyAssigneeActionlet.class.getDeclaredConstructor().newInstance().getName());
                         workflowActionClass.setOrder(0);
                         this.workflowAPI.saveActionClass(workflowActionClass, user);
-                    } catch (Exception e) {
-                        Logger.error(this.getClass(), e.getMessage());
-                        Logger.debug(this, e.getMessage(), e);
-                        throw new DotWorkflowException(e.getMessage(), e);
+                    } catch (final Exception e) {
+                        final String errorMsg = String.format("Failed to save Workflow Action Class with ID '%s': %s", newAction.getId(), ExceptionUtil.getErrorMessage(e));
+                        Logger.error(this.getClass(), errorMsg);
+                        Logger.debug(this, errorMsg, e);
+                        throw new DotWorkflowException(errorMsg, e);
                     }
                 });
             }
-        } catch (Exception e) {
-            Logger.error(this.getClass(), e.getMessage());
-            Logger.debug(this, e.getMessage(), e);
-            throw new DotWorkflowException(e.getMessage(), e);
+        } catch (final Exception e) {
+            final String errorMsg = String.format("Failed to save Workflow Action '%s': %s", actionId, ExceptionUtil.getErrorMessage(e));
+            Logger.error(this.getClass(), errorMsg);
+            Logger.debug(this, errorMsg, e);
+            throw new DotWorkflowException(errorMsg, e);
         }
 
         return newAction;

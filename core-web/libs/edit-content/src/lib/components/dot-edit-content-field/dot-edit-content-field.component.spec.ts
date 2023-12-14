@@ -66,7 +66,10 @@ const FIELD_TYPES_COMPONENTS: Record<
     [FIELD_TYPES.DATE]: DotEditContentCalendarFieldComponent,
     [FIELD_TYPES.DATE_AND_TIME]: DotEditContentCalendarFieldComponent,
     [FIELD_TYPES.TIME]: DotEditContentCalendarFieldComponent,
-    [FIELD_TYPES.TAG]: DotEditContentTagFieldComponent,
+    [FIELD_TYPES.TAG]: {
+        component: DotEditContentTagFieldComponent,
+        providers: [mockProvider(DotEditContentService)]
+    },
     [FIELD_TYPES.CHECKBOX]: DotEditContentCheckboxFieldComponent,
     [FIELD_TYPES.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent,
     [FIELD_TYPES.BLOCK_EDITOR]: DotBlockEditorComponent,

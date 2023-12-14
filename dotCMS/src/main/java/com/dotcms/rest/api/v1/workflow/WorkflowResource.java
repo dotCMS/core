@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
@@ -418,15 +419,20 @@ public class WorkflowResource {
     } // findSteps.
 
     /**
-     * Finds the available actions for an inode
+     * Finds the Workflow Actions that are available for a specific Contentlet Inode. Here's an
+     * example of how you can use this method:
+     * <pre>
+     *     GET http://localhost:8080/api/v1/workflow/contentlet/{CONTENTLET-INODE}/actions?renderMode={editing|listing}
+     * </pre>
      *
-     * @param request HttpServletRequest
-     * @param inode String
-     * @param renderMode String, this is an uncase sensitive query string (?renderMode=) optional parameter.
-     *                   By default the findAvailableAction will run on WorkflowAPI.RenderMode.EDITING, if you want to run for instance on WorkflowAPI.RenderMode.LISTING
-     *                   you can send the renderMode parameter as ?renderMode=listing
-     *                   This will be used to filter the action based on the show on configuration for each action.
-     * @return Response
+     * @param request    The current instance of the {@link HttpServletRequest}.
+     * @param inode      The Inode of the Contentlet.
+     * @param renderMode This is a case-insensitive optional parameter. By default, this method will
+     *                   run EDITING rendering mode. The available modes are specified via the
+     *                   {{@link #validRenderModeSet}} variable.
+     *
+     * @return Response A {@link Response} object that contains the available actions for the
+     * specified Contentlet.
      */
     @GET
     @Path("/contentlet/{inode}/actions")
@@ -446,13 +452,15 @@ public class WorkflowResource {
             this.workflowHelper.checkRenderMode (renderMode, initDataObject.getUser(), this.validRenderModeSet);
 
             final List<WorkflowAction> actions = this.workflowHelper.findAvailableActions(inode, initDataObject.getUser(),
-                    LISTING.equalsIgnoreCase(renderMode)?WorkflowAPI.RenderMode.LISTING:WorkflowAPI.RenderMode.EDITING);
+                    LISTING.equalsIgnoreCase(renderMode)
+                            ? WorkflowAPI.RenderMode.LISTING
+                            : WorkflowAPI.RenderMode.EDITING);
             return Response.ok(new ResponseEntityView<>(actions.stream()
-                    .map(this::toWorkflowActionView).collect(Collectors.toList()))).build(); // 200
-        } catch (Exception e) {
-            Logger.error(this.getClass(),
-                    "Exception on findAvailableActions, contentlet inode: " + inode +
-                            ", exception message: " + e.getMessage(), e);
+                    .map(this::toWorkflowActionView).collect(Collectors.toList()))).build();
+        } catch (final Exception e) {
+            Logger.error(this.getClass(), String.format("An error occurred when finding available" +
+                            " Workflow Actions for Contentlet Inode '%s' in mode '%s': %s", inode, renderMode,
+                    ExceptionUtil.getErrorMessage(e)), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
     } // findAvailableActions.
@@ -462,10 +470,18 @@ public class WorkflowResource {
         return convertToWorkflowActionView(workflowAction);
     }
 
+    /**
+     * Takes the information from a Workflow Action and transforms it into a View object that can
+     * display it in JSON notation appropriately. Keep in mind that any new property you add to the
+     * Workflow Action class will need to be added here as well.
+     *
+     * @param workflowAction The {@link WorkflowAction} that will be transformed.
+     *
+     * @return The {@link WorkflowActionView} that contains the information from the Workflow
+     * Action.
+     */
     public static WorkflowActionView convertToWorkflowActionView(final WorkflowAction workflowAction) {
-
         final WorkflowActionView workflowActionView = new WorkflowActionView();
-
         workflowActionView.setId(workflowAction.getId());
         workflowActionView.setName(workflowAction.getName());
         workflowActionView.setStepId(workflowAction.getSchemeId());
@@ -489,7 +505,7 @@ public class WorkflowResource {
         workflowActionView.setDestroyActionlet(workflowAction.hasDestroyActionlet());
         workflowActionView.setShowOn(workflowAction.getShowOn());
         workflowActionView.setActionInputs(createActionInputViews(workflowAction));
-
+        workflowActionView.setMetadata(workflowAction.getMetadata());
         return workflowActionView;
     }
 
