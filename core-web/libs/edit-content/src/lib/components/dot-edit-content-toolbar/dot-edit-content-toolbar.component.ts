@@ -53,12 +53,7 @@ export class DotEditContentToolbarComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.workflowActionService
-            .getByInode(this.inode, DotRenderMode.EDITING)
-            .subscribe((actions) => {
-                this._grouppedActions = this.groupActions(actions);
-                this.cdRef.markForCheck();
-            });
+        this.fetchWorkflowActions();
     }
 
     private groupActions(actions: DotCMSWorkflowAction[]): MenuItem[][] {
@@ -89,6 +84,7 @@ export class DotEditContentToolbarComponent implements OnInit {
         }).subscribe(
             (contentlet) => {
                 this.inode = contentlet.inode;
+                this.fetchWorkflowActions();
                 this.location.replaceState(`/content/${this.inode}`); // Replace the URL with the new inode without reloading the page
                 this.messageService.add({
                     severity: 'success',
@@ -104,5 +100,14 @@ export class DotEditContentToolbarComponent implements OnInit {
                 });
             }
         );
+    }
+
+    private fetchWorkflowActions() {
+        this.workflowActionService
+            .getByInode(this.inode, DotRenderMode.EDITING)
+            .subscribe((actions) => {
+                this._grouppedActions = this.groupActions(actions);
+                this.cdRef.markForCheck();
+            });
     }
 }
