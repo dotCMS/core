@@ -30,10 +30,10 @@
         <format>dir</format>
     </formats>
     <files>
-        <file>
-            <source>LICENSE.txt</source>
-            <outputDirectory>./</outputDirectory>
-        </file>
+<!--        <file>-->
+<!--            <source>LICENSE.txt</source>-->
+<!--            <outputDirectory>./</outputDirectory>-->
+<!--        </file>-->
         <file>
             <source>${project.build.directory}/${project.artifactId}-${project.version}-runner${executable-suffix}</source>
             <outputDirectory>./bin</outputDirectory>
