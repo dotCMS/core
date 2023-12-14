@@ -38,9 +38,9 @@ jobs:
 
           wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.1.0/graalvm-ce-java11-darwin-aarch64-22.1.0.tar.gz
           tar -xzf graalvm-ce-java11-darwin-aarch64-22.1.0.tar.gz
-          sudo mv graalvm-ce-java11-22.1.0 /Library/Java/JavaVirtualMachines
+          sudo mv graalvm-ce-java11-22.1.0 $PWD/Library/Java/JavaVirtualMachines
 
-          sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java11-22.1.0/Contents/Home
+          sudo xattr -r -d com.apple.quarantine $PWD/Library/Java/JavaVirtualMachines/graalvm-ce-java11-22.1.0/Contents/Home
 
           export GRAALVM_HOME=$PWD/graalvm-ce-java11-22.1.0/Contents/Home
           export PATH=$GRAALVM_HOME/bin:$PATH
