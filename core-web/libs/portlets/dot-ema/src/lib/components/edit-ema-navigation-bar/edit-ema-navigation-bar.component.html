@@ -3,7 +3,7 @@
         class="edit-ema-nav-bar__item"
         *ngFor="let item of items"
         [routerLink]="item.href"
-        data-testId="'nav-bar-item"
+        data-testId="nav-bar-item"
         routerLinkActive="edit-ema-nav-bar__item--active"
         queryParamsHandling="merge">
         <ng-container
@@ -22,6 +22,7 @@
 <ng-template #iconURL let-item="item">
     <svg class="item__image" fill="currentColor" viewBox="0 0 24 24" width="24px" height="24px">
         <use
+            data-testId="nav-bar-item-image"
             attr.href="./assets/dot-ema/{{ item.iconURL }}.svg#{{ item.iconURL }}"
             width="24px"
             height="24px"></use>

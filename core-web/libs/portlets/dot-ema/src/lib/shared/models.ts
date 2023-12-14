@@ -42,8 +42,6 @@ export interface ContainerActionPayload {
 export interface NavigationBarItem {
     icon?: string;
     iconURL?: string;
-    iconURLActive?: string;
     label: string;
     href: string;
-    _active?: boolean;
 }

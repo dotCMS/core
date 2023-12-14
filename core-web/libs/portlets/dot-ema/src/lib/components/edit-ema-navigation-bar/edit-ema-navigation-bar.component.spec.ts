@@ -1,6 +1,8 @@
 import { describe, expect } from '@jest/globals';
 import { byTestId, createRoutingFactory, SpectatorRouting } from '@ngneat/spectator/jest';
 
+import { By } from '@angular/platform-browser';
+
 import { EditEmaNavigationBarComponent } from './edit-ema-navigation-bar.component';
 
 describe('EditEmaNavigationBarComponent', () => {
@@ -49,7 +51,6 @@ describe('EditEmaNavigationBarComponent', () => {
                         href: 'rules'
                     },
                     {
-                        iconURLActive: 'assets/images/experiments-active.svg',
                         iconURL: 'assets/images/experiments.svg',
                         label: 'Experiments',
                         href: 'experiments'
@@ -83,20 +84,29 @@ describe('EditEmaNavigationBarComponent', () => {
 
                 spectator.click(contentButton);
 
-                expect(spectator.query(byTestId('nav-bar-item')).textContent.trim()).toBe(
-                    'Content'
+                expect(spectator.query(byTestId('nav-bar-item')).classList[1]).toBe(
+                    'edit-ema-nav-bar__item--active'
                 );
             });
+
             it('should have an icon', () => {
                 expect(spectator.query(byTestId('nav-bar-item-icon'))).not.toBeNull();
             });
 
+            it('should have a label', () => {
+                expect(spectator.query(byTestId('nav-bar-item-label'))).not.toBeNull();
+            });
+
             describe('item without icon', () => {
-                // it("should have an image with src 'assets/images/experiments.svg'", () => {
-                //     const image = spectator.debugElement.query(
-                //         By.css('[data-testId="nav-bar-item-image"]')
-                //     );
-                // });
+                it("should have an image with href 'assets/images/experiments.svg'", () => {
+                    const image = spectator.debugElement.query(
+                        By.css('[data-testId="nav-bar-item-image"]')
+                    );
+
+                    expect(image.nativeElement.getAttribute('href')).toBe(
+                        './assets/dot-ema/assets/images/experiments.svg.svg#assets/images/experiments.svg'
+                    );
+                });
             });
         });
     });
