@@ -24,7 +24,6 @@ function makeShorter(x){
 	if(h < 150){
 		ele.style.minHeight = "150px";
 	}
-
 }
 
 function makeNarrower(x){
@@ -36,7 +35,6 @@ function makeNarrower(x){
 	if(	ele.style.width  < 100){
 		ele.style.width = "100px";
 	}
-
 }
 
 function makeWider( x){
