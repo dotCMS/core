@@ -44,8 +44,10 @@ jobs:
 
           sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java11-22.1.0/Contents/Home
 
-          export GRAALVM_HOME=/Library/Java/JavaVirtualMachines/graalvm-ce-java11-22.1.0/Contents/Home
-          export PATH=$GRAALVM_HOME/bin:$PATH
+          GRAALVM_HOME="/Library/Java/JavaVirtualMachines/graalvm-ce-java11-22.1.0/Contents/Home"
+          echo "GRAALVM_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
+          PATH="$GRAALVM_HOME/bin:$PATH"
+          echo "PATH=$PATH" >> $GITHUB_ENV
           gu install native-image
 
       - name: Checking GraalVM setup
