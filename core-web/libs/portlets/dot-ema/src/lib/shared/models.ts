@@ -38,3 +38,10 @@ export interface ContainerActionPayload {
     contentletID: string;
     personaTag?: string;
 }
+
+export interface NavigationBarItem {
+    icon?: string;
+    iconURL?: string;
+    label: string;
+    href: string;
+}
