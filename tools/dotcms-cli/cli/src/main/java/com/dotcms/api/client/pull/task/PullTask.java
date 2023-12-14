@@ -100,7 +100,7 @@ public class PullTask<T> extends RecursiveTask<List<Exception>> {
                     .objectMapper(this.params.format());
             final String asString = objectMapper.writeValueAsString(content);
             if (this.params.output().isVerbose()) {
-                this.params.output().info(asString);
+                this.params.output().info( String.format("%n%s", asString) );
             }
 
             final String fileName = String.format(
