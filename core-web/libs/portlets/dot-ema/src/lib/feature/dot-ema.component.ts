@@ -4,6 +4,7 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
+    ChangeDetectorRef,
     Component,
     ElementRef,
     Inject,
@@ -31,6 +32,10 @@ import { EditEmaStore } from './store/dot-ema.store';
 import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from '../components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaToolbarComponent } from '../components/edit-ema-toolbar/edit-ema-toolbar.component';
+import {
+    EmaPageDropzoneComponent,
+    Row
+} from '../components/ema-page-dropzone/ema-page-dropzone.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA, DEFAULT_URL, HOST, WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
@@ -52,7 +57,8 @@ import { deleteContentletFromContainer, insertContentletInContainer } from '../u
         EditEmaPersonaSelectorComponent,
         ClipboardModule,
         ToastModule,
-        DotMessagePipe
+        DotMessagePipe,
+        EmaPageDropzoneComponent
     ],
     providers: [
         EditEmaStore,
@@ -92,7 +98,9 @@ export class DotEmaComponent implements OnInit, OnDestroy {
 
     private savePayload: AddContentletPayload;
 
-    constructor(@Inject(WINDOW) private window: Window) {}
+    rows: Row[] = [];
+
+    constructor(@Inject(WINDOW) private window: Window, private cd: ChangeDetectorRef) {}
 
     ngOnInit(): void {
         this.route.queryParams.subscribe((queryParams: Params) => {
@@ -259,7 +267,10 @@ export class DotEmaComponent implements OnInit, OnDestroy {
         data
     }: {
         origin: string;
-        data: { action: CUSTOMER_ACTIONS; payload: DotCMSContentlet | AddContentletPayload };
+        data: {
+            action: CUSTOMER_ACTIONS;
+            payload: DotCMSContentlet | AddContentletPayload | Row[];
+        };
     }): () => void {
         const action = origin !== this.host ? CUSTOMER_ACTIONS.NOOP : data.action;
 
@@ -324,10 +335,25 @@ export class DotEmaComponent implements OnInit, OnDestroy {
                     queryParamsHandling: 'merge'
                 });
             },
+            [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
+                this.rows = <Row[]>data.payload;
+                this.cd.detectChanges();
+            },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }
         })[action];
+    }
+
+    onDragStart(_event: DragEvent) {
+        this.iframe.nativeElement.contentWindow?.postMessage(
+            NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
+            this.host
+        );
+    }
+
+    onDragEnd(_event: DragEvent) {
+        this.rows = [];
     }
 
     /**

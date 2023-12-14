@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useContext } from 'react';
 import { GlobalContext } from '@/lib/providers/global';
 import { usePathname } from 'next/navigation';
@@ -8,17 +8,83 @@ import Header from './layout/header';
 import Footer from './layout/footer';
 import Row from '@/lib/components/row';
 
-function reloadWindow(event) {
-    if (event.data !== 'ema-reload-page') return;
+function getPageElementBound(rowsRef) {
+    return rowsRef.current.map((row) => {
+        const rowRect = row.getBoundingClientRect();
+        const columns = row.children;
 
-    window.location.reload();
+        return {
+            x: rowRect.x,
+            y: rowRect.y,
+            width: rowRect.width,
+            height: rowRect.height,
+            columns: Array.from(columns).map((column) => {
+                const columnRect = column.getBoundingClientRect();
+                const containers = Array.from(column.querySelectorAll('[data-dot="container"]'));
+
+                const columnX = columnRect.left - rowRect.left;
+                const columnY = columnRect.top - rowRect.top;
+
+                return {
+                    x: columnX,
+                    y: columnY,
+                    width: columnRect.width,
+                    height: columnRect.height,
+                    containers: containers.map((container) => {
+                        const containerRect = container.getBoundingClientRect();
+                        const contentlets = Array.from(
+                            container.querySelectorAll('[data-dot="contentlet"]')
+                        );
+
+                        return {
+                            x: 0,
+                            y: containerRect.y - rowRect.top,
+                            width: containerRect.width,
+                            height: containerRect.height,
+                            contentlets: contentlets.map((contentlet) => {
+                                const contentletRect = contentlet.getBoundingClientRect();
+
+                                return {
+                                    x: 0,
+                                    y: contentletRect.y - containerRect.y,
+                                    width: contentletRect.width,
+                                    height: contentletRect.height
+                                };
+                            })
+                        };
+                    })
+                };
+            })
+        };
+    });
 }
 
 // Main layout component
 export const DotcmsPage = () => {
+    const rowsRef = useRef([]);
+
     const pathname = usePathname();
-    // Get the page layout from the global context
     const { layout, page } = useContext(GlobalContext);
+
+    function handleParentEvents(event) {
+        switch (event.data) {
+            case 'ema-reload-page':
+                window.location.reload();
+                break;
+            case 'ema-request-bounds':
+                const positionData = getPageElementBound(rowsRef);
+                window.parent.postMessage(
+                    {
+                        action: 'set-bounds',
+                        payload: positionData
+                    },
+                    '*'
+                );
+                break;
+            default:
+                break;
+        }
+    }
 
     useEffect(() => {
         const url = pathname.split('/');
@@ -35,12 +101,36 @@ export const DotcmsPage = () => {
     }, [pathname]);
 
     useEffect(() => {
-        window.addEventListener('message', reloadWindow);
+        window.addEventListener('message', handleParentEvents);
 
         return () => {
-            window.removeEventListener('message', reloadWindow);
+            window.removeEventListener('message', handleParentEvents);
         };
     }, []);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            window.parent.postMessage(
+                {
+                    action: 'set-bounds',
+                    payload: []
+                },
+                '*'
+            );
+        };
+
+        window.addEventListener('scroll', handleScroll);
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, []);
+
+    const addRowRef = (el) => {
+        if (el && !rowsRef.current.includes(el)) {
+            rowsRef.current.push(el);
+        }
+    };
 
     return (
         <div className="flex flex-col min-h-screen gap-6">
@@ -48,7 +138,7 @@ export const DotcmsPage = () => {
             <main className="container flex flex-col gap-8 m-auto">
                 <h1 className="text-xl font-bold">{page.title}</h1>
                 {layout.body.rows.map((row, index) => (
-                    <Row key={index} row={row} />
+                    <Row ref={addRowRef} key={index} row={row} />
                 ))}
             </main>
             {layout.footer && <Footer />}

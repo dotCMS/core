@@ -3,6 +3,7 @@
 :host {
     display: grid;
     grid-template-rows: min-content 1fr;
+    grid-template-columns: 1fr 80px;
     height: 100%;
 
     h4 {
@@ -40,9 +41,19 @@
     }
 }
 
+dot-ema-page-dropzone {
+    position: absolute;
+    inset: 0;
+}
+
+dot-edit-ema-toolbar {
+    grid-column: 1 / -1;
+}
+
 .iframe-wrapper {
+    position: relative;
     margin: $spacing-3;
-    border: solid 1px $color-palette-gray-500;
+    // border: solid 1px $color-palette-gray-500;
 }
 
 // Selectors overlayPanel

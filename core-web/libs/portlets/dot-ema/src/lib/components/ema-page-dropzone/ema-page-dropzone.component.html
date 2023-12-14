@@ -1,0 +1,19 @@
+<!-- {{rows | json}} -->
+
+<div class="row" *ngFor="let row of rows" [ngStyle]="getStyle(row, 'transparent')">
+    <div
+        class="column"
+        *ngFor="let column of row.columns"
+        [ngStyle]="getStyle(column, 'transparent')">
+        <div
+            class="container"
+            *ngFor="let container of column.containers"
+            [ngStyle]="getStyle(container, 'red')"
+            (dragover)="onDragOver($event)">
+            <div
+                class="contentlets"
+                *ngFor="let contentlet of container.contentlets"
+                [ngStyle]="getStyle(contentlet, 'black')"></div>
+        </div>
+    </div>
+</div>

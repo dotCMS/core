@@ -42,6 +42,7 @@ function Container({ containerRef }) {
                 +
             </ActionButton>
             <div
+                data-dot="container"
                 className="flex flex-col gap-4"
                 data-dot-accept-types={acceptTypes}
                 data-dot-object="container"
@@ -65,7 +66,8 @@ function Container({ containerRef }) {
 
                     return (
                         <div
-                            className="p-4 border border-gray-300"
+                            data-dot="contentlet"
+                            className="p-4 bg-slate-100"
                             key={contentlet.identifier}
                             data-dot-object="contentlet"
                             data-dot-inode={inode}
