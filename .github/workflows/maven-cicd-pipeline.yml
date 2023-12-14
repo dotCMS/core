@@ -34,17 +34,31 @@ jobs:
     permissions:
       pull-requests: read
     outputs:
-      backend: ${{ steps.filter.outputs.backend }}
-      frontend: ${{ steps.filter.outputs.frontend }}
-      build: ${{ steps.filter.outputs.build }}
-      jvm_unit_test: ${{ steps.filter.outputs.jvm_unit_test }}
-      cli: ${{ steps.filter.outputs.cli }}
+      backend: ${{ steps.filter-rewrite.outputs.backend }}
+      frontend: ${{ steps.filter-rewrite.outputs.frontend }}
+      build: ${{ steps.filter-rewrite.outputs.build }}
+      jvm_unit_test: ${{ steps.filter-rewrite.outputs.jvm_unit_test }}
+      cli: ${{ steps.filter-rewrite.outputs.cli }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v2.11.1
         id: filter
         with:
           filters: .github/filters.yaml
+          list-files: 'escape'
+      - id: filter-rewrite
+        run: |
+          frontend=${{ steps.filter.outputs.frontend }}
+          cli=${{ steps.filter.outputs.cli }}
+          backend=${{ steps.filter.outputs.backend }}
+          
+          echo "${{ steps.filter.outputs.backend_files }}"
+          
+          echo "frontend=${frontend}" >> $GITHUB_OUTPUT
+          echo "cli=${cli}" >> $GITHUB_OUTPUT
+          echo "backend=${backend}" >> $GITHUB_OUTPUT
+          echo "jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test }}" >> $GITHUB_OUTPUT
+          echo "build=${{ steps.filter.outputs.build }}" >> $GITHUB_OUTPUT
 
   #
   # Initial JDK 11 Build
