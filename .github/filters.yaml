@@ -2,7 +2,7 @@ backend: &backend
   - 'bom/**'
   - 'build-parent/**'
   - 'dotCMS/**'
-  - '!(dotCMS/src/main/webapp/html)/**/*.{css,js}'
+  - 'dotCMS/src/main/webapp/!(html)/**/*.{css,js}'
   - 'dotcms-integration/**'
   - 'independent-projects/**'
   - 'maven-plugins/**'
