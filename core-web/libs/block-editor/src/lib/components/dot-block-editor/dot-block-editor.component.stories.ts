@@ -36,6 +36,7 @@ import {
 } from '../../shared';
 import { DotMessageServiceMock } from '../../shared/mocks/dot-message.service.mock';
 import { DotAiServiceMock } from '../../shared/services/dot-ai/dot-ai-service.mock';
+import { DotBlockEditorInitService } from '../../shared/services/dot-block-editor-init/dot-block-editor-init.service';
 
 export default {
     title: 'Library/Block Editor'
@@ -202,7 +203,8 @@ export const primary = () => ({
                     process.env.USE_MIDDLEWARE === 'true'
                         ? DotMessageService
                         : DotMessageServiceMock
-            }
+            },
+            DotBlockEditorInitService
         ],
         // We need these here because they are dynamically rendered
         entryComponents: [
