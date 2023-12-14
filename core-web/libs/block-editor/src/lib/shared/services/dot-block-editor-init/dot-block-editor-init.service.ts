@@ -22,7 +22,7 @@ export class DotBlockEditorInitService {
      *
      * @return {Promise<any>} A Promise that resolves when the Block Editor is initialized.
      */
-    initializeBlockEditor(): Promise<unknown> {
+    initializeBlockEditor(): Promise<boolean[]> {
         return Promise.all([
             this.verifyAiDotCMSPlugin()
             // additional configs
@@ -41,17 +41,15 @@ export class DotBlockEditorInitService {
             return Promise.resolve(this._isPluginInstalled);
         }
 
+        this._isPluginInstalled = false;
+
         try {
             const response = await this.dotAiService.checkPluginInstallation().toPromise();
             this._isPluginInstalled = response.status === 200;
-
-            return this._isPluginInstalled;
         } catch (error) {
             console.error('Error checking plugin installation:', error);
-
-            this._isPluginInstalled = false;
-
-            return this._isPluginInstalled;
         }
+
+        return this._isPluginInstalled;
     }
 }
