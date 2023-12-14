@@ -13,7 +13,7 @@ import {
     inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Params, Router } from '@angular/router';
+import { ActivatedRoute, Router, Params } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -22,23 +22,22 @@ import { ToastModule } from 'primeng/toast';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotPersona } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
+import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
+import { DotPersona, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
-import { EditEmaStore } from './store/dot-ema.store';
+import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
+import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 
-import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-selector/edit-ema-language-selector.component';
-import { EditEmaPersonaSelectorComponent } from '../components/edit-ema-persona-selector/edit-ema-persona-selector.component';
-import { EditEmaToolbarComponent } from '../components/edit-ema-toolbar/edit-ema-toolbar.component';
-import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA, DEFAULT_URL, HOST, WINDOW } from '../shared/consts';
-import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
+import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
+import { HOST, WINDOW, DEFAULT_LANGUAGE_ID, DEFAULT_URL, DEFAULT_PERSONA } from '../shared/consts';
+import { NG_CUSTOM_EVENTS, CUSTOMER_ACTIONS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { AddContentletPayload, DeleteContentletPayload, SetUrlPayload } from '../shared/models';
-import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
+import { insertContentletInContainer, deleteContentletFromContainer } from '../utils';
 
 @Component({
-    selector: 'dot-ema',
+    selector: 'dot-edit-ema-editor',
     standalone: true,
     imports: [
         CommonModule,
@@ -47,30 +46,18 @@ import { deleteContentletFromContainer, insertContentletInContainer } from '../u
         DialogModule,
         DotSpinnerModule,
         ConfirmDialogModule,
-        EditEmaToolbarComponent,
-        EmaLanguageSelectorComponent,
         EditEmaPersonaSelectorComponent,
+        EditEmaLanguageSelectorComponent,
+        EditEmaToolbarComponent,
         ClipboardModule,
         ToastModule,
         DotMessagePipe
     ],
-    providers: [
-        EditEmaStore,
-        DotPageApiService,
-        ConfirmationService,
-        DotLanguagesService,
-        DotPersonalizeService,
-        MessageService,
-        {
-            provide: WINDOW,
-            useValue: window
-        }
-    ],
-    templateUrl: './dot-ema.component.html',
-    styleUrls: ['./dot-ema.component.scss'],
+    templateUrl: './edit-ema-editor.component.html',
+    styleUrls: ['./edit-ema-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEmaComponent implements OnInit, OnDestroy {
+export class EditEmaEditorComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('personaSelector') personaSelector!: EditEmaPersonaSelectorComponent;
