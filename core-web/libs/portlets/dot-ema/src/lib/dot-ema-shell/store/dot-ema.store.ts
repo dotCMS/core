@@ -88,6 +88,10 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 : null // Don't return anything unless we have page data
     );
 
+    readonly layout$ = this.select((state) =>
+        state.editor.page.identifier ? state.editor.layout : null
+    );
+
     /**
      * Load the page editor
      *

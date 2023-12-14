@@ -1,1 +1,3 @@
-<p>edit-ema-layout works!</p>
+<dotcms-template-builder-lib
+    *ngIf="layout$ | async as layout"
+    [layout]="layout"></dotcms-template-builder-lib>
