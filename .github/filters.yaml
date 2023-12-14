@@ -2,6 +2,8 @@ backend: &backend
   - 'bom/**'
   - 'build-parent/**'
   - 'dotCMS/**'
+  - '!(dotCMS/src/main/webapp/html/**/*.css)'
+  - '!(dotCMS/src/main/webapp/html/**/*.js)'
   - 'dotcms-integration/**'
   - 'independent-projects/**'
   - 'maven-plugins/**'
@@ -14,6 +16,8 @@ backend: &backend
   - 'pom.xml'
 frontend: &frontend
   - 'core-web/**'
+  - 'dotCMS/src/main/webapp/html/**/*.css'
+  - 'dotCMS/src/main/webapp/html/**/*.js'
 cli: &cli
   - 'tools/dotcms-cli/**'
 

@@ -57,6 +57,7 @@ import org.immutables.value.Value.Default;
         @Type(value = WysiwygField.class),
         @Type(value = RowField.class),
         @Type(value = ColumnField.class),
+        @Type(value = JSONField.class),
 })
 @JsonInclude(Include.NON_DEFAULT)
 @Value.Style(passAnnotations = {JsonInclude.class})
