@@ -69,7 +69,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
                 }
             });
         }catch (IOException e){
-            logger.fatal("Error starting up application check your configuration file and make sure it is well formed. See Quarkus logs for more details. ");
+            logger.fatal("Error starting up application check your configuration file and make sure it is well formed. See dotcms-cli.log for more details. ");
             throw new IllegalStateException(e);
         }
     }
