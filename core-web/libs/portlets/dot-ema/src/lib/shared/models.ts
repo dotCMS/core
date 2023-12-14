@@ -3,6 +3,8 @@ export interface AddContentletPayload {
     container?: Container;
     pageContainers: Container[];
     pageID: string;
+    personaTag?: string;
+    language_id?: string;
 }
 
 // This is the payload we recieve from the iframe for delete action
@@ -11,6 +13,7 @@ export interface DeleteContentletPayload {
     pageContainers: Container[];
     pageID: string;
     contentletId: string;
+    personaTag?: string;
 }
 
 export interface SetUrlPayload {
@@ -22,6 +25,7 @@ export interface Container {
     identifier: string;
     uuid: string;
     contentletsId?: string[];
+    personaTag?: string;
 }
 
 export interface SavePagePayload extends AddContentletPayload {
@@ -32,4 +36,5 @@ export interface ContainerActionPayload {
     pageContainers: Container[];
     container: Container;
     contentletID: string;
+    personaTag?: string;
 }

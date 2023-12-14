@@ -7,7 +7,7 @@ import { Avatar } from 'primeng/avatar';
     standalone: true
 })
 export class DotAvatarDirective implements OnInit {
-    @Input() readonly text: string = 'Default';
+    @Input() text = 'Default';
 
     constructor(private avatar: Avatar, private cd: ChangeDetectorRef) {
         this.avatar.shape = 'circle';

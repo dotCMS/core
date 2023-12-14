@@ -9,7 +9,7 @@ function Container({ containerRef }) {
     const { identifier, uuid } = containerRef;
 
     // Get the containers from the global context
-    const { containers, page } = useContext(GlobalContext);
+    const { containers, page, viewAs } = useContext(GlobalContext);
 
     const {
         inode,
@@ -35,7 +35,9 @@ function Container({ containerRef }) {
                             contentletsId,
                             acceptTypes
                         },
-                        pageContainers
+                        personaTag: viewAs.persona?.keyTag,
+                        pageContainers,
+                        language_id: viewAs.language.id
                     }
                 }}>
                 +
@@ -94,7 +96,8 @@ function Container({ containerRef }) {
                                                 uuid
                                             },
                                             pageContainers,
-                                            contentletId: contentlet.identifier
+                                            contentletId: contentlet.identifier,
+                                            personaTag: viewAs.persona?.keyTag
                                         }
                                     }}>
                                     Delete

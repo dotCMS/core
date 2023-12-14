@@ -10,7 +10,12 @@ import {
     DotPageApiResponse,
     DotPageApiService
 } from '../../services/dot-page-api.service';
-import { ADD_CONTENTLET_URL, EDIT_CONTENTLET_URL } from '../../shared/consts';
+import {
+    ADD_CONTENTLET_URL,
+    DEFAULT_PERSONA,
+    EDIT_CONTENTLET_URL,
+    HOST
+} from '../../shared/consts';
 import { SavePagePayload } from '../../shared/models';
 
 export interface EditEmaState {
@@ -49,28 +54,39 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         });
     }
 
-    readonly iframeUrl$: Observable<string> = this.select(
-        ({ url, editor }) => `http://localhost:3000/${url}?language_id=${editor.viewAs.language.id}`
-    );
-    readonly language_id$: Observable<number> = this.select(
-        (state) => state.editor.viewAs.language.id
-    );
-    readonly url$: Observable<string> = this.select((state) => state.url);
-    readonly pageTitle$: Observable<string> = this.select((state) => state.editor.page.title);
-    readonly editIframeURL$: Observable<string> = this.select((state) => state.dialogIframeURL);
-    readonly editor$: Observable<DotPageApiResponse> = this.select((state) => state.editor);
+    readonly editorState$ = this.select((state) => {
+        const pageURL = this.createPageURL({
+            url: state.url,
+            language_id: state.editor.viewAs.language.id.toString(),
+            persona_id: state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
+        });
 
-    readonly vm$ = this.select((state) => {
-        return {
-            iframeUrl: `http://localhost:3000/${state.url}?language_id=${state.editor.viewAs.language.id}`,
-            pageTitle: state.editor.page.title,
-            dialogIframeURL: state.dialogIframeURL,
-            dialogVisible: state.dialogVisible,
-            dialogHeader: state.dialogHeader,
-            dialogIframeLoading: state.dialogIframeLoading,
-            editor: state.editor
-        };
+        return state.editor.page.identifier
+            ? {
+                  apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
+                  iframeURL: `${HOST}/${pageURL}`,
+                  editor: {
+                      ...state.editor,
+                      viewAs: {
+                          ...state.editor.viewAs,
+                          persona: state.editor.viewAs.persona ?? DEFAULT_PERSONA
+                      }
+                  }
+              }
+            : null; // Don't return anything unless we have page data
     });
+
+    readonly dialogState$ = this.select(
+        (state) =>
+            state.editor.page.identifier
+                ? {
+                      dialogIframeURL: state.dialogIframeURL,
+                      dialogVisible: state.dialogVisible,
+                      dialogHeader: state.dialogHeader,
+                      dialogIframeLoading: state.dialogIframeLoading
+                  }
+                : null // Don't return anything unless we have page data
+    );
 
     /**
      * Load the page editor
@@ -79,8 +95,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      */
     readonly load = this.effect((params$: Observable<DotPageApiParams>) => {
         return params$.pipe(
-            switchMap(({ language_id, url }) =>
-                this.dotPageApiService.get({ language_id, url }).pipe(
+            switchMap(({ language_id, url, persona_id }) =>
+                this.dotPageApiService.get({ language_id, url, persona_id }).pipe(
                     tap({
                         next: (editor) => {
                             this.patchState({
@@ -110,7 +126,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 this.dotPageApiService.save(payload).pipe(
                     tapResponse(
                         () => {
-                            payload.whenSaved?.(); // TODO: We need to create and editorState for this kind of actions (LOADING | IDLE | SAVED...)
+                            payload.whenSaved?.();
                         },
                         (e) => {
                             console.error(e);
@@ -171,13 +187,26 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     // This method is called when the user clicks on the edit button
     readonly initActionAdd = this.updater(
-        (state, payload: { containerID: string; acceptTypes: string }) => {
+        (state, payload: { containerID: string; acceptTypes: string; language_id: string }) => {
             return {
                 ...state,
                 dialogVisible: true,
                 dialogHeader: 'Search Content', // Does this need translation?
                 dialogIframeLoading: true,
                 dialogIframeURL: this.createAddContentletUrl(payload)
+            };
+        }
+    );
+
+    // This method is called when the user clicks on the edit button
+    readonly initActionCreate = this.updater(
+        (state, payload: { contentType: string; url: string }) => {
+            return {
+                ...state,
+                dialogVisible: true,
+                dialogHeader: payload.contentType,
+                dialogIframeLoading: true,
+                dialogIframeURL: payload.url
             };
         }
     );
@@ -204,14 +233,19 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      */
     private createAddContentletUrl({
         containerID,
-        acceptTypes
+        acceptTypes,
+        language_id
     }: {
         containerID: string;
         acceptTypes: string;
+        language_id: string;
     }): string {
-        return ADD_CONTENTLET_URL.replace('*CONTAINER_ID*', containerID).replace(
-            '*BASE_TYPES*',
-            acceptTypes
-        );
+        return ADD_CONTENTLET_URL.replace('*CONTAINER_ID*', containerID)
+            .replace('*BASE_TYPES*', acceptTypes)
+            .replace('*LANGUAGE_ID*', language_id);
+    }
+
+    private createPageURL({ url, language_id, persona_id }: DotPageApiParams): string {
+        return `${url}?language_id=${language_id}&com.dotmarketing.persona.id=${persona_id}`;
     }
 }

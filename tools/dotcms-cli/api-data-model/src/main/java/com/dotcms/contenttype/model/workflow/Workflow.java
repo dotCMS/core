@@ -19,6 +19,13 @@ public interface Workflow {
         return false;
     }
 
+    /**
+     * The creationDate attribute is marked as auxiliary to exclude it from the equals, hashCode,
+     * and toString methods. This ensures that two instances of Workflow can be considered equal
+     * even if their creationDate values differ. This decision was made because under certain
+     * circumstances, the creationDate value is set using the current date.
+     */
+    @Value.Auxiliary
     @Nullable
     Date creationDate();
 

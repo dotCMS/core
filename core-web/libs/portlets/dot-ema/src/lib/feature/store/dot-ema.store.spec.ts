@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 import { EditEmaStore } from './dot-ema.store';
 
 import { DotPageApiService } from '../../services/dot-page-api.service';
-import { EDIT_CONTENTLET_URL } from '../../shared/consts';
+import { DEFAULT_PERSONA, EDIT_CONTENTLET_URL } from '../../shared/consts';
 
 describe('EditEmaStore', () => {
     let spectator: SpectatorService<EditEmaStore>;
@@ -16,11 +16,12 @@ describe('EditEmaStore', () => {
     beforeEach(() => (spectator = createService()));
 
     describe('selectors', () => {
-        it('should return iframe url', (done) => {
+        it('should return editorState', (done) => {
             const dotPageApiService = spectator.inject(DotPageApiService);
             const mockResponse = {
                 page: {
-                    title: 'Test Page'
+                    title: 'Test Page',
+                    identifier: '123'
                 },
                 viewAs: {
                     language: {
@@ -29,16 +30,54 @@ describe('EditEmaStore', () => {
                         countryCode: '',
                         languageCode: '',
                         country: ''
+                    },
+                    persona: {
+                        ...DEFAULT_PERSONA
                     }
                 }
             };
             dotPageApiService.get.andReturn(of(mockResponse));
 
-            spectator.service.load({ language_id: '1', url: 'test-url' });
+            spectator.service.load({ language_id: '1', url: 'test-url', persona_id: '123' });
 
-            spectator.service.iframeUrl$.subscribe((url) => {
-                expect(url).toEqual('http://localhost:3000/test-url?language_id=1');
+            spectator.service.editorState$.subscribe((state) => {
+                expect(state as unknown).toEqual({
+                    apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
+                    editor: {
+                        page: { identifier: '123', title: 'Test Page' },
+                        viewAs: {
+                            language: {
+                                country: '',
+                                countryCode: '',
+                                id: 1,
+                                language: '',
+                                languageCode: ''
+                            },
+                            persona: {
+                                ...DEFAULT_PERSONA
+                            }
+                        }
+                    },
+                    iframeURL:
+                        'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                });
                 done();
+            });
+        });
+
+        it('should return the dialogState', () => {
+            spectator.service.setDialogIframeURL('test-url');
+            spectator.service.setDialogVisible(true);
+            spectator.service.setDialogHeader('test');
+            spectator.service.setDialogIframeLoading(true);
+
+            spectator.service.dialogState$.subscribe((state) => {
+                expect(state).toEqual({
+                    dialogIframeURL: 'test-url',
+                    dialogVisible: true,
+                    dialogHeader: 'test',
+                    dialogIframeLoading: true
+                });
             });
         });
     });
@@ -228,7 +267,7 @@ describe('EditEmaStore', () => {
             });
         });
 
-        it('should initialize editIframe properties', (done) => {
+        it('should initialize editAction properties', (done) => {
             spectator.service.initActionEdit({
                 inode: '123',
                 title: 'test'
@@ -260,6 +299,74 @@ describe('EditEmaStore', () => {
                 done();
             });
         });
+
+        it('should initialize addAction properties', (done) => {
+            spectator.service.initActionAdd({
+                containerID: '123',
+                acceptTypes: 'test',
+                language_id: '1'
+            });
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state).toEqual({
+                    editor: {
+                        page: {
+                            title: '',
+                            identifier: ''
+                        },
+                        viewAs: {
+                            language: {
+                                id: 1,
+                                language: '',
+                                countryCode: '',
+                                languageCode: '',
+                                country: ''
+                            }
+                        }
+                    },
+                    url: '',
+                    dialogIframeURL:
+                        '/html/ng-contentlet-selector.jsp?ng=true&container_id=123&add=test&language_id=1',
+                    dialogIframeLoading: true,
+                    dialogHeader: 'Search Content',
+                    dialogVisible: true
+                });
+                done();
+            });
+        });
+
+        it('should initialize createAction properties', (done) => {
+            spectator.service.initActionCreate({
+                contentType: 'test',
+                url: 'some/really/long/url'
+            });
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state).toEqual({
+                    editor: {
+                        page: {
+                            title: '',
+                            identifier: ''
+                        },
+                        viewAs: {
+                            language: {
+                                id: 1,
+                                language: '',
+                                countryCode: '',
+                                languageCode: '',
+                                country: ''
+                            }
+                        }
+                    },
+                    url: '',
+                    dialogIframeURL: 'some/really/long/url',
+                    dialogIframeLoading: true,
+                    dialogHeader: 'test',
+                    dialogVisible: true
+                });
+                done();
+            });
+        });
     });
 
     describe('effects', () => {
@@ -282,7 +389,7 @@ describe('EditEmaStore', () => {
             };
             dotPageApiService.get.andReturn(of(mockResponse));
 
-            spectator.service.load({ language_id: 'en', url: 'test-url' });
+            spectator.service.load({ language_id: 'en', url: 'test-url', persona_id: '123' });
 
             spectator.service.state$.subscribe((state) => {
                 expect(state).toEqual({
@@ -320,7 +427,7 @@ describe('EditEmaStore', () => {
             };
             dotPageApiService.get.andReturn(of(mockResponse));
 
-            spectator.service.load({ language_id: 'en', url: 'test-url' });
+            spectator.service.load({ language_id: 'en', url: 'test-url', persona_id: '123' });
             spectator.service.savePage({
                 pageContainers: [],
                 container: {

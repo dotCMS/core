@@ -1,8 +1,13 @@
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow,
+    DotCMSContentTypeLayoutTab
+} from '@dotcms/dotcms-models';
 
 import {
     CALENDAR_FIELD_TYPES,
     FLATTENED_FIELD_TYPES,
+    TAB_FIELD_CLAZZ,
     UNCASTED_FIELD_TYPES
 } from '../models/dot-edit-content-field.constant';
 import {
@@ -74,4 +79,37 @@ export const getFinalCastedValue = (
     }
 
     return castSingleSelectableValue(value as string, field.dataType);
+};
+
+export const transformLayoutToTabs = (
+    firstTabTitle: string,
+    layout: DotCMSContentTypeLayoutRow[]
+): DotCMSContentTypeLayoutTab[] => {
+    const initialTab = [
+        {
+            title: firstTabTitle,
+            layout: []
+        }
+    ];
+
+    // Reduce the layout into tabs
+    const tabs = layout.reduce((acc, row) => {
+        const { clazz, name } = row.divider || {};
+        const lastTabIndex = acc.length - 1;
+
+        // If the class indicates a tab field, create a new tab
+        if (clazz === TAB_FIELD_CLAZZ) {
+            acc.push({
+                title: name,
+                layout: []
+            });
+        } else {
+            // Otherwise, add the row to the layout of the last tab
+            acc[lastTabIndex].layout.push(row);
+        }
+
+        return acc;
+    }, initialTab);
+
+    return tabs;
 };
