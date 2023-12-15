@@ -22,51 +22,50 @@ env:
   JAVA_VERSION: 11
   JAVA_DISTRO: temurin
   NEXT_VERSION: '1.0.0-SNAPSHOT'
-  GRAAL_VERSION: '22.3.2'
-
+  GRAAL_VERSION: '22.1.0'
 
 jobs:
   precheck:
-    name: Pre-check
+    name: 'Pre-check'
     runs-on: ubuntu-latest
     outputs:
       RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
       NEXT_VERSION: ${{ steps.version.outputs.NEXT_VERSION }}
       HEAD: ${{ steps.version.outputs.HEAD }}
     steps:
-      - name: Log GitHub context
+      - name: 'Log GitHub context'
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
 
-      - name: Checkout
+      - name: 'Checkout'
         uses: actions/checkout@v4
 
-      - name: Setup Java
+      - name: 'Setup Java'
         uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRO }}
 
-      - name: Get Date
+      - name: 'Get Date'
         id: get-date
         run: |
           echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
         shell: bash
 
-      - name: Restore Maven Repository
+      - name: 'Restore Maven Repository'
         id: cache-maven
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
 
-      - name: Setup git config
+      - name: 'Setup git config'
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
-      - name: Set release version
+      - name: 'Set release version'
         id: version
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
@@ -100,24 +99,32 @@ jobs:
           ref: ${{ needs.precheck.outputs.HEAD }}
           fetch-depth: 0
 
-      - name: Set up GraalVM
+      - name: 'Set up GraalVM for macOS ${{ matrix.os }}'
+        if: ${{ contains(matrix.os, 'macos-13-xlarge') || contains(matrix.os, 'macOS-latest') }}
         run: |
-
-          wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.1.0/graalvm-ce-java11-darwin-aarch64-22.1.0.tar.gz
-          tar -xzf graalvm-ce-java11-darwin-aarch64-22.1.0.tar.gz
-          sudo mv graalvm-ce-java11-22.1.0 /Library/Java/JavaVirtualMachines
+          if [ ${{ matrix.os }} == "macos-13-xlarge" ]; then
+            echo "Setting GraalVM on macos-13-xlarge"
+            ARCH=aarch64
+          else
+            echo "Setting GraalVM on macOS-latest"
+            ARCH=amd64
+          fi         
+          
+          wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java11-darwin-${ARCH}-${GRAALVM_VERSION}.tar.gz
+          tar -xzf graalvm-ce-java11-darwin-${ARCH}-${GRAALVM_VERSION}.tar.gz
+          sudo mv graalvm-ce-java11-${GRAALVM_VERSION} /Library/Java/JavaVirtualMachines
           
           ls -la /Library/Java/JavaVirtualMachines
 
-          sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java11-22.1.0/Contents/Home
+          sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java11-${GRAALVM_VERSION}/Contents/Home
 
-          GRAALVM_HOME="/Library/Java/JavaVirtualMachines/graalvm-ce-java11-22.1.0/Contents/Home"
+          GRAALVM_HOME="/Library/Java/JavaVirtualMachines/graalvm-ce-java11-${GRAALVM_VERSION}/Contents/Home"
           echo "GRAALVM_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
           PATH="$GRAALVM_HOME/bin:$PATH"
           echo "PATH=$PATH" >> $GITHUB_ENV
           gu install native-image
 
-      - name: Checking GraalVM setup
+      - name: 'Checking GraalVM setup'
         run: |
           echo "GRAALVM_HOME: $GRAALVM_HOME"
           echo "JAVA_HOME: $JAVA_HOME"
@@ -131,7 +138,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
 
-      - name: Prepare dotCMS license
+      - name: 'Prepare dotCMS license'
         env:
           DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
         run: |
@@ -140,31 +147,30 @@ jobs:
           echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
           echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
 
-      - name: Build distribution
+      - name: 'Build distribution'
         working-directory: ${{ github.workspace }}
         run: |
           ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }} -am -pl :dotcms-cli
 
-      - name: Build uber-jar
+      - name: 'Build uber-jar'
         working-directory: ${{ github.workspace }}
         run: |
           ./mvnw package -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
 
-      - name: Build Native Image
+      - name: 'Build Native Image'
         working-directory: ${{ github.workspace }}
         run: |
           ./mvnw package -Pnative -DskipTests=${{ github.event.inputs.skipTests }} -Dquarkus.native.additional-build-args="-H:ReflectionConfigurationFiles=reflection-config.json,-H:ResourceConfigurationFiles=resources-config.json" -pl :dotcms-cli
 
-      - name: Create distribution
+      - name: 'Create distribution'
         working-directory: ${{ github.workspace }}
         run: |
           ./mvnw -B -ntp -Pdist package -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
 
-      - name: Distribution tree
+      - name: 'Distribution tree'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/
         run: |
           ls -ltr cli/target/distributions
-          # tree cli/target/distributions
 
       - name: 'Upload build artifact'
         uses: actions/upload-artifact@v3
@@ -174,12 +180,6 @@ jobs:
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
 #            ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.tar.gz
-
-#      - name: Build distribution
-#        working-directory: ${{ github.workspace }}
-#        run: |
-#          ./mvnw clean install -DskipTests=${{ github.event.inputs.skipTests }} -Dtest.failure.ignore=true -am -pl :dotcms-cli
-#          ./mvnw package -Pnative -DskipTests=${{ github.event.inputs.skipTests }} -Dquarkus.native.additional-build-args="-H:ReflectionConfigurationFiles=reflection-config.json,-H:ResourceConfigurationFiles=resources-config.json" -pl :dotcms-cli
 
   release:
     needs: [ precheck, build ]
@@ -219,7 +219,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
 
-      - name: Releaser
+      - name: 'JReleaser'
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.VERSION }}
@@ -231,12 +231,12 @@ jobs:
         run: |
           tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
 
-      - name: Setup git config
+      - name: 'Setup git config'
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
-      - name: Set next version
+      - name: 'Set next version'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
         run: |
           RELEASE_VERSION=${{ needs.precheck.outputs.RELEASE_VERSION }}
