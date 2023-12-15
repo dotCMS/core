@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useContext } from 'react';
 import { usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 import { GlobalContext } from '@/lib/providers/global';
 import { getPageElementBound } from '@/lib/utils';
@@ -16,12 +17,14 @@ export const DotcmsPage = () => {
     const rowsRef = useRef([]);
 
     const pathname = usePathname();
+    const router = useRouter();
+
     const { layout, page } = useContext(GlobalContext);
 
     function handleParentEvents(event) {
         switch (event.data) {
             case 'ema-reload-page':
-                window.location.reload();
+                router.refresh();
                 break;
             case 'ema-request-bounds':
                 const positionData = getPageElementBound(rowsRef.current);
