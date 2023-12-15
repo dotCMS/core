@@ -445,7 +445,11 @@ class ContentTypeAPIIT {
                 + "\t}, {\n"
                 + "\t\t\"clazz\": \"ColumnField\",\n"
                 + "\t\t\"variable\": \"col\"\n"
-                + "\t}]\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"JSONField\",\n"
+                + "\t\t\"variable\": \"json\"\n"
+                + "\t}"
+                + "]\n"
                 + "}";
 
         final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);

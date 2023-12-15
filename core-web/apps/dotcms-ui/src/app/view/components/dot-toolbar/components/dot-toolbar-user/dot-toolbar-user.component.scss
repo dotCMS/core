@@ -7,6 +7,7 @@
 
 p-avatar {
     cursor: pointer;
+    padding: $spacing-2 0;
 }
 
 ::ng-deep #toolbar-header:hover {
@@ -29,6 +30,10 @@ p-avatar {
 }
 
 :host::ng-deep {
+    .p-menu {
+        margin-top: $spacing-0;
+    }
+
     .p-menu .p-menu-separator {
         margin: $spacing-1;
     }

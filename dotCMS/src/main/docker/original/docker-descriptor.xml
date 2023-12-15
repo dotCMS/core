@@ -19,7 +19,6 @@
                 <exclude>**/logs/**</exclude>
             </excludes>
         </fileSet>
-
         <fileSet>
             <directory>${assembly-directory}/dotserver/tomcat-${tomcat.version}</directory>
             <outputDirectory>dotserver/tomcat-${tomcat.version}</outputDirectory>
@@ -36,9 +35,18 @@
         <fileSet>
             <directory>${exploded-webapp-dir}</directory>
             <outputDirectory>dotserver/tomcat-${tomcat.version}/webapps/ROOT</outputDirectory>
+            <excludes>
+                <exclude>**/dotcms-webcomponents/dist/dotcms-webcomponents/**</exclude>
+            </excludes>
         </fileSet>
+        <fileSet>
+            <directory>${exploded-webapp-dir}/dotcms-webcomponents/dist</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}/webapps/ROOT</outputDirectory>
+            <includes>
+                <include>**/dotcms-webcomponents/**</include>
+            </includes>
+        </fileSet>
+
     </fileSets>
-
-
 
 </assembly>

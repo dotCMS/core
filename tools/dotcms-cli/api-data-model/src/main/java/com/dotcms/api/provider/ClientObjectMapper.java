@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.field.ImmutableFileField;
 import com.dotcms.contenttype.model.field.ImmutableHiddenField;
 import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
 import com.dotcms.contenttype.model.field.ImmutableImageField;
+import com.dotcms.contenttype.model.field.ImmutableJSONField;
 import com.dotcms.contenttype.model.field.ImmutableKeyValueField;
 import com.dotcms.contenttype.model.field.ImmutableLineDividerField;
 import com.dotcms.contenttype.model.field.ImmutableMultiSelectField;
@@ -130,6 +131,7 @@ public class ClientObjectMapper implements ContextResolver<ObjectMapper> {
                 .allowIfSubType(ImmutableTextField.class)
                 .allowIfSubType(ImmutableTimeField.class)
                 .allowIfSubType(ImmutableWysiwygField.class)
+                .allowIfSubType(ImmutableJSONField.class)
 
                 .allowIfSubType(Map.class)
                 .allowIfSubType(List.class)

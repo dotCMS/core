@@ -1,0 +1,109 @@
+<ng-container *ngIf="editorState$ | async as es">
+    <dot-edit-ema-toolbar>
+        <ng-container left>
+            <p-button label="Preview" icon="pi pi-desktop" styleClass="p-button-text p-button-sm" />
+            <p-button label="Bookmark" icon="pi pi-star" styleClass="p-button-text p-button-sm" />
+            <p-button
+                [cdkCopyToClipboard]="es.iframeURL"
+                [label]="'editpage.header.copy' | dm"
+                (cdkCopyToClipboardCopied)="triggerCopyToast()"
+                icon="pi pi-copy"
+                styleClass="p-button-text p-button-sm"
+                data-testId="ema-copy-url" />
+            <a
+                class="p-button-sm p-button-text"
+                [href]="es.apiURL"
+                [title]="es.apiURL"
+                pButton
+                target="_blank"
+                data-testId="ema-api-link"
+                icon="pi pi-link"
+                label="API">
+            </a>
+        </ng-container>
+        <ng-container right>
+            <dot-edit-ema-language-selector
+                [language]="es.editor.viewAs.language"
+                (selected)="onLanguageSelected($event)"
+                data-testId="language-selector" />
+            <dot-edit-ema-persona-selector
+                #personaSelector
+                [pageID]="es.editor.page.identifier"
+                [value]="es.editor.viewAs.persona"
+                (selected)="onPersonaSelected($event)"
+                data-testId="persona-selector" />
+            <p-button class="p-button-sm" label="Save" />
+        </ng-container>
+    </dot-edit-ema-toolbar>
+    <div class="iframe-wrapper">
+        <iframe
+            #iframe
+            [src]="es.iframeURL | safeUrl"
+            [title]="host"
+            data-testId="iframe"
+            style="border: none"
+            width="100%"
+            height="100%"></iframe>
+        <dot-ema-page-dropzone *ngIf="!!rows.length" [rows]="rows" (place)="onPlaceItem($event)" />
+    </div>
+    <div class="palette">
+        <div
+            (dragstart)="onDragStart($event)"
+            (dragend)="onDragEnd($event)"
+            data-item="c1e7e687-a19e-4ec9-8b97-404768566fe0"
+            style="width: 80px; aspect-ratio: 1/1; background-color: chartreuse"
+            draggable="true">
+            Rich Text
+        </div>
+        <div
+            (dragstart)="onDragStart($event)"
+            (dragend)="onDragEnd($event)"
+            data-item="e3b0f871-792a-4787-930b-4596613ae8f9"
+            style="width: 80px; aspect-ratio: 1/1; background-color: chartreuse"
+            draggable="true">
+            Banner
+        </div>
+        <div
+            (dragstart)="onDragStart($event)"
+            (dragend)="onDragEnd($event)"
+            data-item="50757fb4-75df-4e2c-8335-35d36bdb944b"
+            style="width: 80px; aspect-ratio: 1/1; background-color: chartreuse"
+            draggable="true">
+            Activity
+        </div>
+    </div>
+</ng-container>
+<p-dialog
+    #dialog
+    *ngIf="dialogState$ | async as ds"
+    [visible]="ds.dialogVisible"
+    [style]="{ height: '90vh', width: '90vw' }"
+    [header]="ds.dialogHeader"
+    [draggable]="false"
+    [resizable]="false"
+    [maximizable]="true"
+    [modal]="true"
+    (visibleChange)="resetDialogIframeData()"
+    data-testId="dialog">
+    <iframe
+        #dialogIframe
+        [style]="{ border: 'none', display: ds.dialogIframeLoading ? 'none' : 'block' }"
+        [src]="ds.dialogIframeURL | safeUrl"
+        (load)="onIframeLoad($event)"
+        title="dialog"
+        data-testId="dialog-iframe"
+        width="100%"
+        height="100%"></iframe>
+    <dot-spinner *ngIf="ds.dialogIframeLoading" data-testId="spinner"></dot-spinner>
+</p-dialog>
+
+<p-confirmDialog
+    [style]="{
+        width: '400px'
+    }"
+    [rejectIcon]="null"
+    [acceptIcon]="null"
+    rejectButtonStyleClass="p-button-outlined"
+    data-testId="confirm-dialog"></p-confirmDialog>
+
+<p-toast position="top-center" data-testId="ema-toast"></p-toast>
