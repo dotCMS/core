@@ -34,6 +34,7 @@ import { EditEmaPersonaSelectorComponent } from '../components/edit-ema-persona-
 import { EditEmaToolbarComponent } from '../components/edit-ema-toolbar/edit-ema-toolbar.component';
 import {
     EmaPageDropzoneComponent,
+    PlacePayload,
     Row
 } from '../components/ema-page-dropzone/ema-page-dropzone.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
@@ -97,6 +98,8 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     readonly host = HOST;
 
     private savePayload: AddContentletPayload;
+
+    private draggedItem: string;
 
     rows: Row[] = [];
 
@@ -345,7 +348,11 @@ export class DotEmaComponent implements OnInit, OnDestroy {
         })[action];
     }
 
-    onDragStart(_event: DragEvent) {
+    onDragStart(event: DragEvent) {
+        this.draggedItem = (event.target as HTMLDivElement)?.dataset.item;
+
+        event.dataTransfer?.setData('text/plain', 'id');
+
         this.iframe.nativeElement.contentWindow?.postMessage(
             NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
             this.host
@@ -354,6 +361,24 @@ export class DotEmaComponent implements OnInit, OnDestroy {
 
     onDragEnd(_event: DragEvent) {
         this.rows = [];
+    }
+
+    onPlaceItem(event: PlacePayload) {
+        const pageContainers = insertContentletInContainer({
+            pageContainers: event.pageContainers,
+            container: event.container,
+            contentletID: this.draggedItem,
+            personaTag: event.personaTag
+        });
+
+        this.store.savePage({
+            pageContainers,
+            pageID: event.pageID,
+            whenSaved: () => {
+                this.reloadIframe();
+                this.draggedItem = undefined;
+            }
+        }); // Save when selected
     }
 
     /**

@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 
-interface Payload {
+export interface PlacePayload {
     container: ContainerPayload;
     contentletId: string;
     pageContainers: PageContainer[];
     pageID: string;
+    personaTag?: string; // TODO: make this required
 }
 
 interface PageContainer {
@@ -27,7 +28,7 @@ interface Contentlets {
     y: number;
     width: number;
     height: number;
-    payload: Payload;
+    payload: PlacePayload;
 }
 
 interface Container {
@@ -36,7 +37,7 @@ interface Container {
     width: number;
     height: number;
     contentlets: Contentlets[];
-    payload: Payload;
+    payload: PlacePayload;
 }
 
 interface Column {
@@ -65,6 +66,7 @@ export interface Row {
 })
 export class EmaPageDropzoneComponent {
     @Input() rows: Row[] = [];
+    @Output() place = new EventEmitter<PlacePayload>();
 
     getStyle(
         item: Row | Column | Container | Contentlets,
@@ -81,9 +83,9 @@ export class EmaPageDropzoneComponent {
     }
 
     onDrop(event: DragEvent): void {
-        const payload = JSON.parse((event.target as HTMLDivElement).dataset.payload);
-        // eslint-disable-next-line no-console
-        console.log('onDrop', payload);
+        const payload = <PlacePayload>JSON.parse((event.target as HTMLDivElement).dataset.payload);
+
+        this.place.emit(payload);
     }
 
     onDragover(event) {
