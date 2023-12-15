@@ -1,17 +1,23 @@
-import { PlacePayload } from '../components/ema-page-dropzone/ema-page-dropzone.component';
-import { Container, ContainerActionPayload } from '../shared/models';
+import {
+    ActionPayload,
+    PageContainer,
+    PlacePayload
+} from '../components/ema-page-dropzone/ema-page-dropzone.component';
 
-export function insertPositionedContentletInContainer({
-    pageContainers,
-    container,
-    contentletId,
-    personaTag,
-    newContentletId,
-    position
-}: PlacePayload): Container[] {
+/**
+ * Insert a contentlet in a container in a specific position
+ *
+ * @export
+ * @param {PlacePayload} payload
+ * @return {*}  {PageContainer[]}
+ */
+export function insertPositionedContentletInContainer(payload: PlacePayload): PageContainer[] {
+    const { pageContainers, container, contentlet, personaTag, newContentletId, position } =
+        payload;
+
     return pageContainers.map((currentContainer) => {
         if (areContainersEquals(currentContainer, container)) {
-            const index = currentContainer.contentletsId.indexOf(contentletId);
+            const index = currentContainer.contentletsId.indexOf(contentlet.identifier);
 
             if (index !== -1) {
                 if (position === 'before') {
@@ -34,25 +40,18 @@ export function insertPositionedContentletInContainer({
  * Insert a contentlet in a container
  *
  * @export
- * @param {ContainerActionPayload} {
- *     pageContainers,
- *     container,
- *     contentletID
- * }
- * @return {*}  {Container[]}
+ * @param {ActionPayload} action
+ * @return {*}  {PageContainer[]}
  */
-export function insertContentletInContainer({
-    pageContainers,
-    container,
-    contentletID,
-    personaTag
-}: ContainerActionPayload): Container[] {
+export function insertContentletInContainer(action: ActionPayload): PageContainer[] {
+    const { pageContainers, container, contentlet, personaTag } = action;
+
     return pageContainers.map((currentContainer) => {
         if (
             areContainersEquals(currentContainer, container) &&
-            !currentContainer.contentletsId.includes(contentletID)
+            !currentContainer.contentletsId.includes(contentlet.identifier)
         ) {
-            currentContainer.contentletsId.push(contentletID);
+            currentContainer.contentletsId.push(contentlet.identifier);
         }
 
         currentContainer.personaTag = personaTag;
@@ -65,24 +64,19 @@ export function insertContentletInContainer({
  * Delete a contentlet from a container
  *
  * @export
- * @param {ContainerActionPayload} {
- *     pageContainers,
- *     container,
- *     contentletID
- * }
- * @return {*}  {Container[]}
+ * @param {ActionPayload} action
+ * @return {*}  {PageContainer[]}
  */
-export function deleteContentletFromContainer({
-    pageContainers,
-    container,
-    contentletID,
-    personaTag
-}: ContainerActionPayload): Container[] {
+export function deleteContentletFromContainer(action: ActionPayload): PageContainer[] {
+    const { pageContainers, container, contentlet, personaTag } = action;
+
     return pageContainers.map((currentContainer) => {
         if (areContainersEquals(currentContainer, container)) {
             return {
                 ...currentContainer,
-                contentletsId: currentContainer.contentletsId.filter((id) => id !== contentletID),
+                contentletsId: currentContainer.contentletsId.filter(
+                    (id) => id !== contentlet.identifier
+                ),
                 personaTag
             };
         }
@@ -94,11 +88,14 @@ export function deleteContentletFromContainer({
 /**
  * Check if two containers are equals
  *
- * @param {Container} currentContainer
- * @param {Container} containerToFind
+ * @param {PageContainer} currentContainer
+ * @param {PageContainer} containerToFind
  * @return {*}  {boolean}
  */
-function areContainersEquals(currentContainer: Container, containerToFind: Container): boolean {
+function areContainersEquals(
+    currentContainer: PageContainer,
+    containerToFind: PageContainer
+): boolean {
     return (
         currentContainer.identifier === containerToFind.identifier &&
         currentContainer.uuid === containerToFind.uuid

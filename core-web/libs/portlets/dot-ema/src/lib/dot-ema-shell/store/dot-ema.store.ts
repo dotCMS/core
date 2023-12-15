@@ -122,8 +122,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      */
     readonly savePage = this.effect((payload$: Observable<SavePagePayload>) => {
         return payload$.pipe(
-            switchMap((payload) =>
-                this.dotPageApiService.save(payload).pipe(
+            switchMap((payload) => {
+                return this.dotPageApiService.save(payload).pipe(
                     tapResponse(
                         () => {
                             payload.whenSaved?.();
@@ -133,8 +133,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             payload.whenSaved?.();
                         }
                     )
-                )
-            )
+                );
+            })
         );
     });
 
@@ -187,7 +187,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     // This method is called when the user clicks on the edit button
     readonly initActionAdd = this.updater(
-        (state, payload: { containerID: string; acceptTypes: string; language_id: string }) => {
+        (state, payload: { containerId: string; acceptTypes: string; language_id: string }) => {
             return {
                 ...state,
                 dialogVisible: true,
@@ -232,15 +232,15 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      * @memberof EditEmaStore
      */
     private createAddContentletUrl({
-        containerID,
+        containerId,
         acceptTypes,
         language_id
     }: {
-        containerID: string;
+        containerId: string;
         acceptTypes: string;
         language_id: string;
     }): string {
-        return ADD_CONTENTLET_URL.replace('*CONTAINER_ID*', containerID)
+        return ADD_CONTENTLET_URL.replace('*CONTAINER_ID*', containerId)
             .replace('*BASE_TYPES*', acceptTypes)
             .replace('*LANGUAGE_ID*', language_id);
     }

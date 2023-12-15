@@ -8,17 +8,21 @@ import {
     Output
 } from '@angular/core';
 
-export interface PlacePayload {
+export interface ActionPayload {
     container: ContainerPayload;
-    contentletId: string;
+    contentlet?: ContentletPayload; // Only for edit and delete
+    language_id: string;
     pageContainers: PageContainer[];
-    pageID: string;
+    pageId: string;
     personaTag?: string; // TODO: make this required
+}
+
+export interface PlacePayload extends ActionPayload {
     position?: 'before' | 'after';
     newContentletId?: string;
 }
 
-interface PageContainer {
+export interface PageContainer {
     personaTag?: string; // TODO: make this required
     identifier: string;
     uuid: string;
@@ -31,6 +35,12 @@ interface ContainerPayload {
     identifier: string;
     maxContentlets: number;
     uuid: string;
+}
+
+interface ContentletPayload {
+    identifier: string;
+    inode: string;
+    title: string;
 }
 
 interface Contentlets {

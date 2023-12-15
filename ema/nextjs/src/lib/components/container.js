@@ -26,8 +26,9 @@ function Container({ containerRef }) {
 
     const containerPayload = {
         container,
+        language_id: viewAs.language.id,
         pageContainers,
-        pageID: page.identifier,
+        pageId: page.identifier,
         personaTag: viewAs.persona?.keyTag
     };
 
@@ -49,9 +50,10 @@ function Container({ containerRef }) {
 
                     const contentletPayload = {
                         container,
-                        contentletId: contentlet.identifier,
+                        contentlet,
+                        language_id: viewAs.language.id,
                         pageContainers,
-                        pageID: page.identifier,
+                        pageId: page.identifier,
                         personaTag: viewAs.persona?.keyTag
                     };
 
@@ -65,7 +67,7 @@ function Container({ containerRef }) {
                                 <ActionButton
                                     message={{
                                         action: 'edit-contentlet',
-                                        payload: contentlet
+                                        payload: contentletPayload
                                     }}>
                                     Edit
                                 </ActionButton>

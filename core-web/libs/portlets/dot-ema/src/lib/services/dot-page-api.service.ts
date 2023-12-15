@@ -72,9 +72,9 @@ export class DotPageApiService {
      * @return {*}
      * @memberof DotPageApiService
      */
-    save({ pageContainers, pageID }: SavePagePayload): Observable<unknown> {
+    save({ pageContainers, pageId }: SavePagePayload): Observable<unknown> {
         return this.http
-            .post(`/api/v1/page/${pageID}/content`, pageContainers)
+            .post(`/api/v1/page/${pageId}/content`, pageContainers)
             .pipe(catchError(() => EMPTY));
     }
 

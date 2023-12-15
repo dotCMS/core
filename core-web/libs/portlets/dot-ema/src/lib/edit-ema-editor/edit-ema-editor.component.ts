@@ -24,7 +24,7 @@ import { ToastModule } from 'primeng/toast';
 import { takeUntil } from 'rxjs/operators';
 
 import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
-import { DotPersona, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotPersona } from '@dotcms/dotcms-models';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
@@ -32,6 +32,7 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 
 import {
+    ActionPayload,
     EmaPageDropzoneComponent,
     PlacePayload,
     Row
@@ -39,7 +40,7 @@ import {
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA, DEFAULT_URL, HOST, WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
-import { AddContentletPayload, DeleteContentletPayload, SetUrlPayload } from '../shared/models';
+import { SetUrlPayload } from '../shared/models';
 import {
     deleteContentletFromContainer,
     insertContentletInContainer,
@@ -88,7 +89,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     readonly host = HOST;
 
-    private savePayload: AddContentletPayload;
+    private savePayload: ActionPayload;
     private draggePayload: string;
 
     rows: Row[] = [];
@@ -225,15 +226,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
                 const pageContainers = insertContentletInContainer({
-                    pageContainers: this.savePayload.pageContainers,
-                    container: this.savePayload.container,
-                    contentletID: detail.data.identifier,
-                    personaTag: this.savePayload.personaTag
+                    ...this.savePayload,
+                    contentlet: detail.data
                 });
 
                 this.store.savePage({
                     pageContainers,
-                    pageID: this.savePayload.pageID,
+                    pageId: this.savePayload.pageId,
                     whenSaved: () => {
                         this.resetDialogIframeData();
                         this.reloadIframe();
@@ -244,14 +243,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [NG_CUSTOM_EVENTS.SAVE_CONTENTLET]: () => {
                 if (this.savePayload) {
                     const pageContainers = insertContentletInContainer({
-                        pageContainers: this.savePayload.pageContainers,
-                        container: this.savePayload.container,
-                        contentletID: detail.payload.contentletIdentifier
+                        ...this.savePayload,
+                        contentlet: detail.data.contentlet
                     }); // This won't add anything if the contentlet is already on the container, so is safe to call it even when we just edited a contentlet
 
                     this.store.savePage({
                         pageContainers,
-                        pageID: this.savePayload.pageID,
+                        pageId: this.savePayload.pageId,
                         whenSaved: () => {
                             this.resetDialogIframeData();
                             this.reloadIframe();
@@ -286,25 +284,25 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         origin: string;
         data: {
             action: CUSTOMER_ACTIONS;
-            payload: DotCMSContentlet | AddContentletPayload | Row[];
+            payload: ActionPayload | SetUrlPayload | Row[];
         };
     }): () => void {
         const action = origin !== this.host ? CUSTOMER_ACTIONS.NOOP : data.action;
 
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
             [CUSTOMER_ACTIONS.EDIT_CONTENTLET]: () => {
-                const payload = <DotCMSContentlet>data.payload;
+                const payload = <ActionPayload>data.payload;
 
                 this.store.initActionEdit({
-                    inode: payload.inode,
-                    title: payload.title
+                    inode: payload.contentlet.inode,
+                    title: payload.contentlet.title
                 });
             },
             [CUSTOMER_ACTIONS.ADD_CONTENTLET]: () => {
-                const payload = <AddContentletPayload>data.payload;
+                const payload = <ActionPayload>data.payload;
 
                 this.store.initActionAdd({
-                    containerID: payload.container.identifier,
+                    containerId: payload.container.identifier,
                     acceptTypes: payload.container.acceptTypes ?? '*',
                     language_id: payload.language_id
                 });
@@ -312,15 +310,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.savePayload = payload;
             },
             [CUSTOMER_ACTIONS.DELETE_CONTENTLET]: () => {
-                const { pageContainers, container, contentletId, pageID, personaTag } =
-                    data.payload as DeleteContentletPayload;
-
-                const newPageContainers = deleteContentletFromContainer({
-                    pageContainers: pageContainers,
-                    container: container,
-                    contentletID: contentletId,
-                    personaTag
-                });
+                const action = data.payload as ActionPayload;
+                const newPageContainers = deleteContentletFromContainer(action);
 
                 this.confirmationService.confirm({
                     header: this.dotMessageService.get(
@@ -334,7 +325,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     accept: () => {
                         this.store.savePage({
                             pageContainers: newPageContainers,
-                            pageID,
+                            pageId: action.pageId,
                             whenSaved: () => {
                                 this.resetDialogIframeData();
                                 this.reloadIframe();
@@ -384,7 +375,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
         this.store.savePage({
             pageContainers,
-            pageID: event.pageID,
+            pageId: event.pageId,
             whenSaved: () => {
                 this.reloadIframe();
                 this.draggePayload = undefined;
