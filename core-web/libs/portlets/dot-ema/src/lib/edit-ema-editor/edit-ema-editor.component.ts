@@ -331,6 +331,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         );
     }
 
+    /**
+     * Update the query params
+     *
+     * @private
+     * @param {Params} params
+     * @memberof EditEmaEditorComponent
+     */
     private updateQueryParams(params: Params) {
         this.router.navigate([], {
             queryParams: params,
