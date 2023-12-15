@@ -351,8 +351,6 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     onDragStart(event: DragEvent) {
         this.draggedItem = (event.target as HTMLDivElement)?.dataset.item;
 
-        event.dataTransfer?.setData('text/plain', 'id');
-
         this.iframe.nativeElement.contentWindow?.postMessage(
             NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
             this.host
