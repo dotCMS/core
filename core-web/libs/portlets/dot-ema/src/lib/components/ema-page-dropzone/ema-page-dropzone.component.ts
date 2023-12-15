@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    ElementRef,
+    EventEmitter,
+    Input,
+    Output
+} from '@angular/core';
 
 export interface PlacePayload {
     container: ContainerPayload;
@@ -71,6 +78,15 @@ export class EmaPageDropzoneComponent {
     @Input() rows: Row[] = [];
     @Output() place = new EventEmitter<PlacePayload>();
 
+    pointerPosition: Record<string, string> = {
+        left: '0',
+        width: '0',
+        opacity: '0',
+        top: '0'
+    };
+
+    constructor(private readonly el: ElementRef) {}
+
     getStyle(
         item: Row | Column | Container | Contentlets,
         border = 'black'
@@ -99,9 +115,33 @@ export class EmaPageDropzoneComponent {
         };
 
         this.place.emit(payload);
+        this.pointerPosition = {
+            left: '0',
+            width: '0',
+            opacity: '0',
+            top: '0'
+        };
     }
 
     onDragover(event) {
+        const target = event.target as HTMLDivElement;
+
+        if (target.dataset.type === 'contentlet') {
+            const parentReact = this.el.nativeElement.getBoundingClientRect();
+            const targetRect = target.getBoundingClientRect();
+            const mouseY = event.clientY;
+            const isTop = mouseY < targetRect.top + targetRect.height / 2;
+
+            this.pointerPosition = {
+                left: `${targetRect.left - parentReact.left}px`,
+                width: `${targetRect.width}px`,
+                opacity: '1',
+                top: isTop
+                    ? `${targetRect.top - parentReact.top}px`
+                    : `${targetRect.top - parentReact.top + targetRect.height}px`
+            };
+        }
+
         event.stopPropagation();
         event.preventDefault();
     }
