@@ -44,7 +44,7 @@
             style="border: none"
             width="100%"
             height="100%"></iframe>
-        <dot-ema-page-dropzone [rows]="rows" />
+        <dot-ema-page-dropzone *ngIf="!!rows.length" [rows]="rows" />
     </div>
     <div class="palette">
         <div
