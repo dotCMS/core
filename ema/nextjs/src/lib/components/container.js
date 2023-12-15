@@ -11,74 +11,56 @@ function Container({ containerRef }) {
     // Get the containers from the global context
     const { containers, page, viewAs } = useContext(GlobalContext);
 
-    const {
-        inode,
-        maxContentlets,
+    const containerData = getContainersData(containers, containerRef);
+    const { acceptTypes, contentlets, maxContentlets, pageContainers, path } = containerData;
+
+    const contentletsId = contentlets.map((contentlet) => contentlet.identifier);
+
+    const container = {
         acceptTypes,
-        contentlets,
         contentletsId,
+        identifier: path ?? identifier,
+        maxContentlets,
+        uuid
+    };
+
+    const containerPayload = {
+        container,
         pageContainers,
-        path,
-        container
-    } = getContainersData(containers, containerRef);
+        pageID: page.identifier,
+        personaTag: viewAs.persona?.keyTag
+    };
 
     return (
         <>
             <ActionButton
                 message={{
                     action: 'add-contentlet',
-                    payload: {
-                        pageID: page.identifier,
-                        container: {
-                            identifier: container.path ?? identifier,
-                            uuid,
-                            contentletsId,
-                            acceptTypes
-                        },
-                        personaTag: viewAs.persona?.keyTag,
-                        pageContainers
-                    }
+                    payload: containerPayload
                 }}>
                 +
             </ActionButton>
             <div
                 data-dot="container"
-                className="flex flex-col gap-4"
-                data-dot-accept-types={acceptTypes}
-                data-dot-object="container"
-                data-dot-inode={inode}
-                data-dot-identifier={identifier}
-                data-dot-uuid={uuid}
-                data-max-contentlets={maxContentlets}
-                data-dot-can-add="CONTENT,FORM,WIDGET">
+                data-content={JSON.stringify(containerPayload)}
+                className="flex flex-col gap-4">
                 {contentlets.map((contentlet) => {
-                    const {
-                        identifier,
-                        inode,
-                        contentType,
-                        baseType,
-                        title,
-                        languageId,
-                        dotContentTypeId
-                    } = contentlet;
-
                     const Component = contentComponents[contentlet.contentType] || NoContent;
+
+                    const contentletPayload = {
+                        container,
+                        contentletId: contentlet.identifier,
+                        pageContainers,
+                        pageID: page.identifier,
+                        personaTag: viewAs.persona?.keyTag
+                    };
 
                     return (
                         <div
                             data-dot="contentlet"
+                            data-content={JSON.stringify(contentletPayload)}
                             className="p-4 bg-slate-100"
-                            key={contentlet.identifier}
-                            data-dot-object="contentlet"
-                            data-dot-inode={inode}
-                            data-dot-identifier={identifier}
-                            data-dot-type={contentType}
-                            data-dot-basetype={baseType}
-                            data-dot-lang={languageId}
-                            data-dot-title={title}
-                            data-dot-can-edit={true}
-                            data-dot-content-type-id={dotContentTypeId}
-                            data-dot-has-page-lang-version="true">
+                            key={contentlet.identifier}>
                             <div className="flex gap-2">
                                 <ActionButton
                                     message={{
@@ -90,16 +72,7 @@ function Container({ containerRef }) {
                                 <ActionButton
                                     message={{
                                         action: 'delete-contentlet',
-                                        payload: {
-                                            pageID: page.identifier,
-                                            container: {
-                                                identifier: container.path ?? identifier,
-                                                uuid
-                                            },
-                                            pageContainers,
-                                            contentletId: contentlet.identifier,
-                                            personaTag: viewAs.persona?.keyTag
-                                        }
+                                        payload: contentletPayload
                                     }}>
                                     Delete
                                 </ActionButton>

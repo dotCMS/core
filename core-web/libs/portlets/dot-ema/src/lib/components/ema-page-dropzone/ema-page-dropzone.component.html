@@ -1,5 +1,4 @@
 <!-- {{rows | json}} -->
-
 <div class="row" *ngFor="let row of rows" [ngStyle]="getStyle(row, 'transparent')">
     <div
         class="column"
@@ -8,12 +7,15 @@
         <div
             class="container"
             *ngFor="let container of column.containers"
-            [ngStyle]="getStyle(container, 'red')"
-            (dragover)="onDragOver($event)">
+            [attr.data-payload]="container.payload"
+            [ngStyle]="getStyle(container, 'red')">
             <div
                 class="contentlets"
                 *ngFor="let contentlet of container.contentlets"
-                [ngStyle]="getStyle(contentlet, 'black')"></div>
+                [attr.data-payload]="contentlet.payload"
+                [ngStyle]="getStyle(contentlet, 'black')"
+                (drop)="onDrop($event)"
+                (dragover)="onDragover($event)"></div>
         </div>
     </div>
 </div>

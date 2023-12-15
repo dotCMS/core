@@ -2,62 +2,14 @@
 
 import React, { useEffect, useRef } from 'react';
 import { useContext } from 'react';
-import { GlobalContext } from '@/lib/providers/global';
 import { usePathname } from 'next/navigation';
-import Header from './layout/header';
-import Footer from './layout/footer';
+
+import { GlobalContext } from '@/lib/providers/global';
+import { getPageElementBound } from '@/lib/utils';
 import Row from '@/lib/components/row';
 
-function getPageElementBound(rowsRef) {
-    return rowsRef.current.map((row) => {
-        const rowRect = row.getBoundingClientRect();
-        const columns = row.children;
-
-        return {
-            x: rowRect.x,
-            y: rowRect.y,
-            width: rowRect.width,
-            height: rowRect.height,
-            columns: Array.from(columns).map((column) => {
-                const columnRect = column.getBoundingClientRect();
-                const containers = Array.from(column.querySelectorAll('[data-dot="container"]'));
-
-                const columnX = columnRect.left - rowRect.left;
-                const columnY = columnRect.top - rowRect.top;
-
-                return {
-                    x: columnX,
-                    y: columnY,
-                    width: columnRect.width,
-                    height: columnRect.height,
-                    containers: containers.map((container) => {
-                        const containerRect = container.getBoundingClientRect();
-                        const contentlets = Array.from(
-                            container.querySelectorAll('[data-dot="contentlet"]')
-                        );
-
-                        return {
-                            x: 0,
-                            y: containerRect.y - rowRect.top,
-                            width: containerRect.width,
-                            height: containerRect.height,
-                            contentlets: contentlets.map((contentlet) => {
-                                const contentletRect = contentlet.getBoundingClientRect();
-
-                                return {
-                                    x: 0,
-                                    y: contentletRect.y - containerRect.y,
-                                    width: contentletRect.width,
-                                    height: contentletRect.height
-                                };
-                            })
-                        };
-                    })
-                };
-            })
-        };
-    });
-}
+import Header from './layout/header';
+import Footer from './layout/footer';
 
 // Main layout component
 export const DotcmsPage = () => {
@@ -72,7 +24,7 @@ export const DotcmsPage = () => {
                 window.location.reload();
                 break;
             case 'ema-request-bounds':
-                const positionData = getPageElementBound(rowsRef);
+                const positionData = getPageElementBound(rowsRef.current);
                 window.parent.postMessage(
                     {
                         action: 'set-bounds',

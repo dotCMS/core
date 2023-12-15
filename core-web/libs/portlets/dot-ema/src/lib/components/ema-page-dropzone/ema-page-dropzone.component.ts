@@ -1,11 +1,33 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
+interface Payload {
+    container: ContainerPayload;
+    contentletId: string;
+    pageContainers: PageContainer[];
+    pageID: string;
+}
+
+interface PageContainer {
+    identifier: string;
+    uuid: string;
+    contentletsId: string[];
+}
+
+interface ContainerPayload {
+    acceptTypes: string;
+    contentletsId: string[];
+    identifier: string;
+    maxContentlets: number;
+    uuid: string;
+}
+
 interface Contentlets {
     x: number;
     y: number;
     width: number;
     height: number;
+    payload: Payload;
 }
 
 interface Container {
@@ -14,6 +36,7 @@ interface Container {
     width: number;
     height: number;
     contentlets: Contentlets[];
+    payload: Payload;
 }
 
 interface Column {
@@ -57,8 +80,14 @@ export class EmaPageDropzoneComponent {
         };
     }
 
-    onDragOver(event: DragEvent): void {
+    onDrop(event: DragEvent): void {
+        const payload = JSON.parse((event.target as HTMLDivElement).dataset.payload);
         // eslint-disable-next-line no-console
-        console.log('onDragOver', event);
+        console.log('onDrop', payload);
+    }
+
+    onDragover(event) {
+        event.stopPropagation();
+        event.preventDefault();
     }
 }
