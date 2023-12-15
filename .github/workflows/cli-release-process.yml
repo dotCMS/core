@@ -112,7 +112,7 @@ jobs:
           
           wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java11-darwin-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
           tar -xzf graalvm-ce-java11-darwin-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
-          sudo mv graalvm-ce-java11-${GRAALVM_VERSION} /Library/Java/JavaVirtualMachines
+          sudo mv graalvm-ce-java11-${{ env.GRAALVM_VERSION }} /Library/Java/JavaVirtualMachines
           
           ls -la /Library/Java/JavaVirtualMachines
 
