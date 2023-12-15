@@ -62,7 +62,7 @@
             #dialogIframe
             [style]="{ border: 'none', display: ds.dialogIframeLoading ? 'none' : 'block' }"
             [src]="ds.dialogIframeURL | safeUrl"
-            (load)="onIframeLoad($event)"
+            (load)="onIframeLoad()"
             title="dialog"
             data-testId="dialog-iframe"
             width="100%"

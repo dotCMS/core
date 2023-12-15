@@ -18,6 +18,7 @@ import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 
 describe('DotEmaComponent', () => {
     let spectator: SpectatorRouting<DotEmaComponent>;
+    let store: EditEmaStore;
 
     const createComponent = createRoutingFactory({
         component: DotEmaComponent,
@@ -79,11 +80,43 @@ describe('DotEmaComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
+        store = spectator.inject(EditEmaStore, true);
+        jest.spyOn(store, 'load');
     });
 
     describe('DOM', () => {
         it('should have a navigation bar', () => {
             expect(spectator.query('dot-edit-ema-navigation-bar')).not.toBeNull();
+        });
+    });
+
+    describe('router', () => {
+        it('should trigger an store load with default values', () => {
+            spectator.detectChanges();
+
+            expect(store.load).toHaveBeenCalledWith({
+                language_id: 1,
+                url: 'index',
+                persona_id: DEFAULT_PERSONA.identifier
+            });
+        });
+
+        it('should trigger a load when changing the queryParams', () => {
+            spectator.triggerNavigation({
+                url: [],
+                queryParams: {
+                    language_id: 2,
+                    url: 'my-awesome-page',
+                    'com.dotmarketing.persona.id': 'SomeCoolDude'
+                }
+            });
+
+            spectator.detectChanges();
+            expect(store.load).toHaveBeenCalledWith({
+                language_id: 2,
+                url: 'my-awesome-page',
+                persona_id: 'SomeCoolDude'
+            });
         });
     });
 });

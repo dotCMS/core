@@ -1,4 +1,4 @@
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { EditEmaStore } from './dot-ema.store';
@@ -8,38 +8,40 @@ import { DEFAULT_PERSONA, EDIT_CONTENTLET_URL } from '../../shared/consts';
 
 describe('EditEmaStore', () => {
     let spectator: SpectatorService<EditEmaStore>;
+    let dotPageApiService: SpyObject<DotPageApiService>;
     const createService = createServiceFactory({
         service: EditEmaStore,
         mocks: [DotPageApiService]
     });
 
-    beforeEach(() => (spectator = createService()));
+    beforeEach(() => {
+        spectator = createService();
+        const mockResponse = {
+            page: {
+                title: 'Test Page',
+                identifier: '123'
+            },
+            viewAs: {
+                language: {
+                    id: 1,
+                    language: '',
+                    countryCode: '',
+                    languageCode: '',
+                    country: ''
+                },
+                persona: {
+                    ...DEFAULT_PERSONA
+                }
+            }
+        };
+        dotPageApiService = spectator.inject(DotPageApiService);
+        dotPageApiService.get.andReturn(of(mockResponse));
+
+        spectator.service.load({ language_id: '1', url: 'test-url', persona_id: '123' });
+    });
 
     describe('selectors', () => {
         it('should return editorState', (done) => {
-            const dotPageApiService = spectator.inject(DotPageApiService);
-            const mockResponse = {
-                page: {
-                    title: 'Test Page',
-                    identifier: '123'
-                },
-                viewAs: {
-                    language: {
-                        id: 1,
-                        language: '',
-                        countryCode: '',
-                        languageCode: '',
-                        country: ''
-                    },
-                    persona: {
-                        ...DEFAULT_PERSONA
-                    }
-                }
-            };
-            dotPageApiService.get.andReturn(of(mockResponse));
-
-            spectator.service.load({ language_id: '1', url: 'test-url', persona_id: '123' });
-
             spectator.service.editorState$.subscribe((state) => {
                 expect(state as unknown).toEqual({
                     apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
@@ -87,23 +89,23 @@ describe('EditEmaStore', () => {
             spectator.service.setDialogIframeURL('test-url');
 
             spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
+                expect(state as unknown).toEqual({
                     editor: {
-                        page: {
-                            title: '',
-                            identifier: ''
-                        },
+                        page: { identifier: '123', title: 'Test Page' },
                         viewAs: {
                             language: {
+                                country: '',
+                                countryCode: '',
                                 id: 1,
                                 language: '',
-                                countryCode: '',
-                                languageCode: '',
-                                country: ''
+                                languageCode: ''
+                            },
+                            persona: {
+                                ...DEFAULT_PERSONA
                             }
                         }
                     },
-                    url: '',
+                    url: 'test-url',
                     dialogIframeURL: 'test-url',
                     dialogIframeLoading: false,
                     dialogHeader: '',
@@ -117,23 +119,23 @@ describe('EditEmaStore', () => {
             spectator.service.setDialogVisible(true);
 
             spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
+                expect(state as unknown).toEqual({
                     editor: {
-                        page: {
-                            title: '',
-                            identifier: ''
-                        },
+                        page: { identifier: '123', title: 'Test Page' },
                         viewAs: {
                             language: {
+                                country: '',
+                                countryCode: '',
                                 id: 1,
                                 language: '',
-                                countryCode: '',
-                                languageCode: '',
-                                country: ''
+                                languageCode: ''
+                            },
+                            persona: {
+                                ...DEFAULT_PERSONA
                             }
                         }
                     },
-                    url: '',
+                    url: 'test-url',
                     dialogIframeURL: '',
                     dialogIframeLoading: false,
                     dialogHeader: '',
@@ -147,23 +149,23 @@ describe('EditEmaStore', () => {
             spectator.service.setDialogHeader('test');
 
             spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
+                expect(state as unknown).toEqual({
                     editor: {
-                        page: {
-                            title: '',
-                            identifier: ''
-                        },
+                        page: { identifier: '123', title: 'Test Page' },
                         viewAs: {
                             language: {
+                                country: '',
+                                countryCode: '',
                                 id: 1,
                                 language: '',
-                                countryCode: '',
-                                languageCode: '',
-                                country: ''
+                                languageCode: ''
+                            },
+                            persona: {
+                                ...DEFAULT_PERSONA
                             }
                         }
                     },
-                    url: '',
+                    url: 'test-url',
                     dialogIframeURL: '',
                     dialogIframeLoading: false,
                     dialogHeader: 'test',
@@ -177,23 +179,23 @@ describe('EditEmaStore', () => {
             spectator.service.setDialogIframeLoading(true);
 
             spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
+                expect(state as unknown).toEqual({
                     editor: {
-                        page: {
-                            title: '',
-                            identifier: ''
-                        },
+                        page: { identifier: '123', title: 'Test Page' },
                         viewAs: {
                             language: {
+                                country: '',
+                                countryCode: '',
                                 id: 1,
                                 language: '',
-                                countryCode: '',
-                                languageCode: '',
-                                country: ''
+                                languageCode: ''
+                            },
+                            persona: {
+                                ...DEFAULT_PERSONA
                             }
                         }
                     },
-                    url: '',
+                    url: 'test-url',
                     dialogIframeURL: '',
                     dialogIframeLoading: true,
                     dialogHeader: '',
@@ -211,23 +213,23 @@ describe('EditEmaStore', () => {
             spectator.service.resetDialog();
 
             spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
+                expect(state as unknown).toEqual({
                     editor: {
-                        page: {
-                            title: '',
-                            identifier: ''
-                        },
+                        page: { identifier: '123', title: 'Test Page' },
                         viewAs: {
                             language: {
+                                country: '',
+                                countryCode: '',
                                 id: 1,
                                 language: '',
-                                countryCode: '',
-                                languageCode: '',
-                                country: ''
+                                languageCode: ''
+                            },
+                            persona: {
+                                ...DEFAULT_PERSONA
                             }
                         }
                     },
-                    url: '',
+                    url: 'test-url',
                     dialogIframeURL: '',
                     dialogIframeLoading: false,
                     dialogHeader: '',
@@ -244,23 +246,23 @@ describe('EditEmaStore', () => {
             });
 
             spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
+                expect(state as unknown).toEqual({
                     editor: {
-                        page: {
-                            title: '',
-                            identifier: ''
-                        },
+                        page: { identifier: '123', title: 'Test Page' },
                         viewAs: {
                             language: {
+                                country: '',
+                                countryCode: '',
                                 id: 1,
                                 language: '',
-                                countryCode: '',
-                                languageCode: '',
-                                country: ''
+                                languageCode: ''
+                            },
+                            persona: {
+                                ...DEFAULT_PERSONA
                             }
                         }
                     },
-                    url: '',
+                    url: 'test-url',
                     dialogIframeURL: EDIT_CONTENTLET_URL + '123',
                     dialogIframeLoading: true,
                     dialogHeader: 'test',
@@ -278,23 +280,23 @@ describe('EditEmaStore', () => {
             });
 
             spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
+                expect(state as unknown).toEqual({
                     editor: {
-                        page: {
-                            title: '',
-                            identifier: ''
-                        },
+                        page: { identifier: '123', title: 'Test Page' },
                         viewAs: {
                             language: {
+                                country: '',
+                                countryCode: '',
                                 id: 1,
                                 language: '',
-                                countryCode: '',
-                                languageCode: '',
-                                country: ''
+                                languageCode: ''
+                            },
+                            persona: {
+                                ...DEFAULT_PERSONA
                             }
                         }
                     },
-                    url: '',
+                    url: 'test-url',
                     dialogIframeURL:
                         '/html/ng-contentlet-selector.jsp?ng=true&container_id=123&add=test&language_id=1',
                     dialogIframeLoading: true,
@@ -312,23 +314,23 @@ describe('EditEmaStore', () => {
             });
 
             spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
+                expect(state as unknown).toEqual({
                     editor: {
-                        page: {
-                            title: '',
-                            identifier: ''
-                        },
+                        page: { identifier: '123', title: 'Test Page' },
                         viewAs: {
                             language: {
+                                country: '',
+                                countryCode: '',
                                 id: 1,
                                 language: '',
-                                countryCode: '',
-                                languageCode: '',
-                                country: ''
+                                languageCode: ''
+                            },
+                            persona: {
+                                ...DEFAULT_PERSONA
                             }
                         }
                     },
-                    url: '',
+                    url: 'test-url',
                     dialogIframeURL: 'some/really/long/url',
                     dialogIframeLoading: true,
                     dialogHeader: 'test',
@@ -362,7 +364,7 @@ describe('EditEmaStore', () => {
             spectator.service.load({ language_id: 'en', url: 'test-url', persona_id: '123' });
 
             spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
+                expect(state as unknown).toEqual({
                     url: 'test-url',
                     editor: {
                         page: {
