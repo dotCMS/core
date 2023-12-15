@@ -108,24 +108,6 @@ export const DotcmsPage = () => {
         };
     }, []);
 
-    useEffect(() => {
-        const handleScroll = () => {
-            window.parent.postMessage(
-                {
-                    action: 'set-bounds',
-                    payload: []
-                },
-                '*'
-            );
-        };
-
-        window.addEventListener('scroll', handleScroll);
-
-        return () => {
-            window.removeEventListener('scroll', handleScroll);
-        };
-    }, []);
-
     const addRowRef = (el) => {
         if (el && !rowsRef.current.includes(el)) {
             rowsRef.current.push(el);
