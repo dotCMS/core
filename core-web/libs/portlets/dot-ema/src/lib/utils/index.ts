@@ -1,8 +1,4 @@
-import {
-    ActionPayload,
-    PageContainer,
-    PlacePayload
-} from '../components/ema-page-dropzone/ema-page-dropzone.component';
+import { ActionPayload, PageContainer, PlacePayload } from '../shared/models';
 
 /**
  * Insert a contentlet in a container in a specific position

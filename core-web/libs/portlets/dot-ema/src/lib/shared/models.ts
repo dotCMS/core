@@ -1,5 +1,37 @@
-import { PageContainer } from '../components/ema-page-dropzone/ema-page-dropzone.component';
+export interface ActionPayload {
+    container: ContainerPayload;
+    contentlet?: ContentletPayload; // Only for edit and delete
+    language_id: string;
+    pageContainers: PageContainer[];
+    pageId: string;
+    personaTag?: string; // TODO: make this required
+}
 
+export interface PlacePayload extends ActionPayload {
+    position?: 'before' | 'after';
+    newContentletId?: string;
+}
+
+export interface PageContainer {
+    personaTag?: string; // TODO: make this required
+    identifier: string;
+    uuid: string;
+    contentletsId: string[];
+}
+
+interface ContainerPayload {
+    acceptTypes: string;
+    contentletsId: string[];
+    identifier: string;
+    maxContentlets: number;
+    uuid: string;
+}
+
+interface ContentletPayload {
+    identifier: string;
+    inode: string;
+    title: string;
+}
 export interface SetUrlPayload {
     url: string;
 }
