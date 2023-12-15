@@ -1,0 +1,20 @@
+@use "variables" as *;
+
+:host {
+    display: grid;
+    grid-template-columns: 1fr 80px;
+    height: 100%;
+
+    router-outlet {
+        display: none;
+    }
+}
+
+// Selectors overlayPanel
+::ng-deep {
+    .p-overlaypanel.edit-ema-selector.p-component {
+        .p-overlaypanel-content {
+            padding: 0;
+        }
+    }
+}

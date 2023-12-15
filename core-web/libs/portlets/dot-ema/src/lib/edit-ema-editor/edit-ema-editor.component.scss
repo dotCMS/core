@@ -1,21 +1,8 @@
 @use "variables" as *;
 
 :host {
-    display: grid;
-    grid-template-rows: min-content 1fr;
-    height: 100%;
-
-    h4 {
-        margin: 0;
-        padding: 0 $spacing-4;
-        padding-top: $spacing-3;
-    }
-
-    a,
-    a:focus,
-    a:active {
-        text-decoration: none;
-    }
+    display: flex;
+    flex-direction: column;
 
     ::ng-deep {
         .p-dialog {
@@ -43,13 +30,11 @@
 .iframe-wrapper {
     margin: $spacing-3;
     border: solid 1px $color-palette-gray-500;
+    flex-grow: 1;
 }
 
-// Selectors overlayPanel
-::ng-deep {
-    .p-overlaypanel.edit-ema-selector.p-component {
-        .p-overlaypanel-content {
-            padding: 0;
-        }
-    }
+a,
+a:focus,
+a:active {
+    text-decoration: none;
 }

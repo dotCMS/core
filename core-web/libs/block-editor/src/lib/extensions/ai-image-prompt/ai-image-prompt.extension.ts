@@ -25,9 +25,11 @@ export const DOT_AI_IMAGE_CONTENT_KEY = 'dotAIImageContent';
 
 export const AI_IMAGE_PROMPT_PLUGIN_KEY = new PluginKey('aiImagePrompt-form');
 
+export const AI_IMAGE_PROMPT_EXTENSION_NAME = 'aiImagePrompt';
+
 export const AIImagePromptExtension = (viewContainerRef: ViewContainerRef) => {
     return Extension.create<AIImagePromptOptions>({
-        name: 'aiImagePrompt',
+        name: AI_IMAGE_PROMPT_EXTENSION_NAME,
 
         addOptions() {
             return {
