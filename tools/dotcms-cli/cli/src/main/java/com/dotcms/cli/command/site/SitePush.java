@@ -6,6 +6,7 @@ import com.dotcms.api.client.push.site.SiteFetcher;
 import com.dotcms.api.client.push.site.SitePushHandler;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
+import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.WorkspaceManager;
@@ -40,7 +41,7 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>, 
     static final String SITE_PUSH_MIXIN = "sitePushMixin";
 
     @CommandLine.Mixin
-    PushMixin pushMixin;
+    FullPushOptionsMixin pushMixin;
 
     @CommandLine.Mixin(name = SITE_PUSH_MIXIN)
     SitePushMixin sitePushMixin;
@@ -111,6 +112,7 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>, 
                 PushOptions.builder().
                         failFast(pushMixin.failFast).
                         allowRemove(sitePushMixin.removeSites).
+                        disableAutoUpdate(pushMixin.disableAutoUpdate).
                         maxRetryAttempts(pushMixin.retryAttempts).
                         dryRun(pushMixin.dryRun).
                         build(),

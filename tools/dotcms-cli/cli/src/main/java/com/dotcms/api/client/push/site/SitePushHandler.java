@@ -47,10 +47,10 @@ public class SitePushHandler implements PushHandler<SiteView> {
 
     @ActivateRequestContext
     @Override
-    public void add(File localFile, SiteView localSite, Map<String, Object> customOptions) {
+    public SiteView add(File localFile, SiteView localSite, Map<String, Object> customOptions) {
 
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
-        siteAPI.create(
+        var response = siteAPI.create(
                 toRequest(localSite, customOptions)
         );
 
@@ -61,16 +61,20 @@ public class SitePushHandler implements PushHandler<SiteView> {
                     GetSiteByNameRequest.builder().siteName(localSite.siteName()).build()
             );
 
-            siteAPI.publish(byName.entity().identifier());
+            response = siteAPI.publish(byName.entity().identifier());
         }
+
+        return response.entity();
     }
 
     @ActivateRequestContext
     @Override
-    public void edit(File localFile, SiteView localSite, SiteView serverSite,
+    public SiteView edit(File localFile, SiteView localSite, SiteView serverSite,
             Map<String, Object> customOptions) {
 
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
+
+        ResponseEntityView<SiteView> response;
 
         // Unarchiving the site if necessary, this is necessary because the site API doesn't allow
         // to update an archived site
@@ -78,7 +82,7 @@ public class SitePushHandler implements PushHandler<SiteView> {
             siteAPI.unarchive(localSite.identifier());
         }
 
-        siteAPI.update(
+        response = siteAPI.update(
                 localSite.identifier(),
                 toRequest(localSite, customOptions)
         );
@@ -86,16 +90,17 @@ public class SitePushHandler implements PushHandler<SiteView> {
         if (Boolean.TRUE.equals(localSite.isLive()) &&
                 Boolean.FALSE.equals(serverSite.isLive())) {
             // Publishing the site
-            siteAPI.publish(localSite.identifier());
+            response = siteAPI.publish(localSite.identifier());
         } else if (Boolean.FALSE.equals(localSite.isLive()) &&
                 Boolean.TRUE.equals(serverSite.isLive())) {
             // Unpublishing the site
-            siteAPI.unpublish(localSite.identifier());
+            response = siteAPI.unpublish(localSite.identifier());
         } else if (Boolean.TRUE.equals(localSite.isArchived())) {
             // Archiving the site
-            siteAPI.archive(localSite.identifier());
+            response = siteAPI.archive(localSite.identifier());
         }
 
+        return response.entity();
     }
 
     @ActivateRequestContext
