@@ -5,9 +5,11 @@ import { Injectable } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
-import { DotPageRenderParameters } from '@dotcms/dotcms-models';
-
-import { DotPageApiService, DotPageApiParams } from '../../services/dot-page-api.service';
+import {
+    DotPageApiService,
+    DotPageApiParams,
+    DotPageApiResponse
+} from '../../services/dot-page-api.service';
 import {
     DEFAULT_PERSONA,
     HOST,
@@ -17,8 +19,7 @@ import {
 import { SavePagePayload } from '../../shared/models';
 
 export interface EditEmaState {
-    editor: DotPageRenderParameters;
-
+    editor: DotPageApiResponse;
     url: string;
     dialogIframeURL: string;
     dialogVisible: boolean;
