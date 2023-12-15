@@ -115,11 +115,11 @@ export class AIContentPromptView {
                 filter((state) => state.acceptContent)
             )
             .subscribe((state) => {
-                const nodeInformation: DotTiptapNodeInformation = findNodeByType(
+                const nodeInformation: DotTiptapNodeInformation[] = findNodeByType(
                     this.editor,
                     NodeTypes.AI_CONTENT
                 );
-                replaceNodeWithContent(this.editor, nodeInformation, state.content);
+                replaceNodeWithContent(this.editor, nodeInformation[0], state.content);
 
                 this.componentStore.setAcceptContent(false);
             });
@@ -148,15 +148,15 @@ export class AIContentPromptView {
                 filter((deleteContent) => deleteContent)
             )
             .subscribe(() => {
-                const nodeInformation: DotTiptapNodeInformation = findNodeByType(
+                const nodeInformation: DotTiptapNodeInformation[] = findNodeByType(
                     this.editor,
                     NodeTypes.AI_CONTENT
                 );
 
                 if (nodeInformation) {
                     this.editor.commands.deleteRange({
-                        from: nodeInformation.from,
-                        to: nodeInformation.to
+                        from: nodeInformation[0].from,
+                        to: nodeInformation[0].to
                     });
                 }
 
@@ -220,7 +220,6 @@ export class AIContentPromptView {
     }
 
     show() {
-        console.log('show');
         this.createTooltip();
         this.manageClickListener(true);
         this.editor.setEditable(false);

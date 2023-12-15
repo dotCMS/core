@@ -74,12 +74,12 @@ export const AIContentNode = Node.create({
 
                     // If an AI_CONTENT node is found, replace its content.
                     if (nodeInformation) {
-                        tr.setNodeMarkup(nodeInformation.from, undefined, {
+                        tr.setNodeMarkup(nodeInformation[0].from, undefined, {
                             content: content,
                             loading: false
                         });
                         // Set the node selection to the beginning of the replaced content.
-                        commands.setNodeSelection(nodeInformation.from);
+                        commands.setNodeSelection(nodeInformation[0].from);
 
                         return true;
                     }
@@ -96,8 +96,8 @@ export const AIContentNode = Node.create({
                     const nodeInformation = findNodeByType(editor, NodeTypes.AI_CONTENT);
                     // Set the loading attribute to the specified value.
                     if (nodeInformation) {
-                        tr.setNodeMarkup(nodeInformation.from, undefined, {
-                            ...nodeInformation.node.attrs,
+                        tr.setNodeMarkup(nodeInformation[0].from, undefined, {
+                            ...nodeInformation[0].node.attrs,
                             loading: loading
                         });
                     }

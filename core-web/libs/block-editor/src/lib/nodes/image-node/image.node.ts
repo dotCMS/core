@@ -103,8 +103,6 @@ export const ImageNode = Image.extend({
                         storage: { aiStatus: 'pending' }
                     };
 
-                    console.log('insertImage', position);
-
                     return chain()
                         .insertContentAt(position ?? head, node)
                         .run();
