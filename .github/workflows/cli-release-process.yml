@@ -102,7 +102,7 @@ jobs:
       - name: 'Set up GraalVM for macOS ${{ matrix.os }}'
         if: ${{ contains(matrix.os, 'macos-13-xlarge') || contains(matrix.os, 'macOS-latest') }}
         run: |
-          if [ ${{ matrix.os }} == "macos-13-xlarge" ]; then
+          if [ "${{ matrix.os }}" == "macos-13-xlarge" ]; then
             echo "Setting GraalVM on macos-13-xlarge"
             ARCH=aarch64
           else
@@ -110,15 +110,15 @@ jobs:
             ARCH=amd64
           fi         
           
-          wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java11-darwin-${ARCH}-${GRAALVM_VERSION}.tar.gz
-          tar -xzf graalvm-ce-java11-darwin-${ARCH}-${GRAALVM_VERSION}.tar.gz
+          wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java11-darwin-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
+          tar -xzf graalvm-ce-java11-darwin-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
           sudo mv graalvm-ce-java11-${GRAALVM_VERSION} /Library/Java/JavaVirtualMachines
           
           ls -la /Library/Java/JavaVirtualMachines
 
-          sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java11-${GRAALVM_VERSION}/Contents/Home
+          sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home
 
-          GRAALVM_HOME="/Library/Java/JavaVirtualMachines/graalvm-ce-java11-${GRAALVM_VERSION}/Contents/Home"
+          GRAALVM_HOME="/Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home"
           echo "GRAALVM_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
           PATH="$GRAALVM_HOME/bin:$PATH"
           echo "PATH=$PATH" >> $GITHUB_ENV
