@@ -70,16 +70,18 @@ export const AIContentNode = Node.create({
                 (content?: string) =>
                 ({ commands, editor, tr }) => {
                     // Check if the AI_CONTENT node exists in the document.
-                    const nodeInformation = findNodeByType(editor, NodeTypes.AI_CONTENT);
+                    const [nodeInformation] = findNodeByType(editor, NodeTypes.AI_CONTENT) || [
+                        null
+                    ];
 
                     // If an AI_CONTENT node is found, replace its content.
                     if (nodeInformation) {
-                        tr.setNodeMarkup(nodeInformation[0].from, undefined, {
+                        tr.setNodeMarkup(nodeInformation.from, undefined, {
                             content: content,
                             loading: false
                         });
                         // Set the node selection to the beginning of the replaced content.
-                        commands.setNodeSelection(nodeInformation[0].from);
+                        commands.setNodeSelection(nodeInformation.from);
 
                         return true;
                     }
@@ -93,11 +95,13 @@ export const AIContentNode = Node.create({
             setLoadingAIContentNode:
                 (loading: boolean) =>
                 ({ tr, editor }) => {
-                    const nodeInformation = findNodeByType(editor, NodeTypes.AI_CONTENT);
+                    const [nodeInformation] = findNodeByType(editor, NodeTypes.AI_CONTENT) || [
+                        null
+                    ];
                     // Set the loading attribute to the specified value.
                     if (nodeInformation) {
-                        tr.setNodeMarkup(nodeInformation[0].from, undefined, {
-                            ...nodeInformation[0].node.attrs,
+                        tr.setNodeMarkup(nodeInformation.from, undefined, {
+                            ...nodeInformation.node.attrs,
                             loading: loading
                         });
                     }
