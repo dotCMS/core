@@ -7,9 +7,12 @@ export interface PlacePayload {
     pageContainers: PageContainer[];
     pageID: string;
     personaTag?: string; // TODO: make this required
+    position?: 'before' | 'after';
+    newContentletId?: string;
 }
 
 interface PageContainer {
+    personaTag?: string; // TODO: make this required
     identifier: string;
     uuid: string;
     contentletsId: string[];
@@ -83,7 +86,17 @@ export class EmaPageDropzoneComponent {
     }
 
     onDrop(event: DragEvent): void {
-        const payload = <PlacePayload>JSON.parse((event.target as HTMLDivElement).dataset.payload);
+        const target = event.target as HTMLDivElement;
+        const data = JSON.parse(target.dataset.payload);
+
+        const targetRect = (event.target as HTMLElement).getBoundingClientRect();
+        const mouseY = event.clientY;
+        const isTop = mouseY < targetRect.top + targetRect.height / 2;
+
+        const payload = <PlacePayload>{
+            ...data,
+            position: isTop ? 'before' : 'after'
+        };
 
         this.place.emit(payload);
     }

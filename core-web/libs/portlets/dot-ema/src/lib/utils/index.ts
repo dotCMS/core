@@ -1,4 +1,34 @@
+import { PlacePayload } from '../components/ema-page-dropzone/ema-page-dropzone.component';
 import { Container, ContainerActionPayload } from '../shared/models';
+
+export function insertPositionedContentletInContainer({
+    pageContainers,
+    container,
+    contentletId,
+    personaTag,
+    newContentletId,
+    position
+}: PlacePayload): Container[] {
+    return pageContainers.map((currentContainer) => {
+        if (areContainersEquals(currentContainer, container)) {
+            const index = currentContainer.contentletsId.indexOf(contentletId);
+
+            if (index !== -1) {
+                if (position === 'before') {
+                    currentContainer.contentletsId.splice(index, 0, newContentletId);
+                } else if (position === 'after') {
+                    currentContainer.contentletsId.splice(index + 1, 0, newContentletId);
+                }
+            } else {
+                currentContainer.contentletsId.push(newContentletId);
+            }
+        }
+
+        currentContainer.personaTag = personaTag;
+
+        return currentContainer;
+    });
+}
 
 /**
  * Insert a contentlet in a container

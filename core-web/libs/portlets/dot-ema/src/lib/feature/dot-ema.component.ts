@@ -41,7 +41,11 @@ import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA, DEFAULT_URL, HOST, WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { AddContentletPayload, DeleteContentletPayload, SetUrlPayload } from '../shared/models';
-import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
+import {
+    deleteContentletFromContainer,
+    insertContentletInContainer,
+    insertPositionedContentletInContainer
+} from '../utils';
 
 @Component({
     selector: 'dot-ema',
@@ -98,8 +102,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     readonly host = HOST;
 
     private savePayload: AddContentletPayload;
-
-    private draggedItem: string;
+    private draggePayload: string;
 
     rows: Row[] = [];
 
@@ -349,7 +352,7 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     }
 
     onDragStart(event: DragEvent) {
-        this.draggedItem = (event.target as HTMLDivElement)?.dataset.item;
+        this.draggePayload = (event.target as HTMLDivElement)?.dataset.item;
 
         this.iframe.nativeElement.contentWindow?.postMessage(
             NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
@@ -362,11 +365,9 @@ export class DotEmaComponent implements OnInit, OnDestroy {
     }
 
     onPlaceItem(event: PlacePayload) {
-        const pageContainers = insertContentletInContainer({
-            pageContainers: event.pageContainers,
-            container: event.container,
-            contentletID: this.draggedItem,
-            personaTag: event.personaTag
+        const pageContainers = insertPositionedContentletInContainer({
+            ...event,
+            newContentletId: this.draggePayload
         });
 
         this.store.savePage({
@@ -374,9 +375,9 @@ export class DotEmaComponent implements OnInit, OnDestroy {
             pageID: event.pageID,
             whenSaved: () => {
                 this.reloadIframe();
-                this.draggedItem = undefined;
+                this.draggePayload = undefined;
             }
-        }); // Save when selected
+        });
     }
 
     /**
