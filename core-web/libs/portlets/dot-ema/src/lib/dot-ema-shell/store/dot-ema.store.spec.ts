@@ -83,36 +83,6 @@ describe('EditEmaStore', () => {
     });
 
     describe('updaters', () => {
-        it('should update url', (done) => {
-            spectator.service.setURL('test-url');
-
-            spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
-                    editor: {
-                        page: {
-                            title: '',
-                            identifier: ''
-                        },
-                        viewAs: {
-                            language: {
-                                id: 1,
-                                language: '',
-                                countryCode: '',
-                                languageCode: '',
-                                country: ''
-                            }
-                        }
-                    },
-                    url: 'test-url',
-                    dialogIframeURL: '',
-                    dialogIframeLoading: false,
-                    dialogHeader: '',
-                    dialogVisible: false
-                });
-                done();
-            });
-        });
-
         it('should update editFrameURL', (done) => {
             spectator.service.setDialogIframeURL('test-url');
 

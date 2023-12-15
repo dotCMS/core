@@ -6,14 +6,13 @@ import {
     ChangeDetectionStrategy,
     Component,
     ElementRef,
-    Inject,
     OnDestroy,
     OnInit,
     ViewChild,
     inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, Params } from '@angular/router';
+import { Params, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -31,7 +30,7 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
-import { HOST, WINDOW, DEFAULT_LANGUAGE_ID, DEFAULT_URL, DEFAULT_PERSONA } from '../shared/consts';
+import { HOST, WINDOW, DEFAULT_PERSONA } from '../shared/consts';
 import { NG_CUSTOM_EVENTS, CUSTOMER_ACTIONS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { AddContentletPayload, DeleteContentletPayload, SetUrlPayload } from '../shared/models';
 import { insertContentletInContainer, deleteContentletFromContainer } from '../utils';
@@ -62,34 +61,23 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('personaSelector') personaSelector!: EditEmaPersonaSelectorComponent;
 
-    readonly destroy$ = new Subject<boolean>();
-
-    private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
     private readonly store = inject(EditEmaStore);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly personalizeService = inject(DotPersonalizeService);
     private readonly messageService = inject(MessageService);
+    private readonly window = inject(WINDOW);
 
     readonly dialogState$ = this.store.dialogState$;
     readonly editorState$ = this.store.editorState$;
+    readonly destroy$ = new Subject<boolean>();
 
     readonly host = HOST;
 
     private savePayload: AddContentletPayload;
 
-    constructor(@Inject(WINDOW) private window: Window) {}
-
     ngOnInit(): void {
-        this.route.queryParams.subscribe((queryParams: Params) => {
-            this.store.load({
-                language_id: queryParams['language_id'] ?? DEFAULT_LANGUAGE_ID,
-                url: queryParams['url'] ?? DEFAULT_URL,
-                persona_id: queryParams['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier
-            });
-        });
-
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: MessageEvent) => {
@@ -107,7 +95,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {CustomEvent} event
      * @memberof DotEmaComponent
      */
-    onIframeLoad(_: Event) {
+    onIframeLoad() {
         this.store.setDialogIframeLoading(false);
         // This event is destroyed when you close the dialog
         fromEvent(
@@ -137,11 +125,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     onLanguageSelected(language_id: number) {
-        this.router.navigate([], {
-            queryParams: {
-                language_id
-            },
-            queryParamsHandling: 'merge'
+        this.updateQueryParams({
+            language_id
         });
     }
 
@@ -153,11 +138,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     onPersonaSelected(persona: DotPersona & { pageID: string }) {
         if (persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized) {
-            this.router.navigate([], {
-                queryParams: {
-                    'com.dotmarketing.persona.id': persona.identifier
-                },
-                queryParamsHandling: 'merge'
+            this.updateQueryParams({
+                'com.dotmarketing.persona.id': persona.identifier
             });
         } else {
             this.confirmationService.confirm({
@@ -172,11 +154,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.personalizeService
                         .personalized(persona.pageID, persona.keyTag)
                         .subscribe(() => {
-                            this.router.navigate([], {
-                                queryParams: {
-                                    'com.dotmarketing.persona.id': persona.identifier
-                                },
-                                queryParamsHandling: 'merge'
+                            this.updateQueryParams({
+                                'com.dotmarketing.persona.id': persona.identifier
                             });
                         }); // This does a take 1 under the hood
                 },
@@ -329,11 +308,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CUSTOMER_ACTIONS.SET_URL]: () => {
                 const payload = <SetUrlPayload>data.payload;
 
-                this.router.navigate([], {
-                    queryParams: {
-                        url: payload.url
-                    },
-                    queryParamsHandling: 'merge'
+                this.updateQueryParams({
+                    url: payload.url
                 });
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
@@ -353,5 +329,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
             this.host
         );
+    }
+
+    private updateQueryParams(params: Params) {
+        this.router.navigate([], {
+            queryParams: params,
+            queryParamsHandling: 'merge'
+        });
     }
 }

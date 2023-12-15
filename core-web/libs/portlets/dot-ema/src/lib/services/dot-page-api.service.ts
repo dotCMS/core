@@ -5,21 +5,9 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
-import { DotLanguage, DotLayout, DotPersona } from '@dotcms/dotcms-models';
+import { DotPageRenderParameters, DotPersona } from '@dotcms/dotcms-models';
 
 import { SavePagePayload } from '../shared/models';
-
-export interface DotPageApiResponse {
-    page: {
-        title: string;
-        identifier: string;
-    };
-    viewAs: {
-        language: DotLanguage;
-        persona?: DotPersona;
-    };
-    layout?: DotLayout;
-}
 
 export interface DotPageApiParams {
     url: string;
@@ -56,12 +44,12 @@ export class DotPageApiService {
      * @return {*}  {Observable<DotPageApiResponse>}
      * @memberof DotPageApiService
      */
-    get({ url, language_id, persona_id }: DotPageApiParams): Observable<DotPageApiResponse> {
+    get({ url, language_id, persona_id }: DotPageApiParams): Observable<DotPageRenderParameters> {
         const apiUrl = `/api/v1/page/json/${url}?language_id=${language_id}&com.dotmarketing.persona.id=${persona_id}`;
 
         return this.http
             .get<{
-                entity: DotPageApiResponse;
+                entity: DotPageRenderParameters;
             }>(apiUrl)
             .pipe(pluck('entity'));
     }
