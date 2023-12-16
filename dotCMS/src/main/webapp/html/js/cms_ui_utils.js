@@ -25,10 +25,6 @@ function makeShorter(x){
 		ele.style.minHeight = "150px";
 	}
 
-
-
-	
-
 }
 
 function makeNarrower(x){
