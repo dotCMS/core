@@ -98,7 +98,7 @@
 					"script": {
 						"exec": [
 							"// wait for the plugin to get active",
-							"setTimeout(function(){}, 5000);"
+							"setTimeout(function(){}, 10000);"
 						],
 						"type": "text/javascript"
 					}
