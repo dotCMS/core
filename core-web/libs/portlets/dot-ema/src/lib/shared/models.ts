@@ -1,13 +1,10 @@
 export interface ActionPayload {
     container: ContainerPayload;
-    contentlet?: ContentletPayload; // Only for edit and delete
+    contentlet?: ContentletPayload;
     language_id: string;
     pageContainers: PageContainer[];
     pageId: string;
     personaTag?: string; // TODO: make this required
-}
-
-export interface PlacePayload extends ActionPayload {
     position?: 'before' | 'after';
     newContentletId?: string;
 }

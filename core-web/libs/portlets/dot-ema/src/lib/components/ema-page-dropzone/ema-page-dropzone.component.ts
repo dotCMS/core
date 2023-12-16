@@ -8,14 +8,14 @@ import {
     Output
 } from '@angular/core';
 
-import { PlacePayload } from '../../shared/models';
+import { ActionPayload } from '../../shared/models';
 
 interface Contentlets {
     x: number;
     y: number;
     width: number;
     height: number;
-    payload: PlacePayload;
+    payload: ActionPayload;
 }
 
 interface Container {
@@ -24,7 +24,7 @@ interface Container {
     width: number;
     height: number;
     contentlets: Contentlets[];
-    payload: PlacePayload;
+    payload: ActionPayload;
 }
 
 interface Column {
@@ -53,7 +53,7 @@ export interface Row {
 })
 export class EmaPageDropzoneComponent {
     @Input() rows: Row[] = [];
-    @Output() place = new EventEmitter<PlacePayload>();
+    @Output() place = new EventEmitter<ActionPayload>();
 
     pointerPosition: Record<string, string> = {
         left: '0',
@@ -85,7 +85,7 @@ export class EmaPageDropzoneComponent {
         const mouseY = event.clientY;
         const isTop = mouseY < targetRect.top + targetRect.height / 2;
 
-        const payload = <PlacePayload>{
+        const payload = <ActionPayload>{
             ...data,
             position: isTop ? 'before' : 'after'
         };

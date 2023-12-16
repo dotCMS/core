@@ -147,25 +147,27 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      *
      * @memberof EditEmaStore
      */
-    readonly createContentFromPalette = this.effect((contentTypeVariable$: Observable<string>) => {
-        return contentTypeVariable$.pipe(
-            switchMap((payload) => {
-                return this.dotActionUrl.getCreateContentletUrl(payload).pipe(
-                    tapResponse(
-                        (url) => {
-                            this.setDialog({
-                                url,
-                                title: 'Create Something'
-                            });
-                        },
-                        (e) => {
-                            console.error(e);
-                        }
-                    )
-                );
-            })
-        );
-    });
+    readonly createContentFromPalette = this.effect(
+        (contentTypeVariable$: Observable<{ variable: string; name: string }>) => {
+            return contentTypeVariable$.pipe(
+                switchMap(({ name, variable }) => {
+                    return this.dotActionUrl.getCreateContentletUrl(variable).pipe(
+                        tapResponse(
+                            (url) => {
+                                this.setDialog({
+                                    url,
+                                    title: `Create ${name}`
+                                });
+                            },
+                            (e) => {
+                                console.error(e);
+                            }
+                        )
+                    );
+                })
+            );
+        }
+    );
 
     readonly setDialog = this.updater((state, { url, title }: { url: string; title: string }) => {
         return {

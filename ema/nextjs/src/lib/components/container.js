@@ -50,7 +50,11 @@ function Container({ containerRef }) {
 
                     const contentletPayload = {
                         container,
-                        contentlet,
+                        contentlet: {
+                            identifier: contentlet.identifier,
+                            title: contentlet.title,
+                            inode: contentlet.inode
+                        },
                         language_id: viewAs.language.id,
                         pageContainers,
                         pageId: page.identifier,

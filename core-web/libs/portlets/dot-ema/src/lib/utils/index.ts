@@ -1,13 +1,13 @@
-import { ActionPayload, PageContainer, PlacePayload } from '../shared/models';
+import { ActionPayload, PageContainer } from '../shared/models';
 
 /**
  * Insert a contentlet in a container in a specific position
  *
  * @export
- * @param {PlacePayload} payload
+ * @param {ActionPayload} payload
  * @return {*}  {PageContainer[]}
  */
-export function insertPositionedContentletInContainer(payload: PlacePayload): PageContainer[] {
+function insertPositionedContentletInContainer(payload: ActionPayload): PageContainer[] {
     const { pageContainers, container, contentlet, personaTag, newContentletId, position } =
         payload;
 
@@ -40,6 +40,10 @@ export function insertPositionedContentletInContainer(payload: PlacePayload): Pa
  * @return {*}  {PageContainer[]}
  */
 export function insertContentletInContainer(action: ActionPayload): PageContainer[] {
+    if (action.position && action.newContentletId) {
+        return insertPositionedContentletInContainer(action);
+    }
+
     const { pageContainers, container, contentlet, personaTag } = action;
 
     return pageContainers.map((currentContainer) => {
