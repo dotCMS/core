@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 
 import { EditEmaStore } from './dot-ema.store';
 
+import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../../services/dot-page-api.service';
 import { DEFAULT_PERSONA, EDIT_CONTENTLET_URL } from '../../shared/consts';
 
@@ -10,7 +11,7 @@ describe('EditEmaStore', () => {
     let spectator: SpectatorService<EditEmaStore>;
     const createService = createServiceFactory({
         service: EditEmaStore,
-        mocks: [DotPageApiService]
+        mocks: [DotPageApiService, DotActionUrlService]
     });
 
     beforeEach(() => (spectator = createService()));
@@ -164,7 +165,7 @@ describe('EditEmaStore', () => {
 
         it('should initialize addAction properties', (done) => {
             spectator.service.initActionAdd({
-                containerID: '123',
+                containerId: '123',
                 acceptTypes: 'test',
                 language_id: '1'
             });
@@ -292,24 +293,12 @@ describe('EditEmaStore', () => {
             spectator.service.load({ language_id: 'en', url: 'test-url', persona_id: '123' });
             spectator.service.savePage({
                 pageContainers: [],
-                container: {
-                    uuid: '123',
-                    identifier: 'test',
-                    contentletsId: [],
-                    acceptTypes: 'test'
-                },
-                pageID: '789'
+                pageId: '789'
             });
 
             expect(dotPageApiService.save).toHaveBeenCalledWith({
                 pageContainers: [],
-                container: {
-                    uuid: '123',
-                    identifier: 'test',
-                    contentletsId: [],
-                    acceptTypes: 'test'
-                },
-                pageID: '789'
+                pageId: '789'
             });
         });
     });
