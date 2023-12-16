@@ -64,145 +64,9 @@ describe('EditEmaStore', () => {
                 done();
             });
         });
-
-        it('should return the dialogState', () => {
-            spectator.service.setDialogIframeURL('test-url');
-            spectator.service.setDialogVisible(true);
-            spectator.service.setDialogHeader('test');
-            spectator.service.setDialogIframeLoading(true);
-
-            spectator.service.dialogState$.subscribe((state) => {
-                expect(state).toEqual({
-                    dialogIframeURL: 'test-url',
-                    dialogVisible: true,
-                    dialogHeader: 'test',
-                    dialogIframeLoading: true
-                });
-            });
-        });
     });
 
     describe('updaters', () => {
-        it('should update url', (done) => {
-            spectator.service.setURL('test-url');
-
-            spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
-                    editor: {
-                        page: {
-                            title: '',
-                            identifier: ''
-                        },
-                        viewAs: {
-                            language: {
-                                id: 1,
-                                language: '',
-                                countryCode: '',
-                                languageCode: '',
-                                country: ''
-                            }
-                        }
-                    },
-                    url: 'test-url',
-                    dialogIframeURL: '',
-                    dialogIframeLoading: false,
-                    dialogHeader: '',
-                    dialogVisible: false
-                });
-                done();
-            });
-        });
-
-        it('should update editFrameURL', (done) => {
-            spectator.service.setDialogIframeURL('test-url');
-
-            spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
-                    editor: {
-                        page: {
-                            title: '',
-                            identifier: ''
-                        },
-                        viewAs: {
-                            language: {
-                                id: 1,
-                                language: '',
-                                countryCode: '',
-                                languageCode: '',
-                                country: ''
-                            }
-                        }
-                    },
-                    url: '',
-                    dialogIframeURL: 'test-url',
-                    dialogIframeLoading: false,
-                    dialogHeader: '',
-                    dialogVisible: false
-                });
-                done();
-            });
-        });
-
-        it('should update dialogVisible', (done) => {
-            spectator.service.setDialogVisible(true);
-
-            spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
-                    editor: {
-                        page: {
-                            title: '',
-                            identifier: ''
-                        },
-                        viewAs: {
-                            language: {
-                                id: 1,
-                                language: '',
-                                countryCode: '',
-                                languageCode: '',
-                                country: ''
-                            }
-                        }
-                    },
-                    url: '',
-                    dialogIframeURL: '',
-                    dialogIframeLoading: false,
-                    dialogHeader: '',
-                    dialogVisible: true
-                });
-                done();
-            });
-        });
-
-        it('should update dialogHeader', (done) => {
-            spectator.service.setDialogHeader('test');
-
-            spectator.service.state$.subscribe((state) => {
-                expect(state).toEqual({
-                    editor: {
-                        page: {
-                            title: '',
-                            identifier: ''
-                        },
-                        viewAs: {
-                            language: {
-                                id: 1,
-                                language: '',
-                                countryCode: '',
-                                languageCode: '',
-                                country: ''
-                            }
-                        }
-                    },
-                    url: '',
-                    dialogIframeURL: '',
-                    dialogIframeLoading: false,
-                    dialogHeader: 'test',
-                    dialogVisible: false
-                });
-                done();
-            });
-        });
-
         it('should update editIframeLoading', (done) => {
             spectator.service.setDialogIframeLoading(true);
 
@@ -234,8 +98,6 @@ describe('EditEmaStore', () => {
         });
 
         it('should reset editIframe properties', (done) => {
-            spectator.service.setDialogHeader('test');
-            spectator.service.setDialogVisible(true);
             spectator.service.setDialogIframeLoading(true);
 
             spectator.service.resetDialog();

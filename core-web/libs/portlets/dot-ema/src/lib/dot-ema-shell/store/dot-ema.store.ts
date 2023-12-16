@@ -177,26 +177,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         };
     });
 
-    readonly setURL = this.updater((state, url: string) => ({
-        ...state,
-        url
-    }));
-
-    readonly setDialogIframeURL = this.updater((state, editIframeURL: string) => ({
-        ...state,
-        dialogIframeURL: editIframeURL
-    }));
-
-    readonly setDialogVisible = this.updater((state, dialogVisible: boolean) => ({
-        ...state,
-        dialogVisible
-    }));
-
-    readonly setDialogHeader = this.updater((state, dialogHeader: string) => ({
-        ...state,
-        dialogHeader
-    }));
-
     readonly setDialogIframeLoading = this.updater((state, editIframeLoading: boolean) => ({
         ...state,
         dialogIframeLoading: editIframeLoading
