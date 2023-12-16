@@ -46,19 +46,31 @@ jobs:
         with:
           filters: .github/filters.yaml
           list-files: 'escape'
-      - id: filter-rewrite
+      - name: Rewrite Filter
+        id: filter-rewrite
         run: |
           frontend=${{ steps.filter.outputs.frontend }}
           cli=${{ steps.filter.outputs.cli }}
           backend=${{ steps.filter.outputs.backend }}
           
-          echo "${{ steps.filter.outputs.backend_files }}"
+          is_backend=false
+          backend_files=( ${{ steps.filter.outputs.backend_files }} )
+          for backend_file in "${backend_files[@]}"
+          do
+            if [[ ! $backend_file =~ ^dotCMS/src/main/webapp/html/.*\.(js|css)$ ]]; then
+              is_backend=true
+              break
+            fi
+          done
+          
+          backend=${is_backend}
+          [[ $backend == true ]] && build=true && jvm_unit_test=true
           
           echo "frontend=${frontend}" >> $GITHUB_OUTPUT
           echo "cli=${cli}" >> $GITHUB_OUTPUT
           echo "backend=${backend}" >> $GITHUB_OUTPUT
-          echo "jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test }}" >> $GITHUB_OUTPUT
-          echo "build=${{ steps.filter.outputs.build }}" >> $GITHUB_OUTPUT
+          echo "build=${build}" >> $GITHUB_OUTPUT
+          echo "jvm_unit_test=${jvm_unit_test}" >> $GITHUB_OUTPUT
 
   #
   # Initial JDK 11 Build
