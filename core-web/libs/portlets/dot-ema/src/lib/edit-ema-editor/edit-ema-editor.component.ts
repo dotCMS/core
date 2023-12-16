@@ -45,6 +45,11 @@ import {
     insertPositionedContentletInContainer
 } from '../utils';
 
+interface DraggedPalettePayload {
+    type: 'contentlet' | 'content-type';
+    item: string;
+}
+
 @Component({
     selector: 'dot-edit-ema-editor',
     standalone: true,
@@ -88,7 +93,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly host = HOST;
 
     private savePayload: ActionPayload;
-    private draggePayload: string;
+    private draggedPayload: DraggedPalettePayload;
 
     rows: Row[] = [];
 
@@ -353,7 +358,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     onDragStart(event: DragEvent) {
-        this.draggePayload = (event.target as HTMLDivElement)?.dataset.item;
+        this.draggedPayload = (event.target as HTMLDivElement)
+            .dataset as unknown as DraggedPalettePayload;
 
         this.iframe.nativeElement.contentWindow?.postMessage(
             NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
@@ -366,19 +372,25 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     onPlaceItem(event: PlacePayload) {
-        const pageContainers = insertPositionedContentletInContainer({
-            ...event,
-            newContentletId: this.draggePayload
-        });
+        if (this.draggedPayload.type === 'contentlet') {
+            const pageContainers = insertPositionedContentletInContainer({
+                ...event,
+                newContentletId: this.draggedPayload.item
+            });
 
-        this.store.savePage({
-            pageContainers,
-            pageId: event.pageId,
-            whenSaved: () => {
-                this.reloadIframe();
-                this.draggePayload = undefined;
-            }
-        });
+            this.store.savePage({
+                pageContainers,
+                pageId: event.pageId,
+                whenSaved: () => {
+                    this.reloadIframe();
+                    this.draggedPayload = undefined;
+                }
+            });
+
+            return;
+        }
+
+        this.store.createContentFromPalette(this.draggedPayload.item);
     }
 
     /**

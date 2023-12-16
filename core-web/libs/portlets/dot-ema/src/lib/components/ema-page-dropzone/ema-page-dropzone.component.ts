@@ -81,7 +81,6 @@ export class EmaPageDropzoneComponent {
     onDrop(event: DragEvent): void {
         const target = event.target as HTMLDivElement;
         const data = JSON.parse(target.dataset.payload);
-
         const targetRect = (event.target as HTMLElement).getBoundingClientRect();
         const mouseY = event.clientY;
         const isTop = mouseY < targetRect.top + targetRect.height / 2;

@@ -11,6 +11,7 @@ import { DotLanguagesService, DotPersonalizeService } from '@dotcms/data-access'
 import { EditEmaStore } from './store/dot-ema.store';
 
 import { EditEmaNavigationBarComponent } from '../components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
+import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
 import { NavigationBarItem } from '../shared/models';
@@ -28,6 +29,7 @@ import { NavigationBarItem } from '../shared/models';
     providers: [
         EditEmaStore,
         DotPageApiService,
+        DotActionUrlService,
         ConfirmationService,
         DotLanguagesService,
         DotPersonalizeService,
