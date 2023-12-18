@@ -6,7 +6,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { DotLanguagesService, DotPersonalizeService } from '@dotcms/data-access';
+import { DotLanguagesService, DotPersonalizeService, DotRouterService } from '@dotcms/data-access';
 
 import { EditEmaStore } from './store/dot-ema.store';
 
@@ -32,6 +32,7 @@ import { NavigationBarItem } from '../shared/models';
         DotLanguagesService,
         DotPersonalizeService,
         MessageService,
+        DotRouterService,
         {
             provide: WINDOW,
             useValue: window

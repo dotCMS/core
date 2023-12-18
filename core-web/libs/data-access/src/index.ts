@@ -38,3 +38,5 @@ export * from './lib/dot-workflow/dot-workflow.service';
 export * from './lib/dot-workflows-actions/dot-workflows-actions.service';
 export * from './lib/paginator/paginator.service';
 export * from './lib/dot-page-tools/dot-page-tools.service';
+export * from './lib/dot-router/dot-router.service';
+export * from './lib/can-deactivate/can-deactivate-guard.service';

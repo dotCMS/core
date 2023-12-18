@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
+import { DotRouterService } from '@dotcms/data-access';
+import { DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { TemplateBuilderModule } from '@dotcms/template-builder';
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
@@ -15,5 +17,10 @@ import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 })
 export class EditEmaLayoutComponent {
     private readonly store = inject(EditEmaStore);
-    readonly layout$ = this.store.layout$;
+    private readonly dotRouterService = inject(DotRouterService);
+    readonly layoutProperties$ = this.store.layoutProperties$;
+
+    nextTemplateUpdate(_: DotTemplateDesigner) {
+        // console.log(template);
+    }
 }

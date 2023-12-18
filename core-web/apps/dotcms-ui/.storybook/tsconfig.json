@@ -10,6 +10,8 @@
         "../../../**/block-editor/**/src/lib/**/*.stories.ts",
         "../../../**/edit-content/**/src/lib/**/*.stories.ts",
         "../../../**/ui/**/src/lib/**/*.stories.ts",
-        "../../../**/portlets/**/src/lib/**/*.stories.ts"
+        "../../../**/portlets/**/src/lib/**/*.stories.ts",
+        "../../../libs/data-access/src/lib/dot-router",
+        "../../../libs/dotcms-models/src/lib/navigation"
     ]
 }

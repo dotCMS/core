@@ -23,11 +23,10 @@ import { DotNavigationService } from '@components/dot-navigation/services/dot-na
 import { DotGravatarDirective } from '@directives/dot-gravatar/dot-gravatar.directive';
 import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
-import { DotEventsService } from '@dotcms/data-access';
+import { DotEventsService, DotRouterService } from '@dotcms/data-access';
 import {
     CoreWebService,
     DotcmsConfigService,

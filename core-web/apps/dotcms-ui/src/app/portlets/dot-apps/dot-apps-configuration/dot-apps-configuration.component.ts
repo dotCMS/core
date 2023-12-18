@@ -8,8 +8,12 @@ import { LazyLoadEvent } from 'primeng/api';
 import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
 
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotAlertConfirmService, DotMessageService, PaginatorService } from '@dotcms/data-access';
+import {
+    DotAlertConfirmService,
+    DotMessageService,
+    DotRouterService,
+    PaginatorService
+} from '@dotcms/data-access';
 import { dialogAction, DotApps, DotAppsSites } from '@dotcms/dotcms-models';
 
 import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';

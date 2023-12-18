@@ -22,11 +22,15 @@ import { DotGlobalMessageComponent } from '@components/_common/dot-global-messag
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
-import { DotEventsService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
+import {
+    DotEventsService,
+    DotMessageService,
+    DotPropertiesService,
+    DotRouterService
+} from '@dotcms/data-access';
 import { DotLayout, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import {
     AUTOSAVE_DEBOUNCE_TIME,

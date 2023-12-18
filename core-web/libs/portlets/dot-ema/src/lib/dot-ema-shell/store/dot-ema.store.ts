@@ -60,7 +60,10 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         dialogIframeLoading: state.dialogIframeLoading
     }));
 
-    readonly layout$ = this.select((state) => state.editor.layout);
+    readonly layoutProperties$ = this.select((state) => ({
+        layout: state.editor.layout,
+        themeId: state.editor.template.theme
+    }));
 
     /**
      * Load the page editor
