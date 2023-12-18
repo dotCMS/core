@@ -17,7 +17,6 @@ import { Params, Router } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
-import { ToastModule } from 'primeng/toast';
 
 import { takeUntil } from 'rxjs/operators';
 
@@ -49,7 +48,6 @@ import { insertContentletInContainer, deleteContentletFromContainer } from '../u
         EditEmaLanguageSelectorComponent,
         EditEmaToolbarComponent,
         ClipboardModule,
-        ToastModule,
         DotMessagePipe
     ],
     templateUrl: './edit-ema-editor.component.html',

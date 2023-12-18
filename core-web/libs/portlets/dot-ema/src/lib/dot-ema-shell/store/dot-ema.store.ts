@@ -5,6 +5,8 @@ import { Injectable } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
+import { DotLayout } from '@dotcms/dotcms-models';
+
 import {
     DotPageApiService,
     DotPageApiParams,
@@ -62,7 +64,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     readonly layoutProperties$ = this.select((state) => ({
         layout: state.editor.layout,
-        themeId: state.editor.template.theme
+        themeId: state.editor.template.theme,
+        pageID: state.editor.page.identifier
     }));
 
     /**
@@ -186,6 +189,19 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             };
         }
     );
+
+    /**
+     * Update the page layout
+     *
+     * @memberof EditEmaStore
+     */
+    readonly updatePageLayout = this.updater((state, layout: DotLayout) => ({
+        ...state,
+        editor: {
+            ...state.editor,
+            layout
+        }
+    }));
 
     /**
      * Create the url to edit a contentlet
