@@ -3,8 +3,9 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map, pluck } from 'rxjs/operators';
 
+import { DotCMSResponse } from '@dotcms/dotcms-js';
 import { DotCMSWorkflowAction, DotCMSWorkflow } from '@dotcms/dotcms-models';
 
 export enum DotRenderMode {
@@ -46,6 +47,29 @@ export class DotWorkflowsActionsService {
         return this.httpClient
             .get(`${this.BASE_URL}/contentlet/${inode}/actions${renderModeQuery}`)
             .pipe(pluck('entity'));
+    }
+
+    /**
+     * Returns the workflow actions of the passed contentType
+     *
+     * @param {string} inode
+     * @param {DotRenderMode} [renderMode]
+     * @returns {Observable<DotCMSWorkflowAction[]>}
+     * @memberof DotWorkflowsActionsService
+     */
+    getDefaultActions(contentTypeId: string): Observable<DotCMSWorkflowAction[]> {
+        return this.httpClient
+            .get<DotCMSResponse<{ action: DotCMSWorkflowAction; scheme: DotCMSWorkflow }[]>>(
+                `${this.BASE_URL}/defaultactions/contenttype/${contentTypeId}`
+            )
+            .pipe(
+                pluck('entity'),
+                map((res = []) => {
+                    return res.map(({ action }) => {
+                        return action;
+                    });
+                })
+            );
     }
 
     private getWorkFlowId(workflow: DotCMSWorkflow): string {

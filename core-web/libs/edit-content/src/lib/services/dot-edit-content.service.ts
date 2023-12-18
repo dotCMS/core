@@ -6,9 +6,9 @@ import { Injectable, inject } from '@angular/core';
 import { map, pluck } from 'rxjs/operators';
 
 import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { EditContentFormData } from '../models/dot-edit-content-form.interface';
+import { EditContentPayload } from '../models/dot-edit-content-form.interface';
 
 @Injectable()
 export class DotEditContentService {
@@ -23,7 +23,7 @@ export class DotEditContentService {
      * @param id - The ID of the content to retrieve.
      * @returns An observable of the DotCMSContentType object.
      */
-    getContentById(id: string): Observable<DotCMSContentType> {
+    getContentById(id: string): Observable<DotCMSContentlet> {
         return this.http.get(`/api/v1/content/${id}`).pipe(pluck('entity'));
     }
 
@@ -32,10 +32,10 @@ export class DotEditContentService {
      * @param idOrVar - The identifier or variable name of the content type to retrieve form data for.
      * @returns An Observable of an array of DotCMSContentTypeLayoutRow objects representing the form data for the given content type.
      */
-    getContentTypeFormData(idOrVar: string): Observable<EditContentFormData> {
+    getContentTypeFormData(idOrVar: string): Observable<EditContentPayload> {
         return this.dotContentTypeService.getContentType(idOrVar).pipe(
             map(
-                ({ layout, fields, contentType }): EditContentFormData => ({
+                ({ layout, fields, contentType }): EditContentPayload => ({
                     layout,
                     fields,
                     contentType

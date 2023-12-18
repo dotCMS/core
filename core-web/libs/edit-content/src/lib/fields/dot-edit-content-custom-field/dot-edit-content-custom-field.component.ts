@@ -17,8 +17,6 @@ import { ButtonModule } from 'primeng/button';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotIconModule, SafeUrlPipe } from '@dotcms/ui';
 
-import { DotEditContentService } from '../../services/dot-edit-content.service';
-
 @Component({
     selector: 'dot-edit-content-custom-field',
     standalone: true,
@@ -29,14 +27,13 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 })
 export class DotEditContentCustomFieldComponent implements OnInit {
     @Input() field!: DotCMSContentTypeField;
+    @Input() contentType!: string;
 
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
 
     private controlContainer = inject(ControlContainer);
-    private editContentService = inject(DotEditContentService);
     private zone = inject(NgZone);
 
-    private contentType = this.editContentService.currentContentType;
     variables!: { [key: string]: string };
     isFullscreen = false;
     src!: string;

@@ -1,19 +1,16 @@
-<dot-edit-content-toolbar
-    class="header"
-    [inode]="identifier"
-    [formValue]="formValue"></dot-edit-content-toolbar>
+<ng-container *ngIf="data$ | async as data; else noContent">
+    <dot-edit-content-toolbar
+        class="header"
+        [actions]="data.actions"
+        (actionFired)="handleAction($event)"></dot-edit-content-toolbar>
 
-<ng-container *ngIf="formData$ | async as formData; else noContent">
-    <dot-edit-content-form
-        class="body"
-        [formData]="formData"
-        (changeValue)="setFormValue($event)" />
+    <dot-edit-content-form class="body" [formData]="data" (changeValue)="setFormValue($event)" />
     <aside class="sidebar">
-        <dot-edit-content-aside
-            [contentLet]="formData.contentlet"
-            [contentType]="formData.contentType" />
+        <dot-edit-content-aside [contentLet]="data.contentlet" [contentType]="data.contentType" />
     </aside>
     <p *ngIf="isContentSaved">Content saved!</p>
 </ng-container>
 
 <ng-template #noContent>No content to show</ng-template>
+
+<p-toast></p-toast>
