@@ -230,9 +230,67 @@ describe('EditEmaStore', () => {
                 done();
             });
         });
+
+        it('should update dialog state', (done) => {
+            spectator.service.setDialog({
+                url: 'some/really/long/url',
+                title: 'test'
+            });
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state.dialogHeader).toBe('test');
+                expect(state.dialogIframeLoading).toBe(true);
+                expect(state.dialogIframeURL).toBe('some/really/long/url');
+                expect(state.dialogVisible).toBe(true);
+                done();
+            });
+        });
     });
 
     describe('effects', () => {
+        it('should update state to show dialog for create content from palette', (done) => {
+            const dotPageApiService = spectator.inject(DotPageApiService);
+            const dotActionUrlService = spectator.inject(DotActionUrlService);
+
+            dotPageApiService.get.andReturn(
+                of({
+                    page: {
+                        title: 'Test Page',
+                        identifier: '123'
+                    },
+                    viewAs: {
+                        language: {
+                            id: 1,
+                            language: '',
+                            countryCode: '',
+                            languageCode: '',
+                            country: ''
+                        }
+                    }
+                })
+            );
+            dotActionUrlService.getCreateContentletUrl.andReturn(
+                of('https://demo.dotcms.com/jsp.jsp')
+            );
+
+            spectator.service.load({ language_id: 'en', url: 'test-url', persona_id: '123' });
+
+            spectator.service.createContentFromPalette({
+                variable: 'blogPost',
+                name: 'Blog'
+            });
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state.dialogHeader).toBe('Create Blog');
+                expect(state.dialogIframeLoading).toBe(true);
+                expect(state.dialogIframeURL).toBe('https://demo.dotcms.com/jsp.jsp');
+                expect(state.dialogVisible).toBe(true);
+                done();
+            });
+
+            expect(dotActionUrlService.getCreateContentletUrl).toHaveBeenCalledWith('blogPost');
+        });
+
         it('should handle successful data loading', (done) => {
             const dotPageApiService = spectator.inject(DotPageApiService);
             const mockResponse = {
