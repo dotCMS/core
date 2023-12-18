@@ -115,9 +115,7 @@ export class AIContentPromptView {
                 filter((state) => state.acceptContent)
             )
             .subscribe((state) => {
-                const [nodeInformation] = findNodeByType(this.editor, NodeTypes.AI_CONTENT) || [
-                    null
-                ];
+                const nodeInformation = findNodeByType(this.editor, NodeTypes.AI_CONTENT)?.[0];
                 replaceNodeWithContent(this.editor, nodeInformation, state.content);
 
                 this.componentStore.setAcceptContent(false);
@@ -147,9 +145,7 @@ export class AIContentPromptView {
                 filter((deleteContent) => deleteContent)
             )
             .subscribe(() => {
-                const [nodeInformation] = findNodeByType(this.editor, NodeTypes.AI_CONTENT) || [
-                    null
-                ];
+                const nodeInformation = findNodeByType(this.editor, NodeTypes.AI_CONTENT)?.[0];
 
                 if (nodeInformation) {
                     this.editor.commands.deleteRange({

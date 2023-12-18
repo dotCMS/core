@@ -286,7 +286,7 @@ export const getAIPlaceholderImage = (editor: Editor): DotTiptapNodeInformation 
         ? nodes.filter((nodeInfo) => nodeInfo.node.attrs.data[AI_IMAGE_PLACEHOLDER_PROPERTY])
         : null;
 
-    return aIPlaceholderImages?.length ? aIPlaceholderImages[0] : null;
+    return aIPlaceholderImages?.[0];
 };
 
 /**

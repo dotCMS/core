@@ -99,8 +99,7 @@ export const ImageNode = Image.extend({
                     const { head } = selection;
                     const node = {
                         attrs: getImageAttr(attrs),
-                        type: ImageNode.name,
-                        storage: { aiStatus: 'pending' }
+                        type: ImageNode.name
                     };
 
                     return chain()
