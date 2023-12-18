@@ -3,7 +3,7 @@ import { Node } from '@tiptap/core';
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         LoaderNode: {
-            insertLoaderNode: (isLoading?: boolean) => ReturnType;
+            insertLoaderNode: (isLoading?: boolean, position?: number) => ReturnType;
         };
     }
 }
@@ -45,12 +45,18 @@ export const LoaderNode = Node.create({
         return {
             ...this.parent?.(),
             insertLoaderNode:
-                (isLoading?: boolean) =>
-                ({ commands }) => {
-                    return commands.insertContent({
+                (isLoading?: boolean, position?: number) =>
+                ({ chain, state }) => {
+                    const { selection } = state;
+                    const { head } = selection;
+                    const node = {
                         type: this.name,
                         attrs: { isLoading: isLoading }
-                    });
+                    };
+
+                    return chain()
+                        .insertContentAt(position ?? head, node)
+                        .run();
                 }
         };
     },

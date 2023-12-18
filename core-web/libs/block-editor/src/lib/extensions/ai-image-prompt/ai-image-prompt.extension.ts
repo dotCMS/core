@@ -45,7 +45,7 @@ export const AIImagePromptExtension = (viewContainerRef: ViewContainerRef) => {
                     ({ chain }) => {
                         return chain()
                             .command(({ tr }) => {
-                                tr.setMeta(AI_IMAGE_PROMPT_PLUGIN_KEY, { open: true });
+                                tr.setMeta(AI_IMAGE_PROMPT_PLUGIN_KEY, { aIImagePromptOpen: true });
 
                                 return true;
                             })
@@ -57,7 +57,9 @@ export const AIImagePromptExtension = (viewContainerRef: ViewContainerRef) => {
                     ({ chain }) => {
                         return chain()
                             .command(({ tr }) => {
-                                tr.setMeta(AI_IMAGE_PROMPT_PLUGIN_KEY, { open: false });
+                                tr.setMeta(AI_IMAGE_PROMPT_PLUGIN_KEY, {
+                                    aIImagePromptOpen: false
+                                });
 
                                 return true;
                             })
