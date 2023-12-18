@@ -54,7 +54,7 @@ export class EditContentLayoutComponent implements OnInit {
     private activatedRoute = inject(ActivatedRoute);
 
     public contentType = this.activatedRoute.snapshot.params['contentType'];
-    public inode = this.activatedRoute.snapshot.params['id'];
+    public identifier = this.activatedRoute.snapshot.params['id'];
 
     private readonly dotEditContentService = inject(DotEditContentService);
     private readonly workflowActionService = inject(DotWorkflowsActionsService);
@@ -73,7 +73,7 @@ export class EditContentLayoutComponent implements OnInit {
     ngOnInit() {
         if (this.contentType) {
             this.fetchNewContent();
-        } else if (this.inode) {
+        } else if (this.identifier) {
             this.fetchContent();
         }
     }
@@ -111,7 +111,7 @@ export class EditContentLayoutComponent implements OnInit {
     private fetchContent() {
         forkJoin([
             this.getContentletaAndForm(),
-            this.workflowActionService.getByInode(this.inode, DotRenderMode.EDITING)
+            this.workflowActionService.getByInode(this.identifier, DotRenderMode.EDITING)
         ])
             .pipe(
                 map(([data, actions]) => {
@@ -127,7 +127,7 @@ export class EditContentLayoutComponent implements OnInit {
     }
 
     private getContentletaAndForm(): Observable<EditContentPayload> {
-        return this.dotEditContentService.getContentById(this.inode).pipe(
+        return this.dotEditContentService.getContentById(this.identifier).pipe(
             switchMap((contentlet) => {
                 const contentType = contentlet.contentType;
 
@@ -159,14 +159,14 @@ export class EditContentLayoutComponent implements OnInit {
             }
         };
 
-        this.WorkflowActionsFireService.fireTo(this.inode, action.id, payload)
+        this.WorkflowActionsFireService.fireTo(this.identifier, action.id, payload)
             .pipe(
                 tap(({ inode }) => {
-                    this.inode = inode;
+                    this.identifier = inode;
                     this.updateURL(inode);
                 }),
                 switchMap(() =>
-                    this.workflowActionService.getByInode(this.inode, DotRenderMode.EDITING)
+                    this.workflowActionService.getByInode(this.identifier, DotRenderMode.EDITING)
                 )
             )
             .subscribe(

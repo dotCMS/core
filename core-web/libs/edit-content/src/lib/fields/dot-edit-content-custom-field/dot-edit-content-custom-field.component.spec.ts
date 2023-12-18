@@ -21,41 +21,33 @@ describe('DotEditContentCustomFieldComponent', () => {
         componentViewProviders: [
             { provide: ControlContainer, useValue: createFormGroupDirectiveMock(FAKE_FORM_GROUP) }
         ],
-        providers: [
-            FormGroupDirective,
-            {
-                provide: DotEditContentService,
-                useValue: {
-                    currentContentType: 'test'
-                }
-            }
-        ]
+        providers: [FormGroupDirective, DotEditContentService]
     });
 
     beforeEach(() => {
-        spectator = createComponent();
+        spectator = createComponent({
+            props: {
+                field: CUSTOM_FIELD_MOCK,
+                contentType: 'test'
+            }
+        });
+        spectator.detectChanges();
     });
 
     it('should have a valid iframe src', () => {
-        spectator.setInput('field', CUSTOM_FIELD_MOCK);
-        spectator.detectChanges();
         expect(spectator.component.src).toBe(
             `/html/legacy_custom_field/legacy-custom-field.jsp?variable=test&field=${CUSTOM_FIELD_MOCK.variable}`
         );
     });
 
     it('should set the iframe contentWindow form property correctly on iframe load', () => {
-        spectator.setInput('field', CUSTOM_FIELD_MOCK);
         spectator.component.onIframeLoad();
-        spectator.detectChanges();
         expect(spectator.component.iframe.nativeElement.contentWindow['form']).toEqual(
             FAKE_FORM_GROUP
         );
     });
 
     it('should the component receive iframe turnOnFullscreen info', () => {
-        spectator.setInput('field', CUSTOM_FIELD_MOCK);
-        spectator.detectChanges();
         const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
         const onMessageFromCustomField = jest.spyOn(
             spectator.component,
@@ -74,9 +66,7 @@ describe('DotEditContentCustomFieldComponent', () => {
     });
 
     it('should the iframe get the form reference from component', () => {
-        spectator.setInput('field', CUSTOM_FIELD_MOCK);
         spectator.component.onIframeLoad();
-        spectator.detectChanges();
         spectator.component.form.get('custom').setValue('A text');
 
         const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
@@ -84,10 +74,7 @@ describe('DotEditContentCustomFieldComponent', () => {
     });
 
     it('should the component form be modified from iframe', () => {
-        spectator.setInput('field', CUSTOM_FIELD_MOCK);
         spectator.component.onIframeLoad();
-        spectator.detectChanges();
-
         const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
         iframe.nativeElement.contentWindow['form'].get('custom').setValue('Other text');
 
