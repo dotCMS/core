@@ -173,3 +173,5 @@ This maintenance release includes the following code fixes:
 143. https://github.com/dotCMS/core/issues/26481 : Pubsub Connection should prefer SSL #26481
 144. https://github.com/dotCMS/core/issues/26774 : text fields validation limit to 255 chars is not longer required #26774
 145. https://github.com/dotCMS/core/issues/24874 : Unable to import starter.zip #24874
+
+**Release-23.01.10**
