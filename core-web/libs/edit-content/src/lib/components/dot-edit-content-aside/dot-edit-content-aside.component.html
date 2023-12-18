@@ -11,17 +11,17 @@
     <dl class="edit-content-aside--item">
         <dt>{{ 'Assignee' | dm }}</dt>
         <dd class="font-bold" data-testId="workflow-assigned">
-            {{ workflow.task.assignedTo }}
+            {{ workflow.task?.assignedTo }}
         </dd>
 
         <dt>{{ 'Step' | dm }}</dt>
         <dd class="font-bold" data-testId="workflow-step">
-            <p-chip [label]="workflow.step.name" styleClass="p-chip-sm p-chip-rounded" />
+            <p-chip [label]="workflow?.step?.name ?? 'New'" styleClass="p-chip-sm p-chip-rounded" />
         </dd>
 
         <dt>{{ 'Workflow' | dm }}</dt>
         <dd class="font-bold" data-testId="workflow-name">
-            {{ workflow.scheme.name }}
+            {{ workflow.scheme?.name }}
         </dd>
     </dl>
 </ng-container>

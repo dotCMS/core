@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { AsyncPipe, NgIf, NgSwitch, NgSwitchCase, SlicePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
@@ -47,11 +47,13 @@ export class DotEditContentAsideComponent implements OnInit {
 
     private readonly workFlowService = inject(DotWorkflowService);
 
-    workflow$: Observable<DotCMSWorkflowStatus>;
+    workflow$!: Observable<DotCMSWorkflowStatus>;
 
     ngOnInit() {
         if (this.contentLet?.inode) {
             this.workflow$ = this.workFlowService.getWorkflowStatus(this.contentLet.inode);
+        } else {
+            this.workflow$ = of({ scheme: null, step: null, task: null });
         }
     }
 }

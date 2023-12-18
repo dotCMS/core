@@ -93,16 +93,11 @@ describe('DotEditContentAsideComponent', () => {
         );
     });
 
-    it('should not render aside workflow data', () => {
-        const CONTENT_WITHOUT_CONTENTLET = { ...CONTENT_FORM_DATA_MOCK };
-        delete CONTENT_WITHOUT_CONTENTLET.contentlet;
-        spectator.setInput('contentLet', CONTENT_WITHOUT_CONTENTLET.contentlet);
-        spectator.setInput('contentType', CONTENT_WITHOUT_CONTENTLET.contentType);
+    it('should render New as status when dont have contentlet', () => {
+        spectator.setInput('contentLet', null);
+        spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType);
         spectator.detectChanges();
 
-        expect(spectator.component.workflow$).toBeUndefined();
-        expect(spectator.query(byTestId('workflow-name'))).toBeNull();
-        expect(spectator.query(byTestId('workflow-step'))).toBeNull();
-        expect(spectator.query(byTestId('workflow-assigned'))).toBeNull();
+        expect(spectator.query(byTestId('workflow-step')).textContent).toBe('New');
     });
 });
