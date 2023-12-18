@@ -1,59 +1,41 @@
-import { CommonModule, Location } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
+    EventEmitter,
     Input,
-    OnInit,
-    inject
+    OnChanges,
+    Output
 } from '@angular/core';
 
 import { MenuItem, MessageService } from 'primeng/api';
 import { SplitButtonModule } from 'primeng/splitbutton';
-import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import {
-    DotMessageService,
-    DotRenderMode,
-    DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
-} from '@dotcms/data-access';
+import { DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import { DotCMSActionSubtype, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-edit-content-toolbar',
     standalone: true,
-    imports: [CommonModule, ToolbarModule, SplitButtonModule, ToastModule],
+    imports: [CommonModule, ToolbarModule, SplitButtonModule],
     providers: [DotWorkflowsActionsService, DotMessageService, MessageService],
     templateUrl: './dot-edit-content-toolbar.component.html',
     styleUrls: ['./dot-edit-content-toolbar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentToolbarComponent implements OnInit {
-    @Input() inode: string;
-    @Input() formValue: Record<string, string>;
+export class DotEditContentToolbarComponent implements OnChanges {
+    @Input() actions: DotCMSWorkflowAction[];
+    @Output() actionFired = new EventEmitter<DotCMSWorkflowAction>();
 
     private _grouppedActions: MenuItem[][] = [];
-
-    // Angular Build-in services
-    private readonly cdRef = inject(ChangeDetectorRef);
-    private readonly location = inject(Location);
-
-    // PrimeNG services
-    private readonly messageService = inject(MessageService);
-
-    // DotCMS services
-    private readonly workflowActionService = inject(DotWorkflowsActionsService);
-    private readonly WorkflowActionsFireService = inject(DotWorkflowActionsFireService);
-    private readonly dotMessageService = inject(DotMessageService);
 
     get groupedActions(): MenuItem[][] {
         return this._grouppedActions;
     }
 
-    ngOnInit(): void {
-        this.fetchWorkflowActions();
+    ngOnChanges(): void {
+        this._grouppedActions = this.groupActions(this.actions);
     }
 
     private groupActions(actions: DotCMSWorkflowAction[]): MenuItem[][] {
@@ -65,7 +47,7 @@ export class DotEditContentToolbarComponent implements OnInit {
                     } else {
                         acc[acc.length - 1].push({
                             label: action.name,
-                            command: () => this.fireAction(action)
+                            command: () => this.actionFired.emit(action)
                         });
                     }
 
@@ -74,40 +56,5 @@ export class DotEditContentToolbarComponent implements OnInit {
                 [[]]
             )
             .filter((group) => group.length);
-    }
-
-    private fireAction(action: DotCMSWorkflowAction): void {
-        this.WorkflowActionsFireService.fireTo(this.inode, action.id, {
-            contentlet: {
-                ...this.formValue
-            }
-        }).subscribe(
-            (contentlet) => {
-                this.inode = contentlet.inode;
-                this.fetchWorkflowActions();
-                this.location.replaceState(`/content/${this.inode}`); // Replace the URL with the new inode without reloading the page
-                this.messageService.add({
-                    severity: 'success',
-                    summary: this.dotMessageService.get('dot.common.message.success'),
-                    detail: action.name
-                });
-            },
-            (error) => {
-                this.messageService.add({
-                    severity: 'error',
-                    summary: this.dotMessageService.get('dot.common.message.error'),
-                    detail: error.message
-                });
-            }
-        );
-    }
-
-    private fetchWorkflowActions() {
-        this.workflowActionService
-            .getByInode(this.inode, DotRenderMode.EDITING)
-            .subscribe((actions) => {
-                this._grouppedActions = this.groupActions(actions);
-                this.cdRef.markForCheck();
-            });
     }
 }

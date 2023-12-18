@@ -18,6 +18,12 @@ interface DotActionRequestOptions {
     individualPermissions?: { [key: string]: string[] };
 }
 
+interface DotFireActionOptions<T> {
+    actionId: string;
+    inode?: string;
+    data?: T;
+}
+
 enum ActionToFire {
     NEW = 'NEW',
     DESTROY = 'DESTROY',
@@ -34,22 +40,22 @@ export class DotWorkflowActionsFireService {
         .set('Content-Type', 'application/json');
 
     /**
-     * Fire a workflow action over a contentlet
+     *  Fire a workflow action over a contentlet
      *
-     * @param {string} inode
-     * @param {string} actionId
-     * @param {{ [key: string]: string }} data
-     * @returns Observable<DotCMSContentlet> // contentlet
+     * @template T
+     * @param {DotFireActionOptions<T>} options
+     * @return {*}  {Observable<DotCMSContentlet>}
      * @memberof DotWorkflowActionsFireService
      */
-    fireTo<T = { [key: string]: string }>(
-        inode: string,
-        actionId: string,
-        data?: T
+    fireTo<T = Record<string, string>>(
+        options: DotFireActionOptions<T>
     ): Observable<DotCMSContentlet> {
+        const { actionId, inode, data } = options;
+        const queryInode = inode ? `inode=${inode}&` : '';
+
         return this.httpClient
             .put(
-                `${this.BASE_URL}/actions/${actionId}/fire?inode=${inode}&indexPolicy=WAIT_FOR`,
+                `${this.BASE_URL}/actions/${actionId}/fire?${queryInode}indexPolicy=WAIT_FOR`,
                 data,
                 { headers: this.defaultHeaders }
             )

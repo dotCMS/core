@@ -15,7 +15,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
-import { EditContentFormData } from '../models/dot-edit-content-form.interface';
+import { EditContentPayload } from '../models/dot-edit-content-form.interface';
 
 /* FIELDS MOCK BY TYPE */
 
@@ -857,7 +857,7 @@ export const LAYOUT_FIELDS_VALUES_MOCK = {
     date: '2023-11-14 19:27:53'
 };
 
-export const CONTENT_FORM_DATA_MOCK: EditContentFormData = {
+export const CONTENT_FORM_DATA_MOCK: EditContentPayload = {
     layout: LAYOUT_MOCK,
     fields: JUST_FIELDS_MOCKS,
     contentlet: {

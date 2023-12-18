@@ -5,12 +5,18 @@ import { of } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { MessageService } from 'primeng/api';
+
+import {
+    DotMessageService,
+    DotWorkflowActionsFireService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
 import { DotFormatDateService, DotMessagePipe } from '@dotcms/ui';
+import { mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { EditContentLayoutComponent } from './edit-content.layout.component';
 
-import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { CONTENT_TYPE_MOCK, JUST_FIELDS_MOCKS, LAYOUT_MOCK } from '../../utils/mocks';
 
@@ -25,7 +31,18 @@ const createEditContentLayoutComponent = (params: { contentType?: string; id?: s
             },
             mockProvider(DotFormatDateService)
         ],
-        providers: [mockProvider(DotMessageService)]
+        providers: [
+            DotWorkflowActionsFireService,
+            MessageService,
+            mockProvider(DotMessageService),
+            {
+                provide: DotWorkflowsActionsService,
+                useValue: {
+                    getByInode: jest.fn().mockReturnValue(of(mockWorkflowsActions)),
+                    getDefaultActions: jest.fn().mockReturnValue(of(mockWorkflowsActions))
+                }
+            }
+        ]
     });
 };
 
@@ -38,7 +55,6 @@ describe('EditContentLayoutComponent with identifier', () => {
     beforeEach(async () => {
         spectator = createComponent({
             detectChanges: false,
-
             providers: [
                 {
                     provide: DotEditContentService,
@@ -52,8 +68,7 @@ describe('EditContentLayoutComponent with identifier', () => {
                         getContentById: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK)),
                         saveContentlet: jest.fn().mockReturnValue(of({}))
                     }
-                },
-                mockProvider(DotMessageService)
+                }
             ]
         });
 
@@ -70,19 +85,7 @@ describe('EditContentLayoutComponent with identifier', () => {
         expect(dotEditContentService.getContentById).toHaveBeenCalledWith('1');
     });
 
-    it('should call dotEditContentService.saveContentlet with the correct parameters - Using contentType from getContentById', () => {
-        spectator.detectChanges();
-        const formComponent = spectator.query(DotEditContentFormComponent);
-        formComponent.changeValue.emit({ key: 'value' });
-        spectator.component.saveContent();
-        expect(dotEditContentService.saveContentlet).toHaveBeenCalledWith({
-            key: 'value',
-            inode: '1',
-            contentType: 'Test'
-        });
-    });
-
-    it('should have a [formData] reference on the <dot-edit-content-form>', async () => {
+    it('should have a [formData] reference on the <dot-edit-content-form>', () => {
         spectator.detectChanges();
         const formElement = spectator.query('dot-edit-content-form');
         expect(formElement.hasAttribute('ng-reflect-form-data')).toBe(true);

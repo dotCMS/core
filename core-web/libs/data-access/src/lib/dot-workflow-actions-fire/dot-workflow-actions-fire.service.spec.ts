@@ -210,10 +210,16 @@ describe('DotWorkflowActionsFireService', () => {
     });
 
     it('should create and return a new Content', (done) => {
-        spectator.service.fireTo('123', 'new', { id: '123' }).subscribe((res) => {
-            expect(res).toEqual(dotcmsContentletMock);
-            done();
-        });
+        spectator.service
+            .fireTo({
+                inode: '123',
+                actionId: 'new',
+                data: { id: '123' }
+            })
+            .subscribe((res) => {
+                expect(res).toEqual(dotcmsContentletMock);
+                done();
+            });
 
         const req = spectator.expectOne(
             '/api/v1/workflow/actions/new/fire?inode=123&indexPolicy=WAIT_FOR',
