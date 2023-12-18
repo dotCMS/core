@@ -1,4 +1,4 @@
-package com.dotcms.api.client.pull.site;
+package com.dotcms.api.client.util;
 
 import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.model.RestClientFactory;
@@ -20,6 +20,10 @@ public class SiteIterator implements Iterator<List<Site>> {
     private int currentPage = 1;
     private boolean hasMorePages = true;
 
+    private boolean showArchived = false;
+    private boolean showLive = false;
+    private boolean showSystem = false;
+
     /**
      * Constructs a new SiteIterator with the given RestClientFactory and page size.
      *
@@ -29,6 +33,19 @@ public class SiteIterator implements Iterator<List<Site>> {
     public SiteIterator(final RestClientFactory clientFactory, final int pageSize) {
         this.clientFactory = clientFactory;
         this.pageSize = pageSize;
+    }
+
+    /**
+     * SiteIterator is an iterator that fetches all the sites from a remote server. It allows
+     * fetching sites in pages, with various filtering options.
+     */
+    public SiteIterator(final RestClientFactory clientFactory, final int pageSize,
+            final boolean showArchived, final boolean showLive, final boolean showSystem) {
+        this.clientFactory = clientFactory;
+        this.pageSize = pageSize;
+        this.showArchived = showArchived;
+        this.showLive = showLive;
+        this.showSystem = showSystem;
     }
 
     /**
@@ -57,9 +74,9 @@ public class SiteIterator implements Iterator<List<Site>> {
 
         ResponseEntityView<List<Site>> sitesResponse = siteAPI.getSites(
                 null,
-                null,
-                false,
-                false,
+                this.showArchived,
+                this.showLive,
+                this.showSystem,
                 currentPage,
                 pageSize
         );
