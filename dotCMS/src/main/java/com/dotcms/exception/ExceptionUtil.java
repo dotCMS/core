@@ -342,6 +342,22 @@ public class ExceptionUtil {
         return contentValidationErrors;
     }
 
+    /**
+     * Returns the error message from the specified Java exception. If it's not present, returns the
+     * class name.
+     *
+     * @param throwable The thrown exception.
+     *
+     * @return The exception's error message, or its class name if not available.
+     */
+    public static String getErrorMessage(final Throwable throwable) {
+        if (null == throwable) {
+            return StringPool.BLANK;
+        }
+        return UtilMethods.isSet(throwable.getMessage()) ? throwable.getMessage() :
+                throwable.getClass().getName();
+    }
+
     public static class ValidationError {
         private final String field;
         private final String message;

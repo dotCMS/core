@@ -175,3 +175,5 @@ This maintenance release includes the following code fixes:
 145. https://github.com/dotCMS/core/issues/24874 : Unable to import starter.zip #24874
 
 **Release-23.01.10**
+
+146. https://github.com/dotCMS/core/issues/27008 : Adding DEBUG logging to the SASS compilation process #27008
