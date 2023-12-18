@@ -3,8 +3,11 @@
 $notification-padding: $spacing-3;
 
 :host {
-    position: relative;
     display: flex;
+
+    .toolbar-notifications__container {
+        position: relative;
+    }
 
     .badge {
         background-color: $color-palette-primary;
@@ -14,8 +17,8 @@ $notification-padding: $spacing-3;
         line-height: $font-size-sm;
         padding: 2px 5px;
         position: absolute;
-        left: 16px;
-        top: -3px;
+        left: 20px;
+        top: 0;
     }
 
     .toolbar-notifications {

@@ -10,9 +10,13 @@
 </ul>
 
 <div class="announcements__container">
-    <a class="announcements__link" data-testId="announcement_link" href="#/starter">{{
-        'announcements_show_all' | dm
-    }}</a>
+    <a
+        class="announcements__link"
+        [routerLink]="linkToAddDevice"
+        (click)="close()"
+        data-testId="announcement_link"
+        >{{ 'announcements_show_all' | dm }}</a
+    >
 </div>
 
 <h5 class="announcements__title">{{ 'announcements_knowledge_center' | dm }}</h5>

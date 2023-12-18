@@ -1,5 +1,8 @@
 import { NgClass, NgForOf } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
+import { RouterLink } from '@angular/router';
+
+import { OverlayPanel } from 'primeng/overlaypanel';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -8,9 +11,11 @@ import { DotMessagePipe } from '@dotcms/ui';
     templateUrl: './dot-toolbar-announcements.component.html',
     styleUrls: ['./dot-toolbar-announcements.component.scss'],
     standalone: true,
-    imports: [NgForOf, NgClass, DotMessagePipe]
+    imports: [NgForOf, NgClass, DotMessagePipe, RouterLink]
 })
 export class DotToolbarAnnouncementsComponent {
+    @Input() announcementsPanel: OverlayPanel;
+
     announcementsData = [
         {
             iconClass: 'pi pi-comment',
@@ -57,4 +62,9 @@ export class DotToolbarAnnouncementsComponent {
             url: 'https://www.dotcms.com/services/professional-services/?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu'
         }
     ];
+    protected linkToAddDevice = '/c/starter';
+
+    close(): void {
+        this.announcementsPanel.hide();
+    }
 }
