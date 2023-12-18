@@ -57,13 +57,14 @@ export class EditContentLayoutComponent implements OnInit {
     private readonly store = inject(DotEditContentStore);
 
     contentType = this.activatedRoute.snapshot.params['contentType'];
-    identifier = this.activatedRoute.snapshot.params['id'];
+    inode = this.activatedRoute.snapshot.params['id'];
     formValue: Record<string, string>;
+
     vm$: Observable<EditContentPayload> = this.store.vm$.pipe(
         skip(1),
         tap(({ contentType, contentlet }) => {
             this.contentType = contentlet?.contentType || contentType?.variable;
-            this.identifier = contentlet?.identifier;
+            this.inode = contentlet?.inode;
         }),
         map(({ actions, contentType, contentlet }) => ({
             actions,
@@ -76,8 +77,8 @@ export class EditContentLayoutComponent implements OnInit {
 
     ngOnInit() {
         this.store.loadContentEffect({
-            isNewContent: !this.identifier,
-            idOrVar: this.identifier || this.contentType
+            isNewContent: !this.inode,
+            idOrVar: this.inode || this.contentType
         });
     }
 
@@ -101,7 +102,7 @@ export class EditContentLayoutComponent implements OnInit {
 
         this.store.fireWorkflowActionEffect({
             actionId: action.id,
-            inode: this.identifier,
+            inode: this.inode,
             data
         });
     }

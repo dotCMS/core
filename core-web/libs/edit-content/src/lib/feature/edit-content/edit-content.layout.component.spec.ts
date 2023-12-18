@@ -51,7 +51,7 @@ const createEditContentLayoutComponent = (params: { contentType?: string; id?: s
     });
 };
 
-describe('EditContentLayoutComponent with identifier', () => {
+describe('EditContentLayoutComponent with inode', () => {
     let spectator: Spectator<EditContentLayoutComponent>;
     let dotEditContentStore: SpyObject<DotEditContentStore>;
 
@@ -83,9 +83,9 @@ describe('EditContentLayoutComponent with identifier', () => {
         jest.spyOn(dotEditContentStore, 'loadContentEffect');
     });
 
-    it('should set identifier from activatedRoute and contentType undefined', () => {
+    it('should set inode from activatedRoute and contentType undefined', () => {
         expect(spectator.component.contentType).toEqual(undefined);
-        expect(spectator.component.identifier).toEqual('1');
+        expect(spectator.component.inode).toEqual('1');
     });
 
     it('should have a [formData] reference on the <dot-edit-content-form>', async () => {
@@ -99,12 +99,14 @@ describe('EditContentLayoutComponent with identifier', () => {
 
         spectator.component.vm$ = of(data);
         spectator.detectChanges();
+
+        // Check that the component is passing the contentlet as the formData
         const component = spectator.query(DotEditContentFormComponent);
         expect(component).toExist();
         expect(component.formData).toEqual(data);
     });
 
-    it('should call the store with `isNewContent` property being false and the identifier', () => {
+    it('should call the store with `isNewContent` property being false and the inode', () => {
         spectator.detectChanges();
 
         expect(dotEditContentStore.loadContentEffect).toHaveBeenCalledWith({
@@ -114,7 +116,7 @@ describe('EditContentLayoutComponent with identifier', () => {
     });
 });
 
-describe('EditContentLayoutComponent without identifier', () => {
+describe('EditContentLayoutComponent without inode', () => {
     let spectator: Spectator<EditContentLayoutComponent>;
     let dotEditContentStore: SpyObject<DotEditContentStore>;
 
@@ -142,9 +144,9 @@ describe('EditContentLayoutComponent without identifier', () => {
         spectator.detectChanges();
     });
 
-    it('should set contentType from activatedRoute - Identifier undefined.', () => {
+    it('should set contentType from activatedRoute - inode undefined.', () => {
         expect(spectator.component.contentType).toEqual('test');
-        expect(spectator.component.identifier).toEqual(undefined);
+        expect(spectator.component.inode).toEqual(undefined);
     });
 
     it('should call the store with `isNewContent` property being true and the contentType', () => {
