@@ -4,7 +4,7 @@ import { EditorView } from 'prosemirror-view';
 
 import { Editor } from '@tiptap/core';
 
-import { CustomNodeTypes, NodeTypes } from '../../extensions';
+import { AI_IMAGE_PLACEHOLDER_PROPERTY, CustomNodeTypes, NodeTypes } from '../../extensions';
 
 const aTagRex = new RegExp(/<a(|\s+[^>]*)>(\s|\n|<img[^>]*src="[^"]*"[^>]*>)*?<\/a>/gm);
 const imgTagRex = new RegExp(/<img[^>]*src="[^"]*"[^>]*>/gm);
@@ -244,33 +244,49 @@ export const replaceNodeWithContent = (
 };
 
 /**
- * Find the first occurrence of a node of a specific type in the TipTap editor and determine its position range.
+ * Find all occurrences of nodes of a specific type in the TipTap editor and determine their position ranges.
  *
  * @param {Editor} editor - The TipTap editor instance.
  * @param {NodeTypes} nodeType - The type of the node to search for (e.g., 'paragraph').
- * @returns {DotTiptapNodeInformation | null} An object containing information about the found node:
- *          - `node`: The found node or `null` if not found.
- *          - `from`: The starting position of the found node in the document or `null` if not found.
- *          - `to`: The ending position (exclusive) of the found node in the document or `null` if not found.
+ * @returns {DotTiptapNodeInformation[] | null} An array containing information about the found nodes:
+ *          - `node`: The found node.
+ *          - `from`: The starting position of the found node in the document.
+ *          - `to`: The ending position (exclusive) of the found node in the document.
+ *          Returns `null` if no nodes of the specified type are found.
  */
 export const findNodeByType = (
     editor: Editor, // The TipTap editor instance
     nodeType: NodeTypes // The type of the node to search for
-): DotTiptapNodeInformation | null => {
-    let node = null;
-    let from = null;
-    let to = null;
+): DotTiptapNodeInformation[] | null => {
+    const nodes = [];
 
     // Traverse the document's descendants
-    editor.state.doc.descendants((currentNode, currentPosition) => {
-        if (currentNode.type.name === nodeType) {
-            node = currentNode;
-            from = currentPosition;
-            to = from + node.nodeSize;
+    editor.state.doc.descendants((node, currentPosition) => {
+        if (node.type.name === nodeType) {
+            nodes.push({
+                node,
+                from: currentPosition,
+                to: currentPosition + node.nodeSize
+            });
         }
     });
 
-    return node ? { node, from, to } : null;
+    return nodes.length ? nodes : null;
+};
+
+/**
+ * Get the information about the first occurrence of an AI placeholder image node in the TipTap editor.
+ *
+ * @param {Editor} editor - The TipTap editor instance.
+ * @returns {DotTiptapNodeInformation | null}
+ */
+export const getAIPlaceholderImage = (editor: Editor): DotTiptapNodeInformation => {
+    const nodes = findNodeByType(editor, NodeTypes.DOT_IMAGE);
+    const aIPlaceholderImages = nodes
+        ? nodes.filter((nodeInfo) => nodeInfo.node.attrs.data[AI_IMAGE_PLACEHOLDER_PROPERTY])
+        : null;
+
+    return aIPlaceholderImages?.[0];
 };
 
 /**
