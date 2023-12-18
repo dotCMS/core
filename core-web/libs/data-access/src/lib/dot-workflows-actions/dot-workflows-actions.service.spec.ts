@@ -49,7 +49,7 @@ describe('DotWorkflowsActionsService', () => {
 
         spectator
             .expectOne(
-                `/api/v1/workflow/defaultactions/contenttype/${contentTypeId}`,
+                `/api/v1/workflow/initialactions/contenttype/${contentTypeId}`,
                 HttpMethod.GET
             )
             .flush({

@@ -155,11 +155,16 @@ export class EditContentLayoutComponent implements OnInit {
     handleAction(action: DotCMSWorkflowAction): void {
         const payload = {
             contentlet: {
-                ...this.formValue
+                ...this.formValue,
+                contentType: this.contentType
             }
         };
 
-        this.WorkflowActionsFireService.fireTo(this.identifier, action.id, payload)
+        this.WorkflowActionsFireService.fireTo({
+            inode: this.identifier,
+            actionId: action.id,
+            data: payload
+        })
             .pipe(
                 tap(({ inode }) => {
                     this.identifier = inode;
@@ -177,7 +182,7 @@ export class EditContentLayoutComponent implements OnInit {
                     });
                     this.showSuccessMessage(action.name);
                 },
-                (error) => {
+                ({ error }) => {
                     this.messageService.add({
                         severity: 'error',
                         summary: this.dotMessageService.get('dot.common.message.error'),
