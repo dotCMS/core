@@ -32,7 +32,7 @@ export DOT_MAIL_SMTP_SSL_PROTOCOLS=${DOT_MAIL_SMTP_SSL_PROTOCOLS:-"TLSv1.2"}
 export DOT_SAMESITE_COOKIES=${DOT_SAMESITE_COOKIES:-"lax"}
 
 if [[ "${TOMCAT_REDIS_SESSION_ENABLED}" == 'true' ]]; then
-  export TOMCAT_REDIS_SESSION_CONFIG=${TOMCAT_REDIS_SESSION_CONFIG:-'<Valve className="com.dotcms.tomcat.redissessions.RedisSessionHandlerValve" /><Manager className="com.dotcms.tomcat.redissessions.RedisSessionManager" />'}
+  export TOMCAT_REDIS_SESSION_CONFIG=${TOMCAT_REDIS_SESSION_CONFIG:-'<Valve className="com.dotcms.tomcat.redissessions.RedisSessionHandlerValve" \/><Manager className="com.dotcms.tomcat.redissessions.RedisSessionManager" \/>'}
   export TOMCAT_REDIS_SESSION_HOST=${TOMCAT_REDIS_SESSION_HOST:-"redis"}
   export TOMCAT_REDIS_SESSION_PORT=${TOMCAT_REDIS_SESSION_PORT:-"6379"}
   export TOMCAT_REDIS_SESSION_PASSWORD=${TOMCAT_REDIS_SESSION_PASSWORD:-""}
