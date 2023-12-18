@@ -81,7 +81,6 @@ export class DotAiService {
         return this.http.get(`${API_ENDPOINT}/image/test`, { observe: 'response' });
     }
 
-
     private createAndPublishContentlet(image: DotAIImageResponse): Observable<DotCMSContentlet[]> {
         const { response, tempFileName } = image;
         const contentlets: Partial<DotCMSContentlet>[] = [
