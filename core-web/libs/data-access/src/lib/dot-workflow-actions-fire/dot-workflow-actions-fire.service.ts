@@ -18,7 +18,7 @@ interface DotActionRequestOptions {
     individualPermissions?: { [key: string]: string[] };
 }
 
-interface DotFireActionOptions<T> {
+export interface DotFireActionOptions<T> {
     actionId: string;
     inode?: string;
     data?: T;

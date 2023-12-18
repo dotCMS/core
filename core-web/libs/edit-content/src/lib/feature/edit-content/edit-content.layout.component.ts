@@ -1,6 +1,6 @@
-import { BehaviorSubject, Observable, forkJoin } from 'rxjs';
+import { Observable } from 'rxjs';
 
-import { AsyncPipe, JsonPipe, Location, NgIf } from '@angular/common';
+import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
@@ -8,16 +8,17 @@ import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ToastModule } from 'primeng/toast';
 
-import { map, tap, switchMap } from 'rxjs/operators';
+import { map, skip, tap } from 'rxjs/operators';
 
 import {
     DotMessageService,
-    DotRenderMode,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotEditContentStore } from './store/edit-content.store';
 
 import { DotEditContentAsideComponent } from '../../components/dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
@@ -47,35 +48,37 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
         DotWorkflowActionsFireService,
         DotEditContentService,
         DotMessageService,
-        MessageService
+        MessageService,
+        DotEditContentStore
     ]
 })
 export class EditContentLayoutComponent implements OnInit {
-    private activatedRoute = inject(ActivatedRoute);
+    private readonly activatedRoute = inject(ActivatedRoute);
+    private readonly store = inject(DotEditContentStore);
 
-    public contentType = this.activatedRoute.snapshot.params['contentType'];
-    public identifier = this.activatedRoute.snapshot.params['id'];
-
-    private readonly dotEditContentService = inject(DotEditContentService);
-    private readonly workflowActionService = inject(DotWorkflowsActionsService);
-    private readonly WorkflowActionsFireService = inject(DotWorkflowActionsFireService);
-
-    private readonly messageService = inject(MessageService);
-    private readonly dotMessageService = inject(DotMessageService);
-
-    private readonly location = inject(Location);
-
+    contentType = this.activatedRoute.snapshot.params['contentType'];
+    identifier = this.activatedRoute.snapshot.params['id'];
     formValue: Record<string, string>;
-    isContentSaved = false;
-
-    data$: BehaviorSubject<EditContentPayload> = new BehaviorSubject<EditContentPayload>(null);
+    vm$: Observable<EditContentPayload> = this.store.vm$.pipe(
+        skip(1),
+        tap(({ contentType, contentlet }) => {
+            this.contentType = contentlet?.contentType || contentType?.variable;
+            this.identifier = contentlet?.identifier;
+        }),
+        map(({ actions, contentType, contentlet }) => ({
+            actions,
+            contentType: this.contentType,
+            layout: contentType?.layout || [],
+            fields: contentType?.fields || [],
+            contentlet
+        }))
+    );
 
     ngOnInit() {
-        if (this.contentType) {
-            this.fetchNewContent();
-        } else if (this.identifier) {
-            this.fetchContent();
-        }
+        this.store.loadContentEffect({
+            isNewContent: !this.identifier,
+            idOrVar: this.identifier || this.contentType
+        });
     }
 
     /**
@@ -88,107 +91,18 @@ export class EditContentLayoutComponent implements OnInit {
         this.formValue = formValue;
     }
 
-    private fetchNewContent() {
-        forkJoin([
-            this.dotEditContentService.getContentTypeFormData(this.contentType),
-            this.workflowActionService.getDefaultActions(this.contentType)
-        ])
-            .pipe(
-                map(([{ layout, fields }, actions]) => {
-                    return {
-                        layout,
-                        fields,
-                        contentType: this.contentType,
-                        actions
-                    };
-                })
-            )
-            .subscribe((data) => {
-                this.data$.next(data);
-            });
-    }
-
-    private fetchContent() {
-        forkJoin([
-            this.getContentletaAndForm(),
-            this.workflowActionService.getByInode(this.identifier, DotRenderMode.EDITING)
-        ])
-            .pipe(
-                map(([data, actions]) => {
-                    return {
-                        ...data,
-                        actions
-                    };
-                })
-            )
-            .subscribe((data) => {
-                this.data$.next(data);
-            });
-    }
-
-    private getContentletaAndForm(): Observable<EditContentPayload> {
-        return this.dotEditContentService.getContentById(this.identifier).pipe(
-            switchMap((contentlet) => {
-                const contentType = contentlet.contentType;
-
-                return this.dotEditContentService
-                    .getContentTypeFormData(contentType)
-                    .pipe(
-                        map(({ layout, fields }) => ({ layout, fields, contentlet, contentType }))
-                    );
-            })
-        );
-    }
-
-    private updateURL(inode: string) {
-        this.location.replaceState(`/content/${inode}`); // Replace the URL with the new inode without reloading the page
-    }
-
-    private showSuccessMessage(detail: string) {
-        this.messageService.add({
-            severity: 'success',
-            summary: this.dotMessageService.get('dot.common.message.success'),
-            detail
-        });
-    }
-
-    handleAction(action: DotCMSWorkflowAction): void {
-        const payload = {
+    fireAction(action: DotCMSWorkflowAction): void {
+        const data = {
             contentlet: {
                 ...this.formValue,
                 contentType: this.contentType
             }
         };
 
-        this.WorkflowActionsFireService.fireTo({
-            inode: this.identifier,
+        this.store.fireWorkflowActionEffect({
             actionId: action.id,
-            data: payload
-        })
-            .pipe(
-                tap(({ inode }) => {
-                    this.identifier = inode;
-                    this.updateURL(inode);
-                }),
-                switchMap(() =>
-                    this.workflowActionService.getByInode(this.identifier, DotRenderMode.EDITING)
-                )
-            )
-            .subscribe(
-                (actions) => {
-                    this.data$.next({
-                        ...this.data$.value,
-                        actions
-                    });
-                    this.showSuccessMessage(action.name);
-                },
-                ({ error }) => {
-                    this.messageService.add({
-                        severity: 'error',
-                        summary: this.dotMessageService.get('dot.common.message.error'),
-                        detail: error.message
-                    });
-                }
-            );
+            inode: this.identifier,
+            data
+        });
     }
 }

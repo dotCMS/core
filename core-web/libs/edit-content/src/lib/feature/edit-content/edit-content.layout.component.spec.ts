@@ -1,5 +1,5 @@
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
-import { MockPipe } from 'ng-mocks';
+import { MockComponent, MockPipe } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -16,25 +16,30 @@ import { DotFormatDateService, DotMessagePipe } from '@dotcms/ui';
 import { mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { EditContentLayoutComponent } from './edit-content.layout.component';
+import { DotEditContentStore } from './store/edit-content.store';
 
+import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
-import { CONTENT_TYPE_MOCK, JUST_FIELDS_MOCKS, LAYOUT_MOCK } from '../../utils/mocks';
+import { BINARY_FIELD_CONTENTLET, CONTENT_TYPE_MOCK } from '../../utils/mocks';
 
 const createEditContentLayoutComponent = (params: { contentType?: string; id?: string }) => {
     return createComponentFactory({
         component: EditContentLayoutComponent,
-        imports: [HttpClientTestingModule, MockPipe(DotMessagePipe)],
-        componentProviders: [
+        imports: [
+            HttpClientTestingModule,
+            MockPipe(DotMessagePipe),
+            MockComponent(DotEditContentFormComponent)
+        ],
+        providers: [
+            DotEditContentStore,
+            DotWorkflowActionsFireService,
+            MessageService,
+            mockProvider(DotMessageService),
+            mockProvider(DotFormatDateService),
             {
                 provide: ActivatedRoute,
                 useValue: { snapshot: { params } }
             },
-            mockProvider(DotFormatDateService)
-        ],
-        providers: [
-            DotWorkflowActionsFireService,
-            MessageService,
-            mockProvider(DotMessageService),
             {
                 provide: DotWorkflowsActionsService,
                 useValue: {
@@ -48,7 +53,7 @@ const createEditContentLayoutComponent = (params: { contentType?: string; id?: s
 
 describe('EditContentLayoutComponent with identifier', () => {
     let spectator: Spectator<EditContentLayoutComponent>;
-    let dotEditContentService: SpyObject<DotEditContentService>;
+    let dotEditContentStore: SpyObject<DotEditContentStore>;
 
     const createComponent = createEditContentLayoutComponent({ contentType: undefined, id: '1' });
 
@@ -57,14 +62,16 @@ describe('EditContentLayoutComponent with identifier', () => {
             detectChanges: false,
             providers: [
                 {
+                    provide: DotWorkflowsActionsService,
+                    useValue: {
+                        getByInode: jest.fn().mockReturnValue(of(mockWorkflowsActions)),
+                        getDefaultActions: jest.fn().mockReturnValue(of(mockWorkflowsActions))
+                    }
+                },
+                {
                     provide: DotEditContentService,
                     useValue: {
-                        getContentTypeFormData: jest.fn().mockReturnValue(
-                            of({
-                                layout: LAYOUT_MOCK,
-                                fields: JUST_FIELDS_MOCKS
-                            })
-                        ),
+                        getContentType: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK)),
                         getContentById: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK)),
                         saveContentlet: jest.fn().mockReturnValue(of({}))
                     }
@@ -72,7 +79,8 @@ describe('EditContentLayoutComponent with identifier', () => {
             ]
         });
 
-        dotEditContentService = spectator.inject(DotEditContentService, true);
+        dotEditContentStore = spectator.inject(DotEditContentStore, true);
+        jest.spyOn(dotEditContentStore, 'loadContentEffect');
     });
 
     it('should set identifier from activatedRoute and contentType undefined', () => {
@@ -80,22 +88,35 @@ describe('EditContentLayoutComponent with identifier', () => {
         expect(spectator.component.identifier).toEqual('1');
     });
 
-    it('should call getContentById and getContentTypeFormData with contentType if identifier is present', () => {
+    it('should have a [formData] reference on the <dot-edit-content-form>', async () => {
+        const data = {
+            actions: [],
+            contentType: CONTENT_TYPE_MOCK.variable,
+            layout: CONTENT_TYPE_MOCK?.layout || [],
+            fields: CONTENT_TYPE_MOCK?.fields || [],
+            contentlet: BINARY_FIELD_CONTENTLET
+        };
+
+        spectator.component.vm$ = of(data);
         spectator.detectChanges();
-        expect(dotEditContentService.getContentById).toHaveBeenCalledWith('1');
+        const component = spectator.query(DotEditContentFormComponent);
+        expect(component).toExist();
+        expect(component.formData).toEqual(data);
     });
 
-    it('should have a [formData] reference on the <dot-edit-content-form>', () => {
+    it('should call the store with `isNewContent` property being false and the identifier', () => {
         spectator.detectChanges();
-        const formElement = spectator.query('dot-edit-content-form');
-        expect(formElement.hasAttribute('ng-reflect-form-data')).toBe(true);
-        expect(formElement).toBeDefined();
+
+        expect(dotEditContentStore.loadContentEffect).toHaveBeenCalledWith({
+            isNewContent: false,
+            idOrVar: '1'
+        });
     });
 });
 
 describe('EditContentLayoutComponent without identifier', () => {
     let spectator: Spectator<EditContentLayoutComponent>;
-    let dotEditContentService: SpyObject<DotEditContentService>;
+    let dotEditContentStore: SpyObject<DotEditContentStore>;
 
     const createComponent = createEditContentLayoutComponent({
         contentType: 'test',
@@ -109,20 +130,15 @@ describe('EditContentLayoutComponent without identifier', () => {
                 {
                     provide: DotEditContentService,
                     useValue: {
-                        getContentTypeFormData: jest.fn().mockReturnValue(
-                            of({
-                                layout: LAYOUT_MOCK,
-                                fields: JUST_FIELDS_MOCKS,
-                                contentType: 'test'
-                            })
-                        ),
+                        getContentType: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK)),
                         getContentById: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK))
                     }
                 }
             ]
         });
 
-        dotEditContentService = spectator.inject(DotEditContentService, true);
+        dotEditContentStore = spectator.inject(DotEditContentStore, true);
+        jest.spyOn(dotEditContentStore, 'loadContentEffect');
         spectator.detectChanges();
     });
 
@@ -131,8 +147,10 @@ describe('EditContentLayoutComponent without identifier', () => {
         expect(spectator.component.identifier).toEqual(undefined);
     });
 
-    it('should call getContentById and getContentTypeFormData with contentType if identifier is NOT present', () => {
-        expect(dotEditContentService.getContentById).not.toHaveBeenCalled();
-        expect(dotEditContentService.getContentTypeFormData).toHaveBeenCalledWith('test');
+    it('should call the store with `isNewContent` property being true and the contentType', () => {
+        expect(dotEditContentStore.loadContentEffect).toHaveBeenCalledWith({
+            isNewContent: true,
+            idOrVar: 'test'
+        });
     });
 });
