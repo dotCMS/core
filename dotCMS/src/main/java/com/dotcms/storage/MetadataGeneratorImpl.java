@@ -99,10 +99,7 @@ class MetadataGeneratorImpl implements MetadataGenerator {
             metadataMap.put(WIDTH_META_KEY.key(), dimension.width);
             metadataMap.put(HEIGHT_META_KEY.key(), dimension.height);
         } else {
-            if (FileUtil.isFileEditableAsText(mimeType)) {
-                metadataMap.put(EDITABLE_AS_TEXT.key(), true);
-            }
-
+            metadataMap.put(EDITABLE_AS_TEXT.key(), FileUtil.isFileEditableAsText(mimeType));
         }
         return metadataMap;
     }

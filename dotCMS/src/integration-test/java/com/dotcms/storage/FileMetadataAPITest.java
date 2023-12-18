@@ -147,7 +147,7 @@ public class FileMetadataAPITest {
     public void Test_Generate_Metadata_From_HtmlPage_Should_Resolve_ExtendedMetadata() throws Exception {
         prepareIfNecessary();
         final List<String> extendedMetadata = CollectionsUtils.list("metaKeyword", "keywords", "dcSubject",
-                "title", "dcTitle", "description", "copyright", "ogTitle", "language", "ogUrl", "ogImage");
+                "title", "dcTitle", "description", "copyright", "ogTitle", "language", "ogUrl", "ogImage", "editableAsText");
         Metadata metadata = fileMetadataAPI.getFullMetadataNoCache(new
                         File(FileMetadataAPITest.class.getResource("5-snow-sports-to-try-this-winter").getFile()),
                 null);
@@ -155,7 +155,6 @@ public class FileMetadataAPITest {
         assertTrue(metadata.getMap().keySet().containsAll(extendedMetadata));
         assertEquals("5 Snow Sports to Try This Winter", metadata.getMap().get("dcTitle"));
         assertEquals("5 Snow Sports to Try This Winter", metadata.getMap().get("title"));
-
     }
 
 
@@ -169,7 +168,7 @@ public class FileMetadataAPITest {
     @UseDataProvider("getFileAssetMetadataTestCases")
     public void Test_Generate_Metadata_From_FileAssets(final TestCase testCase) throws Exception {
         prepareIfNecessary();
-        final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        final String originalStorageType = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
         try {
             Config.setProperty(DEFAULT_STORAGE_TYPE, testCase.storageType.name());
 
@@ -203,7 +202,7 @@ public class FileMetadataAPITest {
             });
 
         }finally {
-            Config.setProperty(DEFAULT_STORAGE_TYPE,stringProperty);
+            Config.setProperty(DEFAULT_STORAGE_TYPE,originalStorageType);
         }
 
     }
