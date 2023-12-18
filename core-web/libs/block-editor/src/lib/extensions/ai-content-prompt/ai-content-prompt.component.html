@@ -3,10 +3,9 @@
         <span class="p-input-icon-right">
             <input
                 #input
-                [attr.disabled]="vm.status === 'loading' || null"
+                [attr.disabled]="vm.status === ComponentStatus.LOADING || null"
                 (keyup.escape)="handleScape($event)"
                 (keydown.escape)="$event.stopPropagation()"
-                autofocus
                 formControlName="textPrompt"
                 pInputText
                 placeholder="{{
@@ -14,7 +13,7 @@
                 }}"
                 type="text" />
 
-            <ng-container *ngIf="vm.status === 'loading'; else submitButton">
+            <ng-container *ngIf="vm.status === ComponentStatus.LOADING; else submitButton">
                 <span class="pi pi-spin pi-spinner"></span>
             </ng-container>
 

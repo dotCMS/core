@@ -4,6 +4,7 @@ package com.dotcms.cli.command;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
+import java.io.IOException;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
@@ -46,7 +47,7 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
     CommandLine.Model.CommandSpec spec;
 
     @Override
-    public Integer call() {
+    public Integer call() throws IOException {
 
         // Checking for unmatched arguments
         output.throwIfUnmatchedArguments(spec.commandLine());

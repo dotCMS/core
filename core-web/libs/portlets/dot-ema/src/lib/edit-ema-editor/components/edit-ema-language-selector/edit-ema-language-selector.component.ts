@@ -31,7 +31,7 @@ interface DotLanguageWithLabel extends DotLanguage {
     styleUrls: ['./edit-ema-language-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EmaLanguageSelectorComponent implements AfterViewInit {
+export class EditEmaLanguageSelectorComponent implements AfterViewInit {
     @ViewChild('listbox') listbox: Listbox;
     @Output() selected: EventEmitter<number> = new EventEmitter();
     @Input() language: DotLanguage;

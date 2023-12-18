@@ -1,18 +1,18 @@
-import { Observable, Subject, combineLatest, from } from 'rxjs';
-import { assert, object, string, array, optional } from 'superstruct';
+import { combineLatest, from, Observable, Subject } from 'rxjs';
+import { array, assert, object, optional, string } from 'superstruct';
 
 import {
     ChangeDetectorRef,
     Component,
     EventEmitter,
+    forwardRef,
+    inject,
     Injector,
     Input,
     OnDestroy,
     OnInit,
     Output,
-    ViewContainerRef,
-    forwardRef,
-    inject
+    ViewContainerRef
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -33,42 +33,43 @@ import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
 import { DotPropertiesService } from '@dotcms/data-access';
 import {
-    RemoteCustomExtensions,
+    DotCMSContentlet,
+    DotCMSContentTypeField,
     EDITOR_MARKETING_KEYS,
     IMPORT_RESULTS,
-    DotCMSContentlet,
-    DotCMSContentTypeField
+    RemoteCustomExtensions
 } from '@dotcms/dotcms-models';
 
 import {
     ActionsMenu,
-    BubbleFormExtension,
-    BubbleLinkFormExtension,
-    DotBubbleMenuExtension,
-    DEFAULT_LANG_ID,
-    DotConfigExtension,
-    DotTableCellExtension,
-    DotTableHeaderExtension,
-    DotTableExtension,
-    DragHandler,
-    DotFloatingButton,
-    BubbleAssetFormExtension,
-    FreezeScroll,
-    FREEZE_SCROLL_KEY,
-    AssetUploader,
-    DotComands,
+    AIContentActionsExtension,
     AIContentPromptExtension,
     AIImagePromptExtension,
-    AIContentActionsExtension
+    AssetUploader,
+    BubbleAssetFormExtension,
+    BubbleFormExtension,
+    BubbleLinkFormExtension,
+    DEFAULT_LANG_ID,
+    DotBubbleMenuExtension,
+    DotComands,
+    DotConfigExtension,
+    DotFloatingButton,
+    DotTableCellExtension,
+    DotTableExtension,
+    DotTableHeaderExtension,
+    DragHandler,
+    FREEZE_SCROLL_KEY,
+    FreezeScroll
 } from '../../extensions';
 import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
-import { ContentletBlock, ImageNode, VideoNode, AIContentNode, LoaderNode } from '../../nodes';
+import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
 import {
+    AI_PLUGIN_INSTALLED_TOKEN,
+    DotMarketingConfigService,
     formatHTML,
     removeInvalidNodes,
-    SetDocAttrStep,
-    DotMarketingConfigService,
-    RestoreDefaultDOMAttrs
+    RestoreDefaultDOMAttrs,
+    SetDocAttrStep
 } from '../../shared';
 
 @Component({
@@ -91,10 +92,18 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     @Input() isFullscreen = false;
     @Input() value: Content = '';
     @Output() valueChange = new EventEmitter<JSONContent>();
-
+    public allowedContentTypes: string;
+    public customStyles: string;
+    public displayCountBar: boolean | string = true;
+    public charLimit: number;
+    public customBlocks = '';
+    public content: Content = '';
+    public contentletIdentifier: string;
+    editor: Editor;
+    subject = new Subject();
+    freezeScroll = true;
     private onChange: (value: string) => void;
     private onTouched: () => void;
-
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
     private _customNodes: Map<string, AnyExtension> = new Map([
@@ -105,18 +114,15 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         ['aiContent', AIContentNode],
         ['loader', LoaderNode]
     ]);
+    private readonly cd = inject(ChangeDetectorRef);
+    private readonly dotPropertiesService = inject(DotPropertiesService);
+    private readonly isAIPluginInstalled: boolean = inject(AI_PLUGIN_INSTALLED_TOKEN);
 
-    public allowedContentTypes: string;
-    public customStyles: string;
-    public displayCountBar: boolean | string = true;
-    public charLimit: number;
-    public customBlocks = '';
-    public content: Content = '';
-    public contentletIdentifier: string;
-
-    editor: Editor;
-    subject = new Subject();
-    freezeScroll = true;
+    constructor(
+        private readonly injector: Injector,
+        private readonly viewContainerRef: ViewContainerRef,
+        private readonly dotMarketingConfigService: DotMarketingConfigService
+    ) {}
 
     get characterCount(): CharacterCountStorage {
         return this.editor?.storage.characterCount;
@@ -135,15 +141,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         // More Information here: https://help.medium.com/hc/en-us/articles/214991667-Read-time
         return Math.ceil(this.characterCount.words() / 265);
     }
-
-    private readonly cd = inject(ChangeDetectorRef);
-    private readonly dotPropertiesService = inject(DotPropertiesService);
-
-    constructor(
-        private readonly injector: Injector,
-        private readonly viewContainerRef: ViewContainerRef,
-        private readonly dotMarketingConfigService: DotMarketingConfigService
-    ) {}
 
     registerOnChange(fn: (value: string) => void) {
         this.onChange = fn;
@@ -411,14 +408,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     /**
-     * Extensions that improve the user experience
+     * Returns an array of editor extensions
      *
      * @private
-     * @return {*}
-     * @memberof DotBlockEditorComponent
+     * @returns {Array} An array of editor extensions
      */
     private getEditorExtensions() {
-        return [
+        const extensions = [
             DotConfigExtension({
                 lang: this.languageId || this.contentlet?.languageId,
                 allowedContentTypes: this.allowedContentTypes,
@@ -436,14 +432,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             }),
             Subscript,
             Superscript,
-            ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks()),
+            ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks(), {
+                shouldShowAIExtensions: this.isAIPluginInstalled
+            }),
             DragHandler(this.viewContainerRef),
             BubbleLinkFormExtension(this.viewContainerRef, this.languageId),
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
-            AIContentPromptExtension(this.viewContainerRef),
-            AIImagePromptExtension(this.viewContainerRef),
-            AIContentActionsExtension(this.viewContainerRef),
             DotFloatingButton(this.injector, this.viewContainerRef),
             DotTableCellExtension(this.viewContainerRef),
             BubbleAssetFormExtension(this.viewContainerRef),
@@ -453,6 +448,16 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             CharacterCount,
             AssetUploader(this.injector, this.viewContainerRef)
         ];
+
+        if (this.isAIPluginInstalled) {
+            extensions.push(
+                AIContentPromptExtension(this.viewContainerRef),
+                AIImagePromptExtension(this.viewContainerRef),
+                AIContentActionsExtension(this.viewContainerRef)
+            );
+        }
+
+        return extensions;
     }
 
     /**

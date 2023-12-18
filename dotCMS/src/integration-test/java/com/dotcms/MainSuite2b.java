@@ -150,7 +150,6 @@ import com.dotmarketing.startup.runonce.Task231109AddPublishDateToContentletVers
 import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
 import com.dotmarketing.startup.runonce.Task230707CreateSystemTableTest;
 import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSizeTest;
-import com.dotmarketing.startup.runonce.Task231030DropReleaseTableTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.UtilMethodsITest;
@@ -322,7 +321,6 @@ import org.junit.runners.Suite.SuiteClasses;
         SiteViewPaginatorIntegrationTest.class,
         Task230523CreateVariantFieldInContentletIntegrationTest.class,
         DropOldContentVersionsJobTest.class,
-        Task231030DropReleaseTableTest.class,
         Task231109AddPublishDateToContentletVersionInfoTest.class
 })
 
