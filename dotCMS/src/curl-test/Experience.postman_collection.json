@@ -56,13 +56,13 @@
 							"key": "file",
 							"contentType": "",
 							"type": "file",
-							"src": "/Users/danielsilva/dev/core/dotCMS/src/curl-test/resources/Experience/com.dotcms.experience.fragment-1.0.jar"
+							"src": "resources/Experience/com.dotcms.experience.fragment-1.0.jar"
 						},
 						{
 							"key": "file",
 							"contentType": "",
 							"type": "file",
-							"src": "/Users/danielsilva/dev/core/dotCMS/src/curl-test/resources/Experience/com.dotcms.experience-1.0.jar"
+							"src": "resources/Experience/com.dotcms.experience-1.0.jar"
 						},
 						{
 							"key": "json",
