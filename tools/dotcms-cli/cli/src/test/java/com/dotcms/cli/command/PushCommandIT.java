@@ -8,8 +8,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.DotCMSITProfile;
+import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
-import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.WorkspaceManager;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
@@ -57,7 +57,7 @@ class PushCommandIT extends CommandTest {
     OutputOptionMixin outputOptionMixin;
 
     @Mock
-    PushMixin pushMixin;
+    FullPushOptionsMixin pushMixin;
 
     @Mock
     CommandLine.Model.CommandSpec commandSpec;

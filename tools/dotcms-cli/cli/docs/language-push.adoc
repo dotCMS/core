@@ -19,7 +19,7 @@ language-push - *Push languages*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*language push* [*-h*] [*--dry-run*] [*-ff*] [*-rl*] [*--byIso*=_<languageIso>_]
+*language push* [*-h*] [*-dau*] [*--dry-run*] [*-ff*] [*-rl*] [*--byIso*=_<languageIso>_]
               [*--retry-attempts*=_<retryAttempts>_] [_path_]
 
 // end::picocli-generated-man-section-synopsis[]
@@ -37,6 +37,9 @@ This command enables the pushing of languages to the server. It accommodates the
 
 *--byIso*=_<languageIso>_::
   Code to be used to create a new language. Used when no file is specified. For example: en-us
+
+*-dau, --disable-auto-update*::
+  Disable the default behaviour of updating the local file descriptor with the response from the server after a push. When this option is used, the local file will remain in its initial state even after a successful push.
 
 *--dry-run*::
   When this option is enabled, the push process displays information about the changes that would be made on the remote server without actually pushing those changes. No modifications will be made to the remote server. By default, this option is disabled, and the changes will be applied to the remote server.

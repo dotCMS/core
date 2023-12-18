@@ -235,7 +235,8 @@ class ContentTypeAPIIT {
         final ImmutableSimpleContentType updatedContentType = ImmutableSimpleContentType.builder().from(newContentType).description("Updated").build();
         final SaveContentTypeRequest request = AbstractSaveContentTypeRequest.builder()
                 .of(updatedContentType).build();
-        final ResponseEntityView<ContentType> responseEntityView = client.updateContentTypes(request.variable(),request);
+        final ResponseEntityView<ContentType> responseEntityView = client.updateContentType(
+                request.variable(), request);
         Assertions.assertEquals("Updated", responseEntityView.entity().description());
         //And finally test delete
         final ResponseEntityView<String> responseStringEntity = client.delete(updatedContentType.variable());
@@ -334,7 +335,7 @@ class ContentTypeAPIIT {
                         .build()).description("Modified!").build();
 
         final SaveContentTypeRequest request2 = AbstractSaveContentTypeRequest.builder().of(modifiedContentType).build();
-        final ResponseEntityView<ContentType> entityView = client.updateContentTypes(
+        final ResponseEntityView<ContentType> entityView = client.updateContentType(
                 request2.variable(), request2
         );
 

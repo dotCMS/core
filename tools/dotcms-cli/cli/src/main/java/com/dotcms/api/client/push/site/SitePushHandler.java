@@ -47,10 +47,10 @@ public class SitePushHandler implements PushHandler<SiteView> {
 
     @ActivateRequestContext
     @Override
-    public void add(File localFile, SiteView localSite, Map<String, Object> customOptions) {
+    public SiteView add(File localFile, SiteView localSite, Map<String, Object> customOptions) {
 
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
-        siteAPI.create(
+        var response = siteAPI.create(
                 toRequest(localSite, customOptions)
         );
 
@@ -61,20 +61,46 @@ public class SitePushHandler implements PushHandler<SiteView> {
                     GetSiteByNameRequest.builder().siteName(localSite.siteName()).build()
             );
 
-            siteAPI.publish(byName.entity().identifier());
+            response = siteAPI.publish(byName.entity().identifier());
         }
+
+        return response.entity();
     }
 
     @ActivateRequestContext
     @Override
-    public void edit(File localFile, SiteView localSite, SiteView serverSite,
+    public SiteView edit(File localFile, SiteView localSite, SiteView serverSite,
             Map<String, Object> customOptions) {
 
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
-        siteAPI.update(
+
+        ResponseEntityView<SiteView> response;
+
+        // Unarchiving the site if necessary, this is necessary because the site API doesn't allow
+        // to update an archived site
+        if (Boolean.TRUE.equals(serverSite.isArchived())) {
+            siteAPI.unarchive(localSite.identifier());
+        }
+
+        response = siteAPI.update(
                 localSite.identifier(),
                 toRequest(localSite, customOptions)
         );
+
+        if (Boolean.TRUE.equals(localSite.isLive()) &&
+                Boolean.FALSE.equals(serverSite.isLive())) {
+            // Publishing the site
+            response = siteAPI.publish(localSite.identifier());
+        } else if (Boolean.FALSE.equals(localSite.isLive()) &&
+                Boolean.TRUE.equals(serverSite.isLive())) {
+            // Unpublishing the site
+            response = siteAPI.unpublish(localSite.identifier());
+        } else if (Boolean.TRUE.equals(localSite.isArchived())) {
+            // Archiving the site
+            response = siteAPI.archive(localSite.identifier());
+        }
+
+        return response.entity();
     }
 
     @ActivateRequestContext

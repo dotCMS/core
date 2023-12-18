@@ -1,9 +1,8 @@
 package com.dotcms.api.client.push.site;
 
-import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.push.ContentFetcher;
-import com.dotcms.model.ResponseEntityView;
+import com.dotcms.api.client.util.SiteIterator;
 import com.dotcms.model.site.Site;
 import com.dotcms.model.site.SiteView;
 import java.util.ArrayList;
@@ -23,44 +22,35 @@ public class SiteFetcher implements ContentFetcher<SiteView> {
     @Override
     public List<SiteView> fetch() {
 
-        var siteAPI = clientFactory.getClient(SiteAPI.class);
+        // Fetching the all the existing sites
+        final List<Site> allSites = new ArrayList<>();
 
-        final int pageSize = 10;
-        int page = 1;
-
-        // Create a list to store all the retrieved sites
-        List<SiteView> allSites = new ArrayList<>();
-
-        while (true) {
-
-            // Retrieve a page of sites
-            ResponseEntityView<List<Site>> sitesResponse = siteAPI.getSites(
-                    null,
-                    null,
-                    false,
-                    false,
-                    page,
-                    pageSize
-            );
-
-            // Check if the response contains sites
-            if (sitesResponse.entity() != null && !sitesResponse.entity().isEmpty()) {
-
-                // Add the sites from the current page to the list
-                List<SiteView> siteViews = sitesResponse.entity().stream()
-                        .map(this::toView)
-                        .collect(Collectors.toList());
-                allSites.addAll(siteViews);
-
-                // Increment the page number
-                page++;
-            } else {
-                // Handle the case where the response doesn't contain sites or an error occurred
-                break;
-            }
+        final SiteIterator siteIterator = new SiteIterator(
+                clientFactory,
+                100
+        );
+        while (siteIterator.hasNext()) {
+            List<Site> sites = siteIterator.next();
+            allSites.addAll(sites);
         }
 
-        return allSites;
+        // Looking for archived sites
+        final var archivedSiteIterator = new SiteIterator(
+                clientFactory,
+                100,
+                true,
+                false,
+                false
+        );
+        while (archivedSiteIterator.hasNext()) {
+            List<Site> sites = archivedSiteIterator.next();
+            allSites.addAll(sites);
+        }
+
+        // Add the sites from the current page to the list
+        return allSites.stream()
+                .map(this::toView)
+                .collect(Collectors.toList());
     }
 
     /**

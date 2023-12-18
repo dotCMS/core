@@ -10,6 +10,7 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
@@ -50,24 +51,32 @@ public class ContentTypePushHandler implements PushHandler<ContentType> {
 
     @ActivateRequestContext
     @Override
-    public void add(File localFile, ContentType localContentType,
+    public ContentType add(File localFile, ContentType localContentType,
             Map<String, Object> customOptions) {
 
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
 
         final SaveContentTypeRequest saveRequest = new Builder().of(localContentType).build();
-        contentTypeAPI.createContentTypes(List.of(saveRequest));
+        final var response = contentTypeAPI.createContentTypes(List.of(saveRequest));
+
+        return response.entity().stream()
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("No ContentType was created"));
     }
 
     @ActivateRequestContext
     @Override
-    public void edit(File localFile, ContentType localContentType, ContentType serverContentType,
+    public ContentType edit(File localFile, ContentType localContentType,
+            ContentType serverContentType,
             Map<String, Object> customOptions) {
 
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
 
         final SaveContentTypeRequest saveRequest = new Builder().of(localContentType).build();
-        contentTypeAPI.updateContentTypes(localContentType.variable(), saveRequest);
+        final var response = contentTypeAPI.updateContentType(localContentType.variable(),
+                saveRequest);
+
+        return response.entity();
     }
 
     @ActivateRequestContext
