@@ -1,24 +1,5 @@
 package com.dotcms.storage;
 
-import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_1;
-import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_2;
-import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_3;
-import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
-import static com.dotcms.datagen.TestDataUtils.getMultipleBinariesContent;
-import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
-import static com.dotcms.datagen.TestDataUtils.removeAnyMetadata;
-import static com.dotcms.rest.api.v1.temp.TempFileAPITest.mockHttpServletRequest;
-import static com.dotcms.storage.FileMetadataAPI.BINARY_METADATA_VERSION;
-import static com.dotcms.storage.FileMetadataAPIImpl.BASIC_METADATA_EXTENDED_KEYS;
-import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
-import static com.dotcms.storage.model.Metadata.CUSTOM_PROP_PREFIX;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.datagen.TestDataUtils.TestFile;
@@ -42,6 +23,12 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import org.apache.commons.io.FilenameUtils;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -53,11 +40,27 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.function.Supplier;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.io.FilenameUtils;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_1;
+import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_2;
+import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_3;
+import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
+import static com.dotcms.datagen.TestDataUtils.getMultipleBinariesContent;
+import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
+import static com.dotcms.datagen.TestDataUtils.removeAnyMetadata;
+import static com.dotcms.rest.api.v1.temp.TempFileAPITest.mockHttpServletRequest;
+import static com.dotcms.storage.FileMetadataAPI.BINARY_METADATA_VERSION;
+import static com.dotcms.storage.FileMetadataAPIImpl.BASIC_METADATA_EXTENDED_KEYS;
+import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
+import static com.dotcms.storage.model.BasicMetadataFields.EDITABLE_AS_TEXT;
+import static com.dotcms.storage.model.BasicMetadataFields.IS_IMAGE_META_KEY;
+import static com.dotcms.storage.model.Metadata.CUSTOM_PROP_PREFIX;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(DataProviderRunner.class)
 public class FileMetadataAPITest {
@@ -144,7 +147,7 @@ public class FileMetadataAPITest {
     public void Test_Generate_Metadata_From_HtmlPage_Should_Resolve_ExtendedMetadata() throws Exception {
         prepareIfNecessary();
         final List<String> extendedMetadata = CollectionsUtils.list("metaKeyword", "keywords", "dcSubject",
-                "title", "dcTitle", "description", "copyright", "ogTitle", "language", "ogUrl", "ogImage");
+                "title", "dcTitle", "description", "copyright", "ogTitle", "language", "ogUrl", "ogImage", "editableAsText");
         Metadata metadata = fileMetadataAPI.getFullMetadataNoCache(new
                         File(FileMetadataAPITest.class.getResource("5-snow-sports-to-try-this-winter").getFile()),
                 null);
@@ -152,7 +155,6 @@ public class FileMetadataAPITest {
         assertTrue(metadata.getMap().keySet().containsAll(extendedMetadata));
         assertEquals("5 Snow Sports to Try This Winter", metadata.getMap().get("dcTitle"));
         assertEquals("5 Snow Sports to Try This Winter", metadata.getMap().get("title"));
-
     }
 
 
@@ -166,7 +168,7 @@ public class FileMetadataAPITest {
     @UseDataProvider("getFileAssetMetadataTestCases")
     public void Test_Generate_Metadata_From_FileAssets(final TestCase testCase) throws Exception {
         prepareIfNecessary();
-        final String stringProperty = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
+        final String originalStorageType = Config.getStringProperty(DEFAULT_STORAGE_TYPE);
         try {
             Config.setProperty(DEFAULT_STORAGE_TYPE, testCase.storageType.name());
 
@@ -200,7 +202,7 @@ public class FileMetadataAPITest {
             });
 
         }finally {
-            Config.setProperty(DEFAULT_STORAGE_TYPE,stringProperty);
+            Config.setProperty(DEFAULT_STORAGE_TYPE,originalStorageType);
         }
 
     }
@@ -352,6 +354,8 @@ public class FileMetadataAPITest {
             if (!(Boolean)meta.get("isImage") && (key.equals("width") || key.equals("height"))) {
                 // we don't expect
                 Logger.info(FileMetadataAPI.class,"We're not supposed to have width or height in a non-image type of file");
+            } else if ((Boolean)meta.get(IS_IMAGE_META_KEY.key()) && EDITABLE_AS_TEXT.key().equals(key)) {
+                Logger.info(FileMetadataAPI.class,"Image Files don't have the 'editableAsText' field. Just move on...");
             } else {
                 assertTrue(String.format("expected metadata key `%s` isn't present in fields:: %s", key, meta) , meta.containsKey(key));
             }
@@ -383,8 +387,9 @@ public class FileMetadataAPITest {
      */
     private void validateBasicStrict(final Metadata meta) {
         final Boolean isImage = (Boolean) meta.getFieldsMeta().get("isImage");
-        //We must account that width and height are only available for images so minus two
-        final int expectedFieldsNumber = !isImage ? basicMetadataFields.size() -2 : basicMetadataFields.size();
+        // Width and height are only available for images, so minus two
+        // editableAsText is only available for text files, so minus one
+        final int expectedFieldsNumber = !isImage ? basicMetadataFields.size() -2 : basicMetadataFields.size() - 1;
         validateBasic(meta);
 
         assertEquals(

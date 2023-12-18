@@ -19,6 +19,7 @@ import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.InternalServerException;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.DotPreconditions;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.workflow.form.BulkActionForm;
 import com.dotcms.workflow.form.FireBulkActionsForm;
@@ -101,6 +102,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
 import static com.dotmarketing.db.HibernateUtil.addSyncCommitListener;
 
 /**
@@ -1867,56 +1870,48 @@ public class WorkflowHelper {
     }
 
     /**
-     * Finds the available actions of the initial/first step(s) of the workflow scheme(s) associated
-     * with a content type Id and user.
+     * Finds the available actions of all the Workflow Scheme associated to the specified Content
+     * Type ID. This is particularly useful at the exact moment a Contentlet is being created and a
+     * Workflow Scheme hasn't been selected yet.
      *
-     * @param contentTypeId String Content Type Id
-     * @param user User
-     * @return List of WorkflowAction
+     * @param contentTypeId The Content Type ID to find the available schemes and actions for.
+     * @param user          The {@link User} requesting the information.
+     *
+     * @return The list of {@link WorkflowDefaultActionView} objects that represent the available
+     * Workflow Schemes and Actions for the specified Content Type.
      */
     @CloseDBIfOpened
     public List<WorkflowDefaultActionView> findInitialAvailableActionsByContentType(
             final @NotNull String contentTypeId, final User user) {
-
-        if (!UtilMethods.isSet(contentTypeId)) {
-            throw new IllegalArgumentException("Missing required parameter contentTypeId.");
-        }
+        checkNotEmpty(contentTypeId, InternalServerException.class, "Missing required parameter contentTypeId.");
 
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
         final ImmutableList.Builder<WorkflowDefaultActionView> results = new ImmutableList.Builder<>();
         try {
-
-            Logger.debug(this,
-                    () -> "Asking for the available actions for the content type Id: " + contentTypeId);
+            Logger.debug(this, "Asking for the available actions for the content type Id: " + contentTypeId);
             final ContentType contentType = contentTypeAPI.find(contentTypeId);
+            checkNotNull(contentType, DoesNotExistException.class, "Workflow-does-not-exists-content-type");
 
-            if (null == contentType) {
-                throw new DoesNotExistException("Workflow-does-not-exists-content-type");
-            }
+            // For brand new/non-existing contents, all we need is the Contentlet instance with
+            // the Content Type ID in it for the API to return the expected information
+            final Contentlet emptyContentlet = new Contentlet();
+            emptyContentlet.setContentType(contentType);
+            final List<WorkflowAction> actions = this.workflowAPI.findAvailableActionsEditing(emptyContentlet, user);
 
-            final List<WorkflowAction> actions = this.workflowAPI
-                    .findInitialAvailableActionsByContentType(contentType, user);
-
-            final List<WorkflowAction> editingActions =
-                    UtilMethods.isSet(actions)?actions.stream().filter(WorkflowAction::shouldShowOnEdit)
-                            .collect(Collectors.toList()) : Collections.emptyList();
-
-            for (final WorkflowAction action : editingActions) {
+            for (final WorkflowAction action : actions) {
                 final WorkflowScheme scheme = this.workflowAPI.findScheme(action.getSchemeId());
                 final WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme, action);
                 results.add(value);
             }
-
-        } catch (DotDataException | DotSecurityException e) {
-
-            Logger.error(this, e.getMessage());
-            Logger.debug(this, e.getMessage(), e);
-            throw new DotWorkflowException(e.getMessage(), e);
+        } catch (final DotDataException | DotSecurityException e) {
+            final String errorMsg = String.format("Failed to find initial available actions for Content Type " +
+                    "'%s': %s", contentTypeId, ExceptionUtil.getErrorMessage(e));
+            Logger.error(this, errorMsg);
+            Logger.debug(this, errorMsg, e);
+            throw new DotWorkflowException(errorMsg, e);
         }
-
         return results.build();
     } // findInitialAvailableActionsByContentType.
-
 
     /**
      * Saves an existing scheme or create a new one
