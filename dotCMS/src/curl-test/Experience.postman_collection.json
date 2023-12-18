@@ -22,6 +22,9 @@
 							"pm.test(\"SymbolicName check\", function () {",
 							"    pm.expect(jsonData.entity.length).to.eql(2);",
 							"});",
+							"",
+							"// wait for the plugin to get active",
+							"setTimeout(function(){}, 20000);",
 							""
 						],
 						"type": "text/javascript"
@@ -53,13 +56,13 @@
 							"key": "file",
 							"contentType": "",
 							"type": "file",
-							"src": "resources/osgi-bundle/com.dotcms.actionlet.fragment-0.2.jar"
+							"src": "/Users/danielsilva/dev/core/dotCMS/src/curl-test/resources/Experience/com.dotcms.experience.fragment-1.0.jar"
 						},
 						{
 							"key": "file",
 							"contentType": "",
 							"type": "file",
-							"src": "resources/osgi-bundle/com.dotcms.actionlet-0.2.jar"
+							"src": "/Users/danielsilva/dev/core/dotCMS/src/curl-test/resources/Experience/com.dotcms.experience-1.0.jar"
 						},
 						{
 							"key": "json",
@@ -76,60 +79,6 @@
 					"path": [
 						"api",
 						"osgi"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Wait until plugins start",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							""
-						],
-						"type": "text/javascript"
-					}
-				},
-				{
-					"listen": "prerequest",
-					"script": {
-						"exec": [
-							"// wait for the plugin to get active",
-							"setTimeout(function(){}, 10000);"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						""
 					]
 				}
 			},
