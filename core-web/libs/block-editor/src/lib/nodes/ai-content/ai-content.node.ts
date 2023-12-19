@@ -7,10 +7,12 @@ declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         AIContentNode: {
             insertAINode: (content?: string) => ReturnType;
+            setLoadingAIContentNode: (loading: boolean) => ReturnType;
         };
     }
 }
 
+const AI_LOADING_CLASS = 'ai-loading';
 export const AIContentNode = Node.create({
     name: 'aiContent',
 
@@ -18,6 +20,9 @@ export const AIContentNode = Node.create({
         return {
             content: {
                 default: ''
+            },
+            loading: {
+                default: false
             }
         };
     },
@@ -65,12 +70,13 @@ export const AIContentNode = Node.create({
                 (content?: string) =>
                 ({ commands, editor, tr }) => {
                     // Check if the AI_CONTENT node exists in the document.
-                    const nodeInformation = findNodeByType(editor, NodeTypes.AI_CONTENT);
+                    const nodeInformation = findNodeByType(editor, NodeTypes.AI_CONTENT)?.[0];
 
                     // If an AI_CONTENT node is found, replace its content.
                     if (nodeInformation) {
                         tr.setNodeMarkup(nodeInformation.from, undefined, {
-                            content: content
+                            content: content,
+                            loading: false
                         });
                         // Set the node selection to the beginning of the replaced content.
                         commands.setNodeSelection(nodeInformation.from);
@@ -83,6 +89,20 @@ export const AIContentNode = Node.create({
                         type: this.name,
                         attrs: { content: content }
                     });
+                },
+            setLoadingAIContentNode:
+                (loading: boolean) =>
+                ({ tr, editor }) => {
+                    const nodeInformation = findNodeByType(editor, NodeTypes.AI_CONTENT)?.[0];
+                    // Set the loading attribute to the specified value.
+                    if (nodeInformation) {
+                        tr.setNodeMarkup(nodeInformation.from, undefined, {
+                            ...nodeInformation.node.attrs,
+                            loading: loading
+                        });
+                    }
+
+                    return true;
                 }
         };
     },
@@ -96,13 +116,18 @@ export const AIContentNode = Node.create({
             const dom = document.createElement('div');
             const div = document.createElement('div');
 
-            div.innerHTML = node.attrs.content || '';
+            div.innerHTML = node.attrs.loading
+                ? `<span class="pi pi-spin pi-spinner"></span>`
+                : node.attrs.content;
 
             dom.contentEditable = 'true';
-            dom.classList.add('ai-content-container');
+            dom.className = `ai-content-container ${node.attrs.loading ? AI_LOADING_CLASS : ''}`;
+
             dom.append(div);
 
-            return { dom };
+            return {
+                dom
+            };
         };
     }
 });

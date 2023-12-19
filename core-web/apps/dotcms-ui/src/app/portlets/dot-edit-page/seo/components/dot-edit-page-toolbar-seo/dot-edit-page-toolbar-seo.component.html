@@ -14,6 +14,7 @@
             <dot-edit-page-info-seo
                 class="dot-variant-header flex gap-3"
                 [title]="variant.variant.title"
+                [apiLink]="apiLink"
                 [url]="variant.variant.url"></dot-edit-page-info-seo>
         </ng-container>
     </div>
@@ -56,6 +57,7 @@
     <dot-edit-page-info-seo
         class="flex gap-2"
         [title]="pageState.page.title"
+        [apiLink]="apiLink"
         [url]="pageState.page.pageURI"></dot-edit-page-info-seo>
     <p-button
         class="flex gap-3"

@@ -6,14 +6,14 @@ import { By } from '@angular/platform-browser';
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguagesServiceMock } from '@dotcms/utils-testing';
 
-import { EmaLanguageSelectorComponent } from './edit-ema-language-selector.component';
+import { EditEmaLanguageSelectorComponent } from './edit-ema-language-selector.component';
 
 describe('DotEmaLanguageSelectorComponent', () => {
-    let spectator: Spectator<EmaLanguageSelectorComponent>;
-    let component: EmaLanguageSelectorComponent;
+    let spectator: Spectator<EditEmaLanguageSelectorComponent>;
+    let component: EditEmaLanguageSelectorComponent;
 
     const createComponent = createComponentFactory({
-        component: EmaLanguageSelectorComponent,
+        component: EditEmaLanguageSelectorComponent,
         imports: [HttpClientTestingModule],
         providers: [{ provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() }]
     });

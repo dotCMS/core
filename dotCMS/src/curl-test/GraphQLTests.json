@@ -1,9 +1,10 @@
 {
 	"info": {
-		"_postman_id": "7459e2fa-e2d9-4cd9-b488-e31b642c1be9",
+		"_postman_id": "ec9b06ea-0e55-44b2-8364-6c503499f792",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "5403727",
+		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-ec9b06ea-0e55-44b2-8364-6c503499f792?action=share&source=collection_link&creator=5403727"
 	},
 	"item": [
 		{
@@ -4203,17 +4204,24 @@
 			]
 		},
 		{
-			"name": "Test GraphQL File/Image Field fields",
+			"name": "Test File/Image Field fields",
 			"item": [
 				{
-					"name": "Create File/Image ContentType",
+					"name": "Create custom File Asset Content Type",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"fileImageContentTypeVariable\", jsonData.entity[0].variable);"
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Retrieving the var name of the created custom Content Type\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"fileImageContentTypeVariable\", jsonData.entity[0].variable);",
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -4263,19 +4271,23 @@
 					"response": []
 				},
 				{
-					"name": "Create ContentType",
+					"name": "Create Content Type with File and Image fields",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
 									"",
-									"pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
-									"",
-									"pm.collectionVariables.set(\"imageFieldVariable\", jsonData.entity[0].fields[1].variable);",
-									"",
-									"pm.collectionVariables.set(\"fileFieldVariable\", jsonData.entity[0].fields[2].variable);"
+									"pm.test(\"Retrieving the var names of the created Content Type and its File and Image fields\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+									"    pm.collectionVariables.set(\"imageFieldVariable\", jsonData.entity[0].fields[1].variable);",
+									"    pm.collectionVariables.set(\"fileFieldVariable\", jsonData.entity[0].fields[2].variable);",
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -4331,8 +4343,15 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Retrieving the ID of the custom File contentlet\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);",
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -4389,8 +4408,15 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"imageContentIdentifier\", jsonData.entity.identifier);"
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Retrieving the ID of the custom Image contentlet\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"imageContentIdentifier\", jsonData.entity.identifier);",
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -4456,8 +4482,15 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Retrieving the ID of the contentlet with File and Image fields\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);",
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -4502,19 +4535,21 @@
 					"response": []
 				},
 				{
-					"name": "Request content with Image and File fields",
+					"name": "Validate Image and File field attributes",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
 									"",
 									"var jsonData = pm.response.json();",
 									"var contentIdentifier = pm.collectionVariables.get(\"contentIdentifier\")",
 									"var collectionName = pm.collectionVariables.get(\"contentTypeVariable\")+\"Collection\"",
 									"",
-									"pm.test(\"Image Field attributes should be present\", function () {",
+									"pm.test(\"All Image Field attributes must be present\", function () {",
 									"     // image field",
 									"    var imageFieldJson = jsonData.data[collectionName][0][\"myImage\"];",
 									"    ",
@@ -4537,32 +4572,27 @@
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"sha256\", \"d6b09b7a7d42e6a84e455e7257faf32c4351aa9bb491ceb939f7f3443c2150ae\"), 'FAILED:[sha256]').to.be.true;",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"title\", \"tommylee18005.jpeg\"), 'FAILED:[title]').to.be.true;",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"isImage\", \"true\"), 'FAILED:[isImage]').to.be.true;",
-									"    pm.expect(imageFieldJson.metaData.modDate).to.be.not.null;",
-									"    ",
-									"    ",
+									"    pm.expect(imageFieldJson.metaData.modDate).to.be.not.null;    ",
 									"});",
 									"",
-									"pm.test(\"File Field attributes should be present\", function () {",
+									"pm.test(\"All Text File Field attributes must be present\", function () {",
 									"     // File field",
 									"    var fileFieldJson = jsonData.data[collectionName][0][\"myFile\"];",
-									"    ",
+									"",
 									"    // general attributes",
 									"    pm.expect(fileFieldJson.fileName, 'FAILED:[fileName]').to.eql(\"Readme18005.md\");",
-									"    ",
+									"",
 									"    // fileAsset",
 									"    pm.expect(fileFieldJson.fileAsset.name, 'FAILED:[name]').to.eql(\"Readme18005.md\");",
 									"    pm.expect(fileFieldJson.fileAsset.size, 'FAILED:[size]').to.eql(14);",
 									"    pm.expect(fileFieldJson.fileAsset.mime, 'FAILED:[mime]').to.eql(\"text/plain; charset=ISO-8859-1\");",
-									"    ",
-									"    pm.expect(fileFieldJson.metaData.length).to.eql(10);",
+									"    pm.expect(fileFieldJson.metaData.length).to.eql(11, \"Not all the expected metadata properties are present\");",
 									"",
-									"    // console.log(fileFieldJson.metaData)",
-									"    ",
+									"    // Metadata",
 									"    pm.expect(hasProperty(fileFieldJson.metaData, \"fileSize\", \"14\"), 'FAILED:[fileSize]').to.be.true;",
 									"    pm.expect(hasProperty(fileFieldJson.metaData, \"length\", \"14\"), 'FAILED:[length]').to.be.true;",
 									"    pm.expect(hasProperty(fileFieldJson.metaData, \"contentType\", \"text/plain; charset=ISO-8859-1\"), 'FAILED:[contentType]').to.be.true;",
-									"    ",
-									"    ",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"editableAsText\", \"true\"), 'The [editableAsText] property must be \"true\"').to.be.true;",
 									"});",
 									"",
 									"function hasProperty(metaData, name, value) {",

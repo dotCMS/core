@@ -46,31 +46,35 @@ public class LanguagePushHandler implements PushHandler<Language> {
 
     @ActivateRequestContext
     @Override
-    public void add(File localFile, Language localLanguage, Map<String, Object> customOptions) {
+    public Language add(File localFile, Language localLanguage, Map<String, Object> customOptions) {
 
         // Check if the language is missing some required values and trying to set them
         localLanguage = setMissingValues(localLanguage);
 
         final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
-        languageAPI.create(
+        final var response = languageAPI.create(
                 Language.builder().from(localLanguage).id(Optional.empty()).build()
         );
+
+        return response.entity();
     }
 
     @ActivateRequestContext
     @Override
-    public void edit(File localFile, Language localLanguage, Language serverLanguage,
+    public Language edit(File localFile, Language localLanguage, Language serverLanguage,
             Map<String, Object> customOptions) {
 
         // Check if the language is missing some required values and trying to set them
         localLanguage = setMissingValues(localLanguage);
 
         final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
-        languageAPI.update(
+        final var response = languageAPI.update(
                 localLanguage.id().map(String::valueOf).orElseThrow(() ->
                         new RuntimeException("Missing language ID")
                 ), Language.builder().from(localLanguage).id(Optional.empty()).build()
         );
+
+        return response.entity();
     }
 
     @ActivateRequestContext

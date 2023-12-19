@@ -182,7 +182,9 @@ public class LanguagesResource {
         if(null != language && language != LanguageCacheImpl.LANG_404){
             return Response.ok(new ResponseEntityView(language, ImmutableList.of(new MessageEntity("Language already exists.")))).build(); // 200
         }
-        return Response.ok(new ResponseEntityView(saveOrUpdateLanguage(null, languageForm))).build(); // 200
+        return Response.ok(new ResponseEntityView<>(
+                new LanguageView(saveOrUpdateLanguage(null, languageForm))
+        )).build(); // 200
     }
 
     @POST
@@ -208,7 +210,9 @@ public class LanguagesResource {
         if(null != language && language != LanguageCacheImpl.LANG_404){
            return Response.ok(new ResponseEntityView(language, ImmutableList.of(new MessageEntity("Language already exists.")))).build(); // 200
         }
-        return Response.ok(new ResponseEntityView(saveOrUpdateLanguage(null, languageForm))).build(); // 200
+        return Response.ok(new ResponseEntityView<>(
+                new LanguageView(saveOrUpdateLanguage(null, languageForm))
+        )).build(); // 200
     }
 
 
@@ -278,7 +282,9 @@ public class LanguagesResource {
         DotPreconditions.isTrue(doesLanguageExist(languageId), DoesNotExistException.class, ()->"Language not found");
         DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
         final Language language = saveOrUpdateLanguage(languageId, languageForm);
-        return Response.ok(new ResponseEntityView(language)).build(); // 200
+        return Response.ok(new ResponseEntityView<>(
+                new LanguageView(language)
+        )).build(); // 200
     }
 
     /**
@@ -490,6 +496,8 @@ public class LanguagesResource {
         httpServletRequest.getSession().removeAttribute(LANGUAGE_SEARCHED);
         httpServletRequest.getSession().removeAttribute(HTMLPAGE_LANGUAGE);
         httpServletRequest.getSession().removeAttribute(CONTENT_SELECTED_LANGUAGE);
-        return Response.ok(new ResponseEntityView(newDefault)).build(); // 200
+        return Response.ok(new ResponseEntityView<>(
+                new LanguageView(newDefault)
+        )).build(); // 200
     }
 }

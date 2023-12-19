@@ -32,6 +32,11 @@
                         "glob": "**/*",
                         "input": "./libs/block-editor/src/lib/assets",
                         "output": "./assets/block-editor"
+                    },
+                    {
+                        "glob": "**/*",
+                        "input": "./libs/portlets/dot-ema/src/lib/assets",
+                        "output": "./assets/dot-ema"
                     }
                 ],
                 "styles": [

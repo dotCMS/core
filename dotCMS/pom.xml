@@ -27,7 +27,6 @@
         <starter.path>${project.build.directory}/starter</starter.path>
         <starter.full.path>${starter.path}/${starter.filename}</starter.full.path>
 
-
         <clean.docker.volumes>false</clean.docker.volumes>
         <!-- Tomcat -->
         <tomcat.version>9.0.60</tomcat.version>
@@ -37,6 +36,7 @@
         <debugWait>false</debugWait>
         <buildDocker>true</buildDocker>
         <tomcat-dist-folder>dotserver/tomcat-${tomcat.version}</tomcat-dist-folder>
+        <tomcat-lib-folder>${assembly-directory}/${tomcat-dist-folder}/lib</tomcat-lib-folder>
         <tomcat9-overrides>${project.basedir}/src/main/resources/container/tomcat9</tomcat9-overrides>
         <exploded-webapp-dir>${project.build.directory}/${project.build.finalName}</exploded-webapp-dir>
         <war.output.file>${project.build.directory}/${project.build.finalName}-war.war</war.output.file>
@@ -48,18 +48,14 @@
         <legacy.webapp.dir>${project.basedir}/src/main/webapp</legacy.webapp.dir>
         <fabric8.dynamic-port>true</fabric8.dynamic-port>
         <db.port>5432</db.port>
-      <!--  <es.port>9200</es.port>-->
+        <!-- <es.port>9200</es.port> -->
         <db.it.port>5437</db.it.port>
         <es.it.port>9207</es.it.port>
 
-
         <test.webapp.root>${project.build.directory}/${project.build.finalName}</test.webapp.root>
-
 
         <felix.base.dir>${project.build.directory}/core-war/WEB-INF/felix</felix.base.dir>
         <felix.system.base.dir>${project.build.directory}/core-war/WEB-INF/felix-system</felix.system.base.dir>
-
-
 
         <testdata.dir>${project.build.directory}/testdata</testdata.dir>
 
@@ -80,6 +76,12 @@
         <cleanup.before.tests>true</cleanup.before.tests>
        <!-- <docker.platforms>linux/arm64,linux/amd64</docker.platforms>-->
         <docker.platforms></docker.platforms>
+
+        <tomcat.redis-session-manager.version>1.1</tomcat.redis-session-manager.version>
+        <tomcat.catalina.version>9.0.41</tomcat.catalina.version>
+        <commons-pool2.version>2.11.1</commons-pool2.version>
+        <org.slfj4.version>1.7.36</org.slfj4.version>
+        <jedis.version>4.4.6</jedis.version>
     </properties>
     <dependencies>
         <dependency>
@@ -1378,10 +1380,6 @@
             <artifactId>log4j-slf4j2-impl</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
             <!-- Servlet container initialization of Log4j2 -->
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-web</artifactId>
@@ -1391,8 +1389,6 @@
             <groupId>com.lmax</groupId>
             <artifactId>disruptor</artifactId>
         </dependency>
-
-
     </dependencies>
     <dependencyManagement>
         <dependencies>
@@ -1467,7 +1463,6 @@
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/felix-system</outputDirectory>
                                 </artifactItem>
-
                             </artifactItems>
                             <overWriteReleases>false</overWriteReleases>
                             <overWriteSnapshots>true</overWriteSnapshots>
@@ -1494,7 +1489,57 @@
                             </artifactItems>
                         </configuration>
                     </execution>
-
+                    <execution>
+                        <id>copy-redis</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.dotcms</groupId>
+                                    <artifactId>tomcat-redis-session-manager</artifactId>
+                                    <version>${tomcat.redis-session-manager.version}</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${tomcat-lib-folder}</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.tomcat</groupId>
+                                    <artifactId>tomcat-catalina</artifactId>
+                                    <version>${tomcat.catalina.version}</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${tomcat-lib-folder}</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.commons</groupId>
+                                    <artifactId>commons-pool2</artifactId>
+                                    <version>${commons-pool2.version}</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${tomcat-lib-folder}</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.slf4j</groupId>
+                                    <artifactId>slf4j-api</artifactId>
+                                    <version>${org.slfj4.version}</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${tomcat-lib-folder}</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>redis.clients</groupId>
+                                    <artifactId>jedis</artifactId>
+                                    <version>${jedis.version}</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${tomcat-lib-folder}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -1518,8 +1563,6 @@
                     </execution>
                 </executions>
             </plugin>
-
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
@@ -1608,7 +1651,6 @@
                     <classesDirectory>${project.build.outputDirectory}</classesDirectory>
                 </configuration>
                 <executions>
-
                     <execution>
                         <id>default-jar</id>
                         <phase>package</phase>
@@ -1638,7 +1680,6 @@
                     <attachClasses>false</attachClasses>
                     <classifier>war</classifier>
                     <webXml>${legacy.webapp.dir}/WEB-INF/web.xml</webXml>
-
                     <overlays>
                         <overlay>
                             <groupId>com.dotcms</groupId>
@@ -1650,10 +1691,7 @@
                             </excludes>
                         </overlay>
                     </overlays>
-
-
                     <webResources>
-
                         <resource>
                             <directory>${legacy.webapp.dir}</directory>
                             <filtering>false</filtering>
@@ -1661,7 +1699,6 @@
                                 <exclude>**/context.xml</exclude>
                             </excludes>
                         </resource>
-
                         <!-- add osgi bundles -->
                         <resource>
                             <directory>
@@ -1675,7 +1712,6 @@
                             </directory>
                             <targetPath>WEB-INF/felix-system</targetPath>
                         </resource>
-
                         <resource>
                             <directory>
                                 ${starter.path}
@@ -1724,7 +1760,6 @@
                             <DOT_ES_ENDPOINTS>http://localhost:${es.port}</DOT_ES_ENDPOINTS>
                             <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
                         </systemProperties>
-
                         <dependencies>
                             <dependency>
                                 <groupId>org.postgresql</groupId>
@@ -1740,8 +1775,6 @@
                             <cargo.tomcat.debug.suspend>${debugWait}</cargo.tomcat.debug.suspend>
                         </properties>
                     </configuration>
-
-
                     <deployables>
                         <deployable>
                             <groupId>org.codehaus.cargo</groupId>
@@ -1756,8 +1789,6 @@
                             </properties>
                         </deployable>
                     </deployables>
-
-
                     <packager>
                         <outputLocation>${assembly-directory}/dotserver/tomcat-${tomcat.version}</outputLocation>
                     </packager>
@@ -1835,7 +1866,6 @@
                 <artifactId>docker-maven-plugin</artifactId>
                 <configuration>
                     <imagesMap>
-
                         <dotcms>
                             <name>${docker.output.image.name}:${docker.version.tag}</name>
                             <external>
@@ -1919,7 +1949,6 @@
                                 </log>
                             </run>
                         </database>
-
                         <elasticsearch>
                             <name>docker.elastic.co/elasticsearch/elasticsearch:7.11.2</name>
                             <run>
@@ -1959,7 +1988,6 @@
                         </elasticsearch>
                     </imagesMap>
                 </configuration>
-
                 <executions>
                     <execution>
                         <id>remove-containers</id>

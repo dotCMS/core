@@ -8,6 +8,7 @@ import com.dotcms.api.client.push.language.LanguageFetcher;
 import com.dotcms.api.client.push.language.LanguagePushHandler;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
+import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.WorkspaceManager;
@@ -51,7 +52,7 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
     static final String LANGUAGE_PUSH_MIXIN = "languagePushMixin";
 
     @CommandLine.Mixin
-    PushMixin pushMixin;
+    FullPushOptionsMixin pushMixin;
 
     @CommandLine.Mixin(name = LANGUAGE_PUSH_MIXIN)
     LanguagePushMixin languagePushMixin;
@@ -127,6 +128,7 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
                     PushOptions.builder().
                             failFast(pushMixin.failFast).
                             allowRemove(languagePushMixin.removeLanguages).
+                            disableAutoUpdate(pushMixin.disableAutoUpdate).
                             maxRetryAttempts(pushMixin.retryAttempts).
                             dryRun(pushMixin.dryRun).
                             build(),
