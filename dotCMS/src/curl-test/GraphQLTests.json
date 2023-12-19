@@ -5694,7 +5694,25 @@
 							"script": {
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
+									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);",
+									"",
+									"const fs = require('fs');",
+									"",
+									"pm.test(\"File content matches MIME type\", async () => {",
+									"  const filePath = pm.response.toFile();",
+									"  fs.readFile(filePath, (err, data) => {",
+									"    if (err) {",
+									"      pm.expect.fail('Error reading file');",
+									"    } else {",
+									"      const magicNumber = data.slice(0, 4).toString('hex');",
+									"      const expectedType = mime.getType(magicNumber);",
+									"      pm.expect(expectedType).to.equal(pm.response.get('Content-Type'));",
+									"    }",
+									"  });",
+									"});",
+									"",
+									"",
+									""
 								],
 								"type": "text/javascript"
 							}
