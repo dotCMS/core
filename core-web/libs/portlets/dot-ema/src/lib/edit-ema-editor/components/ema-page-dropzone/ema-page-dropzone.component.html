@@ -1,4 +1,3 @@
-<!-- {{rows | json}} -->
 <div *ngFor="let row of rows" [ngStyle]="getStyle(row, 'transparent')" data-type="row">
     <div
         *ngFor="let column of row.columns"

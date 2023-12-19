@@ -64,6 +64,14 @@ export class EmaPageDropzoneComponent {
 
     constructor(private readonly el: ElementRef) {}
 
+    /**
+     * Set the style for the item
+     *
+     * @param {(Row | Column | Container | Contentlets)} item
+     * @param {string} [border='black']
+     * @return {*}  {Record<string, string>}
+     * @memberof EmaPageDropzoneComponent
+     */
     getStyle(
         item: Row | Column | Container | Contentlets,
         border = 'black'
@@ -78,12 +86,16 @@ export class EmaPageDropzoneComponent {
         };
     }
 
+    /**
+     * Emit place event and reset pointer position
+     *
+     * @param {DragEvent} event
+     * @memberof EmaPageDropzoneComponent
+     */
     onDrop(event: DragEvent): void {
         const target = event.target as HTMLDivElement;
         const data = JSON.parse(target.dataset.payload);
-        const targetRect = (event.target as HTMLElement).getBoundingClientRect();
-        const mouseY = event.clientY;
-        const isTop = mouseY < targetRect.top + targetRect.height / 2;
+        const isTop = this.isTop(event);
 
         const payload = <ActionPayload>{
             ...data,
@@ -99,15 +111,19 @@ export class EmaPageDropzoneComponent {
         };
     }
 
+    /**
+     * Set the pointer position
+     *
+     * @param {DragEvent} event
+     * @memberof EmaPageDropzoneComponent
+     */
     onDragover(event: DragEvent): void {
         const target = event.target as HTMLDivElement;
 
         if (target.dataset.type === 'contentlet') {
             const parentReact = this.el.nativeElement.getBoundingClientRect();
-
             const targetRect = target.getBoundingClientRect();
-            const mouseY = event.clientY;
-            const isTop = mouseY < targetRect.top + targetRect.height / 2;
+            const isTop = this.isTop(event);
 
             this.pointerPosition = {
                 left: `${targetRect.left - parentReact.left}px`,
@@ -121,5 +137,13 @@ export class EmaPageDropzoneComponent {
 
         event.stopPropagation();
         event.preventDefault();
+    }
+
+    private isTop(event: DragEvent): boolean {
+        const target = event.target as HTMLDivElement;
+        const targetRect = target.getBoundingClientRect();
+        const mouseY = event.clientY;
+
+        return mouseY < targetRect.top + targetRect.height / 2;
     }
 }
