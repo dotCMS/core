@@ -398,28 +398,25 @@ describe('EditEmaEditorComponent', () => {
                             detail: {
                                 name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
                                 data: {
-                                    contentlet: {
-                                        identifier: '123'
-                                    }
+                                    identifier: '123',
+                                    inode: '123'
                                 }
                             }
                         })
                     );
 
-                    spectator.detectChanges();
-
-                    // expect(saveMock).toHaveBeenCalledWith({
-                    //     pageContainers: [
-                    //         {
-                    //             identifier: 'test',
-                    //             uuid: 'test',
-                    //             contentletsId: ['123'],
-                    //             personaTag: undefined
-                    //         }
-                    //     ],
-                    //     pageId: 'test',
-                    //     whenSaved: expect.any(() => void)
-                    // } as SavePagePayload);
+                    expect(saveMock).toHaveBeenCalledWith({
+                        pageContainers: [
+                            {
+                                identifier: 'test',
+                                uuid: 'test',
+                                contentletsId: ['123'],
+                                personaTag: undefined
+                            }
+                        ],
+                        pageId: 'test',
+                        whenSaved: expect.any(Function)
+                    });
 
                     expect(saveMock).toHaveBeenCalled();
                 });
