@@ -10,13 +10,19 @@ import {
     debounceTime,
     distinctUntilChanged,
     finalize,
+    map,
     switchMap,
     take,
     takeUntil
 } from 'rxjs/operators';
 
 import { DotMessageService, DotPageLayoutService, DotRouterService } from '@dotcms/data-access';
-import { DotPageRender, DotTemplateDesigner } from '@dotcms/dotcms-models';
+import {
+    DotContainerMap,
+    DotPageContainerStructure,
+    DotPageRender,
+    DotTemplateDesigner
+} from '@dotcms/dotcms-models';
 import { TemplateBuilderModule } from '@dotcms/template-builder';
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
@@ -38,7 +44,14 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
     private readonly messageService = inject(MessageService);
     private readonly dotMessageService = inject(DotMessageService);
 
-    readonly layoutProperties$ = this.store.layoutProperties$;
+    readonly layoutProperties$ = this.store.layoutProperties$.pipe(
+        map((properties) => {
+            return {
+                ...properties,
+                containers: this.mapContainers(properties.containers)
+            };
+        })
+    );
 
     private pageID: string;
     private lastLayout: DotTemplateDesigner;
@@ -47,7 +60,8 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
     destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit(): void {
-        this.layoutProperties$.pipe(take(1)).subscribe((properties) => {
+        // Can we map the containers here?
+        this.store.layoutProperties$.pipe(take(1)).subscribe((properties) => {
             this.pageID = properties.pageID;
         });
 
@@ -184,5 +198,21 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
             .subscribe(() => {
                 this.saveTemplate(this.lastLayout);
             });
+    }
+
+    /**
+     * Map the containers to a DotContainerMap
+     *
+     * @private
+     * @param {DotPageContainerStructure} containers
+     * @return {*}  {DotContainerMap}
+     * @memberof EditEmaLayoutComponent
+     */
+    private mapContainers(containers: DotPageContainerStructure): DotContainerMap {
+        return Object.keys(containers).reduce((acc, id) => {
+            acc[id] = containers[id].container;
+
+            return acc;
+        }, {});
     }
 }

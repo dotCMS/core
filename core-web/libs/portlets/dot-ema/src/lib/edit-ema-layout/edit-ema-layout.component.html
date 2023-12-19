@@ -2,6 +2,7 @@
     *ngIf="layoutProperties$ | async as layoutProperties"
     [layout]="layoutProperties.layout"
     [themeId]="layoutProperties.themeId"
+    [containerMap]="layoutProperties.containers"
     (templateChange)="nextTemplateUpdate($event)">
     ></dotcms-template-builder-lib
 >

@@ -65,7 +65,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly layoutProperties$ = this.select((state) => ({
         layout: state.editor.layout,
         themeId: state.editor.template.theme,
-        pageID: state.editor.page.identifier
+        pageID: state.editor.page.identifier,
+        containers: state.editor.containers
     }));
 
     /**
