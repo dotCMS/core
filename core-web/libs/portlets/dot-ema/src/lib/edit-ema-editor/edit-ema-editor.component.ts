@@ -182,7 +182,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {DotPersona} persona
      * @memberof DotEmaComponent
      */
-    onPersonaSelected(persona: DotPersona & { pageID: string }) {
+    onPersonaSelected(persona: DotPersona & { pageId: string }) {
         if (persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized) {
             this.router.navigate([], {
                 queryParams: {
@@ -201,7 +201,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
                 accept: () => {
                     this.personalizeService
-                        .personalized(persona.pageID, persona.keyTag)
+                        .personalized(persona.pageId, persona.keyTag)
                         .subscribe(() => {
                             this.router.navigate([], {
                                 queryParams: {

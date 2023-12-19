@@ -51,15 +51,15 @@ export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit {
     private readonly pageApiService = inject(DotPageApiService);
     personas$: Observable<DotPersona[]>;
 
-    @Input() pageID: string;
+    @Input() pageId: string;
     @Input() value: DotPersona;
 
-    @Output() selected: EventEmitter<DotPersona & { pageID: string }> = new EventEmitter();
+    @Output() selected: EventEmitter<DotPersona & { pageId: string }> = new EventEmitter();
 
     ngOnInit(): void {
         this.personas$ = this.pageApiService
             .getPersonas({
-                pageID: this.pageID,
+                pageId: this.pageId,
                 perPage: 5000
             })
             .pipe(
@@ -82,7 +82,7 @@ export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit {
         if (value.identifier !== this.value.identifier) {
             this.selected.emit({
                 ...value,
-                pageID: this.pageID
+                pageId: this.pageId
             });
         }
     }
