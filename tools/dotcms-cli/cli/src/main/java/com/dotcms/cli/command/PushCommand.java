@@ -1,9 +1,9 @@
 package com.dotcms.cli.command;
 
 import com.dotcms.cli.common.AuthenticationMixin;
+import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
-import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.WorkspaceManager;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ public class PushCommand implements Callable<Integer>, DotCommand {
     HelpOptionMixin helpOption;
 
     @CommandLine.Mixin
-    PushMixin pushMixin;
+    FullPushOptionsMixin pushMixin;
 
     @CommandLine.Mixin
     AuthenticationMixin authenticationMixin;

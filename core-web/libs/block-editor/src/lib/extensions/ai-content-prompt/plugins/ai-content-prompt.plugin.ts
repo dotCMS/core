@@ -12,7 +12,7 @@ import { Editor } from '@tiptap/core';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { DotTiptapNodeInformation, findNodeByType, replaceNodeWithContent } from '../../../shared';
+import { findNodeByType, replaceNodeWithContent } from '../../../shared';
 import { NodeTypes } from '../../bubble-menu/models';
 import { AIContentPromptComponent } from '../ai-content-prompt.component';
 import {
@@ -115,10 +115,7 @@ export class AIContentPromptView {
                 filter((state) => state.acceptContent)
             )
             .subscribe((state) => {
-                const nodeInformation: DotTiptapNodeInformation = findNodeByType(
-                    this.editor,
-                    NodeTypes.AI_CONTENT
-                );
+                const nodeInformation = findNodeByType(this.editor, NodeTypes.AI_CONTENT)?.[0];
                 replaceNodeWithContent(this.editor, nodeInformation, state.content);
 
                 this.componentStore.setAcceptContent(false);
@@ -148,10 +145,7 @@ export class AIContentPromptView {
                 filter((deleteContent) => deleteContent)
             )
             .subscribe(() => {
-                const nodeInformation: DotTiptapNodeInformation = findNodeByType(
-                    this.editor,
-                    NodeTypes.AI_CONTENT
-                );
+                const nodeInformation = findNodeByType(this.editor, NodeTypes.AI_CONTENT)?.[0];
 
                 if (nodeInformation) {
                     this.editor.commands.deleteRange({

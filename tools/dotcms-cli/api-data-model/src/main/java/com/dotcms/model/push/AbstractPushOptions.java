@@ -17,5 +17,7 @@ public interface AbstractPushOptions {
 
     boolean dryRun();
 
+    boolean disableAutoUpdate();
+
     int maxRetryAttempts();
 }
