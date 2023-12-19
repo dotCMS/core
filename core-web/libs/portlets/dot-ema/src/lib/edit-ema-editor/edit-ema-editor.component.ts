@@ -30,11 +30,11 @@ import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
-
 import {
     EmaPageDropzoneComponent,
     Row
-} from '../components/ema-page-dropzone/ema-page-dropzone.component';
+} from './components/ema-page-dropzone/ema-page-dropzone.component';
+
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA, DEFAULT_URL, HOST, WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';

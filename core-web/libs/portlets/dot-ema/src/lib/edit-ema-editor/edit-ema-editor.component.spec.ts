@@ -18,6 +18,7 @@ import {
 
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
+import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
@@ -26,7 +27,6 @@ import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW, HOST } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload } from '../shared/models';
-import { EmaPageDropzoneComponent } from '../components/ema-page-dropzone/ema-page-dropzone.component';
 
 const messagesMock = {
     'editpage.content.contentlet.remove.confirmation_message.header': 'Deleting Content',

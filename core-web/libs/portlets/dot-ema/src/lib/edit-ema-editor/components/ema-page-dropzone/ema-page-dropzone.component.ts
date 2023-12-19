@@ -8,7 +8,7 @@ import {
     Output
 } from '@angular/core';
 
-import { ActionPayload } from '../../shared/models';
+import { ActionPayload } from '../../../shared/models';
 
 interface Contentlets {
     x: number;
