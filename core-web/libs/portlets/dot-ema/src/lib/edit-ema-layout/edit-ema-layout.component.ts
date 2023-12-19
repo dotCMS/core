@@ -56,7 +56,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
     );
 
     private pageID: string;
-    private lastLayout: DotTemplateDesigner;
+    private lastTemplate: DotTemplateDesigner;
 
     updateTemplate = new Subject<DotTemplateDesigner>();
     destroy$: Subject<boolean> = new Subject<boolean>();
@@ -80,7 +80,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
     nextTemplateUpdate(template: DotTemplateDesigner) {
         this.dotRouterService.forbidRouteDeactivation();
         this.updateTemplate.next(template);
-        this.lastLayout = template;
+        this.lastTemplate = template;
     }
 
     /**
@@ -173,13 +173,11 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
      * @param {HttpErrorResponse} httpError
      * @memberof EditEmaLayoutComponent
      */
-    private handleErrorSaveTemplate(httpError: HttpErrorResponse) {
-        const [dotMessage, error] = httpError.error.error.split(': ');
-
+    private handleErrorSaveTemplate(_: HttpErrorResponse) {
         this.messageService.add({
             severity: 'error',
             summary: 'Error',
-            detail: this.dotMessageService.get(dotMessage) + ': ' + error
+            detail: this.dotMessageService.get('dot.common.http.error.400.message')
         });
     }
 
@@ -193,7 +191,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
         this.dotRouterService.pageLeaveRequest$
             .pipe(takeUntil(this.destroy$), distinctUntilChanged()) // To prevent an spam of toasts when clicking on some route
             .subscribe(() => {
-                this.saveTemplate(this.lastLayout);
+                this.saveTemplate(this.lastTemplate);
             });
     }
 

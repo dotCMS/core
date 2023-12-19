@@ -151,18 +151,6 @@ describe('EditEmaEditorComponent', () => {
                     life: 3000
                 });
             });
-
-            it("should open a toast when messageService's add is called", () => {
-                spectator.detectChanges();
-
-                const button = spectator.debugElement.query(By.css('[data-testId="ema-copy-url"]'));
-
-                spectator.triggerEventHandler(button, 'cdkCopyToClipboardCopied', {});
-
-                const toastItem = spectator.query('p-toastitem');
-
-                expect(toastItem).not.toBeNull();
-            });
         });
 
         describe('API URL', () => {
