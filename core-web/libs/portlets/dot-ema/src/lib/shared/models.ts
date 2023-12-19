@@ -4,13 +4,13 @@ export interface ActionPayload {
     language_id: string;
     pageContainers: PageContainer[];
     pageId: string;
-    personaTag?: string; // TODO: make this required
+    personaTag?: string;
     position?: 'before' | 'after';
     newContentletId?: string;
 }
 
 export interface PageContainer {
-    personaTag?: string; // TODO: make this required
+    personaTag?: string;
     identifier: string;
     uuid: string;
     contentletsId: string[];

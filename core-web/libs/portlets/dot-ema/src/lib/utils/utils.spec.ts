@@ -1,8 +1,8 @@
 import { deleteContentletFromContainer, insertContentletInContainer } from '.';
 
 describe('utils functions', () => {
-    describe('deleteContentletFromContainer', () => {
-        it('should delete a contentlet from a container', () => {
+    describe('delete contentlet from container', () => {
+        it('should delete', () => {
             // Current page
 
             const result = deleteContentletFromContainer({
@@ -40,7 +40,7 @@ describe('utils functions', () => {
             ]);
         });
 
-        it('should not delete a contentlet from a container if the id does not match', () => {
+        it('should not delete if id not found', () => {
             // Current page
             const pageContainers = [
                 {
@@ -85,8 +85,8 @@ describe('utils functions', () => {
         });
     });
 
-    describe('insertContentletInContainer', () => {
-        it('should insert a contentlet in a container', () => {
+    describe('insert contentlet in container', () => {
+        it('should insert the end', () => {
             // Current page
             const pageContainers = [
                 {
@@ -130,7 +130,53 @@ describe('utils functions', () => {
             ]);
         });
 
-        it('should not insert a contentlet in a container if the id already exists', () => {
+        it('should insert in specific position', () => {
+            // Current page
+            const pageContainers = [
+                {
+                    identifier: 'test',
+                    uuid: 'test',
+                    contentletsId: ['test', 'test123', 'test1234']
+                }
+            ];
+
+            // Container where we want to insert the contentlet
+            const container = {
+                identifier: 'test',
+                acceptTypes: 'test',
+                uuid: 'test',
+                contentletsId: ['test'],
+                maxContentlets: 1
+            };
+
+            // Contentlet to insert
+            const contentlet = {
+                identifier: 'test123',
+                inode: 'test',
+                title: 'test'
+            };
+
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet,
+                pageId: 'test',
+                language_id: 'test',
+                position: 'after',
+                newContentletId: '000'
+            });
+
+            expect(result).toEqual([
+                {
+                    identifier: 'test',
+                    uuid: 'test',
+                    contentletsId: ['test', 'test123', '000', 'test1234'],
+                    personaTag: undefined
+                }
+            ]);
+        });
+
+        it('should not insert contentlet if already exist', () => {
             // Current Page
             const pageContainers = [
                 {
