@@ -34,6 +34,11 @@
 							"  ",
 							"});",
 							"",
+							"pm.test('File size exceeded', () => {",
+							"  // Check if the response body contains the error message",
+							"  pm.expect(pm.response.text()).to.include('Invalid Binary Part, Message: The maximum file size for this field is 1024.0 K.');",
+							"});",
+							"",
 							""
 						],
 						"type": "text/javascript"
