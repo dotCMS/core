@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -37,6 +38,12 @@ public class JsEngineTest extends IntegrationTestBase {
         this.jsEngine = null;
     }
 
+    /**
+     * Method to test: {@link JsEngine#eval(HttpServletRequest, HttpServletResponse, Reader, Map)}
+     * Given Scenario: Eval a script that sum two numbers
+     * ExpectedResult: The result of the sum
+     *
+     */
     @Test
     public void testNumberEval() throws Exception {
 
@@ -51,6 +58,12 @@ public class JsEngineTest extends IntegrationTestBase {
         Assert.assertEquals(3, result);
     }
 
+    /**
+     * Method to test: {@link JsEngine#eval(HttpServletRequest, HttpServletResponse, Reader, Map)}
+     * Given Scenario: Concat two strings
+     * ExpectedResult: The results of the concat
+     *
+     */
     @Test
     public void testStringEval() throws Exception {
 
@@ -65,6 +78,12 @@ public class JsEngineTest extends IntegrationTestBase {
         Assert.assertEquals( "this is a string", result);
     }
 
+    /**
+     * Method to test: {@link JsEngine#eval(HttpServletRequest, HttpServletResponse, Reader, Map)}
+     * Given Scenario: Eval an AND between true and false booleans
+     * ExpectedResult: False boolean
+     *
+     */
     @Test
     public void testBooleanEval() throws Exception {
 
@@ -79,6 +98,12 @@ public class JsEngineTest extends IntegrationTestBase {
         Assert.assertEquals( false, result);
     }
 
+    /**
+     * Method to test: {@link JsEngine#eval(HttpServletRequest, HttpServletResponse, Reader, Map)}
+     * Given Scenario: Create a Json Object
+     * ExpectedResult: The Json Object is created as a Map with the right values
+     *
+     */
     @Test
     public void testMapEval() throws Exception {
 
@@ -96,6 +121,12 @@ public class JsEngineTest extends IntegrationTestBase {
         Assert.assertEquals( "value1", map.get("value1"));
     }
 
+    /**
+     * Method to test: {@link JsEngine#eval(HttpServletRequest, HttpServletResponse, Reader, Map)}
+     * Given Scenario: Populates values into the dotJSON (which is implicit on the context)
+     * ExpectedResult: The dotJSON is being returned with the right values
+     *
+     */
     @Test
     public void testDotJSONEval() throws Exception {
 
@@ -113,7 +144,12 @@ public class JsEngineTest extends IntegrationTestBase {
         Assert.assertEquals( "value1", map.get("value1"));
     }
 
-
+    /**
+     * Method to test: {@link JsEngine#eval(HttpServletRequest, HttpServletResponse, Reader, Map)}
+     * Given Scenario: The script throws an exception
+     * ExpectedResult: An exception is expected
+     *
+     */
     @Test(expected = PolyglotException.class)
     public void testEvalWithException() throws Exception {
 
@@ -128,5 +164,101 @@ public class JsEngineTest extends IntegrationTestBase {
         Assert.assertEquals(3, result);
     }
 
+    /**
+     * Method to test: {@link JsEngine#eval(HttpServletRequest, HttpServletResponse, Reader, Map)}
+     * Given Scenario: Creates a function and call it with a hardcoded parameters
+     * ExpectedResult: The square of 2 should be returned (4)
+     *
+     */
+    @Test()
+    public void testFunctionEval() throws Exception {
 
+        /*
+        function square(x) {
+                return x * x;
+        }
+
+         square(2);
+         */
+        final String script = "function square(x) {\n" +
+                "        return x * x;\n" +
+                "}\n" +
+                "\n" +
+                "square(2);";
+        final HttpServletRequest request = new MockAttributeRequest(new BaseRequest().request());
+        final HttpServletResponse response = new FakeHttpServletResponse();
+        final Reader scriptReader = new StringReader(script);
+        final Map<String, Object> contextParams = Map.of();
+
+        final Object result = this.jsEngine.eval(request, response, scriptReader,  contextParams);
+
+        Assert.assertEquals(4, result);
+    }
+
+    /**
+     * Method to test: {@link JsEngine#eval(HttpServletRequest, HttpServletResponse, Reader, Map)}
+     * Given Scenario: Creates a function and call it with a parameter pass by argument to the function
+     * ExpectedResult: The square of 4 should be returned (16)
+     *
+     */
+    @Test()
+    public void testFunctionWithArgumentsEval() throws Exception {
+
+        /*
+        (function square(x) {
+                return x * x;
+        })
+         */
+        final String script = "(function square(context, x) {\n" +
+                "        return x * x;\n" +
+                "})";
+        final HttpServletRequest request = new MockAttributeRequest(new BaseRequest().request());
+        final HttpServletResponse response = new FakeHttpServletResponse();
+        final Reader scriptReader = new StringReader(script);
+        final Map<String, Object> contextParams =  new HashMap<>(Map.of("dot:arguments", new Object[]{4}));
+
+        final Object result = this.jsEngine.eval(request, response, scriptReader,  contextParams);
+
+        Assert.assertEquals(16, result);
+    }
+
+    // test class
+    /**
+     * Method to test: {@link JsEngine#eval(HttpServletRequest, HttpServletResponse, Reader, Map)}
+     * Given Scenario: Creates a class and call it with a parameter pass by argument to the function
+     * ExpectedResult: The square of 4 should be returned (16)
+     *
+     */
+    @Test()
+    public void testClassWithArgumentsEval() throws Exception {
+
+        /*
+        class MyMath {
+            static square(x) {
+                return x * x;
+            }
+        }
+
+        (function mycall(context, x) {
+                return MyMath.square(x);
+        })
+         */
+        final String script = "class MyMath {\n" +
+                "            static square(x) {\n" +
+                "                return x * x;\n" +
+                "            }\n" +
+                "        }\n" +
+                "        \n" +
+                "        (function mycall(context, x) {\n" +
+                "                return MyMath.square(x);\n" +
+                "        })";
+        final HttpServletRequest request = new MockAttributeRequest(new BaseRequest().request());
+        final HttpServletResponse response = new FakeHttpServletResponse();
+        final Reader scriptReader = new StringReader(script);
+        final Map<String, Object> contextParams =  new HashMap<>(Map.of("dot:arguments", new Object[]{4}));
+
+        final Object result = this.jsEngine.eval(request, response, scriptReader,  contextParams);
+
+        Assert.assertEquals(16, result);
+    }
 }
