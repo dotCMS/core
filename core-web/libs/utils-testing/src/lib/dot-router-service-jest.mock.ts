@@ -1,6 +1,11 @@
 import { of, Subject } from 'rxjs';
 
 import { Injectable } from '@angular/core';
+
+const noop = () => {
+    /* */
+};
+
 @Injectable()
 export class MockDotRouterJestService {
     get currentPortlet() {
@@ -38,86 +43,36 @@ export class MockDotRouterJestService {
     _currentSavedURL = '';
     pageLeaveRequest$ = new Subject<boolean>();
     canDeactivateRoute$ = of(true);
+    replaceQueryParams = noop;
+    goToEditContentType = noop;
+    goToEditContentlet = noop;
+    goToEditPage = noop;
+    goToEditTask = noop;
+    goToForgotPassword = noop;
+    goToLogin = noop;
+    goToContent = noop;
+    goToCreateContent = noop;
+    goToPreviousUrl = noop;
+    goToStarter = noop;
+    doLogOut = noop;
+    goToMain = noop;
+    goToURL = noop;
+    gotoPortlet = noop;
+    goToAppsConfiguration = noop;
+    goToUpdateAppsConfiguration = noop;
+    goToSiteBrowser = noop;
+    isCurrentPortletCustom = noop;
+    isJSPPortlet = noop;
+    reloadCurrentPortlet = noop;
+    goToEditTemplate = noop;
+    allowRouteDeactivation = noop;
+    forbidRouteDeactivation = noop;
+    isEditPage = noop;
 
     requestPageLeave = () => {
         this.pageLeaveRequest$.next(true);
     };
-    replaceQueryParams = () => {
-        /* noop */
-    };
     getPortletId = () => {
         return 'test';
     };
-    goToEditContentType = () => {
-        /* noop */
-    };
-    goToEditContentlet = () => {
-        /* noop */
-    };
-    goToEditPage = () => {
-        /* noop */
-    };
-    goToEditTask = () => {
-        /* noop */
-    };
-    goToForgotPassword = () => {
-        /* noop */
-    };
-    goToLogin = () => {
-        /* noop */
-    };
-    goToContent = () => {
-        /* noop */
-    };
-    goToCreateContent = () => {
-        /* noop */
-    };
-    goToPreviousUrl = () => {
-        /* noop */
-    };
-    goToStarter = () => {
-        /* noop */
-    };
-    doLogOut = () => {
-        /* noop */
-    };
-    goToMain = () => {
-        /* noop */
-    };
-    goToURL = () => {
-        /* noop */
-    };
-    gotoPortlet = () => {
-        /* noop */
-    };
-    goToAppsConfiguration = () => {
-        /* noop */
-    };
-    goToUpdateAppsConfiguration = () => {
-        /* noop */
-    };
-    goToSiteBrowser = () => {
-        /* noop */
-    };
-    isCurrentPortletCustom = () => {
-        /* noop */
-    };
-    isJSPPortlet = () => {
-        /* noop */
-    };
-    reloadCurrentPortlet = () => {
-        /* noop */
-    };
-    goToEditTemplate = () => {
-        /* noop */
-    };
-    allowRouteDeactivation = () => {
-        /* noop */
-    };
-    forbidRouteDeactivation = () => {
-        /* noop */
-    };
-    isEditPage() {
-        /* */
-    }
 }
