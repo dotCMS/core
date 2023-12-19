@@ -8,6 +8,9 @@ import com.dotcms.model.asset.AssetRequest;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.security.Utils;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.function.BiFunction;
 import org.jboss.logging.Logger;
 
 import java.nio.file.Files;
@@ -19,6 +22,7 @@ import java.util.concurrent.RecursiveTask;
 
 import static com.dotcms.common.AssetsUtils.buildRemoteAssetURL;
 import static com.dotcms.common.AssetsUtils.buildRemoteURL;
+import static com.dotcms.model.asset.BasicMetadataFields.NAME_META_KEY;
 import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
 
 /**
@@ -181,7 +185,7 @@ public class PullTreeNodeTask extends RecursiveTask<List<Exception>> {
             if (Files.exists(assetFilePath)) {
 
                 if (overwrite) {
-                    localFileHash = Utils.Sha256toUnixHash(assetFilePath);
+                    localFileHash = Utils.sha256ToUnixHash(assetFilePath);
                 } else {
                     // If the file already exist, and we are not overwriting files, there is no point in downloading it
                     localFileHash = remoteFileHash; // Fixing hashes so the download is skipped
@@ -203,7 +207,11 @@ public class PullTreeNodeTask extends RecursiveTask<List<Exception>> {
                     // Copy the contents of the InputStream to the target file
                     Files.copy(inputStream, assetFilePath, StandardCopyOption.REPLACE_EXISTING);
                     logger.debug(String.format("Downloaded file [%s] to [%s] ", remoteAssetURL, assetFilePath));
+
                 }
+
+                handleAssetTitleChanged(destination, folder, asset, localFileHash);
+
             } else {
                 logger.debug(String.format("Skipping file [%s], it already exists in the file system - Override flag [%b]",
                         remoteAssetURL, overwrite));
@@ -218,6 +226,46 @@ public class PullTreeNodeTask extends RecursiveTask<List<Exception>> {
         }
 
     }
+
+    /**
+     * If the asset title changed, delete the old file
+     * We revise the underlying file name that comes with the metadata
+     * if the underlying file name is different from the asset name and there is a file with the same name in disc, and they coincide in hash then we delete the file
+     * Because it means that the file was logically renamed via change title
+     *
+     * @param destination    the destination path to save the pulled files
+     * @param folder         the folder view representing the parent folder
+     * @param asset          the asset view representing the asset
+     * @param localFileHash  the local file hash
+     * @throws IOException   if an I/O error occurs
+     */
+    private void handleAssetTitleChanged(final String destination, final FolderView folder, final AssetView asset, String localFileHash) throws IOException {
+        final String remoteUnderlyingName = (String) asset.metadata().get(NAME_META_KEY.key());
+        //compare the underlying file name with the asset name. The underlying file name is the name of the file in the file system, and it comes with the metadata
+        if (remoteUnderlyingName != null && !remoteUnderlyingName.equals(asset.name())) {
+            //First if the logical name and the underlying name are different, we check if there is a file with the underlying name in the file system
+            var unnderlyingFilePath = Paths.get(destination, folder.path(), remoteUnderlyingName);
+            localFileHash = hashFunction.apply(localFileHash, unnderlyingFilePath);
+            if (Files.exists(unnderlyingFilePath) //if the file exists
+                    && Utils.sha256ToUnixHash(unnderlyingFilePath).equals(localFileHash)) { //and the hash is the same
+                //it means that the file was logically renamed via change title
+                logger.info(String.format("Deleting old file [%s] because it was renamed to [%s]", unnderlyingFilePath, asset.name()));
+                //Therefore we delete the old file
+                Files.delete(unnderlyingFilePath);
+            }
+        }
+    }
+
+    /**
+     * Function to calculate the hash of the file
+     * If the preCalculatedHash is not null, then we calculate the hash of the file
+     */
+    static BiFunction<String, Path, String> hashFunction = (preCalculatedHash, assetFilePath) -> {
+        if (preCalculatedHash != null) {
+            return preCalculatedHash;
+        }
+        return  Utils.sha256ToUnixHash(assetFilePath);
+    };
 
     /**
      * Generates the remote URL for a given folder

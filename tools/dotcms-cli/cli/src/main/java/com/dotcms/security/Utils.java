@@ -21,7 +21,7 @@ public class Utils {
      * @throws NoSuchAlgorithmException
      * @throws IOException
      */
-    public static String Sha256toUnixHash(final Path path) {
+    public static String sha256ToUnixHash(final Path path) {
 
         try {
             final HashBuilder sha256Builder = Encryptor.Hashing.sha256();

@@ -590,7 +590,7 @@ public class LocalFolderTraversalTask extends RecursiveTask<Pair<List<Exception>
         if (!Strings.isNullOrEmpty(remoteFileHash)) { // We found the file in the remote server
 
             // Local SHA-256
-            final String localFileHash = Utils.Sha256toUnixHash(file.toPath());
+            final String localFileHash = Utils.sha256ToUnixHash(file.toPath());
 
             // Verify if we need to push the file
             if (localFileHash.equals(remoteFileHash)) {
