@@ -1,6 +1,7 @@
 package com.dotcms.rendering.js;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.api.vtl.model.DotJSON;
 import com.dotcms.mock.request.BaseRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.repackage.org.directwebremoting.util.FakeHttpServletResponse;
@@ -77,6 +78,41 @@ public class JsEngineTest extends IntegrationTestBase {
 
         Assert.assertEquals( false, result);
     }
+
+    @Test
+    public void testMapEval() throws Exception {
+
+        final String script = "var a = 'value1'; var b = 2; var c = {value1:a, value2:b}; c;";
+        final HttpServletRequest request = new MockAttributeRequest(new BaseRequest().request());
+        final HttpServletResponse response = new FakeHttpServletResponse();
+        final Reader scriptReader = new StringReader(script);
+        final Map<String, Object> contextParams = Map.of();
+
+        final Object result = this.jsEngine.eval(request, response, scriptReader,  contextParams);
+
+        Assert.assertTrue(result instanceof Map);
+        final Map map = (Map) result;
+        Assert.assertEquals( 2, map.get("value2"));
+        Assert.assertEquals( "value1", map.get("value1"));
+    }
+
+    @Test
+    public void testDotJSONEval() throws Exception {
+
+        final String script = "var a = 'value1'; var b = 2; dotJSON.put('value1', a); dotJSON.put('value2', b); dotJSON;";
+        final HttpServletRequest request = new MockAttributeRequest(new BaseRequest().request());
+        final HttpServletResponse response = new FakeHttpServletResponse();
+        final Reader scriptReader = new StringReader(script);
+        final Map<String, Object> contextParams = Map.of();
+
+        final Object result = this.jsEngine.eval(request, response, scriptReader,  contextParams);
+
+        Assert.assertTrue(result instanceof DotJSON);
+        final DotJSON map = (DotJSON) result;
+        Assert.assertEquals( 2, map.get("value2"));
+        Assert.assertEquals( "value1", map.get("value1"));
+    }
+
 
     @Test(expected = PolyglotException.class)
     public void testEvalWithException() throws Exception {
