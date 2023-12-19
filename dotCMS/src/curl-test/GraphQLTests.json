@@ -5694,7 +5694,14 @@
 							"script": {
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
+									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);",
+									"",
+									"const validMimeTypes = [\"image/jpeg\", \"image/png\", \"application/pdf\", \"text/plain\"]; // Add more types as needed",
+									"pm.test(\"Valid mime type\", () => {",
+									"  const mimeType = pm.response.json().entity.mimeType;",
+									"  pm.expect(validMimeTypes.includes(mimeType)).to.be.true; // Test will fail if mime type is not in the list",
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
