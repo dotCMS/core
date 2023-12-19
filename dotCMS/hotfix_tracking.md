@@ -19,3 +19,4 @@ This maintenance release includes the following code fixes:
 13. https://github.com/dotCMS/core/issues/26915 : Metadata Generation locks system start up #26915
 14. https://github.com/dotCMS/core/issues/26840 : "Edit Content" screen slow - Unnecessary SQL queries #26840
 15. https://github.com/dotCMS/core/issues/27047 : Binary File upload to a content type fails (Multi-part upload) #27047
+16. https://github.com/dotCMS/core/issues/27039 : Content Search Portlet not showing all language versions #27039
