@@ -99,11 +99,12 @@ export class EmaPageDropzoneComponent {
         };
     }
 
-    onDragover(event) {
+    onDragover(event: DragEvent): void {
         const target = event.target as HTMLDivElement;
 
         if (target.dataset.type === 'contentlet') {
             const parentReact = this.el.nativeElement.getBoundingClientRect();
+
             const targetRect = target.getBoundingClientRect();
             const mouseY = event.clientY;
             const isTop = mouseY < targetRect.top + targetRect.height / 2;

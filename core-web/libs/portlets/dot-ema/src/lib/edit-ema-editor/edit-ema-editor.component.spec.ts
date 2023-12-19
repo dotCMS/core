@@ -27,6 +27,7 @@ import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW, HOST } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload } from '../shared/models';
+import { BOUNDS_MOCK } from './components/ema-page-dropzone/ema-page-dropzone.component.spec';
 
 const messagesMock = {
     'editpage.content.contentlet.remove.confirmation_message.header': 'Deleting Content',
@@ -35,45 +36,6 @@ const messagesMock = {
     'dot.common.dialog.accept': 'Accept',
     'dot.common.dialog.reject': 'Reject'
 };
-
-const BOUNDS_MOCK = [
-    {
-        x: 0,
-        y: 0,
-        width: 1000,
-        height: 200,
-        columns: [
-            {
-                x: 0,
-                y: 0,
-                width: 1000,
-                height: 200,
-                containers: [
-                    {
-                        x: 10,
-                        y: 10,
-                        width: 980,
-                        height: 180,
-                        contentlets: [
-                            {
-                                x: 20,
-                                y: 20,
-                                width: 940,
-                                height: 140,
-                                payload: {
-                                    /* payload data */
-                                }
-                            }
-                        ],
-                        payload: {
-                            /* payload data */
-                        }
-                    }
-                ]
-            }
-        ]
-    }
-];
 
 describe('EditEmaEditorComponent', () => {
     let spectator: SpectatorRouting<EditEmaEditorComponent>;
