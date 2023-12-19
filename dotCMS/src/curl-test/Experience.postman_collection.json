@@ -139,6 +139,93 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Get Metrics",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"All Metrics included\", function () {",
+							"    var metrics = jsonData;",
+							"    pm.expect(metrics.ACTIVE_SITES).to.be.not.undefined;",
+							"    pm.expect(metrics.ACTIVE_USERS).to.be.not.undefined;",
+							"    pm.expect(metrics.CONTENTS_RECENTLY_EDITED).to.be.not.undefined;",
+							"    pm.expect(metrics.CONTENTS_TOTAL).to.be.not.undefined;",
+							"    pm.expect(metrics.CONTENT_LAST_EDIT).to.be.not.undefined;",
+							"    pm.expect(metrics.CUSTOM_CONTENT_TYPES).to.be.not.undefined;",
+							"    pm.expect(metrics.LAST_LOGIN).to.be.not.undefined;",
+							"    pm.expect(metrics.LAST_LOGIN_USER).to.be.not.undefined;",
+							"    pm.expect(metrics.SITES_NON_SYSTEM_FIELDS).to.be.not.undefined;",
+							"    pm.expect(metrics.WORKFLOW_ACTIONS).to.be.not.undefined;",
+							"    pm.expect(metrics.WORKFLOW_CONTENT_TYPES_ASSIGNED_SCHEMES).to.be.not.undefined;",
+							"    pm.expect(metrics.WORKFLOW_SCHEMES).to.be.not.undefined;",
+							"    pm.expect(metrics.WORKFLOW_SCHEMES_ARCHIVED_INCLUDED).to.be.not.undefined;",
+							"    pm.expect(metrics.WORKFLOW_STEPS).to.be.not.undefined;",
+							"    pm.expect(metrics.WORKFLOW_SUBACTIONS).to.be.not.undefined;",
+							"    pm.expect(metrics.WORKFLOW_UNIQUE_SUB_ACTIONS).to.be.not.undefined;",
+							"",
+							"});",
+							"",
+							"",
+							"",
+							"",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/dotexp/stats",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"dotexp",
+						"stats"
+					]
+				}
+			},
+			"response": []
 		}
 	]
 }
