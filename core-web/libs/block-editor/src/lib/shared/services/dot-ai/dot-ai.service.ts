@@ -1,6 +1,6 @@
-import { Observable, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
-import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
 import { catchError, map, pluck, switchMap } from 'rxjs/operators';
@@ -73,12 +73,16 @@ export class DotAiService {
     }
 
     /**
-     * Checks the installation status of a plugin.
-     *
-     * @return {Observable<HttpResponse<unknown>>} Observable that emits an HttpResponse object containing the plugin installation status.
+     * Checks if the plugin is installed by sending a test HTTP request to the API endpoint.
+     * @return {Observable<boolean>} An observable that emits a boolean value indicating whether the plugin is installed (true) or not (false).
      */
-    checkPluginInstallation(): Observable<HttpResponse<unknown>> {
-        return this.http.get(`${API_ENDPOINT}/image/test`, { observe: 'response' });
+    checkPluginInstallation(): Observable<boolean> {
+        return this.http.get(`${API_ENDPOINT}/image/test`, { observe: 'response' }).pipe(
+            map((res) => res.status === 200),
+            catchError(() => {
+                return of(false);
+            })
+        );
     }
 
     private createAndPublishContentlet(image: DotAIImageResponse): Observable<DotCMSContentlet[]> {
