@@ -23,8 +23,7 @@
 							"    pm.expect(jsonData.entity.length).to.eql(2);",
 							"});",
 							"",
-							"// wait for the plugin to get active",
-							"setTimeout(function(){}, 20000);",
+							"pm.sendRequest('https://postman-echo.com/delay/10');",
 							""
 						],
 						"type": "text/javascript"
