@@ -367,6 +367,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         })[action];
     }
 
+    /**
+     * Handle palette start drag event
+     *
+     * @param {DragEvent} event
+     * @memberof EditEmaEditorComponent
+     */
     onDragStart(event: DragEvent) {
         const dataset = (event.target as HTMLDivElement).dataset as unknown as Pick<
             ContentletPayload,
@@ -386,11 +392,24 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         );
     }
 
+    /**
+     * Reset rows when user stop dragging
+     *
+     * @param {DragEvent} _event
+     * @memberof EditEmaEditorComponent
+     */
     onDragEnd(_event: DragEvent) {
         this.rows = [];
     }
 
-    onPlaceItem(event: ActionPayload) {
+    /**
+     * When the user drop a palette item in the dropzone
+     *
+     * @param {ActionPayload} event
+     * @return {*}  {void}
+     * @memberof EditEmaEditorComponent
+     */
+    onPlaceItem(event: ActionPayload): void {
         if (this.draggedPayload.type === 'contentlet') {
             const pageContainers = insertContentletInContainer({
                 ...event,
