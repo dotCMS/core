@@ -4,39 +4,38 @@ describe('utils functions', () => {
     describe('deleteContentletFromContainer', () => {
         it('should delete a contentlet from a container', () => {
             // Current page
-            const pageContainers = [
-                {
+
+            const result = deleteContentletFromContainer({
+                pageId: 'test',
+                language_id: 'test',
+                container: {
                     identifier: 'test',
                     acceptTypes: 'test',
                     uuid: 'test',
-                    contentletsId: ['test']
-                }
-            ];
-
-            // Container where we want to delete the contentlet
-            const container = {
-                identifier: 'test',
-                acceptTypes: 'test',
-                uuid: 'test',
-                contentletsId: ['test']
-            };
-
-            // Contentlet to delete
-
-            const contentletID = 'test';
-
-            const result = deleteContentletFromContainer({
-                pageContainers,
-                container,
-                contentletID
+                    contentletsId: ['test'],
+                    maxContentlets: 1
+                },
+                pageContainers: [
+                    {
+                        identifier: 'test',
+                        uuid: 'test',
+                        contentletsId: ['test']
+                    }
+                ],
+                contentlet: {
+                    identifier: 'test',
+                    inode: 'test',
+                    title: 'test'
+                },
+                personaTag: 'test'
             });
 
             expect(result).toEqual([
                 {
                     identifier: 'test',
-                    acceptTypes: 'test',
                     uuid: 'test',
-                    contentletsId: []
+                    contentletsId: [],
+                    personaTag: 'test'
                 }
             ]);
         });
@@ -46,7 +45,6 @@ describe('utils functions', () => {
             const pageContainers = [
                 {
                     identifier: 'test',
-                    acceptTypes: 'test',
                     uuid: 'test',
                     contentletsId: ['test']
                 }
@@ -55,26 +53,33 @@ describe('utils functions', () => {
             // Container where we want to delete the contentlet
             const container = {
                 identifier: 'test',
-                acceptTypes: 'test',
                 uuid: 'test',
-                contentletsId: ['test']
+                contentletsId: ['test'],
+                maxContentlets: 1,
+                acceptTypes: 'test'
             };
 
             // Contentlet to delete
-            const contentletID = 'test2';
+            const contentlet = {
+                identifier: 'test2',
+                inode: 'test',
+                title: 'test'
+            };
 
             const result = deleteContentletFromContainer({
                 pageContainers,
                 container,
-                contentletID
+                contentlet,
+                pageId: 'test',
+                language_id: 'test'
             });
 
             expect(result).toEqual([
                 {
                     identifier: 'test',
-                    acceptTypes: 'test',
                     uuid: 'test',
-                    contentletsId: ['test']
+                    contentletsId: ['test'],
+                    personaTag: undefined
                 }
             ]);
         });
@@ -86,7 +91,6 @@ describe('utils functions', () => {
             const pageContainers = [
                 {
                     identifier: 'test',
-                    acceptTypes: 'test',
                     uuid: 'test',
                     contentletsId: ['test']
                 }
@@ -97,24 +101,31 @@ describe('utils functions', () => {
                 identifier: 'test',
                 acceptTypes: 'test',
                 uuid: 'test',
-                contentletsId: ['test']
+                contentletsId: ['test'],
+                maxContentlets: 1
             };
 
             // Contentlet to insert
-            const contentletID = 'test2';
+            const contentlet = {
+                identifier: 'test2',
+                inode: 'test',
+                title: 'test'
+            };
 
             const result = insertContentletInContainer({
                 pageContainers,
                 container,
-                contentletID
+                contentlet,
+                pageId: 'test',
+                language_id: 'test'
             });
 
             expect(result).toEqual([
                 {
                     identifier: 'test',
-                    acceptTypes: 'test',
                     uuid: 'test',
-                    contentletsId: ['test', 'test2']
+                    contentletsId: ['test', 'test2'],
+                    personaTag: undefined
                 }
             ]);
         });
@@ -124,7 +135,6 @@ describe('utils functions', () => {
             const pageContainers = [
                 {
                     identifier: 'test',
-                    acceptTypes: 'test',
                     uuid: 'test',
                     contentletsId: ['test']
                 }
@@ -135,22 +145,28 @@ describe('utils functions', () => {
                 identifier: 'test',
                 acceptTypes: 'test',
                 uuid: 'test',
-                contentletsId: ['test']
+                contentletsId: ['test'],
+                maxContentlets: 1
             };
 
             // Contentlet to insert
-            const contentletID = 'test';
+            const contentlet = {
+                identifier: 'test',
+                inode: 'test',
+                title: 'test'
+            };
 
             const result = insertContentletInContainer({
                 pageContainers,
                 container,
-                contentletID
+                contentlet,
+                language_id: 'test',
+                pageId: 'test'
             });
 
             expect(result).toEqual([
                 {
                     identifier: 'test',
-                    acceptTypes: 'test',
                     uuid: 'test',
                     contentletsId: ['test']
                 }
