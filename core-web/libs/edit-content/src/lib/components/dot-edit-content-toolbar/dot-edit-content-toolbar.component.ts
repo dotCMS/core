@@ -8,18 +8,16 @@ import {
     Output
 } from '@angular/core';
 
-import { MenuItem, MessageService } from 'primeng/api';
+import { MenuItem } from 'primeng/api';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import { DotCMSActionSubtype, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-edit-content-toolbar',
     standalone: true,
     imports: [CommonModule, ToolbarModule, SplitButtonModule],
-    providers: [DotWorkflowsActionsService, DotMessageService, MessageService],
     templateUrl: './dot-edit-content-toolbar.component.html',
     styleUrls: ['./dot-edit-content-toolbar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -38,9 +36,9 @@ export class DotEditContentToolbarComponent implements OnChanges {
         this._grouppedActions = this.groupActions(this.actions);
     }
 
-    private groupActions(actions: DotCMSWorkflowAction[]): MenuItem[][] {
+    private groupActions(actions: DotCMSWorkflowAction[] = []): MenuItem[][] {
         return actions
-            .reduce(
+            ?.reduce(
                 (acc, action) => {
                     if (action?.metadata?.subtype === DotCMSActionSubtype.SEPARATOR) {
                         acc.push([]);
