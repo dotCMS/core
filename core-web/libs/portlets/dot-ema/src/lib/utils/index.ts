@@ -1,38 +1,6 @@
 import { ActionPayload, PageContainer } from '../shared/models';
 
 /**
- * Insert a contentlet in a container in a specific position
- *
- * @export
- * @param {ActionPayload} payload
- * @return {*}  {PageContainer[]}
- */
-function insertPositionedContentletInContainer(payload: ActionPayload): PageContainer[] {
-    const { pageContainers, container, contentlet, personaTag, newContentletId, position } =
-        payload;
-
-    return pageContainers.map((currentContainer) => {
-        if (areContainersEquals(currentContainer, container)) {
-            const index = currentContainer.contentletsId.indexOf(contentlet.identifier);
-
-            if (index !== -1) {
-                if (position === 'before') {
-                    currentContainer.contentletsId.splice(index, 0, newContentletId);
-                } else if (position === 'after') {
-                    currentContainer.contentletsId.splice(index + 1, 0, newContentletId);
-                }
-            } else {
-                currentContainer.contentletsId.push(newContentletId);
-            }
-        }
-
-        currentContainer.personaTag = personaTag;
-
-        return currentContainer;
-    });
-}
-
-/**
  * Insert a contentlet in a container
  *
  * @export
@@ -100,4 +68,36 @@ function areContainersEquals(
         currentContainer.identifier === containerToFind.identifier &&
         currentContainer.uuid === containerToFind.uuid
     );
+}
+
+/**
+ * Insert a contentlet in a container in a specific position
+ *
+ * @export
+ * @param {ActionPayload} payload
+ * @return {*}  {PageContainer[]}
+ */
+function insertPositionedContentletInContainer(payload: ActionPayload): PageContainer[] {
+    const { pageContainers, container, contentlet, personaTag, newContentletId, position } =
+        payload;
+
+    return pageContainers.map((currentContainer) => {
+        if (areContainersEquals(currentContainer, container)) {
+            const index = currentContainer.contentletsId.indexOf(contentlet.identifier);
+
+            if (index !== -1) {
+                if (position === 'before') {
+                    currentContainer.contentletsId.splice(index, 0, newContentletId);
+                } else if (position === 'after') {
+                    currentContainer.contentletsId.splice(index + 1, 0, newContentletId);
+                }
+            } else {
+                currentContainer.contentletsId.push(newContentletId);
+            }
+        }
+
+        currentContainer.personaTag = personaTag;
+
+        return currentContainer;
+    });
 }
