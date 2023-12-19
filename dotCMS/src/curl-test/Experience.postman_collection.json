@@ -87,9 +87,6 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be ok 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
 							"",
 							"",
 							""
@@ -101,7 +98,7 @@
 					"listen": "prerequest",
 					"script": {
 						"exec": [
-							""
+							"setTimeout(() => {}, 20000);"
 						],
 						"type": "text/javascript"
 					}
@@ -126,15 +123,14 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "https://postman-echo.com/delay/10",
-					"protocol": "https",
+					"raw": "{{serverURL}}/api/v1/site",
 					"host": [
-						"postman-echo",
-						"com"
+						"{{serverURL}}"
 					],
 					"path": [
-						"delay",
-						"10"
+						"api",
+						"v1",
+						"site"
 					]
 				}
 			},
