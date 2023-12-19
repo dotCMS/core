@@ -1,8 +1,6 @@
 import { NgClass, NgForOf } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { RouterLink } from '@angular/router';
-
-import { OverlayPanel } from 'primeng/overlaypanel';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -14,7 +12,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     imports: [NgForOf, NgClass, DotMessagePipe, RouterLink]
 })
 export class DotToolbarAnnouncementsComponent {
-    @Input() announcementsPanel: OverlayPanel;
+    @Output() hideOverlayPanel = new EventEmitter<string>();
 
     announcementsData = [
         {
@@ -65,6 +63,6 @@ export class DotToolbarAnnouncementsComponent {
     protected linkToAddDevice = '/c/starter';
 
     close(): void {
-        this.announcementsPanel.hide();
+        this.hideOverlayPanel.emit();
     }
 }

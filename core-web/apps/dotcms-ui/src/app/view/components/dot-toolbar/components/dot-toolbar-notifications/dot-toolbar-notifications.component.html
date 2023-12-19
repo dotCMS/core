@@ -5,7 +5,7 @@
         styleClass="p-button-rounded p-button-text"></p-button>
 
     <p-overlayPanel #op styleClass="toolbar-announcements__container">
-        <dot-toolbar-announcements [announcementsPanel]="op" />
+        <dot-toolbar-announcements (hideOverlayPanel)="op.hide()" />
     </p-overlayPanel>
 </ng-container>
 <div class="toolbar-notifications__container">
@@ -44,7 +44,7 @@
                     id="dot-toolbar-notifications-button-load-more"
                     *ngIf="existsMoreToLoad"
                     (click)="loadMore()"
-                    riple
+                    ripple
                     pButton
                     label="{{ 'notifications_load_more' | dm }}"></button>
             </div>
