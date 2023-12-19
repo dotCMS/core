@@ -245,9 +245,9 @@ public class PullTreeNodeTask extends RecursiveTask<List<Exception>> {
         if (remoteUnderlyingName != null && !remoteUnderlyingName.equals(asset.name())) {
             //First if the logical name and the underlying name are different, we check if there is a file with the underlying name in the file system
             var unnderlyingFilePath = Paths.get(destination, folder.path(), remoteUnderlyingName);
-            localFileHash = hashFunction.apply(localFileHash, unnderlyingFilePath);
+            var assetFilePath = Paths.get(destination, folder.path(), asset.name());
             if (Files.exists(unnderlyingFilePath) //if the file exists
-                    && Utils.sha256ToUnixHash(unnderlyingFilePath).equals(localFileHash)) { //and the hash is the same
+                && Utils.sha256ToUnixHash(unnderlyingFilePath).equals(hashFunction.apply(localFileHash, assetFilePath))) { //and the hash is the same
                 //it means that the file was logically renamed via change title
                 logger.info(String.format("Deleting old file [%s] because it was renamed to [%s]", unnderlyingFilePath, asset.name()));
                 //Therefore we delete the old file
