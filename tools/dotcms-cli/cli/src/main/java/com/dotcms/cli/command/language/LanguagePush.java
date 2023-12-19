@@ -8,6 +8,7 @@ import com.dotcms.api.client.push.language.LanguageFetcher;
 import com.dotcms.api.client.push.language.LanguagePushHandler;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
+import com.dotcms.cli.common.ApplyCommandOrder;
 import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
@@ -199,7 +200,7 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
 
     @Override
     public int getOrder() {
-        return 0;
+        return ApplyCommandOrder.LANGUAGE.getOrder();
     }
     
 }

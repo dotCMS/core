@@ -6,6 +6,7 @@ import com.dotcms.api.client.push.contenttype.ContentTypeFetcher;
 import com.dotcms.api.client.push.contenttype.ContentTypePushHandler;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
+import com.dotcms.cli.common.ApplyCommandOrder;
 import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
@@ -140,7 +141,7 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
 
     @Override
     public int getOrder() {
-        return 2;
+        return ApplyCommandOrder.CONTENT_TYPE.getOrder();
     }
 
 }

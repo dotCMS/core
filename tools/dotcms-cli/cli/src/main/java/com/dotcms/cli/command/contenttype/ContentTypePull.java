@@ -5,6 +5,7 @@ import com.dotcms.api.client.pull.contenttype.ContentTypeFetcher;
 import com.dotcms.api.client.pull.contenttype.ContentTypePullHandler;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPull;
+import com.dotcms.cli.common.ApplyCommandOrder;
 import com.dotcms.cli.common.FullPullOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PullMixin;
@@ -133,7 +134,7 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
 
     @Override
     public int getOrder() {
-        return 2;
+        return ApplyCommandOrder.CONTENT_TYPE.getOrder();
     }
 
 }

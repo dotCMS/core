@@ -6,6 +6,7 @@ import com.dotcms.api.client.push.site.SiteFetcher;
 import com.dotcms.api.client.push.site.SitePushHandler;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
+import com.dotcms.cli.common.ApplyCommandOrder;
 import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
@@ -148,7 +149,7 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>, 
 
     @Override
     public int getOrder() {
-        return 1;
+        return ApplyCommandOrder.SITE.getOrder();
     }
 
 }

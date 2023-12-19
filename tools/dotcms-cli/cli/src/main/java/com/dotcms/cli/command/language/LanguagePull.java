@@ -5,6 +5,7 @@ import com.dotcms.api.client.pull.language.LanguageFetcher;
 import com.dotcms.api.client.pull.language.LanguagePullHandler;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPull;
+import com.dotcms.cli.common.ApplyCommandOrder;
 import com.dotcms.cli.common.FullPullOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PullMixin;
@@ -133,7 +134,7 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
 
     @Override
     public int getOrder() {
-        return 0;
+        return ApplyCommandOrder.LANGUAGE.getOrder();
     }
     
 }
