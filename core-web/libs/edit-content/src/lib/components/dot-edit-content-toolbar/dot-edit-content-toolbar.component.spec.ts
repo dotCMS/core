@@ -79,4 +79,12 @@ describe('DotEditContentToolbarComponent', () => {
 
         expect(spy).toHaveBeenCalledWith(WORKFLOW_ACTIONS_MOCK[0]);
     });
+
+    it('should render a normal button is a group has only one action', () => {
+        spectator.setInput('actions', [WORKFLOW_ACTIONS_MOCK[0]]);
+        spectator.detectChanges();
+
+        const button = spectator.query('.p-button');
+        expect(button).not.toBeNull();
+    });
 });

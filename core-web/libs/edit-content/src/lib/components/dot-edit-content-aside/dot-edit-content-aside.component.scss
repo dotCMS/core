@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 :host {
-    padding: 0 16px;
+    padding: 0 $spacing-3;
     display: block;
 }
 

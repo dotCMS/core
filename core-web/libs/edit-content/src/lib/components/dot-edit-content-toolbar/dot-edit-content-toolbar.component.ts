@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -17,7 +18,7 @@ import { DotCMSActionSubtype, DotCMSWorkflowAction } from '@dotcms/dotcms-models
 @Component({
     selector: 'dot-edit-content-toolbar',
     standalone: true,
-    imports: [CommonModule, ToolbarModule, SplitButtonModule],
+    imports: [CommonModule, ToolbarModule, SplitButtonModule, ButtonModule],
     templateUrl: './dot-edit-content-toolbar.component.html',
     styleUrls: ['./dot-edit-content-toolbar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
