@@ -25,7 +25,14 @@ interface DotEditPageNavItem {
     needsEntepriseLicense: boolean;
     tooltip?: string;
 }
-
+/**
+ * Display the navigation for edit page
+ *
+ * @export
+ * @class DotEditPageNavComponent
+ * @implements {OnChanges}
+ * @deprecated use the new nav bar from edit-ema
+ */
 @Component({
     selector: 'dot-edit-page-nav',
     templateUrl: './dot-edit-page-nav.component.html',

@@ -1,0 +1,73 @@
+@use "variables" as *;
+
+:host {
+    width: 5rem;
+    height: 100%;
+}
+.edit-ema-nav-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    background-color: $color-palette-primary-100;
+    border-left: 1px solid $color-palette-primary-300;
+}
+
+.edit-ema-nav-bar__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    height: 5.5rem;
+    width: 100%;
+    gap: $spacing-0;
+    padding: 0 $spacing-0;
+    text-decoration: none;
+    color: $black;
+
+    .pi {
+        font-size: $font-size-xl;
+        color: $color-palette-gray-800;
+    }
+}
+
+.item__image,
+use {
+    user-select: none;
+    -webkit-user-drag: none;
+    color: $color-palette-gray-800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.item__label {
+    text-align: center;
+    text-wrap: wrap;
+    font-size: $font-size-sm;
+}
+
+.edit-ema-nav-bar__item--active {
+    background-color: $white;
+    border: 1px solid $color-palette-primary-300;
+    border-left: none;
+    position: relative;
+
+    &::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        margin-left: -1px;
+        width: 1px;
+        height: 100%;
+        background-color: $white;
+    }
+
+    .pi,
+    .item__label,
+    .item__image use {
+        color: $color-palette-primary-500;
+    }
+}

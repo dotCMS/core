@@ -4,6 +4,7 @@ $notification-padding: $spacing-3;
 
 :host {
     position: relative;
+    display: flex;
 
     .badge {
         background-color: $color-palette-primary;

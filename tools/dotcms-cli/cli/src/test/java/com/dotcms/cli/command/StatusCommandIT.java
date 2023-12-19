@@ -37,7 +37,7 @@ class StatusCommandIT extends CommandTest {
      * Expected: We should get exit code 1 (Error) since we're not able to see our status unless at least 1 profile is selected and the respective message
      */
     @Test
-    public void Test_Command_Status_No_Profiles() {
+    void Test_Command_Status_No_Profiles() throws IOException {
 
         serviceManager.removeAll();
 
@@ -61,7 +61,7 @@ class StatusCommandIT extends CommandTest {
      * @throws IOException
      */
     @Test
-    public void Test_Command_Status_Default_Profile_Not_Logged_In() throws IOException {
+    void Test_Command_Status_Default_Profile_Not_Logged_In() throws IOException {
 
         resetServiceProfiles();
 
@@ -82,7 +82,7 @@ class StatusCommandIT extends CommandTest {
      * @throws IOException
      */
     @Test
-    public void Test_Command_Status_Default_Profile_Invalid_Credentials() throws IOException {
+    void Test_Command_Status_Default_Profile_Invalid_Credentials() throws IOException {
 
         final String user = "admin@dotCMS.com";
         final String token = "not-a-valid-token"; //it could have expired
@@ -113,7 +113,7 @@ class StatusCommandIT extends CommandTest {
      * @throws IOException
      */
     @Test
-    public void Test_Command_Status_Valid_Profile_And_User() throws IOException {
+    void Test_Command_Status_Valid_Profile_And_User() throws IOException {
 
         final String user = "admin@dotCMS.com";
         final String passwd = "admin";

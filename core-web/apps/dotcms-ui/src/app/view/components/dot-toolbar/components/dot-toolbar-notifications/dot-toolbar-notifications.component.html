@@ -2,6 +2,17 @@
     notificationsUnreadCount
 }}</span>
 
+<ng-container *dotShowHideFeature="featureFlagAnnouncements">
+    <p-button
+        (click)="op.toggle($event)"
+        icon="pi pi-megaphone"
+        styleClass="p-button-rounded p-button-text"></p-button>
+
+    <p-overlayPanel #op>
+        <dot-toolbar-announcements />
+    </p-overlayPanel>
+</ng-container>
+
 <dot-dropdown-component
     id="dot-toolbar-notifications"
     [disabled]="!notifications.length"

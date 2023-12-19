@@ -1,6 +1,5 @@
 import { describe, expect } from '@jest/globals';
-import { SpectatorRouting } from '@ngneat/spectator';
-import { byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
+import { SpectatorRouting, createRoutingFactory, byTestId } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -13,17 +12,17 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import {
     DotLanguagesServiceMock,
-    DotPersonalizeServiceMock,
-    MockDotMessageService
+    MockDotMessageService,
+    DotPersonalizeServiceMock
 } from '@dotcms/utils-testing';
 
-import { DotEmaComponent } from './dot-ema.component';
-import { EditEmaStore } from './store/dot-ema.store';
+import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
+import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
-import { EmaLanguageSelectorComponent } from '../components/edit-ema-language-selector/edit-ema-language-selector.component';
-import { EditEmaPersonaSelectorComponent } from '../components/edit-ema-persona-selector/edit-ema-persona-selector.component';
+import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_PERSONA, HOST, WINDOW } from '../shared/consts';
+import { DEFAULT_PERSONA, WINDOW, HOST } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { AddContentletPayload } from '../shared/models';
 
@@ -35,13 +34,13 @@ const messagesMock = {
     'dot.common.dialog.reject': 'Reject'
 };
 
-describe('DotEmaComponent', () => {
-    let spectator: SpectatorRouting<DotEmaComponent>;
+describe('EditEmaEditorComponent', () => {
+    let spectator: SpectatorRouting<EditEmaEditorComponent>;
     let store: EditEmaStore;
     let confirmationService: ConfirmationService;
 
     const createComponent = createRoutingFactory({
-        component: DotEmaComponent,
+        component: EditEmaEditorComponent,
         imports: [RouterTestingModule, HttpClientTestingModule],
         detectChanges: false,
         componentProviders: [
@@ -213,7 +212,7 @@ describe('DotEmaComponent', () => {
 
                 jest.spyOn(router, 'navigate');
 
-                spectator.triggerEventHandler(EmaLanguageSelectorComponent, 'selected', 2);
+                spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 2);
                 spectator.detectChanges();
 
                 expect(router.navigate).toHaveBeenCalledWith([], {
@@ -823,21 +822,16 @@ describe('DotEmaComponent', () => {
             spectator = createComponent({
                 queryParams: { language_id: undefined, url: undefined }
             });
-
             store = spectator.inject(EditEmaStore, true);
         });
-
         it('should initialize with default value', () => {
             const mockQueryParams = {
                 language_id: 1,
                 url: 'index',
                 persona_id: 'modes.persona.no.persona'
             };
-
             jest.spyOn(store, 'load');
-
             spectator.detectChanges();
-
             expect(store.load).toHaveBeenCalledWith(mockQueryParams);
         });
     });

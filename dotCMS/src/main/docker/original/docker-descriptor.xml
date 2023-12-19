@@ -46,7 +46,16 @@
                 <include>**/dotcms-webcomponents/**</include>
             </includes>
         </fileSet>
-
+        <fileSet>
+            <directory>${tomcat-lib-folder}</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}/lib</outputDirectory>
+            <includes>
+                <include>tomcat-redis-session-manager-${tomcat.redis.session.manager.version}.jar</include>
+                <include>tomcat-catalina-${tomcat.catalina.version}.jar</include>
+                <include>commons-pool2-${commons-pool2.version}.jar</include>
+                <include>jedis-${jedis.version}.jar</include>
+            </includes>
+        </fileSet>
     </fileSets>
 
 </assembly>

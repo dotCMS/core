@@ -6,15 +6,15 @@ import { Injectable } from '@angular/core';
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
 import {
-    DotPageApiParams,
     DotPageApiResponse,
-    DotPageApiService
+    DotPageApiService,
+    DotPageApiParams
 } from '../../services/dot-page-api.service';
 import {
-    ADD_CONTENTLET_URL,
     DEFAULT_PERSONA,
+    HOST,
     EDIT_CONTENTLET_URL,
-    HOST
+    ADD_CONTENTLET_URL
 } from '../../shared/consts';
 import { SavePagePayload } from '../../shared/models';
 
