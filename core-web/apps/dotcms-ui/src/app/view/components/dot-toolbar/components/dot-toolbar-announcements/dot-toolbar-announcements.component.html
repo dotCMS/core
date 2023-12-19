@@ -1,0 +1,28 @@
+<h5 class="announcements__title">{{ 'announcements' | dm }}</h5>
+<ul class="announcements__list">
+    <li class="announcements__list-item" *ngFor="let announcement of announcementsData">
+        <span class="announcements__image pi" [ngClass]="announcement.iconClass"></span>
+        <div class="announcements__content">
+            <span class="announcements__label">{{ announcement.label }}</span>
+            <span class="announcements__date">{{ announcement.date }}</span>
+        </div>
+    </li>
+</ul>
+
+<div class="announcements__container">
+    <a class="announcements__link" data-testId="announcement_link" href="#/starter">{{
+        'announcements_show_all' | dm
+    }}</a>
+</div>
+
+<h5 class="announcements__title">{{ 'announcements_knowledge_center' | dm }}</h5>
+<div class="announcements__about">
+    <a *ngFor="let link of knowledgeCenterLinks" [href]="link.url" target="_blank">{{
+        link.label
+    }}</a>
+</div>
+
+<h5 class="announcements__title">{{ 'announcements_knowledge_contact_us' | dm }}</h5>
+<div class="announcements__about">
+    <a *ngFor="let link of contactLinks" [href]="link.url" target="_blank">{{ link.label }}</a>
+</div>

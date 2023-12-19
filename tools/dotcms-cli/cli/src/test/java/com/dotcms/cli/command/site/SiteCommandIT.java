@@ -871,6 +871,132 @@ class SiteCommandIT extends CommandTest {
     }
 
     /**
+     * Given scenario: Create a new site using a file and the push command, then verify the site
+     * descriptor was updated with the proper identifier.
+     */
+    @Test
+    @Order(15)
+    void Test_Create_From_File_via_Push_Checking_Auto_Update() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        try {
+            final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+            final String newSiteName = String.format(
+                    "new.dotcms.site%d",
+                    System.currentTimeMillis()
+            );
+            String siteDescriptor = String.format("{\n"
+                    + "  \"siteName\" : \"%s\",\n"
+                    + "  \"languageId\" : 1,\n"
+                    + "  \"modDate\" : \"2023-05-05T00:13:25.242+00:00\",\n"
+                    + "  \"modUser\" : \"dotcms.org.1\",\n"
+                    + "  \"live\" : true,\n"
+                    + "  \"working\" : true\n"
+                    + "}", newSiteName);
+
+            final var path = Path.of(
+                    workspace.sites().toString(),
+                    String.format("%s.json", newSiteName)
+            );
+            Files.write(path, siteDescriptor.getBytes());
+            final CommandLine commandLine = createCommand();
+            final StringWriter writer = new StringWriter();
+            try (PrintWriter out = new PrintWriter(writer)) {
+                commandLine.setOut(out);
+                commandLine.setErr(out);
+
+                // Pushing the sites
+                int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                        path.toFile().getAbsolutePath(), "--fail-fast", "-e");
+                Assertions.assertEquals(ExitCode.OK, status);
+
+                // Validating the site was created
+                status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name", siteName);
+                Assertions.assertEquals(ExitCode.OK, status);
+
+                // ---
+                // Now validating the auto update updated the site descriptor
+                var updatedSite = this.mapperService.map(
+                        path.toFile(),
+                        SiteView.class
+                );
+                Assertions.assertEquals(newSiteName, updatedSite.siteName());
+                Assertions.assertEquals(1, updatedSite.languageId());
+                Assertions.assertNotNull(updatedSite.identifier());
+                Assertions.assertFalse(updatedSite.identifier().isBlank());
+            }
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Create a new site using a file and the push command disabling the auto
+     * update, then verify the site descriptor was not updated.
+     */
+    @Test
+    @Order(16)
+    void Test_Create_From_File_via_Push_With_Auto_Update_Disabled() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        try {
+            final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+            final String newSiteName = String.format(
+                    "new.dotcms.site%d",
+                    System.currentTimeMillis()
+            );
+            String siteDescriptor = String.format("{\n"
+                    + "  \"siteName\" : \"%s\",\n"
+                    + "  \"languageId\" : 1,\n"
+                    + "  \"modDate\" : \"2023-05-05T00:13:25.242+00:00\",\n"
+                    + "  \"modUser\" : \"dotcms.org.1\",\n"
+                    + "  \"live\" : true,\n"
+                    + "  \"working\" : true\n"
+                    + "}", newSiteName);
+
+            final var path = Path.of(
+                    workspace.sites().toString(),
+                    String.format("%s.json", newSiteName)
+            );
+            Files.write(path, siteDescriptor.getBytes());
+            final CommandLine commandLine = createCommand();
+            final StringWriter writer = new StringWriter();
+            try (PrintWriter out = new PrintWriter(writer)) {
+                commandLine.setOut(out);
+                commandLine.setErr(out);
+
+                // Pushing the sites
+                int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                        path.toFile().getAbsolutePath(), "--fail-fast", "-e",
+                        "--disable-auto-update");
+                Assertions.assertEquals(ExitCode.OK, status);
+
+                // Validating the site was created
+                status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name", siteName);
+                Assertions.assertEquals(ExitCode.OK, status);
+
+                // ---
+                // Now validating the auto update did not update the site descriptor
+                var updatedSite = this.mapperService.map(
+                        path.toFile(),
+                        SiteView.class
+                );
+                Assertions.assertEquals(newSiteName, updatedSite.siteName());
+                Assertions.assertEquals(1, updatedSite.languageId());
+                Assertions.assertNull(updatedSite.identifier());
+            }
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
      * Creates a temporary folder with a random name.
      *
      * @return The path to the created temporary folder.

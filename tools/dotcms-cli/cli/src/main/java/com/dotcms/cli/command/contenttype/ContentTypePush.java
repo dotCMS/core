@@ -6,6 +6,7 @@ import com.dotcms.api.client.push.contenttype.ContentTypeFetcher;
 import com.dotcms.api.client.push.contenttype.ContentTypePushHandler;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
+import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.WorkspaceManager;
@@ -38,7 +39,7 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
     static final String CONTENT_TYPE_PUSH_MIXIN = "contentTypePushMixin";
 
     @CommandLine.Mixin
-    PushMixin pushMixin;
+    FullPushOptionsMixin pushMixin;
 
     @CommandLine.Mixin(name = CONTENT_TYPE_PUSH_MIXIN)
     ContentTypePushMixin contentTypePushMixin;
@@ -103,6 +104,7 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
                 inputFile,
                 PushOptions.builder().
                         failFast(pushMixin.failFast).
+                        disableAutoUpdate(pushMixin.disableAutoUpdate).
                         allowRemove(contentTypePushMixin.removeContentTypes).
                         maxRetryAttempts(pushMixin.retryAttempts).
                         dryRun(pushMixin.dryRun).

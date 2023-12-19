@@ -3,6 +3,7 @@ package com.dotcms.cli.command.language;
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.LanguageAPI;
+import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
@@ -46,6 +47,9 @@ class LanguageCommandIT extends CommandTest {
     @Inject
     RestClientFactory clientFactory;
 
+    @Inject
+    MapperService mapperService;
+
     @BeforeEach
     public void setupTest() throws IOException {
         resetServiceProfiles();
@@ -69,7 +73,7 @@ class LanguageCommandIT extends CommandTest {
             commandLine.setOut(out);
             final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
                     "1", "--verbose", "--workspace", workspace.root().toString());
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
 
             // Reading the resulting JSON file
             final var languageFilePath = Path.of(workspace.languages().toString(),
@@ -101,7 +105,7 @@ class LanguageCommandIT extends CommandTest {
             commandLine.setOut(out);
             final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
                     "en-US", "--verbose", "--workspace", workspace.root().toString());
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
 
             // Reading the resulting JSON file
             final var languageFilePath = Path.of(workspace.languages().toString(),
@@ -142,7 +146,7 @@ class LanguageCommandIT extends CommandTest {
 
             int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US",
                     "--workspace", workspace.root().toString());
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
 
             // Reading the JSON language file to check if the json has a: "dotCMSObjectType" : "Language"
             final var languageFilePath = Path.of(workspace.languages().toString(), "en-us.json");
@@ -152,7 +156,7 @@ class LanguageCommandIT extends CommandTest {
             // And now pushing the language back to dotCMS to make sure the structure is still correct
             status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
                     languageFilePath.toAbsolutePath().toString(), "-ff");
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
         }
@@ -183,7 +187,7 @@ class LanguageCommandIT extends CommandTest {
             int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US",
                     "-fmt", InputOutputFormat.YAML.toString(), "--workspace",
                     workspace.root().toString());
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
 
             // Reading the YAML language file to check if the yaml has a: "dotCMSObjectType" : "Language"
             final var languageFilePath = Path.of(workspace.languages().toString(), "en-us.yml");
@@ -193,7 +197,7 @@ class LanguageCommandIT extends CommandTest {
             // And now pushing the language back to dotCMS to make sure the structure is still correct
             status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
                     languageFilePath.toAbsolutePath().toString(), "-ff");
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
         }
@@ -212,7 +216,7 @@ class LanguageCommandIT extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final int status = commandLine.execute(LanguageCommand.NAME, LanguageFind.NAME);
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.contains("English"));
         }
@@ -236,7 +240,7 @@ class LanguageCommandIT extends CommandTest {
             commandLine.setOut(out);
             final int status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
                     "--byIso", "es-VE", workspace.languages().toFile().getAbsolutePath());
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.contains("Spanish"));
         } finally {
@@ -263,7 +267,7 @@ class LanguageCommandIT extends CommandTest {
             commandLine.setOut(out);
             final int status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
                     "--byIso", "fr", workspace.languages().toFile().getAbsolutePath());
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
 
             // Checking we pushed the language correctly
             var foundLanguage = clientFactory.getClient(LanguageAPI.class).
@@ -312,7 +316,7 @@ class LanguageCommandIT extends CommandTest {
             commandLine.setOut(out);
             final int status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
                     targetFilePath.toAbsolutePath().toString(), "-ff");
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
 
             // Checking we pushed the language correctly
             var foundLanguage = clientFactory.getClient(LanguageAPI.class).
@@ -330,6 +334,78 @@ class LanguageCommandIT extends CommandTest {
             } catch (Exception e) {
                 // Ignoring
             }
+        }
+    }
+
+    /**
+     * <b>Command to test:</b> language push
+     * <p>
+     * <b>Given Scenario:</b> Test the language push command using a JSON file as an input
+     * validating the auto update feature is working and updating the language descriptor as
+     * expected.
+     * <p>
+     * <b>Expected Result:</b> The language returned should be Italian
+     */
+    @Test
+    void Test_Command_Language_Push_byFile_JSON_Checking_Auto_Update() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+        Language createdLanguage = null;
+
+        final CommandLine commandLine = createCommand();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            //Create a JSON file with the language to push
+            final Language language = Language.builder().isoCode("it-it").languageCode("it-IT")
+                    .countryCode("IT").language("Italian").country("Italy").build();
+            final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
+            final var targetFilePath = Path.of(workspace.languages().toString(), "language.json");
+            mapper.writeValue(targetFilePath.toFile(), language);
+            commandLine.setOut(out);
+
+            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
+                    workspace.languages().toString(), "-ff");
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            // Checking we pushed the language correctly
+            var foundLanguage = clientFactory.getClient(LanguageAPI.class).
+                    getFromLanguageIsoCode("it-IT");
+            Assertions.assertNotNull(foundLanguage);
+            Assertions.assertNotNull(foundLanguage.entity());
+            Assertions.assertTrue(foundLanguage.entity().language().isPresent());
+            Assertions.assertEquals("Italian", foundLanguage.entity().language().get());
+            createdLanguage = foundLanguage.entity();
+
+            // ---
+            // Now validating the auto update updated the language descriptor
+            var updatedDescriptor = this.mapperService.map(
+                    targetFilePath.toFile(),
+                    Language.class
+            );
+            Assertions.assertEquals(createdLanguage.isoCode(), updatedDescriptor.isoCode());
+            Assertions.assertEquals(createdLanguage.languageCode(),
+                    updatedDescriptor.languageCode());
+            Assertions.assertTrue(updatedDescriptor.id().isPresent());
+            Assertions.assertNotNull(updatedDescriptor.id().get());
+            Assertions.assertEquals(createdLanguage.id(), updatedDescriptor.id());
+
+        } finally {
+
+            try {
+                if (createdLanguage != null && createdLanguage.id().isPresent()) {
+                    clientFactory.getClient(LanguageAPI.class).delete(
+                            String.valueOf(createdLanguage.id().get())
+                    );
+                }
+            } catch (Exception e) {
+                // Ignoring
+            }
+
+            workspaceManager.destroy(workspace);
         }
     }
 
@@ -359,7 +435,7 @@ class LanguageCommandIT extends CommandTest {
             commandLine.setOut(out);
             int status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
                     targetFilePath.toAbsolutePath().toString(), "-ff");
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
 
             // Checking we pushed the language correctly
             var foundLanguage = clientFactory.getClient(LanguageAPI.class).
@@ -398,7 +474,7 @@ class LanguageCommandIT extends CommandTest {
 
             //We remove the language with iso code "es-VE"
             int status = commandLine.execute(LanguageCommand.NAME, LanguageRemove.NAME, "es-VE", "--cli-test");
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
 
             //We check that the language with iso code "es-VE" is not present
             status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE", "--workspace", workspace.root().toString());
@@ -426,7 +502,7 @@ class LanguageCommandIT extends CommandTest {
             //we pull the language with iso code "es-VE" to get its id
             int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
                     "es-VE", "--verbose", "--workspace", workspace.root().toString());
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
 
             // Reading the resulting JSON file
             final var languageFilePath = Path.of(workspace.languages().toString(),
@@ -441,7 +517,7 @@ class LanguageCommandIT extends CommandTest {
             //We remove the language with iso code "es-VE"
             status = commandLine.execute(LanguageCommand.NAME, LanguageRemove.NAME,
                     String.valueOf(result.id().get()), "--cli-test");
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
 
             //We check that the language with iso code "es-VE" is not present
             status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
@@ -467,7 +543,7 @@ class LanguageCommandIT extends CommandTest {
             final String lang = "en-US".toLowerCase();
             for (int i=0; i<= 5; i++) {
                 final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, lang, "--workspace", workspace.root().toString());
-                Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+                Assertions.assertEquals(ExitCode.OK, status);
                 System.out.println("Lang Pulled: " + i);
             }
 
@@ -507,7 +583,7 @@ class LanguageCommandIT extends CommandTest {
             int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US",
                     "-fmt", InputOutputFormat.YAML.toString(), "--workspace",
                     workspace.root().toString());
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
 
             // Make sure the language it is really there
             final var languageUSPath = Path.of(workspace.languages().toString(), "en-us.yml");
@@ -540,7 +616,7 @@ class LanguageCommandIT extends CommandTest {
             commandLine.setOut(out);
             status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
                     workspace.languages().toString(), "-ff");
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
             String output = writer.toString();
             Assertions.assertTrue(
                     output.contains(
@@ -571,7 +647,7 @@ class LanguageCommandIT extends CommandTest {
             status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "it-IT",
                     "-fmt", InputOutputFormat.JSON.toString().toUpperCase(),
                     "--workspace", workspace.root().toString());
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
 
             // ---
             // Now we remove a file and test the removal is working properly
@@ -593,7 +669,7 @@ class LanguageCommandIT extends CommandTest {
             // Pushing the languages with the remove language flag
             status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME,
                     workspace.languages().toString(), "-ff", "-rl");
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
             output = writer.toString();
             Assertions.assertTrue(
                     output.contains(
@@ -726,7 +802,7 @@ class LanguageCommandIT extends CommandTest {
             // Pulling all languages
             var status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
                     "--workspace", workspace.root().toString());
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
 
             // Make sure we have the proper amount of JSON files in the languages folder
             try (Stream<Path> walk = Files.walk(workspace.languages())) {
@@ -850,7 +926,7 @@ class LanguageCommandIT extends CommandTest {
             var status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
                     "--workspace", workspace.root().toString(),
                     "-fmt", InputOutputFormat.YAML.toString());
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
 
             // Make sure we have the proper amount of JSON files in the languages folder
             try (Stream<Path> walk = Files.walk(workspace.languages())) {
@@ -974,13 +1050,13 @@ class LanguageCommandIT extends CommandTest {
             var status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
                     "--workspace", workspace.root().toString(),
                     "-fmt", InputOutputFormat.YAML.toString());
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
 
             // Executing a second pull of all the languages
             status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
                     "--workspace", workspace.root().toString(),
                     "-fmt", InputOutputFormat.YAML.toString());
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            Assertions.assertEquals(ExitCode.OK, status);
 
             // Make sure we have the proper amount of JSON files in the languages folder
             try (Stream<Path> walk = Files.walk(workspace.languages())) {

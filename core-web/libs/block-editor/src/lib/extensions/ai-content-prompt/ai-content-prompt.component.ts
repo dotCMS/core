@@ -8,9 +8,11 @@ import {
     OnInit,
     ViewChild
 } from '@angular/core';
-import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 
-import { takeUntil } from 'rxjs/operators';
+import { filter, takeUntil } from 'rxjs/operators';
+
+import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { AiContentPromptState, AiContentPromptStore } from './store/ai-content-prompt.store';
 
@@ -26,6 +28,7 @@ interface AIContentForm {
 })
 export class AIContentPromptComponent implements OnInit, OnDestroy {
     vm$: Observable<AiContentPromptState> = this.aiContentPromptStore.vm$;
+    readonly ComponentStatus = ComponentStatus;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     @ViewChild('input') private input: ElementRef;
@@ -37,9 +40,15 @@ export class AIContentPromptComponent implements OnInit, OnDestroy {
     constructor(private readonly aiContentPromptStore: AiContentPromptStore) {}
 
     ngOnInit() {
-        this.aiContentPromptStore.open$.pipe(takeUntil(this.destroy$)).subscribe((open) => {
-            open ? this.input.nativeElement.focus() : this.form.reset();
-        });
+        this.aiContentPromptStore.status$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((status) => status === ComponentStatus.IDLE)
+            )
+            .subscribe(() => {
+                this.form.reset();
+                this.input.nativeElement.focus();
+            });
     }
 
     ngOnDestroy(): void {
@@ -65,7 +74,7 @@ export class AIContentPromptComponent implements OnInit, OnDestroy {
      * @memberof AIContentPromptComponent
      */
     handleScape(event: KeyboardEvent): void {
-        this.aiContentPromptStore.setOpen(false);
+        this.aiContentPromptStore.setStatus(ComponentStatus.INIT);
         event.stopPropagation();
     }
 }

@@ -6,7 +6,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFormatDateService, DotMessagePipe } from '@dotcms/ui';
 
 import { EditContentLayoutComponent } from './edit-content.layout.component';
 
@@ -22,7 +22,8 @@ const createEditContentLayoutComponent = (params: { contentType?: string; id?: s
             {
                 provide: ActivatedRoute,
                 useValue: { snapshot: { params } }
-            }
+            },
+            mockProvider(DotFormatDateService)
         ],
         providers: [mockProvider(DotMessageService)]
     });
@@ -108,7 +109,8 @@ describe('EditContentLayoutComponent without identifier', () => {
                         getContentTypeFormData: jest.fn().mockReturnValue(
                             of({
                                 layout: LAYOUT_MOCK,
-                                fields: JUST_FIELDS_MOCKS
+                                fields: JUST_FIELDS_MOCKS,
+                                contentType: 'test'
                             })
                         ),
                         getContentById: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK))

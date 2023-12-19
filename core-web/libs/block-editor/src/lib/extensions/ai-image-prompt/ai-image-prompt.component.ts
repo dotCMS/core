@@ -37,9 +37,8 @@ import { AiImagePromptInputComponent } from './components/ai-image-prompt-input/
 })
 export class AIImagePromptComponent {
     protected readonly vm$: Observable<VmAiImagePrompt> = inject(DotAiImagePromptStore).vm$;
-
     protected readonly ComponentStatus = ComponentStatus;
-    private store = inject(DotAiImagePromptStore);
+    private store: DotAiImagePromptStore = inject(DotAiImagePromptStore);
 
     /**
      * Hides the dialog.

@@ -25,9 +25,11 @@ export const DOT_AI_IMAGE_CONTENT_KEY = 'dotAIImageContent';
 
 export const AI_IMAGE_PROMPT_PLUGIN_KEY = new PluginKey('aiImagePrompt-form');
 
+export const AI_IMAGE_PROMPT_EXTENSION_NAME = 'aiImagePrompt';
+
 export const AIImagePromptExtension = (viewContainerRef: ViewContainerRef) => {
     return Extension.create<AIImagePromptOptions>({
-        name: 'aiImagePrompt',
+        name: AI_IMAGE_PROMPT_EXTENSION_NAME,
 
         addOptions() {
             return {
@@ -43,7 +45,7 @@ export const AIImagePromptExtension = (viewContainerRef: ViewContainerRef) => {
                     ({ chain }) => {
                         return chain()
                             .command(({ tr }) => {
-                                tr.setMeta(AI_IMAGE_PROMPT_PLUGIN_KEY, { open: true });
+                                tr.setMeta(AI_IMAGE_PROMPT_PLUGIN_KEY, { aIImagePromptOpen: true });
 
                                 return true;
                             })
@@ -55,7 +57,9 @@ export const AIImagePromptExtension = (viewContainerRef: ViewContainerRef) => {
                     ({ chain }) => {
                         return chain()
                             .command(({ tr }) => {
-                                tr.setMeta(AI_IMAGE_PROMPT_PLUGIN_KEY, { open: false });
+                                tr.setMeta(AI_IMAGE_PROMPT_PLUGIN_KEY, {
+                                    aIImagePromptOpen: false
+                                });
 
                                 return true;
                             })
