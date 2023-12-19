@@ -26,6 +26,7 @@ import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW, HOST } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload } from '../shared/models';
+import { EmaPageDropzoneComponent } from '../components/ema-page-dropzone/ema-page-dropzone.component';
 
 const messagesMock = {
     'editpage.content.contentlet.remove.confirmation_message.header': 'Deleting Content',
@@ -34,6 +35,45 @@ const messagesMock = {
     'dot.common.dialog.accept': 'Accept',
     'dot.common.dialog.reject': 'Reject'
 };
+
+const BOUNDS_MOCK = [
+    {
+        x: 0,
+        y: 0,
+        width: 1000,
+        height: 200,
+        columns: [
+            {
+                x: 0,
+                y: 0,
+                width: 1000,
+                height: 200,
+                containers: [
+                    {
+                        x: 10,
+                        y: 10,
+                        width: 980,
+                        height: 180,
+                        contentlets: [
+                            {
+                                x: 20,
+                                y: 20,
+                                width: 940,
+                                height: 140,
+                                payload: {
+                                    /* payload data */
+                                }
+                            }
+                        ],
+                        payload: {
+                            /* payload data */
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+];
 
 describe('EditEmaEditorComponent', () => {
     let spectator: SpectatorRouting<EditEmaEditorComponent>;
@@ -136,18 +176,36 @@ describe('EditEmaEditorComponent', () => {
             confirmationService = spectator.inject(ConfirmationService, true);
         });
 
-        it('should initialize with route query parameters', () => {
-            const mockQueryParams = {
-                language_id: 1,
-                url: 'page-one',
-                persona_id: 'modes.persona.no.persona'
-            };
+        describe('router', () => {
+            it('should initialize with route query parameters', () => {
+                const mockQueryParams = {
+                    language_id: 1,
+                    url: 'page-one',
+                    persona_id: 'modes.persona.no.persona'
+                };
 
-            jest.spyOn(store, 'load');
+                jest.spyOn(store, 'load');
 
-            spectator.detectChanges();
+                spectator.detectChanges();
 
-            expect(store.load).toHaveBeenCalledWith(mockQueryParams);
+                expect(store.load).toHaveBeenCalledWith(mockQueryParams);
+            });
+
+            it('should update the iframe url when the queryParams changes', () => {
+                spectator.detectChanges();
+
+                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: { language_id: 2, url: 'my-awesome-route' }
+                });
+
+                expect(iframe.nativeElement.src).toBe(
+                    HOST +
+                        '/my-awesome-route?language_id=2&com.dotmarketing.persona.id=modes.persona.no.persona'
+                );
+            });
         });
 
         describe('toast', () => {
@@ -271,22 +329,6 @@ describe('EditEmaEditorComponent', () => {
 
                 expect(confirmDialogOpen).toHaveBeenCalled();
             });
-        });
-
-        it('should update the iframe url when the queryParams changes', () => {
-            spectator.detectChanges();
-
-            const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-
-            spectator.triggerNavigation({
-                url: [],
-                queryParams: { language_id: 2, url: 'my-awesome-route' }
-            });
-
-            expect(iframe.nativeElement.src).toBe(
-                HOST +
-                    '/my-awesome-route?language_id=2&com.dotmarketing.persona.id=modes.persona.no.persona'
-            );
         });
 
         describe('customer actions', () => {
@@ -592,167 +634,169 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            it('should not open a dialog when the iframe sends a postmessage with a different origin', () => {
-                spectator.detectChanges();
+            describe('misc', () => {
+                it('should not open a dialog when the iframe sends a postmessage with a different origin', () => {
+                    spectator.detectChanges();
 
-                const dialog = spectator.query(byTestId('dialog'));
+                    const dialog = spectator.query(byTestId('dialog'));
 
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: 'my.super.cool.website.xyz',
-                        data: {
-                            action: 'edit-contentlet',
-                            payload: {
-                                contentlet: {
-                                    identifier: '123'
-                                }
-                            }
-                        }
-                    })
-                );
-
-                spectator.detectChanges();
-
-                expect(dialog.getAttribute('ng-reflect-visible')).toBe('false');
-            });
-
-            it('should trigger onIframeLoad when the dialog is opened', (done) => {
-                spectator.detectChanges();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'edit-contentlet',
-                            payload: {
-                                contentlet: {
-                                    inode: '123',
-                                    title: 'some title'
-                                }
-                            }
-                        }
-                    })
-                );
-
-                spectator.detectComponentChanges();
-
-                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-                const dialogIframe = spectator.debugElement.query(
-                    By.css('[data-testId="dialog-iframe"]')
-                );
-
-                spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
-
-                dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
-                    new CustomEvent('ng-event', {
-                        detail: {
-                            name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: 'my.super.cool.website.xyz',
                             data: {
-                                contentlet: {
-                                    identifier: '123'
+                                action: 'edit-contentlet',
+                                payload: {
+                                    contentlet: {
+                                        identifier: '123'
+                                    }
                                 }
                             }
-                        }
-                    })
-                );
+                        })
+                    );
 
-                spectator.detectChanges();
+                    spectator.detectChanges();
 
-                iframe.nativeElement.contentWindow.addEventListener('message', (event) => {
-                    expect(event).toBeTruthy();
-                    done();
+                    expect(dialog.getAttribute('ng-reflect-visible')).toBe('false');
                 });
 
-                const nullSpinner = spectator.query(byTestId('spinner'));
+                it('should trigger onIframeLoad when the dialog is opened', (done) => {
+                    spectator.detectChanges();
 
-                expect(nullSpinner).toBeNull();
-            });
-
-            it('should show an spinner when triggering an action for the dialog', () => {
-                spectator.detectChanges();
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'edit-contentlet',
-                            payload: {
-                                contentlet: {
-                                    inode: '123',
-                                    title: 'Hello World'
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: 'edit-contentlet',
+                                payload: {
+                                    contentlet: {
+                                        inode: '123',
+                                        title: 'some title'
+                                    }
                                 }
                             }
-                        }
-                    })
-                );
-                spectator.detectChanges();
+                        })
+                    );
 
-                const spinner = spectator.query(byTestId('spinner'));
+                    spectator.detectComponentChanges();
 
-                expect(spinner).toBeTruthy();
-            });
+                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+                    const dialogIframe = spectator.debugElement.query(
+                        By.css('[data-testId="dialog-iframe"]')
+                    );
 
-            it('should not show the spinner after iframe load', () => {
-                spectator.detectChanges();
+                    spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
 
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'edit-contentlet',
-                            payload: {
-                                contentlet: {
-                                    inode: '123',
-                                    title: 'Hello World'
+                    dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
+                        new CustomEvent('ng-event', {
+                            detail: {
+                                name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
+                                data: {
+                                    contentlet: {
+                                        identifier: '123'
+                                    }
                                 }
                             }
-                        }
-                    })
-                );
+                        })
+                    );
 
-                spectator.detectChanges();
+                    spectator.detectChanges();
 
-                const spinner = spectator.query(byTestId('spinner'));
+                    iframe.nativeElement.contentWindow.addEventListener('message', (event) => {
+                        expect(event).toBeTruthy();
+                        done();
+                    });
 
-                expect(spinner).toBeTruthy();
+                    const nullSpinner = spectator.query(byTestId('spinner'));
 
-                const dialogIframe = spectator.debugElement.query(
-                    By.css("[data-testId='dialog-iframe']")
-                );
+                    expect(nullSpinner).toBeNull();
+                });
 
-                spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
+                it('should show an spinner when triggering an action for the dialog', () => {
+                    spectator.detectChanges();
 
-                const nullSpinner = spectator.query(byTestId('spinner'));
-
-                expect(nullSpinner).toBeFalsy();
-            });
-
-            it('should reset the dialog properties when the dialog closes', () => {
-                spectator.detectChanges();
-                const resetDialogMock = jest.spyOn(store, 'resetDialog');
-                const dialog = spectator.query(byTestId('dialog'));
-
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        origin: HOST,
-                        data: {
-                            action: 'edit-contentlet',
-                            payload: {
-                                contentlet: {
-                                    inode: '123',
-                                    title: 'Hello World'
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: 'edit-contentlet',
+                                payload: {
+                                    contentlet: {
+                                        inode: '123',
+                                        title: 'Hello World'
+                                    }
                                 }
                             }
-                        }
-                    })
-                );
+                        })
+                    );
+                    spectator.detectChanges();
 
-                spectator.dispatchFakeEvent(dialog, 'visibleChange');
-                spectator.detectChanges();
+                    const spinner = spectator.query(byTestId('spinner'));
 
-                expect(resetDialogMock).toHaveBeenCalled();
+                    expect(spinner).toBeTruthy();
+                });
 
-                resetDialogMock.mockRestore();
+                it('should not show the spinner after iframe load', () => {
+                    spectator.detectChanges();
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: 'edit-contentlet',
+                                payload: {
+                                    contentlet: {
+                                        inode: '123',
+                                        title: 'Hello World'
+                                    }
+                                }
+                            }
+                        })
+                    );
+
+                    spectator.detectChanges();
+
+                    const spinner = spectator.query(byTestId('spinner'));
+
+                    expect(spinner).toBeTruthy();
+
+                    const dialogIframe = spectator.debugElement.query(
+                        By.css("[data-testId='dialog-iframe']")
+                    );
+
+                    spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
+
+                    const nullSpinner = spectator.query(byTestId('spinner'));
+
+                    expect(nullSpinner).toBeFalsy();
+                });
+
+                it('should reset the dialog properties when the dialog closes', () => {
+                    spectator.detectChanges();
+                    const resetDialogMock = jest.spyOn(store, 'resetDialog');
+                    const dialog = spectator.query(byTestId('dialog'));
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: 'edit-contentlet',
+                                payload: {
+                                    contentlet: {
+                                        inode: '123',
+                                        title: 'Hello World'
+                                    }
+                                }
+                            }
+                        })
+                    );
+
+                    spectator.dispatchFakeEvent(dialog, 'visibleChange');
+                    spectator.detectChanges();
+
+                    expect(resetDialogMock).toHaveBeenCalled();
+
+                    resetDialogMock.mockRestore();
+                });
             });
         });
 
@@ -863,6 +907,87 @@ describe('EditEmaEditorComponent', () => {
                 expect(confirmDialog.getAttribute('rejectIcon')).toBeNull();
             });
         });
+
+        describe('palette', () => {
+            it('should post to iframe to get bound on drag', () => {
+                spectator.detectChanges();
+
+                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+                const postMessageSpy = jest.spyOn(
+                    iframe.nativeElement.contentWindow,
+                    'postMessage'
+                );
+
+                spectator.triggerEventHandler('div[data-type="contentlet"]', 'dragstart', {
+                    target: {
+                        dataset: {
+                            type: 'contentlet',
+                            item: JSON.stringify({
+                                identifier: '123',
+                                title: 'hello world'
+                            })
+                        }
+                    }
+                });
+
+                spectator.detectComponentChanges();
+
+                expect(postMessageSpy).toHaveBeenCalledWith(
+                    'ema-request-bounds',
+                    'http://localhost:3000'
+                );
+            });
+
+            it('should show drop zone on iframe message', () => {
+                spectator.detectChanges();
+
+                let dropZone = spectator.query(EmaPageDropzoneComponent);
+
+                expect(dropZone).toBeNull();
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: 'set-bounds',
+                            payload: BOUNDS_MOCK
+                        }
+                    })
+                );
+
+                spectator.detectComponentChanges();
+
+                dropZone = spectator.query(EmaPageDropzoneComponent);
+
+                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+            });
+
+            xit('should hide drop zone on palette drop', () => {
+                spectator.detectChanges();
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: 'set-bounds',
+                            payload: BOUNDS_MOCK
+                        }
+                    })
+                );
+
+                spectator.detectComponentChanges();
+
+                let dropZone = spectator.query(EmaPageDropzoneComponent);
+
+                expect(dropZone.rows).toBe(BOUNDS_MOCK);
+
+                spectator.triggerEventHandler('div[data-type="contentlet"]', 'dragend', {});
+                spectator.detectComponentChanges();
+                dropZone = spectator.query(EmaPageDropzoneComponent);
+                expect(dropZone.rows).toEqual([]);
+            });
+        });
     });
 
     describe('no queryParams', () => {
@@ -872,6 +997,7 @@ describe('EditEmaEditorComponent', () => {
             });
             store = spectator.inject(EditEmaStore, true);
         });
+
         it('should initialize with default value', () => {
             const mockQueryParams = {
                 language_id: 1,

@@ -44,7 +44,11 @@
             style="border: none"
             width="100%"
             height="100%"></iframe>
-        <dot-ema-page-dropzone *ngIf="!!rows.length" [rows]="rows" (place)="onPlaceItem($event)" />
+        <dot-ema-page-dropzone
+            *ngIf="!!rows.length"
+            [rows]="rows"
+            (place)="onPlaceItem($event)"
+            data-testId="dropzone" />
     </div>
     <div class="palette">
         <div
