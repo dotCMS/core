@@ -46,9 +46,11 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
 
     readonly layoutProperties$ = this.store.layoutProperties$.pipe(
         map((properties) => {
+            this.pageID = properties.pageID;
+
             return {
                 ...properties,
-                containers: this.mapContainers(properties.containers)
+                containersMap: this.mapContainers(properties.containers)
             };
         })
     );
@@ -60,11 +62,6 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
     destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit(): void {
-        // Can we map the containers here?
-        this.store.layoutProperties$.pipe(take(1)).subscribe((properties) => {
-            this.pageID = properties.pageID;
-        });
-
         this.initSaveTemplateDebounce();
         this.initForceSaveOnLeave();
     }
