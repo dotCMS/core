@@ -28,7 +28,7 @@
                 data-testId="language-selector" />
             <dot-edit-ema-persona-selector
                 #personaSelector
-                [pageID]="es.editor.page.identifier"
+                [pageId]="es.editor.page.identifier"
                 [value]="es.editor.viewAs.persona"
                 (selected)="onPersonaSelected($event)"
                 data-testId="persona-selector" />
@@ -44,32 +44,75 @@
             style="border: none"
             width="100%"
             height="100%"></iframe>
+        <dot-ema-page-dropzone
+            *ngIf="!!rows.length"
+            [rows]="rows"
+            (place)="onPlaceItem($event)"
+            data-testId="dropzone" />
+    </div>
+    <div class="palette">
+        <div
+            [attr.data-item]="{ inode: 'c1e7e687-a19e-4ec9-8b97-404768566fe0' } | json"
+            (dragstart)="onDragStart($event)"
+            (dragend)="onDragEnd($event)"
+            data-type="contentlet"
+            style="width: 80px; aspect-ratio: 1/1; background-color: chartreuse"
+            draggable="true">
+            Rich Text
+        </div>
+        <div
+            [attr.data-item]="{ inode: 'e3b0f871-792a-4787-930b-4596613ae8f9' } | json"
+            (dragstart)="onDragStart($event)"
+            (dragend)="onDragEnd($event)"
+            data-type="contentlet"
+            style="width: 80px; aspect-ratio: 1/1; background-color: chartreuse"
+            draggable="true">
+            Banner
+        </div>
+        <div
+            [attr.data-item]="{ inode: '50757fb4-75df-4e2c-8335-35d36bdb944b' } | json"
+            (dragstart)="onDragStart($event)"
+            (dragend)="onDragEnd($event)"
+            data-type="contentlet"
+            style="width: 80px; aspect-ratio: 1/1; background-color: chartreuse"
+            draggable="true">
+            Activity
+        </div>
+        <div
+            [attr.data-item]="{ variable: 'webPageContent', name: 'Rich Text' } | json"
+            (dragstart)="onDragStart($event)"
+            (dragend)="onDragEnd($event)"
+            data-type="content-type"
+            style="width: 80px; aspect-ratio: 1/1; background-color: chartreuse"
+            draggable="true">
+            New Rich Text
+        </div>
     </div>
 </ng-container>
-<ng-container *ngIf="dialogState$ | async as ds">
-    <p-dialog
-        #dialog
-        [visible]="ds.dialogVisible"
-        [style]="{ height: '90vh', width: '90vw' }"
-        [header]="ds.dialogHeader"
-        [draggable]="false"
-        [resizable]="false"
-        [maximizable]="true"
-        [modal]="true"
-        (visibleChange)="resetDialogIframeData()"
-        data-testId="dialog">
-        <iframe
-            #dialogIframe
-            [style]="{ border: 'none', display: ds.dialogIframeLoading ? 'none' : 'block' }"
-            [src]="ds.dialogIframeURL | safeUrl"
-            (load)="onIframeLoad($event)"
-            title="dialog"
-            data-testId="dialog-iframe"
-            width="100%"
-            height="100%"></iframe>
-        <dot-spinner *ngIf="ds.dialogIframeLoading" data-testId="spinner"></dot-spinner>
-    </p-dialog>
-</ng-container>
+<p-dialog
+    #dialog
+    *ngIf="dialogState$ | async as ds"
+    [visible]="ds.dialogVisible"
+    [style]="{ height: '90vh', width: '90vw' }"
+    [header]="ds.dialogHeader"
+    [draggable]="false"
+    [resizable]="false"
+    [maximizable]="true"
+    [modal]="true"
+    (visibleChange)="resetDialogIframeData()"
+    data-testId="dialog">
+    <iframe
+        #dialogIframe
+        [style]="{ border: 'none', display: ds.dialogIframeLoading ? 'none' : 'block' }"
+        [src]="ds.dialogIframeURL | safeUrl"
+        (load)="onIframeLoad($event)"
+        title="dialog"
+        data-testId="dialog-iframe"
+        width="100%"
+        height="100%"></iframe>
+    <dot-spinner *ngIf="ds.dialogIframeLoading" data-testId="spinner"></dot-spinner>
+</p-dialog>
+
 <p-confirmDialog
     [style]="{
         width: '400px'
