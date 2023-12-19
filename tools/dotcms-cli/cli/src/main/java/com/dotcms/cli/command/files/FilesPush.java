@@ -286,4 +286,9 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
         return Optional.of(FILES_PUSH_MIXIN);
     }
 
+    @Override
+    public int getOrder() {
+        return 3;
+    }
+
 }

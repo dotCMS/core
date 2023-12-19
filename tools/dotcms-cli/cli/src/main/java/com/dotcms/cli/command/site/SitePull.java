@@ -134,4 +134,9 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer>, 
         return Optional.empty();
     }
 
+    @Override
+    public int getOrder() {
+        return 1;
+    }
+
 }

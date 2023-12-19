@@ -7,7 +7,9 @@ import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.WorkspaceManager;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
@@ -67,8 +69,13 @@ public class PushCommand implements Callable<Integer>, DotCommand {
         expandedArgs.add("--noValidateUnmatchedArguments");
         var args = expandedArgs.toArray(new String[0]);
 
+        // Sort the subcommands by order
+        final var pushCommandsSorted = pushCommands.stream()
+                .sorted(Comparator.comparingInt(DotPush::getOrder))
+                .collect(Collectors.toList());
+
         // Process each subcommand
-        for (var subCommand : pushCommands) {
+        for (var subCommand : pushCommandsSorted) {
 
             var cmdLine = createCommandLine(subCommand);
 

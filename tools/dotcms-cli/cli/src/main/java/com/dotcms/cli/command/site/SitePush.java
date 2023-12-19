@@ -146,4 +146,9 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>, 
         return Optional.of(SITE_PUSH_MIXIN);
     }
 
+    @Override
+    public int getOrder() {
+        return 1;
+    }
+
 }

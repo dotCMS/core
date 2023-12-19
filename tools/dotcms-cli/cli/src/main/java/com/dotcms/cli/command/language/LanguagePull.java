@@ -131,4 +131,9 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
         return Optional.empty();
     }
 
+    @Override
+    public int getOrder() {
+        return 0;
+    }
+    
 }

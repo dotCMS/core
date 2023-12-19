@@ -131,4 +131,9 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
         return Optional.empty();
     }
 
+    @Override
+    public int getOrder() {
+        return 2;
+    }
+
 }

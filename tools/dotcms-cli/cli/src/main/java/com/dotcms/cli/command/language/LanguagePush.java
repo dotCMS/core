@@ -197,4 +197,9 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
         return Optional.of(LANGUAGE_PUSH_MIXIN);
     }
 
+    @Override
+    public int getOrder() {
+        return 0;
+    }
+    
 }

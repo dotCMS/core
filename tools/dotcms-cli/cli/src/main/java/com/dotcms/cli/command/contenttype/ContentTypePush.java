@@ -138,4 +138,9 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
         return Optional.of(CONTENT_TYPE_PUSH_MIXIN);
     }
 
+    @Override
+    public int getOrder() {
+        return 2;
+    }
+
 }

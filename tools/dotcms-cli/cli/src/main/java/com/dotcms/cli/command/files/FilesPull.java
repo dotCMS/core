@@ -155,4 +155,9 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
         return Optional.empty();
     }
 
+    @Override
+    public int getOrder() {
+        return 3;
+    }
+
 }
