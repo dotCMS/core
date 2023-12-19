@@ -90,7 +90,7 @@ jobs:
       fail-fast: true
       matrix:
         os: [ macos-13-xlarge ]
-#        os: [ ubuntu-latest, macOS-latest, macos-13-xlarge ]
+
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout Repository
@@ -120,6 +120,7 @@ jobs:
 
           GRAALVM_HOME="/Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home"
           echo "GRAALVM_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
+          echo "JAVA_HOME=$GRAALVM_HOME/bin" >> $GITHUB_ENV
           PATH="$GRAALVM_HOME/bin:$PATH"
           echo "PATH=$PATH" >> $GITHUB_ENV
           gu install native-image
@@ -179,7 +180,7 @@ jobs:
           path: |
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
-#            ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.tar.gz
+            ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.tar.gz
 
   release:
     needs: [ precheck, build ]
@@ -207,7 +208,7 @@ jobs:
           ls -R
 
       - name: 'Set up Java'
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRO }}
@@ -229,7 +230,7 @@ jobs:
           JRELEASER_SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         working-directory: ${{ github.workspace }}
         run: |
-          tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
+          tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -DartifactsDir=artifacts -Djreleaser.git.root.search=true -Djreleaser.select.current.platform -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
 
       - name: 'Setup git config'
         run: |

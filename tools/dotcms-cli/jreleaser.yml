@@ -20,7 +20,7 @@ project:
 
   snapshot:
     pattern: .*-SNAPSHOT
-    label: 'dotcms-cli{{projectVersion}}-SNAPSHOT'
+    label: 'dotcms-cli{{projectVersion}}'
     fullChangelog: true
 
 release:
@@ -54,10 +54,7 @@ distributions:
     artifacts:
       - path: '{{artifactsDir}}/distributions/dotcms-cli-{{projectVersion}}-osx-aarch_64.zip'
         platform: 'osx-aarch_64'
-#      - path: '{{artifactsDir}}/distributions/dotcms-cli-{{projectVersion}}-linux-x86_64.tar.gz'
-#        platform: 'linux-x86_64'
-#      - path: '{{artifactsDir}}/distributions/dotcms-cli-{{projectVersion}}-windows-x86_64.zip'
-#        platform: 'windows-x86_64'
+
 upload:
   artifactory:
     dotcms-cli:
