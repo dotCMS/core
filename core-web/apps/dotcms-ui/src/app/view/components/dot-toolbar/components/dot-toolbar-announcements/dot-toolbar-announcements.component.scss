@@ -4,6 +4,7 @@
     max-height: 37rem;
     overflow: scroll;
     display: block;
+    padding: $spacing-4;
 }
 
 .announcements__list {
@@ -72,5 +73,15 @@
     text-decoration: none;
     &:hover {
         background-color: $color-palette-primary-100;
+    }
+}
+
+::ng-deep {
+    .toolbar-announcements__container {
+        &.p-overlaypanel {
+            .p-overlaypanel-content {
+                padding: 0;
+            }
+        }
     }
 }
