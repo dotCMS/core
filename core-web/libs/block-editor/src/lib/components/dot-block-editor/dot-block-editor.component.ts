@@ -408,7 +408,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             const node = this._customNodes.get(block);
             if (node) {
                 whiteList.push(node);
-                whiteList.push(node);
             }
         }
 
