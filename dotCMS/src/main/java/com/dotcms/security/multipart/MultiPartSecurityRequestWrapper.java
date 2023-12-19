@@ -54,10 +54,10 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
 
             Logger.debug(this, ()-> "Should Cache To Disk...");
             this.body = null;
-            final Path tempFilePath = Files.createTempFile(Path.of(ConfigUtils.getAssetTempPath()),"multipartSec", ".tmp");
+            final Path tempFilePath = Files.createTempFile(Path.of(ConfigUtils.getAssetTempPath(),File.separator),"multipartSec", ".tmp");
             this.tmpFile = tempFilePath.toFile();
             // security demands we add this check here
-            if (tmpFile.getCanonicalPath().startsWith(tmpdir.getCanonicalPath())) {
+            if (tmpFile.getCanonicalPath().startsWith(new File(ConfigUtils.getAssetTempPath()).getCanonicalPath())) {
                 try (final OutputStream outputStream = Files.newOutputStream(tempFilePath)) {
                     IOUtils.copy(request.getInputStream(), outputStream);
                     this.checkFile(tmpFile);
@@ -167,6 +167,10 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
         if (tmpFile.getCanonicalPath().startsWith(tmpdir.getCanonicalPath())) {
             try (InputStream in = new BufferedInputStream(Files.newInputStream(tmpFile.toPath()))) {
                 checkSecurityInputStream(in);
+            }
+            catch(Exception e){
+                Logger.warn(this.getClass(),e.getMessage(), e);
+                throw e;
             }
         }
     }
