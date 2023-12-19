@@ -6,10 +6,9 @@ import { DotcmsPage } from '@/components/dotcms-page';
 async function getPage(params) {
     const { url, language_id } = params;
 
-    // TODO: Check why /json is not getting the page correctly
     const requestUrl = `${
         process.env.NEXT_PUBLIC_DOTCMS_HOST
-    }/api/v1/page/render/${url}?language_id=${language_id || '1'}&com.dotmarketing.persona.id=${
+    }/api/v1/page/json/${url}?language_id=${language_id || '1'}&com.dotmarketing.persona.id=${
         params['com.dotmarketing.persona.id'] || 'modes.persona.no.persona'
     }`;
 
@@ -29,7 +28,6 @@ async function getPage(params) {
 }
 
 async function getNav() {
-    // TODO: Check why /json is not getting the page correctly
     const requestUrl = `${process.env.NEXT_PUBLIC_DOTCMS_HOST}/api/v1/nav/?depth=2`;
 
     const res = await fetch(requestUrl, {

@@ -1,8 +1,10 @@
 @use "variables" as *;
 
 :host {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: min-content 1fr;
+    grid-template-columns: 1fr 80px;
+    height: 100%;
 
     ::ng-deep {
         .p-dialog {
@@ -27,10 +29,19 @@
     }
 }
 
+dot-ema-page-dropzone {
+    position: absolute;
+    inset: 0;
+}
+
+dot-edit-ema-toolbar {
+    grid-column: 1 / -1;
+}
+
 .iframe-wrapper {
+    position: relative;
     margin: $spacing-3;
-    border: solid 1px $color-palette-gray-500;
-    flex-grow: 1;
+    outline: solid 1px $color-palette-gray-500;
 }
 
 a,
