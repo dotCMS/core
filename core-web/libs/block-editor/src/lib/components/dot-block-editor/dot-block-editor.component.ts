@@ -64,7 +64,7 @@ import {
 import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
 import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
 import {
-    AI_PLUGIN_INSTALLED_TOKEN,
+    DotAiService,
     DotMarketingConfigService,
     formatHTML,
     removeInvalidNodes,
@@ -116,13 +116,16 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     ]);
     private readonly cd = inject(ChangeDetectorRef);
     private readonly dotPropertiesService = inject(DotPropertiesService);
-    private readonly isAIPluginInstalled: boolean = inject(AI_PLUGIN_INSTALLED_TOKEN);
+    private isAIPluginInstalled$: Observable<boolean>;
 
     constructor(
         private readonly injector: Injector,
         private readonly viewContainerRef: ViewContainerRef,
-        private readonly dotMarketingConfigService: DotMarketingConfigService
-    ) {}
+        private readonly dotMarketingConfigService: DotMarketingConfigService,
+        private readonly dotAiService: DotAiService
+    ) {
+        this.isAIPluginInstalled$ = this.dotAiService.checkPluginInstallation();
+    }
 
     get characterCount(): CharacterCountStorage {
         return this.editor?.storage.characterCount;
@@ -161,12 +164,16 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
 
     ngOnInit() {
         this.setFieldVariable(); // Set the field variables - Before the editor is created
-        combineLatest([this.showVideoThumbnail$(), from(this.getCustomRemoteExtensions())])
+        combineLatest([
+            this.showVideoThumbnail$(),
+            from(this.getCustomRemoteExtensions()),
+            this.isAIPluginInstalled$
+        ])
             .pipe(take(1))
-            .subscribe(([showVideoThumbnail, extensions]) => {
+            .subscribe(([showVideoThumbnail, extensions, isInstalled]) => {
                 this.editor = new Editor({
                     extensions: [
-                        ...this.getEditorExtensions(),
+                        ...this.getEditorExtensions(isInstalled),
                         ...this.getEditorMarks(),
                         ...this.getEditorNodes(),
                         ...extensions
@@ -413,7 +420,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
      * @private
      * @returns {Array} An array of editor extensions
      */
-    private getEditorExtensions() {
+    private getEditorExtensions(isAIPluginInstalled: boolean) {
         const extensions = [
             DotConfigExtension({
                 lang: this.languageId || this.contentlet?.languageId,
@@ -433,7 +440,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             Subscript,
             Superscript,
             ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks(), {
-                shouldShowAIExtensions: this.isAIPluginInstalled
+                shouldShowAIExtensions: isAIPluginInstalled
             }),
             DragHandler(this.viewContainerRef),
             BubbleLinkFormExtension(this.viewContainerRef, this.languageId),
@@ -449,7 +456,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             AssetUploader(this.injector, this.viewContainerRef)
         ];
 
-        if (this.isAIPluginInstalled) {
+        if (isAIPluginInstalled) {
             extensions.push(
                 AIContentPromptExtension(this.viewContainerRef),
                 AIImagePromptExtension(this.viewContainerRef),

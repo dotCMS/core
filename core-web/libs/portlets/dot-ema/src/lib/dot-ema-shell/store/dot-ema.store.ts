@@ -5,6 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
+import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
 import {
     DotPageApiResponse,
     DotPageApiService,
@@ -29,7 +30,10 @@ export interface EditEmaState {
 
 @Injectable()
 export class EditEmaStore extends ComponentStore<EditEmaState> {
-    constructor(private dotPageApiService: DotPageApiService) {
+    constructor(
+        private dotPageApiService: DotPageApiService,
+        private dotActionUrl: DotActionUrlService
+    ) {
         super({
             url: '',
             editor: {
@@ -122,8 +126,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      */
     readonly savePage = this.effect((payload$: Observable<SavePagePayload>) => {
         return payload$.pipe(
-            switchMap((payload) =>
-                this.dotPageApiService.save(payload).pipe(
+            switchMap((payload) => {
+                return this.dotPageApiService.save(payload).pipe(
                     tapResponse(
                         () => {
                             payload.whenSaved?.();
@@ -133,30 +137,47 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             payload.whenSaved?.();
                         }
                     )
-                )
-            )
+                );
+            })
         );
     });
 
-    readonly setURL = this.updater((state, url: string) => ({
-        ...state,
-        url
-    }));
+    /**
+     * Create a contentlet from the palette
+     *
+     * @memberof EditEmaStore
+     */
+    readonly createContentFromPalette = this.effect(
+        (contentTypeVariable$: Observable<{ variable: string; name: string }>) => {
+            return contentTypeVariable$.pipe(
+                switchMap(({ name, variable }) => {
+                    return this.dotActionUrl.getCreateContentletUrl(variable).pipe(
+                        tapResponse(
+                            (url) => {
+                                this.setDialog({
+                                    url,
+                                    title: `Create ${name}`
+                                });
+                            },
+                            (e) => {
+                                console.error(e);
+                            }
+                        )
+                    );
+                })
+            );
+        }
+    );
 
-    readonly setDialogIframeURL = this.updater((state, editIframeURL: string) => ({
-        ...state,
-        dialogIframeURL: editIframeURL
-    }));
-
-    readonly setDialogVisible = this.updater((state, dialogVisible: boolean) => ({
-        ...state,
-        dialogVisible
-    }));
-
-    readonly setDialogHeader = this.updater((state, dialogHeader: string) => ({
-        ...state,
-        dialogHeader
-    }));
+    readonly setDialog = this.updater((state, { url, title }: { url: string; title: string }) => {
+        return {
+            ...state,
+            dialogIframeURL: url,
+            dialogVisible: true,
+            dialogHeader: title,
+            dialogIframeLoading: true
+        };
+    });
 
     readonly setDialogIframeLoading = this.updater((state, editIframeLoading: boolean) => ({
         ...state,
@@ -185,9 +206,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         };
     });
 
-    // This method is called when the user clicks on the edit button
+    // This method is called when the user clicks on the [+ add] button
     readonly initActionAdd = this.updater(
-        (state, payload: { containerID: string; acceptTypes: string; language_id: string }) => {
+        (state, payload: { containerId: string; acceptTypes: string; language_id: string }) => {
             return {
                 ...state,
                 dialogVisible: true,
@@ -198,7 +219,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
-    // This method is called when the user clicks on the edit button
+    // This method is called when the user clicks in the + button in the jsp dialog
     readonly initActionCreate = this.updater(
         (state, payload: { contentType: string; url: string }) => {
             return {
@@ -232,15 +253,15 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      * @memberof EditEmaStore
      */
     private createAddContentletUrl({
-        containerID,
+        containerId,
         acceptTypes,
         language_id
     }: {
-        containerID: string;
+        containerId: string;
         acceptTypes: string;
         language_id: string;
     }): string {
-        return ADD_CONTENTLET_URL.replace('*CONTAINER_ID*', containerID)
+        return ADD_CONTENTLET_URL.replace('*CONTAINER_ID*', containerId)
             .replace('*BASE_TYPES*', acceptTypes)
             .replace('*LANGUAGE_ID*', language_id);
     }

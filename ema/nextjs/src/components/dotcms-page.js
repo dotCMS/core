@@ -1,24 +1,45 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useContext } from 'react';
-import { GlobalContext } from '@/lib/providers/global';
 import { usePathname } from 'next/navigation';
-import Header from './layout/header';
-import Footer from './layout/footer';
+import { useRouter } from 'next/navigation';
+
+import { GlobalContext } from '@/lib/providers/global';
+import { getPageElementBound } from '@/lib/utils';
 import Row from '@/lib/components/row';
 
-function reloadWindow(event) {
-    if (event.data !== 'ema-reload-page') return;
-
-    window.location.reload();
-}
+import Header from './layout/header';
+import Footer from './layout/footer';
 
 // Main layout component
 export const DotcmsPage = () => {
+    const rowsRef = useRef([]);
+
     const pathname = usePathname();
-    // Get the page layout from the global context
+    const router = useRouter();
+
     const { layout, page } = useContext(GlobalContext);
+
+    function handleParentEvents(event) {
+        switch (event.data) {
+            case 'ema-reload-page':
+                router.refresh();
+                break;
+            case 'ema-request-bounds':
+                const positionData = getPageElementBound(rowsRef.current);
+                window.parent.postMessage(
+                    {
+                        action: 'set-bounds',
+                        payload: positionData
+                    },
+                    '*'
+                );
+                break;
+            default:
+                break;
+        }
+    }
 
     useEffect(() => {
         const url = pathname.split('/');
@@ -35,12 +56,18 @@ export const DotcmsPage = () => {
     }, [pathname]);
 
     useEffect(() => {
-        window.addEventListener('message', reloadWindow);
+        window.addEventListener('message', handleParentEvents);
 
         return () => {
-            window.removeEventListener('message', reloadWindow);
+            window.removeEventListener('message', handleParentEvents);
         };
     }, []);
+
+    const addRowRef = (el) => {
+        if (el && !rowsRef.current.includes(el)) {
+            rowsRef.current.push(el);
+        }
+    };
 
     return (
         <div className="flex flex-col min-h-screen gap-6">
@@ -48,7 +75,7 @@ export const DotcmsPage = () => {
             <main className="container flex flex-col gap-8 m-auto">
                 <h1 className="text-xl font-bold">{page.title}</h1>
                 {layout.body.rows.map((row, index) => (
-                    <Row key={index} row={row} />
+                    <Row ref={addRowRef} key={index} row={row} />
                 ))}
             </main>
             {layout.footer && <Footer />}
