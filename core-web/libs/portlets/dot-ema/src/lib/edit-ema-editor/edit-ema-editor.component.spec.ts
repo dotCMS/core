@@ -483,7 +483,7 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectChanges();
 
                     const initAddIframeDialogMock = jest.spyOn(store, 'initActionAdd');
-                    // const savePageMock = jest.spyOn(store, 'savePage');
+                    const savePageMock = jest.spyOn(store, 'savePage');
 
                     window.dispatchEvent(
                         new MessageEvent('message', {
@@ -507,7 +507,8 @@ describe('EditEmaEditorComponent', () => {
                                     },
                                     contentlet: {
                                         inode: '123',
-                                        title: 'Hello World'
+                                        title: 'Hello World',
+                                        identifier: '123'
                                     },
                                     pageId: 'test',
                                     language_id: 'test'
@@ -568,20 +569,18 @@ describe('EditEmaEditorComponent', () => {
 
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
-                    // expect(savePageMock).toHaveBeenCalled();
-
-                    // expect(savePageMock).toHaveBeenCalledWith({
-                    //     pageContainers: [
-                    //         {
-                    //             contentletsId: ['123'],
-                    //             identifier: 'test',
-                    //             uuid: 'test',
-                    //             personaTag: undefined
-                    //         }
-                    //     ],
-                    //     pageId: 'test',
-                    //     whenSaved: expect.any(Function)
-                    // } as SavePagePayload);
+                    expect(savePageMock).toHaveBeenCalledWith({
+                        pageContainers: [
+                            {
+                                contentletsId: ['123'],
+                                identifier: 'test',
+                                uuid: 'test',
+                                personaTag: undefined
+                            }
+                        ],
+                        pageId: 'test',
+                        whenSaved: expect.any(Function)
+                    });
 
                     iframe.nativeElement.contentWindow.addEventListener(
                         'message',
