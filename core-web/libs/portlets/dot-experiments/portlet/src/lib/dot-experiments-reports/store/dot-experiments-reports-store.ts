@@ -349,13 +349,14 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     }
 
     private parseDaysLabels(labels: Array<string>): string[] {
-        return [getPreviousDay(labels[0]), ...labels].map((item) => {
-            const date = new Date(item);
-            const day = date.getDate();
-            const monthTranslated = this.dotMessageService.get(MonthsOfTheYear[date.getMonth()]);
+        const data = [getPreviousDay(labels[0]), ...labels].map((item) => {
+            const [, month, day] = item.split('-').map(Number);
+            const monthTranslated = this.dotMessageService.get(MonthsOfTheYear[month - 1]);
 
             return `${monthTranslated}-${day}`;
         });
+
+        return data;
     }
 
     private getDotExperimentVariantDetail(

@@ -118,14 +118,16 @@ export const isPromotedVariant = (experiment: DotExperiment, variantName: string
 };
 
 export const getPreviousDay = (givenDate: string) => {
-    const date = new Date(givenDate);
-    date.setDate(date.getDate() - 1);
+    const [year, month, day] = givenDate.split('-').map(Number);
 
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const year = date.getFullYear();
+    // Create a Date object in UTC | - 1 - Months are zero-based in JavaScript
+    const inputDateUTC = new Date(Date.UTC(year, month - 1, day));
 
-    return `${month}/${day}/${year}`;
+    // Subtract one day from the timestamp (in milliseconds) to avoid TIMEZONE issues & month change.
+    inputDateUTC.setTime(inputDateUTC.getTime() - 24 * 60 * 60 * 1000);
+
+    // Format the date as "YYYY-MM-dd"
+    return inputDateUTC.toISOString().split('T')[0];
 };
 
 export const getRandomUUID = () => self.crypto.randomUUID();
