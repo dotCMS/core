@@ -177,3 +177,4 @@ This maintenance release includes the following code fixes:
 **Release-23.01.10**
 
 146. https://github.com/dotCMS/core/issues/27008 : Adding DEBUG logging to the SASS compilation process #27008
+147. https://github.com/dotCMS/core/issues/24488 : Fixing ContentletAPITest #24488
