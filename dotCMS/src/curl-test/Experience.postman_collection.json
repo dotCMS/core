@@ -138,7 +138,7 @@
 			"response": []
 		},
 		{
-			"name": "Wait 5s",
+			"name": "Wait 8s",
 			"event": [
 				{
 					"listen": "test",
@@ -180,7 +180,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "https://postman-echo.com/delay/5",
+					"raw": "https://postman-echo.com/delay/8",
 					"protocol": "https",
 					"host": [
 						"postman-echo",
@@ -188,7 +188,7 @@
 					],
 					"path": [
 						"delay",
-						"5"
+						"8"
 					]
 				}
 			},
@@ -209,7 +209,6 @@
 							"",
 							"pm.test(\"All Metrics included\", function () {",
 							"    var metrics = jsonData;",
-							"    pm.expect(metrics.ACTIVE_SITES).to.be.not.undefined;",
 							"    pm.expect(metrics.ACTIVE_USERS).to.be.not.undefined;",
 							"    pm.expect(metrics.CONTENTS_RECENTLY_EDITED).to.be.not.undefined;",
 							"    pm.expect(metrics.CONTENTS_TOTAL).to.be.not.undefined;",
@@ -217,6 +216,7 @@
 							"    pm.expect(metrics.CUSTOM_CONTENT_TYPES).to.be.not.undefined;",
 							"    pm.expect(metrics.LAST_LOGIN).to.be.not.undefined;",
 							"    pm.expect(metrics.LAST_LOGIN_USER).to.be.not.undefined;",
+							"    pm.expect(metrics.SITES_ACTIVE_SITES).to.be.not.undefined;",
 							"    pm.expect(metrics.SITES_NON_SYSTEM_FIELDS).to.be.not.undefined;",
 							"    pm.expect(metrics.WORKFLOW_ACTIONS).to.be.not.undefined;",
 							"    pm.expect(metrics.WORKFLOW_CONTENT_TYPES_ASSIGNED_SCHEMES).to.be.not.undefined;",
