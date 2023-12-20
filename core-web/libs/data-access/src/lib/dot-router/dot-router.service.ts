@@ -13,8 +13,7 @@ import {
 import { filter } from 'rxjs/operators';
 
 import { LOGOUT_URL } from '@dotcms/dotcms-js';
-import { DotAppsSites } from '@dotcms/dotcms-models';
-import { DotNavigateToOptions, PortletNav } from '@models/navigation';
+import { DotAppsSites, DotNavigateToOptions, PortletNav } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotRouterService {

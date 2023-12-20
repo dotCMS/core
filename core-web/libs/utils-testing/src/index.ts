@@ -37,3 +37,4 @@ export * from './lib/dot-roles.mock';
 export * from './lib/dot-experiments.mock';
 export * from './lib/match-media.mock';
 export * from './lib/dot-page-tools.mock';
+export * from './lib/dot-router-service-jest.mock';

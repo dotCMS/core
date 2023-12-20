@@ -53,6 +53,10 @@ dotcms-template-builder-section {
     margin-top: $spacing-3;
 }
 
+dotcms-template-builder-section:last-child {
+    margin-bottom: $spacing-3;
+}
+
 p-divider {
     height: 48px;
 }

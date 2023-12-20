@@ -1,23 +1,27 @@
 import { CommonModule } from '@angular/common';
-import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Component, ChangeDetectionStrategy, OnInit, inject } from '@angular/core';
+import { ActivatedRoute, Params, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { DotLanguagesService, DotPersonalizeService } from '@dotcms/data-access';
+import {
+    DotLanguagesService,
+    DotPageLayoutService,
+    DotPersonalizeService
+} from '@dotcms/data-access';
 
 import { EditEmaStore } from './store/dot-ema.store';
 
 import { EditEmaNavigationBarComponent } from '../components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { WINDOW } from '../shared/consts';
+import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA, DEFAULT_URL, WINDOW } from '../shared/consts';
 import { NavigationBarItem } from '../shared/models';
 
 @Component({
-    selector: 'dot-ema',
+    selector: 'dot-ema-shell',
     standalone: true,
     imports: [
         CommonModule,
@@ -34,16 +38,20 @@ import { NavigationBarItem } from '../shared/models';
         DotLanguagesService,
         DotPersonalizeService,
         MessageService,
+        DotPageLayoutService,
         {
             provide: WINDOW,
             useValue: window
         }
     ],
-    templateUrl: './dot-ema.component.html',
-    styleUrls: ['./dot-ema.component.scss'],
+    templateUrl: './dot-ema-shell.component.html',
+    styleUrls: ['./dot-ema-shell.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEmaComponent {
+export class DotEmaShellComponent implements OnInit {
+    private readonly route = inject(ActivatedRoute);
+    private readonly store = inject(EditEmaStore);
+
     // This needs more logic. Because some of this buttons are for enterprise only or Feature Flags.
     readonly items: NavigationBarItem[] = [
         {
@@ -77,4 +85,14 @@ export class DotEmaComponent {
             href: 'edit-content'
         }
     ];
+
+    ngOnInit(): void {
+        this.route.queryParams.subscribe((queryParams: Params) => {
+            this.store.load({
+                language_id: queryParams['language_id'] ?? DEFAULT_LANGUAGE_ID,
+                url: queryParams['url'] ?? DEFAULT_URL,
+                persona_id: queryParams['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier
+            });
+        });
+    }
 }
