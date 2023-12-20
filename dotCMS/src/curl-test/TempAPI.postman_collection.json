@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "93b8fdd2-a647-40ad-9fb3-a27309267ba3",
+		"_postman_id": "e4ff2f10-07a3-4699-9b0b-41dc810d0c55",
 		"name": "TempAPI",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5403727"
@@ -156,7 +156,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "/Users/jcastro-2022/dotCMS/git/dev/third-branch/core/dotCMS/src/curl-test/resources/test-video-71megabytes.mov"
+							"src": "resources/test-video-71megabytes.mov"
 						}
 					]
 				},
