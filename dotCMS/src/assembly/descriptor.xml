@@ -20,7 +20,6 @@
         </dependencySet>
     </dependencySets>
     <fileSets>
-
         <fileSet>
             <directory>${bin-directory}</directory>
             <outputDirectory>bin</outputDirectory>

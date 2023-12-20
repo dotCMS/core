@@ -10,12 +10,12 @@ import { mergeMap, pluck, take, takeUntil } from 'rxjs/operators';
 
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import {
     DotContentTypesInfoService,
     DotCrudService,
     DotEventsService,
-    DotMessageService
+    DotMessageService,
+    DotRouterService
 } from '@dotcms/data-access';
 import {
     DotCMSContentType,

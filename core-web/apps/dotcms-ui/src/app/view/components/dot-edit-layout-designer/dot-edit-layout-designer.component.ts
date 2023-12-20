@@ -25,8 +25,7 @@ import {
     DotHttpErrorHandled,
     DotHttpErrorManagerService
 } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotEventsService, DotThemesService } from '@dotcms/data-access';
+import { DotEventsService, DotRouterService, DotThemesService } from '@dotcms/data-access';
 import {
     DotLayout,
     DotLayoutBody,

@@ -7,7 +7,6 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import {
@@ -18,7 +17,8 @@ import {
     DotPageRenderService,
     DotPageTypesService,
     DotPageWorkflowsActionsService,
-    DotSessionStorageService
+    DotSessionStorageService,
+    DotRouterService
 } from '@dotcms/data-access';
 
 import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';

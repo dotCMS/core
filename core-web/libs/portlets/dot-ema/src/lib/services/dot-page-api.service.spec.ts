@@ -25,13 +25,7 @@ describe('DotPageApiService', () => {
         spectator.service
             .save({
                 pageContainers: [],
-                container: {
-                    identifier: 'test',
-                    acceptTypes: 'test',
-                    uuid: 'test',
-                    contentletsId: []
-                },
-                pageID: 'test'
+                pageId: 'test'
             })
             .subscribe();
 

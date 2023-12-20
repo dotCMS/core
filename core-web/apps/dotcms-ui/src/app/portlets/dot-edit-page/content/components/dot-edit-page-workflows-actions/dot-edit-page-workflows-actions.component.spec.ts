@@ -18,7 +18,6 @@ import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
@@ -27,6 +26,7 @@ import {
     DotAlertConfirmService,
     DotEventsService,
     DotMessageService,
+    DotRouterService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     DotWorkflowService

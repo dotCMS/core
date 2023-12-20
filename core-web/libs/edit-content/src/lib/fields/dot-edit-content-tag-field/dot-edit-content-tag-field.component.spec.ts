@@ -1,5 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -8,6 +9,7 @@ import { AutoComplete } from 'primeng/autocomplete';
 
 import { DotEditContentTagFieldComponent } from './dot-edit-content-tag-field.component';
 
+import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { createFormGroupDirectiveMock, TAG_FIELD_MOCK } from '../../utils/mocks';
 
 describe('DotEditContentTagFieldComponent', () => {
@@ -21,7 +23,8 @@ describe('DotEditContentTagFieldComponent', () => {
             {
                 provide: ControlContainer,
                 useValue: createFormGroupDirectiveMock()
-            }
+            },
+            { provide: DotEditContentService, useValue: { getTags: () => of(['tagExample']) } }
         ],
         providers: [FormGroupDirective]
     });
@@ -76,5 +79,25 @@ describe('DotEditContentTagFieldComponent', () => {
         });
 
         expect(selectItemMock).toBeCalledWith('test');
+    });
+
+    it('should trigger getTags on search with 3 or more characters', () => {
+        const getTagsMock = jest.spyOn(spectator.component, 'getTags');
+        const autocompleteArg = {
+            query: 'test'
+        };
+        spectator.triggerEventHandler('p-autocomplete', 'completeMethod', autocompleteArg);
+        expect(getTagsMock).toBeCalledWith(autocompleteArg);
+        expect(spectator.query(AutoComplete).suggestions).toBeDefined();
+    });
+
+    it('should dont have suggestions if search ir less than 3 characters', () => {
+        const getTagsMock = jest.spyOn(spectator.component, 'getTags');
+        const autocompleteArg = {
+            query: 'te'
+        };
+        spectator.triggerEventHandler('p-autocomplete', 'completeMethod', autocompleteArg);
+        expect(getTagsMock).toBeCalledWith(autocompleteArg);
+        expect(spectator.query(AutoComplete).suggestions).toBeNull();
     });
 });

@@ -3,6 +3,7 @@ import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
 import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
 import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { INotification } from '@models/notifications';
 
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
@@ -18,6 +19,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
     existsMoreToLoad = false;
     notifications: INotification[] = [];
     notificationsUnreadCount = 0;
+    featureFlagAnnouncements = FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS;
 
     private isNotificationsMarkedAsRead = false;
     private showNotifications = false;
