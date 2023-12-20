@@ -24,6 +24,8 @@ import {
     TIME_90_DAYS
 } from '@dotcms/dotcms-models';
 
+const ONE_DAY = 24 * 60 * 60 * 1000;
+
 export const orderVariants = (arrayToOrder: Array<string>): Array<string> => {
     const index = arrayToOrder.indexOf(DEFAULT_VARIANT_ID);
     if (index > -1) {
@@ -74,7 +76,7 @@ export const processExperimentConfigProps = (
 };
 
 export const daysToMilliseconds = (days: number): number => {
-    return days * 24 * 60 * 60 * 1000;
+    return days * ONE_DAY;
 };
 
 export const checkIfExperimentDescriptionIsSaving = (stepStatusSidebar) =>
@@ -123,8 +125,8 @@ export const getPreviousDay = (givenDate: string) => {
     // Create a Date object in UTC | - 1 - Months are zero-based in JavaScript
     const inputDateUTC = new Date(Date.UTC(year, month - 1, day));
 
-    // Subtract one day from the timestamp (in milliseconds) to avoid TIMEZONE issues & month change.
-    inputDateUTC.setTime(inputDateUTC.getTime() - 24 * 60 * 60 * 1000);
+    // in milliseconds to avoid TIMEZONE issues & month change.
+    inputDateUTC.setTime(inputDateUTC.getTime() - ONE_DAY);
 
     // Format the date as "YYYY-MM-dd"
     return inputDateUTC.toISOString().split('T')[0];
