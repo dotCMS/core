@@ -138,7 +138,7 @@
 			"response": []
 		},
 		{
-			"name": "Wait 10s",
+			"name": "Wait 5s",
 			"event": [
 				{
 					"listen": "test",
@@ -180,7 +180,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "https://postman-echo.com/delay/10",
+					"raw": "https://postman-echo.com/delay/5",
 					"protocol": "https",
 					"host": [
 						"postman-echo",
@@ -188,7 +188,7 @@
 					],
 					"path": [
 						"delay",
-						"10"
+						"5"
 					]
 				}
 			},
