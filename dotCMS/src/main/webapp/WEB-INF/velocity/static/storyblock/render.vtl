@@ -17,6 +17,18 @@
 #*              *#<h3#if($element.attrs.textAlign) style="text-align: $element.attrs.textAlign;"#end>#*
                     *##renderContentBlock($element.content)#*
                 *#</h3>
+#*          *##elseif($element.attrs.level == "4")
+#*              *#<h4#if($element.attrs.textAlign) style="text-align: $element.attrs.textAlign;"#end>#*
+                    *##renderContentBlock($element.content)#*
+                *#</h4>
+#*          *##elseif($element.attrs.level == "5")
+#*              *#<h5#if($element.attrs.textAlign) style="text-align: $element.attrs.textAlign;"#end>#*
+                    *##renderContentBlock($element.content)#*
+                *#</h5>
+#*          *##elseif($element.attrs.level == "6")
+#*              *#<h6#if($element.attrs.textAlign) style="text-align: $element.attrs.textAlign;"#end>#*
+                    *##renderContentBlock($element.content)#*
+                *#</h6>
 #*          *##end#*
         *##elseif( $element.type == "listItem" )
 #*        *#  <li#{if}(${element.attrs.textAlign}) style="text-align: ${element.attrs.textAlign};"#{end}>#*
