@@ -72,12 +72,11 @@
                 padding: $spacing-2 $spacing-6;
                 display: flex;
                 gap: $spacing-2;
-
                 i {
                     color: $color-palette-primary;
                 }
 
-                &.selected {
+                &.default {
                     padding-left: $spacing-1;
                 }
 
@@ -94,11 +93,13 @@
 
     .p-dataview-content {
         width: 100%;
+        max-height: 80vh;
+        overflow: scroll;
         .searchable-dropdown__data-list-item {
             cursor: pointer;
             display: block;
             line-height: normal;
-            padding: $spacing-1 $spacing-3;
+            //padding: $spacing-1 $spacing-3;
             transition: background-color $basic-speed ease-in;
             width: 100%;
 

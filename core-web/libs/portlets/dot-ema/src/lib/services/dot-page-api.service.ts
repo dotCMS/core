@@ -27,7 +27,7 @@ export interface DotPageApiParams {
 }
 
 export interface GetPersonasParams {
-    pageID: string;
+    pageId: string;
     filter?: string;
     page?: number;
     perPage?: number;
@@ -68,13 +68,13 @@ export class DotPageApiService {
     /**
      * Save a contentlet in a page
      *
-     * @param {SavePagePayload} { pageContainers, container, contentletID, pageID }
-     * @return {*}
+     * @param {SavePagePayload} { pageContainers, pageId }
+     * @return {*}  {Observable<unknown>}
      * @memberof DotPageApiService
      */
-    save({ pageContainers, pageID }: SavePagePayload): Observable<unknown> {
+    save({ pageContainers, pageId }: SavePagePayload): Observable<unknown> {
         return this.http
-            .post(`/api/v1/page/${pageID}/content`, pageContainers)
+            .post(`/api/v1/page/${pageId}/content`, pageContainers)
             .pipe(catchError(() => EMPTY));
     }
 
@@ -86,12 +86,12 @@ export class DotPageApiService {
      * @memberof DotPageApiService
      */
     getPersonas({
-        pageID,
+        pageId,
         filter,
         page,
         perPage = 10
     }: GetPersonasParams): Observable<GetPersonasResponse> {
-        const url = this.getPersonasURL({ pageID, filter, page, perPage });
+        const url = this.getPersonasURL({ pageId, filter, page, perPage });
 
         return this.http.get<{ entity: DotPersona[]; pagination: PaginationData }>(url).pipe(
             map((res: { entity: DotPersona[]; pagination: PaginationData }) => ({
@@ -101,8 +101,8 @@ export class DotPageApiService {
         );
     }
 
-    private getPersonasURL({ pageID, filter, page, perPage }: GetPersonasParams): string {
-        const apiUrl = `/api/v1/page/${pageID}/personas?`;
+    private getPersonasURL({ pageId, filter, page, perPage }: GetPersonasParams): string {
+        const apiUrl = `/api/v1/page/${pageId}/personas?`;
 
         const queryParams = new URLSearchParams({
             perper_page: perPage.toString(),

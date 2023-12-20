@@ -1,0 +1,22 @@
+<div *ngFor="let row of rows" [ngStyle]="getStyle(row, 'transparent')" data-type="row">
+    <div
+        *ngFor="let column of row.columns"
+        [ngStyle]="getStyle(column, 'transparent')"
+        data-type="column">
+        <div
+            *ngFor="let container of column.containers"
+            [attr.data-payload]="container.payload"
+            [ngStyle]="getStyle(container, 'transparent')"
+            data-type="container">
+            <div
+                *ngFor="let contentlet of container.contentlets"
+                [attr.data-payload]="contentlet.payload"
+                [ngStyle]="getStyle(contentlet, 'black')"
+                (drop)="onDrop($event)"
+                (dragover)="onDragover($event)"
+                data-type="contentlet"></div>
+        </div>
+    </div>
+</div>
+
+<div class="pointer" [ngStyle]="pointerPosition"></div>
