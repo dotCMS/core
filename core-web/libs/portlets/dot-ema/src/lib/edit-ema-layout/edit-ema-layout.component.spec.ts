@@ -129,12 +129,12 @@ describe('EditEmaLayoutComponent', () => {
         });
 
         it('should trigger a save after 5 secs', fakeAsync(() => {
-            const saveTemplate = jest.spyOn(layoutService, 'save');
+            const layoutServiceSave = jest.spyOn(layoutService, 'save');
 
             templateBuilder.templateChange.emit();
             tick(5000);
 
-            expect(saveTemplate).toHaveBeenCalled();
+            expect(layoutServiceSave).toHaveBeenCalled();
 
             expect(addMock).toHaveBeenNthCalledWith(1, {
                 severity: 'info',
