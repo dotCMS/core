@@ -11,7 +11,6 @@ import { catchError, filter, map, mergeMap, switchMap, take, tap } from 'rxjs/op
 
 import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotEnvironment } from '@dotcms/app/shared/models/dot-environment/dot-environment';
@@ -28,6 +27,7 @@ import {
     DotPageWorkflowsActionsService,
     DotPropertiesService,
     DotRenderMode,
+    DotRouterService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     ESOrderDirection

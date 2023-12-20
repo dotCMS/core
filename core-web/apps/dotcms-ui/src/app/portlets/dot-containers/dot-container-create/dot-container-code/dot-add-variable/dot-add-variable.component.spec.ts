@@ -29,6 +29,7 @@ import {
     DotContentTypeService,
     DotEventsService,
     DotMessageService,
+    DotRouterService,
     DotSiteBrowserService
 } from '@dotcms/data-access';
 import {
@@ -48,7 +49,6 @@ import {
     CoreWebServiceMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotAddVariableComponent } from './dot-add-variable.component';
 import { FilteredFieldTypes } from './dot-add-variable.models';

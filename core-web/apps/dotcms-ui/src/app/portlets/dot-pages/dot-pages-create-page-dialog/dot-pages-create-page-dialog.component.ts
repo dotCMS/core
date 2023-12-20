@@ -8,11 +8,11 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs/operators';
 
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import {
     DotESContentService,
     DotLanguagesService,
     DotPageTypesService,
+    DotRouterService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
