@@ -1,18 +1,21 @@
-import { Observable } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
 
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ToastModule } from 'primeng/toast';
 
+import { switchMap } from 'rxjs/operators';
+
 import {
     DotMessageService,
+    DotRenderMode,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentStore } from './store/edit-content.store';
@@ -49,11 +52,33 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
         DotEditContentStore
     ]
 })
-export class EditContentLayoutComponent {
+export class EditContentLayoutComponent implements OnInit {
     private readonly store = inject(DotEditContentStore);
+
+    private readonly dotEditContentService = inject(DotEditContentService);
+    private readonly workflowActionService = inject(DotWorkflowsActionsService);
+    private readonly activatedRoute = inject(ActivatedRoute);
+
+    private contentType = this.activatedRoute.snapshot.params['contentType'];
+    private initialInode = this.activatedRoute.snapshot.params['id'];
+
     private formValue: Record<string, string>;
 
     vm$: Observable<EditContentPayload> = this.store.vm$;
+
+    ngOnInit(): void {
+        const obs$ = !this.initialInode
+            ? this.getNewContent(this.contentType)
+            : this.getExistingContent(this.initialInode);
+
+        obs$.subscribe(({ contentType, actions, contentlet }) => {
+            this.store.setState({
+                contentType,
+                actions,
+                contentlet
+            });
+        });
+    }
 
     /**
      * Set the form value to be saved.
@@ -71,10 +96,54 @@ export class EditContentLayoutComponent {
      * @param {DotCMSWorkflowAction} action
      * @memberof EditContentLayoutComponent
      */
-    fireWorkflowAction(action: DotCMSWorkflowAction): void {
+    fireWorkflowAction({ actionId, inode, contentType }): void {
         this.store.fireWorkflowActionEffect({
-            actionId: action.id,
-            formData: this.formValue
+            actionId,
+            inode,
+            data: {
+                contentlet: {
+                    ...this.formValue,
+                    contentType
+                }
+            }
         });
+    }
+
+    /**
+     * Get the content type, actions and contentlet for the given contentTypeVar
+     *
+     * @private
+     * @param {string} contentTypeVar
+     * @return {*}
+     * @memberof EditContentLayoutComponent
+     */
+    private getNewContent(contentTypeVar: string) {
+        return forkJoin({
+            contentType: this.dotEditContentService.getContentType(contentTypeVar),
+            actions: this.workflowActionService.getDefaultActions(contentTypeVar),
+            contentlet: of(null)
+        });
+    }
+
+    /**
+     * Get the contentlet, content type and actions for the given inode
+     *
+     * @private
+     * @param {*} inode
+     * @return {*}
+     * @memberof EditContentLayoutComponent
+     */
+    private getExistingContent(inode) {
+        return this.dotEditContentService.getContentById(inode).pipe(
+            switchMap((contentlet) => {
+                const { contentType } = contentlet;
+
+                return forkJoin({
+                    contentType: this.dotEditContentService.getContentType(contentType),
+                    actions: this.workflowActionService.getByInode(inode, DotRenderMode.EDITING),
+                    contentlet: of(contentlet)
+                });
+            })
+        );
     }
 }

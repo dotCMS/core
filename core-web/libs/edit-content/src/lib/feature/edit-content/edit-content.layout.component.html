@@ -2,8 +2,14 @@
     <dot-edit-content-toolbar
         class="header"
         [actions]="vm.actions"
-        (actionFired)="fireWorkflowAction($event)"></dot-edit-content-toolbar>
-
+        (actionFired)="
+            fireWorkflowAction({
+                actionId: $event.id,
+                inode: vm.contentlet.inode,
+                contentType: vm.contentType
+            })
+        "></dot-edit-content-toolbar>
+    <!--  "fireWorkflowAction($data, vm.inode, vm.contentType)-->
     <dot-edit-content-form class="body" [formData]="vm" (changeValue)="setFormValue($event)" />
     <aside class="sidebar">
         <dot-edit-content-aside [contentLet]="vm.contentlet" [contentType]="vm.contentType" />

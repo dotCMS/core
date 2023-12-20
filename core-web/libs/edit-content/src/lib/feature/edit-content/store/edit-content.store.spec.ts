@@ -15,27 +15,35 @@ import {
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { mockWorkflowsActions } from '@dotcms/utils-testing';
+import { MockDotMessageService, mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { DotEditContentStore } from './edit-content.store';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { BINARY_FIELD_CONTENTLET, CONTENT_TYPE_MOCK } from '../../../utils/mocks';
 
+const messageServiceMock = new MockDotMessageService({
+    'dot.common.message.success': 'Success',
+    'edit.content.fire.action.success': 'Content published'
+});
+
 describe('DotEditContentStore', () => {
     let spectator: SpectatorService<DotEditContentStore>;
-    let dotEditContentService: DotEditContentService;
     let dotWorkflowsActionsService: DotWorkflowsActionsService;
     let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
     let location: Location;
+    let messageService: MessageService;
 
     const createService = createServiceFactory({
         service: DotEditContentStore,
         imports: [HttpClientTestingModule],
         providers: [
-            DotMessageService,
             MessageService,
             Location,
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            },
             {
                 provide: DotWorkflowActionsFireService,
                 useValue: {
@@ -66,31 +74,19 @@ describe('DotEditContentStore', () => {
     describe('Existing content', () => {
         beforeEach(() => {
             spectator = createService();
-            dotEditContentService = spectator.inject(DotEditContentService);
             dotWorkflowsActionsService = spectator.inject(DotWorkflowsActionsService);
             dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
+            messageService = spectator.inject(MessageService);
             location = spectator.inject(Location);
+            spectator.service.setState({
+                actions: mockWorkflowsActions,
+                contentType: CONTENT_TYPE_MOCK,
+                contentlet: BINARY_FIELD_CONTENTLET
+            });
         });
 
-        it('should have a initial value', (done) => {
-            const spyContent = jest.spyOn(dotEditContentService, 'getContentById');
-            const spyContentType = jest.spyOn(dotEditContentService, 'getContentType');
-            const spyWorkflow = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
-
-            spectator.service.vm$.subscribe((state) => {
-                expect(state).toEqual({
-                    actions: mockWorkflowsActions,
-                    fields: CONTENT_TYPE_MOCK.fields,
-                    layout: CONTENT_TYPE_MOCK.layout,
-                    contentType: BINARY_FIELD_CONTENTLET.contentType,
-                    contentlet: BINARY_FIELD_CONTENTLET
-                });
-
-                expect(spyContent).toHaveBeenCalledWith('1');
-                expect(spyContentType).toHaveBeenCalledWith(BINARY_FIELD_CONTENTLET.contentType);
-                expect(spyWorkflow).toHaveBeenCalledWith('1', DotRenderMode.EDITING);
-                done();
-            });
+        it('should create the store', () => {
+            expect(spectator.service).toBeDefined();
         });
 
         describe('updaters', () => {
@@ -140,6 +136,7 @@ describe('DotEditContentStore', () => {
                 const workflowSpy = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
                 const updateStateSpy = jest.spyOn(spectator.service, 'updateContentletAndActions');
                 const locationSpy = jest.spyOn(location, 'replaceState');
+                const spyMessage = jest.spyOn(messageService, 'add');
 
                 const mockParams = {
                     actionId: mockWorkflowsActions[0].id,
@@ -173,46 +170,16 @@ describe('DotEditContentStore', () => {
                     expect(locationSpy).toHaveBeenCalledWith(
                         `/content/${BINARY_FIELD_CONTENTLET.inode}`
                     );
+
+                    expect(spyMessage).toHaveBeenCalledWith({
+                        severity: 'success',
+                        summary: 'Success',
+                        detail: 'Content published'
+                    });
                     done();
                 });
 
                 spectator.service.fireWorkflowActionEffect(mockParams);
-            });
-        });
-    });
-
-    describe('New content', () => {
-        beforeEach(() => {
-            spectator = createService({
-                providers: [
-                    {
-                        provide: ActivatedRoute,
-                        useValue: {
-                            snapshot: { params: { contentType: 'newContentType', id: null } }
-                        }
-                    }
-                ]
-            });
-            dotEditContentService = spectator.inject(DotEditContentService);
-            dotWorkflowsActionsService = spectator.inject(DotWorkflowsActionsService);
-        });
-
-        it('should have a initial value', (done) => {
-            const spyContentType = jest.spyOn(dotEditContentService, 'getContentType');
-            const spyWorkflow = jest.spyOn(dotWorkflowsActionsService, 'getDefaultActions');
-
-            spectator.service.vm$.subscribe((state) => {
-                expect(state).toEqual({
-                    actions: mockWorkflowsActions,
-                    fields: CONTENT_TYPE_MOCK.fields,
-                    layout: CONTENT_TYPE_MOCK.layout,
-                    contentType: CONTENT_TYPE_MOCK.variable,
-                    contentlet: null
-                });
-
-                expect(spyContentType).toHaveBeenCalledWith('new');
-                expect(spyWorkflow).toHaveBeenCalledWith('1', DotRenderMode.EDITING);
-                done();
             });
         });
     });

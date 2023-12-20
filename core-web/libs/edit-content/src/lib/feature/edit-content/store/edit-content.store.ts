@@ -3,11 +3,11 @@ import { Observable, forkJoin, of } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { Injectable, inject } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
-import { map, switchMap, tap } from 'rxjs/operators';
+import { switchMap, tap } from 'rxjs/operators';
 
 import {
     DotFireActionOptions,
@@ -17,8 +17,6 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentlet, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
-
-import { DotEditContentService } from '../../../services/dot-edit-content.service';
 
 interface EditContentState {
     actions: DotCMSWorkflowAction[];
@@ -36,19 +34,14 @@ interface EditContentState {
  */
 @Injectable()
 export class DotEditContentStore extends ComponentStore<EditContentState> {
-    private readonly activatedRoute = inject(ActivatedRoute);
     private readonly router = inject(Router);
 
-    private readonly dotEditContentService = inject(DotEditContentService);
     private readonly workflowActionService = inject(DotWorkflowsActionsService);
     private readonly WorkflowActionsFireService = inject(DotWorkflowActionsFireService);
 
     private readonly messageService = inject(MessageService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly location = inject(Location);
-
-    private contentType = this.activatedRoute.snapshot.params['contentType'];
-    private inode = this.activatedRoute.snapshot.params['id'];
 
     readonly vm$ = this.select(
         ({ actions, contentType: { variable, layout, fields }, contentlet }) => ({
@@ -58,30 +51,10 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
             fields: fields || [],
             contentlet
         })
-    ).pipe(
-        // Keep the inode and contentType in sync new content
-        tap(({ contentlet, contentType }) => {
-            this.updateInodeAndContentType({
-                inode: contentlet?.inode,
-                contentType
-            });
-        })
     );
 
     constructor() {
         super();
-
-        const obs$ = !this.inode
-            ? this.getNewContent(this.contentType)
-            : this.getExistingContent(this.inode);
-
-        obs$.subscribe(({ contentType, actions, contentlet }) => {
-            this.setState({
-                contentType,
-                actions,
-                contentlet
-            });
-        });
     }
 
     /**
@@ -114,14 +87,8 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
      * @memberof DotEditContentStore
      */
     readonly fireWorkflowActionEffect = this.effect(
-        (
-            data$: Observable<{
-                actionId: string;
-                formData: { [key: string]: string };
-            }>
-        ) => {
+        (data$: Observable<DotFireActionOptions<{ [key: string]: string | object }>>) => {
             return data$.pipe(
-                map(({ actionId, formData }) => this.getFireActionOptions(actionId, formData)),
                 switchMap((options) => {
                     return this.fireWorkflowAction(options).pipe(
                         tapResponse(
@@ -155,44 +122,6 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
             );
         }
     );
-
-    /**
-     * Get the content type, actions and contentlet for the given contentTypeVar
-     *
-     * @private
-     * @param {string} contentTypeVar
-     * @return {*}
-     * @memberof DotEditContentStore
-     */
-    private getNewContent(contentTypeVar: string) {
-        return forkJoin({
-            contentType: this.dotEditContentService.getContentType(contentTypeVar),
-            actions: this.workflowActionService.getDefaultActions(contentTypeVar),
-            contentlet: of(null)
-        });
-    }
-
-    /**
-     * Get the contentlet, content type and actions for the given inode
-     *
-     * @private
-     * @param {*} inode
-     * @return {*}
-     * @memberof DotEditContentStore
-     */
-    private getExistingContent(inode) {
-        return this.dotEditContentService.getContentById(inode).pipe(
-            switchMap((contentlet) => {
-                const { contentType } = contentlet;
-
-                return forkJoin({
-                    contentType: this.dotEditContentService.getContentType(contentType),
-                    actions: this.workflowActionService.getByInode(inode, DotRenderMode.EDITING),
-                    contentlet: of(contentlet)
-                });
-            })
-        );
-    }
 
     /**
      * Fire the workflow action and update the contentlet and actions
@@ -238,42 +167,5 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
      */
     private updateURL(inode: string) {
         this.location.replaceState(`/content/${inode}`); // Replace the URL with the new inode without reloading the page
-    }
-
-    /**
-     * Update the inode and contentType
-     *
-     * @private
-     * @param {*} { inode, contentType }
-     * @memberof DotEditContentStore
-     */
-    private updateInodeAndContentType({ inode, contentType }) {
-        this.inode = inode;
-        this.contentType = contentType;
-    }
-
-    /**
-     * Get the options to fire the workflow action.
-     *
-     * @private
-     * @param {string} actionId
-     * @param {{ [key: string]: string }} formData
-     * @return {*}  {(DotFireActionOptions<{ [key: string]: string | object }>)}
-     * @memberof DotEditContentStore
-     */
-    private getFireActionOptions(
-        actionId: string,
-        formData: { [key: string]: string }
-    ): DotFireActionOptions<{ [key: string]: string | object }> {
-        return {
-            actionId,
-            data: {
-                contentlet: {
-                    ...formData,
-                    contentType: this.contentType
-                }
-            },
-            inode: this.inode
-        };
     }
 }

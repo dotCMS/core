@@ -858,6 +858,7 @@ export const LAYOUT_FIELDS_VALUES_MOCK = {
 };
 
 export const CONTENT_FORM_DATA_MOCK: EditContentPayload = {
+    actions: [],
     layout: LAYOUT_MOCK,
     fields: JUST_FIELDS_MOCKS,
     contentlet: {
