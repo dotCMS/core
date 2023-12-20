@@ -40,11 +40,13 @@ on:
         required: false
     outputs:
       tags:
-        value: ${{ jobs.build_push_image.outputs.tags }}
+        value: ${{ jobs.build-push-image.outputs.tags }}
       version:
-        value: ${{ jobs.build_push_image.outputs.version }}
+        value: ${{ jobs.build-push-image.outputs.version }}
+      formatted_tags:
+        value: ${{ jobs.build-push-image.outputs.formatted_tags }}
 jobs:
-  build_push_image:
+  build-push-image:
     name: Build/Push Image
     runs-on: ubuntu-latest
     env:
@@ -54,6 +56,7 @@ jobs:
       DOCKER_BUILD_CONTEXT: /home/runner/work/_temp/core-build
     outputs:
       tags: ${{ steps.meta.outputs.tags }}
+      formatted_tags: ${{ steps.format-tags.outputs.formatted_tags }}
       version: ${{ steps.set-common-vars.outputs.version }}
     if: success()
     steps:
@@ -265,3 +268,17 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
         if: success()
+
+      - name: Format Tags
+        id: format-tags
+        run: |
+          tags=''
+          tags_arr=( ${{ steps.meta.outputs.tags }} )
+
+          for tag in "${tags_arr[@]}"
+          do
+          [[ -n "${tags}" ]] && tags="${tags}, "
+          tags="${tags}\`${tag}\`"
+          done
+
+          echo "formatted_tags=${tags}" >> $GITHUB_OUTPUT
