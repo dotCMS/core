@@ -23,7 +23,6 @@ import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
@@ -32,6 +31,7 @@ import {
     DotLicenseService,
     DotMessageService,
     DotPropertiesService,
+    DotRouterService,
     DotSessionStorageService
 } from '@dotcms/data-access';
 import {

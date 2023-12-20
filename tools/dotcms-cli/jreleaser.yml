@@ -54,6 +54,8 @@ distributions:
     artifacts:
       - path: '{{artifactsDir}}/distributions/dotcms-cli-{{projectVersion}}-osx-aarch_64.zip'
         platform: 'osx-aarch_64'
+      - path: '{{artifactsDir}}/distributions/dotcms-cli-{{projectVersion}}-osx-x86_64.zip'
+        platform: 'osx-x86_64'
 
 upload:
   artifactory:

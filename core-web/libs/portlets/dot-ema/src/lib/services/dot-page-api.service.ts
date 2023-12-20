@@ -5,7 +5,13 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
-import { DotLanguage, DotPersona } from '@dotcms/dotcms-models';
+import {
+    DotLanguage,
+    DotLayout,
+    DotPageContainerStructure,
+    DotPersona,
+    DotTemplate
+} from '@dotcms/dotcms-models';
 
 import { SavePagePayload } from '../shared/models';
 
@@ -18,6 +24,9 @@ export interface DotPageApiResponse {
         language: DotLanguage;
         persona?: DotPersona;
     };
+    layout: DotLayout;
+    template: DotTemplate;
+    containers: DotPageContainerStructure;
 }
 
 export interface DotPageApiParams {

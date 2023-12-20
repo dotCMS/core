@@ -28,7 +28,8 @@ import {
     DotEventsService,
     DotMessageService,
     PaginatorService,
-    DotSessionStorageService
+    DotSessionStorageService,
+    DotRouterService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPersona } from '@dotcms/dotcms-models';
@@ -43,7 +44,6 @@ import {
     SiteServiceMock
 } from '@dotcms/utils-testing';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
 

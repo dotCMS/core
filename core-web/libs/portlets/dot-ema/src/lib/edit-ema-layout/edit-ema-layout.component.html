@@ -1,1 +1,7 @@
-<p>edit-ema-layout works!</p>
+<dotcms-template-builder-lib
+    *ngIf="layoutProperties$ | async as layoutProperties"
+    [layout]="layoutProperties.layout"
+    [themeId]="layoutProperties.themeId"
+    [containerMap]="layoutProperties.containersMap"
+    (templateChange)="nextTemplateUpdate($event)"
+    data-testId="edit-ema-layout" />

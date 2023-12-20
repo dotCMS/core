@@ -2,7 +2,8 @@
 
 :host {
     display: grid;
-    grid-template-columns: 1fr 80px;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: 100%;
     height: 100%;
 
     router-outlet {

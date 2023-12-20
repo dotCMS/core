@@ -5,7 +5,7 @@ import { CanDeactivate } from '@angular/router';
 
 import { filter } from 'rxjs/operators';
 
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/data-access';
 
 /**
  *
