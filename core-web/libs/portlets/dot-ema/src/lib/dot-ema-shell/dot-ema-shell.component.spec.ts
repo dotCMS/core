@@ -142,8 +142,6 @@ describe('DotEmaShellComponent', () => {
             siteService.setFakeCurrentSite();
             spectator.detectChanges();
 
-            // console.log(siteService._currentSite);
-
             expect(navigate).toHaveBeenCalledWith(['/pages']);
         });
     });
