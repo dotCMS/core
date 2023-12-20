@@ -2,7 +2,7 @@
     <dot-edit-content-toolbar
         class="header"
         [actions]="vm.actions"
-        (actionFired)="fireAction($event)"></dot-edit-content-toolbar>
+        (actionFired)="fireWorkflowAction($event)"></dot-edit-content-toolbar>
 
     <dot-edit-content-form class="body" [formData]="vm" (changeValue)="setFormValue($event)" />
     <aside class="sidebar">

@@ -1,14 +1,11 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ToastModule } from 'primeng/toast';
-
-import { map, skip, tap } from 'rxjs/operators';
 
 import {
     DotMessageService,
@@ -52,35 +49,11 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
         DotEditContentStore
     ]
 })
-export class EditContentLayoutComponent implements OnInit {
-    private readonly activatedRoute = inject(ActivatedRoute);
+export class EditContentLayoutComponent {
     private readonly store = inject(DotEditContentStore);
+    private formValue: Record<string, string>;
 
-    contentType = this.activatedRoute.snapshot.params['contentType'];
-    inode = this.activatedRoute.snapshot.params['id'];
-    formValue: Record<string, string>;
-
-    vm$: Observable<EditContentPayload> = this.store.vm$.pipe(
-        skip(1),
-        tap(({ contentType, contentlet }) => {
-            this.contentType = contentlet?.contentType || contentType?.variable;
-            this.inode = contentlet?.inode;
-        }),
-        map(({ actions, contentType, contentlet }) => ({
-            actions,
-            contentType: this.contentType,
-            layout: contentType?.layout || [],
-            fields: contentType?.fields || [],
-            contentlet
-        }))
-    );
-
-    ngOnInit() {
-        this.store.loadContentEffect({
-            isNewContent: !this.inode,
-            idOrVar: this.inode || this.contentType
-        });
-    }
+    vm$: Observable<EditContentPayload> = this.store.vm$;
 
     /**
      * Set the form value to be saved.
@@ -92,18 +65,16 @@ export class EditContentLayoutComponent implements OnInit {
         this.formValue = formValue;
     }
 
-    fireAction(action: DotCMSWorkflowAction): void {
-        const data = {
-            contentlet: {
-                ...this.formValue,
-                contentType: this.contentType
-            }
-        };
-
+    /**
+     * Fire the workflow action.
+     *
+     * @param {DotCMSWorkflowAction} action
+     * @memberof EditContentLayoutComponent
+     */
+    fireWorkflowAction(action: DotCMSWorkflowAction): void {
         this.store.fireWorkflowActionEffect({
             actionId: action.id,
-            inode: this.inode,
-            data
+            formData: this.formValue
         });
     }
 }

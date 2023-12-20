@@ -3,10 +3,11 @@ import { Observable, forkJoin, of } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { Injectable, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
-import { switchMap, tap } from 'rxjs/operators';
+import { map, switchMap, tap } from 'rxjs/operators';
 
 import {
     DotFireActionOptions,
@@ -25,12 +26,6 @@ interface EditContentState {
     contentlet: DotCMSContentlet;
 }
 
-const initialState: EditContentState = {
-    actions: [],
-    contentType: null,
-    contentlet: null
-};
-
 /**
  * Temporary store to handle the edit content page state
  * until we have a proper store for the edit content page [https://github.com/dotCMS/core/issues/27022]
@@ -41,6 +36,9 @@ const initialState: EditContentState = {
  */
 @Injectable()
 export class DotEditContentStore extends ComponentStore<EditContentState> {
+    private readonly activatedRoute = inject(ActivatedRoute);
+    private readonly router = inject(Router);
+
     private readonly dotEditContentService = inject(DotEditContentService);
     private readonly workflowActionService = inject(DotWorkflowsActionsService);
     private readonly WorkflowActionsFireService = inject(DotWorkflowActionsFireService);
@@ -49,21 +47,58 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
     private readonly dotMessageService = inject(DotMessageService);
     private readonly location = inject(Location);
 
-    readonly vm$ = this.select(({ actions, contentType, contentlet }) => ({
-        actions,
-        contentType,
-        contentlet
-    }));
+    private contentType = this.activatedRoute.snapshot.params['contentType'];
+    private inode = this.activatedRoute.snapshot.params['id'];
+
+    readonly vm$ = this.select(
+        ({ actions, contentType: { variable, layout, fields }, contentlet }) => ({
+            actions,
+            contentType: contentlet?.contentType || variable,
+            layout: layout || [],
+            fields: fields || [],
+            contentlet
+        })
+    ).pipe(
+        // Keep the inode and contentType in sync new content
+        tap(({ contentlet, contentType }) => {
+            this.updateInodeAndContentType({
+                inode: contentlet?.inode,
+                contentType
+            });
+        })
+    );
 
     constructor() {
-        super(initialState);
+        super();
+
+        const obs$ = !this.inode
+            ? this.getNewContent(this.contentType)
+            : this.getExistingContent(this.inode);
+
+        obs$.subscribe(({ contentType, actions, contentlet }) => {
+            this.setState({
+                contentType,
+                actions,
+                contentlet
+            });
+        });
     }
 
+    /**
+     * Update the state
+     *
+     * @memberof DotEditContentStore
+     */
     readonly updateState = this.updater((state, newState: EditContentState) => ({
         ...state,
         ...newState
     }));
 
+    /**
+     * Update the contentlet and actions
+     *
+     * @memberof DotEditContentStore
+     */
     readonly updateContentletAndActions = this.updater<{
         actions: DotCMSWorkflowAction[];
         contentlet: DotCMSContentlet;
@@ -73,33 +108,20 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
         actions
     }));
 
-    readonly loadContentEffect = this.effect(
+    /**
+     * Fire the workflow action and update the contentlet and actions
+     *
+     * @memberof DotEditContentStore
+     */
+    readonly fireWorkflowActionEffect = this.effect(
         (
             data$: Observable<{
-                isNewContent: boolean;
-                idOrVar: string;
+                actionId: string;
+                formData: { [key: string]: string };
             }>
         ) => {
             return data$.pipe(
-                switchMap(({ isNewContent, idOrVar }) => {
-                    return isNewContent
-                        ? this.getNewContent(idOrVar)
-                        : this.getExistingContent(idOrVar);
-                }),
-                tap(({ contentType, actions, contentlet }: EditContentState) => {
-                    this.updateState({
-                        contentType,
-                        actions,
-                        contentlet
-                    });
-                })
-            );
-        }
-    );
-
-    readonly fireWorkflowActionEffect = this.effect(
-        (data$: Observable<DotFireActionOptions<{ [key: string]: string | object }>>) => {
-            return data$.pipe(
+                map(({ actionId, formData }) => this.getFireActionOptions(actionId, formData)),
                 switchMap((options) => {
                     return this.fireWorkflowAction(options).pipe(
                         tapResponse(
@@ -134,6 +156,14 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
         }
     );
 
+    /**
+     * Get the content type, actions and contentlet for the given contentTypeVar
+     *
+     * @private
+     * @param {string} contentTypeVar
+     * @return {*}
+     * @memberof DotEditContentStore
+     */
     private getNewContent(contentTypeVar: string) {
         return forkJoin({
             contentType: this.dotEditContentService.getContentType(contentTypeVar),
@@ -142,6 +172,14 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
         });
     }
 
+    /**
+     * Get the contentlet, content type and actions for the given inode
+     *
+     * @private
+     * @param {*} inode
+     * @return {*}
+     * @memberof DotEditContentStore
+     */
     private getExistingContent(inode) {
         return this.dotEditContentService.getContentById(inode).pipe(
             switchMap((contentlet) => {
@@ -156,6 +194,17 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
         );
     }
 
+    /**
+     * Fire the workflow action and update the contentlet and actions
+     *
+     * @private
+     * @param {(DotFireActionOptions<{ [key: string]: string | object }>)} options
+     * @return {*}  {Observable<{
+     *         actions: DotCMSWorkflowAction[];
+     *         contentlet: DotCMSContentlet;
+     *     }>}
+     * @memberof DotEditContentStore
+     */
     private fireWorkflowAction(
         options: DotFireActionOptions<{ [key: string]: string | object }>
     ): Observable<{
@@ -163,6 +212,11 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
         contentlet: DotCMSContentlet;
     }> {
         return this.WorkflowActionsFireService.fireTo(options).pipe(
+            tap((contentlet) => {
+                if (!contentlet.inode) {
+                    this.router.navigate(['/c/content']);
+                }
+            }),
             switchMap((contentlet) => {
                 return forkJoin({
                     actions: this.workflowActionService.getByInode(
@@ -175,7 +229,51 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
         );
     }
 
+    /**
+     * Update the URL with the new inode without reloading the page
+     *
+     * @private
+     * @param {string} inode
+     * @memberof DotEditContentStore
+     */
     private updateURL(inode: string) {
         this.location.replaceState(`/content/${inode}`); // Replace the URL with the new inode without reloading the page
+    }
+
+    /**
+     * Update the inode and contentType
+     *
+     * @private
+     * @param {*} { inode, contentType }
+     * @memberof DotEditContentStore
+     */
+    private updateInodeAndContentType({ inode, contentType }) {
+        this.inode = inode;
+        this.contentType = contentType;
+    }
+
+    /**
+     * Get the options to fire the workflow action.
+     *
+     * @private
+     * @param {string} actionId
+     * @param {{ [key: string]: string }} formData
+     * @return {*}  {(DotFireActionOptions<{ [key: string]: string | object }>)}
+     * @memberof DotEditContentStore
+     */
+    private getFireActionOptions(
+        actionId: string,
+        formData: { [key: string]: string }
+    ): DotFireActionOptions<{ [key: string]: string | object }> {
+        return {
+            actionId,
+            data: {
+                contentlet: {
+                    ...formData,
+                    contentType: this.contentType
+                }
+            },
+            inode: this.inode
+        };
     }
 }

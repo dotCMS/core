@@ -8,7 +8,7 @@ import {
 export interface EditContentPayload {
     layout: DotCMSContentTypeLayoutRow[];
     fields: DotCMSContentTypeField[];
-    contentlet?: DotCMSContentlet;
-    actions?: DotCMSWorkflowAction[];
+    actions: DotCMSWorkflowAction[];
     contentType: string;
+    contentlet?: DotCMSContentlet;
 }
