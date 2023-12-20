@@ -48,12 +48,7 @@
 				"body": {
 					"mode": "formdata",
 					"formdata": [
-						{
-							"key": "file",
-							"contentType": "",
-							"type": "file",
-							"src": "resources/Experience/com.dotcms.experience.fragment-1.0.jar"
-						},
+
 						{
 							"key": "file",
 							"contentType": "",
