@@ -8,8 +8,7 @@ import { By } from '@angular/platform-browser';
 import { AvatarModule } from 'primeng/avatar';
 
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotApps } from '@dotcms/dotcms-models';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';

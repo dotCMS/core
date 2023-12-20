@@ -12,7 +12,8 @@ import {
     DotAlertConfirmService,
     DotEventsService,
     DotLicenseService,
-    DotMessageService
+    DotMessageService,
+    DotRouterService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -36,7 +37,6 @@ import { DotIframeService } from './../view/components/_common/iframe/service/do
 
 import { DotCustomEventHandlerService } from '../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotRouterService } from '../api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '../api/services/dot-ui-colors/dot-ui-colors.service';
 import { NGFACES_MODULES } from '../modules';
 import { DotPipesModule } from '../view/pipes/dot-pipes.module';

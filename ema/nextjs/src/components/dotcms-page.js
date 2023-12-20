@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { useContext } from 'react';
 import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
@@ -21,26 +21,6 @@ export const DotcmsPage = () => {
 
     const { layout, page } = useContext(GlobalContext);
 
-    function handleParentEvents(event) {
-        switch (event.data) {
-            case 'ema-reload-page':
-                router.refresh();
-                break;
-            case 'ema-request-bounds':
-                const positionData = getPageElementBound(rowsRef.current);
-                window.parent.postMessage(
-                    {
-                        action: 'set-bounds',
-                        payload: positionData
-                    },
-                    '*'
-                );
-                break;
-            default:
-                break;
-        }
-    }
-
     useEffect(() => {
         const url = pathname.split('/');
 
@@ -55,13 +35,37 @@ export const DotcmsPage = () => {
         );
     }, [pathname]);
 
+    const eventHandler = useCallback(
+        (event) => {
+            switch (event.data) {
+                case 'ema-reload-page':
+                    router.refresh();
+                    break;
+                case 'ema-request-bounds':
+                    const positionData = getPageElementBound(rowsRef.current);
+                    window.parent.postMessage(
+                        {
+                            action: 'set-bounds',
+                            payload: positionData
+                        },
+                        '*'
+                    );
+                    break;
+                default:
+                    break;
+            }
+        },
+        [router]
+    ); // We need this because otherwise the function will create on every render otherwise and we cannot create the function outside because it's bounded to the router and to the ref
+    // We need to unbound this from the component, with a custom hook maybe?
+
     useEffect(() => {
-        window.addEventListener('message', handleParentEvents);
+        window.addEventListener('message', eventHandler);
 
         return () => {
-            window.removeEventListener('message', handleParentEvents);
+            window.removeEventListener('message', eventHandler);
         };
-    }, []);
+    }, [eventHandler]);
 
     const addRowRef = (el) => {
         if (el && !rowsRef.current.includes(el)) {

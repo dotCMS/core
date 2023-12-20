@@ -105,7 +105,7 @@
         #dialogIframe
         [style]="{ border: 'none', display: ds.dialogIframeLoading ? 'none' : 'block' }"
         [src]="ds.dialogIframeURL | safeUrl"
-        (load)="onIframeLoad($event)"
+        (load)="onIframeLoad()"
         title="dialog"
         data-testId="dialog-iframe"
         width="100%"
@@ -121,5 +121,3 @@
     [acceptIcon]="null"
     rejectButtonStyleClass="p-button-outlined"
     data-testId="confirm-dialog"></p-confirmDialog>
-
-<p-toast position="top-center" data-testId="ema-toast"></p-toast>

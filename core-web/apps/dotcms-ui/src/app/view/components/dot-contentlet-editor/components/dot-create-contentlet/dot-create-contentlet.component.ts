@@ -6,7 +6,7 @@ import { ActivatedRoute } from '@angular/router';
 import { filter, pluck } from 'rxjs/operators';
 
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/data-access';
 
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 
