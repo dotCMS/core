@@ -56,7 +56,7 @@ describe('DotContentThumbnailComponent', () => {
             await spectator.fixture.whenStable();
         });
 
-        it('should set thumbnailType to video when contentType is video/*', () => {
+        it('should set thumbnailType to image when contentType is image/*', () => {
             const imageElement = spectator.query(byTestId('thumbail-image'));
 
             expect(spectator.component.thumbnailType).toBe(CONTENT_THUMBNAIL_TYPE.image);
@@ -64,6 +64,34 @@ describe('DotContentThumbnailComponent', () => {
             expect(imageElement.getAttribute('src')).toBe('/dA/123-456/500w/50q');
             expect(imageElement.getAttribute('title')).toBe('image.png');
             expect(imageElement.getAttribute('alt')).toBe('image.png');
+            expect(imageElement).toBeTruthy();
+        });
+    });
+
+    describe('titleImage', () => {
+        beforeEach(async () => {
+            spectator = createComponent({
+                props: {
+                    dotThumbanilOptions: {
+                        ...mockDotThumbnailOptions,
+                        name: 'unknown',
+                        contentType: 'unknown',
+                        titleImage: 'image.png'
+                    }
+                }
+            });
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+        });
+
+        it('should set thumbnailType to image when contentType has titleImage', () => {
+            const imageElement = spectator.query(byTestId('thumbail-image'));
+
+            expect(spectator.component.thumbnailType).toBe(CONTENT_THUMBNAIL_TYPE.image);
+            expect(spectator.component.src).toBe('/dA/123-456/500w/50q');
+            expect(imageElement.getAttribute('src')).toBe('/dA/123-456/500w/50q');
+            expect(imageElement.getAttribute('title')).toBe('unknown');
+            expect(imageElement.getAttribute('alt')).toBe('unknown');
             expect(imageElement).toBeTruthy();
         });
     });
