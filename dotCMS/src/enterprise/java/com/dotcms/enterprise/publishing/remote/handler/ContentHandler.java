@@ -118,6 +118,7 @@ import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
 import com.thoughtworks.xstream.mapper.MapperWrapper;
+import com.thoughtworks.xstream.security.TypePermission;
 import io.vavr.Lazy;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -1354,9 +1355,14 @@ public class ContentHandler implements IHandler {
 			}
 		};
 
-		xstream.allowTypesByWildcard(new String[] {
-				"com.dotcms.**", "com.dotmarketing.**", "com.google.common.collect.**"
+		xstream.addPermission(new TypePermission() {
+			@Override
+			public boolean allows(Class aClass) {
+				Logger.warn(this, aClass.getCanonicalName() + " should be included in the xstream white list");
+				return true;
+			}
 		});
+
 		return xstream;
     }
 
