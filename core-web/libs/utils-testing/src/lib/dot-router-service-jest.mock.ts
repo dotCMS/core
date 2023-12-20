@@ -10,33 +10,35 @@ const noop = () => {
 export class MockDotRouterJestService {
     get currentPortlet() {
         return {
-            url: 'this/is/an/url',
-            id: '123-567'
+            url: 'this/is/an/url/jest',
+            id: '123-567-890'
         };
     }
 
     get portletReload$() {
-        return of('some-id');
+        return of('some-id-jest');
     }
 
     get queryParams() {
-        return {};
+        return {
+            /* Empty */
+        };
     }
 
     get currentSavedURL(): string {
         return this._currentSavedURL;
     }
 
-    set currentSavedURL(url: string) {
-        this._currentSavedURL = url;
+    set currentSavedURL(jestURL: string) {
+        this._currentSavedURL = jestURL;
     }
 
     get storedRedirectUrl(): string {
         return this._storedRedirectUrl;
     }
 
-    set storedRedirectUrl(url: string) {
-        this._storedRedirectUrl = url;
+    set storedRedirectUrl(jestURL: string) {
+        this._storedRedirectUrl = jestURL;
     }
 
     _storedRedirectUrl = '';
