@@ -13,8 +13,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MockDotLoginPageStateService } from '@components/login/dot-login-page-resolver.service.spec';
 import { ForgotPasswordComponent } from '@components/login/forgot-password-component/forgot-password.component';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotFieldValidationMessageComponent } from '@dotcms/ui';
 import {

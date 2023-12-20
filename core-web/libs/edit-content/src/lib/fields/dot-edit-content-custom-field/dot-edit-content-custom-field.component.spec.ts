@@ -93,4 +93,15 @@ describe('DotEditContentCustomFieldComponent', () => {
 
         expect(spectator.component.form.get('custom').value).toBe('Other text');
     });
+
+    it('should the custom field component sent a onFormLoad event to iframe', () => {
+        spectator.setInput('field', CUSTOM_FIELD_MOCK);
+        spectator.detectChanges();
+
+        const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+        const postMessageSpy = jest.spyOn(iframe.nativeElement.contentWindow, 'postMessage');
+        spectator.component.onIframeLoad();
+
+        expect(postMessageSpy).toHaveBeenCalled();
+    });
 });

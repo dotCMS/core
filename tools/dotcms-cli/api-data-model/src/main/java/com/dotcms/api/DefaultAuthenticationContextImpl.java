@@ -1,6 +1,5 @@
 package com.dotcms.api;
 
-
 import com.dotcms.api.client.model.AuthenticationParam;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.model.ServiceManager;
@@ -12,21 +11,22 @@ import com.dotcms.model.config.CredentialsBean;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.arc.All;
 import io.quarkus.arc.DefaultBean;
-import io.quarkus.runtime.StartupEvent;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-
+import org.jboss.logging.Logger;
 
 @DefaultBean
 @ApplicationScoped
 public class DefaultAuthenticationContextImpl implements AuthenticationContext {
+
+    @Inject
+    Logger logger;
 
     @Inject
     @All
@@ -55,6 +55,23 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
             return annotationsByType.length > 0;
         }).findFirst();
         serviceManager = optional.orElseGet(() -> serviceManagers.get(0));
+        //if we fail to read configuration we should fail fast and halt the application
+        readConfiguration(serviceManager);
+    }
+
+    void readConfiguration(ServiceManager serviceManager){
+        try {
+            serviceManager.selected().ifPresent(serviceBean -> {
+                final CredentialsBean credentials = serviceBean.credentials();
+                if (null != credentials) {
+                    this.user = credentials.user();
+                    this.token = credentials.token();
+                }
+            });
+        }catch (IOException e){
+            logger.fatal("Error starting up application check your configuration file and make sure it is well formed. See dotcms-cli.log for more details. ");
+            throw new IllegalStateException(e);
+        }
     }
 
     @Override
@@ -63,7 +80,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
     }
 
     @Override
-    public Optional<char[]> getToken() {
+    public Optional<char[]> getToken() throws IOException {
 
         //This injects the token from the command line if present
         final Optional<char[]> paramToken = authenticationParam.getToken();
@@ -85,7 +102,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
     }
 
     @Override
-    public void login(final String user, final char[] password) {
+    public void login(final String user, final char[] password) throws IOException {
         final AuthenticationAPI api = clientFactory.getClient(AuthenticationAPI.class);
         final ResponseEntityView<TokenEntity> responseEntityView = api.getToken(
                 APITokenRequest.builder().user(user).password(password)
@@ -105,37 +122,26 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
         this.token = token;
     }
 
-    private Optional<char[]> loadToken(String serviceKey, String user) {
+    private Optional<char[]> loadToken(String serviceKey, String user) throws IOException {
 
         final List<ServiceBean> profiles = serviceManager.services();
         final Optional<ServiceBean> optional = profiles.stream()
                 .filter(serviceBean -> serviceKey.equals(serviceBean.name())).findFirst();
         if (optional.isPresent()) {
             final ServiceBean bean = optional.get();
-            if (bean.credentials() != null  && user.equals(bean.credentials().user())) {
+            if (bean.credentials() != null  && user.equals(bean.credentials().user())  && null != bean.credentials().token()) {
                 return Optional.of(bean.credentials().token());
             }
         }
         return Optional.empty();
     }
 
-    String getServiceKey() {
+    String getServiceKey() throws IOException {
         final Optional<ServiceBean> selected = serviceManager.selected();
         if(selected.isEmpty()){
            throw new IllegalStateException("No dotCMS instance has been activated.");
         }
         return selected.get().name();
-    }
-
-
-    void onStart(@Observes StartupEvent ev) {
-        serviceManager.selected().ifPresent(serviceBean -> {
-            final CredentialsBean credentials = serviceBean.credentials();
-            if(null != credentials){
-              this.user = credentials.user();
-              this.token = credentials.token();
-            }
-        });
     }
 
     public void reset(){

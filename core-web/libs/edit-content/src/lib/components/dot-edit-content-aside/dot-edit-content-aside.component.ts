@@ -1,13 +1,17 @@
-import { NgIf, NgSwitch, NgSwitchCase, SlicePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { Observable, of } from 'rxjs';
+
+import { AsyncPipe, NgIf, NgSwitch, NgSwitchCase, SlicePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { ChipModule } from 'primeng/chip';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotWorkflowService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
 import {
     DotApiLinkComponent,
     DotCopyButtonComponent,
+    DotLinkComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
@@ -31,10 +35,25 @@ import { ContentletStatusPipe } from '../../pipes/contentlet-status.pipe';
         ChipModule,
         DotMessagePipe,
         ContentletStatusPipe,
-        RouterLink
-    ]
+        RouterLink,
+        AsyncPipe,
+        DotLinkComponent
+    ],
+    providers: [DotWorkflowService]
 })
-export class DotEditContentAsideComponent {
+export class DotEditContentAsideComponent implements OnInit {
     @Input() contentLet!: DotCMSContentlet;
     @Input() contentType!: string;
+
+    private readonly workFlowService = inject(DotWorkflowService);
+
+    workflow$!: Observable<DotCMSWorkflowStatus>;
+
+    ngOnInit() {
+        if (this.contentLet?.inode) {
+            this.workflow$ = this.workFlowService.getWorkflowStatus(this.contentLet.inode);
+        } else {
+            this.workflow$ = of({ scheme: null, step: null, task: null });
+        }
+    }
 }

@@ -1,15 +1,9 @@
 package com.dotcms.api.client.push.task;
 
-import com.dotcms.api.client.MapperService;
-import com.dotcms.api.client.push.PushHandler;
-import com.dotcms.cli.common.ConsoleProgressBar;
-import com.dotcms.model.push.PushAnalysisResult;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.RecursiveTask;
-import org.jboss.logging.Logger;
 
 /**
  * Represents a task for pushing analysis results using a specified push handler. This class extends
@@ -19,40 +13,10 @@ import org.jboss.logging.Logger;
  */
 public class PushTask<T> extends RecursiveTask<List<Exception>> {
 
-    private final List<PushAnalysisResult<T>> analysisResults;
+    private final PushTaskParams<T> params;
 
-    private final PushHandler<T> pushHandler;
-
-    private final boolean allowRemove;
-
-    private final boolean failFast;
-
-    private final Map<String, Object> customOptions;
-
-    private final MapperService mapperService;
-
-    private final ConsoleProgressBar progressBar;
-
-    private Logger logger;
-
-    public PushTask(
-            final List<PushAnalysisResult<T>> analysisResults,
-            final boolean allowRemove,
-            final Map<String, Object> customOptions,
-            final boolean failFast,
-            final PushHandler<T> pushHandler,
-            final MapperService mapperService,
-            final Logger logger,
-            final ConsoleProgressBar progressBar) {
-
-        this.analysisResults = analysisResults;
-        this.allowRemove = allowRemove;
-        this.customOptions = customOptions;
-        this.failFast = failFast;
-        this.pushHandler = pushHandler;
-        this.mapperService = mapperService;
-        this.logger = logger;
-        this.progressBar = progressBar;
+    public PushTask(final PushTaskParams<T> params) {
+        this.params = params;
     }
 
     /**
@@ -67,14 +31,17 @@ public class PushTask<T> extends RecursiveTask<List<Exception>> {
 
         List<RecursiveAction> tasks = new ArrayList<>();
 
-        for (var result : analysisResults) {
+        for (var result : this.params.results()) {
+
             var task = new ProcessResultTask<>(
-                    result,
-                    allowRemove,
-                    customOptions,
-                    pushHandler,
-                    mapperService,
-                    logger
+                    ProcessResultTaskParams.<T>builder().
+                            result(result).
+                            allowRemove(this.params.allowRemove()).
+                            disableAutoUpdate(this.params.disableAutoUpdate()).
+                            customOptions(this.params.customOptions()).
+                            pushHandler(this.params.pushHandler()).
+                            mapperService(this.params.mapperService()).
+                            logger(this.params.logger()).build()
             );
             tasks.add(task);
             task.fork();
@@ -85,13 +52,13 @@ public class PushTask<T> extends RecursiveTask<List<Exception>> {
             try {
                 task.join();
             } catch (Exception e) {
-                if (failFast) {
+                if (this.params.failFast()) {
                     throw e;
                 } else {
                     errors.add(e);
                 }
             } finally {
-                progressBar.incrementStep();
+                this.params.progressBar().incrementStep();
             }
         }
 

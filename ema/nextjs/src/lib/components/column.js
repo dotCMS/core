@@ -36,7 +36,7 @@ function Column({ column }) {
     const startClass = statrClassMap[column.leftOffset];
 
     return (
-        <div className={`${widthClass} ${startClass}`}>
+        <div data-dot="column" className={`${widthClass} ${startClass}`}>
             {column.containers.map((container, index) => (
                 <Container key={container.identifier} containerRef={container} />
             ))}

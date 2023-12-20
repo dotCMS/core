@@ -1,13 +1,5 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.util.Set;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
@@ -15,9 +7,31 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageUtil;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.Set;
+
 @Deprecated
 abstract class WfBaseAction extends AjaxAction {
 
+	protected static final String ACTION_ID_PARAM = "actionId";
+	protected static final String ACTION_NAME_PARAM = "actionName";
+	protected static final String SCHEME_ID_PARAM = "schemeId";
+	protected static final String STEP_ID_PARAM = "stepId";
+	protected static final String ACTION_ICON_SELECT_PARAM = "actionIconSelect";
+	protected static final String ACTION_ASSIGNABLE_PARAM = "actionAssignable";
+	protected static final String ACTION_COMMENTABLE_PARAM = "actionCommentable";
+	protected static final String ACTION_ROLE_HIERARCHY_FOR_ASSIGN_PARAM = "actionRoleHierarchyForAssign";
+	protected static final String ACTION_NEXT_STEP_PARAM = "actionNextStep";
+	protected static final String ACTION_ASSIGN_TO_SELECT_PARAM = "actionAssignToSelect";
+	protected static final String ACTION_CONDITION_PARAM = "actionCondition";
+	protected static final String SHOW_ON_PARAM = "showOn";
+	protected static final String WHO_CAN_USE_PARAM = "whoCanUse";
+	protected static final String ORDER_PARAM = "order";
+	
 	protected abstract Set<String> getAllowedCommands();
 
 	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
