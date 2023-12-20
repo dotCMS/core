@@ -10,19 +10,14 @@ import {
     debounceTime,
     distinctUntilChanged,
     finalize,
-    map,
     switchMap,
     take,
-    takeUntil
+    takeUntil,
+    tap
 } from 'rxjs/operators';
 
 import { DotMessageService, DotPageLayoutService, DotRouterService } from '@dotcms/data-access';
-import {
-    DotContainerMap,
-    DotPageContainerStructure,
-    DotPageRender,
-    DotTemplateDesigner
-} from '@dotcms/dotcms-models';
+import { DotPageRender, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { TemplateBuilderModule } from '@dotcms/template-builder';
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
@@ -45,20 +40,15 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
     private readonly dotMessageService = inject(DotMessageService);
 
     readonly layoutProperties$ = this.store.layoutProperties$.pipe(
-        map((properties) => {
+        tap((properties) => {
             this.pageId = properties.pageId;
-
-            return {
-                ...properties,
-                containersMap: this.mapContainers(properties.containers)
-            };
         })
     );
 
     private pageId: string;
     private lastTemplate: DotTemplateDesigner;
 
-    updateTemplate = new Subject<DotTemplateDesigner>();
+    updateTemplate$ = new Subject<DotTemplateDesigner>();
     destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit(): void {
@@ -79,7 +69,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
      */
     nextTemplateUpdate(template: DotTemplateDesigner) {
         this.dotRouterService.forbidRouteDeactivation();
-        this.updateTemplate.next(template);
+        this.updateTemplate$.next(template);
         this.lastTemplate = template;
     }
 
@@ -121,7 +111,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
         // More Information Here:
         // - https://stackoverflow.com/questions/35991867/angular-2-using-observable-debounce-with-http-get
         // - https://blog.bitsrc.io/3-ways-to-debounce-http-requests-in-angular-c407eb165ada
-        this.updateTemplate
+        this.updateTemplate$
             .pipe(
                 // debounceTime should be before takeUntil to avoid calling the observable after unsubscribe.
                 // More information: https://stackoverflow.com/questions/58974320/how-is-it-possible-to-stop-a-debounced-rxjs-observable
@@ -193,21 +183,5 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
             .subscribe(() => {
                 this.saveTemplate(this.lastTemplate);
             });
-    }
-
-    /**
-     * Map the containers to a DotContainerMap
-     *
-     * @private
-     * @param {DotPageContainerStructure} containers
-     * @return {*}  {DotContainerMap}
-     * @memberof EditEmaLayoutComponent
-     */
-    private mapContainers(containers: DotPageContainerStructure): DotContainerMap {
-        return Object.keys(containers).reduce((acc, id) => {
-            acc[id] = containers[id].container;
-
-            return acc;
-        }, {});
     }
 }

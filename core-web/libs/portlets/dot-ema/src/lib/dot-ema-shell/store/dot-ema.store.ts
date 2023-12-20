@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
-import { DotLayout } from '@dotcms/dotcms-models';
+import { DotContainerMap, DotLayout, DotPageContainerStructure } from '@dotcms/dotcms-models';
 
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
 import {
@@ -70,7 +70,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         layout: state.editor.layout,
         themeId: state.editor.template.theme,
         pageId: state.editor.page.identifier,
-        containers: state.editor.containers
+        containersMap: this.mapContainers(state.editor.containers)
     }));
 
     /**
@@ -266,5 +266,21 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     private createPageURL({ url, language_id, persona_id }: DotPageApiParams): string {
         return `${url}?language_id=${language_id}&com.dotmarketing.persona.id=${persona_id}`;
+    }
+
+    /**
+     * Map the containers to a DotContainerMap
+     *
+     * @private
+     * @param {DotPageContainerStructure} containers
+     * @return {*}  {DotContainerMap}
+     * @memberof EditEmaStore
+     */
+    private mapContainers(containers: DotPageContainerStructure): DotContainerMap {
+        return Object.keys(containers).reduce((acc, id) => {
+            acc[id] = containers[id].container;
+
+            return acc;
+        }, {});
     }
 }
