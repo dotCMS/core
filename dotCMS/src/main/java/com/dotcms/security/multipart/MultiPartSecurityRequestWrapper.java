@@ -38,7 +38,8 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
     private static final SecurityUtils securityUtils = new SecurityUtils();
 
     /** By default, we'll always cache files greater than 50MB to disk */
-    private static final Lazy<Long> CACHE_IF_LARGER = Lazy.of(() -> Config.getLongProperty("MULTI_PART_CACHE_IF_LARGER",1024*1000*50));
+    private static final Lazy<Long> CACHE_IF_LARGER = Lazy.of(() -> Config.getLongProperty(
+            "MULTI_PART_CACHE_IF_LARGER", (long) 1024 * 1000 * 50));
 
     boolean shouldCacheToDisk(final HttpServletRequest request) {
 
