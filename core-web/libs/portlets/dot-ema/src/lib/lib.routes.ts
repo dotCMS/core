@@ -2,12 +2,12 @@ import { Route } from '@angular/router';
 
 import { CanDeactivateGuardService } from '@dotcms/data-access';
 
-import { DotEmaComponent } from './dot-ema-shell/dot-ema.component';
+import { DotEmaShellComponent } from './dot-ema-shell/dot-ema-shell.component';
 
 export const DotEmaRoutes: Route[] = [
     {
         path: '',
-        component: DotEmaComponent,
+        component: DotEmaShellComponent,
         runGuardsAndResolvers: 'always',
         children: [
             {

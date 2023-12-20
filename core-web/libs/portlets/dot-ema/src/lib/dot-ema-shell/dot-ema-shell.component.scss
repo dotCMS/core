@@ -2,7 +2,7 @@
 
 :host {
     display: grid;
-    grid-template-columns: 1fr 5rem;
+    grid-template-columns: 1fr auto;
     grid-template-rows: 100%;
     height: 100%;
 

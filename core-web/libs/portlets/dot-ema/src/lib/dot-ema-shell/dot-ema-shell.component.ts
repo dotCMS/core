@@ -21,7 +21,7 @@ import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA, DEFAULT_URL, WINDOW } from '../sh
 import { NavigationBarItem } from '../shared/models';
 
 @Component({
-    selector: 'dot-ema',
+    selector: 'dot-ema-shell',
     standalone: true,
     imports: [
         CommonModule,
@@ -44,11 +44,11 @@ import { NavigationBarItem } from '../shared/models';
             useValue: window
         }
     ],
-    templateUrl: './dot-ema.component.html',
-    styleUrls: ['./dot-ema.component.scss'],
+    templateUrl: './dot-ema-shell.component.html',
+    styleUrls: ['./dot-ema-shell.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEmaComponent implements OnInit {
+export class DotEmaShellComponent implements OnInit {
     private readonly route = inject(ActivatedRoute);
     private readonly store = inject(EditEmaStore);
 

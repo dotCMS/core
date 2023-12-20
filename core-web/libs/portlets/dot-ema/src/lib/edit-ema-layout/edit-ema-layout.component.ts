@@ -46,7 +46,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
 
     readonly layoutProperties$ = this.store.layoutProperties$.pipe(
         map((properties) => {
-            this.pageID = properties.pageID;
+            this.pageId = properties.pageId;
 
             return {
                 ...properties,
@@ -55,7 +55,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
         })
     );
 
-    private pageID: string;
+    private pageId: string;
     private lastTemplate: DotTemplateDesigner;
 
     updateTemplate = new Subject<DotTemplateDesigner>();
@@ -99,7 +99,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
 
         this.dotPageLayoutService
             // To save a layout and no a template the title should be null
-            .save(this.pageID, { ...template, title: null })
+            .save(this.pageId, { ...template, title: null })
             .pipe(take(1))
             .subscribe(
                 (updatedPage: DotPageRender) => this.handleSuccessSaveTemplate(updatedPage),
@@ -136,7 +136,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
                     });
 
                     return this.dotPageLayoutService
-                        .save(this.pageID, {
+                        .save(this.pageId, {
                             ...layout,
                             title: null
                         })

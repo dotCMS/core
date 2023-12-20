@@ -17,6 +17,7 @@ import { MockDotRouterJestService } from '@dotcms/utils-testing';
 import { EditEmaLayoutComponent } from './edit-ema-layout.component';
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
+import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 
 describe('EditEmaLayoutComponent', () => {
@@ -38,6 +39,7 @@ describe('EditEmaLayoutComponent', () => {
             EditEmaStore,
             MessageService,
             DotMessageService,
+            DotActionUrlService,
             { provide: DotRouterService, useClass: MockDotRouterJestService },
             {
                 provide: DotPageApiService,

@@ -144,38 +144,6 @@ describe('EditEmaEditorComponent', () => {
             });
         });
 
-        describe('router', () => {
-            it('should initialize with route query parameters', () => {
-                const mockQueryParams = {
-                    language_id: 1,
-                    url: 'index',
-                    persona_id: 'modes.persona.no.persona'
-                };
-
-                jest.spyOn(store, 'load');
-
-                spectator.detectChanges();
-
-                expect(store.load).toHaveBeenCalledWith(mockQueryParams);
-            });
-
-            it('should update the iframe url when the queryParams changes', () => {
-                spectator.detectChanges();
-
-                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-
-                spectator.triggerNavigation({
-                    url: [],
-                    queryParams: { language_id: 2, url: 'my-awesome-route' }
-                });
-
-                expect(iframe.nativeElement.src).toBe(
-                    HOST +
-                        '/my-awesome-route?language_id=2&com.dotmarketing.persona.id=modes.persona.no.persona'
-                );
-            });
-        });
-
         describe('toast', () => {
             it('should trigger messageService when clicking on ema-copy-url', () => {
                 spectator.detectChanges();

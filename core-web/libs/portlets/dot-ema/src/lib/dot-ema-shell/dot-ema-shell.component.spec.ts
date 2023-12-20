@@ -10,24 +10,26 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { DotLanguagesServiceMock, DotPersonalizeServiceMock } from '@dotcms/utils-testing';
 
-import { DotEmaComponent } from './dot-ema.component';
+import { DotEmaShellComponent } from './dot-ema-shell.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
+import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 
-describe('DotEmaComponent', () => {
-    let spectator: SpectatorRouting<DotEmaComponent>;
+describe('DotEmaShellComponent', () => {
+    let spectator: SpectatorRouting<DotEmaShellComponent>;
     let store: EditEmaStore;
 
     const createComponent = createRoutingFactory({
-        component: DotEmaComponent,
+        component: DotEmaShellComponent,
         imports: [RouterTestingModule, HttpClientTestingModule],
         detectChanges: false,
         componentProviders: [
             MessageService,
             EditEmaStore,
             ConfirmationService,
+            DotActionUrlService,
             DotMessageService,
             { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
             {
