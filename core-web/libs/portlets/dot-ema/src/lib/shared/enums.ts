@@ -19,3 +19,8 @@ export enum NG_CUSTOM_EVENTS {
     CREATE_CONTENTLET = 'create-contentlet-from-edit-page',
     SAVE_CONTENTLET = 'save-page'
 }
+
+export enum PALETTE_TYPE {
+    CONTENTTYPE = 'CONTENTTYPE',
+    CONTENTLET = 'CONTENTLET'
+}

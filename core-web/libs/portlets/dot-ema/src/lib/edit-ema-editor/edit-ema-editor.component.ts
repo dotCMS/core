@@ -28,6 +28,7 @@ import { DotPersona } from '@dotcms/dotcms-models';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import {
@@ -66,6 +67,9 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
 @Component({
     selector: 'dot-edit-ema-editor',
     standalone: true,
+    templateUrl: './edit-ema-editor.component.html',
+    styleUrls: ['./edit-ema-editor.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         CommonModule,
         FormsModule,
@@ -79,11 +83,9 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
         ClipboardModule,
         ToastModule,
         DotMessagePipe,
-        EmaPageDropzoneComponent
-    ],
-    templateUrl: './edit-ema-editor.component.html',
-    styleUrls: ['./edit-ema-editor.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+        EmaPageDropzoneComponent,
+        EditEmaPaletteComponent
+    ]
 })
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
