@@ -3,6 +3,8 @@ package com.dotmarketing.business;
 import static com.dotcms.util.CollectionsUtils.set;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.model.Variant;
@@ -32,6 +34,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.apache.commons.beanutils.BeanUtils;
@@ -47,6 +50,7 @@ import org.apache.commons.beanutils.BeanUtils;
 public class VersionableFactoryImpl extends VersionableFactory {
 
 	private final String fourOhFour = "NOTFOUND";
+	private IdentifierStripedLock lockManager;
 
 	IdentifierAPI iapi = null;
 	IdentifierCache icache = null;
@@ -64,6 +68,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	public VersionableFactoryImpl() {
 		this(APILocator.getIdentifierAPI(), CacheLocator.getIdentifierCache(), APILocator.getUserAPI(),
 				APILocator.getContainerAPI(), APILocator.getTemplateAPI());
+		lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
 	}
 
 	@VisibleForTesting
@@ -74,6 +79,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		this.userApi = userApi;
 		this.containerApi = containerApi;
 		this.templateApi = templateApi;
+		lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
 	}
 
 	@Override
@@ -456,19 +462,34 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			throw new DotRuntimeException("identifier cannot be null");
 		}
 
-		List<ContentletVersionInfo> infos = icache.getContentVersionInfos(identifier);
+		final List<ContentletVersionInfo> infos = icache.getContentVersionInfos(identifier);
 		if (infos != null) {
 			return infos;
 		}
-		synchronized (identifier.intern()) {
-			infos = icache.getContentVersionInfos(identifier);
-			if (infos != null) {
-				return infos;
+
+		try{
+		return lockManager.tryLock(identifier,()->{
+			final List<ContentletVersionInfo> infos2 = icache.getContentVersionInfos(identifier);
+			if (infos2 != null) {
+				return infos2;
 			}
-			infos = findContentletVersionInfosInDB(identifier);
-			icache.putContentVersionInfos(identifier, infos);
-			return infos;
+			final List<ContentletVersionInfo> infos3 = findContentletVersionInfosInDB(identifier);
+			icache.putContentVersionInfos(identifier, infos3);
+			return infos3;
+		});
+		} catch (Throwable e) {
+			throw new RuntimeException(e);
 		}
+
+//		synchronized (identifier.intern()) {
+//			infos = icache.getContentVersionInfos(identifier);
+//			if (infos != null) {
+//				return infos;
+//			}
+//			infos = findContentletVersionInfosInDB(identifier);
+//			icache.putContentVersionInfos(identifier, infos);
+//			return infos;
+//		}
 	}
 
 	@Override
