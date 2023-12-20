@@ -480,16 +480,6 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		} catch (Throwable e) {
 			throw new RuntimeException(e);
 		}
-
-//		synchronized (identifier.intern()) {
-//			infos = icache.getContentVersionInfos(identifier);
-//			if (infos != null) {
-//				return infos;
-//			}
-//			infos = findContentletVersionInfosInDB(identifier);
-//			icache.putContentVersionInfos(identifier, infos);
-//			return infos;
-//		}
 	}
 
 	@Override
