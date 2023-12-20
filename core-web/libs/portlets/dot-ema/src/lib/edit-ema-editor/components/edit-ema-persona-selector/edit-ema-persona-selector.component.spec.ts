@@ -80,7 +80,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
                 value: {
                     ...DEFAULT_PERSONA
                 },
-                pageID: '123'
+                pageId: '123'
             }
         });
 
@@ -142,7 +142,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
                 ...{
                     identifier: 'modes.customPersona.uniqueIdentifier'
                 },
-                pageID: '123'
+                pageId: '123'
             });
         });
 

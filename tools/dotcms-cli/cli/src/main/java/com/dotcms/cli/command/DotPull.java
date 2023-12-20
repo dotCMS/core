@@ -33,4 +33,13 @@ public interface DotPull {
         return Optional.empty();
     }
 
+    /**
+     * Returns the execution order of this pull command.
+     *
+     * @return the execution order of this pull command
+     */
+    default int getOrder() {
+        return Integer.MAX_VALUE;  // default to the highest possible value
+    }
+
 }

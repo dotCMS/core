@@ -1,42 +1,42 @@
-// This is the payload we recieve from the iframe for add action
-export interface AddContentletPayload {
-    container?: Container;
-    pageContainers: Container[];
-    pageID: string;
+export interface ActionPayload {
+    container: ContainerPayload;
+    contentlet?: ContentletPayload;
+    language_id: string;
+    pageContainers: PageContainer[];
+    pageId: string;
     personaTag?: string;
-    language_id?: string;
+    position?: 'before' | 'after';
+    newContentletId?: string;
 }
 
-// This is the payload we recieve from the iframe for delete action
-export interface DeleteContentletPayload {
-    container: Container;
-    pageContainers: Container[];
-    pageID: string;
-    contentletId: string;
+export interface PageContainer {
     personaTag?: string;
+    identifier: string;
+    uuid: string;
+    contentletsId: string[];
 }
 
+interface ContainerPayload {
+    acceptTypes: string;
+    contentletsId: string[];
+    identifier: string;
+    maxContentlets: number;
+    uuid: string;
+}
+
+interface ContentletPayload {
+    identifier: string;
+    inode: string;
+    title: string;
+}
 export interface SetUrlPayload {
     url: string;
 }
 
-export interface Container {
-    acceptTypes?: string;
-    identifier: string;
-    uuid: string;
-    contentletsId?: string[];
-    personaTag?: string;
-}
-
-export interface SavePagePayload extends AddContentletPayload {
+export interface SavePagePayload {
+    pageContainers: PageContainer[];
+    pageId: string;
     whenSaved?: () => void;
-}
-
-export interface ContainerActionPayload {
-    pageContainers: Container[];
-    container: Container;
-    contentletID: string;
-    personaTag?: string;
 }
 
 export interface NavigationBarItem {

@@ -13,6 +13,7 @@ import com.dotcms.api.client.pull.file.FileFetcher;
 import com.dotcms.api.client.pull.file.FilePullHandler;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPull;
+import com.dotcms.cli.common.ApplyCommandOrder;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PullMixin;
 import com.dotcms.common.WorkspaceManager;
@@ -153,6 +154,11 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
     @Override
     public Optional<String> getCustomMixinName() {
         return Optional.empty();
+    }
+
+    @Override
+    public int getOrder() {
+        return ApplyCommandOrder.FILES.getOrder();
     }
 
 }
