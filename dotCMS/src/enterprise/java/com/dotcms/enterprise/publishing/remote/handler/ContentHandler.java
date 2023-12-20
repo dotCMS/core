@@ -1353,6 +1353,10 @@ public class ContentHandler implements IHandler {
 				};
 			}
 		};
+
+		xstream.allowTypesByWildcard(new String[] {
+				"com.dotcms.**", "com.dotmarketing.**", "com.google.common.collect.**"
+		});
 		return xstream;
     }
 
