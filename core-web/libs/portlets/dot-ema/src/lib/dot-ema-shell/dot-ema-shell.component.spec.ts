@@ -9,7 +9,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
-import { SiteService } from '@dotcms/dotcms-js';
+import { SiteService, mockSites } from '@dotcms/dotcms-js';
 import {
     DotLanguagesServiceMock,
     DotPersonalizeServiceMock,
@@ -59,7 +59,8 @@ describe('DotEmaShellComponent', () => {
                                     country: 'United States'
                                 },
                                 persona: DEFAULT_PERSONA
-                            }
+                            },
+                            site: mockSites[0]
                         });
                     },
                     save() {
@@ -99,6 +100,7 @@ describe('DotEmaShellComponent', () => {
 
     describe('DOM', () => {
         it('should have a navigation bar', () => {
+            spectator.detectChanges();
             expect(spectator.query('dot-edit-ema-navigation-bar')).not.toBeNull();
         });
     });

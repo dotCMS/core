@@ -73,6 +73,14 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         containersMap: this.mapContainers(state.editor.containers)
     }));
 
+    readonly shellProperties$ = this.select((state) => ({
+        pageId: state.editor.page.identifier,
+        siteId: state.editor.site.identifier,
+        languageId: state.editor.viewAs.language.id,
+        currentUrl: '/' + state.url,
+        host: HOST
+    }));
+
     /**
      * Load the page editor
      *
