@@ -395,6 +395,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     newContentletId: detail.data.identifier
                 });
 
+                // Save when selected
                 this.store.savePage({
                     pageContainers,
                     pageId: this.savePayload.pageId,
@@ -403,7 +404,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         this.reloadIframe();
                         this.savePayload = undefined;
                     }
-                }); // Save when selected
+                });
             },
             [NG_CUSTOM_EVENTS.SAVE_CONTENTLET]: () => {
                 if (this.savePayload) {
@@ -412,6 +413,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         newContentletId: detail.payload.contentletIdentifier
                     }); // This won't add anything if the contentlet is already on the container, so is safe to call it even when we just edited a contentlet
 
+                    // Save when created
                     this.store.savePage({
                         pageContainers,
                         pageId: this.savePayload.pageId,
@@ -420,7 +422,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             this.reloadIframe();
                             this.savePayload = undefined;
                         }
-                    }); // Save when created
+                    });
                 } else {
                     this.reloadIframe(); // We still need to reload the iframe because the contentlet is not in the container yet
                 }

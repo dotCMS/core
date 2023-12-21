@@ -14,6 +14,7 @@ import { EditEmaStore } from './dot-ema.store';
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
 import { DotPageApiResponse, DotPageApiService } from '../../services/dot-page-api.service';
 import { DEFAULT_PERSONA, EDIT_CONTENTLET_URL } from '../../shared/consts';
+import { ActionPayload } from '../../shared/models';
 
 const mockResponse: DotPageApiResponse = {
     page: {
@@ -269,6 +270,59 @@ describe('EditEmaStore', () => {
             expect(dotPageApiService.save).toHaveBeenCalledWith({
                 pageContainers: [],
                 pageId: '789'
+            });
+        });
+
+        it('should add form to page and save', () => {
+            const payload: ActionPayload = {
+                pageId: 'page-identifier-123',
+                language_id: '1',
+                container: {
+                    identifier: 'container-identifier-123',
+                    uuid: '123',
+                    acceptTypes: 'test',
+                    maxContentlets: 1,
+                    contentletsId: ['existing-contentlet-123']
+                },
+                pageContainers: [
+                    {
+                        identifier: 'container-identifier-123',
+                        uuid: '123',
+                        contentletsId: ['existing-contentlet-123']
+                    }
+                ],
+                contentlet: {
+                    identifier: 'existing-contentlet-123',
+                    inode: 'existing-contentlet-inode-456',
+                    title: 'Hello World'
+                }
+            };
+            const dotPageApiService = spectator.inject(DotPageApiService);
+            dotPageApiService.save.andReturn(of({}));
+            dotPageApiService.getFormIndetifier.andReturn(of('form-identifier-123'));
+
+            spectator.service.load({ language_id: 'en', url: 'test-url', persona_id: '123' });
+            spectator.service.saveFormToPage({
+                payload,
+                formId: 'form-identifier-789',
+                // eslint-disable-next-line @typescript-eslint/no-empty-function
+                whenSaved: () => {}
+            });
+
+            expect(dotPageApiService.getFormIndetifier).toHaveBeenCalledWith(
+                payload.container.identifier,
+                'form-identifier-789'
+            );
+            expect(dotPageApiService.save).toHaveBeenCalledWith({
+                pageContainers: [
+                    {
+                        contentletsId: ['existing-contentlet-123', 'form-identifier-123'],
+                        identifier: 'container-identifier-123',
+                        personaTag: undefined,
+                        uuid: '123'
+                    }
+                ],
+                pageId: 'page-identifier-123'
             });
         });
     });

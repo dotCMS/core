@@ -414,7 +414,7 @@ describe('EditEmaEditorComponent', () => {
                             {
                                 identifier: 'test',
                                 uuid: 'test',
-                                contentletsId: []
+                                contentletsId: ['456', '123']
                             }
                         ],
                         container: {
@@ -430,7 +430,8 @@ describe('EditEmaEditorComponent', () => {
                             identifier: '123'
                         },
                         pageId: 'test',
-                        language_id: 'test'
+                        language_id: 'test',
+                        position: 'before'
                     };
 
                     spectator.setInput('contentlet', {
@@ -489,10 +490,7 @@ describe('EditEmaEditorComponent', () => {
                             detail: {
                                 name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
                                 payload: {
-                                    contentlet: {
-                                        identifier: '123',
-                                        title: '123'
-                                    }
+                                    contentletIdentifier: 'new-contentlet-123'
                                 }
                             }
                         })
@@ -505,7 +503,7 @@ describe('EditEmaEditorComponent', () => {
                     expect(savePageMock).toHaveBeenCalledWith({
                         pageContainers: [
                             {
-                                contentletsId: ['123'],
+                                contentletsId: ['456', 'new-contentlet-123', '123'],
                                 identifier: 'test',
                                 uuid: 'test',
                                 personaTag: undefined
@@ -533,9 +531,9 @@ describe('EditEmaEditorComponent', () => {
                         language_id: '1',
                         pageContainers: [
                             {
-                                identifier: 'test',
-                                uuid: 'test',
-                                contentletsId: []
+                                identifier: 'container-identifier-123',
+                                uuid: 'uuid-123',
+                                contentletsId: ['contentlet-identifier-123']
                             }
                         ],
                         contentlet: {
@@ -544,10 +542,10 @@ describe('EditEmaEditorComponent', () => {
                             title: 'Hello World'
                         },
                         container: {
-                            identifier: 'test',
+                            identifier: 'container-identifier-123',
                             acceptTypes: 'test',
-                            uuid: 'test',
-                            contentletsId: [],
+                            uuid: 'uuid-123',
+                            contentletsId: ['contentlet-identifier-123'],
                             maxContentlets: 1
                         },
                         pageId: 'test'
@@ -582,7 +580,7 @@ describe('EditEmaEditorComponent', () => {
                             detail: {
                                 name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
                                 data: {
-                                    identifier: '123',
+                                    identifier: 'new-contentlet-identifier-123',
                                     inode: '123'
                                 }
                             }
@@ -592,9 +590,12 @@ describe('EditEmaEditorComponent', () => {
                     expect(saveMock).toHaveBeenCalledWith({
                         pageContainers: [
                             {
-                                identifier: 'test',
-                                uuid: 'test',
-                                contentletsId: ['contentlet-identifier-123'],
+                                identifier: 'container-identifier-123',
+                                uuid: 'uuid-123',
+                                contentletsId: [
+                                    'contentlet-identifier-123',
+                                    'new-contentlet-identifier-123'
+                                ],
                                 personaTag: undefined
                             }
                         ],

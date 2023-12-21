@@ -86,29 +86,29 @@ describe('utils functions', () => {
     });
 
     describe('insert contentlet in container', () => {
-        it('should insert the end', () => {
+        it('should insert at the end', () => {
             // Current page
             const pageContainers = [
                 {
-                    identifier: 'test',
-                    uuid: 'test',
-                    contentletsId: ['test']
+                    identifier: 'container-identifier-123',
+                    uuid: 'container-uui-123',
+                    contentletsId: ['contentlet-mark-123']
                 }
             ];
 
             // Container where we want to insert the contentlet
             const container = {
-                identifier: 'test',
+                identifier: 'container-identifier-123',
                 acceptTypes: 'test',
-                uuid: 'test',
-                contentletsId: ['test'],
+                uuid: 'container-uui-123',
+                contentletsId: ['contentlet-mark-123'],
                 maxContentlets: 1
             };
 
-            // Contentlet to insert
+            // Contentlet position mark
             const contentlet = {
-                identifier: 'test2',
-                inode: 'test',
+                identifier: 'contentlet-mark-123',
+                inode: 'contentlet-mark-inode-123',
                 title: 'test'
             };
 
@@ -116,15 +116,16 @@ describe('utils functions', () => {
                 pageContainers,
                 container,
                 contentlet,
-                pageId: 'test',
-                language_id: 'test'
+                pageId: 'page-id-123',
+                language_id: '1',
+                newContentletId: 'new-contentlet-id-123'
             });
 
             expect(result).toEqual([
                 {
-                    identifier: 'test',
-                    uuid: 'test',
-                    contentletsId: ['test', 'test2'],
+                    identifier: 'container-identifier-123',
+                    uuid: 'container-uui-123',
+                    contentletsId: ['contentlet-mark-123', 'new-contentlet-id-123'],
                     personaTag: undefined
                 }
             ]);
