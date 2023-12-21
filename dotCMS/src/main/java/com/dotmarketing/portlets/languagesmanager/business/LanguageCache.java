@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
+import com.google.common.collect.ImmutableList;
 import java.util.List;
 
 import com.dotmarketing.business.Cachable;
@@ -48,7 +49,7 @@ public abstract class LanguageCache implements Cachable{
 
     public abstract List<Language> getLanguages()  ;
     
-    public abstract void putLanguages(List<Language> langs);
+    public abstract void putLanguages(ImmutableList<Language> langs);
 
     /**
      * Removes all the languages stored under the key ALL_LANGUAGES_KEY but

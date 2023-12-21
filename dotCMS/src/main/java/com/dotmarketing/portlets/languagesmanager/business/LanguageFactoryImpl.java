@@ -374,7 +374,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	protected List<Language> getLanguages() {
 		List<Language> languages = CacheLocator.getLanguageCache().getLanguages();
 		if(languages != null){
-			return ImmutableList.copyOf(languages);
+			return languages;
 		}
 		try {
 			final Language defaultLang = getDefaultLanguage();
@@ -383,8 +383,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 					.loadObjectResults());
 
 			languages.add(0,defaultLang);
-			languages = ImmutableList.copyOf(languages);
-			CacheLocator.getLanguageCache().putLanguages(languages);
+			CacheLocator.getLanguageCache().putLanguages(ImmutableList.copyOf(languages));
 			return languages;
 		} catch (DotDataException e) {
 			CacheLocator.getLanguageCache().putLanguages(null);

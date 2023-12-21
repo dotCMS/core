@@ -93,12 +93,16 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
     }
 
     /**
+     * Allocate only 1 map per thread rather than for every asset
+     */
+    static final ThreadLocal<Map<String, Object>> TRANSFORMER_MAP = ThreadLocal.withInitial(HashMap::new);
+    /**
      * Transform function
      */
     public static Map<String, Object> transform(final Metadata metadata, final Contentlet contentlet,
             final Field field) {
         DotPreconditions.checkNotNull(metadata, IllegalArgumentException.class, "File can't be null");
-        final Map<String, Object> map = new HashMap<>();
+        TRANSFORMER_MAP.get().clear();
 
         final Identifier identifier = Try.of(()-> APILocator.getIdentifierAPI().find(contentlet.getIdentifier())).getOrNull();
 
@@ -107,27 +111,27 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
             assetName = identifier.getAssetName();
         }
 
-        map.put("versionPath",
+        TRANSFORMER_MAP.get().put("versionPath",
                 "/dA/" + APILocator.getShortyAPI().shortify(contentlet.getInode()) + "/" + field
                         .variable() + "/" + assetName);
         final int contentLanguageSize = Try
                 .of(() -> APILocator.getLanguageAPI().getLanguages()).getOrElse(emptyList()).size();
-        map.put("idPath",
+        TRANSFORMER_MAP.get().put("idPath",
                 "/dA/" + APILocator.getShortyAPI().shortify(contentlet.getIdentifier()) + "/"
                         + field.variable() + "/" + assetName
                         + (contentLanguageSize > 1 ? "?language_id=" + contentlet.getLanguageId()
                         : StringPool.BLANK));
-        map.put("name", assetName);
-        map.put("size", metadata.getSize());
-        map.put("mime", metadata.getContentType());
-        map.put("isImage", metadata.isImage());
-        map.put("width", metadata.getWidth());
-        map.put("height", metadata.getHeight());
-        map.put("path", metadata.getPath());
-        map.put("title", metadata.getTitle());
-        map.put("sha256", metadata.getSha256());
-        map.put("modDate", metadata.getModDate());
-        map.put("focalPoint",  Try.of(()->  metadata.getCustomMeta().get("focalPoint").toString()).getOrElse("0.0"));
-        return map;
+        TRANSFORMER_MAP.get().put("name", assetName);
+        TRANSFORMER_MAP.get().put("size", metadata.getSize());
+        TRANSFORMER_MAP.get().put("mime", metadata.getContentType());
+        TRANSFORMER_MAP.get().put("isImage", metadata.isImage());
+        TRANSFORMER_MAP.get().put("width", metadata.getWidth());
+        TRANSFORMER_MAP.get().put("height", metadata.getHeight());
+        TRANSFORMER_MAP.get().put("path", metadata.getPath());
+        TRANSFORMER_MAP.get().put("title", metadata.getTitle());
+        TRANSFORMER_MAP.get().put("sha256", metadata.getSha256());
+        TRANSFORMER_MAP.get().put("modDate", metadata.getModDate());
+        TRANSFORMER_MAP.get().put("focalPoint",  Try.of(()->  metadata.getCustomMeta().get("focalPoint").toString()).getOrElse("0.0"));
+        return TRANSFORMER_MAP.get();
     }
 }
