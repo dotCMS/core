@@ -1,5 +1,5 @@
 import { describe, expect } from '@jest/globals';
-import { byTestId, createRoutingFactory, SpectatorRouting } from '@ngneat/spectator/jest';
+import { byTestId, byText, createRoutingFactory, SpectatorRouting } from '@ngneat/spectator/jest';
 
 import { By } from '@angular/platform-browser';
 
@@ -7,6 +7,7 @@ import { EditEmaNavigationBarComponent } from './edit-ema-navigation-bar.compone
 
 describe('EditEmaNavigationBarComponent', () => {
     let spectator: SpectatorRouting<EditEmaNavigationBarComponent>;
+    const mockedAction = jest.fn();
 
     const createComponent = createRoutingFactory({
         component: EditEmaNavigationBarComponent,
@@ -54,6 +55,11 @@ describe('EditEmaNavigationBarComponent', () => {
                         iconURL: 'assets/images/experiments.svg',
                         label: 'Experiments',
                         href: 'experiments'
+                    },
+                    {
+                        icon: 'pi-sliders-h',
+                        label: 'Action',
+                        action: mockedAction
                     }
                 ]
             }
@@ -62,19 +68,29 @@ describe('EditEmaNavigationBarComponent', () => {
 
     describe('DOM', () => {
         describe('Nav Bar', () => {
-            it('should have 4 items', () => {
+            it('should have 5 items', () => {
                 const links = spectator.queryAll('a');
 
-                expect(links.length).toBe(4);
+                expect(links.length).toBe(5);
                 expect(links[0].textContent.trim()).toBe('Content');
                 expect(links[1].textContent.trim()).toBe('Layout');
                 expect(links[2].textContent.trim()).toBe('Rules');
                 expect(links[3].textContent.trim()).toBe('Experiments');
+                expect(links[4].textContent.trim()).toBe('Action');
 
                 expect(links[0].getAttribute('ng-reflect-router-link')).toBe('content');
                 expect(links[1].getAttribute('ng-reflect-router-link')).toBe('layout');
                 expect(links[2].getAttribute('ng-reflect-router-link')).toBe('rules');
                 expect(links[3].getAttribute('ng-reflect-router-link')).toBe('experiments');
+                expect(links[4].getAttribute('ng-reflect-router-link')).toBeNull();
+            });
+
+            it("should trigger mockedAction on clicking last item 'Action'", () => {
+                const actionLink = spectator.query(byText('Action'));
+
+                spectator.click(actionLink);
+
+                expect(mockedAction).toHaveBeenCalled();
             });
         });
 

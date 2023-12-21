@@ -2,7 +2,12 @@ import { describe, expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { mockDotContainers, mockDotLayout, mockDotTemplate } from '@dotcms/utils-testing';
+import {
+    mockDotContainers,
+    mockDotLayout,
+    mockDotTemplate,
+    mockSites
+} from '@dotcms/utils-testing';
 
 import { EditEmaStore } from './dot-ema.store';
 
@@ -28,6 +33,7 @@ const mockResponse: DotPageApiResponse = {
             ...DEFAULT_PERSONA
         }
     },
+    site: mockSites[0],
     layout: mockDotLayout(),
     template: mockDotTemplate(),
     containers: mockDotContainers()
