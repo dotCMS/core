@@ -27,7 +27,6 @@ export class EmaContentletToolsComponent {
     items: MenuItem[] = [
         {
             label: 'Content',
-            icon: 'pi pi-refresh',
             command: () => {
                 this.add.emit({
                     ...this.contentlet.payload,
@@ -38,7 +37,6 @@ export class EmaContentletToolsComponent {
         },
         {
             label: 'Form',
-            icon: 'pi pi-book',
             command: () => {
                 this.add.emit({
                     ...this.contentlet.payload,
@@ -49,7 +47,6 @@ export class EmaContentletToolsComponent {
         },
         {
             label: 'Widget',
-            icon: 'pi pi-cog',
             command: () => {
                 // eslint-disable-next-line no-console
                 console.log('Widget');
@@ -97,7 +94,7 @@ export class EmaContentletToolsComponent {
 
         return {
             position: 'absolute',
-            left: `${buttonLeft}px`,
+            left: this.contentlet.width < 250 ? `${this.contentlet.x + 8}px` : `${buttonLeft}px`,
             top: `${buttonTop}px`,
             zIndex: '1'
         };
@@ -116,12 +113,14 @@ export class EmaContentletToolsComponent {
         const buttonLeft = contentletCenterX - buttonWidth / 2;
         const buttonTop = this.contentlet.y + this.contentlet.height - buttonHeight / 2;
 
-        return {
+        const position: Record<string, string> = {
             position: 'absolute',
-            left: `${buttonLeft}px`,
             top: `${buttonTop}px`,
+            left: `${buttonLeft}px`,
             zIndex: '1'
         };
+
+        return position;
     }
 
     /**
@@ -134,12 +133,12 @@ export class EmaContentletToolsComponent {
         const width = 84;
         const height = 40;
         const contentletCenterX = this.contentlet.x + this.contentlet.width;
-        const ledt = contentletCenterX - width - 20;
+        const left = contentletCenterX - width - 8;
         const top = this.contentlet.y - height / 2;
 
         return {
             position: 'absolute',
-            left: `${ledt}px`,
+            left: `${left}px`,
             top: `${top}px`,
             zIndex: '1'
         };
