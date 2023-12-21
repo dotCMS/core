@@ -3,14 +3,14 @@
         <tr>
             <th id="name">Name</th>
             <th id="description">Description</th>
-            <th></th>
+            <th id="action" aria-label="Actions"></th>
         </tr>
     </ng-template>
     <ng-template pTemplate="body" let-contenttype>
         <tr>
             <td headers="name">{{ contenttype.name }}</td>
             <td headers="description">{{ contenttype.description }}</td>
-            <td style="min-width: fit-content">
+            <td headers="action" style="min-width: fit-content">
                 <p-button styleClass="p-button-outlined" label="Select" />
             </td>
         </tr>
