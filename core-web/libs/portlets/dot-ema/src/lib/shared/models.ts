@@ -7,7 +7,6 @@ export interface ActionPayload {
     personaTag?: string;
     position?: 'before' | 'after';
     newContentletId?: string;
-    type?: 'content' | 'form' | 'widget';
 }
 
 export interface PageContainer {

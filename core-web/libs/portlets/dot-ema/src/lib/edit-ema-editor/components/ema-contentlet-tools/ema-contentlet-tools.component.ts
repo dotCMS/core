@@ -20,7 +20,9 @@ export class EmaContentletToolsComponent {
     private buttonPosition: 'after' | 'before' = 'after';
 
     @Input() contentlet: ContentletArea;
-    @Output() add = new EventEmitter<ActionPayload>();
+    @Output() addContent = new EventEmitter<ActionPayload>();
+    @Output() addForm = new EventEmitter<ActionPayload>();
+    @Output() addWidget = new EventEmitter<ActionPayload>();
     @Output() edit = new EventEmitter<ActionPayload>();
     @Output() delete = new EventEmitter<ActionPayload>();
 
@@ -28,28 +30,28 @@ export class EmaContentletToolsComponent {
         {
             label: 'Content',
             command: () => {
-                this.add.emit({
+                this.addContent.emit({
                     ...this.contentlet.payload,
-                    position: this.buttonPosition,
-                    type: 'content'
+                    position: this.buttonPosition
                 });
             }
         },
         {
             label: 'Form',
             command: () => {
-                this.add.emit({
+                this.addForm.emit({
                     ...this.contentlet.payload,
-                    position: this.buttonPosition,
-                    type: 'form'
+                    position: this.buttonPosition
                 });
             }
         },
         {
             label: 'Widget',
             command: () => {
-                // eslint-disable-next-line no-console
-                console.log('Widget');
+                this.addWidget.emit({
+                    ...this.contentlet.payload,
+                    position: this.buttonPosition
+                });
             }
         }
     ];
@@ -113,14 +115,12 @@ export class EmaContentletToolsComponent {
         const buttonLeft = contentletCenterX - buttonWidth / 2;
         const buttonTop = this.contentlet.y + this.contentlet.height - buttonHeight / 2;
 
-        const position: Record<string, string> = {
+        return {
             position: 'absolute',
             top: `${buttonTop}px`,
             left: `${buttonLeft}px`,
             zIndex: '1'
         };
-
-        return position;
     }
 
     /**
