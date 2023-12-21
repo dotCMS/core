@@ -61,7 +61,7 @@ $number-link-icon-size: 2.28rem;
     }
 
     .dot-starter-top-main__block {
-        border-radius: 6px;
+        border-radius: $border-radius-md;
         box-shadow: $md-shadow-7;
 
         align-content: space-between;
@@ -105,7 +105,7 @@ $number-link-icon-size: 2.28rem;
         text-align: center;
 
         h4 {
-            color: #14151a;
+            color: $black;
             font-size: $font-size-lg;
             font-weight: $font-weight-semi-bold;
             margin: 0;
@@ -194,7 +194,7 @@ $number-link-icon-size: 2.28rem;
     .dot-starter-bottom__block {
         background-color: $white;
         border-bottom: 1px solid $color-palette-gray-300;
-        box-shadow: 0 2px 4px 0 var(--color-palette-black-op-10);
+        box-shadow: $md-shadow-4;
         display: flex;
         flex-grow: 1;
         height: 100%;
