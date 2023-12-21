@@ -53,17 +53,22 @@ export class EmaContentletToolsComponent {
         }
     ];
 
-    editHandler() {
-        this.edit.emit(this.contentlet.payload);
-    }
-    deleteHandler() {
-        this.delete.emit(this.contentlet.payload);
-    }
-
+    /**
+     * Set the position flag to add the contentlet before or after the current one
+     *
+     * @param {('before' | 'after')} position
+     * @memberof EmaContentletToolsComponent
+     */
     setPositionFlag(position: 'before' | 'after'): void {
         this.buttonPosition = position;
     }
 
+    /**
+     * Set the position for the bounds div
+     *
+     * @return {*}  {Record<string, string>}
+     * @memberof EmaContentletToolsComponent
+     */
     getPosition(): Record<string, string> {
         return {
             left: `${this.contentlet.x}px`,
@@ -73,6 +78,12 @@ export class EmaContentletToolsComponent {
         };
     }
 
+    /**
+     * Set the position for the top add button
+     *
+     * @return {*}  {Record<string, string>}
+     * @memberof EmaContentletToolsComponent
+     */
     getTopButtonPosition(): Record<string, string> {
         const buttonWidth = 40;
         const buttonHeight = 40;
@@ -88,6 +99,12 @@ export class EmaContentletToolsComponent {
         };
     }
 
+    /**
+     * Set the position for the bottom add button
+     *
+     * @return {*}  {Record<string, string>}
+     * @memberof EmaContentletToolsComponent
+     */
     getBottomButtonPosition(): Record<string, string> {
         const buttonWidth = 40;
         const buttonHeight = 40;
@@ -103,6 +120,12 @@ export class EmaContentletToolsComponent {
         };
     }
 
+    /**
+     * Set the position for the action buttons
+     *
+     * @return {*}  {Record<string, string>}
+     * @memberof EmaContentletToolsComponent
+     */
     getActionPosition(): Record<string, string> {
         const width = 84;
         const height = 40;

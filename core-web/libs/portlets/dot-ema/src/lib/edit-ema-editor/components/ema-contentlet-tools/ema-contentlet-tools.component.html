@@ -10,11 +10,11 @@
 
 <div class="actions" [ngStyle]="getActionPosition()">
     <p-button
-        (click)="editHandler()"
+        (click)="edit.emit(contentlet.payload)"
         styleClass="p-button-rounded p-button-raised"
         icon="pi pi-pencil" />
     <p-button
-        (click)="deleteHandler()"
+        (click)="delete.emit(contentlet.payload)"
         styleClass="p-button-rounded p-button-raised"
         icon="pi pi-times" />
 </div>
