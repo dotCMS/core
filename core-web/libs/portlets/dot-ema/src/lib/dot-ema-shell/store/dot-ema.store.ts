@@ -5,11 +5,13 @@ import { Injectable } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
+import { DotContainerMap, DotLayout, DotPageContainerStructure } from '@dotcms/dotcms-models';
+
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
 import {
-    DotPageApiResponse,
     DotPageApiService,
-    DotPageApiParams
+    DotPageApiParams,
+    DotPageApiResponse
 } from '../../services/dot-page-api.service';
 import {
     DEFAULT_PERSONA,
@@ -20,8 +22,8 @@ import {
 import { SavePagePayload } from '../../shared/models';
 
 export interface EditEmaState {
-    url: string;
     editor: DotPageApiResponse;
+    url: string;
     dialogIframeURL: string;
     dialogVisible: boolean;
     dialogHeader: string;
@@ -34,28 +36,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         private dotPageApiService: DotPageApiService,
         private dotActionUrl: DotActionUrlService
     ) {
-        super({
-            url: '',
-            editor: {
-                page: {
-                    title: '',
-                    identifier: ''
-                },
-                viewAs: {
-                    language: {
-                        id: 1,
-                        language: '',
-                        countryCode: '',
-                        languageCode: '',
-                        country: ''
-                    }
-                }
-            },
-            dialogIframeURL: '',
-            dialogVisible: false,
-            dialogHeader: '',
-            dialogIframeLoading: false
-        });
+        super();
     }
 
     readonly editorState$ = this.select((state) => {
@@ -65,32 +46,32 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             persona_id: state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
         });
 
-        return state.editor.page.identifier
-            ? {
-                  apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
-                  iframeURL: `${HOST}/${pageURL}`,
-                  editor: {
-                      ...state.editor,
-                      viewAs: {
-                          ...state.editor.viewAs,
-                          persona: state.editor.viewAs.persona ?? DEFAULT_PERSONA
-                      }
-                  }
-              }
-            : null; // Don't return anything unless we have page data
+        return {
+            apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
+            iframeURL: `${HOST}/${pageURL}`,
+            editor: {
+                ...state.editor,
+                viewAs: {
+                    ...state.editor.viewAs,
+                    persona: state.editor.viewAs.persona ?? DEFAULT_PERSONA
+                }
+            }
+        };
     });
 
-    readonly dialogState$ = this.select(
-        (state) =>
-            state.editor.page.identifier
-                ? {
-                      dialogIframeURL: state.dialogIframeURL,
-                      dialogVisible: state.dialogVisible,
-                      dialogHeader: state.dialogHeader,
-                      dialogIframeLoading: state.dialogIframeLoading
-                  }
-                : null // Don't return anything unless we have page data
-    );
+    readonly dialogState$ = this.select((state) => ({
+        dialogIframeURL: state.dialogIframeURL,
+        dialogVisible: state.dialogVisible,
+        dialogHeader: state.dialogHeader,
+        dialogIframeLoading: state.dialogIframeLoading
+    }));
+
+    readonly layoutProperties$ = this.select((state) => ({
+        layout: state.editor.layout,
+        themeId: state.editor.template.theme,
+        pageId: state.editor.page.identifier,
+        containersMap: this.mapContainers(state.editor.containers)
+    }));
 
     /**
      * Load the page editor
@@ -103,9 +84,13 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 this.dotPageApiService.get({ language_id, url, persona_id }).pipe(
                     tap({
                         next: (editor) => {
-                            this.patchState({
+                            this.setState({
                                 editor,
-                                url
+                                url,
+                                dialogIframeURL: '',
+                                dialogVisible: false,
+                                dialogHeader: '',
+                                dialogIframeLoading: false
                             });
                         },
                         error: (e) => {
@@ -233,6 +218,19 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     );
 
     /**
+     * Update the page layout
+     *
+     * @memberof EditEmaStore
+     */
+    readonly updatePageLayout = this.updater((state, layout: DotLayout) => ({
+        ...state,
+        editor: {
+            ...state.editor,
+            layout
+        }
+    }));
+
+    /**
      * Create the url to edit a contentlet
      *
      * @private
@@ -268,5 +266,21 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     private createPageURL({ url, language_id, persona_id }: DotPageApiParams): string {
         return `${url}?language_id=${language_id}&com.dotmarketing.persona.id=${persona_id}`;
+    }
+
+    /**
+     * Map the containers to a DotContainerMap
+     *
+     * @private
+     * @param {DotPageContainerStructure} containers
+     * @return {*}  {DotContainerMap}
+     * @memberof EditEmaStore
+     */
+    private mapContainers(containers: DotPageContainerStructure): DotContainerMap {
+        return Object.keys(containers).reduce((acc, id) => {
+            acc[id] = containers[id].container;
+
+            return acc;
+        }, {});
     }
 }

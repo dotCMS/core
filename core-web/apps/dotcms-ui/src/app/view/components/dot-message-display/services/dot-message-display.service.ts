@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 
 import { filter, takeUntil } from 'rxjs/operators';
 
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
 
 import { DotMessageSeverity } from '../model';

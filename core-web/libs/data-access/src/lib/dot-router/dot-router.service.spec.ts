@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
+import { expect, describe } from '@jest/globals';
 import { Subject } from 'rxjs';
 
 import { TestBed, waitForAsync } from '@angular/core/testing';
@@ -20,19 +20,19 @@ class RouterMock {
         }
     };
 
-    navigate = jasmine.createSpy('navigate').and.callFake(() => {
+    navigate = jest.fn(() => {
         return new Promise((resolve) => {
             resolve(true);
         });
     });
 
-    navigateByUrl = jasmine.createSpy('navigateByUrl').and.callFake(() => {
+    navigateByUrl = jest.fn(() => {
         return new Promise((resolve) => {
             resolve(true);
         });
     });
 
-    createUrlTree = jasmine.createSpy('createUrlTree').and.callFake((link) => {
+    createUrlTree = jest.fn((link) => {
         return link;
     });
 
@@ -98,20 +98,21 @@ describe('DotRouterService', () => {
     });
 
     it('should get queryParams from Router', () => {
-        spyOn<any>(router, 'getCurrentNavigation').and.returnValue({
+        jest.spyOn(router, 'getCurrentNavigation').mockReturnValue({
             finalUrl: {
                 queryParams: {
                     hola: 'mundo'
                 }
             }
         });
+
         expect(service.queryParams).toEqual({
             hola: 'mundo'
         });
     });
 
     it('should get queryParams from ActivatedRoute', () => {
-        spyOn(router, 'getCurrentNavigation').and.returnValue(null);
+        jest.spyOn(router, 'getCurrentNavigation').mockReturnValue(null);
         expect(service.queryParams).toEqual({
             hello: 'world'
         });
@@ -123,7 +124,7 @@ describe('DotRouterService', () => {
     });
 
     it('should go to edit page', () => {
-        spyOn(service, 'goToEditPage');
+        jest.spyOn(service, 'goToEditPage');
         service.goToMain('/about/us');
         expect(service.goToEditPage).toHaveBeenCalledWith({ url: '/about/us' });
     });
@@ -302,7 +303,7 @@ describe('DotRouterService', () => {
     });
 
     it('trigger pageLeaveRequest observable stream when a page leave is requested', (done) => {
-        const leavePage = jasmine.createSpy();
+        const leavePage = jest.fn();
         service.pageLeaveRequest$.subscribe(() => {
             leavePage();
             expect(leavePage).toHaveBeenCalled();
@@ -314,8 +315,7 @@ describe('DotRouterService', () => {
     describe('go to login', () => {
         beforeEach(() => {
             const mockDate = new Date(1466424490000);
-            jasmine.clock().install();
-            jasmine.clock().mockDate(mockDate);
+            jest.useFakeTimers().setSystemTime(mockDate);
         });
 
         it('should add the cache busting', () => {
@@ -323,7 +323,7 @@ describe('DotRouterService', () => {
             expect(router.navigate).toHaveBeenCalledWith(['/public/login'], {
                 queryParams: { r: 1466424490000 }
             });
-            jasmine.clock().uninstall();
+            jest.useRealTimers(); // We need to deactivate the fake timer
         });
 
         it('should go to login with cache busting', () => {
@@ -333,15 +333,14 @@ describe('DotRouterService', () => {
             expect(router.navigate).toHaveBeenCalledWith(['/public/login'], {
                 queryParams: { test: 'test', r: 1466424490000 }
             });
-            jasmine.clock().uninstall();
+            jest.useRealTimers();
         });
     });
 
     describe('go to logout', () => {
         beforeEach(() => {
             const mockDate = new Date(1466424490000);
-            jasmine.clock().install();
-            jasmine.clock().mockDate(mockDate);
+            jest.useFakeTimers().setSystemTime(mockDate);
         });
 
         it('should add the cache busting', () => {
@@ -349,7 +348,7 @@ describe('DotRouterService', () => {
             expect(router.navigate).toHaveBeenCalledWith(['/dotAdmin/logout'], {
                 queryParams: { r: 1466424490000 }
             });
-            jasmine.clock().uninstall();
+            jest.useRealTimers();
         });
     });
 });

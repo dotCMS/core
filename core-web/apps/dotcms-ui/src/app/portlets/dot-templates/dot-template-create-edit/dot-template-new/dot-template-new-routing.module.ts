@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
+import { CanDeactivateGuardService } from '@dotcms/data-access';
 import { DotTemplateGuard } from '@portlets/dot-templates/dot-template-create-edit/dot-template-new/guards/dot-template.guard';
-import { CanDeactivateGuardService } from '@services/guards/can-deactivate-guard.service';
 
 import { DotTemplateNewComponent } from './dot-template-new.component';
 

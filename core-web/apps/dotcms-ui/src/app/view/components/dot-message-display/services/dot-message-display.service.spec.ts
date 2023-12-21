@@ -2,7 +2,7 @@
 
 import { TestBed } from '@angular/core/testing';
 
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotcmsEventsServiceMock } from '@dotcms/utils-testing';
 

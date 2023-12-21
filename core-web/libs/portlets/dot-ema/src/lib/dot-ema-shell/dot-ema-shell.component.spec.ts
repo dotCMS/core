@@ -10,23 +10,26 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { DotLanguagesServiceMock, DotPersonalizeServiceMock } from '@dotcms/utils-testing';
 
-import { DotEmaComponent } from './dot-ema.component';
+import { DotEmaShellComponent } from './dot-ema-shell.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
+import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 
-describe('DotEmaComponent', () => {
-    let spectator: SpectatorRouting<DotEmaComponent>;
+describe('DotEmaShellComponent', () => {
+    let spectator: SpectatorRouting<DotEmaShellComponent>;
+    let store: EditEmaStore;
 
     const createComponent = createRoutingFactory({
-        component: DotEmaComponent,
+        component: DotEmaShellComponent,
         imports: [RouterTestingModule, HttpClientTestingModule],
         detectChanges: false,
         componentProviders: [
             MessageService,
             EditEmaStore,
             ConfirmationService,
+            DotActionUrlService,
             DotMessageService,
             { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
             {
@@ -79,11 +82,43 @@ describe('DotEmaComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
+        store = spectator.inject(EditEmaStore, true);
+        jest.spyOn(store, 'load');
     });
 
     describe('DOM', () => {
         it('should have a navigation bar', () => {
             expect(spectator.query('dot-edit-ema-navigation-bar')).not.toBeNull();
+        });
+    });
+
+    describe('router', () => {
+        it('should trigger an store load with default values', () => {
+            spectator.detectChanges();
+
+            expect(store.load).toHaveBeenCalledWith({
+                language_id: 1,
+                url: 'index',
+                persona_id: DEFAULT_PERSONA.identifier
+            });
+        });
+
+        it('should trigger a load when changing the queryParams', () => {
+            spectator.triggerNavigation({
+                url: [],
+                queryParams: {
+                    language_id: 2,
+                    url: 'my-awesome-page',
+                    'com.dotmarketing.persona.id': 'SomeCoolDude'
+                }
+            });
+
+            spectator.detectChanges();
+            expect(store.load).toHaveBeenCalledWith({
+                language_id: 2,
+                url: 'my-awesome-page',
+                persona_id: 'SomeCoolDude'
+            });
         });
     });
 });

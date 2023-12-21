@@ -10,9 +10,8 @@ import { MultiSelectModule } from 'primeng/multiselect';
 
 import { of } from 'rxjs/internal/observable/of';
 
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotPagesFavoritePageEmptySkeletonComponent } from '@dotcms/app/portlets/dot-pages/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
-import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
+import { DotMessageService, DotRouterService, DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
