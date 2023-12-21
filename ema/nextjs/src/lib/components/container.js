@@ -64,6 +64,10 @@ function Container({ containerRef }) {
                     return (
                         <div
                             onPointerEnter={(e) => {
+                                if (e.target.dataset.dot !== 'contentlet') {
+                                    return;
+                                }
+
                                 const { x, y, width, height } = e.target.getBoundingClientRect();
 
                                 window.parent.postMessage(

@@ -1,1 +1,11 @@
+<p-button
+    [ngStyle]="getTopButtonPosition()"
+    (click)="menu.toggle($event)"
+    icon="pi pi-plus"></p-button>
+<p-button
+    [ngStyle]="getBottomButtonPosition()"
+    (click)="menu.toggle($event)"
+    icon="pi pi-plus"></p-button>
+<p-menu #menu [model]="items" [popup]="true" appendTo="body"></p-menu>
+
 <div [ngStyle]="getPosition()"></div>

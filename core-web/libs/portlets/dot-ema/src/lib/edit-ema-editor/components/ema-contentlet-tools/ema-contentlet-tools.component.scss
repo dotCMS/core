@@ -5,6 +5,7 @@
 }
 
 div {
-    outline-color: $color-palette-primary-500;
+    position: absolute;
     pointer-events: none;
+    outline: solid 2px $color-palette-primary-500;
 }
