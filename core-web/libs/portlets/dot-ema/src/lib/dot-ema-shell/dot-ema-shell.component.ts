@@ -1,14 +1,14 @@
 import { Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, ChangeDetectionStrategy, OnInit, inject, OnDestroy } from '@angular/core';
+import { Component, OnInit, inject, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { skip, takeUntil } from 'rxjs/operators';
+import { skip, take, takeUntil } from 'rxjs/operators';
 
 import {
     DotLanguagesService,
@@ -50,8 +50,7 @@ import { NavigationBarItem } from '../shared/models';
         }
     ],
     templateUrl: './dot-ema-shell.component.html',
-    styleUrls: ['./dot-ema-shell.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ['./dot-ema-shell.component.scss']
 })
 export class DotEmaShellComponent implements OnInit, OnDestroy {
     private readonly route = inject(ActivatedRoute);
@@ -62,46 +61,55 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     private readonly destroy$ = new Subject<boolean>();
 
     // This needs more logic. Because some of this buttons are for enterprise only or Feature Flags.
-    readonly items: NavigationBarItem[] = [
-        {
-            icon: 'pi-file',
-            label: 'Content',
-            href: 'content'
-        },
-        {
-            icon: 'pi-table',
-            label: 'Layout',
-            href: 'layout'
-        },
-        {
-            icon: 'pi-sliders-h',
-            label: 'Rules',
-            href: 'rules'
-        },
-        {
-            iconURL: 'experiments',
-            label: 'A/B',
-            href: 'experiments'
-        },
-        {
-            icon: 'pi-th-large',
-            label: 'Page Tools',
-            href: 'page-tools'
-        },
-        {
-            icon: 'pi-ellipsis-v',
-            label: 'Properties',
-            href: 'edit-content'
-        }
-    ];
+    items: NavigationBarItem[];
 
     ngOnInit(): void {
         this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((queryParams: Params) => {
-            this.store.load({
-                language_id: queryParams['language_id'] ?? DEFAULT_LANGUAGE_ID,
-                url: queryParams['url'] ?? DEFAULT_URL,
-                persona_id: queryParams['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier
-            });
+            this.store
+                .load({
+                    language_id: queryParams['language_id'] ?? DEFAULT_LANGUAGE_ID,
+                    url: queryParams['url'] ?? DEFAULT_URL,
+                    persona_id:
+                        queryParams['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier
+                })
+                .add(() =>
+                    // We can internally navigate, so the PageID can change, that's why I trigger this after the load
+                    // We need to move the logic to a function, we still need to add enterprise logic
+                    this.store.editorState$.pipe(take(1)).subscribe(({ editor }) => {
+                        this.items = [
+                            {
+                                icon: 'pi-file',
+                                label: 'Content',
+                                href: 'content'
+                            },
+                            {
+                                icon: 'pi-table',
+                                label: 'Layout',
+                                href: 'layout'
+                            },
+                            {
+                                icon: 'pi-sliders-h',
+                                label: 'Rules',
+                                href: `rules/${editor.page.identifier}`
+                            },
+                            {
+                                iconURL: 'experiments',
+                                label: 'A/B',
+                                href: 'experiments'
+                            },
+                            {
+                                icon: 'pi-th-large',
+                                label: 'Page Tools',
+                                href: 'page-tools'
+                            },
+                            {
+                                icon: 'pi-ellipsis-v',
+                                label: 'Properties',
+                                href: 'edit-content'
+                            }
+                        ];
+                    })
+                );
         });
 
         // We need to skip one because it's the initial value

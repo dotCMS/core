@@ -1,21 +1,22 @@
-import { from as observableFrom, Subject } from 'rxjs';
+import { from as observableFrom, Subject, Observable, BehaviorSubject } from 'rxjs';
+
+import { HttpResponse } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 
 import { mergeMap, reduce, map, tap } from 'rxjs/operators';
 // tslint:disable-next-line:max-file-line-count
-import { Injectable } from '@angular/core';
-import { Observable, BehaviorSubject } from 'rxjs';
 
-import { ApiRoot } from '@dotcms/dotcms-js';
+import { CoreWebService, SiteService, CwError, ApiRoot } from '@dotcms/dotcms-js';
+
 import { ServerSideFieldModel, ServerSideTypeModel } from './ServerSideFieldModel';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { SiteService } from '@dotcms/dotcms-js';
-import { CwError } from '@dotcms/dotcms-js';
 import { I18nService } from './system/locale/I18n';
-import { HttpResponse } from '@angular/common/http';
 
 export const RULE_CREATE = 'RULE_CREATE';
+
 export const RULE_DELETE = 'RULE_DELETE';
+
 export const RULE_UPDATE_NAME = 'RULE_UPDATE_NAME';
+
 export const RULE_UPDATE_ENABLED_STATE = 'RULE_UPDATE_ENABLED_STATE';
 
 export const V_RULE_UPDATE_EXPANDED_STATE = 'V_RULE_UPDATE_EXPANDED_STATE';
@@ -23,18 +24,27 @@ export const V_RULE_UPDATE_EXPANDED_STATE = 'V_RULE_UPDATE_EXPANDED_STATE';
 export const RULE_UPDATE_FIRE_ON = 'RULE_UPDATE_FIRE_ON';
 
 export const RULE_RULE_ACTION_CREATE = 'RULE_RULE_ACTION_CREATE';
+
 export const RULE_RULE_ACTION_DELETE = 'RULE_RULE_ACTION_DELETE';
+
 export const RULE_RULE_ACTION_UPDATE_TYPE = 'RULE_RULE_ACTION_UPDATE_TYPE';
+
 export const RULE_RULE_ACTION_UPDATE_PARAMETER = 'RULE_RULE_ACTION_UPDATE_PARAMETER';
 
 export const RULE_CONDITION_GROUP_UPDATE_OPERATOR = 'RULE_CONDITION_GROUP_UPDATE_OPERATOR';
+
 export const RULE_CONDITION_GROUP_DELETE = 'RULE_CONDITION_GROUP_DELETE';
+
 export const RULE_CONDITION_GROUP_CREATE = 'RULE_CONDITION_GROUP_CREATE';
 
 export const RULE_CONDITION_CREATE = 'RULE_CONDITION_CREATE';
+
 export const RULE_CONDITION_DELETE = 'RULE_CONDITION_DELETE';
+
 export const RULE_CONDITION_UPDATE_TYPE = 'RULE_CONDITION_UPDATE_TYPE';
+
 export const RULE_CONDITION_UPDATE_PARAMETER = 'RULE_CONDITION_UPDATE_PARAMETER';
+
 export const RULE_CONDITION_UPDATE_OPERATOR = 'RULE_CONDITION_UPDATE_OPERATOR';
 
 let idCounter = 1000;
@@ -177,6 +187,7 @@ export class ConditionGroupModel {
 
     isValid(): boolean {
         const valid = this.operator && (this.operator === 'AND' || this.operator === 'OR');
+
         return valid;
     }
 }
@@ -219,6 +230,7 @@ export class RuleModel {
     isValid(): boolean {
         let valid = !!this.name;
         valid = valid && this.name.trim().length > 0;
+
         return valid;
     }
 }
@@ -308,6 +320,7 @@ export class RuleService {
         return Object.keys(ruleMap).map((id: string) => {
             const r: IRule = ruleMap[id];
             r.id = id;
+
             return new RuleModel(r);
         });
     }
@@ -331,6 +344,7 @@ export class RuleService {
             }
         });
         this.removeMeta(sendRule);
+
         return sendRule;
     }
 
@@ -352,12 +366,14 @@ export class RuleService {
             } else {
                 x = 0;
             }
+
             return x;
         };
     }
 
     createRule(body: RuleModel): Observable<RuleModel | CwError> {
         const siteId = this.loadRulesSiteId();
+
         return this.coreWebService
             .request({
                 body: RuleService.fromClientRuleTransformFn(body),
@@ -367,6 +383,7 @@ export class RuleService {
             .pipe(
                 map((result: HttpResponse<any>) => {
                     body.key = result['id']; // @todo:ggranum type the POST result correctly.
+
                     return <RuleModel | CwError>(
                         (<unknown>Object.assign({}, DEFAULT_RULE, body, result))
                     );
@@ -376,6 +393,7 @@ export class RuleService {
 
     deleteRule(ruleId: string): Observable<{ success: boolean } | CwError> {
         const siteId = this.loadRulesSiteId();
+
         return this.coreWebService
             .request({
                 method: 'DELETE',
@@ -406,6 +424,7 @@ export class RuleService {
 
     loadRule(id: string): Observable<RuleModel | CwError> {
         const siteId = this.loadRulesSiteId();
+
         return this.coreWebService
             .request({
                 url: `/api/v1/sites/${siteId}${this._rulesEndpointUrl}/${id}`
@@ -435,10 +454,12 @@ export class RuleService {
                     map((res) => {
                         const r = Object.assign({}, DEFAULT_RULE, res);
                         r.id = id;
+
                         return r;
                     })
                 );
         }
+
         return result;
     }
 
@@ -478,15 +499,23 @@ export class RuleService {
         const types = Object.keys(typesMap).map((key: string) => {
             const json: any = typesMap[key];
             json.key = key;
+
             return ServerSideTypeModel.fromJson(json);
         });
+
         return types.filter((type) => type.key !== 'CountRulesActionlet');
     }
 
     private _preCacheCommonResources(resources: I18nService): void {
-        resources.get('api.sites.ruleengine').subscribe((_rsrc) => {});
-        resources.get('api.ruleengine.system').subscribe((_rsrc) => {});
-        resources.get('api.system.ruleengine').subscribe((_rsrc) => {});
+        resources.get('api.sites.ruleengine').subscribe((_rsrc) => {
+            /**/
+        });
+        resources.get('api.ruleengine.system').subscribe((_rsrc) => {
+            /**/
+        });
+        resources.get('api.system.ruleengine').subscribe((_rsrc) => {
+            /**/
+        });
     }
 
     private sendLoadRulesRequest(siteId: string): void {
@@ -517,6 +546,7 @@ export class RuleService {
                 this._ruleActionTypes
             );
         }
+
         return obs;
     }
 
@@ -531,12 +561,14 @@ export class RuleService {
                         return this._resources.get(type.i18nKey + '.name', type.i18nKey).pipe(
                             map((label: string) => {
                                 type._opt = { value: type.key, label: label };
+
                                 return type;
                             })
                         );
                     }),
                     reduce((types: any[], type: any) => {
                         types.push(type);
+
                         return types;
                     }, []),
                     tap((typ: any[]) => {
@@ -546,6 +578,7 @@ export class RuleService {
                         typ.forEach((type) => {
                             typeMap[type.key] = type;
                         });
+
                         return typ;
                     })
                 );
@@ -563,6 +596,7 @@ export class RuleService {
                 this._conditionTypes
             );
         }
+
         return obs;
     }
 
@@ -573,10 +607,12 @@ export class RuleService {
 
         if (hash.includes('fromCore')) {
             query = hash.substr(hash.indexOf('?') + 1);
+
             return ApiRoot.parseQueryParam(query, 'realmId');
-        } else if (hash.includes('edit-page')) {
+        } else if (hash.includes('edit-page') || hash.includes('edit-ema')) {
             return hash.split('/').pop().split('?')[0];
         }
+
         return null;
     }
 
@@ -595,6 +631,7 @@ export class RuleService {
              */
             siteId = `${this.siteService.currentSite.identifier}`;
         }
+
         return siteId;
     }
 }
