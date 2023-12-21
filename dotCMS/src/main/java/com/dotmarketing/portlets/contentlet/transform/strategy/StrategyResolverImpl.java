@@ -8,6 +8,7 @@ import com.dotcms.util.CollectionsUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 
+import io.vavr.Lazy;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -76,12 +77,11 @@ public class StrategyResolverImpl implements StrategyResolver {
         );
     }
 
-    /**
-     * Default constructor
-     */
-    public StrategyResolverImpl() {
-        this(new Builder().build());
-    }
+
+
+    public static final Lazy<StrategyResolverImpl> IMPL = Lazy.of(()->new StrategyResolverImpl(new Builder().build()));
+
+
 
     /**
      * This decides what strategies must be applied to transform the contentlet based of on the CT and the Options

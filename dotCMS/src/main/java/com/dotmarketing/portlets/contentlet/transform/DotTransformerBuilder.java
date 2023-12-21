@@ -39,15 +39,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+
+
+
+
 /**
  * This Class is the entry point to realize any transformation
  * it facilitates instantiating the Transformer
  */
 public class DotTransformerBuilder {
 
-    private final List<Contentlet> contentlets = new ArrayList<>();
+    static final ThreadLocal<List<Contentlet>> CONTENTLETS = ThreadLocal.withInitial(ArrayList::new);
 
-    private final Set<TransformOptions> optionsHolder = new HashSet<>();
+    static final ThreadLocal<Set<TransformOptions>> OPTIONS_HOLDER = ThreadLocal.withInitial(HashSet::new);
+
 
     private User user;
 
@@ -57,7 +62,8 @@ public class DotTransformerBuilder {
      * @return
      */
     public DotTransformerBuilder content(final List<Contentlet> contentlets){
-        this.contentlets.addAll(contentlets);
+        CONTENTLETS.get().clear();
+        CONTENTLETS.get().addAll(contentlets);
         return this;
     }
 
@@ -67,7 +73,7 @@ public class DotTransformerBuilder {
      * @return
      */
     public DotTransformerBuilder content(final Contentlet... contentlets){
-        this.contentlets.addAll(Arrays.asList(contentlets));
+        this.content(Arrays.asList(contentlets));
         return this;
     }
 
@@ -86,8 +92,8 @@ public class DotTransformerBuilder {
      * @return
      */
     public DotTransformerBuilder binaryToMapTransformer(){
-       optionsHolder.clear();
-       optionsHolder.add(BINARIES_VIEW);
+       OPTIONS_HOLDER.get().clear();
+       OPTIONS_HOLDER.get().add(BINARIES_VIEW);
        return this;
     }
 
@@ -96,8 +102,8 @@ public class DotTransformerBuilder {
      * @return
      */
     public DotTransformerBuilder languageToMapTransformer(){
-        optionsHolder.clear();
-        optionsHolder.add(LANGUAGE_VIEW);
+        OPTIONS_HOLDER.get().clear();
+        OPTIONS_HOLDER.get().add(LANGUAGE_VIEW);
         return this;
     }
 
@@ -106,8 +112,8 @@ public class DotTransformerBuilder {
      * @return
      */
     DotTransformerBuilder identifierToMapTransformer(){
-        optionsHolder.clear();
-        optionsHolder.add(IDENTIFIER_VIEW);
+        OPTIONS_HOLDER.get().clear();
+        OPTIONS_HOLDER.get().add(IDENTIFIER_VIEW);
         return this;
     }
 
@@ -118,9 +124,9 @@ public class DotTransformerBuilder {
      */
     public DotTransformerBuilder siteToMapTransformer(final boolean clear){
         if (clear) {
-            optionsHolder.clear();
+            OPTIONS_HOLDER.get().clear();
         }
-        optionsHolder.addAll(EnumSet.of(SITE_VIEW));
+        OPTIONS_HOLDER.get().addAll(EnumSet.of(SITE_VIEW));
         return this;
     }
 
@@ -129,8 +135,8 @@ public class DotTransformerBuilder {
      * @return
      */
     public DotTransformerBuilder categoryToMapTransformer(){
-        optionsHolder.clear();
-        optionsHolder.addAll(EnumSet.of(CATEGORIES_VIEW));
+        OPTIONS_HOLDER.get().clear();
+        OPTIONS_HOLDER.get().addAll(EnumSet.of(CATEGORIES_VIEW));
         return this;
     }
 
@@ -139,8 +145,8 @@ public class DotTransformerBuilder {
      * @return
      */
     public DotTransformerBuilder keyValueToMapTransformer(){
-        optionsHolder.clear();
-        optionsHolder.addAll(EnumSet.of(KEY_VALUE_VIEW));
+        OPTIONS_HOLDER.get().clear();
+        OPTIONS_HOLDER.get().addAll(EnumSet.of(KEY_VALUE_VIEW));
         return this;
     }
 
@@ -149,9 +155,9 @@ public class DotTransformerBuilder {
      * @return
      */
     public DotTransformerBuilder urlContentMapTransformer(){
-        optionsHolder.clear();
-        optionsHolder.addAll(DotContentletTransformerImpl.defaultOptions);
-        optionsHolder.add(KEY_VALUE_VIEW);
+        OPTIONS_HOLDER.get().clear();
+        OPTIONS_HOLDER.get().addAll(DotContentletTransformerImpl.defaultOptions);
+        OPTIONS_HOLDER.get().add(KEY_VALUE_VIEW);
         return this;
     }
 
@@ -160,24 +166,24 @@ public class DotTransformerBuilder {
      * @return
      */
     public DotTransformerBuilder webAssetOptions(){
-        optionsHolder.clear();
-        optionsHolder.addAll(
+        OPTIONS_HOLDER.get().clear();
+        OPTIONS_HOLDER.get().addAll(
                 EnumSet.of(COMMON_PROPS, VERSION_INFO, LOAD_META, USE_ALIAS, LANGUAGE_PROPS));
         return this;
     }
 
     public DotTransformerBuilder hydratedContentMapTransformer(final TransformOptions...transformOptions){
-        optionsHolder.clear();
-        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, TAGS));
-        optionsHolder.add(KEY_VALUE_VIEW);
-        optionsHolder.add(LANGUAGE_VIEW);
-        optionsHolder.add(CATEGORIES_VIEW);
-        optionsHolder.add(BINARIES_VIEW);
-        optionsHolder.add(FILEASSET_VIEW);
-        optionsHolder.add(LOAD_META);
-        optionsHolder.add(AVOID_MAP_SUFFIX_FOR_VIEWS);
+        OPTIONS_HOLDER.get().clear();
+        OPTIONS_HOLDER.get().addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, TAGS));
+        OPTIONS_HOLDER.get().add(KEY_VALUE_VIEW);
+        OPTIONS_HOLDER.get().add(LANGUAGE_VIEW);
+        OPTIONS_HOLDER.get().add(CATEGORIES_VIEW);
+        OPTIONS_HOLDER.get().add(BINARIES_VIEW);
+        OPTIONS_HOLDER.get().add(FILEASSET_VIEW);
+        OPTIONS_HOLDER.get().add(LOAD_META);
+        OPTIONS_HOLDER.get().add(AVOID_MAP_SUFFIX_FOR_VIEWS);
         if(transformOptions.length>0) {
-            optionsHolder.addAll(Arrays.asList(transformOptions));
+            OPTIONS_HOLDER.get().addAll(Arrays.asList(transformOptions));
         }
 
         return this;
@@ -188,8 +194,8 @@ public class DotTransformerBuilder {
      * @return
      */
     public DotTransformerBuilder dotAssetOptions(){
-        optionsHolder.clear();
-        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, VERSION_INFO, USE_ALIAS, LANGUAGE_PROPS));
+        OPTIONS_HOLDER.get().clear();
+        OPTIONS_HOLDER.get().addAll(EnumSet.of(COMMON_PROPS, VERSION_INFO, USE_ALIAS, LANGUAGE_PROPS));
         return this;
     }
 
@@ -198,12 +204,12 @@ public class DotTransformerBuilder {
      * @return
      */
     public DotTransformerBuilder contentResourceOptions(final boolean allCategoriesInfo){
-        optionsHolder.clear();
-        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, LOAD_META, BINARIES, CATEGORIES_NAME,
+        OPTIONS_HOLDER.get().clear();
+        OPTIONS_HOLDER.get().addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, LOAD_META, BINARIES, CATEGORIES_NAME,
                 DATETIME_FIELDS_TO_TIMESTAMP));
         if(allCategoriesInfo){
-          optionsHolder.remove(CATEGORIES_NAME);
-          optionsHolder.add(CATEGORIES_INFO);
+            OPTIONS_HOLDER.get().remove(CATEGORIES_NAME);
+            OPTIONS_HOLDER.get().add(CATEGORIES_INFO);
         }
         return this;
     }
@@ -213,11 +219,11 @@ public class DotTransformerBuilder {
      * @return
      */
     public DotTransformerBuilder allOptions(final boolean allCategoriesInfo){
-        optionsHolder.clear();
-        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, LOAD_META, BINARIES, CATEGORIES_NAME, LANGUAGE_PROPS));
+        OPTIONS_HOLDER.get().clear();
+        OPTIONS_HOLDER.get().addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, LOAD_META, BINARIES, CATEGORIES_NAME, LANGUAGE_PROPS));
         if(allCategoriesInfo){
-            optionsHolder.remove(CATEGORIES_NAME);
-            optionsHolder.add(CATEGORIES_INFO);
+            OPTIONS_HOLDER.get().remove(CATEGORIES_NAME);
+            OPTIONS_HOLDER.get().add(CATEGORIES_INFO);
         }
         return this;
     }
@@ -228,8 +234,8 @@ public class DotTransformerBuilder {
      * @return
      */
     public DotTransformerBuilder graphQLDataFetchOptions(){
-        optionsHolder.clear();
-        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, CATEGORIES_NAME));
+        OPTIONS_HOLDER.get().clear();
+        OPTIONS_HOLDER.get().addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, CATEGORIES_NAME));
         return this;
     }
 
@@ -238,8 +244,8 @@ public class DotTransformerBuilder {
      * @return
      */
     public DotTransformerBuilder defaultOptions(){
-        optionsHolder.clear();
-        optionsHolder.addAll(DotContentletTransformerImpl.defaultOptions);
+        OPTIONS_HOLDER.get().clear();
+        OPTIONS_HOLDER.get().addAll(DotContentletTransformerImpl.defaultOptions);
         return this;
     }
 
@@ -251,7 +257,7 @@ public class DotTransformerBuilder {
         final StrategyResolver resolver;
         final String providerClassName = getStrategyResolverProvider();
         if (isNotSet(providerClassName)) {
-            resolver = new StrategyResolverImpl();
+            resolver = StrategyResolverImpl.IMPL.get();
         } else {
             try {
                 resolver = ((Class<StrategyResolver>) Class.forName(providerClassName))
@@ -271,7 +277,7 @@ public class DotTransformerBuilder {
                 throw new DotRuntimeException(e);
             }
         }
-        return new DotContentletTransformerImpl(contentlets, resolver, EnumSet.copyOf(optionsHolder), user);
+        return new DotContentletTransformerImpl(CONTENTLETS.get(), resolver, EnumSet.copyOf(OPTIONS_HOLDER.get()), user);
     }
 
     final static Lazy<String> strategyResolver = Lazy.of(() -> {

@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
+import com.google.common.collect.ImmutableList;
 import java.util.List;
 
 import com.dotmarketing.business.CacheLocator;
@@ -22,20 +23,20 @@ public class LanguageCacheImpl extends LanguageCache {
 			LANG_404_STR);
 
 	@Override
-    public List<Language> getLanguages()  {
+    public ImmutableList<Language> getLanguages()  {
 	
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
     	
     	
 		try {
-			return (List<Language>) cache.get( ALL_LANGUAGES_KEY, getPrimaryGroup());
+			return (ImmutableList<Language>) cache.get( ALL_LANGUAGES_KEY, getPrimaryGroup());
 		} catch (DotCacheException e) {
 			return null;
 		}
     	
     	
     }
-    public void putLanguages(List<Language> languages) {
+    public void putLanguages(ImmutableList<Language> languages) {
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
     	cache.put(ALL_LANGUAGES_KEY, languages, getPrimaryGroup());
     	

@@ -393,7 +393,7 @@ public class StringUtils {
 
         if (UtilMethods.isSet(shortStr)) {
 
-          final String trimmedShortStr = shortStr.trim().replaceAll("-", "");
+          final String trimmedShortStr = shortStr.trim().replace("-", "");
           final int    min             = Math.min(trimmedShortStr.length(), minLength);
 
           return (trimmedShortStr.startsWith(TempFileAPI.TEMP_RESOURCE_PREFIX)) ? trimmedShortStr : 
