@@ -1,5 +1,5 @@
 import { describe, expect } from '@jest/globals';
-import { byTestId, createRoutingFactory, SpectatorRouting } from '@ngneat/spectator/jest';
+import { byTestId, byText, createRoutingFactory, SpectatorRouting } from '@ngneat/spectator/jest';
 
 import { By } from '@angular/platform-browser';
 
@@ -86,9 +86,9 @@ describe('EditEmaNavigationBarComponent', () => {
             });
 
             it("should trigger mockedAction on clicking last item 'Action'", () => {
-                const links = spectator.queryAll(byTestId('nav-bar-item'));
+                const actionLink = spectator.query(byText('Action'));
 
-                spectator.click(links.find(({ textContent }) => textContent.trim() === 'Action'));
+                spectator.click(actionLink);
 
                 expect(mockedAction).toHaveBeenCalled();
             });
