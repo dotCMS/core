@@ -88,7 +88,7 @@ describe('EditEmaNavigationBarComponent', () => {
             it("should trigger mockedAction on clicking last item 'Action'", () => {
                 const links = spectator.queryAll(byTestId('nav-bar-item'));
 
-                spectator.click(links[4]);
+                spectator.click(links.find(({ textContent }) => textContent.trim() === 'Action'));
 
                 expect(mockedAction).toHaveBeenCalled();
             });

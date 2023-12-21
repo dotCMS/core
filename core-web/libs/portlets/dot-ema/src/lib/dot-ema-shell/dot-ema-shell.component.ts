@@ -62,7 +62,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     private readonly siteService = inject(SiteService);
 
     private readonly destroy$ = new Subject<boolean>();
-    visible = false;
+    pageToolsVisible = false;
 
     // We can internally navigate, so the PageID can change
     // We need to move the logic to a function, we still need to add enterprise logic
@@ -96,7 +96,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     icon: 'pi-th-large',
                     label: 'Page Tools',
                     action: () => {
-                        this.visible = !this.visible;
+                        this.pageToolsVisible = !this.pageToolsVisible;
                     }
                 },
                 {
