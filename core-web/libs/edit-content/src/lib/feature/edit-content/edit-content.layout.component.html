@@ -9,7 +9,6 @@
                 contentType: vm.contentType
             })
         "></dot-edit-content-toolbar>
-    <!--  "fireWorkflowAction($data, vm.inode, vm.contentType)-->
     <dot-edit-content-form class="body" [formData]="vm" (changeValue)="setFormValue($event)" />
     <aside class="sidebar">
         <dot-edit-content-aside [contentLet]="vm.contentlet" [contentType]="vm.contentType" />
