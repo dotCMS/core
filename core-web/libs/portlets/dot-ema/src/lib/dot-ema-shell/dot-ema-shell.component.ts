@@ -125,7 +125,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
         // We need to skip one because it's the initial value
         this.siteService.switchSite$.pipe(skip(1)).subscribe(() => {
-            // this.location.back();
             this.router.navigate(['/pages']);
         });
     }
