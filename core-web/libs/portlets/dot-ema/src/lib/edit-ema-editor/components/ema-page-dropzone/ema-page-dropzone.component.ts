@@ -72,17 +72,13 @@ export class EmaPageDropzoneComponent {
      * @return {*}  {Record<string, string>}
      * @memberof EmaPageDropzoneComponent
      */
-    getStyle(
-        item: Row | Column | Container | ContentletArea,
-        border = 'black'
-    ): Record<string, string> {
+    getPosition(item: Row | Column | Container | ContentletArea): Record<string, string> {
         return {
             position: 'absolute',
             left: `${item.x}px`,
             top: `${item.y}px`,
             width: `${item.width}px`,
-            height: `${item.height}px`,
-            border: `1px solid ${border}`
+            height: `${item.height}px`
         };
     }
 
