@@ -190,7 +190,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             dialogVisible: true,
             dialogHeader: payload.title,
             dialogIframeLoading: true,
-            dialogIframeURL: this.createEditContentletUrl(payload.inode)
+            dialogIframeURL: this.createEditContentletUrl(payload.inode),
+            dialogType: 'content'
         };
     });
 
