@@ -61,17 +61,14 @@ export const DotcmsPage = () => {
     );
     // We need to unbound this from the component, with a custom hook maybe?
 
-    const eventScrollHandler = useCallback(
-        (event) => {
-            window.parent.postMessage(
-                {
-                    action: 'scroll'
-                },
-                '*'
-            );
-        },
-        [router]
-    );
+    const eventScrollHandler = useCallback((_event) => {
+        window.parent.postMessage(
+            {
+                action: 'scroll'
+            },
+            '*'
+        );
+    }, []);
 
     useEffect(() => {
         window.addEventListener('message', eventMessageHandler);
