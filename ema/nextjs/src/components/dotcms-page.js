@@ -43,6 +43,7 @@ export const DotcmsPage = () => {
                     break;
                 case 'ema-request-bounds':
                     const positionData = getPageElementBound(rowsRef.current);
+
                     window.parent.postMessage(
                         {
                             action: 'set-bounds',

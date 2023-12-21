@@ -85,10 +85,11 @@ function Container({ containerRef }) {
                                 );
                             }}
                             data-dot="contentlet"
+                            data-content={JSON.stringify(contentletPayload)}
                             className="p-4 bg-slate-100"
                             key={contentlet.identifier}>
                             <div className="flex gap-2">
-                                {/* <ActionButton
+                                <ActionButton
                                     message={{
                                         action: 'edit-contentlet',
                                         payload: contentletPayload
@@ -101,7 +102,7 @@ function Container({ containerRef }) {
                                         payload: contentletPayload
                                     }}>
                                     Delete
-                                </ActionButton> */}
+                                </ActionButton>
                             </div>
                             <Component {...contentlet} />
                         </div>

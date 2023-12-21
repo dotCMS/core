@@ -48,7 +48,7 @@ interface BasePayload {
 interface ContentletPayload extends BasePayload {
     type: 'contentlet';
     item: {
-        inode: string;
+        identifier: string;
     };
 }
 
@@ -225,7 +225,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
                 const pageContainers = insertContentletInContainer({
                     ...this.savePayload,
-                    contentlet: detail.data
+                    newContentletId: detail.data.identifier
                 });
 
                 this.store.savePage({
@@ -297,13 +297,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 });
             },
             [CUSTOMER_ACTIONS.ADD_CONTENTLET]: () => {
-                this.store.initActionAdd({
-                    containerId: payload.container.identifier,
-                    acceptTypes: payload.container.acceptTypes ?? '*',
-                    language_id: payload.language_id
-                });
-
-                this.savePayload = payload;
+                // DELETE THIS
             },
             [CUSTOMER_ACTIONS.DELETE_CONTENTLET]: () => {
                 const newPageContainers = deleteContentletFromContainer(payload);
@@ -396,7 +390,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         if (this.draggedPayload.type === 'contentlet') {
             const pageContainers = insertContentletInContainer({
                 ...event,
-                newContentletId: this.draggedPayload.item.inode
+                newContentletId: this.draggedPayload.item.identifier
             });
 
             this.store.savePage({
@@ -414,6 +408,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.savePayload = event;
 
         this.store.createContentFromPalette(this.draggedPayload.item);
+    }
+
+    /**
+     * Add contentlet
+     *
+     * @param {ActionPayload} payload
+     * @memberof EditEmaEditorComponent
+     */
+    addContentlet(payload: ActionPayload): void {
+        this.store.initActionAdd({
+            containerId: payload.container.identifier,
+            acceptTypes: payload.container.acceptTypes ?? '*',
+            language_id: payload.language_id
+        });
+
+        this.savePayload = payload;
     }
 
     /**
