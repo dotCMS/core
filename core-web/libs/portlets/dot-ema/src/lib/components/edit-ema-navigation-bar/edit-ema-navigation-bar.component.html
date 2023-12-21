@@ -3,9 +3,11 @@
         class="edit-ema-nav-bar__item"
         *ngFor="let item of items"
         [routerLink]="item.href"
+        (click)="item?.action()"
         data-testId="nav-bar-item"
         routerLinkActive="edit-ema-nav-bar__item--active"
-        queryParamsHandling="merge">
+        queryParamsHandling="merge"
+        rel="noopener">
         <ng-container
             [ngTemplateOutlet]="item.icon ? icon : iconURL"
             [ngTemplateOutletContext]="{ item: item }">

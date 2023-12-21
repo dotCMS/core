@@ -8,12 +8,17 @@ import { DotPageToolsSeoStore } from './dot-page-tools-seo.store';
 
 describe('DotPageToolsSeoStore', () => {
     let store: DotPageToolsSeoStore;
-    let dotPageToolsService: jasmine.SpyObj<DotPageToolsService>;
+    let dotPageToolsService: unknown;
     let pageToolUrlParamsTest: DotPageToolUrlParams;
+    const pageTools: DotPageTool[] = mockPageTools.pageTools;
 
     beforeEach(() => {
-        dotPageToolsService = jasmine.createSpyObj('DotPageToolsService', ['get']);
-        store = new DotPageToolsSeoStore(dotPageToolsService);
+        dotPageToolsService = {
+            get: () => of(pageTools),
+            http: jest.fn(),
+            seoToolsUrl: 'assets/seo/page-tools.json'
+        };
+        store = new DotPageToolsSeoStore(dotPageToolsService as DotPageToolsService);
         pageToolUrlParamsTest = {
             currentUrl: '/blogTest',
             requestHostName: 'localhost',
@@ -23,9 +28,6 @@ describe('DotPageToolsSeoStore', () => {
     });
 
     it('should load page tools', () => {
-        const pageTools: DotPageTool[] = mockPageTools.pageTools;
-        dotPageToolsService.get.and.returnValue(of(pageTools));
-
         store.getTools(pageToolUrlParamsTest);
 
         store.tools$.subscribe((tools) => {

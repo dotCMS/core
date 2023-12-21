@@ -3,12 +3,18 @@ import { SpectatorRouting, createRoutingFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
-import { DotLanguagesServiceMock, DotPersonalizeServiceMock } from '@dotcms/utils-testing';
+import { SiteService, mockSites } from '@dotcms/dotcms-js';
+import {
+    DotLanguagesServiceMock,
+    DotPersonalizeServiceMock,
+    SiteServiceMock
+} from '@dotcms/utils-testing';
 
 import { DotEmaShellComponent } from './dot-ema-shell.component';
 import { EditEmaStore } from './store/dot-ema.store';
@@ -20,11 +26,14 @@ import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 describe('DotEmaShellComponent', () => {
     let spectator: SpectatorRouting<DotEmaShellComponent>;
     let store: EditEmaStore;
+    let siteService: SiteServiceMock;
+    let router: Router;
 
     const createComponent = createRoutingFactory({
         component: DotEmaShellComponent,
         imports: [RouterTestingModule, HttpClientTestingModule],
         detectChanges: false,
+        providers: [{ provide: SiteService, useClass: SiteServiceMock }],
         componentProviders: [
             MessageService,
             EditEmaStore,
@@ -50,7 +59,8 @@ describe('DotEmaShellComponent', () => {
                                     country: 'United States'
                                 },
                                 persona: DEFAULT_PERSONA
-                            }
+                            },
+                            site: mockSites[0]
                         });
                     },
                     save() {
@@ -82,12 +92,15 @@ describe('DotEmaShellComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
+        siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
         store = spectator.inject(EditEmaStore, true);
+        router = spectator.inject(Router);
         jest.spyOn(store, 'load');
     });
 
     describe('DOM', () => {
         it('should have a navigation bar', () => {
+            spectator.detectChanges();
             expect(spectator.query('dot-edit-ema-navigation-bar')).not.toBeNull();
         });
     });
@@ -119,6 +132,19 @@ describe('DotEmaShellComponent', () => {
                 url: 'my-awesome-page',
                 persona_id: 'SomeCoolDude'
             });
+        });
+    });
+
+    describe('Site Changes', () => {
+        it('should trigger a navigate to /pages when site changes', async () => {
+            const navigate = jest.spyOn(router, 'navigate');
+
+            spectator.detectChanges();
+            siteService.setFakeCurrentSite(); // We have to trigger the first set as dotcms on init
+            siteService.setFakeCurrentSite();
+            spectator.detectChanges();
+
+            expect(navigate).toHaveBeenCalledWith(['/pages']);
         });
     });
 });
