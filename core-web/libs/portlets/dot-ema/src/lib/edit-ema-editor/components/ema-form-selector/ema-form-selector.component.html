@@ -1,15 +1,15 @@
 <p-table [value]="data | async" [tableStyle]="{ 'min-width': '100%' }">
     <ng-template pTemplate="header">
         <tr>
-            <th>Name</th>
-            <th>Description</th>
+            <th id="name">Name</th>
+            <th id="description">Description</th>
             <th></th>
         </tr>
     </ng-template>
     <ng-template pTemplate="body" let-contenttype>
         <tr>
-            <td>{{ contenttype.name }}</td>
-            <td>{{ contenttype.description }}</td>
+            <td headers="name">{{ contenttype.name }}</td>
+            <td headers="description">{{ contenttype.description }}</td>
             <td style="min-width: fit-content">
                 <p-button styleClass="p-button-outlined" label="Select" />
             </td>
