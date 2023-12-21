@@ -299,6 +299,7 @@
             </build>
             <properties>
                 <quarkus.package.type>native</quarkus.package.type>
+                <quarkus.native.additional-build-args>-H:ResourceConfigurationFiles=resources-config.json,-H:ReflectionConfigurationFiles=reflection-config.json</quarkus.native.additional-build-args>
             </properties>
         </profile>
     </profiles>

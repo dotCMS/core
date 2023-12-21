@@ -148,7 +148,7 @@ jobs:
           echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
           echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
 
-      - name: 'Build distribution'
+      - name: 'Compile and install packaged artifacts'
         working-directory: ${{ github.workspace }}
         run: |
           ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }} -am -pl :dotcms-cli
@@ -156,24 +156,32 @@ jobs:
       - name: 'Build uber-jar'
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw package -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
+          ./mvnw package -Dquarkus.package.type=uber-jar -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
 
-      - name: 'Build Native Image'
+      - name: 'Test native image'
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw package -Pnative -DskipTests=${{ github.event.inputs.skipTests }} -Dquarkus.native.additional-build-args="-H:ReflectionConfigurationFiles=reflection-config.json,-H:ResourceConfigurationFiles=resources-config.json" -pl :dotcms-cli
+          ./mvnw verify -Dnative -pl :dotcms-cli
+
+      - name: 'Build Native Image'
+        if: ${{ success() }}
+        working-directory: ${{ github.workspace }}
+        run: |
+          ./mvnw package -Pnative -DskipTests=true -pl :dotcms-cli
 
       - name: 'Create distribution'
+        if: ${{ success() }}
         working-directory: ${{ github.workspace }}
         run: |
           ./mvnw -B -ntp -Pdist package -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
 
-      - name: 'Distribution tree'
-        working-directory: ${{ github.workspace }}/tools/dotcms-cli/
-        run: |
-          ls -ltr cli/target/distributions
+#      - name: 'Distribution tree'
+#        working-directory: ${{ github.workspace }}/tools/dotcms-cli/
+#        run: |
+#          ls -ltr cli/target/distributions
 
       - name: 'Upload build artifact'
+        if: ${{ success() }}
         uses: actions/upload-artifact@v3
         with:
           name: artifacts
@@ -183,6 +191,7 @@ jobs:
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.tar.gz
 
   release:
+    if: ${{ success() }}
     needs: [ precheck, build ]
     runs-on: ubuntu-latest
     steps:
@@ -203,9 +212,9 @@ jobs:
           name: artifacts
           path: ${{ github.workspace }}/artifacts
 
-      - name: 'List artifacts'
-        run: |
-          ls -R
+#      - name: 'List artifacts'
+#        run: |
+#          ls -R
 
       - name: 'Set up Java'
         uses: actions/setup-java@v4
