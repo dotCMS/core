@@ -324,86 +324,6 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            describe('add', () => {
-                it('should add contentlet', () => {
-                    const saveMock = jest.spyOn(store, 'savePage');
-
-                    spectator.detectChanges();
-
-                    const payload: ActionPayload = {
-                        language_id: '1',
-                        pageContainers: [
-                            {
-                                identifier: 'test',
-                                uuid: 'test',
-                                contentletsId: []
-                            }
-                        ],
-                        contentlet: {
-                            identifier: 'contentlet-identifier-123',
-                            inode: 'contentlet-inode-123',
-                            title: 'Hello World'
-                        },
-                        container: {
-                            identifier: 'test',
-                            acceptTypes: 'test',
-                            uuid: 'test',
-                            contentletsId: [],
-                            maxContentlets: 1
-                        },
-                        pageId: 'test',
-                        type: 'content'
-                    };
-
-                    spectator.setInput('contentlet', {
-                        x: 100,
-                        y: 100,
-                        width: 500,
-                        height: 500,
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    spectator.triggerEventHandler(EmaContentletToolsComponent, 'add', payload);
-
-                    spectator.detectComponentChanges();
-
-                    const dialogIframe = spectator.debugElement.query(
-                        By.css('[data-testId="dialog-iframe"]')
-                    );
-
-                    spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
-
-                    dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
-                        new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
-                                data: {
-                                    identifier: '123',
-                                    inode: '123'
-                                }
-                            }
-                        })
-                    );
-
-                    expect(saveMock).toHaveBeenCalledWith({
-                        pageContainers: [
-                            {
-                                identifier: 'test',
-                                uuid: 'test',
-                                contentletsId: ['contentlet-identifier-123'],
-                                personaTag: undefined
-                            }
-                        ],
-                        pageId: 'test',
-                        whenSaved: expect.any(Function)
-                    });
-
-                    expect(saveMock).toHaveBeenCalled();
-                });
-            });
-
             describe('edit', () => {
                 it('should open a dialog and save after backend emit', (done) => {
                     spectator.detectChanges();
@@ -482,46 +402,52 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            describe('create', () => {
-                it('should open a dialog, trigger a save from the store and send a post message when saving a contentlet', (done) => {
+            describe('add', () => {
+                it('should add contentlet after backend emit SAVE_CONTENTLET', (done) => {
                     spectator.detectChanges();
 
                     const initAddIframeDialogMock = jest.spyOn(store, 'initActionAdd');
                     const savePageMock = jest.spyOn(store, 'savePage');
 
-                    window.dispatchEvent(
-                        new MessageEvent('message', {
-                            origin: 'http://localhost:3000',
-                            data: {
-                                action: 'add-contentlet',
-                                payload: {
-                                    pageContainers: [
-                                        {
-                                            identifier: 'test',
-                                            uuid: 'test',
-                                            contentletsId: []
-                                        }
-                                    ],
-                                    container: {
-                                        identifier: 'test',
-                                        acceptTypes: 'test',
-                                        uuid: 'test',
-                                        contentletsId: [],
-                                        maxContentlets: 1
-                                    },
-                                    contentlet: {
-                                        inode: '123',
-                                        title: 'Hello World',
-                                        identifier: '123'
-                                    },
-                                    pageId: 'test',
-                                    language_id: 'test'
-                                } as ActionPayload
+                    const payload: ActionPayload = {
+                        pageContainers: [
+                            {
+                                identifier: 'test',
+                                uuid: 'test',
+                                contentletsId: []
                             }
-                        })
-                    );
+                        ],
+                        container: {
+                            identifier: 'test',
+                            acceptTypes: 'test',
+                            uuid: 'test',
+                            contentletsId: [],
+                            maxContentlets: 1
+                        },
+                        contentlet: {
+                            inode: '123',
+                            title: 'Hello World',
+                            identifier: '123'
+                        },
+                        pageId: 'test',
+                        language_id: 'test',
+                        type: 'content'
+                    };
 
-                    spectator.detectChanges();
+                    spectator.setInput('contentlet', {
+                        x: 100,
+                        y: 100,
+                        width: 500,
+                        height: 500,
+                        payload
+                    });
+
+                    spectator.detectComponentChanges();
+
+                    spectator.triggerEventHandler(EmaContentletToolsComponent, 'add', payload);
+
+                    spectator.detectComponentChanges();
+
                     const dialog = spectator.query(byTestId('dialog'));
 
                     expect(dialog.getAttribute('ng-reflect-visible')).toBe('true');
@@ -593,6 +519,84 @@ describe('EditEmaEditorComponent', () => {
                             done();
                         }
                     );
+                });
+
+                it('should add contentlet after backend emit CONTENT_SEARCH_SELECT', () => {
+                    const saveMock = jest.spyOn(store, 'savePage');
+
+                    spectator.detectChanges();
+
+                    const payload: ActionPayload = {
+                        language_id: '1',
+                        pageContainers: [
+                            {
+                                identifier: 'test',
+                                uuid: 'test',
+                                contentletsId: []
+                            }
+                        ],
+                        contentlet: {
+                            identifier: 'contentlet-identifier-123',
+                            inode: 'contentlet-inode-123',
+                            title: 'Hello World'
+                        },
+                        container: {
+                            identifier: 'test',
+                            acceptTypes: 'test',
+                            uuid: 'test',
+                            contentletsId: [],
+                            maxContentlets: 1
+                        },
+                        pageId: 'test',
+                        type: 'content'
+                    };
+
+                    spectator.setInput('contentlet', {
+                        x: 100,
+                        y: 100,
+                        width: 500,
+                        height: 500,
+                        payload
+                    });
+
+                    spectator.detectComponentChanges();
+
+                    spectator.triggerEventHandler(EmaContentletToolsComponent, 'add', payload);
+
+                    spectator.detectComponentChanges();
+
+                    const dialogIframe = spectator.debugElement.query(
+                        By.css('[data-testId="dialog-iframe"]')
+                    );
+
+                    spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
+
+                    dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
+                        new CustomEvent('ng-event', {
+                            detail: {
+                                name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
+                                data: {
+                                    identifier: '123',
+                                    inode: '123'
+                                }
+                            }
+                        })
+                    );
+
+                    expect(saveMock).toHaveBeenCalledWith({
+                        pageContainers: [
+                            {
+                                identifier: 'test',
+                                uuid: 'test',
+                                contentletsId: ['contentlet-identifier-123'],
+                                personaTag: undefined
+                            }
+                        ],
+                        pageId: 'test',
+                        whenSaved: expect.any(Function)
+                    });
+
+                    expect(saveMock).toHaveBeenCalled();
                 });
             });
 
