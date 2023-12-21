@@ -39,6 +39,7 @@ dot-edit-ema-toolbar {
 
 .iframe-wrapper {
     position: relative;
+    overflow: hidden;
     margin: $spacing-3;
     outline: solid 1px $color-palette-gray-500;
 }
