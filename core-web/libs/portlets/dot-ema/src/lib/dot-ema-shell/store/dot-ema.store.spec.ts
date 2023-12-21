@@ -81,7 +81,8 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: '',
                     dialogIframeLoading: true,
                     dialogHeader: '',
-                    dialogVisible: false
+                    dialogVisible: false,
+                    dialogType: null
                 });
                 done();
             });
@@ -99,7 +100,8 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: '',
                     dialogIframeLoading: false,
                     dialogHeader: '',
-                    dialogVisible: false
+                    dialogVisible: false,
+                    dialogType: null
                 });
                 done();
             });
@@ -118,7 +120,8 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: EDIT_CONTENTLET_URL + '123',
                     dialogIframeLoading: true,
                     dialogHeader: 'test',
-                    dialogVisible: true
+                    dialogVisible: true,
+                    dialogType: 'content'
                 });
                 done();
             });
@@ -139,7 +142,8 @@ describe('EditEmaStore', () => {
                         '/html/ng-contentlet-selector.jsp?ng=true&container_id=123&add=test&language_id=1',
                     dialogIframeLoading: true,
                     dialogHeader: 'Search Content',
-                    dialogVisible: true
+                    dialogVisible: true,
+                    dialogType: 'content'
                 });
                 done();
             });
@@ -158,23 +162,25 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: 'some/really/long/url',
                     dialogIframeLoading: true,
                     dialogHeader: 'test',
-                    dialogVisible: true
+                    dialogVisible: true,
+                    dialogType: 'content'
                 });
                 done();
             });
         });
 
         it('should update dialog state', (done) => {
-            spectator.service.setDialog({
+            spectator.service.setDialogForCreateContent({
                 url: 'some/really/long/url',
-                title: 'test'
+                name: 'Blog Posts'
             });
 
             spectator.service.state$.subscribe((state) => {
-                expect(state.dialogHeader).toBe('test');
+                expect(state.dialogHeader).toBe('Create Blog Posts');
                 expect(state.dialogIframeLoading).toBe(true);
                 expect(state.dialogIframeURL).toBe('some/really/long/url');
                 expect(state.dialogVisible).toBe(true);
+                expect(state.dialogType).toBe('content');
                 done();
             });
         });
@@ -238,7 +244,8 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: '',
                     dialogIframeLoading: false,
                     dialogHeader: '',
-                    dialogVisible: false
+                    dialogVisible: false,
+                    dialogType: null
                 });
                 done();
             });

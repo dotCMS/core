@@ -22,6 +22,8 @@ import {
 import { ActionPayload, SavePagePayload } from '../../shared/models';
 import { insertContentletInContainer } from '../../utils';
 
+type DialogType = 'content' | 'form' | 'widget' | null;
+
 export interface EditEmaState {
     editor: DotPageApiResponse;
     url: string;
@@ -29,7 +31,7 @@ export interface EditEmaState {
     dialogVisible: boolean;
     dialogHeader: string;
     dialogIframeLoading: boolean;
-    dialogType: 'content' | 'form' | 'widget' | null;
+    dialogType: DialogType;
 }
 
 @Injectable()
@@ -199,10 +201,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     return this.dotActionUrl.getCreateContentletUrl(variable).pipe(
                         tapResponse(
                             (url) => {
-                                this.setDialog({
-                                    url,
-                                    title: `Create ${name}`
-                                });
+                                this.setDialogForCreateContent({ url, name });
                             },
                             (e) => {
                                 console.error(e);
@@ -214,15 +213,18 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
-    readonly setDialog = this.updater((state, { url, title }: { url: string; title: string }) => {
-        return {
-            ...state,
-            dialogIframeURL: url,
-            dialogVisible: true,
-            dialogHeader: title,
-            dialogIframeLoading: true
-        };
-    });
+    readonly setDialogForCreateContent = this.updater(
+        (state, { url, name }: { url: string; name: string }) => {
+            return {
+                ...state,
+                dialogIframeURL: url,
+                dialogVisible: true,
+                dialogHeader: `Create ${name}`,
+                dialogIframeLoading: true,
+                dialogType: 'content'
+            };
+        }
+    );
 
     readonly setDialogIframeLoading = this.updater((state, editIframeLoading: boolean) => ({
         ...state,
@@ -236,7 +238,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             dialogIframeURL: '',
             dialogVisible: false,
             dialogHeader: '',
-            dialogIframeLoading: false
+            dialogIframeLoading: false,
+            dialogType: null
         };
     });
 
