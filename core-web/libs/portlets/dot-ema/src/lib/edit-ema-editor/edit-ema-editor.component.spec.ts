@@ -430,8 +430,7 @@ describe('EditEmaEditorComponent', () => {
                             identifier: '123'
                         },
                         pageId: 'test',
-                        language_id: 'test',
-                        type: 'content'
+                        language_id: 'test'
                     };
 
                     spectator.setInput('contentlet', {
@@ -444,7 +443,11 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    spectator.triggerEventHandler(EmaContentletToolsComponent, 'add', payload);
+                    spectator.triggerEventHandler(
+                        EmaContentletToolsComponent,
+                        'addContent',
+                        payload
+                    );
 
                     spectator.detectComponentChanges();
 
@@ -547,8 +550,7 @@ describe('EditEmaEditorComponent', () => {
                             contentletsId: [],
                             maxContentlets: 1
                         },
-                        pageId: 'test',
-                        type: 'content'
+                        pageId: 'test'
                     };
 
                     spectator.setInput('contentlet', {
@@ -561,7 +563,11 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    spectator.triggerEventHandler(EmaContentletToolsComponent, 'add', payload);
+                    spectator.triggerEventHandler(
+                        EmaContentletToolsComponent,
+                        'addContent',
+                        payload
+                    );
 
                     spectator.detectComponentChanges();
 
@@ -649,8 +655,7 @@ describe('EditEmaEditorComponent', () => {
                             contentletsId: [],
                             maxContentlets: 1
                         },
-                        pageId: 'test',
-                        type: 'content'
+                        pageId: 'test'
                     };
 
                     spectator.setInput('contentlet', {
@@ -721,8 +726,7 @@ describe('EditEmaEditorComponent', () => {
                             contentletsId: [],
                             maxContentlets: 1
                         },
-                        pageId: 'test',
-                        type: 'content'
+                        pageId: 'test'
                     };
 
                     spectator.setInput('contentlet', {
@@ -764,8 +768,7 @@ describe('EditEmaEditorComponent', () => {
                             contentletsId: [],
                             maxContentlets: 1
                         },
-                        pageId: 'test',
-                        type: 'content'
+                        pageId: 'test'
                     };
 
                     spectator.setInput('contentlet', {
