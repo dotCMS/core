@@ -43,5 +43,6 @@ export interface NavigationBarItem {
     icon?: string;
     iconURL?: string;
     label: string;
-    href: string;
+    href?: string;
+    action?: () => void;
 }
