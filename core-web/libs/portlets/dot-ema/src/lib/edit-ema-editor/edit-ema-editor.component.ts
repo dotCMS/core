@@ -28,7 +28,9 @@ import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
+import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import {
+    ContentletArea,
     EmaPageDropzoneComponent,
     Row
 } from './components/ema-page-dropzone/ema-page-dropzone.component';
@@ -76,7 +78,8 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
         EditEmaToolbarComponent,
         ClipboardModule,
         DotMessagePipe,
-        EmaPageDropzoneComponent
+        EmaPageDropzoneComponent,
+        EmaContentletToolsComponent
     ],
     templateUrl: './edit-ema-editor.component.html',
     styleUrls: ['./edit-ema-editor.component.scss'],
@@ -106,6 +109,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private draggedPayload: DraggedPalettePayload;
 
     rows: Row[] = [];
+    contentlet!: ContentletArea;
 
     ngOnInit(): void {
         fromEvent(this.window, 'message')
@@ -279,7 +283,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         origin: string;
         data: {
             action: CUSTOMER_ACTIONS;
-            payload: ActionPayload | SetUrlPayload | Row[];
+            payload: ActionPayload | SetUrlPayload | Row[] | ContentletArea;
         };
     }): () => void {
         const action = origin !== this.host ? CUSTOMER_ACTIONS.NOOP : data.action;
@@ -334,6 +338,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
                 this.rows = <Row[]>data.payload;
+                this.cd.detectChanges();
+            },
+            [CUSTOMER_ACTIONS.SET_CONTENTLET]: () => {
+                this.contentlet = <ContentletArea>data.payload;
                 this.cd.detectChanges();
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {

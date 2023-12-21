@@ -1,0 +1,10 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+}
+
+div {
+    outline-color: $color-palette-primary-500;
+    pointer-events: none;
+}

@@ -10,7 +10,7 @@ import {
 
 import { ActionPayload } from '../../../shared/models';
 
-interface Contentlets {
+export interface ContentletArea {
     x: number;
     y: number;
     width: number;
@@ -23,7 +23,7 @@ interface Container {
     y: number;
     width: number;
     height: number;
-    contentlets: Contentlets[];
+    contentlets: ContentletArea[];
     payload: ActionPayload;
 }
 
@@ -67,13 +67,13 @@ export class EmaPageDropzoneComponent {
     /**
      * Set the style for the item
      *
-     * @param {(Row | Column | Container | Contentlets)} item
+     * @param {(Row | Column | Container | ContentletArea)} item
      * @param {string} [border='black']
      * @return {*}  {Record<string, string>}
      * @memberof EmaPageDropzoneComponent
      */
     getStyle(
-        item: Row | Column | Container | Contentlets,
+        item: Row | Column | Container | ContentletArea,
         border = 'black'
     ): Record<string, string> {
         return {
