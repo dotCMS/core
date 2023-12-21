@@ -64,11 +64,13 @@ function Container({ containerRef }) {
                     return (
                         <div
                             onPointerEnter={(e) => {
-                                if (e.target.dataset.dot !== 'contentlet') {
-                                    return;
+                                let target = e.target;
+
+                                if (target.dataset.dot !== 'contentlet') {
+                                    target = target.closest('[data-dot="contentlet"]');
                                 }
 
-                                const { x, y, width, height } = e.target.getBoundingClientRect();
+                                const { x, y, width, height } = target.getBoundingClientRect();
 
                                 window.parent.postMessage(
                                     {
