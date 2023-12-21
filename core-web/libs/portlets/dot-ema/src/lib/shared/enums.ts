@@ -1,7 +1,4 @@
 export enum CUSTOMER_ACTIONS {
-    EDIT_CONTENTLET = 'edit-contentlet', // The customer hit edit button
-    ADD_CONTENTLET = 'add-contentlet', // The customer hit add button
-    DELETE_CONTENTLET = 'delete-contentlet', // The customer hit delete button
     SET_URL = 'set-url', // User navigate internally within the ema
     SET_BOUNDS = 'set-bounds', // Receive the position of the rows, columns, containers and contentlets
     SET_CONTENTLET = 'set-contentlet', // Receive the position of the rows, columns, containers and contentlets

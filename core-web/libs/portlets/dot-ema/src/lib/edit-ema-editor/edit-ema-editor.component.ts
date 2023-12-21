@@ -271,62 +271,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Handle the post message event
-     *
-     * @private
-     * @param {{ action: CUSTOMER_ACTIONS; payload: DotCMSContentlet }} data
-     * @return {*}
-     * @memberof DotEmaComponent
-     */
-    private handlePostMessage({
-        origin = this.host,
-        data
-    }: {
-        origin: string;
-        data: {
-            action: CUSTOMER_ACTIONS;
-            payload: ActionPayload | SetUrlPayload | Row[] | ContentletArea;
-        };
-    }): () => void {
-        const action = origin !== this.host ? CUSTOMER_ACTIONS.NOOP : data.action;
-
-        return (<Record<CUSTOMER_ACTIONS, () => void>>{
-            [CUSTOMER_ACTIONS.EDIT_CONTENTLET]: () => {
-                // DELETE THIS
-            },
-            [CUSTOMER_ACTIONS.ADD_CONTENTLET]: () => {
-                // DELETE THIS
-            },
-            [CUSTOMER_ACTIONS.DELETE_CONTENTLET]: () => {
-                // DELETE THIS
-            },
-            [CUSTOMER_ACTIONS.SET_URL]: () => {
-                const payload = <SetUrlPayload>data.payload;
-
-                this.updateQueryParams({
-                    url: payload.url
-                });
-            },
-            [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
-                this.rows = <Row[]>data.payload;
-                this.cd.detectChanges();
-            },
-            [CUSTOMER_ACTIONS.SET_CONTENTLET]: () => {
-                this.contentlet = <ContentletArea>data.payload;
-                this.cd.detectChanges();
-            },
-            [CUSTOMER_ACTIONS.IFRAME_SCROLL]: () => {
-                this.contentlet = null;
-                this.rows = [];
-                this.cd.detectChanges();
-            },
-            [CUSTOMER_ACTIONS.NOOP]: () => {
-                /* Do Nothing because is not the origin we are expecting */
-            }
-        })[action];
-    }
-
-    /**
      * Handle palette start drag event
      *
      * @param {DragEvent} event
@@ -461,6 +405,53 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             inode: payload.contentlet.inode,
             title: payload.contentlet.title
         });
+    }
+
+    /**
+     * Handle the post message event
+     *
+     * @private
+     * @param {{ action: CUSTOMER_ACTIONS; payload: DotCMSContentlet }} data
+     * @return {*}
+     * @memberof DotEmaComponent
+     */
+    private handlePostMessage({
+        origin = this.host,
+        data
+    }: {
+        origin: string;
+        data: {
+            action: CUSTOMER_ACTIONS;
+            payload: ActionPayload | SetUrlPayload | Row[] | ContentletArea;
+        };
+    }): () => void {
+        const action = origin !== this.host ? CUSTOMER_ACTIONS.NOOP : data.action;
+
+        return (<Record<CUSTOMER_ACTIONS, () => void>>{
+            [CUSTOMER_ACTIONS.SET_URL]: () => {
+                const payload = <SetUrlPayload>data.payload;
+
+                this.updateQueryParams({
+                    url: payload.url
+                });
+            },
+            [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
+                this.rows = <Row[]>data.payload;
+                this.cd.detectChanges();
+            },
+            [CUSTOMER_ACTIONS.SET_CONTENTLET]: () => {
+                this.contentlet = <ContentletArea>data.payload;
+                this.cd.detectChanges();
+            },
+            [CUSTOMER_ACTIONS.IFRAME_SCROLL]: () => {
+                this.contentlet = null;
+                this.rows = [];
+                this.cd.detectChanges();
+            },
+            [CUSTOMER_ACTIONS.NOOP]: () => {
+                /* Do Nothing because is not the origin we are expecting */
+            }
+        })[action];
     }
 
     /**
