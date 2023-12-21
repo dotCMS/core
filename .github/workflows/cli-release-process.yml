@@ -90,9 +90,20 @@ jobs:
       fail-fast: true
       matrix:
         os: [ macos-13-xlarge, macOS-latest ]
-
     runs-on: ${{ matrix.os }}
     steps:
+      - name: 'Install docker'
+        run: |
+          brew install docker
+          colima start
+          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
+
+      - name: 'Log docker context'
+        run: |
+          colima status
+          colima version
+          docker context list
+
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
