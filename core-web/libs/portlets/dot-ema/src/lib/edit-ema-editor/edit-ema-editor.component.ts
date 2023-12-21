@@ -34,7 +34,7 @@ import {
 } from './components/ema-page-dropzone/ema-page-dropzone.component';
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
-import { DEFAULT_PERSONA, HOST, WINDOW } from '../shared/consts';
+import { DEFAULT_PERSONA, DEFAULT_URL, HOST, WINDOW } from '../shared/consts';
 import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { ActionPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
@@ -329,7 +329,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const payload = <SetUrlPayload>data.payload;
 
                 this.updateQueryParams({
-                    url: payload.url
+                    url: payload.url.length ? payload.url : DEFAULT_URL
                 });
             },
             [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {

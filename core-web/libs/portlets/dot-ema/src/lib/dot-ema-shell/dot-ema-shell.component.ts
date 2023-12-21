@@ -1,14 +1,14 @@
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, ChangeDetectionStrategy, OnInit, inject, OnDestroy } from '@angular/core';
+import { Component, OnInit, inject, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { skip, takeUntil } from 'rxjs/operators';
+import { map, skip, takeUntil } from 'rxjs/operators';
 
 import {
     DotLanguagesService,
@@ -50,8 +50,7 @@ import { NavigationBarItem } from '../shared/models';
         }
     ],
     templateUrl: './dot-ema-shell.component.html',
-    styleUrls: ['./dot-ema-shell.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ['./dot-ema-shell.component.scss']
 })
 export class DotEmaShellComponent implements OnInit, OnDestroy {
     private readonly route = inject(ActivatedRoute);
@@ -61,39 +60,42 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     private readonly destroy$ = new Subject<boolean>();
 
-    // This needs more logic. Because some of this buttons are for enterprise only or Feature Flags.
-    readonly items: NavigationBarItem[] = [
-        {
-            icon: 'pi-file',
-            label: 'Content',
-            href: 'content'
-        },
-        {
-            icon: 'pi-table',
-            label: 'Layout',
-            href: 'layout'
-        },
-        {
-            icon: 'pi-sliders-h',
-            label: 'Rules',
-            href: 'rules'
-        },
-        {
-            iconURL: 'experiments',
-            label: 'A/B',
-            href: 'experiments'
-        },
-        {
-            icon: 'pi-th-large',
-            label: 'Page Tools',
-            href: 'page-tools'
-        },
-        {
-            icon: 'pi-ellipsis-v',
-            label: 'Properties',
-            href: 'edit-content'
-        }
-    ];
+    // We can internally navigate, so the PageID can change
+    // We need to move the logic to a function, we still need to add enterprise logic
+    items$: Observable<NavigationBarItem[]> = this.store.editorState$.pipe(
+        map(({ editor }) => [
+            {
+                icon: 'pi-file',
+                label: 'Content',
+                href: 'content'
+            },
+            {
+                icon: 'pi-table',
+                label: 'Layout',
+                href: 'layout'
+            },
+            {
+                icon: 'pi-sliders-h',
+                label: 'Rules',
+                href: `rules/${editor.page.identifier}`
+            },
+            {
+                iconURL: 'experiments',
+                label: 'A/B',
+                href: 'experiments'
+            },
+            {
+                icon: 'pi-th-large',
+                label: 'Page Tools',
+                href: 'page-tools'
+            },
+            {
+                icon: 'pi-ellipsis-v',
+                label: 'Properties',
+                href: 'edit-content'
+            }
+        ])
+    );
 
     ngOnInit(): void {
         this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((queryParams: Params) => {
