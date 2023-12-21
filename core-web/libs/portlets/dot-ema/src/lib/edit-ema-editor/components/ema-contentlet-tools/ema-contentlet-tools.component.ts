@@ -31,7 +31,8 @@ export class EmaContentletToolsComponent {
             command: () => {
                 this.add.emit({
                     ...this.contentlet.payload,
-                    position: this.buttonPosition
+                    position: this.buttonPosition,
+                    type: 'content'
                 });
             }
         },
@@ -39,8 +40,11 @@ export class EmaContentletToolsComponent {
             label: 'Form',
             icon: 'pi pi-book',
             command: () => {
-                // eslint-disable-next-line no-console
-                console.log('Form');
+                this.add.emit({
+                    ...this.contentlet.payload,
+                    position: this.buttonPosition,
+                    type: 'form'
+                });
             }
         },
         {

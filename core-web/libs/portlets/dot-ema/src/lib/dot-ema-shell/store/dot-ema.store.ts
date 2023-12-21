@@ -19,7 +19,7 @@ import {
     EDIT_CONTENTLET_URL,
     ADD_CONTENTLET_URL
 } from '../../shared/consts';
-import { SavePagePayload } from '../../shared/models';
+import { ActionPayload, SavePagePayload } from '../../shared/models';
 
 export interface EditEmaState {
     editor: DotPageApiResponse;
@@ -28,6 +28,7 @@ export interface EditEmaState {
     dialogVisible: boolean;
     dialogHeader: string;
     dialogIframeLoading: boolean;
+    dialogType: 'content' | 'form' | 'widget' | null;
 }
 
 @Injectable()
@@ -63,7 +64,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         dialogIframeURL: state.dialogIframeURL,
         dialogVisible: state.dialogVisible,
         dialogHeader: state.dialogHeader,
-        dialogIframeLoading: state.dialogIframeLoading
+        dialogIframeLoading: state.dialogIframeLoading,
+        dialogType: state.dialogType
     }));
 
     readonly layoutProperties$ = this.select((state) => ({
@@ -90,7 +92,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                 dialogIframeURL: '',
                                 dialogVisible: false,
                                 dialogHeader: '',
-                                dialogIframeLoading: false
+                                dialogIframeLoading: false,
+                                dialogType: null
                             });
                         },
                         error: (e) => {
@@ -199,10 +202,22 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 dialogVisible: true,
                 dialogHeader: 'Search Content', // Does this need translation?
                 dialogIframeLoading: true,
-                dialogIframeURL: this.createAddContentletUrl(payload)
+                dialogIframeURL: this.createAddContentletUrl(payload),
+                dialogType: 'content'
             };
         }
     );
+
+    readonly initActionAddForm = this.updater((state, _payload: ActionPayload) => {
+        return {
+            ...state,
+            dialogVisible: true,
+            dialogHeader: 'Search Forms', // Does this need translation?
+            dialogIframeLoading: true,
+            dialogIframeURL: null,
+            dialogType: 'form'
+        };
+    });
 
     // This method is called when the user clicks in the + button in the jsp dialog
     readonly initActionCreate = this.updater(
@@ -212,7 +227,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 dialogVisible: true,
                 dialogHeader: payload.contentType,
                 dialogIframeLoading: true,
-                dialogIframeURL: payload.url
+                dialogIframeURL: payload.url,
+                dialogType: 'content'
             };
         }
     );

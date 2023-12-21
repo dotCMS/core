@@ -107,16 +107,22 @@
     [modal]="true"
     (visibleChange)="resetDialogIframeData()"
     data-testId="dialog">
-    <iframe
-        #dialogIframe
-        [style]="{ border: 'none', display: ds.dialogIframeLoading ? 'none' : 'block' }"
-        [src]="ds.dialogIframeURL | safeUrl"
-        (load)="onIframeLoad()"
-        title="dialog"
-        data-testId="dialog-iframe"
-        width="100%"
-        height="100%"></iframe>
-    <dot-spinner *ngIf="ds.dialogIframeLoading" data-testId="spinner"></dot-spinner>
+    <ng-container [ngSwitch]="ds.dialogType">
+        <dot-ema-form-selector *ngSwitchCase="'form'" />
+
+        <ng-container *ngSwitchCase="'content'">
+            <iframe
+                #dialogIframe
+                [style]="{ border: 'none', display: ds.dialogIframeLoading ? 'none' : 'block' }"
+                [src]="ds.dialogIframeURL | safeUrl"
+                (load)="onIframeLoad()"
+                title="dialog"
+                data-testId="dialog-iframe"
+                width="100%"
+                height="100%"></iframe>
+            <dot-spinner *ngIf="ds.dialogIframeLoading" data-testId="spinner"></dot-spinner>
+        </ng-container>
+    </ng-container>
 </p-dialog>
 
 <p-confirmDialog

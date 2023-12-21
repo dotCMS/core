@@ -29,6 +29,7 @@ import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
+import { EmaFormSelectorComponent } from './components/ema-form-selector/ema-form-selector.component';
 import {
     ContentletArea,
     EmaPageDropzoneComponent,
@@ -79,7 +80,8 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
         ClipboardModule,
         DotMessagePipe,
         EmaPageDropzoneComponent,
-        EmaContentletToolsComponent
+        EmaContentletToolsComponent,
+        EmaFormSelectorComponent
     ],
     templateUrl: './edit-ema-editor.component.html',
     styleUrls: ['./edit-ema-editor.component.scss'],
@@ -397,11 +399,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     addContentlet(payload: ActionPayload): void {
-        this.store.initActionAdd({
-            containerId: payload.container.identifier,
-            acceptTypes: payload.container.acceptTypes ?? '*',
-            language_id: payload.language_id
-        });
+        switch (payload.type) {
+            case 'content':
+                this.store.initActionAdd({
+                    containerId: payload.container.identifier,
+                    acceptTypes: payload.container.acceptTypes ?? '*',
+                    language_id: payload.language_id
+                });
+                break;
+
+            case 'form':
+                this.store.initActionAddForm(payload);
+                break;
+
+            default:
+                break;
+        }
 
         this.savePayload = payload;
     }
