@@ -338,6 +338,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.contentlet = <ContentletArea>data.payload;
                 this.cd.detectChanges();
             },
+            [CUSTOMER_ACTIONS.IFRAME_SCROLL]: () => {
+                this.contentlet = null;
+                this.rows = [];
+                this.cd.detectChanges();
+            },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }
