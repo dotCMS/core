@@ -405,33 +405,54 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('edit', () => {
-                it('should open a dialog and send a post message when saving the contentlet', (done) => {
+                it('should open a dialog and save after backend emit', (done) => {
                     spectator.detectChanges();
 
                     const initiEditIframeDialogMock = jest.spyOn(store, 'initActionEdit');
                     const dialog = spectator.query(byTestId('dialog'));
 
-                    window.dispatchEvent(
-                        new MessageEvent('message', {
-                            origin: HOST,
-                            data: {
-                                action: 'edit-contentlet',
-                                payload: {
-                                    contentlet: {
-                                        inode: '123',
-                                        title: 'hello world'
-                                    }
-                                }
+                    const payload: ActionPayload = {
+                        language_id: '1',
+                        pageContainers: [
+                            {
+                                identifier: 'test',
+                                uuid: 'test',
+                                contentletsId: []
                             }
-                        })
-                    );
+                        ],
+                        contentlet: {
+                            identifier: 'contentlet-identifier-123',
+                            inode: 'contentlet-inode-123',
+                            title: 'Hello World'
+                        },
+                        container: {
+                            identifier: 'test',
+                            acceptTypes: 'test',
+                            uuid: 'test',
+                            contentletsId: [],
+                            maxContentlets: 1
+                        },
+                        pageId: 'test'
+                    };
 
-                    spectator.detectChanges();
+                    spectator.setInput('contentlet', {
+                        x: 100,
+                        y: 100,
+                        width: 500,
+                        height: 500,
+                        payload
+                    });
+
+                    spectator.detectComponentChanges();
+
+                    spectator.triggerEventHandler(EmaContentletToolsComponent, 'edit', payload);
+
+                    spectator.detectComponentChanges();
 
                     expect(dialog.getAttribute('ng-reflect-visible')).toBe('true');
                     expect(initiEditIframeDialogMock).toHaveBeenCalledWith({
-                        inode: '123',
-                        title: 'hello world'
+                        inode: 'contentlet-inode-123',
+                        title: 'Hello World'
                     });
 
                     const dialogIframe = spectator.debugElement.query(
