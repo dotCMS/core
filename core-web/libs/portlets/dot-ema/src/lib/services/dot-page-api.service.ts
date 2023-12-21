@@ -5,6 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
+import { Site } from '@dotcms/dotcms-js';
 import {
     DotLanguage,
     DotLayout,
@@ -20,6 +21,7 @@ export interface DotPageApiResponse {
         title: string;
         identifier: string;
     };
+    site: Site;
     viewAs: {
         language: DotLanguage;
         persona?: DotPersona;

@@ -1,4 +1,5 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { describe, expect, beforeEach } from '@jest/globals';
+import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
@@ -22,7 +23,6 @@ describe('DotPageToolsSeoComponent', () => {
         imports: [HttpClientTestingModule, DialogModule],
         providers: [
             DotPageToolsSeoStore,
-
             {
                 provide: HttpClient,
                 useValue: {
@@ -55,9 +55,10 @@ describe('DotPageToolsSeoComponent', () => {
         });
     });
 
-    it('should have page tool list', () => {
+    it('should have page tool list', async () => {
         spectator.detectChanges();
-        const menuListItems = spectator.queryAll(byTestId('page-tools-list-item'));
+
+        const menuListItems = spectator.queryAll('[data-testId="page-tools-list-item"]');
 
         expect(menuListItems.length).toEqual(3);
     });
@@ -66,7 +67,7 @@ describe('DotPageToolsSeoComponent', () => {
         const tools = mockPageTools.pageTools;
         spectator.detectChanges();
 
-        const anchorElements = spectator.queryAll(byTestId('page-tools-list-link'));
+        const anchorElements = spectator.queryAll('[data-testId="page-tools-list-link"]');
 
         expect(anchorElements.length).toEqual(3);
 

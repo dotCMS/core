@@ -16,10 +16,12 @@ import {
     DotPersonalizeService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
+import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
 
 import { EditEmaStore } from './store/dot-ema.store';
 
 import { EditEmaNavigationBarComponent } from '../components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
+import { DotPageToolsSeoComponent } from '../dot-page-tools-seo/dot-page-tools-seo.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA, DEFAULT_URL, WINDOW } from '../shared/consts';
@@ -33,7 +35,8 @@ import { NavigationBarItem } from '../shared/models';
         ConfirmDialogModule,
         ToastModule,
         EditEmaNavigationBarComponent,
-        RouterModule
+        RouterModule,
+        DotPageToolsSeoComponent
     ],
     providers: [
         EditEmaStore,
@@ -59,42 +62,56 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     private readonly siteService = inject(SiteService);
 
     private readonly destroy$ = new Subject<boolean>();
+    visible = false;
 
     // We can internally navigate, so the PageID can change
     // We need to move the logic to a function, we still need to add enterprise logic
-    items$: Observable<NavigationBarItem[]> = this.store.editorState$.pipe(
-        map(({ editor }) => [
-            {
-                icon: 'pi-file',
-                label: 'Content',
-                href: 'content'
-            },
-            {
-                icon: 'pi-table',
-                label: 'Layout',
-                href: 'layout'
-            },
-            {
-                icon: 'pi-sliders-h',
-                label: 'Rules',
-                href: `rules/${editor.page.identifier}`
-            },
-            {
-                iconURL: 'experiments',
-                label: 'A/B',
-                href: 'experiments'
-            },
-            {
-                icon: 'pi-th-large',
-                label: 'Page Tools',
-                href: 'page-tools'
-            },
-            {
-                icon: 'pi-ellipsis-v',
-                label: 'Properties',
-                href: 'edit-content'
+    shellProperties$: Observable<{
+        items: NavigationBarItem[];
+        seoProperties: DotPageToolUrlParams;
+    }> = this.store.shellProperties$.pipe(
+        map(({ currentUrl, pageId, host, languageId, siteId }) => ({
+            items: [
+                {
+                    icon: 'pi-file',
+                    label: 'Content',
+                    href: 'content'
+                },
+                {
+                    icon: 'pi-table',
+                    label: 'Layout',
+                    href: 'layout'
+                },
+                {
+                    icon: 'pi-sliders-h',
+                    label: 'Rules',
+                    href: `rules/${pageId}`
+                },
+                {
+                    iconURL: 'experiments',
+                    label: 'A/B',
+                    href: 'experiments'
+                },
+                {
+                    icon: 'pi-th-large',
+                    label: 'Page Tools',
+                    action: () => {
+                        this.visible = !this.visible;
+                    }
+                },
+                {
+                    icon: 'pi-ellipsis-v',
+                    label: 'Properties',
+                    href: 'edit-content'
+                }
+            ],
+            seoProperties: {
+                currentUrl,
+                languageId,
+                siteId,
+                requestHostName: host
             }
-        ])
+        }))
     );
 
     ngOnInit(): void {
@@ -108,6 +125,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
         // We need to skip one because it's the initial value
         this.siteService.switchSite$.pipe(skip(1)).subscribe(() => {
+            // this.location.back();
             this.router.navigate(['/pages']);
         });
     }
