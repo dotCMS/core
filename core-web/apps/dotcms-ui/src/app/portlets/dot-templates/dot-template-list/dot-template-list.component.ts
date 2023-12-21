@@ -12,11 +12,11 @@ import { DotBulkInformationComponent } from '@components/_common/dot-bulk-inform
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import {
     DotAlertConfirmService,
     DotMessageService,
+    DotRouterService,
     DotSiteBrowserService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, Site, SiteService } from '@dotcms/dotcms-js';

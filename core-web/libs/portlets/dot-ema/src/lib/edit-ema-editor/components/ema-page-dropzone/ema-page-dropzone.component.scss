@@ -1,0 +1,13 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+}
+
+.pointer {
+    background-color: $color-palette-primary-500;
+    pointer-events: none;
+    user-select: none;
+    position: absolute;
+    height: 3px;
+}

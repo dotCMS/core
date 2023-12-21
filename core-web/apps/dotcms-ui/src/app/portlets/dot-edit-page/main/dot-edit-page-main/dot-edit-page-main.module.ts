@@ -24,6 +24,7 @@ import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.mod
         DotContentletEditorModule,
         DotBlockEditorSidebarModule,
         DotEditPageNavDirective,
+        DotEditPageNavModule,
         DotExperimentClassDirective,
         OverlayPanelModule,
         DialogModule

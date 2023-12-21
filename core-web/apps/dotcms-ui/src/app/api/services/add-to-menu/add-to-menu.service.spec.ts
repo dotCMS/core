@@ -8,7 +8,7 @@ import { ConfirmationService } from 'primeng/api';
 
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { DotAlertConfirmService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { DotFormatDateService } from '@dotcms/ui';
 import {
@@ -19,7 +19,6 @@ import {
     mockResponseView
 } from '@dotcms/utils-testing';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotAddToMenuService, DotCreateCustomTool } from './add-to-menu.service';
 

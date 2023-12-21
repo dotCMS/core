@@ -1,3 +1,31 @@
+<ng-container *ngIf="workflow$ | async as workflow">
+    <div class="edit-content-aside--header">
+        <strong>
+            <i class="pi pi-sitemap"></i>
+            {{ 'Workflow' | dm }}
+        </strong>
+
+        <dot-link [label]="'History' | dm" href="" icon="pi-history"></dot-link>
+    </div>
+
+    <dl class="edit-content-aside--item">
+        <dt>{{ 'Assignee' | dm }}</dt>
+        <dd class="font-bold" data-testId="workflow-assigned">
+            {{ workflow.task?.assignedTo }}
+        </dd>
+
+        <dt>{{ 'Step' | dm }}</dt>
+        <dd class="font-bold" data-testId="workflow-step">
+            <p-chip [label]="workflow?.step?.name ?? 'New'" styleClass="p-chip-sm p-chip-rounded" />
+        </dd>
+
+        <dt>{{ 'Workflow' | dm }}</dt>
+        <dd class="font-bold" data-testId="workflow-name">
+            {{ workflow.scheme?.name }}
+        </dd>
+    </dl>
+</ng-container>
+
 <div class="edit-content-aside--header">
     <strong>
         <i class="pi pi-info-circle"></i>
