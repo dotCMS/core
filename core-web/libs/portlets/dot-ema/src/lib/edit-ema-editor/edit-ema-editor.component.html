@@ -110,7 +110,7 @@
     (visibleChange)="resetDialogIframeData()"
     data-testId="dialog">
     <ng-container [ngSwitch]="ds.dialogType">
-        <dot-ema-form-selector *ngSwitchCase="'form'" />
+        <dot-ema-form-selector *ngSwitchCase="'form'" (selected)="addSelectedForm($event)" />
 
         <ng-container *ngSwitchCase="'content'">
             <iframe

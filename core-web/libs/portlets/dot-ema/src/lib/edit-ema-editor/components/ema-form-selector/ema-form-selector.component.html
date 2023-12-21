@@ -10,8 +10,11 @@
         <tr>
             <td headers="name">{{ contenttype.name }}</td>
             <td headers="description">{{ contenttype.description }}</td>
-            <td headers="action" style="min-width: fit-content">
-                <p-button styleClass="p-button-outlined" label="Select" />
+            <td headers="action" style="min-width: fit-content; text-align: right">
+                <p-button
+                    (click)="selected.emit(contenttype.id)"
+                    styleClass="p-button-outlined"
+                    label="Select" />
             </td>
         </tr>
     </ng-template>

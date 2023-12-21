@@ -3,7 +3,7 @@ import { EMPTY, Observable } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { catchError, switchMap, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 import { DotContainerMap, DotLayout, DotPageContainerStructure } from '@dotcms/dotcms-models';
 
@@ -20,6 +20,7 @@ import {
     ADD_CONTENTLET_URL
 } from '../../shared/consts';
 import { ActionPayload, SavePagePayload } from '../../shared/models';
+import { insertContentletInContainer } from '../../utils';
 
 export interface EditEmaState {
     editor: DotPageApiResponse;
@@ -137,6 +138,54 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             })
         );
     });
+
+    readonly saveFormToPage = this.effect(
+        (
+            payload$: Observable<{
+                payload: ActionPayload;
+                formId: string;
+                whenSaved?: () => void;
+            }>
+        ) => {
+            return payload$.pipe(
+                switchMap(({ payload, formId, whenSaved }) => {
+                    return this.dotPageApiService
+                        .getFormIndetifier(payload.container.identifier, formId)
+                        .pipe(
+                            map((formId: string) => {
+                                return {
+                                    payload: {
+                                        ...payload,
+                                        newContentletId: formId
+                                    },
+                                    whenSaved
+                                };
+                            })
+                        );
+                }),
+                switchMap(({ whenSaved, payload }) => {
+                    const pageContainers = insertContentletInContainer(payload);
+
+                    return this.dotPageApiService
+                        .save({
+                            pageContainers,
+                            pageId: payload.pageId
+                        })
+                        .pipe(
+                            tapResponse(
+                                () => {
+                                    whenSaved?.();
+                                },
+                                (e) => {
+                                    console.error(e);
+                                    whenSaved?.();
+                                }
+                            )
+                        );
+                })
+            );
+        }
+    );
 
     /**
      * Create a contentlet from the palette

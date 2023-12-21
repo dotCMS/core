@@ -211,66 +211,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Handle the custom events from the iframe
-     *
-     * @private
-     * @param {Event} event
-     * @memberof DotEmaComponent
-     */
-    private handleNgEvent(event: CustomEvent) {
-        const { detail } = event;
-
-        return (<Record<NG_CUSTOM_EVENTS, () => void>>{
-            [NG_CUSTOM_EVENTS.EDIT_CONTENTLET_LOADED]: () => {
-                /* */
-            },
-            [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
-                const pageContainers = insertContentletInContainer({
-                    ...this.savePayload,
-                    newContentletId: detail.data.identifier
-                });
-
-                this.store.savePage({
-                    pageContainers,
-                    pageId: this.savePayload.pageId,
-                    whenSaved: () => {
-                        this.resetDialogIframeData();
-                        this.reloadIframe();
-                        this.savePayload = undefined;
-                    }
-                }); // Save when selected
-            },
-            [NG_CUSTOM_EVENTS.SAVE_CONTENTLET]: () => {
-                if (this.savePayload) {
-                    const pageContainers = insertContentletInContainer({
-                        ...this.savePayload,
-                        newContentletId: detail.payload.contentletIdentifier
-                    }); // This won't add anything if the contentlet is already on the container, so is safe to call it even when we just edited a contentlet
-
-                    this.store.savePage({
-                        pageContainers,
-                        pageId: this.savePayload.pageId,
-                        whenSaved: () => {
-                            this.resetDialogIframeData();
-                            this.reloadIframe();
-                            this.savePayload = undefined;
-                        }
-                    }); // Save when created
-                } else {
-                    this.reloadIframe(); // We still need to reload the iframe because the contentlet is not in the container yet
-                }
-            },
-            [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
-                this.store.initActionCreate({
-                    contentType: detail.data.contentType,
-                    url: detail.data.url
-                });
-                this.cd.detectChanges();
-            }
-        })[detail.name];
-    }
-
-    /**
      * Handle palette start drag event
      *
      * @param {DragEvent} event
@@ -363,6 +303,24 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Add selected form
+     *
+     * @param {string} identifier
+     * @memberof EditEmaEditorComponent
+     */
+    addSelectedForm(identifier: string): void {
+        this.store.saveFormToPage({
+            payload: this.savePayload,
+            formId: identifier,
+            whenSaved: () => {
+                this.resetDialogIframeData();
+                this.reloadIframe();
+                this.savePayload = undefined;
+            }
+        });
+    }
+
+    /**
      * Add Widget
      *
      * @param {ActionPayload} payload
@@ -415,6 +373,66 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             inode: payload.contentlet.inode,
             title: payload.contentlet.title
         });
+    }
+
+    /**
+     * Handle the custom events from the iframe
+     *
+     * @private
+     * @param {Event} event
+     * @memberof DotEmaComponent
+     */
+    private handleNgEvent(event: CustomEvent) {
+        const { detail } = event;
+
+        return (<Record<NG_CUSTOM_EVENTS, () => void>>{
+            [NG_CUSTOM_EVENTS.EDIT_CONTENTLET_LOADED]: () => {
+                /* */
+            },
+            [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
+                const pageContainers = insertContentletInContainer({
+                    ...this.savePayload,
+                    newContentletId: detail.data.identifier
+                });
+
+                this.store.savePage({
+                    pageContainers,
+                    pageId: this.savePayload.pageId,
+                    whenSaved: () => {
+                        this.resetDialogIframeData();
+                        this.reloadIframe();
+                        this.savePayload = undefined;
+                    }
+                }); // Save when selected
+            },
+            [NG_CUSTOM_EVENTS.SAVE_CONTENTLET]: () => {
+                if (this.savePayload) {
+                    const pageContainers = insertContentletInContainer({
+                        ...this.savePayload,
+                        newContentletId: detail.payload.contentletIdentifier
+                    }); // This won't add anything if the contentlet is already on the container, so is safe to call it even when we just edited a contentlet
+
+                    this.store.savePage({
+                        pageContainers,
+                        pageId: this.savePayload.pageId,
+                        whenSaved: () => {
+                            this.resetDialogIframeData();
+                            this.reloadIframe();
+                            this.savePayload = undefined;
+                        }
+                    }); // Save when created
+                } else {
+                    this.reloadIframe(); // We still need to reload the iframe because the contentlet is not in the container yet
+                }
+            },
+            [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
+                this.store.initActionCreate({
+                    contentType: detail.data.contentType,
+                    url: detail.data.url
+                });
+                this.cd.detectChanges();
+            }
+        })[detail.name];
     }
 
     /**
