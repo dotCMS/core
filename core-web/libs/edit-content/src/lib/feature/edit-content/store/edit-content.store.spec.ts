@@ -38,8 +38,8 @@ describe('DotEditContentStore', () => {
         service: DotEditContentStore,
         imports: [HttpClientTestingModule],
         providers: [
-            MessageService,
             Location,
+            MessageService,
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
@@ -71,115 +71,108 @@ describe('DotEditContentStore', () => {
         ]
     });
 
-    describe('Existing content', () => {
-        beforeEach(() => {
-            spectator = createService();
-            dotWorkflowsActionsService = spectator.inject(DotWorkflowsActionsService);
-            dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
-            messageService = spectator.inject(MessageService);
-            location = spectator.inject(Location);
-            spectator.service.setState({
-                actions: mockWorkflowsActions,
+    beforeEach(() => {
+        spectator = createService();
+        dotWorkflowsActionsService = spectator.inject(DotWorkflowsActionsService);
+        dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
+        messageService = spectator.inject(MessageService);
+        location = spectator.inject(Location);
+
+        spectator.service.setState({
+            actions: mockWorkflowsActions,
+            contentType: CONTENT_TYPE_MOCK,
+            contentlet: BINARY_FIELD_CONTENTLET
+        });
+    });
+
+    it('should create the store', () => {
+        expect(spectator.service).toBeDefined();
+    });
+
+    describe('updaters', () => {
+        it('should update the state', (done) => {
+            // Skip the initial value
+            spectator.service.vm$.pipe(skip(1)).subscribe((state) => {
+                expect(state).toEqual({
+                    actions: [],
+                    fields: CONTENT_TYPE_MOCK.fields,
+                    layout: CONTENT_TYPE_MOCK.layout,
+                    contentType: BINARY_FIELD_CONTENTLET.contentType,
+                    contentlet: BINARY_FIELD_CONTENTLET
+                });
+                done();
+            });
+            spectator.service.updateState({
+                actions: [],
                 contentType: CONTENT_TYPE_MOCK,
                 contentlet: BINARY_FIELD_CONTENTLET
             });
         });
 
-        it('should create the store', () => {
-            expect(spectator.service).toBeDefined();
-        });
+        it('should update the contentlet and actions', (done) => {
+            const NEW_BINARY_FIELD_CONTENTLET = {
+                ...BINARY_FIELD_CONTENTLET,
+                title: 'new title'
+            };
 
-        describe('updaters', () => {
-            it('should update the state', (done) => {
-                // Skip the initial value
-                spectator.service.vm$.pipe(skip(1)).subscribe((state) => {
-                    expect(state).toEqual({
-                        actions: [],
-                        fields: CONTENT_TYPE_MOCK.fields,
-                        layout: CONTENT_TYPE_MOCK.layout,
-                        contentType: BINARY_FIELD_CONTENTLET.contentType,
-                        contentlet: BINARY_FIELD_CONTENTLET
-                    });
-                    done();
-                });
-                spectator.service.updateState({
-                    actions: [],
-                    contentType: CONTENT_TYPE_MOCK,
-                    contentlet: BINARY_FIELD_CONTENTLET
-                });
-            });
-
-            it('should update the contentlet and actions', (done) => {
-                const NEW_BINARY_FIELD_CONTENTLET = {
-                    ...BINARY_FIELD_CONTENTLET,
-                    title: 'new title'
-                };
-
-                spectator.service.vm$.pipe(skip(1)).subscribe((state) => {
-                    expect(state).toEqual({
-                        ...state,
-                        actions: [],
-                        contentlet: NEW_BINARY_FIELD_CONTENTLET
-                    });
-                    done();
-                });
-                spectator.service.updateContentletAndActions({
+            spectator.service.vm$.pipe(skip(1)).subscribe((state) => {
+                expect(state).toEqual({
+                    ...state,
                     actions: [],
                     contentlet: NEW_BINARY_FIELD_CONTENTLET
                 });
+                done();
+            });
+            spectator.service.updateContentletAndActions({
+                actions: [],
+                contentlet: NEW_BINARY_FIELD_CONTENTLET
             });
         });
+    });
 
-        describe('effects', () => {
-            it('should call fireWorkflowAction and update the state and url', (done) => {
-                const fireWorkflowActionSpy = jest.spyOn(dotWorkflowActionsFireService, 'fireTo');
-                const workflowSpy = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
-                const updateStateSpy = jest.spyOn(spectator.service, 'updateContentletAndActions');
-                const locationSpy = jest.spyOn(location, 'replaceState');
-                const spyMessage = jest.spyOn(messageService, 'add');
+    describe('effects', () => {
+        it('should call fireWorkflowAction and update the state and url', (done) => {
+            const fireWorkflowActionSpy = jest.spyOn(dotWorkflowActionsFireService, 'fireTo');
+            const workflowSpy = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
+            const updateStateSpy = jest.spyOn(spectator.service, 'updateContentletAndActions');
+            const locationSpy = jest.spyOn(location, 'replaceState');
+            const spyMessage = jest.spyOn(messageService, 'add');
 
-                const mockParams = {
-                    actionId: mockWorkflowsActions[0].id,
-                    formData: {
+            const mockParams = {
+                actionId: mockWorkflowsActions[0].id,
+                data: {
+                    contentlet: {
                         title: 'new title',
-                        inode: '12345'
+                        inode: '12345',
+                        contentType: BINARY_FIELD_CONTENTLET.contentType
                     }
-                };
+                },
+                inode: BINARY_FIELD_CONTENTLET.inode
+            };
 
-                const mockWFActionPayload = {
-                    actionId: mockParams.actionId,
-                    data: {
-                        contentlet: {
-                            ...mockParams.formData,
-                            contentType: BINARY_FIELD_CONTENTLET.contentType
-                        }
-                    },
-                    inode: BINARY_FIELD_CONTENTLET.inode
-                };
+            spectator.service.fireWorkflowActionEffect(mockParams);
 
-                spectator.service.vm$.pipe(skip(1)).subscribe(() => {
-                    expect(fireWorkflowActionSpy).toHaveBeenCalledWith(mockWFActionPayload);
-                    expect(workflowSpy).toHaveBeenCalledWith(
-                        BINARY_FIELD_CONTENTLET.inode,
-                        DotRenderMode.EDITING
-                    );
-                    expect(updateStateSpy).toHaveBeenCalledWith({
-                        contentlet: BINARY_FIELD_CONTENTLET,
-                        actions: mockWorkflowsActions
-                    });
-                    expect(locationSpy).toHaveBeenCalledWith(
-                        `/content/${BINARY_FIELD_CONTENTLET.inode}`
-                    );
+            spectator.service.vm$.subscribe(() => {
+                expect(fireWorkflowActionSpy).toHaveBeenCalledWith(mockParams);
+                expect(workflowSpy).toHaveBeenCalledWith(
+                    BINARY_FIELD_CONTENTLET.inode,
+                    DotRenderMode.EDITING
+                );
+                expect(updateStateSpy).toHaveBeenCalledWith({
+                    contentlet: BINARY_FIELD_CONTENTLET,
+                    actions: mockWorkflowsActions
+                });
+                expect(locationSpy).toHaveBeenCalledWith(
+                    `/content/${BINARY_FIELD_CONTENTLET.inode}`
+                );
 
-                    expect(spyMessage).toHaveBeenCalledWith({
-                        severity: 'success',
-                        summary: 'Success',
-                        detail: 'Content published'
-                    });
-                    done();
+                expect(spyMessage).toHaveBeenCalledWith({
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: 'Content published'
                 });
 
-                spectator.service.fireWorkflowActionEffect(mockParams);
+                done();
             });
         });
     });
