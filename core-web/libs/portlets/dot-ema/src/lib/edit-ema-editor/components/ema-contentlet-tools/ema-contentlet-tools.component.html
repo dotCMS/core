@@ -1,11 +1,22 @@
 <p-button
     [ngStyle]="getTopButtonPosition()"
-    (click)="setPosition('before'); menu.toggle($event)"
+    (click)="setPositionFlag('before'); menu.toggle($event)"
     icon="pi pi-plus"></p-button>
 <p-button
     [ngStyle]="getBottomButtonPosition()"
-    (click)="setPosition('after'); menu.toggle($event)"
+    (click)="setPositionFlag('after'); menu.toggle($event)"
     icon="pi pi-plus"></p-button>
 <p-menu #menu [model]="items" [popup]="true" appendTo="body"></p-menu>
 
-<div [ngStyle]="getPosition()"></div>
+<div class="actions" [ngStyle]="getActionPosition()">
+    <p-button
+        (click)="editHandler()"
+        styleClass="p-button-rounded p-button-raised"
+        icon="pi pi-pencil" />
+    <p-button
+        (click)="deleteHandler()"
+        styleClass="p-button-rounded p-button-raised"
+        icon="pi pi-times" />
+</div>
+
+<div class="bounds" [ngStyle]="getPosition()"></div>

@@ -47,6 +47,8 @@
         <dot-ema-contentlet-tools
             *ngIf="!rows.length && !!contentlet"
             [contentlet]="contentlet"
+            (edit)="editContentlet($event)"
+            (delete)="deleteContentlet($event)"
             (add)="addContentlet($event)" />
         <dot-ema-page-dropzone
             *ngIf="!!rows.length"

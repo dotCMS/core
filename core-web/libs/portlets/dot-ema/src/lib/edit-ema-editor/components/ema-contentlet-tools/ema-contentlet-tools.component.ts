@@ -21,6 +21,8 @@ export class EmaContentletToolsComponent {
 
     @Input() contentlet: ContentletArea;
     @Output() add = new EventEmitter<ActionPayload>();
+    @Output() edit = new EventEmitter<ActionPayload>();
+    @Output() delete = new EventEmitter<ActionPayload>();
 
     items: MenuItem[] = [
         {
@@ -51,7 +53,14 @@ export class EmaContentletToolsComponent {
         }
     ];
 
-    setPosition(position: 'before' | 'after'): void {
+    editHandler() {
+        this.edit.emit(this.contentlet.payload);
+    }
+    deleteHandler() {
+        this.delete.emit(this.contentlet.payload);
+    }
+
+    setPositionFlag(position: 'before' | 'after'): void {
         this.buttonPosition = position;
     }
 
@@ -90,6 +99,21 @@ export class EmaContentletToolsComponent {
             position: 'absolute',
             left: `${buttonLeft}px`,
             top: `${buttonTop}px`,
+            zIndex: '1'
+        };
+    }
+
+    getActionPosition(): Record<string, string> {
+        const width = 84;
+        const height = 40;
+        const contentletCenterX = this.contentlet.x + this.contentlet.width;
+        const ledt = contentletCenterX - width - 20;
+        const top = this.contentlet.y - height / 2;
+
+        return {
+            position: 'absolute',
+            left: `${ledt}px`,
+            top: `${top}px`,
             zIndex: '1'
         };
     }

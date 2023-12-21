@@ -287,41 +287,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         };
     }): () => void {
         const action = origin !== this.host ? CUSTOMER_ACTIONS.NOOP : data.action;
-        const payload = <ActionPayload>data.payload;
 
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
             [CUSTOMER_ACTIONS.EDIT_CONTENTLET]: () => {
-                this.store.initActionEdit({
-                    inode: payload.contentlet.inode,
-                    title: payload.contentlet.title
-                });
+                // DELETE THIS
             },
             [CUSTOMER_ACTIONS.ADD_CONTENTLET]: () => {
                 // DELETE THIS
             },
             [CUSTOMER_ACTIONS.DELETE_CONTENTLET]: () => {
-                const newPageContainers = deleteContentletFromContainer(payload);
-
-                this.confirmationService.confirm({
-                    header: this.dotMessageService.get(
-                        'editpage.content.contentlet.remove.confirmation_message.header'
-                    ),
-                    message: this.dotMessageService.get(
-                        'editpage.content.contentlet.remove.confirmation_message.message'
-                    ),
-                    acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
-                    rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
-                    accept: () => {
-                        this.store.savePage({
-                            pageContainers: newPageContainers,
-                            pageId: payload.pageId,
-                            whenSaved: () => {
-                                this.resetDialogIframeData();
-                                this.reloadIframe();
-                            }
-                        }); // Save when selected
-                    }
-                });
+                // DELETE THIS
             },
             [CUSTOMER_ACTIONS.SET_URL]: () => {
                 const payload = <SetUrlPayload>data.payload;
@@ -429,6 +404,50 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         });
 
         this.savePayload = payload;
+    }
+
+    /**
+     * Delete contentlet
+     *
+     * @param {ActionPayload} payload
+     * @memberof EditEmaEditorComponent
+     */
+    deleteContentlet(payload: ActionPayload) {
+        const newPageContainers = deleteContentletFromContainer(payload);
+
+        this.confirmationService.confirm({
+            header: this.dotMessageService.get(
+                'editpage.content.contentlet.remove.confirmation_message.header'
+            ),
+            message: this.dotMessageService.get(
+                'editpage.content.contentlet.remove.confirmation_message.message'
+            ),
+            acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
+            rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+            accept: () => {
+                this.store.savePage({
+                    pageContainers: newPageContainers,
+                    pageId: payload.pageId,
+                    whenSaved: () => {
+                        this.resetDialogIframeData();
+                        this.reloadIframe();
+                    }
+                }); // Save when selected
+            }
+        });
+    }
+
+    /**
+     * Edit contentlet
+     *
+     * @param {ActionPayload} payload
+     * @memberof EditEmaEditorComponent
+     */
+    editContentlet(payload: ActionPayload) {
+        this.store.initActionEdit({
+            inode: payload.contentlet.inode,
+            title: payload.contentlet.title
+        });
     }
 
     /**
