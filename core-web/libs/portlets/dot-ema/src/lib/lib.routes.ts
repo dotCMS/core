@@ -26,11 +26,8 @@ export const DotEmaRoutes: Route[] = [
                 canDeactivate: [CanDeactivateGuardService]
             },
             {
-                path: 'rules',
-                loadComponent: () =>
-                    import('./edit-ema-rules/edit-ema-rules.component').then(
-                        (mod) => mod.EditEmaRulesComponent
-                    )
+                path: 'rules/:pageId',
+                loadChildren: () => import('@dotcms/dot-rules').then((m) => m.DotRulesModule)
             },
             {
                 path: 'experiments',
