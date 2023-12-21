@@ -18,6 +18,7 @@ import {
 
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
+import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import { BOUNDS_MOCK } from './components/ema-page-dropzone/ema-page-dropzone.component.spec';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
@@ -260,36 +261,45 @@ describe('EditEmaEditorComponent', () => {
                 it('should open a confirm dialog and save on confirm', () => {
                     spectator.detectChanges();
 
+                    const payload: ActionPayload = {
+                        pageId: '123',
+                        language_id: '1',
+                        container: {
+                            identifier: '123',
+                            uuid: '123',
+                            acceptTypes: 'test',
+                            maxContentlets: 1,
+                            contentletsId: ['123']
+                        },
+                        pageContainers: [
+                            {
+                                identifier: '123',
+                                uuid: '123',
+                                contentletsId: ['123']
+                            }
+                        ],
+                        contentlet: {
+                            identifier: '123',
+                            inode: '456',
+                            title: 'Hello World'
+                        }
+                    };
+
+                    spectator.setInput('contentlet', {
+                        x: 100,
+                        y: 100,
+                        width: 500,
+                        height: 500,
+                        payload
+                    });
+
+                    spectator.detectChanges();
+
                     const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
                     const saveMock = jest.spyOn(store, 'savePage');
                     const confirmDialog = spectator.query(byTestId('confirm-dialog'));
 
-                    window.dispatchEvent(
-                        new MessageEvent('message', {
-                            origin: HOST,
-                            data: {
-                                action: 'delete-contentlet',
-                                payload: {
-                                    pageId: '123',
-                                    container: {
-                                        identifier: '123',
-                                        uuid: '123'
-                                    },
-                                    pageContainers: [
-                                        {
-                                            identifier: '123',
-                                            uuid: '123',
-                                            acceptTypes: '123',
-                                            contentletsId: ['123']
-                                        }
-                                    ],
-                                    contentlet: {
-                                        identifier: '123'
-                                    }
-                                }
-                            }
-                        })
-                    );
+                    spectator.triggerEventHandler(EmaContentletToolsComponent, 'delete', payload);
 
                     spectator.detectChanges();
 
@@ -304,8 +314,8 @@ describe('EditEmaEditorComponent', () => {
                             {
                                 identifier: '123',
                                 uuid: '123',
-                                acceptTypes: '123',
-                                contentletsId: []
+                                contentletsId: [],
+                                personaTag: undefined
                             }
                         ],
                         pageId: '123',
