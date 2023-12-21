@@ -158,9 +158,13 @@ jobs:
         run: |
           ./mvnw package -Dquarkus.package.type=uber-jar -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
 
-      - name: 'Test native image'
+      - name: 'Testing native image'
         working-directory: ${{ github.workspace }}
+        env:
+          DOTCMS_IMAGE: dotcms/dotcms:master_latest_SNAPSHOT
         run: |
+          echo "${DOTCMS_IMAGE}"
+          echo "${DOTCMS_LICENSE_FILE}"
           ./mvnw verify -Dnative -pl :dotcms-cli
 
       - name: 'Build Native Image'
