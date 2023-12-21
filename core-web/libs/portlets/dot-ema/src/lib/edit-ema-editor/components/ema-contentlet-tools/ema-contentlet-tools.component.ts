@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 
+import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 
@@ -16,17 +17,19 @@ import { ContentletArea } from '../ema-page-dropzone/ema-page-dropzone.component
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmaContentletToolsComponent {
+    private buttonPosition: 'after' | 'before' = 'after';
+
     @Input() contentlet: ContentletArea;
     @Output() add = new EventEmitter<ActionPayload>();
 
-    items = [
+    items: MenuItem[] = [
         {
             label: 'Content',
             icon: 'pi pi-refresh',
             command: () => {
                 this.add.emit({
                     ...this.contentlet.payload,
-                    position: 'before'
+                    position: this.buttonPosition
                 });
             }
         },
@@ -47,6 +50,10 @@ export class EmaContentletToolsComponent {
             }
         }
     ];
+
+    setPosition(position: 'before' | 'after'): void {
+        this.buttonPosition = position;
+    }
 
     getPosition(): Record<string, string> {
         return {
