@@ -49,7 +49,9 @@
             [contentlet]="contentlet"
             (edit)="editContentlet($event)"
             (delete)="deleteContentlet($event)"
-            (add)="addContentlet($event)" />
+            (addWidget)="addWidget($event)"
+            (addForm)="addForm($event)"
+            (addContent)="addContentlet($event)" />
         <dot-ema-page-dropzone
             *ngIf="!!rows.length"
             [rows]="rows"

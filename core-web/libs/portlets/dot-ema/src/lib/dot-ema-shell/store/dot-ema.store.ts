@@ -220,6 +220,17 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         };
     });
 
+    // readonly initActionAddWidget = this.updater((_state, _payload: ActionPayload) => {
+    //     return {
+    //         ...state,
+    //         dialogVisible: true,
+    //         dialogHeader: 'Search Forms', // Does this need translation?
+    //         dialogIframeLoading: true,
+    //         dialogIframeURL: null,
+    //         dialogType: 'widget'
+    //     };
+    // });
+
     // This method is called when the user clicks in the + button in the jsp dialog
     readonly initActionCreate = this.updater(
         (state, payload: { contentType: string; url: string }) => {

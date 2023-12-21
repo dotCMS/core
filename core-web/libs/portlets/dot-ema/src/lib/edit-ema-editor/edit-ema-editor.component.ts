@@ -343,23 +343,33 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     addContentlet(payload: ActionPayload): void {
-        switch (payload.type) {
-            case 'content':
-                this.store.initActionAdd({
-                    containerId: payload.container.identifier,
-                    acceptTypes: payload.container.acceptTypes ?? '*',
-                    language_id: payload.language_id
-                });
-                break;
+        this.store.initActionAdd({
+            containerId: payload.container.identifier,
+            acceptTypes: payload.container.acceptTypes ?? '*',
+            language_id: payload.language_id
+        });
+        this.savePayload = payload;
+    }
 
-            case 'form':
-                this.store.initActionAddForm(payload);
-                break;
+    /**
+     * Add Form
+     *
+     * @param {ActionPayload} payload
+     * @memberof EditEmaEditorComponent
+     */
+    addForm(payload: ActionPayload): void {
+        this.store.initActionAddForm(payload);
+        this.savePayload = payload;
+    }
 
-            default:
-                break;
-        }
-
+    /**
+     * Add Widget
+     *
+     * @param {ActionPayload} payload
+     * @memberof EditEmaEditorComponent
+     */
+    addWidget(payload: ActionPayload): void {
+        // this.store.initActionAddWidget(payload);
         this.savePayload = payload;
     }
 
