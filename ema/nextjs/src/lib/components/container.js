@@ -44,7 +44,7 @@ function Container({ containerRef }) {
                         container,
                         contentlet: {
                             identifier: contentlet.identifier,
-                            title: contentlet.title,
+                            title: contentlet.widgetTitle || contentlet.title,
                             inode: contentlet.inode
                         },
                         language_id: viewAs.language.id,

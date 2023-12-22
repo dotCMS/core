@@ -34,6 +34,27 @@ export interface EditEmaState {
     dialogType: DialogType;
 }
 
+function getFormId(dotPageApiService) {
+    return (source: Observable<unknown>) =>
+        source.pipe(
+            switchMap(({ payload, formId, whenSaved }) => {
+                return dotPageApiService
+                    .getFormIndetifier(payload.container.identifier, formId)
+                    .pipe(
+                        map((newFormId: string) => {
+                            return {
+                                payload: {
+                                    ...payload,
+                                    newContentletId: newFormId
+                                },
+                                whenSaved
+                            };
+                        })
+                    );
+            })
+        );
+}
+
 @Injectable()
 export class EditEmaStore extends ComponentStore<EditEmaState> {
     constructor(
@@ -150,21 +171,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             }>
         ) => {
             return payload$.pipe(
-                switchMap(({ payload, formId, whenSaved }) => {
-                    return this.dotPageApiService
-                        .getFormIndetifier(payload.container.identifier, formId)
-                        .pipe(
-                            map((formId: string) => {
-                                return {
-                                    payload: {
-                                        ...payload,
-                                        newContentletId: formId
-                                    },
-                                    whenSaved
-                                };
-                            })
-                        );
-                }),
+                getFormId(this.dotPageApiService),
                 switchMap(({ whenSaved, payload }) => {
                     const pageContainers = insertContentletInContainer(payload);
 
