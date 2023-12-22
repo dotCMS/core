@@ -35,7 +35,9 @@
             <p-button class="p-button-sm" label="Save" />
         </ng-container>
     </dot-edit-ema-toolbar>
-    <div class="iframe-wrapper">
+    <div
+        class="iframe-wrapper"
+        [ngStyle]="{ 'grid-column': es.haveEnterpriseLicense ? '' : '1/-1' }">
         <iframe
             #iframe
             [src]="es.iframeURL | safeUrl"
@@ -51,6 +53,9 @@
             data-testId="dropzone" />
     </div>
     <dot-edit-ema-palette
+        *ngIf="es.haveEnterpriseLicense"
+        [languageId]="es.editor.viewAs.language.id"
+        [containers]="es.editor.containers"
         (dragStart)="onDragStart($event)"
         (dragEnd)="onDragEnd($event)"></dot-edit-ema-palette>
 </ng-container>

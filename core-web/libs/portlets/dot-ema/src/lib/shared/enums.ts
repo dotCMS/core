@@ -20,7 +20,7 @@ export enum NG_CUSTOM_EVENTS {
     SAVE_CONTENTLET = 'save-page'
 }
 
-export enum PALETTE_TYPE {
+export enum PALETTE_TYPES {
     CONTENTTYPE = 'CONTENTTYPE',
     CONTENTLET = 'CONTENTLET'
 }

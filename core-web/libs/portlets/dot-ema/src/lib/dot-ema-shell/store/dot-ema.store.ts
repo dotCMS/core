@@ -1,11 +1,18 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import { EMPTY, Observable } from 'rxjs';
+import { EMPTY, Observable, forkJoin } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { catchError, switchMap, tap } from 'rxjs/operators';
+import { catchError, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotContainerMap, DotLayout, DotPageContainerStructure } from '@dotcms/dotcms-models';
+import { DotLicenseService, DotPropertiesService } from '@dotcms/data-access';
+import {
+    DotContainerMap,
+    DotContainerStructure,
+    DotLayout,
+    DotPageContainerStructure,
+    DotPageRenderState
+} from '@dotcms/dotcms-models';
 
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
 import {
@@ -28,13 +35,16 @@ export interface EditEmaState {
     dialogVisible: boolean;
     dialogHeader: string;
     dialogIframeLoading: boolean;
+    isEnterpriseLicense: boolean;
 }
 
 @Injectable()
 export class EditEmaStore extends ComponentStore<EditEmaState> {
     constructor(
         private dotPageApiService: DotPageApiService,
-        private dotActionUrl: DotActionUrlService
+        private dotActionUrl: DotActionUrlService,
+        private dotLicenseService: DotLicenseService,
+        private dotConfigurationsService: DotPropertiesService
     ) {
         super();
     }
@@ -55,7 +65,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     ...state.editor.viewAs,
                     persona: state.editor.viewAs.persona ?? DEFAULT_PERSONA
                 }
-            }
+            },
+            haveEnterpriseLicense: state.isEnterpriseLicense
         };
     });
 
@@ -81,16 +92,20 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly load = this.effect((params$: Observable<DotPageApiParams>) => {
         return params$.pipe(
             switchMap(({ language_id, url, persona_id }) =>
-                this.dotPageApiService.get({ language_id, url, persona_id }).pipe(
+                forkJoin({
+                    pageData: this.dotPageApiService.get({ language_id, url, persona_id }),
+                    licenseData: this.dotLicenseService.isEnterprise().pipe(take(1), shareReplay())
+                }).pipe(
                     tap({
-                        next: (editor) => {
+                        next: ({ pageData, licenseData }) => {
                             this.setState({
-                                editor,
+                                editor: pageData,
                                 url,
                                 dialogIframeURL: '',
                                 dialogVisible: false,
                                 dialogHeader: '',
-                                dialogIframeLoading: false
+                                dialogIframeLoading: false,
+                                isEnterpriseLicense: licenseData
                             });
                         },
                         error: (e) => {
@@ -282,5 +297,32 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
             return acc;
         }, {});
+    }
+
+    // private setAllowedContent(pageState: DotPageRenderState): void {
+    //     const CONTENT_HIDDEN_KEY = 'CONTENT_PALETTE_HIDDEN_CONTENT_TYPES';
+    //     this.dotConfigurationsService
+    //         .getKeyAsList(CONTENT_HIDDEN_KEY)
+    //         .pipe(take(1))
+    //         .subscribe((results) => {
+    //             this.allowedContent = this.filterAllowedContentTypes(results, pageState) || [];
+    //         });
+    // }
+
+    private filterAllowedContentTypes(
+        blackList: string[] = [],
+        pageState: DotPageRenderState
+    ): string[] {
+        const allowedContent = new Set();
+        Object.values(pageState.containers).forEach((container) => {
+            Object.values(container.containerStructures).forEach(
+                (containerStructure: DotContainerStructure) => {
+                    allowedContent.add(containerStructure.contentTypeVar.toLocaleLowerCase());
+                }
+            );
+        });
+        blackList.forEach((content) => allowedContent.delete(content.toLocaleLowerCase()));
+
+        return [...allowedContent] as string[];
     }
 }

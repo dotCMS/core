@@ -1,71 +1,76 @@
-<div class="edit-ema-palette">
-    <div class="content-search">
-        <i
-            class="pi pi-angle-left"
-            *ngIf="currentPaletteType === PALETTETYPE.CONTENTLET"
-            (click)="showContentTypes()"></i>
-
-        <span class="p-input-icon-right">
-            <i class="pi pi-search"></i>
-            <input [placeholder]="'Search' | dm" type="text" pInputText />
-        </span>
-    </div>
-
-    <div class="contenttypes" *ngIf="currentPaletteType === PALETTETYPE.CONTENTTYPE">
-        <div
-            class="contenttype-card"
-            [attr.data-item]="{ inode: 'c1e7e687-a19e-4ec9-8b97-404768566fe0' } | json"
-            (dragstart)="onDragStart($event)"
-            (dragend)="onDragEnd($event)"
-            data-type="contentlet"
-            draggable="true">
+<ng-container *ngIf="vm$ | async as vm">
+    <div class="edit-ema-palette">
+        <div class="content-search">
             <i
-                class="pi pi-angle-right icon-go-content"
-                (click)="showContentletsFromContentType()"></i>
+                class="pi pi-angle-left"
+                *ngIf="currentPaletteType === PALETTETYPE.CONTENTLET"
+                (click)="showContentTypes()"></i>
 
-            <div class="ctc-content">
-                <dot-icon name="folder_open"></dot-icon>
-                Activity
+            <span class="p-input-icon-right">
+                <i class="pi pi-search"></i>
+                <input
+                    *ngIf="currentPaletteType === PALETTETYPE.CONTENTTYPE"
+                    [placeholder]="'Search' | dm"
+                    [formControl]="searchContenttype"
+                    type="text"
+                    pInputText />
+
+                <input
+                    *ngIf="currentPaletteType === PALETTETYPE.CONTENTLET"
+                    [placeholder]="'Search' | dm"
+                    [formControl]="searchContentlet"
+                    type="text"
+                    pInputText />
+            </span>
+        </div>
+
+        <div class="contenttypes" *ngIf="currentPaletteType === PALETTETYPE.CONTENTTYPE">
+            <div
+                class="contenttype-card"
+                *ngFor="let contenttype of vm.contenttypes.items"
+                [attr.data-item]="{ variable: contenttype.variable, name: contenttype.name } | json"
+                (dragstart)="onDragStart($event)"
+                (dragend)="onDragEnd($event)"
+                data-type="contentlet"
+                draggable="true">
+                <i
+                    class="pi pi-angle-right icon-go-content"
+                    (click)="showContentletsFromContentType(contenttype.name)"></i>
+
+                <div class="ctc-content">
+                    <dot-icon [name]="contenttype.icon"></dot-icon>
+                    {{ contenttype.name }}
+                </div>
+                <dot-icon class="drag-icon" name="drag_indicator"></dot-icon>
             </div>
-            <dot-icon class="drag-icon" name="drag_indicator"></dot-icon>
         </div>
-        <div
-            class="contenttype-card"
-            [attr.data-item]="{ inode: 'e3b0f871-792a-4787-930b-4596613ae8f9' } | json"
-            (dragstart)="onDragStart($event)"
-            (dragend)="onDragEnd($event)"
-            data-type="contentlet"
-            draggable="true">
-            Banner
-        </div>
-        <div
-            class="contenttype-card"
-            [attr.data-item]="{ inode: '50757fb4-75df-4e2c-8335-35d36bdb944b' } | json"
-            (dragstart)="onDragStart($event)"
-            (dragend)="onDragEnd($event)"
-            data-type="contentlet"
-            draggable="true">
-            Activity
-        </div>
-        <div
-            class="contenttype-card"
-            [attr.data-item]="{ variable: 'webPageContent', name: 'Rich Text' } | json"
-            (dragstart)="onDragStart($event)"
-            (dragend)="onDragEnd($event)"
-            data-type="content-type"
-            draggable="true">
-            New Rich Text
+
+        <div class="contentlets" *ngIf="currentPaletteType === PALETTETYPE.CONTENTLET">
+            <div
+                class="contentlet-card"
+                *ngFor="let contentlet of vm.contentlets.items"
+                [attr.data-item]="{ inode: contentlet.identifier } | json"
+                (dragstart)="onDragStart($event)"
+                (dragend)="onDragEnd($event)"
+                data-type="contentlet"
+                draggable="true">
+                <dot-icon name="drag_indicator"></dot-icon>
+
+                <dot-contentlet-thumbnail
+                    [iconSize]="'24px'"
+                    [cover]="false"
+                    [contentlet]="contentlet">
+                </dot-contentlet-thumbnail>
+
+                <span>{{ contentlet.title }}</span>
+            </div>
+            <p-paginator
+                *ngIf="vm.contentlets.totalRecords > 0"
+                [rows]="vm.itemsPerPage"
+                [showFirstLastIcon]="false"
+                [totalRecords]="vm.contentlets.totalRecords"
+                [pageLinkSize]="0"
+                (onPageChange)="onPaginate($event, vm.contentlets.filter)"></p-paginator>
         </div>
     </div>
-
-    <div class="contentlets" *ngIf="currentPaletteType === PALETTETYPE.CONTENTLET">
-        <div class="contentlet-card" *ngFor="let item of [1, 2, 3, 4, 5]">
-            <dot-icon name="drag_indicator"></dot-icon>
-
-            <img src="https://a-z-animals.com/media/2018/09/Frog-tree.jpg" alt="" />
-
-            <span>File Template Design Example with a biiiiiiig title lorem gaaaaaa fdfad</span>
-        </div>
-    </div>
-    <!-- <p-paginator (onPageChange)="onPageChange($event)" [first]="first" [rows]="rows" [totalRecords]="120" [rowsPerPageOptions]="[10, 20, 30]"></p-paginator> -->
-</div>
+</ng-container>

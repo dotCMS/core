@@ -1,3 +1,7 @@
+:host {
+    overflow: auto;
+}
+
 .edit-ema-palette {
     padding: 12px 16px; //Replace later
     .content-search {
@@ -44,12 +48,15 @@
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                color: hsla(229, 12%, 9%, 1);
+                color: hsl(229deg, 12%, 9%);
+                font-size: 13px;
+                text-align: center;
+                max-width: 50%;
             }
 
             .drag-icon {
                 position: absolute;
-                bottom: 0%;
+                bottom: -3px;
                 left: calc(50% - 12px);
                 transform: rotate(90deg);
             }
@@ -65,7 +72,7 @@
             display: flex;
             gap: 0.5rem;
 
-            img {
+            dot-contentlet-thumbnail {
                 // REMOVE LATER
                 width: 54px;
                 height: 36px;
