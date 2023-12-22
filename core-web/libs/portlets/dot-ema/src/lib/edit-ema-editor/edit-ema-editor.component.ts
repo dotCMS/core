@@ -327,7 +327,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     addWidget(payload: ActionPayload): void {
-        // this.store.initActionAddWidget(payload);
         this.savePayload = payload;
     }
 
