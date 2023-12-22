@@ -77,7 +77,7 @@ describe('EmaContentletToolsComponent', () => {
             });
 
             describe('top button', () => {
-                it('should open menu on add top button click', () => {
+                it('should open menu on add button click', () => {
                     spectator.click('[data-testId="add-top-button"]');
                     expect(spectator.query('.p-menu-overlay')).not.toBeNull();
                 });
@@ -114,7 +114,7 @@ describe('EmaContentletToolsComponent', () => {
             });
 
             describe('bottom button', () => {
-                it('should open menu on add top button click', () => {
+                it('should open menu on button click', () => {
                     spectator.click('[data-testId="add-bottom-button"]');
                     expect(spectator.query('.p-menu-overlay')).not.toBeNull();
                 });
