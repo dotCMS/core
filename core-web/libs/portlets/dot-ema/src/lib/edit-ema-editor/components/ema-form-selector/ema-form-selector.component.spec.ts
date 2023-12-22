@@ -6,7 +6,8 @@ import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 
-import { DotContentTypeService } from '@dotcms/data-access';
+import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { EmaFormSelectorComponent } from './ema-form-selector.component';
 
@@ -16,7 +17,17 @@ describe('EmaFormSelectorComponent', () => {
     const createComponent = createComponentFactory({
         component: EmaFormSelectorComponent,
         imports: [CommonModule, TableModule, ButtonModule],
-        mocks: [DotContentTypeService]
+        mocks: [DotContentTypeService],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    name: 'Name',
+                    description: 'Description',
+                    Actions: 'Actions'
+                })
+            }
+        ]
     });
 
     beforeEach(() => {

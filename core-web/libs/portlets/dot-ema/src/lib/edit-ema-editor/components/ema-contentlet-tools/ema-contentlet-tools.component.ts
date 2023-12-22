@@ -12,9 +12,10 @@ import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 
+import { DotMessageService } from '@dotcms/data-access';
+
 import { ActionPayload } from '../../../shared/models';
 import { ContentletArea } from '../ema-page-dropzone/ema-page-dropzone.component';
-import { DotMessageService } from '@dotcms/data-access';
 
 @Component({
     selector: 'dot-ema-contentlet-tools',
