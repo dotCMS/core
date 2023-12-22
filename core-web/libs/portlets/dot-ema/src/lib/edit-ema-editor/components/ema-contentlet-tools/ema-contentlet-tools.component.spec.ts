@@ -3,6 +3,9 @@ import { Spectator, byTestId, byText, createComponentFactory } from '@ngneat/spe
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import { EmaContentletToolsComponent } from './ema-contentlet-tools.component';
 
 import { ActionPayload } from '../../../shared/models';
@@ -37,7 +40,17 @@ describe('EmaContentletToolsComponent', () => {
     let spectator: Spectator<EmaContentletToolsComponent>;
     const createComponent = createComponentFactory({
         component: EmaContentletToolsComponent,
-        imports: [ButtonModule, MenuModule]
+        imports: [ButtonModule, MenuModule],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    content: 'Content',
+                    Widget: 'Widget',
+                    form: 'Form'
+                })
+            }
+        ]
     });
 
     describe('default', () => {

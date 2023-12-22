@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    Input,
+    Output,
+    inject
+} from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -7,6 +14,7 @@ import { MenuModule } from 'primeng/menu';
 
 import { ActionPayload } from '../../../shared/models';
 import { ContentletArea } from '../ema-page-dropzone/ema-page-dropzone.component';
+import { DotMessageService } from '@dotcms/data-access';
 
 @Component({
     selector: 'dot-ema-contentlet-tools',
@@ -17,6 +25,8 @@ import { ContentletArea } from '../ema-page-dropzone/ema-page-dropzone.component
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmaContentletToolsComponent {
+    private dotMessageService = inject(DotMessageService);
+
     private buttonPosition: 'after' | 'before' = 'after';
 
     @Input() contentlet: ContentletArea;
@@ -28,7 +38,7 @@ export class EmaContentletToolsComponent {
 
     items: MenuItem[] = [
         {
-            label: 'Content',
+            label: this.dotMessageService.get('content'),
             command: () => {
                 this.addContent.emit({
                     ...this.contentlet.payload,
@@ -37,7 +47,7 @@ export class EmaContentletToolsComponent {
             }
         },
         {
-            label: 'Form',
+            label: this.dotMessageService.get('Widget'),
             command: () => {
                 this.addForm.emit({
                     ...this.contentlet.payload,
@@ -46,7 +56,7 @@ export class EmaContentletToolsComponent {
             }
         },
         {
-            label: 'Widget',
+            label: this.dotMessageService.get('form'),
             command: () => {
                 this.addWidget.emit({
                     ...this.contentlet.payload,
