@@ -49,7 +49,7 @@ export class EmaContentletToolsComponent {
         {
             label: this.dotMessageService.get('Widget'),
             command: () => {
-                this.addForm.emit({
+                this.addWidget.emit({
                     ...this.contentlet.payload,
                     position: this.buttonPosition
                 });
@@ -58,7 +58,7 @@ export class EmaContentletToolsComponent {
         {
             label: this.dotMessageService.get('form'),
             command: () => {
-                this.addWidget.emit({
+                this.addForm.emit({
                     ...this.contentlet.payload,
                     position: this.buttonPosition
                 });

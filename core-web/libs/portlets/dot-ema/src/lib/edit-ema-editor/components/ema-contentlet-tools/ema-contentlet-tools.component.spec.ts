@@ -91,7 +91,8 @@ describe('EmaContentletToolsComponent', () => {
                         position: 'before'
                     } as ActionPayload);
                 });
-                it('should call addContent on Content option click', () => {
+
+                it('should call addForm on Form option click', () => {
                     const addSpy = jest.spyOn(spectator.component.addForm, 'emit');
                     spectator.click('[data-testId="add-top-button"]');
                     spectator.click(byText('Form'));
@@ -100,7 +101,8 @@ describe('EmaContentletToolsComponent', () => {
                         position: 'before'
                     } as ActionPayload);
                 });
-                it('should call addContent on Content option click', () => {
+
+                it('should call addWidget on Widget option click', () => {
                     const addSpy = jest.spyOn(spectator.component.addWidget, 'emit');
                     spectator.click('[data-testId="add-top-button"]');
                     spectator.click(byText('Widget'));
@@ -126,7 +128,7 @@ describe('EmaContentletToolsComponent', () => {
                         position: 'after'
                     } as ActionPayload);
                 });
-                it('should call addContent on Content option click', () => {
+                it('should call addForm on Form option click', () => {
                     const addSpy = jest.spyOn(spectator.component.addForm, 'emit');
                     spectator.click('[data-testId="add-bottom-button"]');
                     spectator.click(byText('Form'));
@@ -135,7 +137,7 @@ describe('EmaContentletToolsComponent', () => {
                         position: 'after'
                     } as ActionPayload);
                 });
-                it('should call addContent on Content option click', () => {
+                it('should call addWidget on Widget option click', () => {
                     const addSpy = jest.spyOn(spectator.component.addWidget, 'emit');
                     spectator.click('[data-testId="add-bottom-button"]');
                     spectator.click(byText('Widget'));
