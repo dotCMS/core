@@ -1,10 +1,10 @@
 import { render } from '@testing-library/react';
 
-import SdkReact from './sdk-react';
+import Container from './container';
 
-describe('SdkReact', () => {
+describe('Container', () => {
   it('should render successfully', () => {
-    const { baseElement } = render(<SdkReact />);
+    const { baseElement } = render(<Container />);
     expect(baseElement).toBeTruthy();
   });
 });
