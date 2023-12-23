@@ -1,3 +1,3 @@
 export function sdkJsClient(): string {
-    return 'sdk-js-client';
+  return 'sdk-js-client';
 }
