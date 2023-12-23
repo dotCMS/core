@@ -8,23 +8,23 @@ import { ActionPayload, PageContainer } from '../shared/models';
  * @return {*}  {PageContainer[]}
  */
 export function insertContentletInContainer(action: ActionPayload): PageContainer[] {
-    if (action.position && action.newContentletId) {
+    if (action.position) {
         return insertPositionedContentletInContainer(action);
     }
 
-    const { pageContainers, container, contentlet, personaTag } = action;
+    const { pageContainers, container, personaTag, newContentletId } = action;
 
-    return pageContainers.map((currentContainer) => {
+    return pageContainers.map((pageContainer) => {
         if (
-            areContainersEquals(currentContainer, container) &&
-            !currentContainer.contentletsId.includes(contentlet.identifier)
+            areContainersEquals(pageContainer, container) &&
+            !pageContainer.contentletsId.includes(newContentletId)
         ) {
-            currentContainer.contentletsId.push(contentlet.identifier);
+            pageContainer.contentletsId.push(newContentletId);
         }
 
-        currentContainer.personaTag = personaTag;
+        pageContainer.personaTag = personaTag;
 
-        return currentContainer;
+        return pageContainer;
     });
 }
 

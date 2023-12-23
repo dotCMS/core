@@ -30,6 +30,7 @@
     <div
         class="template-builder__main"
         #templateContainerRef
+        [ngStyle]="customStyles"
         (mousemove)="fixGridStackNodeOptions()"
         data-testId="template-builder-main">
         <dotcms-template-builder-section

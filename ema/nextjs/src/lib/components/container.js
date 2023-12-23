@@ -3,7 +3,6 @@ import { GlobalContext } from '@/lib/providers/global';
 import { getContainersData } from '@/lib/utils';
 import { contentComponents } from '@/components/content-types';
 import NoContent from '@/components/content-types/noContent';
-import ActionButton from './actionButton';
 
 function Container({ containerRef }) {
     const { identifier, uuid } = containerRef;
@@ -34,13 +33,6 @@ function Container({ containerRef }) {
 
     return (
         <>
-            <ActionButton
-                message={{
-                    action: 'add-contentlet',
-                    payload: containerPayload
-                }}>
-                +
-            </ActionButton>
             <div
                 data-dot="container"
                 data-content={JSON.stringify(containerPayload)}
@@ -52,7 +44,7 @@ function Container({ containerRef }) {
                         container,
                         contentlet: {
                             identifier: contentlet.identifier,
-                            title: contentlet.title,
+                            title: contentlet.widgetTitle || contentlet.title,
                             inode: contentlet.inode
                         },
                         language_id: viewAs.language.id,
@@ -63,26 +55,33 @@ function Container({ containerRef }) {
 
                     return (
                         <div
+                            onPointerEnter={(e) => {
+                                let target = e.target;
+
+                                if (target.dataset.dot !== 'contentlet') {
+                                    target = target.closest('[data-dot="contentlet"]');
+                                }
+
+                                const { x, y, width, height } = target.getBoundingClientRect();
+
+                                window.parent.postMessage(
+                                    {
+                                        action: 'set-contentlet',
+                                        payload: {
+                                            x,
+                                            y,
+                                            width,
+                                            height,
+                                            payload: contentletPayload
+                                        }
+                                    },
+                                    '*'
+                                );
+                            }}
                             data-dot="contentlet"
                             data-content={JSON.stringify(contentletPayload)}
                             className="p-4 bg-slate-100"
                             key={contentlet.identifier}>
-                            <div className="flex gap-2">
-                                <ActionButton
-                                    message={{
-                                        action: 'edit-contentlet',
-                                        payload: contentletPayload
-                                    }}>
-                                    Edit
-                                </ActionButton>
-                                <ActionButton
-                                    message={{
-                                        action: 'delete-contentlet',
-                                        payload: contentletPayload
-                                    }}>
-                                    Delete
-                                </ActionButton>
-                            </div>
                             <Component {...contentlet} />
                         </div>
                     );

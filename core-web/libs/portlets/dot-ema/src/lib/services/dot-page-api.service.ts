@@ -112,6 +112,22 @@ export class DotPageApiService {
         );
     }
 
+    /**
+     * Get form information to add to the page
+     *
+     * @param {string} containerId
+     * @param {string} formId
+     * @return {*}  {Observable<{ render: string; content: { [key: string]: string } }>}
+     * @memberof DotPageApiService
+     */
+    getFormIndetifier(containerId: string, formId: string): Observable<string> {
+        return this.http
+            .get<{ entity: { content: { idenfitier: string } } }>(
+                `/api/v1/containers/form/${formId}?containerId=${containerId}`
+            )
+            .pipe(pluck('entity', 'content', 'identifier'));
+    }
+
     private getPersonasURL({ pageId, filter, page, perPage }: GetPersonasParams): string {
         const apiUrl = `/api/v1/page/${pageId}/personas?`;
 

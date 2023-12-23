@@ -11,9 +11,8 @@
             .p-dialog-content {
                 display: flex;
                 justify-content: center;
-                align-items: center;
+                align-items: flex-start;
                 padding: 0;
-                overflow: hidden;
             }
         }
 
@@ -40,6 +39,7 @@ dot-edit-ema-toolbar {
 
 .iframe-wrapper {
     position: relative;
+    overflow: hidden;
     margin: $spacing-3;
     outline: solid 1px $color-palette-gray-500;
 }
