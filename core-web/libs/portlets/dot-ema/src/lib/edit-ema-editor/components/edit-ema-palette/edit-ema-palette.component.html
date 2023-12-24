@@ -1,76 +1,23 @@
 <ng-container *ngIf="vm$ | async as vm">
+    <!-- <button (click)="print(vm)">Print</button> -->
     <div class="edit-ema-palette">
-        <div class="content-search">
-            <i
-                class="pi pi-angle-left"
-                *ngIf="currentPaletteType === PALETTETYPE.CONTENTLET"
-                (click)="showContentTypes()"></i>
+        <dot-edit-ema-palette-content-type
+            *ngIf="vm.currentPaletteType === PALETTETYPE.CONTENTTYPE"
+            [contentTypes]="vm.contenttypes.items"
+            [filter]="vm.contenttypes.filter"
+            [control]="searchContenttype"
+            (showContentlets)="showContentletsFromContentType($event)"
+            (dragStart)="onDragStart($event)"
+            (dragEnd)="onDragEnd($event)" />
 
-            <span class="p-input-icon-right">
-                <i class="pi pi-search"></i>
-                <input
-                    *ngIf="currentPaletteType === PALETTETYPE.CONTENTTYPE"
-                    [placeholder]="'Search' | dm"
-                    [formControl]="searchContenttype"
-                    type="text"
-                    pInputText />
-
-                <input
-                    *ngIf="currentPaletteType === PALETTETYPE.CONTENTLET"
-                    [placeholder]="'Search' | dm"
-                    [formControl]="searchContentlet"
-                    type="text"
-                    pInputText />
-            </span>
-        </div>
-
-        <div class="contenttypes" *ngIf="currentPaletteType === PALETTETYPE.CONTENTTYPE">
-            <div
-                class="contenttype-card"
-                *ngFor="let contenttype of vm.contenttypes.items"
-                [attr.data-item]="{ variable: contenttype.variable, name: contenttype.name } | json"
-                (dragstart)="onDragStart($event)"
-                (dragend)="onDragEnd($event)"
-                data-type="contentlet"
-                draggable="true">
-                <i
-                    class="pi pi-angle-right icon-go-content"
-                    (click)="showContentletsFromContentType(contenttype.name)"></i>
-
-                <div class="ctc-content">
-                    <dot-icon [name]="contenttype.icon"></dot-icon>
-                    {{ contenttype.name }}
-                </div>
-                <dot-icon class="drag-icon" name="drag_indicator"></dot-icon>
-            </div>
-        </div>
-
-        <div class="contentlets" *ngIf="currentPaletteType === PALETTETYPE.CONTENTLET">
-            <div
-                class="contentlet-card"
-                *ngFor="let contentlet of vm.contentlets.items"
-                [attr.data-item]="{ inode: contentlet.identifier } | json"
-                (dragstart)="onDragStart($event)"
-                (dragend)="onDragEnd($event)"
-                data-type="contentlet"
-                draggable="true">
-                <dot-icon name="drag_indicator"></dot-icon>
-
-                <dot-contentlet-thumbnail
-                    [iconSize]="'24px'"
-                    [cover]="false"
-                    [contentlet]="contentlet">
-                </dot-contentlet-thumbnail>
-
-                <span>{{ contentlet.title }}</span>
-            </div>
-            <p-paginator
-                *ngIf="vm.contentlets.totalRecords > 0"
-                [rows]="vm.itemsPerPage"
-                [showFirstLastIcon]="false"
-                [totalRecords]="vm.contentlets.totalRecords"
-                [pageLinkSize]="0"
-                (onPageChange)="onPaginate($event, vm.contentlets.filter)"></p-paginator>
-        </div>
+        <dot-edit-ema-palette-contentlets
+            *ngIf="vm.currentPaletteType === PALETTETYPE.CONTENTLET"
+            [contentlets]="vm.contentlets"
+            [control]="searchContentlet"
+            [itemsPerPage]="vm.itemsPerPage"
+            (paginate)="onPaginate($event)"
+            (showContentTypes)="showContentTypes()"
+            (dragStart)="onDragStart($event)"
+            (dragEnd)="onDragEnd($event)" />
     </div>
 </ng-container>

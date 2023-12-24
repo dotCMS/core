@@ -1,0 +1,51 @@
+:host {
+    ::ng-deep {
+        .p-paginator-icon {
+            color: hsla(226, 85%, 60%, 1);
+        }
+    }
+}
+
+.content-search {
+    display: flex;
+    gap: 0.5em;
+
+    i {
+        color: hsla(226, 85%, 60%, 1);
+    }
+
+    .p-input-icon-right {
+        width: 100%;
+        input {
+            width: 100%;
+        }
+    }
+}
+
+.contentlets {
+    margin-top: 1em;
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    .contentlet-card {
+        display: flex;
+        gap: 0.5rem;
+
+        dot-contentlet-thumbnail {
+            // REMOVE LATER
+            width: 54px;
+            height: 36px;
+            border-radius: 8px;
+        }
+
+        span {
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            text-overflow: ellipsis;
+            font-size: 13px;
+            line-height: 18.2px;
+        }
+    }
+}

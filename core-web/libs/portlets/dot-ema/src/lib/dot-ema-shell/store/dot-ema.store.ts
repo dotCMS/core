@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { catchError, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotLicenseService, DotPropertiesService } from '@dotcms/data-access';
+import { DotLicenseService } from '@dotcms/data-access';
 import {
     DotContainerMap,
     DotContainerStructure,
@@ -43,8 +43,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     constructor(
         private dotPageApiService: DotPageApiService,
         private dotActionUrl: DotActionUrlService,
-        private dotLicenseService: DotLicenseService,
-        private dotConfigurationsService: DotPropertiesService
+        private dotLicenseService: DotLicenseService
     ) {
         super();
     }

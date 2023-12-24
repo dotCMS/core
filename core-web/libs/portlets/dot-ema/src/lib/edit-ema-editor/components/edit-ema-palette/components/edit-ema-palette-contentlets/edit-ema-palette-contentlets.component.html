@@ -1,0 +1,34 @@
+<div class="content-search">
+    <i class="pi pi-angle-left" (click)="backToContentTypes()"></i>
+
+    <span class="p-input-icon-right">
+        <i class="pi pi-search"></i>
+
+        <input [placeholder]="'Search' | dm" [formControl]="control" type="text" pInputText />
+    </span>
+</div>
+
+<div class="contentlets">
+    <div
+        class="contentlet-card"
+        *ngFor="let contentlet of contentlets.items"
+        [attr.data-item]="{ inode: contentlet.identifier } | json"
+        (dragstart)="onDragStart($event)"
+        (dragend)="onDragEnd($event)"
+        data-type="contentlet"
+        draggable="true">
+        <dot-icon name="drag_indicator"></dot-icon>
+
+        <dot-contentlet-thumbnail [iconSize]="'24px'" [cover]="false" [contentlet]="contentlet">
+        </dot-contentlet-thumbnail>
+
+        <span>{{ contentlet.title }}</span>
+    </div>
+    <p-paginator
+        *ngIf="contentlets.totalRecords > 0"
+        [rows]="itemsPerPage"
+        [showFirstLastIcon]="false"
+        [totalRecords]="contentlets.totalRecords"
+        [pageLinkSize]="0"
+        (onPageChange)="onPaginate($event, contentlets.filter)"></p-paginator>
+</div>

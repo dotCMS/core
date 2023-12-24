@@ -3,13 +3,12 @@ import { Observable, forkJoin } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { LazyLoadEvent } from 'primeng/api';
-
 import { map, switchMap } from 'rxjs/operators';
 
 import { DotContentTypeService, DotESContentService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
+import { PAGINATOR_ITEMS_PER_PAGE } from '../../../../shared/consts';
 import { PALETTE_TYPES } from '../../../../shared/enums';
 
 export interface DotPaletteState {
@@ -33,13 +32,11 @@ export interface DotPaletteState {
 @Injectable()
 export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     readonly vm$ = this.state$;
-    private itemsPerPage = 4; //Search how to integrate this
-    private contentTypeVarName: string; //Same
+    private itemsPerPage = PAGINATOR_ITEMS_PER_PAGE;
 
     constructor(
         private dotContentTypeService: DotContentTypeService,
-        private dotESContentService: DotESContentService,
-        private paginatorESService: DotESContentService
+        private dotESContentService: DotESContentService
     ) {
         super({
             contentlets: {
@@ -50,18 +47,22 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
             contenttypes: { items: [], filter: '' },
             loading: false,
             currentPaletteType: PALETTE_TYPES.CONTENTTYPE,
-            itemsPerPage: 4
+            itemsPerPage: PAGINATOR_ITEMS_PER_PAGE
         });
     }
 
-    readonly loadContenttypesEffect = this.effect(
+    readonly changeView = this.updater((state, view: PALETTE_TYPES) => ({
+        ...state,
+        currentPaletteType: view
+    }));
+
+    readonly loadContentTypes = this.effect(
         (data$: Observable<{ filter: string; allowedContent: string[] }>) => {
             return data$.pipe(
                 switchMap(({ allowedContent, filter }) => {
-                    // const obs$ = allowedContent?.length
                     //     ? this.getFilteredContenttypes(filter, allowedContent)
                     //     : this.getWidgets(filter);
-                    const obs$ = this.getFilteredContenttypes(filter, allowedContent);
+                    const obs$ = this.getFilteredContentTypes(filter, allowedContent);
 
                     return obs$.pipe(
                         tapResponse(
@@ -77,7 +78,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         }
     );
 
-    readonly loadContentletsEffect = this.effect(
+    readonly loadContentlets = this.effect(
         (
             data$: Observable<{
                 filter: string;
@@ -119,7 +120,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         }
     );
 
-    getFilteredContenttypes(filter: string, allowedContent: string[]) {
+    private getFilteredContentTypes(filter: string, allowedContent: string[]) {
         return forkJoin([
             this.dotContentTypeService.filterContentTypes(filter, allowedContent.join(',')),
             this.dotContentTypeService.getContentTypes({ filter, page: 40, type: 'WIDGET' })
@@ -143,19 +144,5 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                 return contentTypes;
             })
         );
-    }
-
-    getWidgets(filter: string) {
-        return this.dotContentTypeService.getContentTypes({ filter, page: 40, type: 'WIDGET' });
-    }
-
-    getContentlets(event?: LazyLoadEvent, languageId?: string, filter?: string) {
-        return this.paginatorESService.get({
-            itemsPerPage: this.itemsPerPage,
-            lang: languageId || '1',
-            filter: filter || '',
-            offset: (event && event.first.toString()) || '0',
-            query: `+contentType: ${this.contentTypeVarName} +deleted: false `.trim()
-        });
     }
 }

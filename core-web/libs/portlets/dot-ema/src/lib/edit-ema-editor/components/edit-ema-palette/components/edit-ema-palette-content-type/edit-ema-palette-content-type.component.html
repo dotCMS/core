@@ -1,0 +1,34 @@
+<div class="content-search">
+    <span class="p-input-icon-right">
+        <i class="pi pi-search"></i>
+        <input
+            [placeholder]="'Search' | dm"
+            [formControl]="control"
+            [value]="filter"
+            type="text"
+            pInputText />
+    </span>
+</div>
+
+<div class="contenttypes">
+    <div
+        class="contenttype-card"
+        *ngFor="let contenttype of contentTypes"
+        [attr.data-item]="{ variable: contenttype.variable, name: contenttype.name } | json"
+        (dragstart)="onDragStart($event)"
+        (dragend)="onDragEnd($event)"
+        data-type="contentlet"
+        draggable="true">
+        <i
+            class="pi pi-angle-right icon-go-content"
+            (click)="showContentletsFromContentType(contenttype.name)"></i>
+
+        <div class="ctc-content">
+            <dot-icon [name]="contenttype.icon"></dot-icon>
+            <span>
+                {{ contenttype.name }}
+            </span>
+        </div>
+        <dot-icon class="drag-icon" name="drag_indicator"></dot-icon>
+    </div>
+</div>
