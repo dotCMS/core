@@ -94,25 +94,14 @@ jobs:
     steps:
       - name: 'Sign the QEMU binary locally'
         run: |
-          brew install qemu
-
-          cat >entitlements.xml <<EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>com.apple.security.hypervisor</key>
-            <true/>
-          </dict>
-          </plist>
-          EOF
-          codesign --sign - --entitlements entitlements.xml --force /opt/homebrew/bin/qemu-system-aarch64
+          brew remove --ignore-dependencies qemu
+          curl -o ./qemu.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/dc0669eca9479e9eeb495397ba3a7480aaa45c2e/Formula/qemu.rb
+          brew install ./qemu.rb
 
       - name: 'Install docker'
         run: |
-          brew install colima
-          brew install docker
-          /opt/homebrew/opt/colima/bin/colima start -f
+          brew install colima docker docker-compose
+#          /opt/homebrew/opt/colima/bin/colima start -f
 #          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
 
       - name: 'Log docker context'
