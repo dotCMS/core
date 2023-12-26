@@ -95,19 +95,20 @@ jobs:
       - name: 'Sign the QEMU binary locally'
         run: |
           brew update
-          brew install qemu
+          curl -o https://raw.githubusercontent.com/Homebrew/homebrew-core/dc0669eca9479e9eeb495397ba3a7480aaa45c2e/Formula/qemu.rb
+          brew install ./qemu.rb
 
-      - name: 'Install docker'
-        run: |
-          brew install colima docker docker-compose
+#      - name: 'Install docker'
+#        run: |
+#          brew install colima docker docker-compose
 #          /opt/homebrew/opt/colima/bin/colima start -f
 #          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
 
-      - name: 'Log docker context'
-        run: |
-          /opt/homebrew/opt/colima/bin/colima status
-          /opt/homebrew/opt/colima/bin/colima version
-          docker context list
+#      - name: 'Log docker context'
+#        run: |
+#          /opt/homebrew/opt/colima/bin/colima status
+#          /opt/homebrew/opt/colima/bin/colima version
+#          docker context list
 
 #      - name: Checkout Repository
 #        uses: actions/checkout@v4
