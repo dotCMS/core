@@ -286,7 +286,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.store.initActionAdd({
             containerId: payload.container.identifier,
             acceptTypes: payload.container.acceptTypes ?? '*',
-            language_id: payload.language_id
+            language_id: payload.language_id,
+            context: 'editor'
         });
         this.savePayload = payload;
     }
@@ -298,7 +299,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     addForm(payload: ActionPayload): void {
-        this.store.initActionAddForm(payload);
+        this.store.initActionAddForm({ context: 'editor' });
         this.savePayload = payload;
     }
 
@@ -370,7 +371,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     editContentlet(payload: ActionPayload) {
         this.store.initActionEdit({
             inode: payload.contentlet.inode,
-            title: payload.contentlet.title
+            title: payload.contentlet.title,
+            context: 'editor'
         });
     }
 
@@ -429,7 +431,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
                 this.store.initActionCreate({
                     contentType: detail.data.contentType,
-                    url: detail.data.url
+                    url: detail.data.url,
+                    context: 'editor'
                 });
                 this.cd.detectChanges();
             }

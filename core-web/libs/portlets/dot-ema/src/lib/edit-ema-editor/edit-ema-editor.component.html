@@ -100,30 +100,30 @@
 <p-dialog
     #dialog
     *ngIf="dialogState$ | async as ds"
-    [visible]="ds.dialogVisible"
+    [visible]="ds.context == 'editor'"
     [style]="{ height: '90vh', width: '90vw' }"
-    [header]="ds.dialogHeader"
+    [header]="ds.header"
     [draggable]="false"
     [resizable]="false"
     [maximizable]="true"
     [modal]="true"
     (visibleChange)="resetDialogIframeData()"
     data-testId="dialog">
-    <ng-container [ngSwitch]="ds.dialogType">
+    <ng-container [ngSwitch]="ds.type">
         <dot-ema-form-selector *ngSwitchCase="'form'" (selected)="addSelectedForm($event)" />
 
         <ng-container *ngSwitchCase="'content'">
             <iframe
                 #dialogIframe
-                [style]="{ border: 'none', display: ds.dialogIframeLoading ? 'none' : 'block' }"
-                [src]="ds.dialogIframeURL | safeUrl"
+                [style]="{ border: 'none', display: ds.iframeLoading ? 'none' : 'block' }"
+                [src]="ds.iframeURL | safeUrl"
                 (load)="onIframeLoad()"
                 title="dialog"
                 data-testId="dialog-iframe"
                 width="100%"
                 height="100%"></iframe>
             <dot-spinner
-                *ngIf="ds.dialogIframeLoading"
+                *ngIf="ds.iframeLoading"
                 [ngStyle]="{ position: 'absolute', top: '50%' }"
                 data-testId="spinner"></dot-spinner>
         </ng-container>
