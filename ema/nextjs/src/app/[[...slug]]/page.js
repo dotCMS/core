@@ -61,15 +61,5 @@ export default async function Home({ searchParams, params }) {
 
     const nav = await getNav();
 
-    return (
-        <MyPage nav={nav.entity.children} data={data.entity}></MyPage>
-        // Provide the page data globally
-        // <GlobalProvider
-        //     entity={{
-        //         ...data.entity,
-        //         nav: nav.entity.children
-        //     }}>
-        //     <DotcmsPage />
-        // </GlobalProvider>
-    );
+    return <MyPage nav={nav.entity.children} data={data.entity}></MyPage>;
 }
