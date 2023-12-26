@@ -28,18 +28,6 @@ export interface ContainerData {
 }
 
 export interface PageProviderContext {
-    nav: {
-        code: string;
-        folder: string;
-        hash: number;
-        host: string;
-        href: string;
-        languageId: number;
-        order: number;
-        target: string;
-        title: string;
-        type: string;
-    }[];
     components: {
         [contentTypeVariable: string]: React.ElementType;
     };
@@ -77,7 +65,6 @@ export interface PageProviderContext {
 export const PageContext = createContext<PageProviderContext>({
     containers: {},
     components: {},
-    nav: [],
     layout: {
         header: false,
         footer: false,
