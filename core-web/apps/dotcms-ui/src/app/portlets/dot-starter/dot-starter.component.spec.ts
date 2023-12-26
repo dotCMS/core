@@ -24,7 +24,7 @@ import { DotStarterComponent } from './dot-starter.component';
 const messages = {
     'starter.title': 'Welcome!',
     'starter.description':
-        'To help you get started building with dotCMS we provided some quick links.',
+        'You are logged in as <em>{0}</em>. To help you get started building with dotCMS we provided some quick links.',
     'starter.dont.show': `Don't show this again`,
     'starter.main.link.data.model.title': 'Create data model',
     'starter.main.link.data.model.description': 'Create data model description',
@@ -135,7 +135,7 @@ describe('DotStarterComponent', () => {
                 de.query(By.css('[data-testId="dot-starter-title"]')).nativeElement.innerText
             ).toContain(messageServiceMock.get('starter.title'));
             expect(de.query(By.css('.dot-starter-description')).nativeElement.innerText).toContain(
-                'To help you get started building with dotCMS we provided some quick links.'
+                'You are logged in as Admin. To help you get started building with dotCMS we provided some quick links.'
             );
             expect(
                 de.query(By.css('[data-testId="starter.main.link.data.model"] h4')).nativeElement
