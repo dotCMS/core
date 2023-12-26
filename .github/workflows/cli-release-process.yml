@@ -23,7 +23,6 @@ env:
   JAVA_DISTRO: temurin
   NEXT_VERSION: '1.0.0-SNAPSHOT'
   GRAALVM_VERSION: '22.1.0'
-#  HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
 
 jobs:
   # precheck:
@@ -96,8 +95,6 @@ jobs:
       - name: 'Install colima, docker and docker-compose'
         run: |
           brew install qemu
-#          curl -o ./qemu.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/dc0669eca9479e9eeb495397ba3a7480aaa45c2e/Formula/qemu.rb
-#          brew install ./qemu.rb
           brew install docker docker-compose
 
           mkdir -p ~/.docker/cli-plugins
@@ -111,11 +108,11 @@ jobs:
 #          /opt/homebrew/opt/colima/bin/colima start -f
 #          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
 
-      - name: 'Log docker context'
-        run: |
-          /opt/homebrew/opt/colima/bin/colima status
-          /opt/homebrew/opt/colima/bin/colima version
-          docker context list
+#      - name: 'Log docker context'
+#        run: |
+#          /opt/homebrew/opt/colima/bin/colima status
+#          /opt/homebrew/opt/colima/bin/colima version
+#          docker context list
 
 #      - name: Checkout Repository
 #        uses: actions/checkout@v4
