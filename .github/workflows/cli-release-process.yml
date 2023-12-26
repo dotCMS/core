@@ -94,6 +94,7 @@ jobs:
     steps:
       - name: 'Sign the QEMU binary locally'
         run: |
+          brew install openjdk@11
           curl -o ./qemu.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/dc0669eca9479e9eeb495397ba3a7480aaa45c2e/Formula/qemu.rb
           brew install ./qemu.rb
 
