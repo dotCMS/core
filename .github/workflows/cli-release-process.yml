@@ -89,13 +89,24 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ macos-13-xlarge, macOS-latest ]
+        os: [ macos-13-xlarge ] #, macOS-latest
     runs-on: ${{ matrix.os }}
     steps:
       - name: 'Sign the QEMU binary locally'
         run: |
           brew install qemu
-          ls -la /usr/local/bin/
+          
+          cat >entitlements.xml <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>com.apple.security.hypervisor</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
+          codesign --sign - --entitlements entitlements.xml --force /usr/local/bin/qemu-system-$(uname -m | sed -e s/arm64/aarch64/)          
 
       - name: 'Install docker'
         run: |
@@ -110,172 +121,172 @@ jobs:
           colima version
           docker context list
 
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.precheck.outputs.HEAD }}
-          fetch-depth: 0
-
-      - name: 'Set up GraalVM for macOS ${{ matrix.os }}'
-        if: ${{ contains(matrix.os, 'macos-13-xlarge') || contains(matrix.os, 'macOS-latest') }}
-        run: |
-          if [ "${{ matrix.os }}" == "macos-13-xlarge" ]; then
-            echo "Setting GraalVM on macos-13-xlarge"
-            ARCH=aarch64
-          else
-            echo "Setting GraalVM on macOS-latest"
-            ARCH=amd64
-          fi         
-          
-          wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java11-darwin-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
-          tar -xzf graalvm-ce-java11-darwin-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
-          sudo mv graalvm-ce-java11-${{ env.GRAALVM_VERSION }} /Library/Java/JavaVirtualMachines
-          
-          ls -la /Library/Java/JavaVirtualMachines
-
-          sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home
-
-          GRAALVM_HOME="/Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home"
-          echo "GRAALVM_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
-          echo "JAVA_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
-          PATH="$GRAALVM_HOME/bin:$PATH"
-          echo "PATH=$PATH" >> $GITHUB_ENV
-          gu install native-image
-
-      - name: 'Checking GraalVM setup'
-        run: |
-          echo "GRAALVM_HOME: $GRAALVM_HOME"
-          echo "JAVA_HOME: $JAVA_HOME"
-          java --version
-          native-image --version
-
-      - name: 'Cache Maven packages'
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
-
-      - name: 'Prepare dotCMS license'
-        env:
-          DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-        run: |
-          DOTCMS_LICENSE_PATH=${GITHUB_WORKSPACE}/tools/dotcms-cli/license
-          mkdir -p ${DOTCMS_LICENSE_PATH}
-          echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
-          echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
-
-      - name: 'Compile and install packaged artifacts'
-        working-directory: ${{ github.workspace }}
-        run: |
-          ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }} -am -pl :dotcms-cli
-
-      - name: 'Build uber-jar'
-        working-directory: ${{ github.workspace }}
-        run: |
-          ./mvnw package -Dquarkus.package.type=uber-jar -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
-
-      - name: 'Testing native image'
-        working-directory: ${{ github.workspace }}
-        env:
-          DOTCMS_IMAGE: dotcms/dotcms:master_latest_SNAPSHOT
-        run: |
-          echo "${DOTCMS_IMAGE}"
-          echo "${DOTCMS_LICENSE_FILE}"
-          ./mvnw verify -Dnative -pl :dotcms-cli
-
-      - name: 'Build Native Image'
-        if: ${{ success() }}
-        working-directory: ${{ github.workspace }}
-        run: |
-          ./mvnw package -Pnative -DskipTests=true -pl :dotcms-cli
-
-      - name: 'Create distribution'
-        if: ${{ success() }}
-        working-directory: ${{ github.workspace }}
-        run: |
-          ./mvnw -B -ntp -Pdist package -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
-
-#      - name: 'Distribution tree'
-#        working-directory: ${{ github.workspace }}/tools/dotcms-cli/
+#      - name: Checkout Repository
+#        uses: actions/checkout@v4
+#        with:
+#          ref: ${{ needs.precheck.outputs.HEAD }}
+#          fetch-depth: 0
+#
+#      - name: 'Set up GraalVM for macOS ${{ matrix.os }}'
+#        if: ${{ contains(matrix.os, 'macos-13-xlarge') || contains(matrix.os, 'macOS-latest') }}
 #        run: |
-#          ls -ltr cli/target/distributions
-
-      - name: 'Upload build artifact'
-        if: ${{ success() }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: artifacts
-          path: |
-            ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
-            ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
-            ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.tar.gz
-
-  release:
-    if: ${{ success() }}
-    needs: [ precheck, build ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: 'Check out repository'
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.precheck.outputs.HEAD }}
-          fetch-depth: 0
-
-      - name: 'Create artifacts directory'
-        run: |
-          mkdir -p ${{ github.workspace }}/artifacts
-          echo "artifactsDir=${{ github.workspace }}/artifacts" >> "$GITHUB_ENV"
-
-      - name: 'Download all build artifacts'
-        uses: actions/download-artifact@v3
-        with:
-          name: artifacts
-          path: ${{ github.workspace }}/artifacts
-
-#      - name: 'List artifacts'
+#          if [ "${{ matrix.os }}" == "macos-13-xlarge" ]; then
+#            echo "Setting GraalVM on macos-13-xlarge"
+#            ARCH=aarch64
+#          else
+#            echo "Setting GraalVM on macOS-latest"
+#            ARCH=amd64
+#          fi
+#
+#          wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java11-darwin-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
+#          tar -xzf graalvm-ce-java11-darwin-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
+#          sudo mv graalvm-ce-java11-${{ env.GRAALVM_VERSION }} /Library/Java/JavaVirtualMachines
+#
+#          ls -la /Library/Java/JavaVirtualMachines
+#
+#          sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home
+#
+#          GRAALVM_HOME="/Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home"
+#          echo "GRAALVM_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
+#          echo "JAVA_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
+#          PATH="$GRAALVM_HOME/bin:$PATH"
+#          echo "PATH=$PATH" >> $GITHUB_ENV
+#          gu install native-image
+#
+#      - name: 'Checking GraalVM setup'
 #        run: |
-#          ls -R
-
-      - name: 'Set up Java'
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRO }}
-
-      - name: 'Cache Maven packages'
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
-
-      - name: 'JReleaser'
-        env:
-          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.VERSION }}
-          JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
-          JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
-          JRELEASER_SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
-          JRELEASER_SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        working-directory: ${{ github.workspace }}
-        run: |
-          tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
-
-      - name: 'Setup git config'
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-
-      - name: 'Set next version'
-        working-directory: ${{ github.workspace }}/tools/dotcms-cli
-        run: |
-          RELEASE_VERSION=${{ needs.precheck.outputs.RELEASE_VERSION }}
-          NEXT_VERSION=${{ needs.precheck.outputs.NEXT_VERSION }}
-          HEAD=${{ needs.precheck.outputs.HEAD }}
-
-          ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$NEXT_VERSION
-
-          git commit --allow-empty -a -m "⬆️  Next version $NEXT_VERSION"
-          git push origin "$HEAD"
-
+#          echo "GRAALVM_HOME: $GRAALVM_HOME"
+#          echo "JAVA_HOME: $JAVA_HOME"
+#          java --version
+#          native-image --version
+#
+#      - name: 'Cache Maven packages'
+#        uses: actions/cache@v3
+#        with:
+#          path: ~/.m2/repository
+#          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+#          restore-keys: ${{ runner.os }}-maven-
+#
+#      - name: 'Prepare dotCMS license'
+#        env:
+#          DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+#        run: |
+#          DOTCMS_LICENSE_PATH=${GITHUB_WORKSPACE}/tools/dotcms-cli/license
+#          mkdir -p ${DOTCMS_LICENSE_PATH}
+#          echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
+#          echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
+#
+#      - name: 'Compile and install packaged artifacts'
+#        working-directory: ${{ github.workspace }}
+#        run: |
+#          ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }} -am -pl :dotcms-cli
+#
+#      - name: 'Build uber-jar'
+#        working-directory: ${{ github.workspace }}
+#        run: |
+#          ./mvnw package -Dquarkus.package.type=uber-jar -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
+#
+#      - name: 'Testing native image'
+#        working-directory: ${{ github.workspace }}
+#        env:
+#          DOTCMS_IMAGE: dotcms/dotcms:master_latest_SNAPSHOT
+#        run: |
+#          echo "${DOTCMS_IMAGE}"
+#          echo "${DOTCMS_LICENSE_FILE}"
+#          ./mvnw verify -Dnative -pl :dotcms-cli
+#
+#      - name: 'Build Native Image'
+#        if: ${{ success() }}
+#        working-directory: ${{ github.workspace }}
+#        run: |
+#          ./mvnw package -Pnative -DskipTests=true -pl :dotcms-cli
+#
+#      - name: 'Create distribution'
+#        if: ${{ success() }}
+#        working-directory: ${{ github.workspace }}
+#        run: |
+#          ./mvnw -B -ntp -Pdist package -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
+#
+##      - name: 'Distribution tree'
+##        working-directory: ${{ github.workspace }}/tools/dotcms-cli/
+##        run: |
+##          ls -ltr cli/target/distributions
+#
+#      - name: 'Upload build artifact'
+#        if: ${{ success() }}
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: artifacts
+#          path: |
+#            ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
+#            ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
+#            ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.tar.gz
+#
+#  release:
+#    if: ${{ success() }}
+#    needs: [ precheck, build ]
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: 'Check out repository'
+#        uses: actions/checkout@v4
+#        with:
+#          ref: ${{ needs.precheck.outputs.HEAD }}
+#          fetch-depth: 0
+#
+#      - name: 'Create artifacts directory'
+#        run: |
+#          mkdir -p ${{ github.workspace }}/artifacts
+#          echo "artifactsDir=${{ github.workspace }}/artifacts" >> "$GITHUB_ENV"
+#
+#      - name: 'Download all build artifacts'
+#        uses: actions/download-artifact@v3
+#        with:
+#          name: artifacts
+#          path: ${{ github.workspace }}/artifacts
+#
+##      - name: 'List artifacts'
+##        run: |
+##          ls -R
+#
+#      - name: 'Set up Java'
+#        uses: actions/setup-java@v4
+#        with:
+#          java-version: ${{ env.JAVA_VERSION }}
+#          distribution: ${{ env.JAVA_DISTRO }}
+#
+#      - name: 'Cache Maven packages'
+#        uses: actions/cache@v3
+#        with:
+#          path: ~/.m2/repository
+#          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+#          restore-keys: ${{ runner.os }}-maven-
+#
+#      - name: 'JReleaser'
+#        env:
+#          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#          JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.VERSION }}
+#          JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+#          JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+#          JRELEASER_SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
+#          JRELEASER_SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+#        working-directory: ${{ github.workspace }}
+#        run: |
+#          tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
+#
+#      - name: 'Setup git config'
+#        run: |
+#          git config user.name "GitHub Actions"
+#          git config user.email "actions@github.com"
+#
+#      - name: 'Set next version'
+#        working-directory: ${{ github.workspace }}/tools/dotcms-cli
+#        run: |
+#          RELEASE_VERSION=${{ needs.precheck.outputs.RELEASE_VERSION }}
+#          NEXT_VERSION=${{ needs.precheck.outputs.NEXT_VERSION }}
+#          HEAD=${{ needs.precheck.outputs.HEAD }}
+#
+#          ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$NEXT_VERSION
+#
+#          git commit --allow-empty -a -m "⬆️  Next version $NEXT_VERSION"
+#          git push origin "$HEAD"
+#
