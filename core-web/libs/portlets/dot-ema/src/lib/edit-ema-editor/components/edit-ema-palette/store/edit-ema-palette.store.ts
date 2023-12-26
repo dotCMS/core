@@ -1,9 +1,9 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import { Observable, forkJoin } from 'rxjs';
+import { EMPTY, Observable, forkJoin } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { map, switchMap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 import { DotContentTypeService, DotESContentService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
@@ -56,18 +56,35 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         currentPaletteType: view
     }));
 
+    readonly setLoading = this.updater((state, loading: boolean) => ({
+        ...state,
+        loading
+    }));
+
+    readonly resetContentlets = this.updater((state) => ({
+        ...state,
+        contentlets: { items: [], filter: { query: '', contentTypeVarName: '' }, totalRecords: 0 }
+    }));
+
+    /**
+     * Loads content types based on the provided filter and allowed content.
+     * @param data$ An observable that emits an object containing the filter and allowed content.
+     * @returns An observable that emits the loaded content types.
+     */
     readonly loadContentTypes = this.effect(
         (data$: Observable<{ filter: string; allowedContent: string[] }>) => {
+            this.setLoading(true);
+            this.resetContentlets();
+
             return data$.pipe(
                 switchMap(({ allowedContent, filter }) => {
-                    //     ? this.getFilteredContenttypes(filter, allowedContent)
-                    //     : this.getWidgets(filter);
                     const obs$ = this.getFilteredContentTypes(filter, allowedContent);
 
                     return obs$.pipe(
                         tapResponse(
                             (contentTypes) => {
                                 this.patchState({ contenttypes: { items: contentTypes, filter } });
+                                this.setLoading(false);
                             },
                             // eslint-disable-next-line no-console
                             (err) => console.log(err)
@@ -78,6 +95,11 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         }
     );
 
+    /**
+     * Loads contentlets based on the provided filter, content type name, language ID, and page number.
+     * @param data$ An observable that emits an object containing the filter, content type name, language ID, and page number.
+     * @returns An observable that emits the loaded contentlets.
+     */
     readonly loadContentlets = this.effect(
         (
             data$: Observable<{
@@ -88,6 +110,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
             }>
         ) => {
             return data$.pipe(
+                tap(() => this.setLoading(true)),
                 switchMap(({ filter, contenttypeName, languageId, page }) => {
                     return this.dotESContentService
                         .get({
@@ -110,6 +133,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                                             totalRecords: contentlets.resultsSize
                                         }
                                     });
+                                    this.setLoading(false);
                                 },
                                 // eslint-disable-next-line no-console
                                 (err) => console.log(err)
@@ -120,6 +144,12 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         }
     );
 
+    /**
+     * Retrieves filtered content types based on the provided filter and allowed content.
+     * @param filter - The filter to apply to the content types.
+     * @param allowedContent - An array of allowed content types.
+     * @returns An Observable that emits the filtered content types.
+     */
     private getFilteredContentTypes(filter: string, allowedContent: string[]) {
         return forkJoin([
             this.dotContentTypeService.filterContentTypes(filter, allowedContent.join(',')),
@@ -142,7 +172,8 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                     .slice(0, 40);
 
                 return contentTypes;
-            })
+            }),
+            catchError(() => EMPTY)
         );
     }
 }

@@ -9,26 +9,32 @@
 </div>
 
 <div class="contentlets">
-    <div
-        class="contentlet-card"
-        *ngFor="let contentlet of contentlets.items"
-        [attr.data-item]="{ inode: contentlet.identifier } | json"
-        (dragstart)="onDragStart($event)"
-        (dragend)="onDragEnd($event)"
-        data-type="contentlet"
-        draggable="true">
-        <dot-icon name="drag_indicator"></dot-icon>
+    <ng-container *ngIf="contentlets.items.length > 0; else loading">
+        <div
+            class="contentlet-card"
+            *ngFor="let contentlet of contentlets.items"
+            [attr.data-item]="{ inode: contentlet.identifier } | json"
+            (dragstart)="onDragStart($event)"
+            (dragend)="onDragEnd($event)"
+            data-type="contentlet"
+            draggable="true">
+            <dot-icon name="drag_indicator"></dot-icon>
 
-        <dot-contentlet-thumbnail [iconSize]="'24px'" [cover]="false" [contentlet]="contentlet">
-        </dot-contentlet-thumbnail>
+            <dot-contentlet-thumbnail [iconSize]="'24px'" [cover]="false" [contentlet]="contentlet">
+            </dot-contentlet-thumbnail>
 
-        <span>{{ contentlet.title }}</span>
-    </div>
-    <p-paginator
-        *ngIf="contentlets.totalRecords > 0"
-        [rows]="itemsPerPage"
-        [showFirstLastIcon]="false"
-        [totalRecords]="contentlets.totalRecords"
-        [pageLinkSize]="0"
-        (onPageChange)="onPaginate($event, contentlets.filter)"></p-paginator>
+            <span>{{ contentlet.title }}</span>
+        </div>
+        <p-paginator
+            *ngIf="contentlets.totalRecords > 0"
+            [rows]="itemsPerPage"
+            [showFirstLastIcon]="false"
+            [totalRecords]="contentlets.totalRecords"
+            [pageLinkSize]="0"
+            (onPageChange)="onPaginate($event, contentlets.filter)"></p-paginator>
+    </ng-container>
+
+    <ng-template #loading>
+        <dot-spinner *ngIf="isLoading" [size]="'40px'" [borderSize]="'8px'"></dot-spinner>
+    </ng-template>
 </div>

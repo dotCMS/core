@@ -73,14 +73,27 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
             });
     }
 
+    /**
+     * Event handler for the drag start event.
+     * @param event The drag event.
+     */
     onDragStart(event: DragEvent) {
         this.dragStart.emit(event);
     }
 
+    /**
+     * Handles the drag end event.
+     * @param event The drag event.
+     */
     onDragEnd(event: DragEvent) {
         this.dragEnd.emit(event);
     }
 
+    /**
+     * Shows contentlets from a specific content type.
+     *
+     * @param contentTypeName - The name of the content type.
+     */
     showContentletsFromContentType(contentTypeName: string) {
         this.searchContentlet.setValue('', { emitEvent: false });
 
@@ -94,10 +107,20 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
         this.store.changeView(PALETTE_TYPES.CONTENTLET);
     }
 
+    /**
+     * Shows the content types in the palette.
+     */
     showContentTypes() {
         this.store.changeView(PALETTE_TYPES.CONTENTTYPE);
+        this.store.resetContentlets();
     }
 
+    /**
+     * Filters the allowed content types based on a blacklist.
+     *
+     * @param blackList - An array of content types to be excluded from the allowed list.
+     * @returns An array of allowed content types.
+     */
     private filterAllowedContentTypes(blackList: string[] = []): string[] {
         const allowedContent = new Set();
         Object.values(this.containers).forEach((container) => {
@@ -112,6 +135,13 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
         return [...allowedContent] as string[];
     }
 
+    /**
+     * Handles the pagination event for the edit-ema-palette component.
+     * @param {Object} options - The pagination options.
+     * @param {string} options.contentTypeVarName - The variable name of the content type.
+     * @param {number} options.page - The page number to load.
+     * @returns {void}
+     */
     onPaginate({ contentTypeVarName, page }) {
         this.store.loadContentlets({
             filter: '',
@@ -121,6 +151,10 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
         });
     }
 
+    /**
+     * Listens to changes in the search input fields for content types and contentlets,
+     * and loads the corresponding data based on the search criteria.
+     */
     listenToSearchContents() {
         this.searchContenttype.valueChanges
             .pipe(takeUntil(this.destroy$), debounceTime(1000), distinctUntilChanged())

@@ -48,4 +48,10 @@
             line-height: 18.2px;
         }
     }
+
+    dot-spinner {
+        align-self: center;
+        justify-self: center;
+        grid-column: 1/-1;
+    }
 }

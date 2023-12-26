@@ -11,24 +11,29 @@
 </div>
 
 <div class="contenttypes">
-    <div
-        class="contenttype-card"
-        *ngFor="let contenttype of contentTypes"
-        [attr.data-item]="{ variable: contenttype.variable, name: contenttype.name } | json"
-        (dragstart)="onDragStart($event)"
-        (dragend)="onDragEnd($event)"
-        data-type="contentlet"
-        draggable="true">
-        <i
-            class="pi pi-angle-right icon-go-content"
-            (click)="showContentletsFromContentType(contenttype.name)"></i>
+    <ng-container *ngIf="contentTypes.length; else loading">
+        <div
+            class="contenttype-card"
+            *ngFor="let contenttype of contentTypes"
+            [attr.data-item]="{ variable: contenttype.variable, name: contenttype.name } | json"
+            (dragstart)="onDragStart($event)"
+            (dragend)="onDragEnd($event)"
+            data-type="contentlet"
+            draggable="true">
+            <i
+                class="pi pi-angle-right icon-go-content"
+                (click)="showContentletsFromContentType(contenttype.name)"></i>
 
-        <div class="ctc-content">
-            <dot-icon [name]="contenttype.icon"></dot-icon>
-            <span>
-                {{ contenttype.name }}
-            </span>
+            <div class="ctc-content">
+                <dot-icon [name]="contenttype.icon"></dot-icon>
+                <span>
+                    {{ contenttype.name }}
+                </span>
+            </div>
+            <dot-icon class="drag-icon" name="drag_indicator"></dot-icon>
         </div>
-        <dot-icon class="drag-icon" name="drag_indicator"></dot-icon>
-    </div>
+    </ng-container>
+    <ng-template #loading>
+        <dot-spinner *ngIf="isLoading" [size]="'40px'" [borderSize]="'8px'"></dot-spinner>
+    </ng-template>
 </div>

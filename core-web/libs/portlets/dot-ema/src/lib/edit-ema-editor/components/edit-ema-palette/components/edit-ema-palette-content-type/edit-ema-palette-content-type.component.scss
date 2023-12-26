@@ -58,4 +58,9 @@
             transform: rotate(90deg);
         }
     }
+    dot-spinner {
+        align-self: center;
+        justify-self: center;
+        grid-column: 1/-1;
+    }
 }

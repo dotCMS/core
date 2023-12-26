@@ -9,7 +9,12 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
-import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
+import {
+    DotLanguagesService,
+    DotLicenseService,
+    DotMessageService,
+    DotPersonalizeService
+} from '@dotcms/data-access';
 import {
     DotLanguagesServiceMock,
     MockDotMessageService,
@@ -50,6 +55,12 @@ describe('EditEmaEditorComponent', () => {
             MessageService,
             EditEmaStore,
             ConfirmationService,
+            {
+                provide: DotLicenseService,
+                useValue: {
+                    isEnterprise: () => true
+                }
+            },
             { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
             {
                 provide: DotActionUrlService,
