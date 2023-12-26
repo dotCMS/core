@@ -112,13 +112,13 @@ jobs:
         run: |
           brew install colima
           brew install docker
-          colima start
-          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
+          /opt/homebrew/opt/colima/bin/colima start -f
+#          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
 
       - name: 'Log docker context'
         run: |
-          colima status
-          colima version
+          /opt/homebrew/opt/colima/bin/colima status
+          /opt/homebrew/opt/colima/bin/colima version
           docker context list
 
 #      - name: Checkout Repository
