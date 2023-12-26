@@ -1,4 +1,8 @@
-import { ActionPayload, PageContainer } from '../shared/models';
+import {
+    ActionPayload,
+    ContainerPayload,
+    PageContainer,
+} from '../shared/models';
 
 /**
  * Insert a contentlet in a container
@@ -7,7 +11,9 @@ import { ActionPayload, PageContainer } from '../shared/models';
  * @param {ActionPayload} action
  * @return {*}  {PageContainer[]}
  */
-export function insertContentletInContainer(action: ActionPayload): PageContainer[] {
+export function insertContentletInContainer(
+    action: ActionPayload
+): PageContainer[] {
     if (action.position) {
         return insertPositionedContentletInContainer(action);
     }
@@ -35,7 +41,9 @@ export function insertContentletInContainer(action: ActionPayload): PageContaine
  * @param {ActionPayload} action
  * @return {*}  {PageContainer[]}
  */
-export function deleteContentletFromContainer(action: ActionPayload): PageContainer[] {
+export function deleteContentletFromContainer(
+    action: ActionPayload
+): PageContainer[] {
     const { pageContainers, container, contentlet, personaTag } = action;
 
     return pageContainers.map((currentContainer) => {
@@ -45,7 +53,7 @@ export function deleteContentletFromContainer(action: ActionPayload): PageContai
                 contentletsId: currentContainer.contentletsId.filter(
                     (id) => id !== contentlet.identifier
                 ),
-                personaTag
+                personaTag,
             };
         }
 
@@ -57,12 +65,12 @@ export function deleteContentletFromContainer(action: ActionPayload): PageContai
  * Check if two containers are equals
  *
  * @param {PageContainer} currentContainer
- * @param {PageContainer} containerToFind
+ * @param {ContainerPayload} containerToFind
  * @return {*}  {boolean}
  */
 function areContainersEquals(
     currentContainer: PageContainer,
-    containerToFind: PageContainer
+    containerToFind: ContainerPayload
 ): boolean {
     return (
         currentContainer.identifier === containerToFind.identifier &&
@@ -77,27 +85,34 @@ function areContainersEquals(
  * @param {ActionPayload} payload
  * @return {*}  {PageContainer[]}
  */
-function insertPositionedContentletInContainer(payload: ActionPayload): PageContainer[] {
-    const { pageContainers, container, contentlet, personaTag, newContentletId, position } =
-        payload;
+function insertPositionedContentletInContainer(
+    payload: ActionPayload
+): PageContainer[] {
+    const {
+        pageContainers,
+        container,
+        contentlet,
+        personaTag,
+        newContentletId,
+        position,
+    } = payload;
 
-    return pageContainers.map((currentContainer) => {
-        if (areContainersEquals(currentContainer, container)) {
-            const index = currentContainer.contentletsId.indexOf(contentlet.identifier);
+    return pageContainers.map((pageContainer) => {
+        if (areContainersEquals(pageContainer, container)) {
+            const index = pageContainer.contentletsId.indexOf(
+                contentlet.identifier
+            );
 
             if (index !== -1) {
-                if (position === 'before') {
-                    currentContainer.contentletsId.splice(index, 0, newContentletId);
-                } else if (position === 'after') {
-                    currentContainer.contentletsId.splice(index + 1, 0, newContentletId);
-                }
+                const offset = position === 'before' ? index : index + 1;
+                pageContainer.contentletsId.splice(offset, 0, newContentletId);
             } else {
-                currentContainer.contentletsId.push(newContentletId);
+                pageContainer.contentletsId.push(newContentletId);
             }
         }
 
-        currentContainer.personaTag = personaTag;
+        pageContainer.personaTag = personaTag;
 
-        return currentContainer;
+        return pageContainer;
     });
 }
