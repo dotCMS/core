@@ -101,6 +101,8 @@ jobs:
           ln -sfn /usr/local/opt/docker-compose/bin/docker-compose ~/.docker/cli-plugins/docker-compose
 
           colima start --mount-type 9p
+          
+          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
 
 #      - name: 'Install docker'
 #        run: |
