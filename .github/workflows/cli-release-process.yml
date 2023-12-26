@@ -94,7 +94,8 @@ jobs:
     steps:
       - name: 'Install docker'
         run: |
-          brew install docker
+          brew install colima
+          brew install docker docker-compose
           colima start
           sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
 
