@@ -1,12 +1,14 @@
+@use "variables" as *;
+
 :host {
     overflow: auto;
 }
 
 .edit-ema-palette {
-    padding: 12px 16px; //Replace later
+    padding: $spacing-2 $spacing-3;
     .content-search {
         display: flex;
-        gap: 0.5em;
+        gap: $spacing-1;
 
         i {
             color: hsla(226, 85%, 60%, 1);

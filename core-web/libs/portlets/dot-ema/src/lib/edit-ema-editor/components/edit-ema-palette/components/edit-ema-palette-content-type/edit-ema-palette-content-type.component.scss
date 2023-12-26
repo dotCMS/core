@@ -1,6 +1,8 @@
+@use "variables" as *;
+
 .content-search {
     display: flex;
-    gap: 0.5em;
+    gap: $spacing-1;
 
     .p-input-icon-right {
         width: 100%;
@@ -11,17 +13,17 @@
 }
 
 .contenttypes {
-    margin-top: 1em;
+    margin-top: $spacing-3;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1em;
+    gap: $spacing-3;
 
     .contenttype-card {
         height: 92px;
         width: 100%;
         max-width: 100px;
         border: 1px solid hsla(222, 12%, 84%, 1);
-        border-radius: 8px;
+        border-radius: $spacing-1;
         position: relative;
         color: hsla(222, 12%, 84%, 1);
         display: flex;
@@ -30,8 +32,8 @@
 
         .icon-go-content {
             position: absolute;
-            top: 5px;
-            right: 5px;
+            top: $spacing-0;
+            right: $spacing-0;
         }
 
         .ctc-content {
@@ -39,7 +41,7 @@
             flex-direction: column;
             align-items: center;
             color: hsl(229deg, 12%, 9%);
-            font-size: 13px;
+            font-size: $font-size-sm;
             text-align: center;
             width: 90%;
 
