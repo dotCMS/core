@@ -8,8 +8,7 @@ import {
 
 /* eslint-disable-next-line */
 export interface ContainerProps {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    containerRef: any;
+    containerRef: PageProviderContext['layout']['body']['rows'][0]['columns'][0]['containers'][0];
 }
 
 export function Container({ containerRef }: ContainerProps) {

@@ -2,11 +2,11 @@ import React, { forwardRef } from 'react';
 
 import styles from './row.module.css';
 
-import { RowModel } from '../../types/page.model';
 import Column from '../column/column';
+import { PageProviderContext } from '../page-provider/page-provider';
 
 interface RowProps {
-    row: RowModel;
+    row: PageProviderContext['layout']['body']['rows'][0];
 }
 
 export function Row({ row }: RowProps, ref: React.Ref<HTMLDivElement>) {

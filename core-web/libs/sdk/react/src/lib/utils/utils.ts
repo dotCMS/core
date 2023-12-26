@@ -1,5 +1,7 @@
-import { ContainerData } from '../components/page-provider/page-provider';
-import { ContainerModel } from '../types/page.model';
+import {
+    ContainerData,
+    PageProviderContext,
+} from '../components/page-provider/page-provider';
 
 export function getPageElementBound(rowsNodes: HTMLDivElement[]) {
     return rowsNodes.map((row) => {
@@ -94,7 +96,7 @@ export const getPageContainers = (containers: ContainerData) => {
 // This extracts all the data we need in the container component
 export const getContainersData = (
     containers: ContainerData,
-    containerRef: ContainerModel
+    containerRef: PageProviderContext['layout']['body']['rows'][0]['columns'][0]['containers'][0]
 ) => {
     const { identifier, uuid } = containerRef;
 

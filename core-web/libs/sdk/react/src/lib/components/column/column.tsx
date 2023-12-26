@@ -1,11 +1,11 @@
 import styles from './column.module.css';
 
-import { ColumnModel } from '../../types/page.model';
 import Container from '../container/container';
+import { PageProviderContext } from '../page-provider/page-provider';
 
 /* eslint-disable-next-line */
 interface ColumnProps {
-    column: ColumnModel;
+    column: PageProviderContext['layout']['body']['rows'][0]['columns'][0];
 }
 
 export function Column({ column }: ColumnProps) {

@@ -28,6 +28,22 @@ export interface ContainerData {
 
 export interface PageProviderContext {
     containers: ContainerData;
+    layout: {
+        header: boolean;
+        footer: boolean;
+        body: {
+            rows: {
+                columns: {
+                    width: number;
+                    leftOffset: number;
+                    containers: {
+                        identifier: string;
+                        uuid: string;
+                    }[];
+                }[];
+            }[];
+        };
+    };
     page: {
         title: string;
         identifier: string;
@@ -44,6 +60,23 @@ export interface PageProviderContext {
 
 export const GlobalContext = createContext<PageProviderContext>({
     containers: {},
+    layout: {
+        header: false,
+        footer: false,
+        body: {
+            rows: [
+                {
+                    columns: [
+                        {
+                            width: 0,
+                            leftOffset: 0,
+                            containers: [],
+                        },
+                    ],
+                },
+            ],
+        },
+    },
     page: {
         title: '',
         identifier: '',
