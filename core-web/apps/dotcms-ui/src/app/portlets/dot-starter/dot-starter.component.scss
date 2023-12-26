@@ -34,7 +34,7 @@ $number-link-icon-size: 2.28rem;
 
     .dot-starter-description {
         color: $color-palette-gray-700;
-        margin: 0 $spacing-3 $spacing-5 $spacing-3;
+        margin: 0 $spacing-3;
     }
 
     .dot-starter-top-content,
@@ -47,23 +47,31 @@ $number-link-icon-size: 2.28rem;
 
     .dot-starter-top-main__section {
         background-color: $white;
-        box-shadow: $md-shadow-4;
         counter-reset: css-counter 0;
         flex-grow: 1;
-        margin-left: $spacing-1;
+        margin-left: 0;
         margin-bottom: $spacing-4;
         margin-right: $spacing-1;
         overflow: hidden;
-        border-radius: $border-radius-md;
+        display: flex;
+    }
+
+    .dot-starter-offset {
+        margin-left: $spacing-5;
     }
 
     .dot-starter-top-main__block {
+        border-radius: $border-radius-md;
+        box-shadow: $md-shadow-7;
+
         align-content: space-between;
         border-bottom: 1px solid $color-palette-gray-300;
         display: flex;
-        margin: 0;
+        flex-direction: column;
+        margin: 1rem;
         padding: $spacing-5 0;
         transition: background-color $basic-speed ease-in;
+        width: 25%;
 
         &:hover {
             background-color: $bg-hover;
@@ -77,12 +85,10 @@ $number-link-icon-size: 2.28rem;
 
         span {
             align-items: center;
-            background-color: $color-palette-primary;
-            border-radius: 50%;
-            color: $white;
+            color: $color-palette-primary;
             counter-increment: css-counter 1;
             display: inline-flex;
-            font-size: $md-icon-size-normal;
+            font-size: $md-icon-size-extra-big;
             height: $number-link-icon-size;
             justify-content: center;
             width: $number-link-icon-size;
@@ -96,16 +102,18 @@ $number-link-icon-size: 2.28rem;
     .dot-starter-top-main__link-data {
         align-self: center;
         flex-grow: 1;
+        text-align: center;
 
         h4 {
-            color: $color-palette-primary;
+            color: $black;
             font-size: $font-size-lg;
-            font-weight: bold;
+            font-weight: $font-weight-semi-bold;
             margin: 0;
         }
         p {
             color: $color-palette-gray-700;
             margin: 0;
+            font-size: $font-size-md;
         }
     }
 
@@ -119,16 +127,13 @@ $number-link-icon-size: 2.28rem;
         }
     }
 
-    .dot-starter-top-secondary__section {
-        margin-left: $spacing-1;
-
-        h3 {
-            font-size: $font-size-lg;
-            font-weight: $font-weight-semi-bold;
-            margin: 0;
-        }
+    .dot-starter-top-main__title {
+        font-size: $font-size-lg;
+        font-weight: $font-weight-semi-bold;
+        margin: 0;
+        border-bottom: 1px solid $color-palette-gray-300;
+        padding-bottom: $spacing-3;
     }
-
     .dot-starter-top-secondary__block {
         display: flex;
         padding: $spacing-3 0;
@@ -165,6 +170,21 @@ $number-link-icon-size: 2.28rem;
         }
     }
 
+    .dot-starter-top-secondary__link-data-apis {
+        padding: 0;
+
+        h4 {
+            color: $color-palette-primary;
+            font-size: $font-size-lg;
+            font-weight: 500;
+            margin: 0;
+        }
+        p {
+            color: $color-palette-gray-700;
+            margin: 0;
+        }
+    }
+
     .dot-starter-bottom-content {
         flex-wrap: wrap;
         margin-bottom: $spacing-5;
@@ -180,7 +200,7 @@ $number-link-icon-size: 2.28rem;
         height: 100%;
         margin: $spacing-3 $spacing-1 0;
         overflow: hidden;
-        padding: $spacing-3 0;
+        padding: 0.2rem 0;
         transition: background-color $basic-speed ease-in;
         border-radius: $border-radius-md;
 
