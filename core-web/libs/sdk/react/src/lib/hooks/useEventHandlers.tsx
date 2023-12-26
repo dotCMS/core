@@ -2,29 +2,32 @@ import { useEffect, useCallback } from 'react';
 
 import { getPageElementBound } from '../utils/utils';
 
-export function useEventHandlers(rowsRef: React.RefObject<HTMLDivElement[]>) {
-    const eventMessageHandler = useCallback((event: MessageEvent) => {
-        const positionData = getPageElementBound(rowsRef.current);
+export function useEventHandlers(rows: React.RefObject<HTMLDivElement[]>) {
+    const eventMessageHandler = useCallback(
+        (event: MessageEvent) => {
+            const positionData = getPageElementBound(rows.current);
 
-        switch (event.data) {
-            case 'ema-reload-page':
-                window.location.reload();
-                break;
+            switch (event.data) {
+                case 'ema-reload-page':
+                    window.location.reload();
+                    break;
 
-            case 'ema-request-bounds':
-                window.parent.postMessage(
-                    {
-                        action: 'set-bounds',
-                        payload: positionData,
-                    },
-                    '*'
-                );
-                break;
+                case 'ema-request-bounds':
+                    window.parent.postMessage(
+                        {
+                            action: 'set-bounds',
+                            payload: positionData,
+                        },
+                        '*'
+                    );
+                    break;
 
-            default:
-                break;
-        }
-    }, []);
+                default:
+                    break;
+            }
+        },
+        [rows]
+    );
 
     const eventScrollHandler = useCallback((_event: Event) => {
         window.parent.postMessage(
