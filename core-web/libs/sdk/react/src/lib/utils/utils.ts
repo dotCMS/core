@@ -3,7 +3,11 @@ import {
     PageProviderContext,
 } from '../components/page-provider/page-provider';
 
-export function getPageElementBound(rowsNodes: HTMLDivElement[]) {
+export function getPageElementBound(rowsNodes: HTMLDivElement[] | null) {
+    if (!rowsNodes) {
+        return [];
+    }
+
     return rowsNodes.map((row) => {
         const rowRect = row.getBoundingClientRect();
         const columns = row.children;

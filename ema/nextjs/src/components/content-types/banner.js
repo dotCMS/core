@@ -1,12 +1,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { useContext } from 'react';
-import { PageContext } from '@dotcms/react';
+import { useDotcmsPageContext } from '@dotcms/react';
 
 function Banner({ title, image, caption, buttonText, link }) {
     const {
         viewAs: { language }
-    } = useContext(PageContext);
+    } = useDotcmsPageContext();
 
     return (
         <div className="relative w-full p-4 bg-gray-200 h-96">
