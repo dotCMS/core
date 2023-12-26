@@ -93,17 +93,26 @@ jobs:
         os: [ macos-13-xlarge ] #, macOS-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - name: 'Sign the QEMU binary locally'
+      - name: 'Install colima, docker and docker-compose'
         run: |
-          brew update
+#          brew update
           curl -o ./qemu.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/dc0669eca9479e9eeb495397ba3a7480aaa45c2e/Formula/qemu.rb
           brew install ./qemu.rb
+          brew install docker docker-compose
 
-      - name: 'Install docker'
-        run: |
-          brew install colima docker docker-compose
-          /opt/homebrew/opt/colima/bin/colima start -f
-          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
+          # Link the Docker Compose v2 plugin so it's understood by the docker CLI
+          mkdir -p ~/.docker/cli-plugins
+          ln -sfn /usr/local/opt/docker-compose/bin/docker-compose ~/.docker/cli-plugins/docker-compose
+          
+          # Using mount-type 9p to allow the containers launched via docker-compose to chown
+          # https://github.com/abiosoft/colima/issues/54#issuecomment-1250217077
+          colima start --mount-type 9p
+
+#      - name: 'Install docker'
+#        run: |
+#          brew install colima docker docker-compose
+#          /opt/homebrew/opt/colima/bin/colima start -f
+#          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
 
 #      - name: 'Log docker context'
 #        run: |
