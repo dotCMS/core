@@ -1,19 +1,19 @@
 export type RowModel = {
-  columns: ColumnModel[];
+    columns: ColumnModel[];
 };
 
 export type ColumnModel = {
-  leftOffset: number;
-  width: number;
-  containers: ContainerModel[];
+    leftOffset: number;
+    width: number;
+    containers: ContainerModel[];
 };
 
 export type ContainerModel = {
-  id: string;
-  type: string;
-  content: string;
+    identifier: string;
+    uuid: string;
+    content: string;
 };
 
 export interface PageModel {
-  rows: RowModel[];
+    rows: RowModel[];
 }

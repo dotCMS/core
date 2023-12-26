@@ -38,6 +38,7 @@ function Container({ containerRef }) {
                 data-content={JSON.stringify(containerPayload)}
                 className="flex flex-col gap-4">
                 {contentlets.map((contentlet) => {
+                    // const Component = contentComponents[contentlet.contentType] || NoContent;
                     const Component = contentComponents[contentlet.contentType] || NoContent;
 
                     const contentletPayload = {
