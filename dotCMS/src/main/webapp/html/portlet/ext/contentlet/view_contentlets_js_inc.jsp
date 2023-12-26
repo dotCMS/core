@@ -1074,11 +1074,11 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 //dijit.byId("clearButton").attr("disabled", false);
 
                 fieldsValues = fieldsValues.map(value => {
-					if (value.includes('[') || value.includes(']')) {
-									return encodeURIComponent(value);
-					} else {
-									return value;
-					}
+                    if (value.includes('[') || value.includes(']')) {
+                        return encodeURIComponent(value);
+                    } else {
+                        return value;
+                    }
                 });
 
                 document.getElementById('fieldsValues').value = fieldsValues;
