@@ -1,7 +1,4 @@
-import React from 'react';
-
-import GlobalProvider from '@/lib/providers/global';
-import { DotcmsPage } from '@/components/dotcms-page';
+import { MyPage } from '@/components/my-page';
 
 async function getPage(params) {
     const { url, language_id } = params;
@@ -65,13 +62,14 @@ export default async function Home({ searchParams, params }) {
     const nav = await getNav();
 
     return (
+        <MyPage nav={nav.entity.children} data={data.entity}></MyPage>
         // Provide the page data globally
-        <GlobalProvider
-            entity={{
-                ...data.entity,
-                nav: nav.entity.children
-            }}>
-            <DotcmsPage />
-        </GlobalProvider>
+        // <GlobalProvider
+        //     entity={{
+        //         ...data.entity,
+        //         nav: nav.entity.children
+        //     }}>
+        //     <DotcmsPage />
+        // </GlobalProvider>
     );
 }

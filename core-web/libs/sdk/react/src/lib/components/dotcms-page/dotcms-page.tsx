@@ -1,3 +1,5 @@
+// "use client";
+
 import { useCallback, useEffect, useRef, useContext } from 'react';
 
 // import { usePathname } from 'next/navigation';
