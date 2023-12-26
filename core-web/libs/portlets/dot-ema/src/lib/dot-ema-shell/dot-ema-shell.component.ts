@@ -18,9 +18,9 @@ import {
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
 
+import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
-import { EditEmaNavigationBarComponent } from '../components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { DotPageToolsSeoComponent } from '../dot-page-tools-seo/dot-page-tools-seo.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';

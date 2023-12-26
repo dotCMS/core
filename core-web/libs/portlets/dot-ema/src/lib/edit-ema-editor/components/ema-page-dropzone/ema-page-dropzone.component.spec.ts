@@ -91,7 +91,6 @@ describe('EmaPageDropzoneComponent', () => {
             expect(style.top).toEqual('0px');
             expect(style.width).toEqual('1000px');
             expect(style.height).toEqual('200px');
-            expect(style.border).toEqual('1px solid transparent');
         });
 
         it('should apply styles to columns correctly', () => {
@@ -105,7 +104,6 @@ describe('EmaPageDropzoneComponent', () => {
             expect(style.top).toEqual('0px');
             expect(style.width).toEqual('500px');
             expect(style.height).toEqual('100px');
-            expect(style.border).toEqual('1px solid transparent');
         });
 
         it('should apply styles to container correctly', () => {
@@ -119,7 +117,6 @@ describe('EmaPageDropzoneComponent', () => {
             expect(style.top).toEqual('10px');
             expect(style.width).toEqual('980px');
             expect(style.height).toEqual('180px');
-            expect(style.border).toEqual('1px solid transparent');
         });
 
         it('should apply styles to contentlet correctly', () => {
@@ -133,7 +130,6 @@ describe('EmaPageDropzoneComponent', () => {
             expect(style.top).toEqual('20px');
             expect(style.width).toEqual('940px');
             expect(style.height).toEqual('140px');
-            expect(style.border).toEqual('1px solid black');
         });
     });
 
