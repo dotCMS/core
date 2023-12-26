@@ -1,12 +1,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useContext } from 'react';
-import { GlobalContext } from '@/lib/providers/global';
+import { PageContext } from '@dotcms/react';
 
 function Product({ image, title, salePrice, retailPrice, urlTitle }) {
     const {
         viewAs: { language }
-    } = useContext(GlobalContext);
+    } = useContext(PageContext);
 
     const formatPrice = (price) => {
         return new Intl.NumberFormat('en-US', {

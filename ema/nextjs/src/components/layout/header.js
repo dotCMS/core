@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import Navigation from './navigation';
 import { useContext } from 'react';
-import { GlobalContext } from '@/lib/providers/global';
+import { PageContext } from '@dotcms/react';
 
 function Header() {
-    const { nav } = useContext(GlobalContext);
+    const { nav } = useContext(PageContext);
     return (
         <header className="flex items-center justify-between p-4 bg-blue-500">
             <div className="flex items-center">

@@ -2,11 +2,14 @@ import { useContext } from 'react';
 
 import { getContainersData } from '../../utils/utils';
 import {
-    GlobalContext,
+    PageContext,
     PageProviderContext,
 } from '../page-provider/page-provider';
 
-/* eslint-disable-next-line */
+function NoContent({ contentType }: { contentType: string }) {
+    return <h3>No Content for {contentType}</h3>;
+}
+
 export interface ContainerProps {
     containerRef: PageProviderContext['layout']['body']['rows'][0]['columns'][0]['containers'][0];
 }
@@ -15,8 +18,8 @@ export function Container({ containerRef }: ContainerProps) {
     const { identifier, uuid } = containerRef;
 
     // Get the containers from the global context
-    const { containers, page, viewAs } =
-        useContext<PageProviderContext>(GlobalContext);
+    const { containers, page, viewAs, components } =
+        useContext<PageProviderContext>(PageContext);
 
     const containerData = getContainersData(containers, containerRef);
     const { acceptTypes, contentlets, maxContentlets, pageContainers, path } =
@@ -49,9 +52,8 @@ export function Container({ containerRef }: ContainerProps) {
             className="flex flex-col gap-4"
         >
             {contentlets.map((contentlet) => {
-                // const Component =
-                //     contentComponents[contentlet.contentType] || NoContent;
-                const Component = () => <h3>Contentlet</h3>;
+                const Component =
+                    components[contentlet.contentType] || NoContent;
 
                 const contentletPayload = {
                     container,
@@ -103,8 +105,8 @@ export function Container({ containerRef }: ContainerProps) {
                         className="p-4 bg-slate-100"
                         key={contentlet.identifier}
                     >
-                        {/* <Component {...contentlet} /> */}
-                        <Component />
+                        {/* <h2>Hola</h2> */}
+                        <Component {...contentlet} />
                     </div>
                 );
             })}

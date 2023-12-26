@@ -17,6 +17,7 @@ export interface ContainerData {
         }[];
         contentlets: {
             [key: string]: {
+                contentType: string;
                 identifier: string;
                 title: string;
                 inode: string;
@@ -27,6 +28,9 @@ export interface ContainerData {
 }
 
 export interface PageProviderContext {
+    components: {
+        [contentTypeVariable: string]: React.ElementType;
+    };
     containers: ContainerData;
     layout: {
         header: boolean;
@@ -58,8 +62,9 @@ export interface PageProviderContext {
     };
 }
 
-export const GlobalContext = createContext<PageProviderContext>({
+export const PageContext = createContext<PageProviderContext>({
     containers: {},
+    components: {},
     layout: {
         header: false,
         footer: false,
@@ -93,9 +98,7 @@ export const GlobalContext = createContext<PageProviderContext>({
 
 export function PageProvider({ entity, children }: PageProviderProps) {
     return (
-        <GlobalContext.Provider value={entity}>
-            {children}
-        </GlobalContext.Provider>
+        <PageContext.Provider value={entity}>{children}</PageContext.Provider>
     );
 }
 
