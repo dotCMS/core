@@ -94,6 +94,7 @@ jobs:
     steps:
       - name: 'Sign the QEMU binary locally'
         run: |
+          brew install qemu
           ls -la /usr/local/bin/
 
       - name: 'Install docker'
