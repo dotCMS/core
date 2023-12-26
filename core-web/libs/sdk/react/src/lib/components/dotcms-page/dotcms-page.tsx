@@ -4,12 +4,17 @@ import { useRef } from 'react';
 
 // import { usePathname } from 'next/navigation';
 // import { useRouter } from 'next/navigation';
-import { useDotcmsPageContext } from '../../hooks/useDotcmsPageContext';
 import { useEventHandlers } from '../../hooks/useEventHandlers';
+import PageProvider, {
+    PageProviderContext,
+} from '../page-provider/page-provider';
 import Row from '../row/row';
 
-export function DotcmsPage() {
-    const { layout } = useDotcmsPageContext();
+type DotcmsPageProps = {
+    entity: PageProviderContext;
+};
+
+export function DotcmsPage({ entity }: DotcmsPageProps) {
     const rowsRef = useRef<HTMLDivElement[]>([]);
     useEventHandlers(rowsRef);
 
@@ -39,10 +44,10 @@ export function DotcmsPage() {
     };
 
     return (
-        <>
-            {layout.body.rows.map((row, index) => (
+        <PageProvider entity={entity}>
+            {entity.layout.body.rows.map((row, index) => (
                 <Row ref={addRowRef} key={index} row={row} />
             ))}
-        </>
+        </PageProvider>
     );
 }
