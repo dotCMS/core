@@ -94,7 +94,7 @@ jobs:
     steps:
       - name: 'Sign the QEMU binary locally'
         run: |
-          brew install qemu
+          brew install --build-from-source qemu
 
 #          cat >entitlements.xml <<EOF
 #          <?xml version="1.0" encoding="UTF-8"?>
