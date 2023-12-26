@@ -1073,6 +1073,14 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 dijit.byId("searchButton").attr("disabled", true);
                 //dijit.byId("clearButton").attr("disabled", false);
 
+                fieldsValues = fieldsValues.map(value => {
+					if (value.includes('[') || value.includes(']')) {
+									return encodeURIComponent(value);
+					} else {
+									return value;
+					}
+                });
+
                 document.getElementById('fieldsValues').value = fieldsValues;
                 document.getElementById('categoriesValues').value = categoriesValues;
                 document.getElementById('showDeleted').value = showDeleted;
