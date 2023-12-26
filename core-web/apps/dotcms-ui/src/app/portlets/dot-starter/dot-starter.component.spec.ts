@@ -9,8 +9,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Checkbox, CheckboxModule } from 'primeng/checkbox';
 
 import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import {

@@ -53,6 +53,10 @@ dotcms-template-builder-section {
     margin-top: $spacing-3;
 }
 
+dotcms-template-builder-section:last-child {
+    margin-bottom: $spacing-3;
+}
+
 p-divider {
     height: 48px;
 }
@@ -78,6 +82,7 @@ p-divider {
     padding: 0 $spacing-5 5rem $spacing-5;
     height: 100%;
     overflow-y: auto;
+    transition: opacity 0.3s ease-in-out;
 }
 
 .grid-stack-item {

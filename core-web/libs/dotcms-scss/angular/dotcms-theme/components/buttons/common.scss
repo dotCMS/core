@@ -65,6 +65,7 @@
 #outlined-primary-severity {
     background-color: transparent;
     border: $field-border-size solid $color-palette-primary;
+    white-space: nowrap;
 
     .p-button-label,
     .p-button-icon,

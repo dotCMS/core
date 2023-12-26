@@ -7,8 +7,7 @@ import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 import { catchError, filter, map, switchMap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotSessionStorageService } from '@dotcms/data-access';
+import { DotRouterService, DotSessionStorageService } from '@dotcms/data-access';
 import { DotCMSResponse, HttpCode, Site, SiteService } from '@dotcms/dotcms-js';
 import { DotPageRenderOptions, DotPageRenderState } from '@dotcms/dotcms-models';
 
