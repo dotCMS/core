@@ -96,19 +96,17 @@ jobs:
         run: |
           brew install qemu
 
-          whereis qemu
-          
-          cat >entitlements.xml <<EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>com.apple.security.hypervisor</key>
-            <true/>
-          </dict>
-          </plist>
-          EOF
-          codesign --sign - --entitlements entitlements.xml --force /usr/local/bin/qemu-system-$(uname -m | sed -e s/arm64/aarch64/)          
+#          cat >entitlements.xml <<EOF
+#          <?xml version="1.0" encoding="UTF-8"?>
+#          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+#          <plist version="1.0">
+#          <dict>
+#            <key>com.apple.security.hypervisor</key>
+#            <true/>
+#          </dict>
+#          </plist>
+#          EOF
+#          codesign --sign - --entitlements entitlements.xml --force /usr/local/bin/qemu-system-$(uname -m | sed -e s/arm64/aarch64/)
 
       - name: 'Install docker'
         run: |
