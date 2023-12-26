@@ -99,11 +99,11 @@ jobs:
           curl -o ./qemu.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/dc0669eca9479e9eeb495397ba3a7480aaa45c2e/Formula/qemu.rb
           brew install ./qemu.rb
 
-#      - name: 'Install docker'
-#        run: |
-#          brew install colima docker docker-compose
-#          /opt/homebrew/opt/colima/bin/colima start -f
-#          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
+      - name: 'Install docker'
+        run: |
+          brew install colima docker docker-compose
+          /opt/homebrew/opt/colima/bin/colima start -f
+          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
 
 #      - name: 'Log docker context'
 #        run: |
