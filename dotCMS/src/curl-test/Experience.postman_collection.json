@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "13afc7f3-eb78-4341-a7c4-8920dc5773ac",
+		"_postman_id": "830f8ad7-f7d9-40cb-a3ee-6398201a0255",
 		"name": "Experience",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "30436704"
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
@@ -52,7 +52,13 @@
 							"key": "file",
 							"contentType": "",
 							"type": "file",
-							"src": "Experience/com.dotcms.experience-1.0.jar"
+							"src": "resources/Experience/com.dotcms.experience.fragment-1.0.jar"
+						},
+						{
+							"key": "file",
+							"contentType": "",
+							"type": "file",
+							"src": "resources/Experience/com.dotcms.experience-1.0.jar"
 						},
 						{
 							"key": "json",
@@ -69,120 +75,6 @@
 					"path": [
 						"api",
 						"osgi"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Wait 10s",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"",
-							"",
-							""
-						],
-						"type": "text/javascript"
-					}
-				},
-				{
-					"listen": "prerequest",
-					"script": {
-						"exec": [
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "https://postman-echo.com/delay/10",
-					"protocol": "https",
-					"host": [
-						"postman-echo",
-						"com"
-					],
-					"path": [
-						"delay",
-						"10"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Wait 10s",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"",
-							"",
-							""
-						],
-						"type": "text/javascript"
-					}
-				},
-				{
-					"listen": "prerequest",
-					"script": {
-						"exec": [
-							""
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "https://postman-echo.com/delay/10",
-					"protocol": "https",
-					"host": [
-						"postman-echo",
-						"com"
-					],
-					"path": [
-						"delay",
-						"10"
 					]
 				}
 			},
