@@ -202,7 +202,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                             tapResponse(
                                 (results) => {
                                     const allowedContentTypes =
-                                        this.filterAllowedContentTypes(results, containers) || [];
+                                        this.filterAllowedContentTypes(containers, results) || [];
 
                                     this.setAllowedTypes(allowedContentTypes);
                                     this.loadContentTypes({
@@ -255,8 +255,8 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     }
 
     private filterAllowedContentTypes(
-        blackList: string[] = [],
-        containers: DotPageContainerStructure
+        containers: DotPageContainerStructure,
+        blackList: string[] = []
     ): string[] {
         const allowedContent = new Set();
         Object.values(containers).forEach((container) => {

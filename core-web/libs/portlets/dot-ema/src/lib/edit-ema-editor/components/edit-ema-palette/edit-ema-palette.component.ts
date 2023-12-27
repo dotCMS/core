@@ -12,7 +12,7 @@ import {
     inject
 } from '@angular/core';
 
-import { DotESContentService, DotPropertiesService } from '@dotcms/data-access';
+import { DotESContentService } from '@dotcms/data-access';
 import { DotPageContainerStructure } from '@dotcms/dotcms-models';
 
 import { EditEmaPaletteContentTypeComponent } from './components/edit-ema-palette-content-type/edit-ema-palette-content-type.component';
@@ -41,7 +41,6 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
     @Output() dragEnd = new EventEmitter();
 
     private readonly store = inject(DotPaletteStore);
-    private readonly dotConfigurationService = inject(DotPropertiesService);
     private destroy$ = new Subject<void>();
 
     vm$ = this.store.vm$;
