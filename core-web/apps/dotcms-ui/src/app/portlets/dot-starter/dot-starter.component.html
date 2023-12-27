@@ -5,7 +5,10 @@
                 <h2 class="dot-starter-title" data-testId="dot-starter-title">
                     {{ 'starter.title' | dm }}
                 </h2>
-                <p class="dot-starter-description" [innerHTML]="'starter.description' | dm"></p>
+                <p
+                    class="dot-starter-description"
+                    [innerHTML]="'starter.description' | dm : [user.username]"></p>
+
             </div>
             <p-checkbox
                 [binary]="true"
