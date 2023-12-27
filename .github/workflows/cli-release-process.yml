@@ -105,10 +105,11 @@ jobs:
 
           colima start --mount-type 9p
 
-#          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
           echo "DOCKER_HOST=unix://${HOME}/.colima/default/docker.sock" >> "$GITHUB_ENV"
           echo "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock" >> "$GITHUB_ENV"
           echo "TESTCONTAINERS_RYUK_DISABLED=true" >> "$GITHUB_ENV"
+
+#          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
 
 #      - name: 'Install docker'
 #        run: |
