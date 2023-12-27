@@ -44,3 +44,18 @@ export const DEFAULT_PERSONA: DotPersona = {
     hasLiveVersion: false,
     modUser: 'system'
 };
+
+export const DEFAULT_QUERY_PARAMS = [
+    {
+        key: 'language_id',
+        value: DEFAULT_LANGUAGE_ID
+    },
+    {
+        key: 'url',
+        value: DEFAULT_URL
+    },
+    {
+        key: 'com.dotmarketing.persona.id',
+        value: DEFAULT_PERSONA.identifier
+    }
+];
