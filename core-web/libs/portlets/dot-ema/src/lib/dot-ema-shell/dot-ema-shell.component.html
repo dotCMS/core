@@ -9,14 +9,14 @@
 <p-dialog
     #dialog
     *ngIf="dialogState$ | async as ds"
-    [visible]="ds.context === 'shell'"
+    [visible]="ds.type === 'shell'"
     [style]="{ height: '90vh', width: '90vw' }"
     [header]="ds.header"
     [draggable]="false"
     [resizable]="false"
     [maximizable]="true"
     [modal]="true"
-    (visibleChange)="resetDialogIframeData()"
+    (visibleChange)="store.resetDialog()"
     data-testId="dialog">
     <iframe
         #dialogIframe

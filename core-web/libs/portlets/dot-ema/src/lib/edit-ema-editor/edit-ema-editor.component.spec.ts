@@ -373,7 +373,7 @@ describe('EditEmaEditorComponent', () => {
                     expect(initiEditIframeDialogMock).toHaveBeenCalledWith({
                         inode: 'contentlet-inode-123',
                         title: 'Hello World',
-                        context: 'editor'
+                        type: 'content'
                     });
 
                     const dialogIframe = spectator.debugElement.query(
@@ -459,8 +459,7 @@ describe('EditEmaEditorComponent', () => {
                     expect(initAddIframeDialogMock).toHaveBeenCalledWith({
                         containerId: 'test',
                         acceptTypes: 'test',
-                        language_id: 'test',
-                        context: 'editor'
+                        language_id: 'test'
                     });
 
                     const dialogIframe = spectator.debugElement.query(

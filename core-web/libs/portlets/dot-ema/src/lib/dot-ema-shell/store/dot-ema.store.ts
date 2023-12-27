@@ -22,15 +22,12 @@ import {
 import { ActionPayload, SavePagePayload } from '../../shared/models';
 import { insertContentletInContainer } from '../../utils';
 
-type DialogType = 'content' | 'form' | 'widget' | null;
-
-type DialogContext = 'editor' | 'shell' | null;
+type DialogType = 'content' | 'form' | 'widget' | 'shell' | null;
 
 export interface EditEmaState {
     editor: DotPageApiResponse;
     url: string;
     dialogIframeURL: string;
-    dialogContext: DialogContext;
     dialogHeader: string;
     dialogIframeLoading: boolean;
     dialogType: DialogType;
@@ -88,7 +85,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     readonly dialogState$ = this.select((state) => ({
         iframeURL: state.dialogIframeURL,
-        context: state.dialogContext,
         header: state.dialogHeader,
         iframeLoading: state.dialogIframeLoading,
         type: state.dialogType
@@ -124,7 +120,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                 editor,
                                 url,
                                 dialogIframeURL: '',
-                                dialogContext: null,
                                 dialogHeader: '',
                                 dialogIframeLoading: false,
                                 dialogType: null
@@ -227,7 +222,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             return {
                 ...state,
                 dialogIframeURL: url,
-                dialogContext: 'editor',
                 dialogHeader: `Create ${name}`,
                 dialogIframeLoading: true,
                 dialogType: 'content'
@@ -245,7 +239,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         return {
             ...state,
             dialogIframeURL: '',
-            dialogContext: null,
             dialogHeader: '',
             dialogIframeLoading: false,
             dialogType: null
@@ -254,14 +247,13 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     // This method is called when the user clicks on the edit button
     readonly initActionEdit = this.updater(
-        (state, payload: { inode: string; title: string; context: DialogContext }) => {
+        (state, payload: { inode: string; title: string; type: DialogType }) => {
             return {
                 ...state,
-                dialogContext: payload.context,
                 dialogHeader: payload.title,
                 dialogIframeLoading: true,
                 dialogIframeURL: this.createEditContentletUrl(payload.inode),
-                dialogType: 'content'
+                dialogType: payload.type
             };
         }
     );
@@ -274,12 +266,10 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 containerId: string;
                 acceptTypes: string;
                 language_id: string;
-                context: DialogContext;
             }
         ) => {
             return {
                 ...state,
-                dialogContext: payload.context,
                 dialogHeader: 'Search Content', // Does this need translation?
                 dialogIframeLoading: true,
                 dialogIframeURL: this.createAddContentletUrl(payload),
@@ -288,10 +278,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
-    readonly initActionAddForm = this.updater((state, payload: { context: DialogContext }) => {
+    readonly initActionAddForm = this.updater((state) => {
         return {
             ...state,
-            dialogContext: payload.context,
             dialogHeader: 'Search Forms', // Does this need translation?
             dialogIframeLoading: true,
             dialogIframeURL: null,
@@ -301,10 +290,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     // This method is called when the user clicks in the + button in the jsp dialog
     readonly initActionCreate = this.updater(
-        (state, payload: { contentType: string; url: string; context: DialogContext }) => {
+        (state, payload: { contentType: string; url: string }) => {
             return {
                 ...state,
-                dialogContext: payload.context,
                 dialogHeader: payload.contentType,
                 dialogIframeLoading: true,
                 dialogIframeURL: payload.url,

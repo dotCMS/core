@@ -85,7 +85,7 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: '',
                     dialogIframeLoading: true,
                     dialogHeader: '',
-                    dialogContext: null,
+
                     dialogType: null
                 });
                 done();
@@ -104,7 +104,7 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: '',
                     dialogIframeLoading: false,
                     dialogHeader: '',
-                    dialogContext: null,
+
                     dialogType: null
                 });
                 done();
@@ -115,7 +115,7 @@ describe('EditEmaStore', () => {
             spectator.service.initActionEdit({
                 inode: '123',
                 title: 'test',
-                context: 'editor'
+                type: 'content'
             });
 
             spectator.service.state$.subscribe((state) => {
@@ -125,7 +125,6 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: EDIT_CONTENTLET_URL + '123',
                     dialogIframeLoading: true,
                     dialogHeader: 'test',
-                    dialogContext: 'editor',
                     dialogType: 'content'
                 });
                 done();
@@ -136,8 +135,7 @@ describe('EditEmaStore', () => {
             spectator.service.initActionAdd({
                 containerId: '1234',
                 acceptTypes: 'test',
-                language_id: '1',
-                context: 'editor'
+                language_id: '1'
             });
 
             spectator.service.state$.subscribe((state) => {
@@ -148,7 +146,6 @@ describe('EditEmaStore', () => {
                         '/html/ng-contentlet-selector.jsp?ng=true&container_id=1234&add=test&language_id=1',
                     dialogIframeLoading: true,
                     dialogHeader: 'Search Content',
-                    dialogContext: 'editor',
                     dialogType: 'content'
                 });
                 done();
@@ -158,8 +155,7 @@ describe('EditEmaStore', () => {
         it('should initialize createAction properties', (done) => {
             spectator.service.initActionCreate({
                 contentType: 'test',
-                url: 'some/really/long/url',
-                context: 'editor'
+                url: 'some/really/long/url'
             });
 
             spectator.service.state$.subscribe((state) => {
@@ -169,7 +165,6 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: 'some/really/long/url',
                     dialogIframeLoading: true,
                     dialogHeader: 'test',
-                    dialogContext: 'editor',
                     dialogType: 'content'
                 });
                 done();
@@ -186,7 +181,6 @@ describe('EditEmaStore', () => {
                 expect(state.dialogHeader).toBe('Create Blog Posts');
                 expect(state.dialogIframeLoading).toBe(true);
                 expect(state.dialogIframeURL).toBe('some/really/long/url');
-                expect(state.dialogContext).toBe('editor');
                 expect(state.dialogType).toBe('content');
                 done();
             });
@@ -230,7 +224,7 @@ describe('EditEmaStore', () => {
                 expect(state.dialogHeader).toBe('Create Blog');
                 expect(state.dialogIframeLoading).toBe(true);
                 expect(state.dialogIframeURL).toBe('https://demo.dotcms.com/jsp.jsp');
-                expect(state.dialogContext).toBe('editor');
+                expect(state.dialogType).toBe('content');
                 done();
             });
 
@@ -251,7 +245,6 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: '',
                     dialogIframeLoading: false,
                     dialogHeader: '',
-                    dialogContext: null,
                     dialogType: null
                 });
                 done();

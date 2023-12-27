@@ -151,13 +151,13 @@ describe('DotEmaShellComponent', () => {
         });
     });
 
-    describe('dialog', () => {
+    describe('page properties', () => {
         it('should open the dialog when triggering store.initEditAction with shell as context', () => {
             spectator.detectChanges();
             store.initActionEdit({
                 inode: '123',
                 title: 'hello world',
-                context: 'shell'
+                type: 'shell'
             });
             spectator.detectChanges();
 
@@ -171,7 +171,7 @@ describe('DotEmaShellComponent', () => {
             store.initActionEdit({
                 inode: '123',
                 title: 'hello world',
-                context: 'shell'
+                type: 'shell'
             });
             spectator.detectChanges();
 
@@ -208,7 +208,7 @@ describe('DotEmaShellComponent', () => {
             store.initActionEdit({
                 inode: '123',
                 title: 'hello world',
-                context: 'shell'
+                type: 'shell'
             });
             spectator.detectChanges();
 

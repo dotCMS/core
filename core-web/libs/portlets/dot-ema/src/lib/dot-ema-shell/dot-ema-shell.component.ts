@@ -63,8 +63,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
-    private readonly store = inject(EditEmaStore);
     private readonly siteService = inject(SiteService);
+    readonly store = inject(EditEmaStore);
 
     private readonly destroy$ = new Subject<boolean>();
     private queryParams: DotPageApiParams;
@@ -114,7 +114,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                         this.store.initActionEdit({
                             inode: page.inode,
                             title: page.title,
-                            context: 'shell'
+                            type: 'shell'
                         });
                     }
                 }
@@ -148,10 +148,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
-    }
-
-    resetDialogIframeData() {
-        this.store.resetDialog();
     }
 
     onIframeLoad() {
