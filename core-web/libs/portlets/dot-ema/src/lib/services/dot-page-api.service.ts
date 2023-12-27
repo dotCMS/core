@@ -20,6 +20,7 @@ export interface DotPageApiResponse {
     page: {
         title: string;
         identifier: string;
+        inode: string;
     };
     site: Site;
     viewAs: {

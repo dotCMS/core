@@ -298,7 +298,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     addForm(payload: ActionPayload): void {
-        this.store.initActionAddForm(payload);
+        this.store.initActionAddForm();
         this.savePayload = payload;
     }
 
@@ -370,7 +370,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     editContentlet(payload: ActionPayload) {
         this.store.initActionEdit({
             inode: payload.contentlet.inode,
-            title: payload.contentlet.title
+            title: payload.contentlet.title,
+            type: 'content'
         });
     }
 

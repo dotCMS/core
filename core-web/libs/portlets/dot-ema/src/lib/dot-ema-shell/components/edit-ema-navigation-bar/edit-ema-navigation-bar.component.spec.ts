@@ -69,7 +69,7 @@ describe('EditEmaNavigationBarComponent', () => {
     describe('DOM', () => {
         describe('Nav Bar', () => {
             it('should have 5 items', () => {
-                const links = spectator.queryAll('a');
+                const links = spectator.queryAll(byTestId('nav-bar-item'));
 
                 expect(links.length).toBe(5);
                 expect(links[0].textContent.trim()).toBe('Content');
@@ -83,6 +83,12 @@ describe('EditEmaNavigationBarComponent', () => {
                 expect(links[2].getAttribute('ng-reflect-router-link')).toBe('rules');
                 expect(links[3].getAttribute('ng-reflect-router-link')).toBe('experiments');
                 expect(links[4].getAttribute('ng-reflect-router-link')).toBeNull();
+            });
+
+            it("should be a button if action is defined on last item 'Action'", () => {
+                const actionLink = spectator.query('button[data-testId="nav-bar-item"]');
+
+                expect(actionLink).not.toBeNull();
             });
 
             it("should trigger mockedAction on clicking last item 'Action'", () => {

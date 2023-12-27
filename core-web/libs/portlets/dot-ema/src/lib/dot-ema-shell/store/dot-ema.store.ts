@@ -22,13 +22,12 @@ import {
 import { ActionPayload, SavePagePayload } from '../../shared/models';
 import { insertContentletInContainer } from '../../utils';
 
-type DialogType = 'content' | 'form' | 'widget' | null;
+type DialogType = 'content' | 'form' | 'widget' | 'shell' | null;
 
 export interface EditEmaState {
     editor: DotPageApiResponse;
     url: string;
     dialogIframeURL: string;
-    dialogVisible: boolean;
     dialogHeader: string;
     dialogIframeLoading: boolean;
     dialogType: DialogType;
@@ -73,7 +72,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
         return {
             apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
-            iframeURL: `${HOST}/${pageURL}`,
+            iframeURL: `${HOST}/${pageURL}` + `&t=${Date.now()}`, // The iframe will only reload if the queryParams changes, so we add a timestamp to force a reload when no queryParams change
             editor: {
                 ...state.editor,
                 viewAs: {
@@ -85,11 +84,10 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     });
 
     readonly dialogState$ = this.select((state) => ({
-        dialogIframeURL: state.dialogIframeURL,
-        dialogVisible: state.dialogVisible,
-        dialogHeader: state.dialogHeader,
-        dialogIframeLoading: state.dialogIframeLoading,
-        dialogType: state.dialogType
+        iframeURL: state.dialogIframeURL,
+        header: state.dialogHeader,
+        iframeLoading: state.dialogIframeLoading,
+        type: state.dialogType
     }));
 
     readonly layoutProperties$ = this.select((state) => ({
@@ -100,7 +98,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }));
 
     readonly shellProperties$ = this.select((state) => ({
-        pageId: state.editor.page.identifier,
+        page: state.editor.page,
         siteId: state.editor.site.identifier,
         languageId: state.editor.viewAs.language.id,
         currentUrl: '/' + state.url,
@@ -122,7 +120,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                 editor,
                                 url,
                                 dialogIframeURL: '',
-                                dialogVisible: false,
                                 dialogHeader: '',
                                 dialogIframeLoading: false,
                                 dialogType: null
@@ -225,7 +222,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             return {
                 ...state,
                 dialogIframeURL: url,
-                dialogVisible: true,
                 dialogHeader: `Create ${name}`,
                 dialogIframeLoading: true,
                 dialogType: 'content'
@@ -243,7 +239,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         return {
             ...state,
             dialogIframeURL: '',
-            dialogVisible: false,
             dialogHeader: '',
             dialogIframeLoading: false,
             dialogType: null
@@ -251,23 +246,30 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     });
 
     // This method is called when the user clicks on the edit button
-    readonly initActionEdit = this.updater((state, payload: { inode: string; title: string }) => {
-        return {
-            ...state,
-            dialogVisible: true,
-            dialogHeader: payload.title,
-            dialogIframeLoading: true,
-            dialogIframeURL: this.createEditContentletUrl(payload.inode),
-            dialogType: 'content'
-        };
-    });
+    readonly initActionEdit = this.updater(
+        (state, payload: { inode: string; title: string; type: DialogType }) => {
+            return {
+                ...state,
+                dialogHeader: payload.title,
+                dialogIframeLoading: true,
+                dialogIframeURL: this.createEditContentletUrl(payload.inode),
+                dialogType: payload.type
+            };
+        }
+    );
 
     // This method is called when the user clicks on the [+ add] button
     readonly initActionAdd = this.updater(
-        (state, payload: { containerId: string; acceptTypes: string; language_id: string }) => {
+        (
+            state,
+            payload: {
+                containerId: string;
+                acceptTypes: string;
+                language_id: string;
+            }
+        ) => {
             return {
                 ...state,
-                dialogVisible: true,
                 dialogHeader: 'Search Content', // Does this need translation?
                 dialogIframeLoading: true,
                 dialogIframeURL: this.createAddContentletUrl(payload),
@@ -276,10 +278,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
-    readonly initActionAddForm = this.updater((state, _payload: ActionPayload) => {
+    readonly initActionAddForm = this.updater((state) => {
         return {
             ...state,
-            dialogVisible: true,
             dialogHeader: 'Search Forms', // Does this need translation?
             dialogIframeLoading: true,
             dialogIframeURL: null,
@@ -292,7 +293,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         (state, payload: { contentType: string; url: string }) => {
             return {
                 ...state,
-                dialogVisible: true,
                 dialogHeader: payload.contentType,
                 dialogIframeLoading: true,
                 dialogIframeURL: payload.url,

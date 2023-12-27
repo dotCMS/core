@@ -372,7 +372,8 @@ describe('EditEmaEditorComponent', () => {
                     expect(dialog.getAttribute('ng-reflect-visible')).toBe('true');
                     expect(initiEditIframeDialogMock).toHaveBeenCalledWith({
                         inode: 'contentlet-inode-123',
-                        title: 'Hello World'
+                        title: 'Hello World',
+                        type: 'content'
                     });
 
                     const dialogIframe = spectator.debugElement.query(
@@ -403,7 +404,7 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('add', () => {
-                it('should add contentlet after backend emit SAVE_CONTENTLET', (done) => {
+                it('should add contentlet after backend emit SAVE_CONTENTLET', () => {
                     spectator.detectChanges();
 
                     const initAddIframeDialogMock = jest.spyOn(store, 'initActionAdd');
@@ -429,7 +430,7 @@ describe('EditEmaEditorComponent', () => {
                             title: 'Hello World',
                             identifier: '123'
                         },
-                        pageId: 'test',
+                        pageId: 'test1',
                         language_id: 'test',
                         position: 'before'
                     };
@@ -498,8 +499,6 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectChanges();
 
-                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
-
                     expect(savePageMock).toHaveBeenCalledWith({
                         pageContainers: [
                             {
@@ -509,17 +508,11 @@ describe('EditEmaEditorComponent', () => {
                                 personaTag: undefined
                             }
                         ],
-                        pageId: 'test',
+                        pageId: 'test1',
                         whenSaved: expect.any(Function)
                     });
 
-                    iframe.nativeElement.contentWindow.addEventListener(
-                        'message',
-                        (event: MessageEvent) => {
-                            expect(event).toBeTruthy();
-                            done();
-                        }
-                    );
+                    spectator.detectChanges();
                 });
 
                 it('should add contentlet after backend emit CONTENT_SEARCH_SELECT', () => {
