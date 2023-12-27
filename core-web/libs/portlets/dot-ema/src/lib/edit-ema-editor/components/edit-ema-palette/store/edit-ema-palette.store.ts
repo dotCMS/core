@@ -8,7 +8,7 @@ import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { DotContentTypeService, DotESContentService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
-import { PAGINATOR_ITEMS_PER_PAGE } from '../../../../shared/consts';
+import { PALETTE_PAGINATOR_ITEMS_PER_PAGE } from '../shared/edit-ema-palette.const';
 import { EditEmaPaletteStoreStatus, PALETTE_TYPES } from '../shared/edit-ema-palette.enums';
 
 export interface DotPaletteState {
@@ -37,13 +37,12 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         private dotContentTypeService: DotContentTypeService,
         private dotESContentService: DotESContentService
     ) {
-        // super();
         super({
             contentlets: {
                 items: [],
                 filter: { query: '', contentTypeVarName: '' },
                 totalRecords: 0,
-                itemsPerPage: PAGINATOR_ITEMS_PER_PAGE
+                itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE
             },
             contenttypes: { items: [], filter: '' },
             status: EditEmaPaletteStoreStatus.LOADING,
@@ -67,7 +66,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
             items: [],
             filter: { query: '', contentTypeVarName: '' },
             totalRecords: 0,
-            itemsPerPage: PAGINATOR_ITEMS_PER_PAGE
+            itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE
         }
     }));
 
@@ -121,10 +120,11 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                 switchMap(({ filter, contenttypeName, languageId, page }) => {
                     return this.dotESContentService
                         .get({
-                            itemsPerPage: PAGINATOR_ITEMS_PER_PAGE,
+                            itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE,
                             lang: languageId || '1',
                             filter: filter || '',
-                            offset: ((page || 0) * PAGINATOR_ITEMS_PER_PAGE).toString() || '0',
+                            offset:
+                                ((page || 0) * PALETTE_PAGINATOR_ITEMS_PER_PAGE).toString() || '0',
                             query: `+contentType: ${contenttypeName} +deleted: false`.trim()
                         })
                         .pipe(
@@ -138,7 +138,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                                                 contentTypeVarName: contenttypeName
                                             },
                                             totalRecords: contentlets.resultsSize,
-                                            itemsPerPage: PAGINATOR_ITEMS_PER_PAGE
+                                            itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE
                                         },
                                         status: EditEmaPaletteStoreStatus.LOADED
                                     });
@@ -191,7 +191,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                 items: [],
                 filter: { query: '', contentTypeVarName: '' },
                 totalRecords: 0,
-                itemsPerPage: PAGINATOR_ITEMS_PER_PAGE
+                itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE
             },
             contenttypes: { items: [], filter: '' },
             status: EditEmaPaletteStoreStatus.LOADED,

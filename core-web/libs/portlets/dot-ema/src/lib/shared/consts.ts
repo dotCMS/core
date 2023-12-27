@@ -44,5 +44,3 @@ export const DEFAULT_PERSONA: DotPersona = {
     hasLiveVersion: false,
     modUser: 'system'
 };
-
-export const PAGINATOR_ITEMS_PER_PAGE = 10;

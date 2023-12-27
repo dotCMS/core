@@ -4,9 +4,9 @@ import { FormControl } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
 
-import { PAGINATOR_ITEMS_PER_PAGE } from './../../../../../shared/consts';
 import { EditEmaPaletteContentletsComponent } from './edit-ema-palette-contentlets.component';
 
+import { PALETTE_PAGINATOR_ITEMS_PER_PAGE } from '../../shared/edit-ema-palette.const';
 import { EditEmaPaletteStoreStatus } from '../../shared/edit-ema-palette.enums';
 import { CONTENTLETS_MOCK } from '../../shared/edit-ema-palette.mocks';
 
@@ -33,7 +33,7 @@ describe('EditEmaPaletteContentletsComponent', () => {
                 contentlets: {
                     items: CONTENTLETS_MOCK,
                     totalRecords: 10,
-                    itemsPerPage: PAGINATOR_ITEMS_PER_PAGE
+                    itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE
                 },
                 control: new FormControl(''),
                 paletteStatus: EditEmaPaletteStoreStatus.LOADED

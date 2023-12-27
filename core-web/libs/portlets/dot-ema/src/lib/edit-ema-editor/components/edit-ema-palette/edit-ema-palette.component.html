@@ -1,5 +1,4 @@
 <ng-container *ngIf="vm$ | async as vm">
-    <!-- <button (click)="print(vm)">print</button>ƒ -->
     <dot-edit-ema-palette-content-type
         *ngIf="vm.currentPaletteType === PALETTETYPE.CONTENTTYPE"
         [contentTypes]="vm.contenttypes.items"

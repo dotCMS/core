@@ -5,7 +5,7 @@ import { DotContentTypeService, DotESContentService } from '@dotcms/data-access'
 
 import { DotPaletteStore } from './edit-ema-palette.store';
 
-import { PAGINATOR_ITEMS_PER_PAGE } from '../../../../shared/consts';
+import { PALETTE_PAGINATOR_ITEMS_PER_PAGE } from '../shared/edit-ema-palette.const';
 import { EditEmaPaletteStoreStatus, PALETTE_TYPES } from '../shared/edit-ema-palette.enums';
 
 describe('EditEmaPaletteStore', () => {
@@ -20,10 +20,11 @@ describe('EditEmaPaletteStore', () => {
     });
 
     describe('updaters', () => {
-        it('should change view', () => {
+        it('should change view', (done) => {
             spectator.service.changeView(PALETTE_TYPES.CONTENTLET);
             spectator.service.vm$.subscribe((state) => {
                 expect(state.currentPaletteType).toEqual(PALETTE_TYPES.CONTENTLET);
+                done();
             });
         });
 
@@ -35,15 +36,16 @@ describe('EditEmaPaletteStore', () => {
             });
         });
 
-        it('should reset contentlets', () => {
+        it('should reset contentlets', (done) => {
             spectator.service.resetContentlets();
             spectator.service.vm$.subscribe((state) => {
                 expect(state.contentlets).toEqual({
                     items: [],
                     filter: { query: '', contentTypeVarName: '' },
                     totalRecords: 0,
-                    itemsPerPage: PAGINATOR_ITEMS_PER_PAGE
+                    itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE
                 });
+                done();
             });
         });
     });
