@@ -135,6 +135,18 @@ export class AIContentPromptView {
         });
 
         /**
+         * Subscription to "exit" the tippy since that can happen on escape listener that is in the html
+         */
+        this.componentStore.hasError$
+            .pipe(
+                filter((hasError) => hasError === true),
+                takeUntil(this.destroy$)
+            )
+            .subscribe(() => {
+                this.tippy?.hide();
+            });
+
+        /**
          * Subscription to delete AI_CONTENT node.
          * Fired from the AI Content Actions plugin.
          */

@@ -67,8 +67,6 @@ export class AIImagePromptView {
 
         this.store = this.component.injector.get(DotAiImagePromptStore);
 
-        // TODO: handle the error
-
         /**
          * Subscription fired by the store when the dialog change of the state
          * Handle the manual close of the dialog (esc, click outside, x button)
@@ -110,6 +108,22 @@ export class AIImagePromptView {
                     this.store.hideDialog();
                     this.editor.chain().insertLoaderNode().closeImagePrompt().run();
                 }
+            });
+
+        /**
+         * Subscription fired by an error and remove the loader node
+         */
+        this.store.hasError$
+            .pipe(
+                filter((hasError) => hasError === true),
+                takeUntil(this.destroy$)
+            )
+            .subscribe(() => {
+                const loaderNodes = findNodeByType(this.editor, NodeTypes.LOADER);
+                this.editor.commands.deleteRange({
+                    from: loaderNodes[0].from,
+                    to: loaderNodes[0].to
+                });
             });
 
         /**

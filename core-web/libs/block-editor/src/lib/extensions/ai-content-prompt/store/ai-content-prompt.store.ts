@@ -15,35 +15,25 @@ export interface AiContentPromptState {
     acceptContent: boolean;
     deleteContent: boolean;
     status: ComponentStatus;
+    error: boolean;
 }
 
 @Injectable({
     providedIn: 'root'
 })
 export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
-    constructor(private dotAiService: DotAiService) {
-        super({
-            prompt: '',
-            content: '',
-            acceptContent: false,
-            deleteContent: false,
-            status: ComponentStatus.INIT
-        });
-    }
-
     //Selectors
+    readonly hasError$ = this.select(this.state$, ({ error }) => error);
     readonly prompt$ = this.select((state) => state.prompt);
     readonly content$ = this.select((state) => state.content);
     readonly deleteContent$ = this.select((state) => state.deleteContent);
     readonly status$ = this.select((state) => state.status);
     readonly vm$ = this.select((state) => state);
-
     //Updaters
     readonly setStatus = this.updater((state, status: ComponentStatus) => ({
         ...state,
         status
     }));
-
     readonly setAcceptContent = this.updater((state, acceptContent: boolean) => ({
         ...state,
         acceptContent
@@ -52,7 +42,6 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
         ...state,
         deleteContent
     }));
-
     // Effects
     readonly generateContent = this.effect((prompt$: Observable<string>) => {
         return prompt$.pipe(
@@ -60,10 +49,15 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
                 this.patchState({ status: ComponentStatus.LOADING, prompt });
 
                 return this.dotAiService.generateContent(prompt).pipe(
-                    tap((content) => this.patchState({ status: ComponentStatus.LOADED, content })),
+                    tap((content) =>
+                        this.patchState({ status: ComponentStatus.LOADED, content, error: false })
+                    ),
                     catchError(() => {
-                        //TODO: Notify to handle error in the UI.
-                        this.patchState({ status: ComponentStatus.LOADED, content: '' });
+                        this.patchState({
+                            status: ComponentStatus.LOADED,
+                            content: '',
+                            error: true
+                        });
 
                         return of(null);
                     })
@@ -71,7 +65,6 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
             })
         );
     });
-
     /**
      * When this effect is triggered, it uses the latest prompt value from the store's state
      * to generate content using the `generateContent` effect.
@@ -86,4 +79,15 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
             tap(([_, { prompt }]) => this.generateContent(of(prompt)))
         );
     });
+
+    constructor(private dotAiService: DotAiService) {
+        super({
+            prompt: '',
+            content: '',
+            acceptContent: false,
+            deleteContent: false,
+            status: ComponentStatus.INIT,
+            error: false
+        });
+    }
 }

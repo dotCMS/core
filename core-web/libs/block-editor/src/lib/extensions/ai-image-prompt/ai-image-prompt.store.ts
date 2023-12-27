@@ -20,7 +20,7 @@ export interface DotAiImagePromptComponentState {
     editorContent: string | null;
     contentlets: DotCMSContentlet[] | [];
     status: ComponentStatus;
-    error: string | null;
+    error: boolean;
 }
 
 export interface VmAiImagePrompt {
@@ -36,7 +36,7 @@ const initialState: DotAiImagePromptComponentState = {
     contentlets: [],
     prompt: null,
     editorContent: null,
-    error: null
+    error: false
 };
 
 @Injectable({ providedIn: 'root' })
@@ -47,6 +47,7 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         this.state$,
         ({ status }) => status === ComponentStatus.LOADING
     );
+    readonly hasError$ = this.select(this.state$, ({ error }) => error);
     readonly getContentlets$ = this.select(this.state$, ({ contentlets }) => contentlets);
 
     //Updaters
@@ -96,7 +97,11 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                         ? `${cleanPrompt} to illustrate the following content: ${editorContent}`
                         : cleanPrompt;
 
-                this.patchState({ status: ComponentStatus.LOADING, prompt: finalPrompt });
+                this.patchState({
+                    status: ComponentStatus.LOADING,
+                    prompt: finalPrompt,
+                    error: false
+                });
 
                 return this.dotAiService.generateAndPublishImage(finalPrompt).pipe(
                     tapResponse(
@@ -107,9 +112,8 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                             });
                         },
                         () => {
-                            this.patchState({ status: ComponentStatus.IDLE });
+                            this.patchState({ status: ComponentStatus.IDLE, error: true });
 
-                            //TODO: Notify to handle error in the UI.
                             return of(null);
                         }
                     )

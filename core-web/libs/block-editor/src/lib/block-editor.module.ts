@@ -1,8 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { APP_INITIALIZER, NgModule } from '@angular/core';
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
+import { APP_INITIALIZER, ErrorHandler, NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
@@ -26,22 +29,14 @@ import {
 } from './extensions';
 import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 import { ContentletBlockComponent } from './nodes';
-import {
-    AI_PLUGIN_INSTALLED_TOKEN,
-    DotAiService,
-    DotUploadFileService,
-    EditorDirective
-} from './shared';
+import { DotAiService, DotUploadFileService, EditorDirective } from './shared';
+import { HttpErrorInterceptor } from './shared/interceptors/http-error-interceptor';
 import { PrimengModule } from './shared/primeng.module';
-import { DotBlockEditorInitService } from './shared/services/dot-block-editor-init/dot-block-editor-init.service';
+import { BlockEditorErrorHandlerService } from './shared/services/block-editor-error-handler/block-editor-error-handler.service';
 import { SharedModule } from './shared/shared.module';
 
 const initTranslations = (dotMessageService: DotMessageService) => {
     return () => dotMessageService.init();
-};
-
-const initializeBlockEditor = (appInitService: DotBlockEditorInitService) => {
-    return () => appInitService.initializeBlockEditor();
 };
 
 @NgModule({
@@ -55,7 +50,8 @@ const initializeBlockEditor = (appInitService: DotBlockEditorInitService) => {
         DotFieldRequiredDirective,
         UploadPlaceholderComponent,
         AIImagePromptComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        ConfirmDialogModule
     ],
     declarations: [
         EditorDirective,
@@ -78,24 +74,21 @@ const initializeBlockEditor = (appInitService: DotBlockEditorInitService) => {
         LoggerService,
         StringUtils,
         DotAiService,
-        DotBlockEditorInitService,
+        BlockEditorErrorHandlerService,
         {
             provide: APP_INITIALIZER,
             useFactory: initTranslations,
             deps: [DotMessageService],
             multi: true
         },
-
         {
-            provide: APP_INITIALIZER,
-            useFactory: initializeBlockEditor,
-            deps: [DotBlockEditorInitService],
-            multi: true
+            provide: ErrorHandler,
+            useClass: BlockEditorErrorHandlerService
         },
         {
-            provide: AI_PLUGIN_INSTALLED_TOKEN,
-            useFactory: (service: DotBlockEditorInitService) => service.isPluginInstalled,
-            deps: [DotBlockEditorInitService]
+            provide: HTTP_INTERCEPTORS,
+            useClass: HttpErrorInterceptor,
+            multi: true
         }
     ],
     exports: [
