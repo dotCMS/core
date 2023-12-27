@@ -67,7 +67,16 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly store = inject(EditEmaStore);
 
     private readonly destroy$ = new Subject<boolean>();
-    private queryParams: DotPageApiParams;
+
+    get queryParams(): DotPageApiParams {
+        const queryParams = this.route.snapshot.queryParams;
+
+        return {
+            language_id: queryParams['language_id'],
+            url: queryParams['url'],
+            'com.dotmarketing.persona.id': queryParams['com.dotmarketing.persona.id']
+        };
+    }
     pageToolsVisible = false;
 
     dialogState$ = this.store.dialogState$;
@@ -153,12 +162,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     queryParamsHandling: 'merge'
                 });
             } else {
-                this.queryParams = {
-                    language_id: queryParams['language_id'],
-                    url: queryParams['url'],
-                    'com.dotmarketing.persona.id': queryParams['com.dotmarketing.persona.id']
-                };
-
                 this.store.load({
                     ...this.queryParams
                 });
