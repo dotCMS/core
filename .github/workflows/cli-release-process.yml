@@ -124,6 +124,8 @@ jobs:
 #
       - name: 'Log docker context'
         run: |
+          echo "DOCKER_HOST=unix:///${HOME}/.lima/docker-actions-toolkit/docker.sock" >> "$GITHUB_ENV"
+          echo "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock" >> "$GITHUB_ENV"          
           docker context list
 #          colima status
 #          colima version
