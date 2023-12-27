@@ -10,7 +10,7 @@ type PageApiOptions = {
     language_id?: number;
     'com.dotmarketing.persona.id'?: string;
     fireRules?: boolean;
-    depth?: 0 | 1 | 2;
+    depth?: number;
 };
 
 type NavApiOptions = {
@@ -23,10 +23,16 @@ class DotCmsClient {
     private config: ClientConfig;
 
     constructor(config: ClientConfig) {
-        if (!config.host || !config.siteId || !config.authToken) {
-            throw new Error(
-                'Invalid configuration - host, siteId, and authToken are required'
-            );
+        if (!config.host) {
+            throw new Error("Invalid configuration - 'host' is required");
+        }
+
+        if (!config.siteId) {
+            throw new Error("Invalid configuration - 'siteId' is required");
+        }
+
+        if (!config.authToken) {
+            throw new Error("Invalid configuration - 'authToken' is required");
         }
 
         this.config = config;
@@ -38,24 +44,26 @@ class DotCmsClient {
                 "The 'path' parameter is required for the Page API"
             );
         }
-
-        if (options.depth && ![0, 1, 2].includes(options.depth)) {
-            throw new Error("Invalid 'depth' parameter. It must be 0, 1, or 2");
-        }
     }
 
     private validateNavOptions(options: NavApiOptions): void {
         if (!options.path) {
             throw new Error("The 'path' parameter is required for the Nav API");
         }
-
-        if (options.depth && options.depth < 1) {
-            throw new Error(
-                "Invalid 'depth' parameter. It must be 1 or greater"
-            );
-        }
     }
 
+    /**
+     * @description
+     * The Page API enables you to retrieve all the elements of any Page in your dotCMS system.
+     * The elements may be retrieved in JSON format.
+     *
+     * @link https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas
+     *
+     *
+     * @param {PageApiOptions} options
+     * @return {*}  {Promise<any>}
+     * @memberof DotCmsClient
+     */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async getPage(options: PageApiOptions): Promise<any> {
         this.validatePageOptions(options);
@@ -84,6 +92,16 @@ class DotCmsClient {
         return response.json();
     }
 
+    /**
+     * @description
+     *  Enables you to retrieve information about the dotCMS file and folder tree through REST API calls.
+     *
+     * @link https://www.dotcms.com/docs/latest/navigation-rest-api
+     *
+     * @param {NavApiOptions} options
+     * @return {*}  {Promise<any>}
+     * @memberof DotCmsClient
+     */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async getNav(options: NavApiOptions): Promise<any> {
         this.validateNavOptions(options);
