@@ -3,10 +3,12 @@ import { createServiceFactory } from '@ngneat/spectator/jest';
 
 import { DotContentTypeService, DotESContentService } from '@dotcms/data-access';
 
-import { DotPaletteStore } from './edit-ema-palette.store';
-
-import { PALETTE_PAGINATOR_ITEMS_PER_PAGE } from '../shared/edit-ema-palette.const';
-import { EditEmaPaletteStoreStatus, PALETTE_TYPES } from '../shared/edit-ema-palette.enums';
+import {
+    DotPaletteStore,
+    EditEmaPaletteStoreStatus,
+    PALETTE_PAGINATOR_ITEMS_PER_PAGE,
+    PALETTE_TYPES
+} from './edit-ema-palette.store';
 
 describe('EditEmaPaletteStore', () => {
     let spectator: SpectatorService<DotPaletteStore>;

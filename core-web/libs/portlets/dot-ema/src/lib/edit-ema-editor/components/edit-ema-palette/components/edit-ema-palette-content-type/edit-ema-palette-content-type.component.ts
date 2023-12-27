@@ -6,7 +6,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotIconModule, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
 
-import { EditEmaPaletteStoreStatus } from '../../shared/edit-ema-palette.enums';
+import { EditEmaPaletteStoreStatus } from '../../store/edit-ema-palette.store';
 
 @Component({
     selector: 'dot-edit-ema-palette-content-type',
@@ -39,8 +39,10 @@ export class EditEmaPaletteContentTypeComponent {
     EDIT_EMA_PALETTE_STATUS = EditEmaPaletteStoreStatus;
 
     /**
-     * Shows the contentlets from a specific content type.
-     * @param contentTypeName - The name of the content type.
+     *
+     *
+     * @param {string} contentTypeName
+     * @memberof EditEmaPaletteContentTypeComponent
      */
     showContentletsFromContentType(contentTypeName: string) {
         this.showContentlets.emit(contentTypeName);

@@ -1,28 +1,25 @@
-import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { DotContentTypeService, DotESContentService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 
 import { EditEmaPaletteContentTypeComponent } from './components/edit-ema-palette-content-type/edit-ema-palette-content-type.component';
 import { EditEmaPaletteContentletsComponent } from './components/edit-ema-palette-contentlets/edit-ema-palette-contentlets.component';
 import { EditEmaPaletteComponent } from './edit-ema-palette.component';
-import { PALETTE_TYPES } from './shared/edit-ema-palette.enums';
 import {
     CONTENTLETS_MOCK,
     INITIAL_STATE_PALETTE_CONTENTLET_MOCK,
     INITIAL_STATE_PALETTE_CONTENTTYPE_MOCK
 } from './shared/edit-ema-palette.mocks';
-import { DotPaletteStore } from './store/edit-ema-palette.store';
+import { DotPaletteStore, PALETTE_TYPES } from './store/edit-ema-palette.store';
 
 const createEditEmaPaletteComponent = () => {
     return createComponentFactory({
         component: EditEmaPaletteComponent,
         imports: [HttpClientTestingModule],
         providers: [
-            mockProvider(DotPaletteStore),
             {
                 provide: DotContentTypeService,
                 useValue: {
@@ -39,9 +36,7 @@ const createEditEmaPaletteComponent = () => {
                             resultSize: CONTENTLETS_MOCK.length
                         })
                 }
-            },
-            // mockProvider(DotESContentService),
-            mockProvider(CoreWebService)
+            }
         ]
     });
 };

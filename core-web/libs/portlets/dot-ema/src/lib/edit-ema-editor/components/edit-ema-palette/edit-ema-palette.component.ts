@@ -2,7 +2,6 @@ import { Subject } from 'rxjs';
 
 import { AsyncPipe, NgIf } from '@angular/common';
 import {
-    CUSTOM_ELEMENTS_SCHEMA,
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
@@ -21,8 +20,7 @@ import { DotContainerStructure, DotPageContainerStructure } from '@dotcms/dotcms
 
 import { EditEmaPaletteContentTypeComponent } from './components/edit-ema-palette-content-type/edit-ema-palette-content-type.component';
 import { EditEmaPaletteContentletsComponent } from './components/edit-ema-palette-contentlets/edit-ema-palette-contentlets.component';
-import { PALETTE_TYPES } from './shared/edit-ema-palette.enums';
-import { DotPaletteStore } from './store/edit-ema-palette.store';
+import { DotPaletteStore, PALETTE_TYPES } from './store/edit-ema-palette.store';
 
 @Component({
     selector: 'dot-edit-ema-palette',
@@ -36,8 +34,7 @@ import { DotPaletteStore } from './store/edit-ema-palette.store';
         EditEmaPaletteContentTypeComponent,
         EditEmaPaletteContentletsComponent
     ],
-    providers: [DotPaletteStore, DotESContentService],
-    schemas: [CUSTOM_ELEMENTS_SCHEMA]
+    providers: [DotESContentService, DotPaletteStore]
 })
 export class EditEmaPaletteComponent implements OnInit, OnDestroy {
     @Input() languageId: number;
@@ -55,7 +52,7 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
     searchContentlet = new FormControl('');
 
     allowedContentTypes: string[];
-    currentContenttype = ''; //Search how avoid to use this, its neede in line 148.
+    currentContenttype = '';
 
     PALETTETYPE = PALETTE_TYPES;
 
@@ -136,11 +133,10 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Handles the pagination event for the edit-ema-palette component.
-     * @param {Object} options - The pagination options.
-     * @param {string} options.contentTypeVarName - The variable name of the content type.
-     * @param {number} options.page - The page number to load.
-     * @returns {void}
+     *
+     *
+     * @param {*} { contentTypeVarName, page }
+     * @memberof EditEmaPaletteComponent
      */
     onPaginate({ contentTypeVarName, page }) {
         this.store.loadContentlets({

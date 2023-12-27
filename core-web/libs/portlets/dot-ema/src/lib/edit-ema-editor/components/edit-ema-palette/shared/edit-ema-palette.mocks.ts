@@ -1,6 +1,8 @@
-import { EditEmaPaletteStoreStatus, PALETTE_TYPES } from './edit-ema-palette.enums';
-
-import { DotPaletteState } from '../store/edit-ema-palette.store';
+import {
+    DotPaletteState,
+    EditEmaPaletteStoreStatus,
+    PALETTE_TYPES
+} from '../store/edit-ema-palette.store';
 
 export const CONTENT_TYPE_MOCK = [
     {

@@ -1,1 +1,0 @@
-export const PALETTE_PAGINATOR_ITEMS_PER_PAGE = 10;

@@ -19,8 +19,9 @@
     <ng-template #content>
         <div
             class="content-type-card"
-            *ngFor="let contenttype of contentTypes"
+            *ngFor="let contenttype of contentTypes; let i = index"
             [attr.data-item]="{ variable: contenttype.variable, name: contenttype.name } | json"
+            [attr.data-testId]="'content-type-' + i"
             (dragstart)="dragStart.emit($event)"
             (dragend)="dragEnd.emit($event)"
             data-type="contentlet"

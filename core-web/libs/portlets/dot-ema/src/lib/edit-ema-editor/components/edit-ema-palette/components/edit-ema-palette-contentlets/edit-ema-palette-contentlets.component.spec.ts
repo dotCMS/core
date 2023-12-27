@@ -2,13 +2,17 @@ import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { FormControl } from '@angular/forms';
 
+import { Paginator } from 'primeng/paginator';
+
 import { DotMessageService } from '@dotcms/data-access';
 
 import { EditEmaPaletteContentletsComponent } from './edit-ema-palette-contentlets.component';
 
-import { PALETTE_PAGINATOR_ITEMS_PER_PAGE } from '../../shared/edit-ema-palette.const';
-import { EditEmaPaletteStoreStatus } from '../../shared/edit-ema-palette.enums';
 import { CONTENTLETS_MOCK } from '../../shared/edit-ema-palette.mocks';
+import {
+    EditEmaPaletteStoreStatus,
+    PALETTE_PAGINATOR_ITEMS_PER_PAGE
+} from '../../store/edit-ema-palette.store';
 
 describe('EditEmaPaletteContentletsComponent', () => {
     let spectator: Spectator<EditEmaPaletteContentletsComponent>;
@@ -61,12 +65,12 @@ describe('EditEmaPaletteContentletsComponent', () => {
     });
 
     it('should emit paginate event with filter on onPaginate', () => {
-        const event = { page: 1 };
-        const filter = { query: 'sample', contentTypeVarName: 'sample' };
-
         const spy = jest.spyOn(spectator.component.paginate, 'emit');
-        spectator.component.onPaginate(event, filter);
-        expect(spy).toHaveBeenCalledWith({ ...event, ...filter });
+        spectator.triggerEventHandler(Paginator, 'onPageChange', {
+            page: 1,
+            contentVarName: 'sample'
+        });
+        expect(spy).toHaveBeenCalledWith({ page: 1, contentVarName: 'sample' });
     });
 
     it('should render contentlet list', () => {

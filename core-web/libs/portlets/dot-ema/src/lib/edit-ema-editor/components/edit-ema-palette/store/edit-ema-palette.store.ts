@@ -8,8 +8,18 @@ import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { DotContentTypeService, DotESContentService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
-import { PALETTE_PAGINATOR_ITEMS_PER_PAGE } from '../shared/edit-ema-palette.const';
-import { EditEmaPaletteStoreStatus, PALETTE_TYPES } from '../shared/edit-ema-palette.enums';
+export enum PALETTE_TYPES {
+    CONTENTTYPE = 'CONTENTTYPE',
+    CONTENTLET = 'CONTENTLET'
+}
+
+export enum EditEmaPaletteStoreStatus {
+    LOADING = 'LOADING',
+    LOADED = 'LOADED',
+    ERROR = 'ERROR'
+}
+
+export const PALETTE_PAGINATOR_ITEMS_PER_PAGE = 20;
 
 export interface DotPaletteState {
     contentlets: {
@@ -31,12 +41,13 @@ export interface DotPaletteState {
 
 @Injectable()
 export class DotPaletteStore extends ComponentStore<DotPaletteState> {
-    readonly vm$ = this.state$;
+    // readonly vm$ = this.state$;
 
     constructor(
         private dotContentTypeService: DotContentTypeService,
         private dotESContentService: DotESContentService
     ) {
+        // super();
         super({
             contentlets: {
                 items: [],
@@ -49,6 +60,8 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
             currentPaletteType: PALETTE_TYPES.CONTENTTYPE
         });
     }
+
+    readonly vm$ = this.select((state) => state);
 
     readonly changeView = this.updater((state, view: PALETTE_TYPES) => ({
         ...state,
@@ -81,7 +94,13 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
 
             return data$.pipe(
                 switchMap(({ allowedContent, filter }) => {
-                    return this.getFilteredContentTypes(filter, allowedContent).pipe(
+                    const obs$ = allowedContent?.length
+                        ? this.getFilteredContentTypes(filter, allowedContent)
+                        : this.getWidgets(filter);
+                    // const obs$ = this.getFilteredContenttypes(filter, allowedContent);
+
+                    // return this.getFilteredContentTypes(filter, allowedContent).pipe(
+                    return obs$.pipe(
                         tapResponse(
                             (contentTypes) => {
                                 this.patchState({
@@ -117,14 +136,13 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         ) => {
             return data$.pipe(
                 tap(() => this.setStatus(EditEmaPaletteStoreStatus.LOADING)),
-                switchMap(({ filter, contenttypeName, languageId, page }) => {
+                switchMap(({ filter, contenttypeName, languageId, page = 0 }) => {
                     return this.dotESContentService
                         .get({
                             itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE,
                             lang: languageId || '1',
                             filter: filter || '',
-                            offset:
-                                ((page || 0) * PALETTE_PAGINATOR_ITEMS_PER_PAGE).toString() || '0',
+                            offset: (page * PALETTE_PAGINATOR_ITEMS_PER_PAGE).toString(),
                             query: `+contentType: ${contenttypeName} +deleted: false`.trim()
                         })
                         .pipe(
@@ -183,6 +201,10 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
             }),
             catchError(() => EMPTY)
         );
+    }
+
+    getWidgets(filter: string) {
+        return this.dotContentTypeService.getContentTypes({ filter, page: 40, type: 'WIDGET' });
     }
 
     setInitialState() {

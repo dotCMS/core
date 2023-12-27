@@ -6,8 +6,8 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { EditEmaPaletteContentTypeComponent } from './edit-ema-palette-content-type.component';
 
-import { EditEmaPaletteStoreStatus } from '../../shared/edit-ema-palette.enums';
 import { CONTENT_TYPE_MOCK } from '../../shared/edit-ema-palette.mocks';
+import { EditEmaPaletteStoreStatus } from '../../store/edit-ema-palette.store';
 
 describe('EditEmaPaletteContentTypeComponent', () => {
     let spectator: Spectator<EditEmaPaletteContentTypeComponent>;

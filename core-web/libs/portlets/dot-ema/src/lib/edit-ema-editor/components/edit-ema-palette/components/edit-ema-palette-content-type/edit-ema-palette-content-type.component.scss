@@ -1,8 +1,19 @@
 @use "variables" as *;
 
+:host {
+    height: 100ch;
+    display: flex;
+    flex-direction: column;
+}
+
 .content-search {
     display: flex;
     gap: $spacing-1;
+    top: 0;
+    padding: $spacing-3 $spacing-3;
+    position: sticky;
+    z-index: 99;
+    background: $white;
 
     .p-input-icon-right {
         width: 100%;
@@ -13,14 +24,15 @@
 }
 
 .content-types {
-    margin-top: $spacing-3;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: $spacing-3;
+    gap: $spacing-1;
+    padding: 0 $spacing-3 $spacing-2;
 
     .content-type-card {
-        height: 92px;
-        border: 1px solid $color-palette-gray-500;
+        cursor: move;
+        height: 5.75rem;
+        border: 1px solid $color-palette-gray-400;
         border-radius: $spacing-1;
         position: relative;
         color: $color-palette-gray-500;
@@ -33,6 +45,7 @@
             position: absolute;
             top: $spacing-0;
             right: $spacing-0;
+            cursor: pointer;
         }
 
         .content-type-card__content {

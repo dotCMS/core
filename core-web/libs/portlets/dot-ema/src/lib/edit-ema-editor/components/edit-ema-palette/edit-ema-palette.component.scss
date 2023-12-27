@@ -2,6 +2,6 @@
 
 :host {
     overflow: auto;
-    padding: $spacing-2 $spacing-3;
     border-left: 1px solid $color-palette-gray-300;
+    position: relative;
 }

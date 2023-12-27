@@ -15,7 +15,7 @@ import { PaginatorModule } from 'primeng/paginator';
 
 import { DotIconModule, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
 
-import { EditEmaPaletteStoreStatus } from '../../shared/edit-ema-palette.enums';
+import { EditEmaPaletteStoreStatus } from '../../store/edit-ema-palette.store';
 
 @Component({
     selector: 'dot-edit-ema-palette-contentlets',
@@ -50,9 +50,11 @@ export class EditEmaPaletteContentletsComponent {
     EDIT_EMA_PALETTE_STATUS = EditEmaPaletteStoreStatus;
 
     /**
-     * Handles the pagination event and emits the paginated data.
-     * @param event The pagination event.
-     * @param filter The filter object containing the query and contentTypeVarName.
+     *
+     *
+     * @param {*} event
+     * @param {{ query: string; contentTypeVarName: string }} filter
+     * @memberof EditEmaPaletteContentletsComponent
      */
     onPaginate(event, filter: { query: string; contentTypeVarName: string }) {
         this.paginate.emit({ ...event, ...filter });
