@@ -93,12 +93,11 @@ jobs:
         os: [ macos-13 ] # macos-13-xlarge, macOS-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: docker-practice/actions-setup-docker@master
-        timeout-minutes: 12
-      - run: |
-          set -x          
-          docker version          
-          docker run --rm hello-world
+      -
+        name: Set up Docker
+        uses: crazy-max/ghaction-setup-docker@v3
+        env:
+          LIMA_START_ARGS: --cpus 4 --memory 8
 #      - name: 'Install colima, docker and docker-compose'
 #        run: |
 #          curl -o ./qemu.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/dc0669eca9479e9eeb495397ba3a7480aaa45c2e/Formula/qemu.rb
