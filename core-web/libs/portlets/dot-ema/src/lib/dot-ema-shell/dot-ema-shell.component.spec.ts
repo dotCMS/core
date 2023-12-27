@@ -247,6 +247,39 @@ describe('DotEmaShellComponent', () => {
                     persona_id: DEFAULT_PERSONA.identifier
                 });
             });
+
+            it('should fill the queryParams with the old ones if trying to navigate with missing queryParams', () => {
+                spectator.detectChanges();
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        language_id: 2,
+                        url: 'my-awesome-page',
+                        'com.dotmarketing.persona.id': 'SomeCoolDude'
+                    }
+                });
+
+                const navigate = jest.spyOn(router, 'navigate');
+
+                spectator.detectChanges();
+
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: {
+                        url: 'my-another-super-awesome-page'
+                    }
+                });
+                spectator.detectChanges();
+
+                expect(navigate).toHaveBeenCalledWith([], {
+                    queryParams: {
+                        language_id: 2,
+                        url: 'my-another-super-awesome-page',
+                        'com.dotmarketing.persona.id': 'SomeCoolDude'
+                    },
+                    queryParamsHandling: 'merge'
+                });
+            });
         });
     });
 
