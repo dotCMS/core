@@ -6,6 +6,8 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotIconModule, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
 
+import { EditEmaPaletteStoreStatus } from '../../shared/edit-ema-palette.enums';
+
 @Component({
     selector: 'dot-edit-ema-palette-content-type',
     standalone: true,
@@ -27,28 +29,14 @@ export class EditEmaPaletteContentTypeComponent {
     searchContenttype = new FormControl('');
     @Input() contentTypes = [];
     @Input() filter = '';
-    @Input() control;
-    @Input() isLoading: boolean;
+    @Input() control: FormControl;
+    @Input() paletteStatus: EditEmaPaletteStoreStatus;
 
     @Output() dragStart = new EventEmitter();
     @Output() dragEnd = new EventEmitter();
     @Output() showContentlets = new EventEmitter<string>();
 
-    /**
-     * Event handler for the drag start event.
-     * @param event The DragEvent object.
-     */
-    onDragStart(event: DragEvent) {
-        this.dragStart.emit(event);
-    }
-
-    /**
-     * Event handler for the drag end event.
-     * @param event The DragEvent object.
-     */
-    onDragEnd(event: DragEvent) {
-        this.dragEnd.emit(event);
-    }
+    EDIT_EMA_PALETTE_STATUS = EditEmaPaletteStoreStatus;
 
     /**
      * Shows the contentlets from a specific content type.

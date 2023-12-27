@@ -1,40 +1,51 @@
 <div class="content-search">
-    <i class="pi pi-angle-left" (click)="backToContentTypes()"></i>
+    <!-- <i class="pi pi-angle-left" (click)="backToContentTypes()"></i> -->
+    <p-button
+        (click)="showContentTypes.emit()"
+        icon="pi pi-angle-left"
+        styleClass="p-button-rounded p-button-text p-button-sm"></p-button>
 
     <span class="p-input-icon-right">
         <i class="pi pi-search"></i>
 
-        <input [placeholder]="'Search' | dm" [formControl]="control" type="text" pInputText />
+        <input [placeholder]="'Search' | dm" [formControl]="control" type="search" pInputText />
     </span>
 </div>
 
 <div class="contentlets">
-    <ng-container *ngIf="contentlets.items.length > 0; else loading">
-        <div
-            class="contentlet-card"
-            *ngFor="let contentlet of contentlets.items"
-            [attr.data-item]="{ inode: contentlet.identifier } | json"
-            (dragstart)="onDragStart($event)"
-            (dragend)="onDragEnd($event)"
-            data-type="contentlet"
-            draggable="true">
-            <dot-icon name="drag_indicator"></dot-icon>
+    <dot-spinner
+        *ngIf="paletteStatus === EDIT_EMA_PALETTE_STATUS.LOADING; else content"
+        [size]="'40px'"
+        [borderSize]="'8px'"></dot-spinner>
 
-            <dot-contentlet-thumbnail [iconSize]="'24px'" [cover]="false" [contentlet]="contentlet">
-            </dot-contentlet-thumbnail>
+    <ng-template #content>
+        <ng-container *ngIf="contentlets.items.length > 0; else noContent">
+            <div
+                class="contentlet-card"
+                *ngFor="let contentlet of contentlets.items"
+                [attr.data-item]="{ inode: contentlet.identifier } | json"
+                (dragstart)="dragStart.emit($event)"
+                (dragend)="dragEnd.emit($event)"
+                data-type="contentlet"
+                draggable="true">
+                <dot-icon name="drag_indicator"></dot-icon>
 
-            <span>{{ contentlet.title }}</span>
-        </div>
-        <p-paginator
-            *ngIf="contentlets.totalRecords > 0"
-            [rows]="itemsPerPage"
-            [showFirstLastIcon]="false"
-            [totalRecords]="contentlets.totalRecords"
-            [pageLinkSize]="0"
-            (onPageChange)="onPaginate($event, contentlets.filter)"></p-paginator>
-    </ng-container>
+                <dot-contentlet-thumbnail
+                    [iconSize]="'24px'"
+                    [cover]="false"
+                    [contentlet]="contentlet">
+                </dot-contentlet-thumbnail>
 
-    <ng-template #loading>
-        <dot-spinner *ngIf="isLoading" [size]="'40px'" [borderSize]="'8px'"></dot-spinner>
+                <span>{{ contentlet.title }}</span>
+            </div>
+            <p-paginator
+                *ngIf="contentlets.totalRecords > 0"
+                [rows]="contentlets.itemsPerPage"
+                [showFirstLastIcon]="false"
+                [totalRecords]="contentlets.totalRecords"
+                [pageLinkSize]="0"
+                (onPageChange)="onPaginate($event, contentlets.filter)"></p-paginator>
+        </ng-container>
+        <ng-template #noContent>No content to show</ng-template>
     </ng-template>
 </div>

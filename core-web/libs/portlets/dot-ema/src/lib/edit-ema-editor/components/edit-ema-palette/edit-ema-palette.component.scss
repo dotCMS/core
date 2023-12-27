@@ -2,23 +2,6 @@
 
 :host {
     overflow: auto;
-}
-
-.edit-ema-palette {
     padding: $spacing-2 $spacing-3;
-    .content-search {
-        display: flex;
-        gap: $spacing-1;
-
-        i {
-            color: hsla(226, 85%, 60%, 1);
-        }
-
-        .p-input-icon-right {
-            width: 100%;
-            input {
-                width: 100%;
-            }
-        }
-    }
+    border-left: 1px solid $color-palette-gray-300;
 }

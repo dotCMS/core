@@ -21,9 +21,9 @@ import { DotContainerStructure, DotPageContainerStructure } from '@dotcms/dotcms
 
 import { EditEmaPaletteContentTypeComponent } from './components/edit-ema-palette-content-type/edit-ema-palette-content-type.component';
 import { EditEmaPaletteContentletsComponent } from './components/edit-ema-palette-contentlets/edit-ema-palette-contentlets.component';
+import { PALETTE_TYPES } from './shared/edit-ema-palette.enums';
 import { DotPaletteStore } from './store/edit-ema-palette.store';
 
-import { PALETTE_TYPES } from '../../../shared/enums';
 @Component({
     selector: 'dot-edit-ema-palette',
     standalone: true,

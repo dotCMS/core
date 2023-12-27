@@ -1,6 +1,6 @@
 import { expect, describe } from '@jest/globals';
 import { SpyObject } from '@ngneat/spectator';
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -10,7 +10,14 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { MessageService } from 'primeng/api';
 
-import { DotMessageService, DotPageLayoutService, DotRouterService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotLicenseService,
+    DotMessageService,
+    DotPageLayoutService,
+    DotRouterService
+} from '@dotcms/data-access';
+import { CoreWebService } from '@dotcms/dotcms-js';
 import { TemplateBuilderComponent } from '@dotcms/template-builder';
 import { MockDotRouterJestService } from '@dotcms/utils-testing';
 
@@ -41,6 +48,12 @@ describe('EditEmaLayoutComponent', () => {
             DotMessageService,
             DotActionUrlService,
             { provide: DotRouterService, useClass: MockDotRouterJestService },
+            {
+                provide: DotLicenseService,
+                useValue: {
+                    isEnterprise: () => of(true)
+                }
+            },
             {
                 provide: DotPageApiService,
                 useValue: {
@@ -83,7 +96,9 @@ describe('EditEmaLayoutComponent', () => {
                         });
                     }
                 }
-            }
+            },
+            mockProvider(DotContentTypeService),
+            mockProvider(CoreWebService)
         ]
     });
 

@@ -12,20 +12,18 @@
     }
 }
 
-.contenttypes {
+.content-types {
     margin-top: $spacing-3;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: $spacing-3;
 
-    .contenttype-card {
+    .content-type-card {
         height: 92px;
-        width: 100%;
-        max-width: 100px;
-        border: 1px solid hsla(222, 12%, 84%, 1);
+        border: 1px solid $color-palette-gray-500;
         border-radius: $spacing-1;
         position: relative;
-        color: hsla(222, 12%, 84%, 1);
+        color: $color-palette-gray-500;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -36,11 +34,11 @@
             right: $spacing-0;
         }
 
-        .ctc-content {
+        .content-type-card__content {
             display: flex;
             flex-direction: column;
             align-items: center;
-            color: hsl(229deg, 12%, 9%);
+            color: $black;
             font-size: $font-size-sm;
             text-align: center;
             width: 90%;
@@ -56,7 +54,6 @@
         .drag-icon {
             position: absolute;
             bottom: -3px;
-            left: calc(50% - 12px);
             transform: rotate(90deg);
         }
     }

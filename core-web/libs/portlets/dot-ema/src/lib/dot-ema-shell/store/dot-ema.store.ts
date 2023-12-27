@@ -6,13 +6,7 @@ import { Injectable } from '@angular/core';
 import { catchError, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotLicenseService } from '@dotcms/data-access';
-import {
-    DotContainerMap,
-    DotContainerStructure,
-    DotLayout,
-    DotPageContainerStructure,
-    DotPageRenderState
-} from '@dotcms/dotcms-models';
+import { DotContainerMap, DotLayout, DotPageContainerStructure } from '@dotcms/dotcms-models';
 
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
 import {
@@ -65,7 +59,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     persona: state.editor.viewAs.persona ?? DEFAULT_PERSONA
                 }
             },
-            haveEnterpriseLicense: state.isEnterpriseLicense
+            isEnterpriseLicense: state.isEnterpriseLicense
         };
     });
 
@@ -296,32 +290,5 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
             return acc;
         }, {});
-    }
-
-    // private setAllowedContent(pageState: DotPageRenderState): void {
-    //     const CONTENT_HIDDEN_KEY = 'CONTENT_PALETTE_HIDDEN_CONTENT_TYPES';
-    //     this.dotConfigurationsService
-    //         .getKeyAsList(CONTENT_HIDDEN_KEY)
-    //         .pipe(take(1))
-    //         .subscribe((results) => {
-    //             this.allowedContent = this.filterAllowedContentTypes(results, pageState) || [];
-    //         });
-    // }
-
-    private filterAllowedContentTypes(
-        blackList: string[] = [],
-        pageState: DotPageRenderState
-    ): string[] {
-        const allowedContent = new Set();
-        Object.values(pageState.containers).forEach((container) => {
-            Object.values(container.containerStructures).forEach(
-                (containerStructure: DotContainerStructure) => {
-                    allowedContent.add(containerStructure.contentTypeVar.toLocaleLowerCase());
-                }
-            );
-        });
-        blackList.forEach((content) => allowedContent.delete(content.toLocaleLowerCase()));
-
-        return [...allowedContent] as string[];
     }
 }

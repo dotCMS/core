@@ -1,24 +1,22 @@
 <ng-container *ngIf="vm$ | async as vm">
-    <div class="edit-ema-palette">
-        <dot-edit-ema-palette-content-type
-            *ngIf="vm.currentPaletteType === PALETTETYPE.CONTENTTYPE"
-            [contentTypes]="vm.contenttypes.items"
-            [filter]="vm.contenttypes.filter"
-            [control]="searchContenttype"
-            [isLoading]="vm.loading"
-            (showContentlets)="showContentletsFromContentType($event)"
-            (dragStart)="onDragStart($event)"
-            (dragEnd)="onDragEnd($event)" />
+    <!-- <button (click)="print(vm)">print</button>ƒ -->
+    <dot-edit-ema-palette-content-type
+        *ngIf="vm.currentPaletteType === PALETTETYPE.CONTENTTYPE"
+        [contentTypes]="vm.contenttypes.items"
+        [filter]="vm.contenttypes.filter"
+        [control]="searchContenttype"
+        [paletteStatus]="vm.status"
+        (showContentlets)="showContentletsFromContentType($event)"
+        (dragStart)="onDragStart($event)"
+        (dragEnd)="onDragEnd($event)" />
 
-        <dot-edit-ema-palette-contentlets
-            *ngIf="vm.currentPaletteType === PALETTETYPE.CONTENTLET"
-            [contentlets]="vm.contentlets"
-            [control]="searchContentlet"
-            [itemsPerPage]="vm.itemsPerPage"
-            [isLoading]="vm.loading"
-            (paginate)="onPaginate($event)"
-            (showContentTypes)="showContentTypes()"
-            (dragStart)="onDragStart($event)"
-            (dragEnd)="onDragEnd($event)" />
-    </div>
+    <dot-edit-ema-palette-contentlets
+        *ngIf="vm.currentPaletteType === PALETTETYPE.CONTENTLET"
+        [contentlets]="vm.contentlets"
+        [control]="searchContentlet"
+        [paletteStatus]="vm.status"
+        (paginate)="onPaginate($event)"
+        (showContentTypes)="showContentTypes()"
+        (dragStart)="onDragStart($event)"
+        (dragEnd)="onDragEnd($event)" />
 </ng-container>

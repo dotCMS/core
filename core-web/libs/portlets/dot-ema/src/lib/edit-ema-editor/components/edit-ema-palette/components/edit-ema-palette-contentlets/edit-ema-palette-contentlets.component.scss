@@ -10,11 +10,8 @@
 
 .content-search {
     display: flex;
-    gap: $spacing-1;
-
-    i {
-        color: hsla(226, 85%, 60%, 1);
-    }
+    align-items: center;
+    gap: $spacing-0;
 
     .p-input-icon-right {
         width: 100%;
@@ -28,13 +25,18 @@
     margin-top: $spacing-3;
     display: flex;
     flex-direction: column;
-    gap: $spacing-3;
+
     .contentlet-card {
         display: flex;
+        align-items: center;
+        height: $spacing-8;
         gap: $spacing-1;
 
+        dot-icon {
+            color: $color-palette-gray-400;
+        }
+
         dot-contentlet-thumbnail {
-            // REMOVE LATER
             width: 54px;
             height: 36px;
             border-radius: $spacing-1;

@@ -9,10 +9,13 @@ import {
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
+import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { PaginatorModule } from 'primeng/paginator';
 
 import { DotIconModule, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
+
+import { EditEmaPaletteStoreStatus } from '../../shared/edit-ema-palette.enums';
 
 @Component({
     selector: 'dot-edit-ema-palette-contentlets',
@@ -26,7 +29,8 @@ import { DotIconModule, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
         DotMessagePipe,
         JsonPipe,
         InputTextModule,
-        DotSpinnerModule
+        DotSpinnerModule,
+        ButtonModule
     ],
     templateUrl: './edit-ema-palette-contentlets.component.html',
     styleUrls: ['./edit-ema-palette-contentlets.component.scss'],
@@ -36,36 +40,14 @@ import { DotIconModule, DotMessagePipe, DotSpinnerModule } from '@dotcms/ui';
 export class EditEmaPaletteContentletsComponent {
     @Input() contentlets;
     @Input() control: FormControl;
-    @Input() itemsPerPage: number;
-    @Input() isLoading: boolean;
+    @Input() paletteStatus: EditEmaPaletteStoreStatus;
 
     @Output() dragStart = new EventEmitter();
     @Output() dragEnd = new EventEmitter();
     @Output() paginate = new EventEmitter();
     @Output() showContentTypes = new EventEmitter();
 
-    /**
-     * Event handler for the drag start event.
-     * @param event The drag event.
-     */
-    onDragStart(event: DragEvent) {
-        this.dragStart.emit(event);
-    }
-
-    /**
-     * Handles the drag end event.
-     * @param event The drag event.
-     */
-    onDragEnd(event: DragEvent) {
-        this.dragEnd.emit(event);
-    }
-
-    /**
-     * Navigates back to the content types view.
-     */
-    backToContentTypes() {
-        this.showContentTypes.emit();
-    }
+    EDIT_EMA_PALETTE_STATUS = EditEmaPaletteStoreStatus;
 
     /**
      * Handles the pagination event and emits the paginated data.

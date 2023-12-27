@@ -5,26 +5,31 @@
             [placeholder]="'Search' | dm"
             [formControl]="control"
             [value]="filter"
-            type="text"
+            type="search"
             pInputText />
     </span>
 </div>
 
-<div class="contenttypes">
-    <ng-container *ngIf="contentTypes.length; else loading">
+<div class="content-types">
+    <dot-spinner
+        *ngIf="paletteStatus === EDIT_EMA_PALETTE_STATUS.LOADING; else content"
+        [size]="'40px'"
+        [borderSize]="'8px'"></dot-spinner>
+
+    <ng-template #content>
         <div
-            class="contenttype-card"
+            class="content-type-card"
             *ngFor="let contenttype of contentTypes"
             [attr.data-item]="{ variable: contenttype.variable, name: contenttype.name } | json"
-            (dragstart)="onDragStart($event)"
-            (dragend)="onDragEnd($event)"
+            (dragstart)="dragStart.emit($event)"
+            (dragend)="dragEnd.emit($event)"
             data-type="contentlet"
             draggable="true">
             <i
                 class="pi pi-angle-right icon-go-content"
                 (click)="showContentletsFromContentType(contenttype.name)"></i>
 
-            <div class="ctc-content">
+            <div class="content-type-card__content">
                 <dot-icon [name]="contenttype.icon"></dot-icon>
                 <span>
                     {{ contenttype.name }}
@@ -32,8 +37,5 @@
             </div>
             <dot-icon class="drag-icon" name="drag_indicator"></dot-icon>
         </div>
-    </ng-container>
-    <ng-template #loading>
-        <dot-spinner *ngIf="isLoading" [size]="'40px'" [borderSize]="'8px'"></dot-spinner>
     </ng-template>
 </div>

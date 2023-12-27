@@ -9,7 +9,7 @@ import { DotContentTypeService, DotESContentService } from '@dotcms/data-access'
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { PAGINATOR_ITEMS_PER_PAGE } from '../../../../shared/consts';
-import { PALETTE_TYPES } from '../../../../shared/enums';
+import { EditEmaPaletteStoreStatus, PALETTE_TYPES } from '../shared/edit-ema-palette.enums';
 
 export interface DotPaletteState {
     contentlets: {
@@ -19,35 +19,35 @@ export interface DotPaletteState {
         };
         items: DotCMSContentlet[];
         totalRecords: number;
+        itemsPerPage: number;
     };
     contenttypes: {
         filter: string;
         items: DotCMSContentType[];
     };
-    loading: boolean;
+    status: EditEmaPaletteStoreStatus;
     currentPaletteType: PALETTE_TYPES;
-    itemsPerPage: number;
 }
 
 @Injectable()
 export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     readonly vm$ = this.state$;
-    private itemsPerPage = PAGINATOR_ITEMS_PER_PAGE;
 
     constructor(
         private dotContentTypeService: DotContentTypeService,
         private dotESContentService: DotESContentService
     ) {
+        // super();
         super({
             contentlets: {
                 items: [],
                 filter: { query: '', contentTypeVarName: '' },
-                totalRecords: 0
+                totalRecords: 0,
+                itemsPerPage: PAGINATOR_ITEMS_PER_PAGE
             },
             contenttypes: { items: [], filter: '' },
-            loading: false,
-            currentPaletteType: PALETTE_TYPES.CONTENTTYPE,
-            itemsPerPage: PAGINATOR_ITEMS_PER_PAGE
+            status: EditEmaPaletteStoreStatus.LOADING,
+            currentPaletteType: PALETTE_TYPES.CONTENTTYPE
         });
     }
 
@@ -56,14 +56,19 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         currentPaletteType: view
     }));
 
-    readonly setLoading = this.updater((state, loading: boolean) => ({
+    readonly setStatus = this.updater((state, status: EditEmaPaletteStoreStatus) => ({
         ...state,
-        loading
+        status
     }));
 
     readonly resetContentlets = this.updater((state) => ({
         ...state,
-        contentlets: { items: [], filter: { query: '', contentTypeVarName: '' }, totalRecords: 0 }
+        contentlets: {
+            items: [],
+            filter: { query: '', contentTypeVarName: '' },
+            totalRecords: 0,
+            itemsPerPage: PAGINATOR_ITEMS_PER_PAGE
+        }
     }));
 
     /**
@@ -73,21 +78,23 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
      */
     readonly loadContentTypes = this.effect(
         (data$: Observable<{ filter: string; allowedContent: string[] }>) => {
-            this.setLoading(true);
             this.resetContentlets();
 
             return data$.pipe(
                 switchMap(({ allowedContent, filter }) => {
-                    const obs$ = this.getFilteredContentTypes(filter, allowedContent);
-
-                    return obs$.pipe(
+                    return this.getFilteredContentTypes(filter, allowedContent).pipe(
                         tapResponse(
                             (contentTypes) => {
-                                this.patchState({ contenttypes: { items: contentTypes, filter } });
-                                this.setLoading(false);
+                                this.patchState({
+                                    contenttypes: { items: contentTypes, filter },
+                                    status: EditEmaPaletteStoreStatus.LOADED
+                                });
                             },
-                            // eslint-disable-next-line no-console
-                            (err) => console.log(err)
+                            (err) => {
+                                this.setStatus(EditEmaPaletteStoreStatus.ERROR);
+                                // eslint-disable-next-line no-console
+                                console.log(err);
+                            }
                         )
                     );
                 })
@@ -110,14 +117,14 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
             }>
         ) => {
             return data$.pipe(
-                tap(() => this.setLoading(true)),
+                tap(() => this.setStatus(EditEmaPaletteStoreStatus.LOADING)),
                 switchMap(({ filter, contenttypeName, languageId, page }) => {
                     return this.dotESContentService
                         .get({
-                            itemsPerPage: this.itemsPerPage,
+                            itemsPerPage: PAGINATOR_ITEMS_PER_PAGE,
                             lang: languageId || '1',
                             filter: filter || '',
-                            offset: ((page || 0) * this.itemsPerPage).toString() || '0',
+                            offset: ((page || 0) * PAGINATOR_ITEMS_PER_PAGE).toString() || '0',
                             query: `+contentType: ${contenttypeName} +deleted: false`.trim()
                         })
                         .pipe(
@@ -130,10 +137,11 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                                                 query: filter,
                                                 contentTypeVarName: contenttypeName
                                             },
-                                            totalRecords: contentlets.resultsSize
-                                        }
+                                            totalRecords: contentlets.resultsSize,
+                                            itemsPerPage: PAGINATOR_ITEMS_PER_PAGE
+                                        },
+                                        status: EditEmaPaletteStoreStatus.LOADED
                                     });
-                                    this.setLoading(false);
                                 },
                                 // eslint-disable-next-line no-console
                                 (err) => console.log(err)
@@ -175,5 +183,19 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
             }),
             catchError(() => EMPTY)
         );
+    }
+
+    setInitialState() {
+        this.setState({
+            contentlets: {
+                items: [],
+                filter: { query: '', contentTypeVarName: '' },
+                totalRecords: 0,
+                itemsPerPage: PAGINATOR_ITEMS_PER_PAGE
+            },
+            contenttypes: { items: [], filter: '' },
+            status: EditEmaPaletteStoreStatus.LOADED,
+            currentPaletteType: PALETTE_TYPES.CONTENTTYPE
+        });
     }
 }
