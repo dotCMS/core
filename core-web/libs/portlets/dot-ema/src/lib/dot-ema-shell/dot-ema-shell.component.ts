@@ -1,11 +1,12 @@
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, fromEvent } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, OnDestroy } from '@angular/core';
+import { Component, OnInit, inject, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 
 import { map, skip, takeUntil } from 'rxjs/operators';
@@ -17,14 +18,15 @@ import {
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
+import { SafeUrlPipe } from '@dotcms/ui';
 
+import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
-import { EditEmaNavigationBarComponent } from '../components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { DotPageToolsSeoComponent } from '../dot-page-tools-seo/dot-page-tools-seo.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA, DEFAULT_URL, WINDOW } from '../shared/consts';
+import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
+import { DEFAULT_QUERY_PARAMS, WINDOW } from '../shared/consts';
 import { NavigationBarItem } from '../shared/models';
 
 @Component({
@@ -36,7 +38,9 @@ import { NavigationBarItem } from '../shared/models';
         ToastModule,
         EditEmaNavigationBarComponent,
         RouterModule,
-        DotPageToolsSeoComponent
+        DotPageToolsSeoComponent,
+        DialogModule,
+        SafeUrlPipe
     ],
     providers: [
         EditEmaStore,
@@ -56,13 +60,26 @@ import { NavigationBarItem } from '../shared/models';
     styleUrls: ['./dot-ema-shell.component.scss']
 })
 export class DotEmaShellComponent implements OnInit, OnDestroy {
+    @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
-    private readonly store = inject(EditEmaStore);
     private readonly siteService = inject(SiteService);
+    readonly store = inject(EditEmaStore);
 
     private readonly destroy$ = new Subject<boolean>();
+
+    get queryParams(): DotPageApiParams {
+        const queryParams = this.route.snapshot.queryParams;
+
+        return {
+            language_id: queryParams['language_id'],
+            url: queryParams['url'],
+            'com.dotmarketing.persona.id': queryParams['com.dotmarketing.persona.id']
+        };
+    }
     pageToolsVisible = false;
+
+    dialogState$ = this.store.dialogState$;
 
     // We can internally navigate, so the PageID can change
     // We need to move the logic to a function, we still need to add enterprise logic
@@ -70,7 +87,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         items: NavigationBarItem[];
         seoProperties: DotPageToolUrlParams;
     }> = this.store.shellProperties$.pipe(
-        map(({ currentUrl, pageId, host, languageId, siteId }) => ({
+        map(({ currentUrl, page, host, languageId, siteId }) => ({
             items: [
                 {
                     icon: 'pi-file',
@@ -85,7 +102,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 {
                     icon: 'pi-sliders-h',
                     label: 'Rules',
-                    href: `rules/${pageId}`
+                    href: `rules/${page.identifier}`
                 },
                 {
                     iconURL: 'experiments',
@@ -102,7 +119,13 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 {
                     icon: 'pi-ellipsis-v',
                     label: 'Properties',
-                    href: 'edit-content'
+                    action: () => {
+                        this.store.initActionEdit({
+                            inode: page.inode,
+                            title: page.title,
+                            type: 'shell'
+                        });
+                    }
                 }
             ],
             seoProperties: {
@@ -116,11 +139,33 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((queryParams: Params) => {
-            this.store.load({
-                language_id: queryParams['language_id'] ?? DEFAULT_LANGUAGE_ID,
-                url: queryParams['url'] ?? DEFAULT_URL,
-                persona_id: queryParams['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier
-            });
+            const { missing, ...missingQueryParams } = DEFAULT_QUERY_PARAMS.reduce(
+                (acc, curr) => {
+                    if (!queryParams[curr.key]) {
+                        acc[curr.key] = curr.value;
+                        acc.missing = true;
+                    }
+
+                    return acc;
+                },
+                {
+                    missing: false
+                }
+            );
+
+            if (missing) {
+                this.router.navigate([], {
+                    queryParams: {
+                        ...queryParams,
+                        ...missingQueryParams
+                    },
+                    queryParamsHandling: 'merge'
+                });
+            } else {
+                this.store.load({
+                    ...this.queryParams
+                });
+            }
         });
 
         // We need to skip one because it's the initial value
@@ -132,5 +177,33 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    onIframeLoad() {
+        this.store.setDialogIframeLoading(false);
+
+        fromEvent(
+            // The events are getting sended to the document
+            this.dialogIframe.nativeElement.contentWindow.document,
+            'ng-event'
+        )
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((event: CustomEvent) => {
+                if (event.detail.name === 'save-page') {
+                    const url = event.detail.payload.htmlPageReferer.split('?')[0].replace('/', '');
+
+                    this.queryParams.url !== url
+                        ? // If the url is different we need to navigate
+                          this.router.navigate([], {
+                              queryParams: {
+                                  url
+                              },
+                              queryParamsHandling: 'merge'
+                          })
+                        : this.store.load({
+                              ...this.queryParams
+                          }); // If the url is the same we need to fetch the page
+                }
+            });
     }
 }
