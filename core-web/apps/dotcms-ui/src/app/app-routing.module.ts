@@ -68,8 +68,7 @@ const PORTLETS_ANGULAR = [
         path: 'rules',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
-        loadChildren: () =>
-            import('@portlets/dot-rules/dot-rules.module').then((m) => m.DotRulesModule)
+        loadChildren: () => import('@dotcms/dot-rules').then((m) => m.DotRulesModule)
     },
     {
         path: 'starter',
@@ -184,8 +183,7 @@ const appRoutes: Routes = [
         children: [
             {
                 path: 'rules',
-                loadChildren: () =>
-                    import('@portlets/dot-rules/dot-rules.module').then((m) => m.DotRulesModule),
+                loadChildren: () => import('@dotcms/dot-rules').then((m) => m.DotRulesModule),
                 canActivate: [AuthGuardService]
             }
         ],

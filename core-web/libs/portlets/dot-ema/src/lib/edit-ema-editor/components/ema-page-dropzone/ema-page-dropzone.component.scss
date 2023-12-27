@@ -11,3 +11,7 @@
     position: absolute;
     height: 3px;
 }
+
+[data-type="contentlet"] {
+    outline: solid 1px $color-palette-primary-500;
+}
