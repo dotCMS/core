@@ -324,4 +324,91 @@ describe('DotEmaShellComponent', () => {
             });
         });
     });
+
+    describe('page properties', () => {
+        it('should open the dialog when triggering store.initEditAction with shell as context', () => {
+            spectator.detectChanges();
+            store.initActionEdit({
+                inode: '123',
+                title: 'hello world',
+                type: 'shell'
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('dialog-iframe'))).not.toBeNull();
+        });
+
+        it('should trigger a navigate when saving and the url changed', () => {
+            const navigate = jest.spyOn(router, 'navigate');
+
+            spectator.detectChanges();
+            store.initActionEdit({
+                inode: '123',
+                title: 'hello world',
+                type: 'shell'
+            });
+            spectator.detectChanges();
+
+            const dialogIframe = spectator.debugElement.query(
+                By.css('[data-testId="dialog-iframe"]')
+            );
+
+            spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
+
+            dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
+                        payload: {
+                            htmlPageReferer: '/my-awesome-page'
+                        }
+                    }
+                })
+            );
+            spectator.detectChanges();
+
+            expect(navigate).toHaveBeenCalledWith([], {
+                queryParams: {
+                    url: 'my-awesome-page'
+                },
+                queryParamsHandling: 'merge'
+            });
+        });
+
+        it('should trigger a store load if the url is the same', () => {
+            const loadMock = jest.spyOn(store, 'load');
+
+            spectator.detectChanges();
+            store.initActionEdit({
+                inode: '123',
+                title: 'hello world',
+                type: 'shell'
+            });
+            spectator.detectChanges();
+
+            const dialogIframe = spectator.debugElement.query(
+                By.css('[data-testId="dialog-iframe"]')
+            );
+
+            spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
+
+            dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
+                        payload: {
+                            htmlPageReferer: '/index'
+                        }
+                    }
+                })
+            );
+            spectator.detectChanges();
+
+            expect(loadMock).toHaveBeenCalledWith({
+                language_id: 1,
+                url: 'index',
+                persona_id: DEFAULT_PERSONA.identifier
+            });
+        });
+    });
 });
