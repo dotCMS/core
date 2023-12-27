@@ -93,21 +93,27 @@ jobs:
         os: [ macos-13 ] # macos-13-xlarge, macOS-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - name: 'Install colima, docker and docker-compose'
-        run: |
-          curl -o ./qemu.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/dc0669eca9479e9eeb495397ba3a7480aaa45c2e/Formula/qemu.rb
-          brew install ./qemu.rb
-
-          brew install colima docker docker-compose
-
-          mkdir -p ~/.docker/cli-plugins
-          ln -sfn /usr/local/opt/docker-compose/bin/docker-compose ~/.docker/cli-plugins/docker-compose
-
-          colima start --mount-type 9p
-
-          echo "DOCKER_HOST=unix://${HOME}/.colima/default/docker.sock" >> "$GITHUB_ENV"
-          echo "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock" >> "$GITHUB_ENV"
-          echo "TESTCONTAINERS_RYUK_DISABLED=true" >> "$GITHUB_ENV"
+      - uses: docker-practice/actions-setup-docker@master
+        timeout-minutes: 12
+      - run: |
+          set -x          
+          docker version          
+          docker run --rm hello-world
+#      - name: 'Install colima, docker and docker-compose'
+#        run: |
+#          curl -o ./qemu.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/dc0669eca9479e9eeb495397ba3a7480aaa45c2e/Formula/qemu.rb
+#          brew install ./qemu.rb
+#
+#          brew install colima docker docker-compose
+#
+#          mkdir -p ~/.docker/cli-plugins
+#          ln -sfn /usr/local/opt/docker-compose/bin/docker-compose ~/.docker/cli-plugins/docker-compose
+#
+#          colima start --mount-type 9p
+#
+#          echo "DOCKER_HOST=unix://${HOME}/.colima/default/docker.sock" >> "$GITHUB_ENV"
+#          echo "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock" >> "$GITHUB_ENV"
+#          echo "TESTCONTAINERS_RYUK_DISABLED=true" >> "$GITHUB_ENV"
 
 #          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
 
@@ -116,98 +122,98 @@ jobs:
 #          brew install colima docker docker-compose
 #          /opt/homebrew/opt/colima/bin/colima start -f
 #          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
-
-      - name: 'Log docker context'
-        run: |
-          colima status
-          colima version
-          docker context list
-
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.precheck.outputs.HEAD }}
-          fetch-depth: 0
-
-      - name: 'Set up GraalVM for macOS ${{ matrix.os }}'
-        if: ${{ contains(matrix.os, 'macos') }}
-        run: |
-          if [ "${{ matrix.os }}" == "macos-13-xlarge" ]; then
-            echo "Setting GraalVM on macos-13-xlarge"
-            ARCH=aarch64
-          else
-            echo "Setting GraalVM on macOS-latest"
-            ARCH=amd64
-          fi
-
-          wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java11-darwin-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
-          tar -xzf graalvm-ce-java11-darwin-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
-          sudo mv graalvm-ce-java11-${{ env.GRAALVM_VERSION }} /Library/Java/JavaVirtualMachines
-
-          ls -la /Library/Java/JavaVirtualMachines
-
-          sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home
-
-          GRAALVM_HOME="/Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home"
-          echo "GRAALVM_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
-          echo "JAVA_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
-          PATH="$GRAALVM_HOME/bin:$PATH"
-          echo "PATH=$PATH" >> $GITHUB_ENV
-          gu install native-image
-
-      - name: 'Checking GraalVM setup'
-        run: |
-          echo "GRAALVM_HOME: $GRAALVM_HOME"
-          echo "JAVA_HOME: $JAVA_HOME"
-          java --version
-          native-image --version
-
-      - name: 'Cache Maven packages'
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
-
-      - name: 'Prepare dotCMS license'
-        env:
-          DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
-        run: |
-          DOTCMS_LICENSE_PATH=${GITHUB_WORKSPACE}/tools/dotcms-cli/license
-          mkdir -p ${DOTCMS_LICENSE_PATH}
-          echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
-          echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
-
-      - name: 'Compile and install packaged artifacts'
-        working-directory: ${{ github.workspace }}
-        run: |
-          ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }} -am -pl :dotcms-cli
-
-      - name: 'Build uber-jar'
-        working-directory: ${{ github.workspace }}
-        run: |
-          ./mvnw package -Dquarkus.package.type=uber-jar -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
-
-      - name: 'Testing native image'
-        working-directory: ${{ github.workspace }}
-        env:
-          DOTCMS_IMAGE: dotcms/dotcms:master_latest_SNAPSHOT
-        run: |
-          echo "${DOTCMS_IMAGE}"
-          echo "${DOTCMS_LICENSE_FILE}"
-          ./mvnw verify -Dnative -pl :dotcms-cli
-
-      - name: 'Build Native Image'
-        if: ${{ success() }}
-        working-directory: ${{ github.workspace }}
-        run: |
-          ./mvnw package -Pnative -DskipTests=true -pl :dotcms-cli
-
-      - name: 'Create distribution'
-        if: ${{ success() }}
-        working-directory: ${{ github.workspace }}
-        run: |
-          ./mvnw -B -ntp -Pdist package -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
+#
+#      - name: 'Log docker context'
+#        run: |
+#          colima status
+#          colima version
+#          docker context list
+#
+#      - name: Checkout Repository
+#        uses: actions/checkout@v4
+#        with:
+#          ref: ${{ needs.precheck.outputs.HEAD }}
+#          fetch-depth: 0
+#
+#      - name: 'Set up GraalVM for macOS ${{ matrix.os }}'
+#        if: ${{ contains(matrix.os, 'macos') }}
+#        run: |
+#          if [ "${{ matrix.os }}" == "macos-13-xlarge" ]; then
+#            echo "Setting GraalVM on macos-13-xlarge"
+#            ARCH=aarch64
+#          else
+#            echo "Setting GraalVM on macOS-latest"
+#            ARCH=amd64
+#          fi
+#
+#          wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java11-darwin-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
+#          tar -xzf graalvm-ce-java11-darwin-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
+#          sudo mv graalvm-ce-java11-${{ env.GRAALVM_VERSION }} /Library/Java/JavaVirtualMachines
+#
+#          ls -la /Library/Java/JavaVirtualMachines
+#
+#          sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home
+#
+#          GRAALVM_HOME="/Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home"
+#          echo "GRAALVM_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
+#          echo "JAVA_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
+#          PATH="$GRAALVM_HOME/bin:$PATH"
+#          echo "PATH=$PATH" >> $GITHUB_ENV
+#          gu install native-image
+#
+#      - name: 'Checking GraalVM setup'
+#        run: |
+#          echo "GRAALVM_HOME: $GRAALVM_HOME"
+#          echo "JAVA_HOME: $JAVA_HOME"
+#          java --version
+#          native-image --version
+#
+#      - name: 'Cache Maven packages'
+#        uses: actions/cache@v3
+#        with:
+#          path: ~/.m2/repository
+#          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+#          restore-keys: ${{ runner.os }}-maven-
+#
+#      - name: 'Prepare dotCMS license'
+#        env:
+#          DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
+#        run: |
+#          DOTCMS_LICENSE_PATH=${GITHUB_WORKSPACE}/tools/dotcms-cli/license
+#          mkdir -p ${DOTCMS_LICENSE_PATH}
+#          echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
+#          echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
+#
+#      - name: 'Compile and install packaged artifacts'
+#        working-directory: ${{ github.workspace }}
+#        run: |
+#          ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }} -am -pl :dotcms-cli
+#
+#      - name: 'Build uber-jar'
+#        working-directory: ${{ github.workspace }}
+#        run: |
+#          ./mvnw package -Dquarkus.package.type=uber-jar -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
+#
+#      - name: 'Testing native image'
+#        working-directory: ${{ github.workspace }}
+#        env:
+#          DOTCMS_IMAGE: dotcms/dotcms:master_latest_SNAPSHOT
+#        run: |
+#          echo "${DOTCMS_IMAGE}"
+#          echo "${DOTCMS_LICENSE_FILE}"
+#          ./mvnw verify -Dnative -pl :dotcms-cli
+#
+#      - name: 'Build Native Image'
+#        if: ${{ success() }}
+#        working-directory: ${{ github.workspace }}
+#        run: |
+#          ./mvnw package -Pnative -DskipTests=true -pl :dotcms-cli
+#
+#      - name: 'Create distribution'
+#        if: ${{ success() }}
+#        working-directory: ${{ github.workspace }}
+#        run: |
+#          ./mvnw -B -ntp -Pdist package -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
 
 ##      - name: 'Distribution tree'
 ##        working-directory: ${{ github.workspace }}/tools/dotcms-cli/
