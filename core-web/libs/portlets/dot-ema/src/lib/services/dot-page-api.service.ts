@@ -5,7 +5,14 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
-import { DotLanguage, DotPersona } from '@dotcms/dotcms-models';
+import { Site } from '@dotcms/dotcms-js';
+import {
+    DotLanguage,
+    DotLayout,
+    DotPageContainerStructure,
+    DotPersona,
+    DotTemplate
+} from '@dotcms/dotcms-models';
 
 import { SavePagePayload } from '../shared/models';
 
@@ -13,11 +20,16 @@ export interface DotPageApiResponse {
     page: {
         title: string;
         identifier: string;
+        inode: string;
     };
+    site: Site;
     viewAs: {
         language: DotLanguage;
         persona?: DotPersona;
     };
+    layout: DotLayout;
+    template: DotTemplate;
+    containers: DotPageContainerStructure;
 }
 
 export interface DotPageApiParams {
@@ -99,6 +111,22 @@ export class DotPageApiService {
                 pagination: res.pagination
             }))
         );
+    }
+
+    /**
+     * Get form information to add to the page
+     *
+     * @param {string} containerId
+     * @param {string} formId
+     * @return {*}  {Observable<{ render: string; content: { [key: string]: string } }>}
+     * @memberof DotPageApiService
+     */
+    getFormIndetifier(containerId: string, formId: string): Observable<string> {
+        return this.http
+            .get<{ entity: { content: { idenfitier: string } } }>(
+                `/api/v1/containers/form/${formId}?containerId=${containerId}`
+            )
+            .pipe(pluck('entity', 'content', 'identifier'));
     }
 
     private getPersonasURL({ pageId, filter, page, perPage }: GetPersonasParams): string {

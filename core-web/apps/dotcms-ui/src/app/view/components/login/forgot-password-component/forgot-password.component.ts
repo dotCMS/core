@@ -7,7 +7,7 @@ import { NavigationExtras } from '@angular/router';
 import { take, tap } from 'rxjs/operators';
 
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
 

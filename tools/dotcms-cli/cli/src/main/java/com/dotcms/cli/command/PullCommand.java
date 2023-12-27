@@ -5,7 +5,9 @@ import com.dotcms.cli.common.FullPullOptionsMixin;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
@@ -58,8 +60,13 @@ public class PullCommand implements Callable<Integer>, DotCommand {
         expandedArgs.add("--noValidateUnmatchedArguments");
         var args = expandedArgs.toArray(new String[0]);
 
+        // Sort the subcommands by order
+        final var pullCommandsSorted = pullCommands.stream()
+                .sorted(Comparator.comparingInt(DotPull::getOrder))
+                .collect(Collectors.toList());
+
         // Process each subcommand
-        for (var subCommand : pullCommands) {
+        for (var subCommand : pullCommandsSorted) {
 
             var cmdLine = createCommandLine(subCommand);
 

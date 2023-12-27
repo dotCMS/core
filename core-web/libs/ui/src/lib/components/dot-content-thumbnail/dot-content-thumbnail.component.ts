@@ -88,7 +88,7 @@ export class DotContentThumbnailComponent implements OnInit {
         this._contentType = contentType;
         this._titleImage = titleImage;
         this._iconSize = iconSize;
-        this._type = this._contentType.split('/')[0];
+        this._type = titleImage ? CONTENT_THUMBNAIL_TYPE.image : this._contentType.split('/')[0];
     }
 
     private buildThumbnail(): void {

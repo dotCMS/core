@@ -27,6 +27,7 @@ import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-b
 import {
     DotAlertConfirmService,
     DotMessageService,
+    DotRouterService,
     DotSiteBrowserService,
     PaginatorService
 } from '@dotcms/data-access';
@@ -54,7 +55,6 @@ import {
 } from '@dotcms/utils-testing';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 
 import { ContainerListRoutingModule } from './container-list-routing.module';

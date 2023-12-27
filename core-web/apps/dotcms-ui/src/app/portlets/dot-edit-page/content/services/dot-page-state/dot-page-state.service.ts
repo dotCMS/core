@@ -10,12 +10,12 @@ import {
     DotHttpErrorHandled,
     DotHttpErrorManagerService
 } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import {
     DotContentletLockerService,
     DotLicenseService,
     DotMessageService,
-    DotPageRenderService
+    DotPageRenderService,
+    DotRouterService
 } from '@dotcms/data-access';
 import { CurrentUser, HttpCode, LoginService, User } from '@dotcms/dotcms-js';
 import {

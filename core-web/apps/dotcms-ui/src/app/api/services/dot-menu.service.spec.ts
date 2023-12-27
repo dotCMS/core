@@ -1,7 +1,7 @@
 import { HttpMethod, SpectatorHttp, createHttpFactory } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { DotMenu } from '@dotcms/app/shared/models/navigation';
+import { DotMenu } from '@dotcms/dotcms-models';
 
 import { DotMenuService } from './dot-menu.service';
 

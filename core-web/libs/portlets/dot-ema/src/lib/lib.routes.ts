@@ -1,12 +1,14 @@
 import { Route } from '@angular/router';
 
-import { DotEmaComponent } from './dot-ema-shell/dot-ema.component';
+import { CanDeactivateGuardService } from '@dotcms/data-access';
+
+import { DotEmaShellComponent } from './dot-ema-shell/dot-ema-shell.component';
 
 export const DotEmaRoutes: Route[] = [
     {
         path: '',
-        component: DotEmaComponent,
-
+        component: DotEmaShellComponent,
+        runGuardsAndResolvers: 'always',
         children: [
             {
                 path: 'content',
@@ -20,14 +22,12 @@ export const DotEmaRoutes: Route[] = [
                 loadComponent: () =>
                     import('./edit-ema-layout/edit-ema-layout.component').then(
                         (mod) => mod.EditEmaLayoutComponent
-                    )
+                    ),
+                canDeactivate: [CanDeactivateGuardService]
             },
             {
-                path: 'rules',
-                loadComponent: () =>
-                    import('./edit-ema-rules/edit-ema-rules.component').then(
-                        (mod) => mod.EditEmaRulesComponent
-                    )
+                path: 'rules/:pageId',
+                loadChildren: () => import('@dotcms/dot-rules').then((m) => m.DotRulesModule)
             },
             {
                 path: 'experiments',

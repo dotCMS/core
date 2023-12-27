@@ -5,10 +5,8 @@ import { Injectable } from '@angular/core';
 
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { DotAlertConfirmService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { HttpCode, LoginService } from '@dotcms/dotcms-js';
-
-import { DotRouterService } from '../dot-router/dot-router.service';
 
 export interface DotHttpErrorHandled {
     redirected: boolean;
