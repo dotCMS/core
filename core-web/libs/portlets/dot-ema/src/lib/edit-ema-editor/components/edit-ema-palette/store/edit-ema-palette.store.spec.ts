@@ -1,7 +1,12 @@
 import { SpectatorService } from '@ngneat/spectator';
 import { createServiceFactory } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
-import { DotContentTypeService, DotESContentService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotESContentService,
+    DotPropertiesService
+} from '@dotcms/data-access';
 
 import {
     DotPaletteStore,
@@ -14,6 +19,14 @@ describe('EditEmaPaletteStore', () => {
     let spectator: SpectatorService<DotPaletteStore>;
     const createService = createServiceFactory({
         service: DotPaletteStore,
+        providers: [
+            {
+                provide: DotPropertiesService,
+                useValue: {
+                    getKeyAsList: () => of([])
+                }
+            }
+        ],
         mocks: [DotContentTypeService, DotESContentService]
     });
 
@@ -68,6 +81,14 @@ describe('EditEmaPaletteStore', () => {
             spectator.service.loadContentlets({ filter: '', contenttypeName: '', languageId: '1' });
             spectator.service.vm$.subscribe((state) => {
                 expect(state.contentlets.items).toEqual([]);
+                done();
+            });
+        });
+
+        it('should load allowed content types', (done) => {
+            spectator.service.loadAllowedContentTypes({ containers: {} });
+            spectator.service.vm$.subscribe((state) => {
+                expect(state.allowedTypes).toEqual([]);
                 done();
             });
         });

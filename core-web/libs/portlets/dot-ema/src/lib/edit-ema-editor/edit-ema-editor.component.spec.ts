@@ -912,7 +912,7 @@ describe('EditEmaEditorComponent', () => {
                 expect(dropZone.rows).toBe(BOUNDS_MOCK);
             });
 
-            xit('should hide drop zone on palette drop', () => {
+            it('should hide drop zone on palette drop', () => {
                 spectator.detectChanges();
 
                 window.dispatchEvent(
@@ -934,7 +934,7 @@ describe('EditEmaEditorComponent', () => {
                 spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragEnd', {});
                 spectator.detectComponentChanges();
                 dropZone = spectator.query(EmaPageDropzoneComponent);
-                expect(dropZone.rows).toEqual([]);
+                expect(dropZone).toBeNull();
             });
         });
     });

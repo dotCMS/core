@@ -60,7 +60,8 @@ describe('EditEmaPaletteComponent', () => {
                             vm$: of(INITIAL_STATE_PALETTE_CONTENTTYPE_MOCK),
                             loadContentlets: () => of({}),
                             changeView: () => of({}),
-                            resetContentlets: () => ({})
+                            resetContentlets: () => ({}),
+                            loadAllowedContentTypes: () => ({})
                         }
                     }
                 ]
@@ -110,7 +111,6 @@ describe('EditEmaPaletteComponent', () => {
                 'showContentlets',
                 'TestNameContentType'
             );
-            expect(spectator.component.currentContenttype).toEqual('TestNameContentType');
             expect(storeSpy).toHaveBeenCalledWith({
                 filter: '',
                 languageId: '1',
@@ -137,12 +137,19 @@ describe('EditEmaPaletteComponent', () => {
                             vm$: of(INITIAL_STATE_PALETTE_CONTENTLET_MOCK),
                             loadContentlets: () => of({}),
                             changeView: () => of({}),
-                            resetContentlets: () => ({})
+                            resetContentlets: () => ({}),
+                            loadAllowedContentTypes: () => ({})
                         }
                     }
                 ]
             });
             store = spectator.inject(DotPaletteStore);
+        });
+
+        it('should load allowed contentTypes on init', () => {
+            const storeSpy = jest.spyOn(store, 'loadAllowedContentTypes');
+            spectator.component.ngOnInit();
+            expect(storeSpy).toHaveBeenCalledWith({ containers: {} });
         });
 
         it('should render Contentlets', () => {

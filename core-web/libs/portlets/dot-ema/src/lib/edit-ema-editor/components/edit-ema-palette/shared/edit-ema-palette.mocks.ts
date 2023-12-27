@@ -936,7 +936,8 @@ export const INITIAL_STATE_PALETTE_CONTENTTYPE_MOCK: DotPaletteState = {
         filter: ''
     },
     status: EditEmaPaletteStoreStatus.LOADED,
-    currentPaletteType: PALETTE_TYPES.CONTENTTYPE
+    currentPaletteType: PALETTE_TYPES.CONTENTTYPE,
+    allowedTypes: []
 };
 
 export const INITIAL_STATE_PALETTE_CONTENTLET_MOCK: DotPaletteState = {
@@ -954,5 +955,6 @@ export const INITIAL_STATE_PALETTE_CONTENTLET_MOCK: DotPaletteState = {
         filter: ''
     },
     status: EditEmaPaletteStoreStatus.LOADED,
-    currentPaletteType: PALETTE_TYPES.CONTENTLET
+    currentPaletteType: PALETTE_TYPES.CONTENTLET,
+    allowedTypes: []
 };

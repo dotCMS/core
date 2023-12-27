@@ -1,5 +1,6 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
+import { fakeAsync, tick } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
 
 import { Paginator } from 'primeng/paginator';
@@ -47,13 +48,15 @@ describe('EditEmaPaletteContentletsComponent', () => {
 
     it('should emit dragStart event on drag start', () => {
         const dragSpy = jest.spyOn(spectator.component.dragStart, 'emit');
-        spectator.triggerEventHandler('.contentlet-card', 'dragstart', { inode: '123' });
+        spectator.triggerEventHandler('[data-testId="contentlet-0"]', 'dragstart', {
+            inode: '123'
+        });
         expect(dragSpy).toHaveBeenCalledWith({ inode: '123' });
     });
 
     it('should emit dragEnd event on drag end', () => {
         const dragSpy = jest.spyOn(spectator.component.dragEnd, 'emit');
-        spectator.triggerEventHandler('.contentlet-card', 'dragend', { inode: '123' });
+        spectator.triggerEventHandler('[data-testId="contentlet-0"]', 'dragend', { inode: '123' });
         expect(dragSpy).toHaveBeenCalledWith({ inode: '123' });
     });
 
@@ -74,10 +77,17 @@ describe('EditEmaPaletteContentletsComponent', () => {
     });
 
     it('should render contentlet list', () => {
-        expect(spectator.query('.contentlet-card')).toBeTruthy();
+        expect(spectator.query('[data-testId="contentlet-0"]')).toBeTruthy();
     });
 
     it('should the contentlet list item have data-item attribute', () => {
-        expect(spectator.query('.contentlet-card')).toHaveAttribute('data-item');
+        expect(spectator.query('[data-testId="contentlet-0"]')).toHaveAttribute('data-item');
     });
+
+    it('should emit search event on search contentlet', fakeAsync(() => {
+        const searchSpy = jest.spyOn(spectator.component.search, 'emit');
+        spectator.typeInElement('test', spectator.query(byTestId('contentlet-search')));
+        tick(1100); // For debounce time
+        expect(searchSpy).toHaveBeenCalledWith('test');
+    }));
 });

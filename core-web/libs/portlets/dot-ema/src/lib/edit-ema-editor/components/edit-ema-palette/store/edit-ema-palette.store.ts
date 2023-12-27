@@ -1,12 +1,21 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { EMPTY, Observable, forkJoin } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
-import { DotContentTypeService, DotESContentService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import {
+    DotContentTypeService,
+    DotESContentService,
+    DotPropertiesService
+} from '@dotcms/data-access';
+import {
+    DotCMSContentlet,
+    DotCMSContentType,
+    DotContainerStructure,
+    DotPageContainerStructure
+} from '@dotcms/dotcms-models';
 
 export enum PALETTE_TYPES {
     CONTENTTYPE = 'CONTENTTYPE',
@@ -37,17 +46,18 @@ export interface DotPaletteState {
     };
     status: EditEmaPaletteStoreStatus;
     currentPaletteType: PALETTE_TYPES;
+    allowedTypes: string[];
+    currentContentType?: string;
 }
 
 @Injectable()
 export class DotPaletteStore extends ComponentStore<DotPaletteState> {
-    // readonly vm$ = this.state$;
+    private readonly dotConfigurationService = inject(DotPropertiesService);
 
     constructor(
         private dotContentTypeService: DotContentTypeService,
         private dotESContentService: DotESContentService
     ) {
-        // super();
         super({
             contentlets: {
                 items: [],
@@ -57,7 +67,8 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
             },
             contenttypes: { items: [], filter: '' },
             status: EditEmaPaletteStoreStatus.LOADING,
-            currentPaletteType: PALETTE_TYPES.CONTENTTYPE
+            currentPaletteType: PALETTE_TYPES.CONTENTTYPE,
+            allowedTypes: []
         });
     }
 
@@ -73,6 +84,16 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         status
     }));
 
+    readonly setAllowedTypes = this.updater((state, allowedTypes: string[]) => ({
+        ...state,
+        allowedTypes
+    }));
+
+    readonly setCurrentContentType = this.updater((state, currentContentType: string) => ({
+        ...state,
+        currentContentType
+    }));
+
     readonly resetContentlets = this.updater((state) => ({
         ...state,
         contentlets: {
@@ -84,9 +105,9 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     }));
 
     /**
-     * Loads content types based on the provided filter and allowed content.
-     * @param data$ An observable that emits an object containing the filter and allowed content.
-     * @returns An observable that emits the loaded content types.
+     *
+     *
+     * @memberof DotPaletteStore
      */
     readonly loadContentTypes = this.effect(
         (data$: Observable<{ filter: string; allowedContent: string[] }>) => {
@@ -94,13 +115,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
 
             return data$.pipe(
                 switchMap(({ allowedContent, filter }) => {
-                    const obs$ = allowedContent?.length
-                        ? this.getFilteredContentTypes(filter, allowedContent)
-                        : this.getWidgets(filter);
-                    // const obs$ = this.getFilteredContenttypes(filter, allowedContent);
-
-                    // return this.getFilteredContentTypes(filter, allowedContent).pipe(
-                    return obs$.pipe(
+                    return this.getFilteredContentTypes(filter, allowedContent).pipe(
                         tapResponse(
                             (contentTypes) => {
                                 this.patchState({
@@ -121,9 +136,9 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
     );
 
     /**
-     * Loads contentlets based on the provided filter, content type name, language ID, and page number.
-     * @param data$ An observable that emits an object containing the filter, content type name, language ID, and page number.
-     * @returns An observable that emits the loaded contentlets.
+     *
+     *
+     * @memberof DotPaletteStore
      */
     readonly loadContentlets = this.effect(
         (
@@ -137,6 +152,8 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
             return data$.pipe(
                 tap(() => this.setStatus(EditEmaPaletteStoreStatus.LOADING)),
                 switchMap(({ filter, contenttypeName, languageId, page = 0 }) => {
+                    this.setCurrentContentType(contenttypeName);
+
                     return this.dotESContentService
                         .get({
                             itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE,
@@ -163,6 +180,40 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                                 },
                                 // eslint-disable-next-line no-console
                                 (err) => console.log(err)
+                            )
+                        );
+                })
+            );
+        }
+    );
+
+    /**
+     *
+     *
+     * @memberof DotPaletteStore
+     */
+    loadAllowedContentTypes = this.effect(
+        (data$: Observable<{ containers: DotPageContainerStructure }>) => {
+            return data$.pipe(
+                switchMap(({ containers }) => {
+                    return this.dotConfigurationService
+                        .getKeyAsList('CONTENT_PALETTE_HIDDEN_CONTENT_TYPES')
+                        .pipe(
+                            tapResponse(
+                                (results) => {
+                                    const allowedContentTypes =
+                                        this.filterAllowedContentTypes(results, containers) || [];
+
+                                    this.setAllowedTypes(allowedContentTypes);
+                                    this.loadContentTypes({
+                                        filter: '',
+                                        allowedContent: allowedContentTypes
+                                    });
+                                },
+                                (err) => {
+                                    // eslint-disable-next-line no-console
+                                    console.log(err);
+                                }
                             )
                         );
                 })
@@ -203,10 +254,24 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         );
     }
 
-    getWidgets(filter: string) {
-        return this.dotContentTypeService.getContentTypes({ filter, page: 40, type: 'WIDGET' });
+    private filterAllowedContentTypes(
+        blackList: string[] = [],
+        containers: DotPageContainerStructure
+    ): string[] {
+        const allowedContent = new Set();
+        Object.values(containers).forEach((container) => {
+            Object.values(container.containerStructures).forEach(
+                (containerStructure: DotContainerStructure) => {
+                    allowedContent.add(containerStructure.contentTypeVar.toLocaleLowerCase());
+                }
+            );
+        });
+        blackList.forEach((content) => allowedContent.delete(content.toLocaleLowerCase()));
+
+        return [...allowedContent] as string[];
     }
 
+    //Unused for now, have a strange issue when try lazy init.
     setInitialState() {
         this.setState({
             contentlets: {
@@ -217,7 +282,8 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
             },
             contenttypes: { items: [], filter: '' },
             status: EditEmaPaletteStoreStatus.LOADED,
-            currentPaletteType: PALETTE_TYPES.CONTENTTYPE
+            currentPaletteType: PALETTE_TYPES.CONTENTTYPE,
+            allowedTypes: []
         });
     }
 }

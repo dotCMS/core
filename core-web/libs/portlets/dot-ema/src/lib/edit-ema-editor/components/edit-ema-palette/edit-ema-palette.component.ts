@@ -11,12 +11,9 @@ import {
     Output,
     inject
 } from '@angular/core';
-import { FormControl } from '@angular/forms';
-
-import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
 import { DotESContentService, DotPropertiesService } from '@dotcms/data-access';
-import { DotContainerStructure, DotPageContainerStructure } from '@dotcms/dotcms-models';
+import { DotPageContainerStructure } from '@dotcms/dotcms-models';
 
 import { EditEmaPaletteContentTypeComponent } from './components/edit-ema-palette-content-type/edit-ema-palette-content-type.component';
 import { EditEmaPaletteContentletsComponent } from './components/edit-ema-palette-contentlets/edit-ema-palette-contentlets.component';
@@ -48,26 +45,11 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
     private destroy$ = new Subject<void>();
 
     vm$ = this.store.vm$;
-    searchContenttype = new FormControl('');
-    searchContentlet = new FormControl('');
-
-    allowedContentTypes: string[];
-    currentContenttype = '';
 
     PALETTETYPE = PALETTE_TYPES;
 
     ngOnInit() {
-        this.listenToSearchContents();
-
-        this.dotConfigurationService
-            .getKeyAsList('CONTENT_PALETTE_HIDDEN_CONTENT_TYPES')
-            .subscribe((results) => {
-                this.allowedContentTypes = this.filterAllowedContentTypes(results) || [];
-                this.store.loadContentTypes({
-                    filter: '',
-                    allowedContent: this.allowedContentTypes
-                });
-            });
+        this.store.loadAllowedContentTypes({ containers: this.containers });
     }
 
     /**
@@ -92,9 +74,6 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
      * @param contentTypeName - The name of the content type.
      */
     showContentletsFromContentType(contentTypeName: string) {
-        this.searchContentlet.setValue('', { emitEvent: false });
-
-        this.currentContenttype = contentTypeName;
         this.store.loadContentlets({
             filter: '',
             languageId: this.languageId.toString(),
@@ -113,26 +92,6 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Filters the allowed content types based on a blacklist.
-     *
-     * @param blackList - An array of content types to be excluded from the allowed list.
-     * @returns An array of allowed content types.
-     */
-    private filterAllowedContentTypes(blackList: string[] = []): string[] {
-        const allowedContent = new Set();
-        Object.values(this.containers).forEach((container) => {
-            Object.values(container.containerStructures).forEach(
-                (containerStructure: DotContainerStructure) => {
-                    allowedContent.add(containerStructure.contentTypeVar.toLocaleLowerCase());
-                }
-            );
-        });
-        blackList.forEach((content) => allowedContent.delete(content.toLocaleLowerCase()));
-
-        return [...allowedContent] as string[];
-    }
-
-    /**
      *
      *
      * @param {*} { contentTypeVarName, page }
@@ -147,29 +106,19 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
         });
     }
 
-    /**
-     * Listens to changes in the search input fields for content types and contentlets,
-     * and loads the corresponding data based on the search criteria.
-     */
-    listenToSearchContents() {
-        this.searchContenttype.valueChanges
-            .pipe(takeUntil(this.destroy$), debounceTime(1000), distinctUntilChanged())
-            .subscribe((res) => {
-                this.store.loadContentTypes({
-                    filter: res,
-                    allowedContent: this.allowedContentTypes
-                });
-            });
+    loadContentTypes(filter: string, allowedContent: string[]) {
+        this.store.loadContentTypes({
+            filter,
+            allowedContent
+        });
+    }
 
-        this.searchContentlet.valueChanges
-            .pipe(takeUntil(this.destroy$), debounceTime(1000), distinctUntilChanged())
-            .subscribe((res) => {
-                this.store.loadContentlets({
-                    filter: res,
-                    contenttypeName: this.currentContenttype,
-                    languageId: this.languageId.toString()
-                });
-            });
+    loadContentlets(filter: string, currentContentType: string) {
+        this.store.loadContentlets({
+            filter,
+            contenttypeName: currentContentType,
+            languageId: this.languageId.toString()
+        });
     }
 
     ngOnDestroy() {

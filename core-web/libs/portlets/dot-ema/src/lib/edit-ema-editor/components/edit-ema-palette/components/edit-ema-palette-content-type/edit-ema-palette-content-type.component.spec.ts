@@ -1,6 +1,6 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
-import { FormControl } from '@angular/forms';
+import { fakeAsync, tick } from '@angular/core/testing';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -31,7 +31,6 @@ describe('EditEmaPaletteContentTypeComponent', () => {
             props: {
                 contentTypes: CONTENT_TYPE_MOCK,
                 filter: '',
-                control: new FormControl(''),
                 paletteStatus: EditEmaPaletteStoreStatus.LOADED
             }
         });
@@ -40,7 +39,7 @@ describe('EditEmaPaletteContentTypeComponent', () => {
     it('should emit dragStart event on drag start', () => {
         const dragSpy = jest.spyOn(spectator.component.dragStart, 'emit');
 
-        spectator.triggerEventHandler('.content-type-card', 'dragstart', {
+        spectator.triggerEventHandler('[data-testId="content-type-0"]', 'dragstart', {
             variable: 'test',
             name: 'Test'
         });
@@ -50,7 +49,7 @@ describe('EditEmaPaletteContentTypeComponent', () => {
     it('should emit dragEnd event on drag end', () => {
         const dragSpy = jest.spyOn(spectator.component.dragEnd, 'emit');
 
-        spectator.triggerEventHandler('.content-type-card', 'dragend', {
+        spectator.triggerEventHandler('[data-testId="content-type-0"]', 'dragend', {
             variable: 'test',
             name: 'Test'
         });
@@ -66,10 +65,17 @@ describe('EditEmaPaletteContentTypeComponent', () => {
     });
 
     it('should render the content type list', () => {
-        expect(spectator.query('.content-type-card')).not.toBeNull();
+        expect(spectator.query('[data-testId="content-type-0"]')).not.toBeNull();
     });
 
     it('should the content type list hace data-item attribute', () => {
-        expect(spectator.query('.content-type-card')).toHaveAttribute('data-item');
+        expect(spectator.query('[data-testId="content-type-0"]')).toHaveAttribute('data-item');
     });
+
+    it('should emit search event on search', fakeAsync(() => {
+        const searchSpy = jest.spyOn(spectator.component.search, 'emit');
+        spectator.typeInElement('test', spectator.query(byTestId('content-type-search')));
+        tick(1100); // For debounce time
+        expect(searchSpy).toHaveBeenCalledWith('test');
+    }));
 });

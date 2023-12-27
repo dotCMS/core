@@ -7,7 +7,12 @@
     <span class="p-input-icon-right">
         <i class="pi pi-search"></i>
 
-        <input [placeholder]="'Search' | dm" [formControl]="control" type="search" pInputText />
+        <input
+            [placeholder]="'Search' | dm"
+            [formControl]="control"
+            type="search"
+            data-testId="contentlet-search"
+            pInputText />
     </span>
 </div>
 
@@ -22,8 +27,9 @@
             <div class="contentlets-cards">
                 <div
                     class="contentlet-card"
-                    *ngFor="let contentlet of contentlets.items"
+                    *ngFor="let contentlet of contentlets.items; let i = index"
                     [attr.data-item]="{ inode: contentlet.identifier } | json"
+                    [attr.data-testId]="'contentlet-' + i"
                     (dragstart)="dragStart.emit($event)"
                     (dragend)="dragEnd.emit($event)"
                     data-type="contentlet"

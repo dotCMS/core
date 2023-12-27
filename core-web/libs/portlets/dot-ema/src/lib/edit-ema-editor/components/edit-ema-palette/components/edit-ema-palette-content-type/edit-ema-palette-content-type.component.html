@@ -3,8 +3,9 @@
         <i class="pi pi-search"></i>
         <input
             [placeholder]="'Search' | dm"
-            [formControl]="control"
+            [formControl]="searchContentType"
             [value]="filter"
+            data-testId="content-type-search"
             type="search"
             pInputText />
     </span>
@@ -28,7 +29,7 @@
             draggable="true">
             <i
                 class="pi pi-angle-right icon-go-content"
-                (click)="showContentletsFromContentType(contenttype.name)"></i>
+                (click)="showContentletsFromContentType(contenttype.variable)"></i>
 
             <div class="content-type-card__content">
                 <dot-icon [name]="contenttype.icon"></dot-icon>

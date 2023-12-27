@@ -3,8 +3,8 @@
         *ngIf="vm.currentPaletteType === PALETTETYPE.CONTENTTYPE"
         [contentTypes]="vm.contenttypes.items"
         [filter]="vm.contenttypes.filter"
-        [control]="searchContenttype"
         [paletteStatus]="vm.status"
+        (search)="loadContentTypes($event, vm.allowedTypes)"
         (showContentlets)="showContentletsFromContentType($event)"
         (dragStart)="onDragStart($event)"
         (dragEnd)="onDragEnd($event)" />
@@ -12,9 +12,9 @@
     <dot-edit-ema-palette-contentlets
         *ngIf="vm.currentPaletteType === PALETTETYPE.CONTENTLET"
         [contentlets]="vm.contentlets"
-        [control]="searchContentlet"
         [paletteStatus]="vm.status"
         (paginate)="onPaginate($event)"
+        (search)="loadContentlets($event, vm.currentContentType)"
         (showContentTypes)="showContentTypes()"
         (dragStart)="onDragStart($event)"
         (dragEnd)="onDragEnd($event)" />
