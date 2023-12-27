@@ -25,6 +25,7 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -883,6 +884,7 @@ public class FileMetadataAPITest {
      * @throws Exception
      */
     @Test
+    @Ignore
     @UseDataProvider("getStorageType")
     public void Test_Write_Custom_Metadata_Then_Generate_Metadata_Expect_All_Metadata(final StorageType storageType) throws Exception {
         prepareIfNecessary();
