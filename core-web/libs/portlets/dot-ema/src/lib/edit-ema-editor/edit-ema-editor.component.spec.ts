@@ -141,7 +141,7 @@ describe('EditEmaEditorComponent', () => {
             store.load({
                 url: 'index',
                 language_id: '1',
-                persona_id: DEFAULT_PERSONA.identifier
+                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
             });
         });
 

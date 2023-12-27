@@ -25,7 +25,7 @@ import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotPageToolsSeoComponent } from '../dot-page-tools-seo/dot-page-tools-seo.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiService } from '../services/dot-page-api.service';
+import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_QUERY_PARAMS, WINDOW } from '../shared/consts';
 import { NavigationBarItem } from '../shared/models';
 
@@ -67,7 +67,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly store = inject(EditEmaStore);
 
     private readonly destroy$ = new Subject<boolean>();
-    private queryParams: Record<string, string> = {};
+    private queryParams: DotPageApiParams;
     pageToolsVisible = false;
 
     dialogState$ = this.store.dialogState$;
@@ -133,7 +133,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             const { missing, ...missingQueryParams } = DEFAULT_QUERY_PARAMS.reduce(
                 (acc, curr) => {
                     if (!queryParams[curr.key]) {
-                        acc[curr.key] = this.queryParams[curr.key] ?? curr.value;
+                        acc[curr.key] = curr.value;
                         acc.missing = true;
                     }
 
@@ -160,9 +160,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 };
 
                 this.store.load({
-                    language_id: queryParams['language_id'],
-                    url: queryParams['url'],
-                    persona_id: queryParams['com.dotmarketing.persona.id']
+                    ...this.queryParams
                 });
             }
         });
@@ -200,9 +198,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                               queryParamsHandling: 'merge'
                           })
                         : this.store.load({
-                              language_id: this.queryParams['language_id'],
-                              url: this.queryParams['url'],
-                              persona_id: this.queryParams['com.dotmarketing.persona.id']
+                              ...this.queryParams
                           }); // If the url is the same we need to fetch the page
                 }
             });
