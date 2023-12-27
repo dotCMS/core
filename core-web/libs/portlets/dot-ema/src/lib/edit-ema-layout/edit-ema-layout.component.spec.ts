@@ -100,7 +100,7 @@ describe('EditEmaLayoutComponent', () => {
         store.load({
             language_id: '1',
             url: 'test',
-            persona_id: 'SuperCoolDude'
+            'com.dotmarketing.persona.id': 'SuperCoolDude'
         });
 
         spectator.detectChanges();

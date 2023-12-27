@@ -35,7 +35,7 @@ export interface DotPageApiResponse {
 export interface DotPageApiParams {
     url: string;
     language_id: string;
-    persona_id: string;
+    'com.dotmarketing.persona.id': string;
 }
 
 export interface GetPersonasParams {
@@ -67,8 +67,8 @@ export class DotPageApiService {
      * @return {*}  {Observable<DotPageApiResponse>}
      * @memberof DotPageApiService
      */
-    get({ url, language_id, persona_id }: DotPageApiParams): Observable<DotPageApiResponse> {
-        const apiUrl = `/api/v1/page/json/${url}?language_id=${language_id}&com.dotmarketing.persona.id=${persona_id}`;
+    get(params: DotPageApiParams): Observable<DotPageApiResponse> {
+        const apiUrl = `/api/v1/page/json/${params.url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
 
         return this.http
             .get<{
