@@ -6,48 +6,14 @@ import {
 
 export const CONTENT_TYPE_MOCK = [
     {
-        baseType: 'CONTENT',
-        clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-        defaultType: false,
-        description: 'Activities available at desitnations',
-        detailPage: 'e5f131d2-1952-4596-bbbf-28fb28021b68',
-        fixed: false,
-        folder: 'SYSTEM_FOLDER',
-        folderPath: '/',
-        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-        iDate: 1567778770000,
-        layout: [],
-        icon: 'paragliding',
-        id: '778f3246-9b11-4a2a-a101-e7fdf111bdad',
-        modDate: 1703020624000,
-        multilingualable: false,
-        nEntries: 10,
-        name: 'Activity',
-        workflows: []
+        name: 'Test Content Type',
+        variable: 'Test1',
+        icon: 'icon'
     },
     {
-        baseType: 'CONTENT',
-        clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-        defaultType: false,
-        description: 'Hero image used on homepage and landing pages',
-        fixed: false,
-        folder: 'SYSTEM_FOLDER',
-        folderPath: '/',
-        host: 'SYSTEM_HOST',
-        iDate: 1489086945734,
-        icon: 'image_aspect_ratio',
-        id: '4c441ada-944a-43af-a653-9bb4f3f0cb2b',
-        modDate: 1703020612000,
-        layout: [],
-        multilingualable: false,
-        nEntries: 11,
-        name: 'Banner',
-        siteName: 'systemHost',
-        sortOrder: 0,
-        system: false,
-        variable: 'Banner',
-        versionable: true,
-        workflows: []
+        name: 'Test Content Type 2',
+        variable: 'Test2',
+        icon: 'icon'
     }
 ];
 
