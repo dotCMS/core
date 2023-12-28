@@ -122,8 +122,8 @@ jobs:
           fi         
           
           wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java11-${PLATFORM}-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
-          mkdir -p $INSTALLATION_PATH
-          tar -xzf graalvm-ce-java11-${PLATFORM}-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz -C $INSTALLATION_PATH
+          sudo mkdir -p $INSTALLATION_PATH
+          sudo tar -xzf graalvm-ce-java11-${PLATFORM}-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz -C $INSTALLATION_PATH
 
           if [ "${{ matrix.os }}" == *"macos-"* ]; then
             sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home        
