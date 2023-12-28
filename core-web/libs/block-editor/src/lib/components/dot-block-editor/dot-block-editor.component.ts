@@ -487,7 +487,11 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private setEditorJSONContent(content: Content) {
         //TODO: remove this when the AI content is generated exclusively in popups and not in the editor directly.
         const filterContent = removeLoadingNodes(
-            Array.isArray(content) ? [...content] : [...(content as JSONContent).content]
+            content
+                ? Array.isArray(content)
+                    ? [...content]
+                    : [...(content as JSONContent).content]
+                : []
         );
 
         this.content =
