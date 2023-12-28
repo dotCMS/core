@@ -5,27 +5,6 @@
     grid-template-rows: min-content 1fr;
     grid-template-columns: 1fr 80px;
     height: 100%;
-
-    ::ng-deep {
-        .p-dialog {
-            .p-dialog-content {
-                display: flex;
-                justify-content: center;
-                align-items: flex-start;
-                padding: 0;
-            }
-        }
-
-        .p-confirm-dialog {
-            .p-dialog-content {
-                padding: 0 $spacing-6 $spacing-6 $spacing-6;
-            }
-
-            .p-dialog-footer {
-                padding-top: 0;
-            }
-        }
-    }
 }
 
 dot-ema-page-dropzone {
