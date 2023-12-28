@@ -111,11 +111,6 @@ export const AIContentNode = Node.create({
         return ['div[ai-content]'];
     },
 
-    toJSON() {
-        // Return an empty object to exclude the node from serialization
-        return {};
-    },
-
     addNodeView() {
         return ({ node }) => {
             const dom = document.createElement('div');
