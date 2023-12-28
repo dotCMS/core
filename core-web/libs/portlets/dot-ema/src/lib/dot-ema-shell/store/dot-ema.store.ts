@@ -5,23 +5,19 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
-import {
-    DotContainerMap,
-    DotLayout,
-    DotPageContainerStructure,
-} from '@dotcms/dotcms-models';
+import { DotContainerMap, DotLayout, DotPageContainerStructure } from '@dotcms/dotcms-models';
 
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
 import {
     DotPageApiService,
     DotPageApiParams,
-    DotPageApiResponse,
+    DotPageApiResponse
 } from '../../services/dot-page-api.service';
 import {
     DEFAULT_PERSONA,
     HOST,
     EDIT_CONTENTLET_URL,
-    ADD_CONTENTLET_URL,
+    ADD_CONTENTLET_URL
 } from '../../shared/consts';
 import { ActionPayload, SavePagePayload } from '../../shared/models';
 import { insertContentletInContainer } from '../../utils';
@@ -48,9 +44,9 @@ function getFormId(dotPageApiService) {
                             return {
                                 payload: {
                                     ...payload,
-                                    newContentletId: newFormId,
+                                    newContentletId: newFormId
                                 },
-                                whenSaved,
+                                whenSaved
                             };
                         })
                     );
@@ -72,8 +68,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             url: state.url,
             language_id: state.editor.viewAs.language.id.toString(),
             'com.dotmarketing.persona.id':
-                state.editor.viewAs.persona?.identifier ??
-                DEFAULT_PERSONA.identifier,
+                state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
         });
 
         return {
@@ -83,9 +78,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 ...state.editor,
                 viewAs: {
                     ...state.editor.viewAs,
-                    persona: state.editor.viewAs.persona ?? DEFAULT_PERSONA,
-                },
-            },
+                    persona: state.editor.viewAs.persona ?? DEFAULT_PERSONA
+                }
+            }
         };
     });
 
@@ -93,14 +88,14 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         iframeURL: state.dialogIframeURL,
         header: state.dialogHeader,
         iframeLoading: state.dialogIframeLoading,
-        type: state.dialogType,
+        type: state.dialogType
     }));
 
     readonly layoutProperties$ = this.select((state) => ({
         layout: state.editor.layout,
         themeId: state.editor.template.theme,
         pageId: state.editor.page.identifier,
-        containersMap: this.mapContainers(state.editor.containers),
+        containersMap: this.mapContainers(state.editor.containers)
     }));
 
     readonly shellProperties$ = this.select((state) => ({
@@ -108,7 +103,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         siteId: state.editor.site.identifier,
         languageId: state.editor.viewAs.language.id,
         currentUrl: '/' + state.url,
-        host: HOST,
+        host: HOST
     }));
 
     /**
@@ -128,13 +123,13 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                 dialogIframeURL: '',
                                 dialogHeader: '',
                                 dialogIframeLoading: false,
-                                dialogType: null,
+                                dialogType: null
                             });
                         },
                         error: (e) => {
                             // eslint-disable-next-line no-console
                             console.log(e);
-                        },
+                        }
                     }),
                     catchError(() => EMPTY)
                 )
@@ -181,7 +176,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     return this.dotPageApiService
                         .save({
                             pageContainers,
-                            pageId: payload.pageId,
+                            pageId: payload.pageId
                         })
                         .pipe(
                             tapResponse(
@@ -205,26 +200,22 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      * @memberof EditEmaStore
      */
     readonly createContentFromPalette = this.effect(
-        (
-            contentTypeVariable$: Observable<{ variable: string; name: string }>
-        ) => {
+        (contentTypeVariable$: Observable<{ variable: string; name: string }>) => {
             return contentTypeVariable$.pipe(
                 switchMap(({ name, variable }) => {
-                    return this.dotActionUrl
-                        .getCreateContentletUrl(variable)
-                        .pipe(
-                            tapResponse(
-                                (url) => {
-                                    this.setDialogForCreateContent({
-                                        url,
-                                        name,
-                                    });
-                                },
-                                (e) => {
-                                    console.error(e);
-                                }
-                            )
-                        );
+                    return this.dotActionUrl.getCreateContentletUrl(variable).pipe(
+                        tapResponse(
+                            (url) => {
+                                this.setDialogForCreateContent({
+                                    url,
+                                    name
+                                });
+                            },
+                            (e) => {
+                                console.error(e);
+                            }
+                        )
+                    );
                 })
             );
         }
@@ -237,17 +228,15 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 dialogIframeURL: url,
                 dialogHeader: `Create ${name}`,
                 dialogIframeLoading: true,
-                dialogType: 'content',
+                dialogType: 'content'
             };
         }
     );
 
-    readonly setDialogIframeLoading = this.updater(
-        (state, editIframeLoading: boolean) => ({
-            ...state,
-            dialogIframeLoading: editIframeLoading,
-        })
-    );
+    readonly setDialogIframeLoading = this.updater((state, editIframeLoading: boolean) => ({
+        ...state,
+        dialogIframeLoading: editIframeLoading
+    }));
 
     // This method resets the properties that are being used in for the dialog
     readonly resetDialog = this.updater((state) => {
@@ -256,22 +245,19 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             dialogIframeURL: '',
             dialogHeader: '',
             dialogIframeLoading: false,
-            dialogType: null,
+            dialogType: null
         };
     });
 
     // This method is called when the user clicks on the edit button
     readonly initActionEdit = this.updater(
-        (
-            state,
-            payload: { inode: string; title: string; type: DialogType }
-        ) => {
+        (state, payload: { inode: string; title: string; type: DialogType }) => {
             return {
                 ...state,
                 dialogHeader: payload.title,
                 dialogIframeLoading: true,
                 dialogIframeURL: this.createEditContentletUrl(payload.inode),
-                dialogType: payload.type,
+                dialogType: payload.type
             };
         }
     );
@@ -291,7 +277,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 dialogHeader: 'Search Content', // Does this need translation?
                 dialogIframeLoading: true,
                 dialogIframeURL: this.createAddContentletUrl(payload),
-                dialogType: 'content',
+                dialogType: 'content'
             };
         }
     );
@@ -302,7 +288,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             dialogHeader: 'Search Forms', // Does this need translation?
             dialogIframeLoading: true,
             dialogIframeURL: null,
-            dialogType: 'form',
+            dialogType: 'form'
         };
     });
 
@@ -314,7 +300,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 dialogHeader: payload.contentType,
                 dialogIframeLoading: true,
                 dialogIframeURL: payload.url,
-                dialogType: 'content',
+                dialogType: 'content'
             };
         }
     );
@@ -328,8 +314,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         ...state,
         editor: {
             ...state.editor,
-            layout,
-        },
+            layout
+        }
     }));
 
     /**
@@ -355,7 +341,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     private createAddContentletUrl({
         containerId,
         acceptTypes,
-        language_id,
+        language_id
     }: {
         containerId: string;
         acceptTypes: string;
@@ -378,9 +364,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      * @return {*}  {DotContainerMap}
      * @memberof EditEmaStore
      */
-    private mapContainers(
-        containers: DotPageContainerStructure
-    ): DotContainerMap {
+    private mapContainers(containers: DotPageContainerStructure): DotContainerMap {
         return Object.keys(containers).reduce((acc, id) => {
             acc[id] = containers[id].container;
 

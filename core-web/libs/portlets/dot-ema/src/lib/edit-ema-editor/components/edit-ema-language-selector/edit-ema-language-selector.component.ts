@@ -8,7 +8,7 @@ import {
     OnChanges,
     Output,
     ViewChild,
-    inject,
+    inject
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -30,11 +30,9 @@ interface DotLanguageWithLabel extends DotLanguage {
     imports: [CommonModule, OverlayPanelModule, ListboxModule, ButtonModule],
     templateUrl: './edit-ema-language-selector.component.html',
     styleUrls: ['./edit-ema-language-selector.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EditEmaLanguageSelectorComponent
-    implements AfterViewInit, OnChanges
-{
+export class EditEmaLanguageSelectorComponent implements AfterViewInit, OnChanges {
     @ViewChild('listbox') listbox: Listbox;
     @Output() selected: EventEmitter<number> = new EventEmitter();
     @Input() language: DotLanguage;
@@ -42,7 +40,7 @@ export class EditEmaLanguageSelectorComponent
     get selectedLanguage() {
         return {
             ...this.language,
-            label: this.createLanguageLabel(this.language),
+            label: this.createLanguageLabel(this.language)
         };
     }
 
@@ -52,7 +50,7 @@ export class EditEmaLanguageSelectorComponent
             map((languages) =>
                 languages.map((lang) => ({
                     ...lang,
-                    label: this.createLanguageLabel(lang),
+                    label: this.createLanguageLabel(lang)
                 }))
             )
         );

@@ -1,10 +1,5 @@
 import { describe, expect } from '@jest/globals';
-import {
-    byTestId,
-    byText,
-    createRoutingFactory,
-    SpectatorRouting,
-} from '@ngneat/spectator/jest';
+import { byTestId, byText, createRoutingFactory, SpectatorRouting } from '@ngneat/spectator/jest';
 
 import { By } from '@angular/platform-browser';
 
@@ -20,21 +15,21 @@ describe('EditEmaNavigationBarComponent', () => {
         routes: [
             {
                 path: 'content',
-                component: EditEmaNavigationBarComponent,
+                component: EditEmaNavigationBarComponent
             },
             {
                 path: 'layout',
-                component: EditEmaNavigationBarComponent,
+                component: EditEmaNavigationBarComponent
             },
             {
                 path: 'rules',
-                component: EditEmaNavigationBarComponent,
+                component: EditEmaNavigationBarComponent
             },
             {
                 path: 'experiments',
-                component: EditEmaNavigationBarComponent,
-            },
-        ],
+                component: EditEmaNavigationBarComponent
+            }
+        ]
     });
 
     beforeEach(() => {
@@ -44,30 +39,30 @@ describe('EditEmaNavigationBarComponent', () => {
                     {
                         icon: 'pi-file',
                         label: 'Content',
-                        href: 'content',
+                        href: 'content'
                     },
                     {
                         icon: 'pi-table',
                         label: 'Layout',
-                        href: 'layout',
+                        href: 'layout'
                     },
                     {
                         icon: 'pi-sliders-h',
                         label: 'Rules',
-                        href: 'rules',
+                        href: 'rules'
                     },
                     {
                         iconURL: 'assets/images/experiments.svg',
                         label: 'Experiments',
-                        href: 'experiments',
+                        href: 'experiments'
                     },
                     {
                         icon: 'pi-sliders-h',
                         label: 'Action',
-                        action: mockedAction,
-                    },
-                ],
-            },
+                        action: mockedAction
+                    }
+                ]
+            }
         });
     });
 
@@ -83,27 +78,15 @@ describe('EditEmaNavigationBarComponent', () => {
                 expect(links[3].textContent.trim()).toBe('Experiments');
                 expect(links[4].textContent.trim()).toBe('Action');
 
-                expect(links[0].getAttribute('ng-reflect-router-link')).toBe(
-                    'content'
-                );
-                expect(links[1].getAttribute('ng-reflect-router-link')).toBe(
-                    'layout'
-                );
-                expect(links[2].getAttribute('ng-reflect-router-link')).toBe(
-                    'rules'
-                );
-                expect(links[3].getAttribute('ng-reflect-router-link')).toBe(
-                    'experiments'
-                );
-                expect(
-                    links[4].getAttribute('ng-reflect-router-link')
-                ).toBeNull();
+                expect(links[0].getAttribute('ng-reflect-router-link')).toBe('content');
+                expect(links[1].getAttribute('ng-reflect-router-link')).toBe('layout');
+                expect(links[2].getAttribute('ng-reflect-router-link')).toBe('rules');
+                expect(links[3].getAttribute('ng-reflect-router-link')).toBe('experiments');
+                expect(links[4].getAttribute('ng-reflect-router-link')).toBeNull();
             });
 
             it("should be a button if action is defined on last item 'Action'", () => {
-                const actionLink = spectator.query(
-                    'button[data-testId="nav-bar-item"]'
-                );
+                const actionLink = spectator.query('button[data-testId="nav-bar-item"]');
 
                 expect(actionLink).not.toBeNull();
             });
@@ -123,21 +106,17 @@ describe('EditEmaNavigationBarComponent', () => {
 
                 spectator.click(contentButton);
 
-                expect(
-                    spectator.query(byTestId('nav-bar-item')).classList[1]
-                ).toBe('edit-ema-nav-bar__item--active');
+                expect(spectator.query(byTestId('nav-bar-item')).classList[1]).toBe(
+                    'edit-ema-nav-bar__item--active'
+                );
             });
 
             it('should have an icon', () => {
-                expect(
-                    spectator.query(byTestId('nav-bar-item-icon'))
-                ).not.toBeNull();
+                expect(spectator.query(byTestId('nav-bar-item-icon'))).not.toBeNull();
             });
 
             it('should have a label', () => {
-                expect(
-                    spectator.query(byTestId('nav-bar-item-label'))
-                ).not.toBeNull();
+                expect(spectator.query(byTestId('nav-bar-item-label'))).not.toBeNull();
             });
 
             describe('item without icon', () => {

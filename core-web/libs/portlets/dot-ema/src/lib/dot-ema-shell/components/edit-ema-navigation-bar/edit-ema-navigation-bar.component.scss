@@ -1,4 +1,4 @@
-@use 'variables' as *;
+@use "variables" as *;
 
 :host {
     width: 5rem;
@@ -61,7 +61,7 @@ use {
     position: relative;
 
     &::before {
-        content: '';
+        content: "";
         position: absolute;
         left: 0;
         margin-left: -1px;

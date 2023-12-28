@@ -1,13 +1,10 @@
 <router-outlet></router-outlet>
 <ng-container *ngIf="shellProperties$ | async as sp">
-    <dot-edit-ema-navigation-bar
-        [items]="sp.items"
-    ></dot-edit-ema-navigation-bar>
+    <dot-edit-ema-navigation-bar [items]="sp.items"></dot-edit-ema-navigation-bar>
     <p-toast position="top-center" data-testId="ema-toast"></p-toast>
     <dot-page-tools-seo
         [visible]="pageToolsVisible"
-        [currentPageUrlParams]="sp.seoProperties"
-    ></dot-page-tools-seo>
+        [currentPageUrlParams]="sp.seoProperties"></dot-page-tools-seo>
 </ng-container>
 <p-dialog
     #dialog
@@ -20,8 +17,7 @@
     [maximizable]="true"
     [modal]="true"
     (visibleChange)="store.resetDialog()"
-    data-testId="dialog"
->
+    data-testId="dialog">
     <iframe
         #dialogIframe
         [style]="{
@@ -33,11 +29,9 @@
         title="dialog"
         data-testId="dialog-iframe"
         width="100%"
-        height="100%"
-    ></iframe>
+        height="100%"></iframe>
     <dot-spinner
         *ngIf="ds.iframeLoading"
         [ngStyle]="{ position: 'absolute', top: '50%' }"
-        data-testId="spinner"
-    ></dot-spinner>
+        data-testId="spinner"></dot-spinner>
 </p-dialog>

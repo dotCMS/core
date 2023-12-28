@@ -1,25 +1,18 @@
 import { describe, expect } from '@jest/globals';
-import {
-    createServiceFactory,
-    SpectatorService,
-    SpyObject,
-} from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import {
     mockDotContainers,
     mockDotLayout,
     mockDotTemplate,
-    mockSites,
+    mockSites
 } from '@dotcms/utils-testing';
 
 import { EditEmaStore } from './dot-ema.store';
 
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
-import {
-    DotPageApiResponse,
-    DotPageApiService,
-} from '../../services/dot-page-api.service';
+import { DotPageApiResponse, DotPageApiService } from '../../services/dot-page-api.service';
 import { DEFAULT_PERSONA, EDIT_CONTENTLET_URL } from '../../shared/consts';
 import { ActionPayload } from '../../shared/models';
 
@@ -27,7 +20,7 @@ const mockResponse: DotPageApiResponse = {
     page: {
         title: 'Test Page',
         identifier: '123',
-        inode: '123-i',
+        inode: '123-i'
     },
     viewAs: {
         language: {
@@ -35,17 +28,17 @@ const mockResponse: DotPageApiResponse = {
             language: 'English',
             countryCode: 'US',
             languageCode: 'En',
-            country: 'United States',
+            country: 'United States'
         },
 
         persona: {
-            ...DEFAULT_PERSONA,
-        },
+            ...DEFAULT_PERSONA
+        }
     },
     site: mockSites[0],
     layout: mockDotLayout(),
     template: mockDotTemplate(),
-    containers: mockDotContainers(),
+    containers: mockDotContainers()
 };
 
 describe('EditEmaStore', () => {
@@ -54,7 +47,7 @@ describe('EditEmaStore', () => {
     const now = Date.now();
     const createService = createServiceFactory({
         service: EditEmaStore,
-        mocks: [DotPageApiService, DotActionUrlService],
+        mocks: [DotPageApiService, DotActionUrlService]
     });
 
     beforeEach(() => {
@@ -66,7 +59,7 @@ describe('EditEmaStore', () => {
         spectator.service.load({
             language_id: '1',
             url: 'test-url',
-            'com.dotmarketing.persona.id': '123',
+            'com.dotmarketing.persona.id': '123'
         });
     });
 
@@ -77,7 +70,7 @@ describe('EditEmaStore', () => {
                 expect(state).toEqual({
                     editor: mockResponse,
                     apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
-                    iframeURL: `http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&t=${now}`,
+                    iframeURL: `http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&t=${now}`
                 });
                 done();
                 jest.useRealTimers();
@@ -97,7 +90,7 @@ describe('EditEmaStore', () => {
                     dialogIframeLoading: true,
                     dialogHeader: '',
 
-                    dialogType: null,
+                    dialogType: null
                 });
                 done();
             });
@@ -116,7 +109,7 @@ describe('EditEmaStore', () => {
                     dialogIframeLoading: false,
                     dialogHeader: '',
 
-                    dialogType: null,
+                    dialogType: null
                 });
                 done();
             });
@@ -126,7 +119,7 @@ describe('EditEmaStore', () => {
             spectator.service.initActionEdit({
                 inode: '123',
                 title: 'test',
-                type: 'content',
+                type: 'content'
             });
 
             spectator.service.state$.subscribe((state) => {
@@ -136,7 +129,7 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: EDIT_CONTENTLET_URL + '123',
                     dialogIframeLoading: true,
                     dialogHeader: 'test',
-                    dialogType: 'content',
+                    dialogType: 'content'
                 });
                 done();
             });
@@ -146,7 +139,7 @@ describe('EditEmaStore', () => {
             spectator.service.initActionAdd({
                 containerId: '1234',
                 acceptTypes: 'test',
-                language_id: '1',
+                language_id: '1'
             });
 
             spectator.service.state$.subscribe((state) => {
@@ -157,7 +150,7 @@ describe('EditEmaStore', () => {
                         '/html/ng-contentlet-selector.jsp?ng=true&container_id=1234&add=test&language_id=1',
                     dialogIframeLoading: true,
                     dialogHeader: 'Search Content',
-                    dialogType: 'content',
+                    dialogType: 'content'
                 });
                 done();
             });
@@ -166,7 +159,7 @@ describe('EditEmaStore', () => {
         it('should initialize createAction properties', (done) => {
             spectator.service.initActionCreate({
                 contentType: 'test',
-                url: 'some/really/long/url',
+                url: 'some/really/long/url'
             });
 
             spectator.service.state$.subscribe((state) => {
@@ -176,7 +169,7 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: 'some/really/long/url',
                     dialogIframeLoading: true,
                     dialogHeader: 'test',
-                    dialogType: 'content',
+                    dialogType: 'content'
                 });
                 done();
             });
@@ -185,7 +178,7 @@ describe('EditEmaStore', () => {
         it('should update dialog state', (done) => {
             spectator.service.setDialogForCreateContent({
                 url: 'some/really/long/url',
-                name: 'Blog Posts',
+                name: 'Blog Posts'
             });
 
             spectator.service.state$.subscribe((state) => {
@@ -207,7 +200,7 @@ describe('EditEmaStore', () => {
                 of({
                     page: {
                         title: 'Test Page',
-                        identifier: '123',
+                        identifier: '123'
                     },
                     viewAs: {
                         language: {
@@ -215,9 +208,9 @@ describe('EditEmaStore', () => {
                             language: '',
                             countryCode: '',
                             languageCode: '',
-                            country: '',
-                        },
-                    },
+                            country: ''
+                        }
+                    }
                 })
             );
             dotActionUrlService.getCreateContentletUrl.andReturn(
@@ -227,27 +220,23 @@ describe('EditEmaStore', () => {
             spectator.service.load({
                 language_id: 'en',
                 url: 'test-url',
-                'com.dotmarketing.persona.id': '123',
+                'com.dotmarketing.persona.id': '123'
             });
 
             spectator.service.createContentFromPalette({
                 variable: 'blogPost',
-                name: 'Blog',
+                name: 'Blog'
             });
 
             spectator.service.state$.subscribe((state) => {
                 expect(state.dialogHeader).toBe('Create Blog');
                 expect(state.dialogIframeLoading).toBe(true);
-                expect(state.dialogIframeURL).toBe(
-                    'https://demo.dotcms.com/jsp.jsp'
-                );
+                expect(state.dialogIframeURL).toBe('https://demo.dotcms.com/jsp.jsp');
                 expect(state.dialogType).toBe('content');
                 done();
             });
 
-            expect(
-                dotActionUrlService.getCreateContentletUrl
-            ).toHaveBeenCalledWith('blogPost');
+            expect(dotActionUrlService.getCreateContentletUrl).toHaveBeenCalledWith('blogPost');
         });
 
         it('should handle successful data loading', (done) => {
@@ -258,7 +247,7 @@ describe('EditEmaStore', () => {
             spectator.service.load({
                 language_id: 'en',
                 url: 'test-url',
-                'com.dotmarketing.persona.id': '123',
+                'com.dotmarketing.persona.id': '123'
             });
 
             spectator.service.state$.subscribe((state) => {
@@ -268,7 +257,7 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: '',
                     dialogIframeLoading: false,
                     dialogHeader: '',
-                    dialogType: null,
+                    dialogType: null
                 });
                 done();
             });
@@ -278,24 +267,24 @@ describe('EditEmaStore', () => {
             const dotPageApiService = spectator.inject(DotPageApiService);
             const mockResponse = {
                 page: {
-                    title: 'Test Page',
-                },
+                    title: 'Test Page'
+                }
             };
             dotPageApiService.get.andReturn(of(mockResponse));
 
             spectator.service.load({
                 language_id: 'en',
                 url: 'test-url',
-                'com.dotmarketing.persona.id': '123',
+                'com.dotmarketing.persona.id': '123'
             });
             spectator.service.savePage({
                 pageContainers: [],
-                pageId: '789',
+                pageId: '789'
             });
 
             expect(dotPageApiService.save).toHaveBeenCalledWith({
                 pageContainers: [],
-                pageId: '789',
+                pageId: '789'
             });
         });
 
@@ -308,37 +297,35 @@ describe('EditEmaStore', () => {
                     uuid: '123',
                     acceptTypes: 'test',
                     maxContentlets: 1,
-                    contentletsId: ['existing-contentlet-123'],
+                    contentletsId: ['existing-contentlet-123']
                 },
                 pageContainers: [
                     {
                         identifier: 'container-identifier-123',
                         uuid: '123',
-                        contentletsId: ['existing-contentlet-123'],
-                    },
+                        contentletsId: ['existing-contentlet-123']
+                    }
                 ],
                 contentlet: {
                     identifier: 'existing-contentlet-123',
                     inode: 'existing-contentlet-inode-456',
-                    title: 'Hello World',
-                },
+                    title: 'Hello World'
+                }
             };
             const dotPageApiService = spectator.inject(DotPageApiService);
             dotPageApiService.save.andReturn(of({}));
-            dotPageApiService.getFormIndetifier.andReturn(
-                of('form-identifier-123')
-            );
+            dotPageApiService.getFormIndetifier.andReturn(of('form-identifier-123'));
 
             spectator.service.load({
                 language_id: 'en',
                 url: 'test-url',
-                'com.dotmarketing.persona.id': '123',
+                'com.dotmarketing.persona.id': '123'
             });
             spectator.service.saveFormToPage({
                 payload,
                 formId: 'form-identifier-789',
                 // eslint-disable-next-line @typescript-eslint/no-empty-function
-                whenSaved: () => {},
+                whenSaved: () => {}
             });
 
             expect(dotPageApiService.getFormIndetifier).toHaveBeenCalledWith(
@@ -348,16 +335,13 @@ describe('EditEmaStore', () => {
             expect(dotPageApiService.save).toHaveBeenCalledWith({
                 pageContainers: [
                     {
-                        contentletsId: [
-                            'existing-contentlet-123',
-                            'form-identifier-123',
-                        ],
+                        contentletsId: ['existing-contentlet-123', 'form-identifier-123'],
                         identifier: 'container-identifier-123',
                         personaTag: undefined,
-                        uuid: '123',
-                    },
+                        uuid: '123'
+                    }
                 ],
-                pageId: 'page-identifier-123',
+                pageId: 'page-identifier-123'
             });
         });
     });

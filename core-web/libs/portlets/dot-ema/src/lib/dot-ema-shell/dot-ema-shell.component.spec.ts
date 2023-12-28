@@ -1,9 +1,5 @@
 import { describe, expect } from '@jest/globals';
-import {
-    SpectatorRouting,
-    byTestId,
-    createRoutingFactory,
-} from '@ngneat/spectator/jest';
+import { SpectatorRouting, byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -13,16 +9,12 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
-import {
-    DotLanguagesService,
-    DotMessageService,
-    DotPersonalizeService,
-} from '@dotcms/data-access';
+import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { SiteService, mockSites } from '@dotcms/dotcms-js';
 import {
     DotLanguagesServiceMock,
     DotPersonalizeServiceMock,
-    SiteServiceMock,
+    SiteServiceMock
 } from '@dotcms/utils-testing';
 
 import { DotEmaShellComponent } from './dot-ema-shell.component';
@@ -52,7 +44,7 @@ describe('DotEmaShellComponent', () => {
             DotMessageService,
             {
                 provide: DotLanguagesService,
-                useValue: new DotLanguagesServiceMock(),
+                useValue: new DotLanguagesServiceMock()
             },
             {
                 provide: DotPageApiService,
@@ -62,7 +54,7 @@ describe('DotEmaShellComponent', () => {
                             page: {
                                 title: 'hello world',
                                 identifier: '123',
-                                inode: '123',
+                                inode: '123'
                             },
                             viewAs: {
                                 language: {
@@ -70,11 +62,11 @@ describe('DotEmaShellComponent', () => {
                                     language: 'English',
                                     countryCode: 'US',
                                     languageCode: 'EN',
-                                    country: 'United States',
+                                    country: 'United States'
                                 },
-                                persona: DEFAULT_PERSONA,
+                                persona: DEFAULT_PERSONA
                             },
-                            site: mockSites[0],
+                            site: mockSites[0]
                         });
                     },
                     save() {
@@ -86,30 +78,28 @@ describe('DotEmaShellComponent', () => {
                             pagination: {
                                 totalEntries: 1,
                                 perPage: 10,
-                                page: 1,
-                            },
+                                page: 1
+                            }
                         });
-                    },
-                },
+                    }
+                }
             },
 
             {
                 provide: WINDOW,
-                useValue: window,
+                useValue: window
             },
             {
                 provide: DotPersonalizeService,
-                useValue: new DotPersonalizeServiceMock(),
-            },
-        ],
+                useValue: new DotPersonalizeServiceMock()
+            }
+        ]
     });
 
     describe('with queryParams', () => {
         beforeEach(() => {
             spectator = createComponent();
-            siteService = spectator.inject(
-                SiteService
-            ) as unknown as SiteServiceMock;
+            siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
             store = spectator.inject(EditEmaStore, true);
             router = spectator.inject(Router);
             jest.spyOn(store, 'load');
@@ -119,17 +109,15 @@ describe('DotEmaShellComponent', () => {
                 queryParams: {
                     language_id: 1,
                     url: 'index',
-                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                },
+                    'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+                }
             });
         });
 
         describe('DOM', () => {
             it('should have a navigation bar', () => {
                 spectator.detectChanges();
-                expect(
-                    spectator.query('dot-edit-ema-navigation-bar')
-                ).not.toBeNull();
+                expect(spectator.query('dot-edit-ema-navigation-bar')).not.toBeNull();
             });
         });
 
@@ -140,7 +128,7 @@ describe('DotEmaShellComponent', () => {
                 expect(store.load).toHaveBeenCalledWith({
                     language_id: 1,
                     url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                 });
             });
 
@@ -150,15 +138,15 @@ describe('DotEmaShellComponent', () => {
                     queryParams: {
                         language_id: 2,
                         url: 'my-awesome-page',
-                        'com.dotmarketing.persona.id': 'SomeCoolDude',
-                    },
+                        'com.dotmarketing.persona.id': 'SomeCoolDude'
+                    }
                 });
 
                 spectator.detectChanges();
                 expect(store.load).toHaveBeenCalledWith({
                     language_id: 2,
                     url: 'my-awesome-page',
-                    'com.dotmarketing.persona.id': 'SomeCoolDude',
+                    'com.dotmarketing.persona.id': 'SomeCoolDude'
                 });
             });
         });
@@ -183,13 +171,11 @@ describe('DotEmaShellComponent', () => {
                 store.initActionEdit({
                     inode: '123',
                     title: 'hello world',
-                    type: 'shell',
+                    type: 'shell'
                 });
                 spectator.detectChanges();
 
-                expect(
-                    spectator.query(byTestId('dialog-iframe'))
-                ).not.toBeNull();
+                expect(spectator.query(byTestId('dialog-iframe'))).not.toBeNull();
             });
 
             it('should trigger a navigate when saving and the url changed', () => {
@@ -199,7 +185,7 @@ describe('DotEmaShellComponent', () => {
                 store.initActionEdit({
                     inode: '123',
                     title: 'hello world',
-                    type: 'shell',
+                    type: 'shell'
                 });
                 spectator.detectChanges();
 
@@ -214,18 +200,18 @@ describe('DotEmaShellComponent', () => {
                         detail: {
                             name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
                             payload: {
-                                htmlPageReferer: '/my-awesome-page',
-                            },
-                        },
+                                htmlPageReferer: '/my-awesome-page'
+                            }
+                        }
                     })
                 );
                 spectator.detectChanges();
 
                 expect(navigate).toHaveBeenCalledWith([], {
                     queryParams: {
-                        url: 'my-awesome-page',
+                        url: 'my-awesome-page'
                     },
-                    queryParamsHandling: 'merge',
+                    queryParamsHandling: 'merge'
                 });
             });
 
@@ -236,7 +222,7 @@ describe('DotEmaShellComponent', () => {
                 store.initActionEdit({
                     inode: '123',
                     title: 'hello world',
-                    type: 'shell',
+                    type: 'shell'
                 });
                 spectator.detectChanges();
 
@@ -251,9 +237,9 @@ describe('DotEmaShellComponent', () => {
                         detail: {
                             name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
                             payload: {
-                                htmlPageReferer: '/index',
-                            },
-                        },
+                                htmlPageReferer: '/index'
+                            }
+                        }
                     })
                 );
                 spectator.detectChanges();
@@ -261,7 +247,7 @@ describe('DotEmaShellComponent', () => {
                 expect(loadMock).toHaveBeenCalledWith({
                     language_id: 1,
                     url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                 });
             });
         });
@@ -270,9 +256,7 @@ describe('DotEmaShellComponent', () => {
     describe('without queryParams', () => {
         beforeEach(() => {
             spectator = createComponent();
-            siteService = spectator.inject(
-                SiteService
-            ) as unknown as SiteServiceMock;
+            siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
             store = spectator.inject(EditEmaStore, true);
             router = spectator.inject(Router);
             jest.spyOn(store, 'load');
@@ -288,9 +272,9 @@ describe('DotEmaShellComponent', () => {
                 queryParams: {
                     language_id: 1,
                     url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                 },
-                queryParamsHandling: 'merge',
+                queryParamsHandling: 'merge'
             });
 
             // We need to trigger the navigation manually because we are not using the router
@@ -299,14 +283,14 @@ describe('DotEmaShellComponent', () => {
                 queryParams: {
                     language_id: 1,
                     url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
-                },
+                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                }
             });
 
             expect(store.load).toHaveBeenCalledWith({
                 language_id: 1,
                 url: 'index',
-                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
             });
         });
     });

@@ -1,14 +1,7 @@
 import { Observable, Subject, fromEvent } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import {
-    Component,
-    OnInit,
-    inject,
-    OnDestroy,
-    ViewChild,
-    ElementRef,
-} from '@angular/core';
+import { Component, OnInit, inject, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -21,7 +14,7 @@ import { map, skip, takeUntil } from 'rxjs/operators';
 import {
     DotLanguagesService,
     DotPageLayoutService,
-    DotPersonalizeService,
+    DotPersonalizeService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
@@ -32,10 +25,7 @@ import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotPageToolsSeoComponent } from '../dot-page-tools-seo/dot-page-tools-seo.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import {
-    DotPageApiParams,
-    DotPageApiService,
-} from '../services/dot-page-api.service';
+import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_QUERY_PARAMS, WINDOW } from '../shared/consts';
 import { NavigationBarItem } from '../shared/models';
 
@@ -50,7 +40,7 @@ import { NavigationBarItem } from '../shared/models';
         RouterModule,
         DotPageToolsSeoComponent,
         DialogModule,
-        SafeUrlPipe,
+        SafeUrlPipe
     ],
     providers: [
         EditEmaStore,
@@ -63,11 +53,11 @@ import { NavigationBarItem } from '../shared/models';
         DotPageLayoutService,
         {
             provide: WINDOW,
-            useValue: window,
-        },
+            useValue: window
+        }
     ],
     templateUrl: './dot-ema-shell.component.html',
-    styleUrls: ['./dot-ema-shell.component.scss'],
+    styleUrls: ['./dot-ema-shell.component.scss']
 })
 export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
@@ -84,8 +74,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         return {
             language_id: queryParams['language_id'],
             url: queryParams['url'],
-            'com.dotmarketing.persona.id':
-                queryParams['com.dotmarketing.persona.id'],
+            'com.dotmarketing.persona.id': queryParams['com.dotmarketing.persona.id']
         };
     }
     pageToolsVisible = false;
@@ -103,29 +92,29 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 {
                     icon: 'pi-file',
                     label: 'Content',
-                    href: 'content',
+                    href: 'content'
                 },
                 {
                     icon: 'pi-table',
                     label: 'Layout',
-                    href: 'layout',
+                    href: 'layout'
                 },
                 {
                     icon: 'pi-sliders-h',
                     label: 'Rules',
-                    href: `rules/${page.identifier}`,
+                    href: `rules/${page.identifier}`
                 },
                 {
                     iconURL: 'experiments',
                     label: 'A/B',
-                    href: 'experiments',
+                    href: 'experiments'
                 },
                 {
                     icon: 'pi-th-large',
                     label: 'Page Tools',
                     action: () => {
                         this.pageToolsVisible = !this.pageToolsVisible;
-                    },
+                    }
                 },
                 {
                     icon: 'pi-ellipsis-v',
@@ -134,53 +123,50 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                         this.store.initActionEdit({
                             inode: page.inode,
                             title: page.title,
-                            type: 'shell',
+                            type: 'shell'
                         });
-                    },
-                },
+                    }
+                }
             ],
             seoProperties: {
                 currentUrl,
                 languageId,
                 siteId,
-                requestHostName: host,
-            },
+                requestHostName: host
+            }
         }))
     );
 
     ngOnInit(): void {
-        this.route.queryParams
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((queryParams: Params) => {
-                const { missing, ...missingQueryParams } =
-                    DEFAULT_QUERY_PARAMS.reduce(
-                        (acc, curr) => {
-                            if (!queryParams[curr.key]) {
-                                acc[curr.key] = curr.value;
-                                acc.missing = true;
-                            }
+        this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((queryParams: Params) => {
+            const { missing, ...missingQueryParams } = DEFAULT_QUERY_PARAMS.reduce(
+                (acc, curr) => {
+                    if (!queryParams[curr.key]) {
+                        acc[curr.key] = curr.value;
+                        acc.missing = true;
+                    }
 
-                            return acc;
-                        },
-                        {
-                            missing: false,
-                        }
-                    );
-
-                if (missing) {
-                    this.router.navigate([], {
-                        queryParams: {
-                            ...queryParams,
-                            ...missingQueryParams,
-                        },
-                        queryParamsHandling: 'merge',
-                    });
-                } else {
-                    this.store.load({
-                        ...this.queryParams,
-                    });
+                    return acc;
+                },
+                {
+                    missing: false
                 }
-            });
+            );
+
+            if (missing) {
+                this.router.navigate([], {
+                    queryParams: {
+                        ...queryParams,
+                        ...missingQueryParams
+                    },
+                    queryParamsHandling: 'merge'
+                });
+            } else {
+                this.store.load({
+                    ...this.queryParams
+                });
+            }
+        });
 
         // We need to skip one because it's the initial value
         this.siteService.switchSite$.pipe(skip(1)).subscribe(() => {
@@ -204,20 +190,18 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: CustomEvent) => {
                 if (event.detail.name === 'save-page') {
-                    const url = event.detail.payload.htmlPageReferer
-                        .split('?')[0]
-                        .replace('/', '');
+                    const url = event.detail.payload.htmlPageReferer.split('?')[0].replace('/', '');
 
                     this.queryParams.url !== url
                         ? // If the url is different we need to navigate
                           this.router.navigate([], {
                               queryParams: {
-                                  url,
+                                  url
                               },
-                              queryParamsHandling: 'merge',
+                              queryParamsHandling: 'merge'
                           })
                         : this.store.load({
-                              ...this.queryParams,
+                              ...this.queryParams
                           }); // If the url is the same we need to fetch the page
                 }
             });
