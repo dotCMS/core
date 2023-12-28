@@ -7,14 +7,12 @@
                 </h2>
                 <p
                     class="dot-starter-description"
-                    [innerHTML]="'starter.description' | dm : [user.username]"
-                ></p>
+                    [innerHTML]="'starter.description' | dm : [user.username]"></p>
             </div>
             <p-checkbox
                 [binary]="true"
                 [label]="'starter.dont.show' | dm"
-                (onChange)="handleVisibility($event.checked)"
-            ></p-checkbox>
+                (onChange)="handleVisibility($event.checked)"></p-checkbox>
         </div>
         <div class="col-12">
             <div class="grid">
@@ -24,23 +22,16 @@
                             class="dot-starter-top-main__block"
                             *ngIf="user.showCreateDataModelLink"
                             data-testId="starter.main.link.data.model"
-                            routerLink="/content-types-angular/create/content"
-                        >
+                            routerLink="/content-types-angular/create/content">
                             <div class="dot-starter-top-main__link-number">
                                 <span></span>
                             </div>
                             <div class="dot-starter-top-main__link-data">
                                 <h4>
-                                    {{
-                                        'starter.main.link.data.model.title'
-                                            | dm
-                                    }}
+                                    {{ 'starter.main.link.data.model.title' | dm }}
                                 </h4>
                                 <p>
-                                    {{
-                                        'starter.main.link.data.model.description'
-                                            | dm
-                                    }}
+                                    {{ 'starter.main.link.data.model.description' | dm }}
                                 </p>
                             </div>
                         </a>
@@ -48,23 +39,16 @@
                             class="dot-starter-top-main__block"
                             *ngIf="user.showCreateContentLink"
                             data-testId="starter.main.link.content"
-                            routerLink="/c/content/new/webPageContent"
-                        >
+                            routerLink="/c/content/new/webPageContent">
                             <div class="dot-starter-top-main__link-number">
                                 <span></span>
                             </div>
                             <div class="dot-starter-top-main__link-data">
                                 <h4>
-                                    {{
-                                        'starter.main.link.add.content.title'
-                                            | dm
-                                    }}
+                                    {{ 'starter.main.link.add.content.title' | dm }}
                                 </h4>
                                 <p>
-                                    {{
-                                        'starter.main.link.add.content.description'
-                                            | dm
-                                    }}
+                                    {{ 'starter.main.link.add.content.description' | dm }}
                                 </p>
                             </div>
                         </a>
@@ -72,23 +56,16 @@
                             class="dot-starter-top-main__block"
                             *ngIf="user.showCreateTemplateLink"
                             data-testId="starter.main.link.design.layout"
-                            routerLink="/templates/new/designer"
-                        >
+                            routerLink="/templates/new/designer">
                             <div class="dot-starter-top-main__link-number">
                                 <span></span>
                             </div>
                             <div class="dot-starter-top-main__link-data">
                                 <h4>
-                                    {{
-                                        'starter.main.link.design.layout.title'
-                                            | dm
-                                    }}
+                                    {{ 'starter.main.link.design.layout.title' | dm }}
                                 </h4>
                                 <p>
-                                    {{
-                                        'starter.main.link.design.layout.description'
-                                            | dm
-                                    }}
+                                    {{ 'starter.main.link.design.layout.description' | dm }}
                                 </p>
                             </div>
                         </a>
@@ -96,33 +73,23 @@
                             class="dot-starter-top-main__block"
                             *ngIf="user.showCreatePageLink"
                             data-testId="starter.main.link.create.page"
-                            routerLink="/c/content/new/htmlpageasset"
-                        >
+                            routerLink="/c/content/new/htmlpageasset">
                             <div class="dot-starter-top-main__link-number">
                                 <span></span>
                             </div>
                             <div class="dot-starter-top-main__link-data">
                                 <h4>
-                                    {{
-                                        'starter.main.link.create.page.title'
-                                            | dm
-                                    }}
+                                    {{ 'starter.main.link.create.page.title' | dm }}
                                 </h4>
                                 <p>
-                                    {{
-                                        'starter.main.link.create.page.description'
-                                            | dm
-                                    }}
+                                    {{ 'starter.main.link.create.page.description' | dm }}
                                 </p>
                             </div>
                         </a>
                     </div>
                 </div>
                 <div class="md:col-12 dot-starter-offset">
-                    <h5
-                        class="dot-starter-top-main__title"
-                        data-testId="dot-side-title"
-                    >
+                    <h5 class="dot-starter-top-main__title" data-testId="dot-side-title">
                         {{ 'starter.side.title' | dm }}
                     </h5>
                 </div>
@@ -132,16 +99,13 @@
                         class="dot-starter-top-secondary__block"
                         href="https://dotcms.com/docs/latest/graphql"
                         data-testId="starter.side.link.graphQl"
-                        target="_blank"
-                    >
+                        target="_blank">
                         <div class="dot-starter-top-secondary__link-data-apis">
                             <h4>
                                 {{ 'starter.side.link.graphQl.title' | dm }}
                             </h4>
                             <p>
-                                {{
-                                    'starter.side.link.graphQl.description' | dm
-                                }}
+                                {{ 'starter.side.link.graphQl.description' | dm }}
                             </p>
                         </div>
                     </a>
@@ -149,20 +113,13 @@
                         class="dot-starter-top-secondary__block"
                         href="https://dotcms.com/product/features/image-api/"
                         data-testId="starter.side.link.image.processing"
-                        target="_blank"
-                    >
+                        target="_blank">
                         <div class="dot-starter-top-secondary__link-data-apis">
                             <h4>
-                                {{
-                                    'starter.side.link.image.processing.title'
-                                        | dm
-                                }}
+                                {{ 'starter.side.link.image.processing.title' | dm }}
                             </h4>
                             <p>
-                                {{
-                                    'starter.side.link.image.processing.description'
-                                        | dm
-                                }}
+                                {{ 'starter.side.link.image.processing.description' | dm }}
                             </p>
                         </div>
                     </a>
@@ -170,19 +127,13 @@
                         class="dot-starter-top-secondary__block"
                         href="https://dotcms.com/docs/latest/rest-api-authentication#APIToken"
                         data-testId="starter.side.link.generate.key"
-                        target="_blank"
-                    >
+                        target="_blank">
                         <div class="dot-starter-top-secondary__link-data-apis">
                             <h4>
-                                {{
-                                    'starter.side.link.generate.key.title' | dm
-                                }}
+                                {{ 'starter.side.link.generate.key.title' | dm }}
                             </h4>
                             <p>
-                                {{
-                                    'starter.side.link.generate.key.description'
-                                        | dm
-                                }}
+                                {{ 'starter.side.link.generate.key.description' | dm }}
                             </p>
                         </div>
                     </a>
@@ -192,16 +143,13 @@
                         class="dot-starter-top-secondary__block"
                         href="https://dotcms.com/docs/latest/content-api"
                         data-testId="starter.side.link.content"
-                        target="_blank"
-                    >
+                        target="_blank">
                         <div class="dot-starter-top-secondary__link-data-apis">
                             <h4>
                                 {{ 'starter.side.link.content.title' | dm }}
                             </h4>
                             <p>
-                                {{
-                                    'starter.side.link.content.description' | dm
-                                }}
+                                {{ 'starter.side.link.content.description' | dm }}
                             </p>
                         </div>
                     </a>
@@ -210,17 +158,13 @@
                         class="dot-starter-top-secondary__block"
                         href="https://dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas"
                         data-testId="starter.side.link.page.layout"
-                        target="_blank"
-                    >
+                        target="_blank">
                         <div class="dot-starter-top-secondary__link-data-apis">
                             <h4>
                                 {{ 'starter.side.link.page.layout.title' | dm }}
                             </h4>
                             <p>
-                                {{
-                                    'starter.side.link.page.layout.description'
-                                        | dm
-                                }}
+                                {{ 'starter.side.link.page.layout.description' | dm }}
                             </p>
                         </div>
                     </a>
@@ -231,10 +175,7 @@
 
     <div class="dot-starter-bottom-content">
         <div class="md:col-12 dot-starter-offset">
-            <h3
-                class="dot-starter-top-main__title"
-                data-test="dot-resources-title"
-            >
+            <h3 class="dot-starter-top-main__title" data-test="dot-resources-title">
                 {{ 'starter.side.resources.title' | dm }}
             </h3>
         </div>
@@ -243,8 +184,7 @@
                 class="dot-starter-bottom__block"
                 href="https://dotcms.com/docs/latest/"
                 data-testId="starter.footer.link.documentation"
-                target="_blank"
-            >
+                target="_blank">
                 <div class="dot-starter-bottom__link-icon">
                     <i class="pi pi-file-import"></i>
                 </div>
@@ -253,9 +193,7 @@
                         {{ 'starter.footer.link.documentation.title' | dm }}
                     </h4>
                     <p>
-                        {{
-                            'starter.footer.link.documentation.description' | dm
-                        }}
+                        {{ 'starter.footer.link.documentation.description' | dm }}
                     </p>
                 </div>
             </a>
@@ -265,8 +203,7 @@
                 class="dot-starter-bottom__block"
                 href="https://dotcms.com/codeshare/"
                 data-testId="starter.footer.link.examples"
-                target="_blank"
-            >
+                target="_blank">
                 <div class="dot-starter-bottom__link-icon">
                     <i class="pi pi-code"></i>
                 </div>
@@ -281,8 +218,7 @@
                 class="dot-starter-bottom__block"
                 href="https://dotcms.com/forum/"
                 data-testId="starter.footer.link.community"
-                target="_blank"
-            >
+                target="_blank">
                 <div class="dot-starter-bottom__link-icon">
                     <i class="pi pi-users"></i>
                 </div>
@@ -299,8 +235,7 @@
                 class="dot-starter-bottom__block"
                 href="https://dotcms.com/courses/"
                 data-testId="starter.footer.link.training"
-                target="_blank"
-            >
+                target="_blank">
                 <div class="dot-starter-bottom__link-icon">
                     <i class="pi pi-video"></i>
                 </div>
@@ -315,8 +250,7 @@
                 class="dot-starter-bottom__block"
                 href="https://dotcms.com/review/"
                 data-testId="starter.footer.link.review"
-                target="_blank"
-            >
+                target="_blank">
                 <div class="dot-starter-bottom__link-icon">
                     <i class="pi pi-star"></i>
                 </div>
@@ -331,8 +265,7 @@
                 class="dot-starter-bottom__block"
                 href="https://dotcms.com/contact-us/"
                 data-testId="starter.footer.link.feedback"
-                target="_blank"
-            >
+                target="_blank">
                 <div class="dot-starter-bottom__link-icon">
                     <i class="pi pi-comment"></i>
                 </div>
