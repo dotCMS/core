@@ -153,22 +153,6 @@ public interface FieldAPI {
 	 */
 	FieldVariable save(FieldVariable fieldVar, User user) throws DotDataException, DotSecurityException;
 
-	static Set<String> RESERVED_FIELD_VARS= ImmutableSet.of(
-			Contentlet.INODE_KEY,
-			Contentlet.LANGUAGEID_KEY,
-			Contentlet.STRUCTURE_INODE_KEY,
-			Contentlet.DISABLED_WYSIWYG_KEY,
-			Contentlet.LOCKED_KEY,
-			Contentlet.ARCHIVED_KEY,
-			Contentlet.LIVE_KEY,
-			Contentlet.WORKING_KEY,
-			Contentlet.MOD_DATE_KEY,
-			Contentlet.MOD_USER_KEY,
-			Contentlet.OWNER_KEY,
-			Contentlet.IDENTIFIER_KEY,
-			Contentlet.SORT_ORDER_KEY,
-			Contentlet.HOST_KEY,
-			Contentlet.FOLDER_KEY);
 
 	/**
 	 * Returns a field based on the Content Type Id and the Field Relation Type

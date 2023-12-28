@@ -5,6 +5,7 @@ import {
     Component,
     EventEmitter,
     Input,
+    OnChanges,
     Output,
     ViewChild,
     inject
@@ -31,7 +32,7 @@ interface DotLanguageWithLabel extends DotLanguage {
     styleUrls: ['./edit-ema-language-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EditEmaLanguageSelectorComponent implements AfterViewInit {
+export class EditEmaLanguageSelectorComponent implements AfterViewInit, OnChanges {
     @ViewChild('listbox') listbox: Listbox;
     @Output() selected: EventEmitter<number> = new EventEmitter();
     @Input() language: DotLanguage;
@@ -53,6 +54,14 @@ export class EditEmaLanguageSelectorComponent implements AfterViewInit {
                 }))
             )
         );
+
+    ngOnChanges(): void {
+        // To select the correct language when the page is reloaded with no queryParams
+        if (this.listbox) {
+            this.listbox.value = this.selectedLanguage;
+            this.listbox.cd.detectChanges();
+        }
+    }
 
     ngAfterViewInit(): void {
         this.listbox.value = this.selectedLanguage;
