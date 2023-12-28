@@ -19,3 +19,24 @@
         }
     }
 }
+
+::ng-deep {
+    .p-dialog.edit-ema-dialog.p-component {
+        .p-dialog-content {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 0;
+        }
+    }
+
+    .p-confirm-dialog {
+        .p-dialog-content {
+            padding: 0 $spacing-6 $spacing-6 $spacing-6;
+        }
+
+        .p-dialog-footer {
+            padding-top: 0;
+        }
+    }
+}

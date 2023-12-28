@@ -17,7 +17,8 @@
     [maximizable]="true"
     [modal]="true"
     (visibleChange)="store.resetDialog()"
-    data-testId="dialog">
+    data-testId="dialog"
+    styleClass="edit-ema-dialog">
     <iframe
         #dialogIframe
         [style]="{ border: 'none', display: ds.iframeLoading ? 'none' : 'block' }"

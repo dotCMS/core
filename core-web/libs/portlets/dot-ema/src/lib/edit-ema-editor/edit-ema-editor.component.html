@@ -109,7 +109,8 @@
     [maximizable]="true"
     [modal]="true"
     (visibleChange)="resetDialogIframeData()"
-    data-testId="dialog">
+    data-testId="dialog"
+    styleClass="edit-ema-dialog">
     <ng-container [ngSwitch]="ds.type">
         <dot-ema-form-selector *ngSwitchCase="'form'" (selected)="addSelectedForm($event)" />
 
