@@ -11,7 +11,7 @@ import {
     DotLayout,
     DotPageContainerStructure,
     DotPersona,
-    DotTemplate
+    DotTemplate,
 } from '@dotcms/dotcms-models';
 
 import { SavePagePayload } from '../shared/models';
@@ -20,6 +20,7 @@ export interface DotPageApiResponse {
     page: {
         title: string;
         identifier: string;
+        inode: string;
     };
     site: Site;
     viewAs: {
@@ -34,7 +35,7 @@ export interface DotPageApiResponse {
 export interface DotPageApiParams {
     url: string;
     language_id: string;
-    persona_id: string;
+    'com.dotmarketing.persona.id': string;
 }
 
 export interface GetPersonasParams {
@@ -66,8 +67,8 @@ export class DotPageApiService {
      * @return {*}  {Observable<DotPageApiResponse>}
      * @memberof DotPageApiService
      */
-    get({ url, language_id, persona_id }: DotPageApiParams): Observable<DotPageApiResponse> {
-        const apiUrl = `/api/v1/page/json/${url}?language_id=${language_id}&com.dotmarketing.persona.id=${persona_id}`;
+    get(params: DotPageApiParams): Observable<DotPageApiResponse> {
+        const apiUrl = `/api/v1/page/json/${params.url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
 
         return this.http
             .get<{
@@ -100,16 +101,23 @@ export class DotPageApiService {
         pageId,
         filter,
         page,
-        perPage = 10
+        perPage = 10,
     }: GetPersonasParams): Observable<GetPersonasResponse> {
         const url = this.getPersonasURL({ pageId, filter, page, perPage });
 
-        return this.http.get<{ entity: DotPersona[]; pagination: PaginationData }>(url).pipe(
-            map((res: { entity: DotPersona[]; pagination: PaginationData }) => ({
-                data: res.entity,
-                pagination: res.pagination
-            }))
-        );
+        return this.http
+            .get<{ entity: DotPersona[]; pagination: PaginationData }>(url)
+            .pipe(
+                map(
+                    (res: {
+                        entity: DotPersona[];
+                        pagination: PaginationData;
+                    }) => ({
+                        data: res.entity,
+                        pagination: res.pagination,
+                    })
+                )
+            );
     }
 
     /**
@@ -128,13 +136,18 @@ export class DotPageApiService {
             .pipe(pluck('entity', 'content', 'identifier'));
     }
 
-    private getPersonasURL({ pageId, filter, page, perPage }: GetPersonasParams): string {
+    private getPersonasURL({
+        pageId,
+        filter,
+        page,
+        perPage,
+    }: GetPersonasParams): string {
         const apiUrl = `/api/v1/page/${pageId}/personas?`;
 
         const queryParams = new URLSearchParams({
             perper_page: perPage.toString(),
             respectFrontEndRoles: 'true',
-            variantName: 'DEFAULT'
+            variantName: 'DEFAULT',
         });
 
         if (filter) {

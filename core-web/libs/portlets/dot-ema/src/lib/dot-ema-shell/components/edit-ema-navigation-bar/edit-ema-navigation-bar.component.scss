@@ -1,4 +1,4 @@
-@use "variables" as *;
+@use 'variables' as *;
 
 :host {
     width: 5rem;
@@ -33,6 +33,11 @@
     }
 }
 
+.edit-ema-nav-bar__item--button {
+    background-color: transparent;
+    border: none;
+}
+
 .item__image,
 use {
     user-select: none;
@@ -56,7 +61,7 @@ use {
     position: relative;
 
     &::before {
-        content: "";
+        content: '';
         position: absolute;
         left: 0;
         margin-left: -1px;

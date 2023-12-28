@@ -68,8 +68,9 @@ $number-link-icon-size: 2.28rem;
         border-bottom: 1px solid $color-palette-gray-300;
         display: flex;
         flex-direction: column;
-        margin: 1rem;
-        padding: $spacing-5 0;
+        margin: $spacing-3;
+        padding: $spacing-5 $spacing-3;
+
         transition: background-color $basic-speed ease-in;
         width: 25%;
 
@@ -80,7 +81,7 @@ $number-link-icon-size: 2.28rem;
 
     .dot-starter-top-main__link-number {
         align-self: center;
-        margin: 0 $spacing-4;
+        margin: 0 $spacing-4 $spacing-1;
         text-align: center;
 
         span {
@@ -200,9 +201,10 @@ $number-link-icon-size: 2.28rem;
         height: 100%;
         margin: $spacing-3 $spacing-1 0;
         overflow: hidden;
-        padding: 0.2rem 0;
+        padding: $spacing-4 $spacing-3 0;
         transition: background-color $basic-speed ease-in;
         border-radius: $border-radius-md;
+        gap: $spacing-3;
 
         &:hover {
             background-color: $bg-hover;
@@ -210,10 +212,6 @@ $number-link-icon-size: 2.28rem;
     }
 
     .dot-starter-bottom__link-icon {
-        align-self: center;
-        margin: 0 $spacing-5;
-        text-align: center;
-
         span {
             color: $color-palette-primary;
             display: inline-flex;
@@ -221,7 +219,6 @@ $number-link-icon-size: 2.28rem;
     }
 
     .dot-starter-bottom__link-data {
-        align-self: center;
         margin-right: $spacing-5;
         padding: 0;
 

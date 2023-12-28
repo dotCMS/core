@@ -22,13 +22,11 @@ export const DotcmsPage = () => {
     const { layout, page } = useContext(GlobalContext);
 
     useEffect(() => {
-        const url = pathname.split('/');
-
         window.parent.postMessage(
             {
                 action: 'set-url',
                 payload: {
-                    url: url === '/' ? 'index' : url.pop() //TODO: We need to enhance this, this will break for: nested/pages/like/this
+                    url: pathname === '/' ? 'index' : pathname.replace('/', '')
                 }
             },
             '*'
