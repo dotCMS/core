@@ -19,12 +19,26 @@ type NavApiOptions = {
     languageId?: number;
 };
 
+function isValidUrl(url: string): boolean {
+    try {
+        new URL(url);
+
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
 class DotCmsClient {
     private config: ClientConfig;
 
     constructor(config: ClientConfig) {
         if (!config.host) {
             throw new Error("Invalid configuration - 'host' is required");
+        }
+
+        if (!isValidUrl(config.host)) {
+            throw new Error("Invalid configuration - 'host' must be a valid URL");
         }
 
         if (!config.siteId) {
