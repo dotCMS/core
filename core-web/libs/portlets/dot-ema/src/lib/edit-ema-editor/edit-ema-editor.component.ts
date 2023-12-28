@@ -193,6 +193,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             this.updateQueryParams({
                                 'com.dotmarketing.persona.id': persona.identifier
                             });
+
+                            this.personaSelector.fetchPersonas();
                         }); // This does a take 1 under the hood
                 },
                 reject: () => {
@@ -200,6 +202,37 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
             });
         }
+    }
+
+    /**
+     * Handle the persona despersonalization
+     *
+     * @param {(DotPersona & { pageId: string })} persona
+     * @memberof EditEmaEditorComponent
+     */
+    onDespersonalize(persona: DotPersona & { pageId: string; selected: boolean }) {
+        this.confirmationService.confirm({
+            header: this.dotMessageService.get('editpage.personalization.delete.confirm.header'),
+            message: this.dotMessageService.get(
+                'editpage.personalization.delete.confirm.message',
+                persona.name
+            ),
+            acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
+            rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+            accept: () => {
+                this.personalizeService
+                    .despersonalized(persona.pageId, persona.keyTag)
+                    .subscribe(() => {
+                        this.personaSelector.fetchPersonas();
+
+                        if (persona.selected) {
+                            this.updateQueryParams({
+                                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                            });
+                        }
+                    }); // This does a take 1 under the hood
+            }
+        });
     }
 
     triggerCopyToast() {
