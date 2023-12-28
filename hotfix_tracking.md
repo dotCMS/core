@@ -180,3 +180,4 @@ This maintenance release includes the following code fixes:
 147. https://github.com/dotCMS/core/issues/24488 : Fixing ContentletAPITest #24488
 148. https://github.com/dotCMS/core/issues/26980: SiteSelector not showing all possible sites for limited user #26980
 149. https://github.com/dotCMS/core/issues/26970 : GraphQL Cache not working #26970
+150. https://github.com/dotCMS/core/issues/26934 : Add Catalina Log Back #26934
