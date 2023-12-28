@@ -9,7 +9,7 @@ interface RowProps {
     row: PageProviderContext['layout']['body']['rows'][0];
 }
 
-export function Row({ row }: RowProps, ref: React.Ref<HTMLDivElement>) {
+export const Row = forwardRef<HTMLDivElement, RowProps>(({ row }, ref) => {
     return (
         <div data-dot="row" ref={ref} className={styles.row}>
             {row.columns.map((column, index) => (
@@ -17,6 +17,6 @@ export function Row({ row }: RowProps, ref: React.Ref<HTMLDivElement>) {
             ))}
         </div>
     );
-}
+});
 
-export default forwardRef(Row);
+export default Row;

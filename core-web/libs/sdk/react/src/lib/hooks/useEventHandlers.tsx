@@ -2,14 +2,20 @@ import { useEffect, useCallback } from 'react';
 
 import { getPageElementBound } from '../utils/utils';
 
-export function useEventHandlers(rows: React.RefObject<HTMLDivElement[]>) {
+export function useEventHandlers({
+    rows,
+    reload = window.location.reload,
+}: {
+    rows: React.MutableRefObject<HTMLDivElement[]>;
+    reload?: () => void;
+}) {
     const eventMessageHandler = useCallback(
         (event: MessageEvent) => {
             const positionData = getPageElementBound(rows.current);
 
             switch (event.data) {
                 case 'ema-reload-page':
-                    window.location.reload();
+                    reload();
                     break;
 
                 case 'ema-request-bounds':
@@ -26,7 +32,7 @@ export function useEventHandlers(rows: React.RefObject<HTMLDivElement[]>) {
                     break;
             }
         },
-        [rows]
+        [rows, reload]
     );
 
     const eventScrollHandler = useCallback((_event: Event) => {

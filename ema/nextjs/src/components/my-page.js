@@ -1,6 +1,6 @@
 'use client';
 
-import { DotcmsPage } from '@dotcms/react';
+import { DotcmsPage } from '@dotcms/nextjs';
 
 import WebPageContent from './content-types/webPageContent';
 import Banner from './content-types/banner';
