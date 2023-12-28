@@ -10,7 +10,7 @@ public class DotPubSubProviderLocator {
     public final static String DOT_PUBSUB_PROVIDER_OVERRIDE = "DOT_PUBSUB_PROVIDER_OVERRIDE";
     public final static String DOT_PUBSUB_USE_QUEUE = "DOT_PUBSUB_USE_QUEUE";
     /**
-     * Default provider is postgres, can be overriden by setting config: DOT_PUBSUB_PROVIDER_OVERRIDE
+     * Default provider is JDBCPubSubImpl, can be overriden by setting config: DOT_PUBSUB_PROVIDER_OVERRIDE
      * DOT_PUBSUB_USE_QUEUE is a boolean, and will wrap the Pubsub in a queue
      */
     public static Lazy<DotPubSubProvider> provider = Lazy.of(() -> {
@@ -20,9 +20,9 @@ public class DotPubSubProviderLocator {
                         : Config.getBooleanProperty(DOT_PUBSUB_USE_QUEUE, true);
 
         final String pubsubClazz = System.getProperty(DOT_PUBSUB_PROVIDER_OVERRIDE) != null
-                        ? System.getProperty(DOT_PUBSUB_PROVIDER_OVERRIDE)
-                        : Config.getStringProperty(DOT_PUBSUB_PROVIDER_OVERRIDE,
-                                        PostgresPubSubImpl.class.getCanonicalName());
+                ? System.getProperty(DOT_PUBSUB_PROVIDER_OVERRIDE)
+                : Config.getStringProperty(DOT_PUBSUB_PROVIDER_OVERRIDE,
+                JDBCPubSubImpl.class.getCanonicalName());
 
         DotPubSubProvider provider = (DotPubSubProvider) Try.of(() -> Class.forName(pubsubClazz).newInstance())
                         .getOrElseThrow(e -> new DotRuntimeException(e));

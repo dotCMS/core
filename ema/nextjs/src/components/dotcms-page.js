@@ -22,13 +22,11 @@ export const DotcmsPage = () => {
     const { layout, page } = useContext(GlobalContext);
 
     useEffect(() => {
-        const url = pathname.split('/');
-
         window.parent.postMessage(
             {
                 action: 'set-url',
                 payload: {
-                    url: url === '/' ? 'index' : pathname.replace('/', '')
+                    url: pathname === '/' ? 'index' : pathname.replace('/', '')
                 }
             },
             '*'

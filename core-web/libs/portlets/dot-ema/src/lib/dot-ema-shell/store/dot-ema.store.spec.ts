@@ -65,7 +65,11 @@ describe('EditEmaStore', () => {
         dotPageApiService = spectator.inject(DotPageApiService);
         dotPageApiService.get.andReturn(of(mockResponse));
 
-        spectator.service.load({ language_id: '1', url: 'test-url', persona_id: '123' });
+        spectator.service.load({
+            language_id: '1',
+            url: 'test-url',
+            'com.dotmarketing.persona.id': '123'
+        });
     });
 
     describe('selectors', () => {
@@ -227,7 +231,11 @@ describe('EditEmaStore', () => {
                 of('https://demo.dotcms.com/jsp.jsp')
             );
 
-            spectator.service.load({ language_id: 'en', url: 'test-url', persona_id: '123' });
+            spectator.service.load({
+                language_id: 'en',
+                url: 'test-url',
+                'com.dotmarketing.persona.id': '123'
+            });
 
             spectator.service.createContentFromPalette({
                 variable: 'blogPost',
@@ -250,7 +258,11 @@ describe('EditEmaStore', () => {
 
             dotPageApiService.get.andReturn(of(mockResponse));
 
-            spectator.service.load({ language_id: 'en', url: 'test-url', persona_id: '123' });
+            spectator.service.load({
+                language_id: 'en',
+                url: 'test-url',
+                'com.dotmarketing.persona.id': '123'
+            });
 
             spectator.service.state$.subscribe((state) => {
                 expect(state as unknown).toEqual({
@@ -275,7 +287,11 @@ describe('EditEmaStore', () => {
             };
             dotPageApiService.get.andReturn(of(mockResponse));
 
-            spectator.service.load({ language_id: 'en', url: 'test-url', persona_id: '123' });
+            spectator.service.load({
+                language_id: 'en',
+                url: 'test-url',
+                'com.dotmarketing.persona.id': '123'
+            });
             spectator.service.savePage({
                 pageContainers: [],
                 pageId: '789'
@@ -315,7 +331,11 @@ describe('EditEmaStore', () => {
             dotPageApiService.save.andReturn(of({}));
             dotPageApiService.getFormIndetifier.andReturn(of('form-identifier-123'));
 
-            spectator.service.load({ language_id: 'en', url: 'test-url', persona_id: '123' });
+            spectator.service.load({
+                language_id: 'en',
+                url: 'test-url',
+                'com.dotmarketing.persona.id': '123'
+            });
             spectator.service.saveFormToPage({
                 payload,
                 formId: 'form-identifier-789',

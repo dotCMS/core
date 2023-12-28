@@ -70,7 +70,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         const pageURL = this.createPageURL({
             url: state.url,
             language_id: state.editor.viewAs.language.id.toString(),
-            persona_id: state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
+            'com.dotmarketing.persona.id':
+                state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
         });
 
         return {
@@ -116,16 +117,16 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      */
     readonly load = this.effect((params$: Observable<DotPageApiParams>) => {
         return params$.pipe(
-            switchMap(({ language_id, url, persona_id }) =>
+            switchMap((params) =>
                 forkJoin({
-                    pageData: this.dotPageApiService.get({ language_id, url, persona_id }),
+                    pageData: this.dotPageApiService.get(params),
                     licenseData: this.dotLicenseService.isEnterprise().pipe(take(1), shareReplay())
                 }).pipe(
                     tap({
                         next: ({ pageData, licenseData }) => {
                             this.setState({
                                 editor: pageData,
-                                url,
+                                url: params.url,
                                 dialogIframeURL: '',
                                 dialogHeader: '',
                                 dialogIframeLoading: false,
@@ -356,8 +357,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             .replace('*LANGUAGE_ID*', language_id);
     }
 
-    private createPageURL({ url, language_id, persona_id }: DotPageApiParams): string {
-        return `${url}?language_id=${language_id}&com.dotmarketing.persona.id=${persona_id}`;
+    private createPageURL(params: DotPageApiParams): string {
+        return `${params.url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
     }
 
     /**

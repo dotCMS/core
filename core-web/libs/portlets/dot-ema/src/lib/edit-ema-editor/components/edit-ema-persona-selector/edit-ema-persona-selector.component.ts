@@ -7,6 +7,7 @@ import {
     Component,
     EventEmitter,
     Input,
+    OnChanges,
     OnInit,
     Output,
     ViewChild,
@@ -45,7 +46,7 @@ import { DotPageApiService } from '../../../services/dot-page-api.service';
     styleUrls: ['./edit-ema-persona-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit {
+export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit, OnChanges {
     @ViewChild('listbox') listbox: Listbox;
 
     private readonly pageApiService = inject(DotPageApiService);
@@ -66,6 +67,13 @@ export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit {
                 map((res) => res.data),
                 catchError(() => of([]))
             );
+    }
+
+    ngOnChanges(): void {
+        // To select the correct persona when the page is reloaded with no queryParams
+        if (this.listbox) {
+            this.resetValue();
+        }
     }
 
     ngAfterViewInit(): void {
