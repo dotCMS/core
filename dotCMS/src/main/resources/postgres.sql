@@ -2513,3 +2513,6 @@ create table experiment (
 
 CREATE INDEX idx_exp_pageid ON experiment (page_id);
 
+-- Set up "like 'param%'" indexes for inode and identifier
+CREATE INDEX if not exists inode_inode_leading_idx ON inode(inode  COLLATE "C");
+CREATE INDEX if not exists identifier_id_leading_idx ON identifier(id  COLLATE "C");

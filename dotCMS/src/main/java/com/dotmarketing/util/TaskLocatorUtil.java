@@ -371,6 +371,7 @@ public class TaskLocatorUtil {
 		ret.add(Task230119MigrateContentToProperPersonaTagAndRemoveDupTags.class);
 		ret.add(Task230713IncreaseDisabledWysiwygColumnSize.class);
 		ret.add(Task230701AddHashIndicesToWorkflowTables.class);
+		ret.add(Task231207AddInodeAndIdentifierLeftIndexes.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

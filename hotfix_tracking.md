@@ -181,3 +181,4 @@ This maintenance release includes the following code fixes:
 148. https://github.com/dotCMS/core/issues/26980: SiteSelector not showing all possible sites for limited user #26980
 149. https://github.com/dotCMS/core/issues/26970 : GraphQL Cache not working #26970
 150. https://github.com/dotCMS/core/issues/26934 : Add Catalina Log Back #26934
+151. https://github.com/dotCMS/core/issues/26926 : Add left indexes to inode.inode and identifier.id #26926
