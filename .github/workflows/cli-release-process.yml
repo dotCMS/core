@@ -89,7 +89,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ ubuntu-latest ] #  macos-13-xlarge, macOS-latest,
+        os: [ macos-13-xlarge, macOS-latest,ubuntu-latest ] #
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -129,8 +129,13 @@ jobs:
           sudo mkdir -p $INSTALLATION_PATH
           tar -xzf graalvm-ce-java11-${PLATFORM}-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz 
           sudo mv graalvm-ce-java11-${{ env.GRAALVM_VERSION }} $INSTALLATION_PATH
-
-          GRAALVM_HOME="${INSTALLATION_PATH}/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}"
+          
+          if [ "${{ matrix.os }}" == *"macos-"* ]; then
+            sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home        
+            GRAALVM_HOME="${INSTALLATION_PATH}/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home"
+          else
+            GRAALVM_HOME="${INSTALLATION_PATH}/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}"
+          fi
           
           echo "GRAALVM_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
           echo "JAVA_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
