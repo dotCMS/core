@@ -10,11 +10,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { MessageService } from 'primeng/api';
 
-import {
-    DotMessageService,
-    DotPageLayoutService,
-    DotRouterService,
-} from '@dotcms/data-access';
+import { DotMessageService, DotPageLayoutService, DotRouterService } from '@dotcms/data-access';
 import { TemplateBuilderComponent } from '@dotcms/template-builder';
 import { MockDotRouterJestService } from '@dotcms/utils-testing';
 
@@ -52,10 +48,10 @@ describe('EditEmaLayoutComponent', () => {
                         return of({
                             containers: {},
                             page: {
-                                identifier: 'test',
+                                identifier: 'test'
                             },
                             template: {
-                                theme: 'testTheme',
+                                theme: 'testTheme'
                             },
                             layout: {
                                 body: {
@@ -65,30 +61,30 @@ describe('EditEmaLayoutComponent', () => {
                                                 {
                                                     containers: [
                                                         {
-                                                            identifier: 'test',
-                                                        },
-                                                    ],
-                                                },
-                                            ],
-                                        },
-                                    ],
-                                },
-                            },
+                                                            identifier: 'test'
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
                         });
-                    },
-                },
+                    }
+                }
             },
             {
                 provide: DotPageLayoutService,
                 useValue: {
                     save: () => {
                         return of({
-                            layout: {},
+                            layout: {}
                         });
-                    },
-                },
-            },
-        ],
+                    }
+                }
+            }
+        ]
     });
 
     beforeEach(async () => {
@@ -104,7 +100,7 @@ describe('EditEmaLayoutComponent', () => {
         store.load({
             language_id: '1',
             url: 'test',
-            'com.dotmarketing.persona.id': 'SuperCoolDude',
+            'com.dotmarketing.persona.id': 'SuperCoolDude'
         });
 
         spectator.detectChanges();
@@ -136,21 +132,18 @@ describe('EditEmaLayoutComponent', () => {
                 severity: 'info',
                 summary: 'Info',
                 detail: 'dot.common.message.saving',
-                life: 1000,
+                life: 1000
             });
 
             expect(addMock).toHaveBeenNthCalledWith(2, {
                 severity: 'success',
                 summary: 'Success',
-                detail: 'dot.common.message.saved',
+                detail: 'dot.common.message.saved'
             });
         }));
 
         it('should unlock navigation after saving', fakeAsync(() => {
-            const allowRouting = jest.spyOn(
-                dotRouter,
-                'allowRouteDeactivation'
-            );
+            const allowRouting = jest.spyOn(dotRouter, 'allowRouteDeactivation');
 
             templateBuilder.templateChange.emit();
             tick(6000);
@@ -171,13 +164,13 @@ describe('EditEmaLayoutComponent', () => {
                 severity: 'info',
                 summary: 'Info',
                 detail: 'dot.common.message.saving',
-                life: 1000,
+                life: 1000
             });
 
             expect(addMock).toHaveBeenNthCalledWith(2, {
                 severity: 'success',
                 summary: 'Success',
-                detail: 'dot.common.message.saved',
+                detail: 'dot.common.message.saved'
             });
         });
     });

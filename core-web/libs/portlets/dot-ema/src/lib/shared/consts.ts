@@ -42,20 +42,20 @@ export const DEFAULT_PERSONA: DotPersona = {
     titleImage: 'TITLE_IMAGE_NOT_FOUND',
     modUserName: 'system user system user',
     hasLiveVersion: false,
-    modUser: 'system',
+    modUser: 'system'
 };
 
 export const DEFAULT_QUERY_PARAMS = [
     {
         key: 'language_id',
-        value: DEFAULT_LANGUAGE_ID,
+        value: DEFAULT_LANGUAGE_ID
     },
     {
         key: 'url',
-        value: DEFAULT_URL,
+        value: DEFAULT_URL
     },
     {
         key: 'com.dotmarketing.persona.id',
-        value: DEFAULT_PERSONA.identifier,
-    },
+        value: DEFAULT_PERSONA.identifier
+    }
 ];

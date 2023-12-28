@@ -1,24 +1,15 @@
 <ng-container *ngIf="editorState$ | async as es">
     <dot-edit-ema-toolbar>
         <ng-container left>
-            <p-button
-                label="Preview"
-                icon="pi pi-desktop"
-                styleClass="p-button-text p-button-sm"
-            />
-            <p-button
-                label="Bookmark"
-                icon="pi pi-star"
-                styleClass="p-button-text p-button-sm"
-            />
+            <p-button label="Preview" icon="pi pi-desktop" styleClass="p-button-text p-button-sm" />
+            <p-button label="Bookmark" icon="pi pi-star" styleClass="p-button-text p-button-sm" />
             <p-button
                 [cdkCopyToClipboard]="es.iframeURL"
                 [label]="'editpage.header.copy' | dm"
                 (cdkCopyToClipboardCopied)="triggerCopyToast()"
                 icon="pi pi-copy"
                 styleClass="p-button-text p-button-sm"
-                data-testId="ema-copy-url"
-            />
+                data-testId="ema-copy-url" />
             <a
                 class="p-button-sm p-button-text"
                 [href]="es.apiURL"
@@ -27,23 +18,20 @@
                 target="_blank"
                 data-testId="ema-api-link"
                 icon="pi pi-link"
-                label="API"
-            >
+                label="API">
             </a>
         </ng-container>
         <ng-container right>
             <dot-edit-ema-language-selector
                 [language]="es.editor.viewAs.language"
                 (selected)="onLanguageSelected($event)"
-                data-testId="language-selector"
-            />
+                data-testId="language-selector" />
             <dot-edit-ema-persona-selector
                 #personaSelector
                 [pageId]="es.editor.page.identifier"
                 [value]="es.editor.viewAs.persona"
                 (selected)="onPersonaSelected($event)"
-                data-testId="persona-selector"
-            />
+                data-testId="persona-selector" />
             <p-button class="p-button-sm" label="Save" />
         </ng-container>
     </dot-edit-ema-toolbar>
@@ -55,8 +43,7 @@
             data-testId="iframe"
             style="border: none"
             width="100%"
-            height="100%"
-        ></iframe>
+            height="100%"></iframe>
         <dot-ema-contentlet-tools
             *ngIf="!rows.length && !!contentlet"
             [contentlet]="contentlet"
@@ -64,62 +51,48 @@
             (delete)="deleteContentlet($event)"
             (addWidget)="addWidget($event)"
             (addForm)="addForm($event)"
-            (addContent)="addContentlet($event)"
-        />
+            (addContent)="addContentlet($event)" />
         <dot-ema-page-dropzone
             *ngIf="!!rows.length"
             [rows]="rows"
             (place)="onPlaceItem($event)"
-            data-testId="dropzone"
-        />
+            data-testId="dropzone" />
     </div>
     <div class="palette">
         <div
-            [attr.data-item]="
-                { identifier: 'c1e7e687-a19e-4ec9-8b97-404768566fe0' } | json
-            "
+            [attr.data-item]="{ identifier: 'c1e7e687-a19e-4ec9-8b97-404768566fe0' } | json"
             (dragstart)="onDragStart($event)"
             (dragend)="onDragEnd($event)"
             data-type="contentlet"
             style="width: 80px; aspect-ratio: 1/1; background-color: chartreuse"
-            draggable="true"
-        >
+            draggable="true">
             Rich Text
         </div>
         <div
-            [attr.data-item]="
-                { identifier: 'e3b0f871-792a-4787-930b-4596613ae8f9' } | json
-            "
+            [attr.data-item]="{ identifier: 'e3b0f871-792a-4787-930b-4596613ae8f9' } | json"
             (dragstart)="onDragStart($event)"
             (dragend)="onDragEnd($event)"
             data-type="contentlet"
             style="width: 80px; aspect-ratio: 1/1; background-color: chartreuse"
-            draggable="true"
-        >
+            draggable="true">
             Banner
         </div>
         <div
-            [attr.data-item]="
-                { identifier: '50757fb4-75df-4e2c-8335-35d36bdb944b' } | json
-            "
+            [attr.data-item]="{ identifier: '50757fb4-75df-4e2c-8335-35d36bdb944b' } | json"
             (dragstart)="onDragStart($event)"
             (dragend)="onDragEnd($event)"
             data-type="contentlet"
             style="width: 80px; aspect-ratio: 1/1; background-color: chartreuse"
-            draggable="true"
-        >
+            draggable="true">
             Activity
         </div>
         <div
-            [attr.data-item]="
-                { variable: 'webPageContent', name: 'Rich Text' } | json
-            "
+            [attr.data-item]="{ variable: 'webPageContent', name: 'Rich Text' } | json"
             (dragstart)="onDragStart($event)"
             (dragend)="onDragEnd($event)"
             data-type="content-type"
             style="width: 80px; aspect-ratio: 1/1; background-color: chartreuse"
-            draggable="true"
-        >
+            draggable="true">
             New Rich Text
         </div>
     </div>
@@ -135,13 +108,9 @@
     [maximizable]="true"
     [modal]="true"
     (visibleChange)="resetDialogIframeData()"
-    data-testId="dialog"
->
+    data-testId="dialog">
     <ng-container [ngSwitch]="ds.type">
-        <dot-ema-form-selector
-            *ngSwitchCase="'form'"
-            (selected)="addSelectedForm($event)"
-        />
+        <dot-ema-form-selector *ngSwitchCase="'form'" (selected)="addSelectedForm($event)" />
 
         <ng-container *ngSwitchCase="'content'">
             <iframe
@@ -155,13 +124,11 @@
                 title="dialog"
                 data-testId="dialog-iframe"
                 width="100%"
-                height="100%"
-            ></iframe>
+                height="100%"></iframe>
             <dot-spinner
                 *ngIf="ds.iframeLoading"
                 [ngStyle]="{ position: 'absolute', top: '50%' }"
-                data-testId="spinner"
-            ></dot-spinner>
+                data-testId="spinner"></dot-spinner>
         </ng-container>
     </ng-container>
 </p-dialog>
@@ -173,5 +140,4 @@
     [rejectIcon]="null"
     [acceptIcon]="null"
     rejectButtonStyleClass="p-button-outlined"
-    data-testId="confirm-dialog"
-></p-confirmDialog>
+    data-testId="confirm-dialog"></p-confirmDialog>

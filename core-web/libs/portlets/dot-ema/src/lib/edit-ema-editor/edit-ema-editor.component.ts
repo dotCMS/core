@@ -10,7 +10,7 @@ import {
     OnDestroy,
     OnInit,
     ViewChild,
-    inject,
+    inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Params, Router } from '@angular/router';
@@ -33,21 +33,14 @@ import { EmaFormSelectorComponent } from './components/ema-form-selector/ema-for
 import {
     ContentletArea,
     EmaPageDropzoneComponent,
-    Row,
+    Row
 } from './components/ema-page-dropzone/ema-page-dropzone.component';
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DEFAULT_PERSONA, HOST, WINDOW } from '../shared/consts';
-import {
-    CUSTOMER_ACTIONS,
-    NG_CUSTOM_EVENTS,
-    NOTIFY_CUSTOMER,
-} from '../shared/enums';
+import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { ActionPayload, SetUrlPayload } from '../shared/models';
-import {
-    deleteContentletFromContainer,
-    insertContentletInContainer,
-} from '../utils';
+import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
 
 interface BasePayload {
     type: 'contentlet' | 'content-type';
@@ -88,11 +81,11 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
         DotMessagePipe,
         EmaPageDropzoneComponent,
         EmaContentletToolsComponent,
-        EmaFormSelectorComponent,
+        EmaFormSelectorComponent
     ],
     templateUrl: './edit-ema-editor.component.html',
     styleUrls: ['./edit-ema-editor.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
@@ -170,7 +163,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     onLanguageSelected(language_id: number) {
         this.updateQueryParams({
-            language_id,
+            language_id
         });
     }
 
@@ -181,41 +174,31 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     onPersonaSelected(persona: DotPersona & { pageId: string }) {
-        if (
-            persona.identifier === DEFAULT_PERSONA.identifier ||
-            persona.personalized
-        ) {
+        if (persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized) {
             this.updateQueryParams({
-                'com.dotmarketing.persona.id': persona.identifier,
+                'com.dotmarketing.persona.id': persona.identifier
             });
         } else {
             this.confirmationService.confirm({
-                header: this.dotMessageService.get(
-                    'editpage.personalization.confirm.header'
-                ),
+                header: this.dotMessageService.get('editpage.personalization.confirm.header'),
                 message: this.dotMessageService.get(
                     'editpage.personalization.confirm.message',
                     persona.name
                 ),
-                acceptLabel: this.dotMessageService.get(
-                    'dot.common.dialog.accept'
-                ),
-                rejectLabel: this.dotMessageService.get(
-                    'dot.common.dialog.reject'
-                ),
+                acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
+                rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
                 accept: () => {
                     this.personalizeService
                         .personalized(persona.pageId, persona.keyTag)
                         .subscribe(() => {
                             this.updateQueryParams({
-                                'com.dotmarketing.persona.id':
-                                    persona.identifier,
+                                'com.dotmarketing.persona.id': persona.identifier
                             });
                         }); // This does a take 1 under the hood
                 },
                 reject: () => {
                     this.personaSelector.resetValue();
-                },
+                }
             });
         }
     }
@@ -224,7 +207,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.messageService.add({
             severity: 'success',
             summary: this.dotMessageService.get('Copied'),
-            life: 3000,
+            life: 3000
         });
     }
 
@@ -235,14 +218,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onDragStart(event: DragEvent) {
-        const dataset = (event.target as HTMLDivElement)
-            .dataset as unknown as Pick<ContentletPayload, 'type'> & {
+        const dataset = (event.target as HTMLDivElement).dataset as unknown as Pick<
+            ContentletPayload,
+            'type'
+        > & {
             item: string;
         };
 
         this.draggedPayload = {
             type: dataset.type,
-            item: JSON.parse(dataset.item),
+            item: JSON.parse(dataset.item)
         };
 
         this.iframe.nativeElement.contentWindow?.postMessage(
@@ -272,7 +257,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         if (this.draggedPayload.type === 'contentlet') {
             const pageContainers = insertContentletInContainer({
                 ...event,
-                newContentletId: this.draggedPayload.item.identifier,
+                newContentletId: this.draggedPayload.item.identifier
             });
 
             this.store.savePage({
@@ -281,7 +266,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 whenSaved: () => {
                     this.reloadIframe();
                     this.draggedPayload = undefined;
-                },
+                }
             });
 
             return;
@@ -302,7 +287,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.store.initActionAdd({
             containerId: payload.container.identifier,
             acceptTypes: payload.container.acceptTypes ?? '*',
-            language_id: payload.language_id,
+            language_id: payload.language_id
         });
         this.savePayload = payload;
     }
@@ -332,7 +317,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.resetDialogIframeData();
                 this.reloadIframe();
                 this.savePayload = undefined;
-            },
+            }
         });
     }
 
@@ -371,9 +356,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     whenSaved: () => {
                         this.resetDialogIframeData();
                         this.reloadIframe();
-                    },
+                    }
                 }); // Save when selected
-            },
+            }
         });
     }
 
@@ -387,7 +372,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.store.initActionEdit({
             inode: payload.contentlet.inode,
             title: payload.contentlet.title,
-            type: 'content',
+            type: 'content'
         });
     }
 
@@ -408,7 +393,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
                 const pageContainers = insertContentletInContainer({
                     ...this.savePayload,
-                    newContentletId: detail.data.identifier,
+                    newContentletId: detail.data.identifier
                 });
 
                 // Save when selected
@@ -419,14 +404,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         this.resetDialogIframeData();
                         this.reloadIframe();
                         this.savePayload = undefined;
-                    },
+                    }
                 });
             },
             [NG_CUSTOM_EVENTS.SAVE_CONTENTLET]: () => {
                 if (this.savePayload) {
                     const pageContainers = insertContentletInContainer({
                         ...this.savePayload,
-                        newContentletId: detail.payload.contentletIdentifier,
+                        newContentletId: detail.payload.contentletIdentifier
                     }); // This won't add anything if the contentlet is already on the container, so is safe to call it even when we just edited a contentlet
 
                     // Save when created
@@ -437,7 +422,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             this.resetDialogIframeData();
                             this.reloadIframe();
                             this.savePayload = undefined;
-                        },
+                        }
                     });
                 } else {
                     this.reloadIframe(); // We still need to reload the iframe because the contentlet is not in the container yet
@@ -446,10 +431,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
                 this.store.initActionCreate({
                     contentType: detail.data.contentType,
-                    url: detail.data.url,
+                    url: detail.data.url
                 });
                 this.cd.detectChanges();
-            },
+            }
         })[detail.name];
     }
 
@@ -463,7 +448,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     private handlePostMessage({
         origin = this.host,
-        data,
+        data
     }: {
         origin: string;
         data: {
@@ -471,15 +456,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             payload: ActionPayload | SetUrlPayload | Row[] | ContentletArea;
         };
     }): () => void {
-        const action =
-            origin !== this.host ? CUSTOMER_ACTIONS.NOOP : data.action;
+        const action = origin !== this.host ? CUSTOMER_ACTIONS.NOOP : data.action;
 
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
             [CUSTOMER_ACTIONS.SET_URL]: () => {
                 const payload = <SetUrlPayload>data.payload;
 
                 this.updateQueryParams({
-                    url: payload.url,
+                    url: payload.url
                 });
             },
             [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
@@ -497,7 +481,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
-            },
+            }
         })[action];
     }
 
@@ -524,7 +508,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private updateQueryParams(params: Params) {
         this.router.navigate([], {
             queryParams: params,
-            queryParamsHandling: 'merge',
+            queryParamsHandling: 'merge'
         });
     }
 }

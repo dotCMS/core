@@ -11,7 +11,7 @@ import {
     OnInit,
     Output,
     ViewChild,
-    inject,
+    inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -40,15 +40,13 @@ import { DotPageApiService } from '../../../services/dot-page-api.service';
         DotMessagePipe,
         ListboxModule,
         ConfirmDialogModule,
-        FormsModule,
+        FormsModule
     ],
     templateUrl: './edit-ema-persona-selector.component.html',
     styleUrls: ['./edit-ema-persona-selector.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EditEmaPersonaSelectorComponent
-    implements OnInit, AfterViewInit, OnChanges
-{
+export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit, OnChanges {
     @ViewChild('listbox') listbox: Listbox;
 
     private readonly pageApiService = inject(DotPageApiService);
@@ -57,14 +55,13 @@ export class EditEmaPersonaSelectorComponent
     @Input() pageId: string;
     @Input() value: DotPersona;
 
-    @Output() selected: EventEmitter<DotPersona & { pageId: string }> =
-        new EventEmitter();
+    @Output() selected: EventEmitter<DotPersona & { pageId: string }> = new EventEmitter();
 
     ngOnInit(): void {
         this.personas$ = this.pageApiService
             .getPersonas({
                 pageId: this.pageId,
-                perPage: 5000,
+                perPage: 5000
             })
             .pipe(
                 map((res) => res.data),
@@ -93,7 +90,7 @@ export class EditEmaPersonaSelectorComponent
         if (value.identifier !== this.value.identifier) {
             this.selected.emit({
                 ...value,
-                pageId: this.pageId,
+                pageId: this.pageId
             });
         }
     }

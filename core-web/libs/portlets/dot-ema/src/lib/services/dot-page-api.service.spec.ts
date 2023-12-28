@@ -1,8 +1,4 @@
-import {
-    createHttpFactory,
-    HttpMethod,
-    SpectatorHttp,
-} from '@ngneat/spectator';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator';
 
 import { DotPageApiService } from './dot-page-api.service';
 
@@ -19,7 +15,7 @@ describe('DotPageApiService', () => {
             .get({
                 url: 'test-url',
                 language_id: 'en',
-                'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                'com.dotmarketing.persona.id': 'modes.persona.no.persona'
             })
             .subscribe();
 
@@ -33,7 +29,7 @@ describe('DotPageApiService', () => {
         spectator.service
             .save({
                 pageContainers: [],
-                pageId: 'test',
+                pageId: 'test'
             })
             .subscribe();
 

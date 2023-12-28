@@ -11,7 +11,7 @@ import {
     DotLayout,
     DotPageContainerStructure,
     DotPersona,
-    DotTemplate,
+    DotTemplate
 } from '@dotcms/dotcms-models';
 
 import { SavePagePayload } from '../shared/models';
@@ -101,23 +101,16 @@ export class DotPageApiService {
         pageId,
         filter,
         page,
-        perPage = 10,
+        perPage = 10
     }: GetPersonasParams): Observable<GetPersonasResponse> {
         const url = this.getPersonasURL({ pageId, filter, page, perPage });
 
-        return this.http
-            .get<{ entity: DotPersona[]; pagination: PaginationData }>(url)
-            .pipe(
-                map(
-                    (res: {
-                        entity: DotPersona[];
-                        pagination: PaginationData;
-                    }) => ({
-                        data: res.entity,
-                        pagination: res.pagination,
-                    })
-                )
-            );
+        return this.http.get<{ entity: DotPersona[]; pagination: PaginationData }>(url).pipe(
+            map((res: { entity: DotPersona[]; pagination: PaginationData }) => ({
+                data: res.entity,
+                pagination: res.pagination
+            }))
+        );
     }
 
     /**
@@ -136,18 +129,13 @@ export class DotPageApiService {
             .pipe(pluck('entity', 'content', 'identifier'));
     }
 
-    private getPersonasURL({
-        pageId,
-        filter,
-        page,
-        perPage,
-    }: GetPersonasParams): string {
+    private getPersonasURL({ pageId, filter, page, perPage }: GetPersonasParams): string {
         const apiUrl = `/api/v1/page/${pageId}/personas?`;
 
         const queryParams = new URLSearchParams({
             perper_page: perPage.toString(),
             respectFrontEndRoles: 'true',
-            variantName: 'DEFAULT',
+            variantName: 'DEFAULT'
         });
 
         if (filter) {
