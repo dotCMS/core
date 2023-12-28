@@ -9,7 +9,7 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { EditEmaPaletteContentletsComponent } from './edit-ema-palette-contentlets.component';
 
-import { CONTENTLETS_MOCK } from '../../shared/edit-ema-palette.mocks';
+import { CONTENTLETS_MOCK } from '../../edit-ema-palette.component.spec';
 import {
     EditEmaPaletteStoreStatus,
     PALETTE_PAGINATOR_ITEMS_PER_PAGE

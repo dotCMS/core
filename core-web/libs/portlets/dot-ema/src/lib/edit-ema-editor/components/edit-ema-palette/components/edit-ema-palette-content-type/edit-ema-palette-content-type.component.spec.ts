@@ -6,8 +6,20 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { EditEmaPaletteContentTypeComponent } from './edit-ema-palette-content-type.component';
 
-import { CONTENT_TYPE_MOCK } from '../../shared/edit-ema-palette.mocks';
 import { EditEmaPaletteStoreStatus } from '../../store/edit-ema-palette.store';
+
+export const CONTENT_TYPE_MOCK = [
+    {
+        name: 'Test Content Type',
+        variable: 'Test1',
+        icon: 'icon'
+    },
+    {
+        name: 'Test Content Type 2',
+        variable: 'Test2',
+        icon: 'icon'
+    }
+];
 
 describe('EditEmaPaletteContentTypeComponent', () => {
     let spectator: Spectator<EditEmaPaletteContentTypeComponent>;
