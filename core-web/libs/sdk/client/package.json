@@ -1,5 +1,5 @@
 {
-  "name": "@dotcms/client",
-  "version": "0.0.1",
-  "type": "module"
+    "name": "@dotcms/client",
+    "version": "0.0.1",
+    "type": "module"
 }

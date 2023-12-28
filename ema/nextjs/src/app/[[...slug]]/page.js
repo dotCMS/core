@@ -21,6 +21,11 @@ export async function generateMetadata({ params, searchParams }) {
 }
 
 export default async function Home({ searchParams, params }) {
+    console.log({
+        path: params?.slug ? params.slug.join('/') : 'index',
+        language_id: searchParams.language_id,
+        'com.dotmarketing.persona.id': searchParams['com.dotmarketing.persona.id'] || ''
+    });
     const data = await client.getPage({
         path: params?.slug ? params.slug.join('/') : 'index',
         language_id: searchParams.language_id,
