@@ -11,16 +11,14 @@
     }
 }
 
-// Selectors overlayPanel
+// Selectors overlayPanel and dialog
 ::ng-deep {
     .p-overlaypanel.edit-ema-selector.p-component {
         .p-overlaypanel-content {
             padding: 0;
         }
     }
-}
 
-::ng-deep {
     .p-dialog.edit-ema-dialog.p-component {
         .p-dialog-content {
             display: flex;
