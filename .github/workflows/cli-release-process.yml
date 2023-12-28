@@ -130,7 +130,7 @@ jobs:
           tar -xzf graalvm-ce-java11-${PLATFORM}-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz 
           sudo mv graalvm-ce-java11-${{ env.GRAALVM_VERSION }} $INSTALLATION_PATH
           
-          if [ "${{ matrix.os }}" == *"macos-"* ]; then
+          if [ "${{ matrix.os }}" != "ubuntu-latest" ]; then
             sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home        
             GRAALVM_HOME="${INSTALLATION_PATH}/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home"
           else
