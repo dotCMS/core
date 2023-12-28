@@ -61,6 +61,7 @@ import { NavigationBarItem } from '../shared/models';
 })
 export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
+    @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
     private readonly siteService = inject(SiteService);
@@ -77,7 +78,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             'com.dotmarketing.persona.id': queryParams['com.dotmarketing.persona.id']
         };
     }
-    pageToolsVisible = false;
 
     dialogState$ = this.store.dialogState$;
 
@@ -113,7 +113,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     icon: 'pi-th-large',
                     label: 'Page Tools',
                     action: () => {
-                        this.pageToolsVisible = !this.pageToolsVisible;
+                        this.pageTools.toggleDialog();
                     }
                 },
                 {

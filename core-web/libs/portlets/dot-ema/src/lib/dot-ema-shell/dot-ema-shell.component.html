@@ -2,9 +2,7 @@
 <ng-container *ngIf="shellProperties$ | async as sp">
     <dot-edit-ema-navigation-bar [items]="sp.items"></dot-edit-ema-navigation-bar>
     <p-toast position="top-center" data-testId="ema-toast"></p-toast>
-    <dot-page-tools-seo
-        [visible]="pageToolsVisible"
-        [currentPageUrlParams]="sp.seoProperties"></dot-page-tools-seo>
+    <dot-page-tools-seo #pageTools [currentPageUrlParams]="sp.seoProperties"></dot-page-tools-seo>
 </ng-container>
 <p-dialog
     #dialog
