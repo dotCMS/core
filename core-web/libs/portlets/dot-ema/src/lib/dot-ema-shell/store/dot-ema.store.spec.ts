@@ -99,7 +99,6 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: '',
                     dialogIframeLoading: true,
                     dialogHeader: '',
-                    dialogVisible: false,
                     isEnterpriseLicense: true,
                     dialogType: null
                 });
