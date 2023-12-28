@@ -178,3 +178,4 @@ This maintenance release includes the following code fixes:
 
 146. https://github.com/dotCMS/core/issues/27008 : Adding DEBUG logging to the SASS compilation process #27008
 147. https://github.com/dotCMS/core/issues/24488 : Fixing ContentletAPITest #24488
+148. https://github.com/dotCMS/core/issues/26980: SiteSelector not showing all possible sites for limited user #26980
