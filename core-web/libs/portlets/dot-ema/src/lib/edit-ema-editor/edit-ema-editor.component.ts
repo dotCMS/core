@@ -210,7 +210,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param {(DotPersona & { pageId: string })} persona
      * @memberof EditEmaEditorComponent
      */
-    onDespersonalizePersona(persona: DotPersona & { pageId: string; selected: boolean }) {
+    onDespersonalize(persona: DotPersona & { pageId: string; selected: boolean }) {
         this.confirmationService.confirm({
             header: this.dotMessageService.get('editpage.personalization.delete.confirm.header'),
             message: this.dotMessageService.get(
