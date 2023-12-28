@@ -115,7 +115,11 @@ export const removeLoadingNodes = (content: JSONContent[]): JSONContent[] => {
     for (const i in content) {
         const node = content[i];
 
-        if (!nodesToRemove.includes(node.type as NodeTypes) && !isAIPlaceholderImage(node)) {
+        if (
+            node &&
+            !nodesToRemove.includes(node?.type as NodeTypes) &&
+            !isAIPlaceholderImage(node)
+        ) {
             allowedContent.push({
                 ...node,
                 content: removeLoadingNodes(node.content)
