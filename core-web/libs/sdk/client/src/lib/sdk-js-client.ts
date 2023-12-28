@@ -40,9 +40,7 @@ class DotCmsClient {
 
     private validatePageOptions(options: PageApiOptions): void {
         if (!options.path) {
-            throw new Error(
-                "The 'path' parameter is required for the Page API"
-            );
+            throw new Error("The 'path' parameter is required for the Page API");
         }
     }
 
@@ -70,7 +68,7 @@ class DotCmsClient {
 
         const queryParamsObj: Record<string, string> = {};
         for (const [key, value] of Object.entries(options)) {
-            if (value !== undefined) {
+            if (value !== undefined && key !== 'path') {
                 queryParamsObj[key] = String(value);
             }
         }
@@ -80,12 +78,13 @@ class DotCmsClient {
 
         const queryParams = new URLSearchParams(queryParamsObj).toString();
 
+        const formattedPath = options.path.startsWith('/') ? options.path : `/${options.path}`;
         const response = await fetch(
-            `${this.config.host}/api/v1/page/json/${options.path}?${queryParams}`,
+            `${this.config.host}/api/v1/page/json${formattedPath}?${queryParams}`,
             {
                 headers: {
-                    Authorization: `Bearer ${this.config.authToken}`,
-                },
+                    Authorization: `Bearer ${this.config.authToken}`
+                }
             }
         );
 
@@ -119,12 +118,14 @@ class DotCmsClient {
 
         // Format the URL correctly depending on the 'path' value
         const formattedPath = path === '/' ? '/' : `/${path}`;
-        const url = `${this.config.host}/api/v1/nav${formattedPath}?${queryParams}`;
+        const url = `${this.config.host}/api/v1/nav${formattedPath}${
+            queryParams ? `?${queryParams}` : ''
+        }`;
 
         const response = await fetch(url, {
             headers: {
-                Authorization: `Bearer ${this.config.authToken}`,
-            },
+                Authorization: `Bearer ${this.config.authToken}`
+            }
         });
 
         return response.json();
@@ -135,5 +136,5 @@ class DotCmsClient {
 export const dotcmsClient = {
     init: (config: ClientConfig): DotCmsClient => {
         return new DotCmsClient(config);
-    },
+    }
 };
