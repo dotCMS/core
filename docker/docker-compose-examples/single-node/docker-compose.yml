@@ -33,8 +33,8 @@ services:
     networks:
       - opensearch-net
 
-  dotcms:
-    image: dotcms/dotcms:latest
+  dotcms:  
+    image: dotcms/dotcms:master_7b858a3
     environment:
         CMS_JAVA_OPTS: '-Xmx1g '
         LANG: 'C.UTF-8'
@@ -46,18 +46,29 @@ services:
         DOT_ES_ENDPOINTS: 'https://opensearch:9200'
         DOT_INITIAL_ADMIN_PASSWORD: 'admin'
         DOT_DOTCMS_CLUSTER_ID:  'dotcms-production'
-        #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20211201/starter-20211201.zip'
+        DOTFAVORITEPAGE_FEATURE_ENABLE: true
+        DOT_FEATURE_FLAG_SEO_IMPROVEMENTS: true
+        DOT_FEATURE_FLAG_SEO_PAGE_TOOLS: true        
+        # CUSTOM_STARTER_URL: '/starter.zip'
+        CUSTOM_STARTER_URL: https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20230712/starter-20230712.zip
     depends_on:
       - opensearch
       - db
     volumes:
-      - cms-shared:/data/shared
-      #- {license_local_path}/license.zip:/data/shared/assets/license.zip
+      - cms-shared:/data/shared      
+      - type: bind
+        source: /Users/dcolina/Downloads/License/dotsecure/license/license.dat
+        target: /data/local/dotsecure/license/license.dat
+      # - type: bind
+      #   source: ./assets/starter.zip
+      #   target: /data/shared/custom_starter.zip
+      # - ./assets/starter.zip:/app-data/starter.zip  
+      # - ${PWD}/assets/license.zip:/data/shared/assets/license.zip
     networks:
       - db_net
       - opensearch-net
     ports:
-      - "8082:8082"
+      - "8080:8080"
       - "8443:8443"
 
   db:
