@@ -4,6 +4,8 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+
     ::ng-deep {
         .p-paginator-icon {
             color: $color-palette-primary;
@@ -37,6 +39,7 @@
 
     .contentlets-cards {
         flex: 1;
+        overflow: scroll;
     }
 
     .contentlet-card {
