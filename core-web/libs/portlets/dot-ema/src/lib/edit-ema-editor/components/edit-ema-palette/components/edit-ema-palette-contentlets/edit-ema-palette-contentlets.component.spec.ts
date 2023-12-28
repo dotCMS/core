@@ -49,9 +49,9 @@ describe('EditEmaPaletteContentletsComponent', () => {
     it('should emit dragStart event on drag start', () => {
         const dragSpy = jest.spyOn(spectator.component.dragStart, 'emit');
         spectator.triggerEventHandler('[data-testId="contentlet-0"]', 'dragstart', {
-            inode: '123'
+            identifier: '123'
         });
-        expect(dragSpy).toHaveBeenCalledWith({ inode: '123' });
+        expect(dragSpy).toHaveBeenCalledWith({ identifier: '123' });
     });
 
     it('should emit dragEnd event on drag end', () => {
