@@ -11,8 +11,7 @@ import {
 import {
     DotPaletteStore,
     EditEmaPaletteStoreStatus,
-    PALETTE_PAGINATOR_ITEMS_PER_PAGE,
-    PALETTE_TYPES
+    PALETTE_PAGINATOR_ITEMS_PER_PAGE
 } from './edit-ema-palette.store';
 
 describe('EditEmaPaletteStore', () => {
@@ -35,14 +34,6 @@ describe('EditEmaPaletteStore', () => {
     });
 
     describe('updaters', () => {
-        it('should change view', (done) => {
-            spectator.service.changeView(PALETTE_TYPES.CONTENTLET);
-            spectator.service.vm$.subscribe((state) => {
-                expect(state.currentPaletteType).toEqual(PALETTE_TYPES.CONTENTLET);
-                done();
-            });
-        });
-
         it('should set loading', (done) => {
             spectator.service.setStatus(EditEmaPaletteStoreStatus.LOADING);
             spectator.service.vm$.subscribe((state) => {

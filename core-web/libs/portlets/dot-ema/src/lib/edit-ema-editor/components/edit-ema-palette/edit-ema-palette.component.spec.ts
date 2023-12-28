@@ -323,15 +323,13 @@ describe('EditEmaPaletteComponent', () => {
         });
 
         it('should show content types when component emits click on back button', () => {
-            const changeViewSpy = jest.spyOn(store, 'changeView');
-            const resetContentLetsSpy = jest.spyOn(store, 'changeView');
+            const resetContentLetsSpy = jest.spyOn(store, 'resetContentlets');
             spectator.triggerEventHandler(
                 EditEmaPaletteContentletsComponent,
                 'showContentTypes',
                 true
             );
 
-            expect(changeViewSpy).toHaveBeenCalledWith(PALETTE_TYPES.CONTENTTYPE);
             expect(resetContentLetsSpy).toHaveBeenCalled();
         });
 

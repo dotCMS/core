@@ -74,11 +74,6 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
 
     readonly vm$ = this.select((state) => state);
 
-    readonly changeView = this.updater((state, view: PALETTE_TYPES) => ({
-        ...state,
-        currentPaletteType: view
-    }));
-
     readonly setStatus = this.updater((state, status: EditEmaPaletteStoreStatus) => ({
         ...state,
         status
@@ -101,7 +96,8 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
             filter: { query: '', contentTypeVarName: '' },
             totalRecords: 0,
             itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE
-        }
+        },
+        currentPaletteType: PALETTE_TYPES.CONTENTTYPE
     }));
 
     /**
@@ -175,7 +171,8 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                                             totalRecords: contentlets.resultsSize,
                                             itemsPerPage: PALETTE_PAGINATOR_ITEMS_PER_PAGE
                                         },
-                                        status: EditEmaPaletteStoreStatus.LOADED
+                                        status: EditEmaPaletteStoreStatus.LOADED,
+                                        currentPaletteType: PALETTE_TYPES.CONTENTLET
                                     });
                                 },
                                 // eslint-disable-next-line no-console

@@ -43,9 +43,9 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
     private readonly store = inject(DotPaletteStore);
     private destroy$ = new Subject<void>();
 
-    vm$ = this.store.vm$;
+    readonly vm$ = this.store.vm$;
 
-    PALETTETYPE = PALETTE_TYPES;
+    PALETTE_TYPES_ENUM = PALETTE_TYPES;
 
     ngOnInit() {
         this.store.loadAllowedContentTypes({ containers: this.containers });
@@ -78,15 +78,12 @@ export class EditEmaPaletteComponent implements OnInit, OnDestroy {
             languageId: this.languageId.toString(),
             contenttypeName: contentTypeName
         });
-
-        this.store.changeView(PALETTE_TYPES.CONTENTLET);
     }
 
     /**
      * Shows the content types in the palette.
      */
     showContentTypes() {
-        this.store.changeView(PALETTE_TYPES.CONTENTTYPE);
         this.store.resetContentlets();
     }
 

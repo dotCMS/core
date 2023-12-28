@@ -18,7 +18,7 @@
     align-items: center;
     gap: $spacing-0;
     top: 0;
-    padding: 1em 1em;
+    padding: $spacing-3 $spacing-3;
     position: sticky;
     z-index: 99;
     background: white;
@@ -34,7 +34,7 @@
 .contentlets {
     display: flex;
     flex-direction: column;
-    padding: 0 1rem;
+    padding: 0 $spacing-3;
     height: 100%;
 
     .contentlets-cards {
@@ -47,7 +47,7 @@
         grid-template-columns: max-content 3.37rem auto;
         height: $spacing-8;
         gap: $spacing-1;
-        padding: 14px 4px;
+        padding: 14px $spacing-0;
         align-items: center;
         background-color: $white;
         cursor: move;

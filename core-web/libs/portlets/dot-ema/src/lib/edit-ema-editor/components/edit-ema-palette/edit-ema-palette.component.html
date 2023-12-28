@@ -1,6 +1,6 @@
 <ng-container *ngIf="vm$ | async as vm">
     <dot-edit-ema-palette-content-type
-        *ngIf="vm.currentPaletteType === PALETTETYPE.CONTENTTYPE"
+        *ngIf="vm.currentPaletteType === PALETTE_TYPES_ENUM.CONTENTTYPE"
         [contentTypes]="vm.contenttypes.items"
         [filter]="vm.contenttypes.filter"
         [paletteStatus]="vm.status"
@@ -10,7 +10,7 @@
         (dragEnd)="onDragEnd($event)" />
 
     <dot-edit-ema-palette-contentlets
-        *ngIf="vm.currentPaletteType === PALETTETYPE.CONTENTLET"
+        *ngIf="vm.currentPaletteType === PALETTE_TYPES_ENUM.CONTENTLET"
         [contentlets]="vm.contentlets"
         [paletteStatus]="vm.status"
         (paginate)="onPaginate($event)"
