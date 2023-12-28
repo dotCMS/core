@@ -119,7 +119,11 @@ jobs:
           
             PLATFORM=darwin
             INSTALLATION_PATH=/Library/Java/JavaVirtualMachines          
-          fi         
+          fi 
+          
+          echo "PLATFORM=$PLATFORM"
+          echo "ARCH=$ARCH"
+          echo "INSTALLATION_PATH=$INSTALLATION_PATH"
           
           wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java11-${PLATFORM}-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
           sudo mkdir -p $INSTALLATION_PATH
