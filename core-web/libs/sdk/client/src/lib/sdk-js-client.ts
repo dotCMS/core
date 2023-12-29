@@ -8,7 +8,7 @@ type PageApiOptions = {
     path: string;
     host_id?: string;
     language_id?: number;
-    'com.dotmarketing.persona.id'?: string;
+    personaId?: string;
     fireRules?: boolean;
     depth?: number;
 };
@@ -83,7 +83,11 @@ class DotCmsClient {
         const queryParamsObj: Record<string, string> = {};
         for (const [key, value] of Object.entries(options)) {
             if (value !== undefined && key !== 'path') {
-                queryParamsObj[key] = String(value);
+                if (key === 'personaId') {
+                    queryParamsObj['com.dotmarketing.persona.id'] = String(value);
+                } else {
+                    queryParamsObj[key] = String(value);
+                }
             }
         }
 

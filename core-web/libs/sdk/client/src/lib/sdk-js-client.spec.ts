@@ -109,6 +109,20 @@ describe('DotCmsClient', () => {
                 `The 'path' parameter is required for the Page API`
             );
         });
+
+        it('should get the page for specified persona', () => {
+            const mockResponse = { content: 'Page data' };
+            mockFetchResponse(mockResponse);
+
+            client.getPage({ path: '/home', personaId: 'doe123' });
+
+            expect(fetch).toHaveBeenCalledWith(
+                'http://localhost/api/v1/page/json/home?com.dotmarketing.persona.id=doe123&host_id=123456',
+                {
+                    headers: { Authorization: 'Bearer ABC' }
+                }
+            );
+        });
     });
 
     describe('getNav', () => {
