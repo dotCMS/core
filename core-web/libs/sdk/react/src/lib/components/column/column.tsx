@@ -3,7 +3,6 @@ import styles from './column.module.css';
 import Container from '../container/container';
 import { PageProviderContext } from '../page-provider/page-provider';
 
-/* eslint-disable-next-line */
 interface ColumnProps {
     column: PageProviderContext['layout']['body']['rows'][0]['columns'][0];
 }
@@ -21,7 +20,7 @@ export function Column({ column }: ColumnProps) {
         9: 'col-span-9',
         10: 'col-span-10',
         11: 'col-span-11',
-        12: 'col-span-12',
+        12: 'col-span-12'
     };
 
     const statrClassMap: Record<number, string> = {
@@ -36,17 +35,14 @@ export function Column({ column }: ColumnProps) {
         9: 'col-start-9',
         10: 'col-start-10',
         11: 'col-start-11',
-        12: 'col-start-12',
+        12: 'col-start-12'
     };
 
     const widthClass = widthClassMap[column.width];
     const startClass = statrClassMap[column.leftOffset];
 
     return (
-        <div
-            data-dot="column"
-            className={`${styles[widthClass]} ${styles[startClass]}`}
-        >
+        <div data-dot="column" className={`${styles[widthClass]} ${styles[startClass]}`}>
             {column.containers.map((container) => (
                 <Container
                     key={`${container.identifier}-${container.uuid}`}
