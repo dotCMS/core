@@ -4,6 +4,8 @@ import Row from './row';
 
 import { PageProviderContext } from '../page-provider/page-provider';
 
+import '@testing-library/jest-dom';
+
 jest.mock('../column/column', () => {
     return ({ column }) => <div data-testid="mockColumn">{JSON.stringify(column)}</div>;
 });
@@ -39,7 +41,7 @@ describe('Row', () => {
     });
 
     it('should set the data-dot attribute', () => {
-        expect(screen.getByTestId('row').dataset.dot).toEqual('row');
+        expect(screen.getByTestId('row')).toHaveAttribute('data-dot', 'row');
     });
 
     it('renders the correct number of mock columns', () => {

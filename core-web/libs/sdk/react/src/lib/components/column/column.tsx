@@ -42,7 +42,10 @@ export function Column({ column }: ColumnProps) {
     const startClass = statrClassMap[column.leftOffset];
 
     return (
-        <div data-dot="column" className={`${styles[widthClass]} ${styles[startClass]}`}>
+        <div
+            data-dot="column"
+            data-testid="column"
+            className={`${styles[widthClass]} ${styles[startClass]}`}>
             {column.containers.map((container) => (
                 <Container
                     key={`${container.identifier}-${container.uuid}`}

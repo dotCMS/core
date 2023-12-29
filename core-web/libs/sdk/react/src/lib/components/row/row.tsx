@@ -11,7 +11,7 @@ interface RowProps {
 
 export const Row = forwardRef<HTMLDivElement, RowProps>(({ row }, ref) => {
     return (
-        <div data-testId="row" data-dot="row" ref={ref} className={styles.row}>
+        <div data-testid="row" data-dot="row" ref={ref} className={styles.row}>
             {row.columns.map((column, index) => (
                 <Column key={index} column={column} />
             ))}
