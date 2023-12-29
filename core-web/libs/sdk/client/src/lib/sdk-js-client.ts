@@ -1,6 +1,6 @@
 type ClientConfig = {
-    host: string;
-    siteId: string;
+    dotcmsUrl: string;
+    host_id: string;
     authToken: string;
 };
 
@@ -33,15 +33,15 @@ class DotCmsClient {
     private config: ClientConfig;
 
     constructor(config: ClientConfig) {
-        if (!config.host) {
-            throw new Error("Invalid configuration - 'host' is required");
+        if (!config.dotcmsUrl) {
+            throw new Error("Invalid configuration - 'dotcmsUrl' is required");
         }
 
-        if (!isValidUrl(config.host)) {
-            throw new Error("Invalid configuration - 'host' must be a valid URL");
+        if (!isValidUrl(config.dotcmsUrl)) {
+            throw new Error("Invalid configuration - 'dotcmsUrl' must be a valid URL");
         }
 
-        if (!config.siteId) {
+        if (!config.host_id) {
             throw new Error("Invalid configuration - 'siteId' is required");
         }
 
@@ -92,13 +92,13 @@ class DotCmsClient {
         }
 
         // Override or add the 'host_id' with the one from the config if it's not provided.
-        queryParamsObj['host_id'] = options.host_id || this.config.siteId;
+        queryParamsObj['host_id'] = options.host_id || this.config.host_id;
 
         const queryParams = new URLSearchParams(queryParamsObj).toString();
 
         const formattedPath = options.path.startsWith('/') ? options.path : `/${options.path}`;
         const response = await fetch(
-            `${this.config.host}/api/v1/page/json${formattedPath}?${queryParams}`,
+            `${this.config.dotcmsUrl}/api/v1/page/json${formattedPath}?${queryParams}`,
             {
                 headers: {
                     Authorization: `Bearer ${this.config.authToken}`
@@ -136,7 +136,7 @@ class DotCmsClient {
 
         // Format the URL correctly depending on the 'path' value
         const formattedPath = path === '/' ? '/' : `/${path}`;
-        const url = `${this.config.host}/api/v1/nav${formattedPath}${
+        const url = `${this.config.dotcmsUrl}/api/v1/nav${formattedPath}${
             queryParams ? `?${queryParams}` : ''
         }`;
 
