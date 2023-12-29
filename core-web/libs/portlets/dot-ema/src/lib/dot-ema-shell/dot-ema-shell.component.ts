@@ -26,7 +26,7 @@ import { EditEmaStore } from './store/dot-ema.store';
 import { DotPageToolsSeoComponent } from '../dot-page-tools-seo/dot-page-tools-seo.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_LANGUAGE_ID, DEFAULT_PERSONA, DEFAULT_URL, WINDOW } from '../shared/consts';
+import { DEFAULT_QUERY_PARAMS, WINDOW } from '../shared/consts';
 import { NavigationBarItem } from '../shared/models';
 
 @Component({
@@ -61,14 +61,23 @@ import { NavigationBarItem } from '../shared/models';
 })
 export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
+    @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
     private readonly siteService = inject(SiteService);
     readonly store = inject(EditEmaStore);
 
     private readonly destroy$ = new Subject<boolean>();
-    private queryParams: DotPageApiParams;
-    pageToolsVisible = false;
+
+    get queryParams(): DotPageApiParams {
+        const queryParams = this.route.snapshot.queryParams;
+
+        return {
+            language_id: queryParams['language_id'],
+            url: queryParams['url'],
+            'com.dotmarketing.persona.id': queryParams['com.dotmarketing.persona.id']
+        };
+    }
 
     dialogState$ = this.store.dialogState$;
 
@@ -104,7 +113,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     icon: 'pi-th-large',
                     label: 'Page Tools',
                     action: () => {
-                        this.pageToolsVisible = !this.pageToolsVisible;
+                        this.pageTools.toggleDialog();
                     }
                 },
                 {
@@ -130,13 +139,33 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((queryParams: Params) => {
-            this.queryParams = {
-                language_id: queryParams['language_id'] ?? DEFAULT_LANGUAGE_ID,
-                url: queryParams['url'] ?? DEFAULT_URL,
-                persona_id: queryParams['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier
-            };
+            const { missing, ...missingQueryParams } = DEFAULT_QUERY_PARAMS.reduce(
+                (acc, curr) => {
+                    if (!queryParams[curr.key]) {
+                        acc[curr.key] = curr.value;
+                        acc.missing = true;
+                    }
 
-            this.store.load(this.queryParams);
+                    return acc;
+                },
+                {
+                    missing: false
+                }
+            );
+
+            if (missing) {
+                this.router.navigate([], {
+                    queryParams: {
+                        ...queryParams,
+                        ...missingQueryParams
+                    },
+                    queryParamsHandling: 'merge'
+                });
+            } else {
+                this.store.load({
+                    ...this.queryParams
+                });
+            }
         });
 
         // We need to skip one because it's the initial value
@@ -171,7 +200,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                               },
                               queryParamsHandling: 'merge'
                           })
-                        : this.store.load(this.queryParams); // If the url is the same we need to fetch the page
+                        : this.store.load({
+                              ...this.queryParams
+                          }); // If the url is the same we need to fetch the page
                 }
             });
     }

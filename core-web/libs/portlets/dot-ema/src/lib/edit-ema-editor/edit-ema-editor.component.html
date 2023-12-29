@@ -31,6 +31,7 @@
                 [pageId]="es.editor.page.identifier"
                 [value]="es.editor.viewAs.persona"
                 (selected)="onPersonaSelected($event)"
+                (despersonalize)="onDespersonalize($event)"
                 data-testId="persona-selector" />
             <p-button class="p-button-sm" label="Save" />
         </ng-container>
@@ -108,7 +109,8 @@
     [maximizable]="true"
     [modal]="true"
     (visibleChange)="resetDialogIframeData()"
-    data-testId="dialog">
+    data-testId="dialog"
+    styleClass="edit-ema-dialog">
     <ng-container [ngSwitch]="ds.type">
         <dot-ema-form-selector *ngSwitchCase="'form'" (selected)="addSelectedForm($event)" />
 

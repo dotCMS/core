@@ -18,6 +18,7 @@ import {
 
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
+import { CUSTOM_PERSONA } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component.spec';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import { BOUNDS_MOCK } from './components/ema-page-dropzone/ema-page-dropzone.component.spec';
@@ -141,7 +142,7 @@ describe('EditEmaEditorComponent', () => {
             store.load({
                 url: 'index',
                 language_id: '1',
-                persona_id: DEFAULT_PERSONA.identifier
+                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
             });
         });
 
@@ -253,6 +254,158 @@ describe('EditEmaEditorComponent', () => {
                 spectator.detectChanges();
 
                 expect(confirmDialogOpen).toHaveBeenCalled();
+            });
+
+            it('should fetchPersonas and navigate when confirming the personalization', () => {
+                const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...DEFAULT_PERSONA,
+                    identifier: '123',
+                    pageId: '123',
+                    personalized: false
+                });
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+                const personaSelector = spectator.debugElement.query(
+                    By.css('[data-testId="persona-selector"]')
+                ).componentInstance;
+                const routerSpy = jest.spyOn(spectator.inject(Router), 'navigate');
+                const fetchPersonasSpy = jest.spyOn(personaSelector, 'fetchPersonas');
+
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+
+                confirmDialog
+                    .querySelector('.p-confirm-dialog-accept')
+                    .dispatchEvent(new Event('click')); // This is the internal button, coudln't find a better way to test it
+
+                spectator.detectChanges();
+
+                expect(routerSpy).toBeCalledWith([], {
+                    queryParams: { 'com.dotmarketing.persona.id': '123' },
+                    queryParamsHandling: 'merge'
+                });
+                expect(fetchPersonasSpy).toHaveBeenCalled();
+            });
+
+            it('should reset the value on personalization rejection', () => {
+                const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...DEFAULT_PERSONA,
+                    identifier: '123',
+                    pageId: '123',
+                    personalized: false
+                });
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+                const personaSelector = spectator.debugElement.query(
+                    By.css('[data-testId="persona-selector"]')
+                ).componentInstance;
+
+                const resetValueSpy = jest.spyOn(personaSelector, 'resetValue');
+
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+
+                confirmDialog
+                    .querySelector('.p-confirm-dialog-reject')
+                    .dispatchEvent(new Event('click')); // This is the internal button, coudln't find a better way to test it
+
+                spectator.detectChanges();
+
+                expect(resetValueSpy).toHaveBeenCalled();
+            });
+
+            it('should open a confirmation dialog when despersonalize is triggered', () => {
+                const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'despersonalize', {
+                    ...DEFAULT_PERSONA,
+                    pageId: '123',
+                    selected: false
+                });
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+            });
+
+            it('should fetchPersonas when confirming the despersonalization', () => {
+                const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'despersonalize', {
+                    ...DEFAULT_PERSONA,
+                    pageId: '123',
+                    selected: false
+                });
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+                const personaSelector = spectator.debugElement.query(
+                    By.css('[data-testId="persona-selector"]')
+                ).componentInstance;
+
+                const fetchPersonasSpy = jest.spyOn(personaSelector, 'fetchPersonas');
+
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+
+                confirmDialog
+                    .querySelector('.p-confirm-dialog-accept')
+                    .dispatchEvent(new Event('click')); // This is the internal button, coudln't find a better way to test it
+
+                spectator.detectChanges();
+
+                expect(fetchPersonasSpy).toHaveBeenCalled();
+            });
+
+            it('should navigate with default persona as current persona when the selected is the same as the despersonalized', () => {
+                const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'despersonalize', {
+                    ...CUSTOM_PERSONA,
+                    pageId: '123',
+                    selected: true
+                });
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+                const routerSpy = jest.spyOn(spectator.inject(Router), 'navigate');
+
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+
+                confirmDialog
+                    .querySelector('.p-confirm-dialog-accept')
+                    .dispatchEvent(new Event('click')); // This is the internal button, coudln't find a better way to test it
+
+                spectator.detectChanges();
+
+                expect(routerSpy).toHaveBeenCalledWith([], {
+                    queryParams: { 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier },
+                    queryParamsHandling: 'merge'
+                });
             });
         });
 
