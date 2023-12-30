@@ -66,20 +66,14 @@ describe('Container', () => {
     };
 
     it('renders NoContent component for unsupported content types', () => {
-        // Adjust mockContext to include a contentlet with an unsupported content type
         const updatedContext = {
             ...mockContext,
             components: {}
         };
 
-        const updatedContainerRef = {
-            ...mockContainerRef,
-            contentlets: [{ identifier: 'contentlet-1', contentType: 'unsupported' }]
-        };
-
         render(
             <PageContext.Provider value={updatedContext}>
-                <Container containerRef={updatedContainerRef} />
+                <Container containerRef={mockContainerRef} />
             </PageContext.Provider>
         );
 
