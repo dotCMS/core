@@ -105,6 +105,7 @@
         "lodash": "^4.17.20",
         "lodash.isequal": "^4.5.0",
         "md5": "^2.3.0",
+        "next": "^14.0.4",
         "ng-packagr": "15.1.1",
         "ng2-dragula": "^2.1.1",
         "ngx-markdown": "^15.1.0",
