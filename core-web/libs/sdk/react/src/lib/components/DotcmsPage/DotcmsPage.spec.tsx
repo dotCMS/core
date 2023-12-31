@@ -20,7 +20,7 @@ jest.mock('../PageProvider/PageProvider', () => {
     return ({ children }) => <div data-testid="mockPageProvider">{children}</div>;
 });
 
-const mockEntity: PageProviderContext = {
+export const mockEntity: PageProviderContext = {
     layout: {
         header: true,
         footer: true,

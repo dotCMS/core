@@ -2,7 +2,7 @@ import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
 
-import Container from './container';
+import Container from './Container';
 
 import { PageContext, PageProviderContext } from '../PageProvider/PageProvider'; // Adjust the import path based on your file structure.
 
