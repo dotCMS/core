@@ -1,4 +1,6 @@
-import { ReactNode, createContext } from 'react';
+import { ReactNode } from 'react';
+
+import { PageContext } from '../../contexts/PageContext';
 
 export interface PageProviderProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,40 +63,6 @@ export interface PageProviderContext {
         };
     };
 }
-
-export const PageContext = createContext<PageProviderContext>({
-    containers: {},
-    components: {},
-    layout: {
-        header: false,
-        footer: false,
-        body: {
-            rows: [
-                {
-                    columns: [
-                        {
-                            width: 0,
-                            leftOffset: 0,
-                            containers: []
-                        }
-                    ]
-                }
-            ]
-        }
-    },
-    page: {
-        title: '',
-        identifier: ''
-    },
-    viewAs: {
-        language: {
-            id: ''
-        },
-        persona: {
-            keyTag: ''
-        }
-    }
-});
 
 export function PageProvider({ entity, children }: PageProviderProps) {
     return <PageContext.Provider value={entity}>{children}</PageContext.Provider>;

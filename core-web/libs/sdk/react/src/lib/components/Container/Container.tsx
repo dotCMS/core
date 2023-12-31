@@ -1,7 +1,8 @@
 import { useContext } from 'react';
 
+import { PageContext } from '../../contexts/PageContext';
 import { getContainersData } from '../../utils/utils';
-import { PageContext, PageProviderContext } from '../PageProvider/PageProvider';
+import { PageProviderContext } from '../PageProvider/PageProvider';
 
 function NoContent({ contentType }: { readonly contentType: string }) {
     return <div data-testid="no-component">No Component for {contentType}</div>;
