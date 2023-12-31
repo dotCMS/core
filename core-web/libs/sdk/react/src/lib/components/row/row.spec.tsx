@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 
-import Row from './Row';
+import { Row } from './Row';
 
-import { PageProviderContext } from '../page-provider/page-provider';
+import { PageProviderContext } from '../PageProvider/PageProvider';
 
 import '@testing-library/jest-dom';
 

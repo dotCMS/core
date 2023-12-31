@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import Column from './column';
+import { Column } from './column';
 
-jest.mock('../container/container', () => {
+jest.mock('../Container/Container', () => {
     return ({ containerRef }) => <div data-testid="mockContainer">{containerRef.identifier}</div>;
 });
 

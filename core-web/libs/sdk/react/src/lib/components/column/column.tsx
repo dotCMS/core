@@ -1,6 +1,6 @@
 import styles from './column.module.css';
 
-import Container from '../Container/Container';
+import { Container } from '../Container/Container';
 import { PageProviderContext } from '../PageProvider/PageProvider';
 
 interface ColumnProps {
@@ -55,5 +55,3 @@ export function Column({ column }: ColumnProps) {
         </div>
     );
 }
-
-export default Column;

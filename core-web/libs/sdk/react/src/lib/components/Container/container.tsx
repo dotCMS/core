@@ -102,5 +102,3 @@ export function Container({ containerRef }: ContainerProps) {
         </div>
     );
 }
-
-export default Container;

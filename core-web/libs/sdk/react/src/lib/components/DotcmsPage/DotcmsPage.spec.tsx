@@ -10,7 +10,7 @@ jest.mock('../../hooks/useEventHandlers', () => ({
     useEventHandlers: jest.fn()
 }));
 
-jest.mock('../row/row', () => {
+jest.mock('../Row/Row', () => {
     const { forwardRef } = jest.requireActual('react');
 
     return forwardRef((props, ref) => <div ref={ref} data-testid="mockRow"></div>);

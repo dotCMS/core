@@ -52,18 +52,6 @@ class DotCmsClient {
         this.config = config;
     }
 
-    private validatePageOptions(options: PageApiOptions): void {
-        if (!options.path) {
-            throw new Error("The 'path' parameter is required for the Page API");
-        }
-    }
-
-    private validateNavOptions(options: NavApiOptions): void {
-        if (!options.path) {
-            throw new Error("The 'path' parameter is required for the Nav API");
-        }
-    }
-
     /**
      * @description
      * The Page API enables you to retrieve all the elements of any Page in your dotCMS system.
@@ -147,6 +135,18 @@ class DotCmsClient {
         });
 
         return response.json();
+    }
+
+    private validatePageOptions(options: PageApiOptions): void {
+        if (!options.path) {
+            throw new Error("The 'path' parameter is required for the Page API");
+        }
+    }
+
+    private validateNavOptions(options: NavApiOptions): void {
+        if (!options.path) {
+            throw new Error("The 'path' parameter is required for the Nav API");
+        }
     }
 }
 

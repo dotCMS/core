@@ -99,5 +99,3 @@ export const PageContext = createContext<PageProviderContext>({
 export function PageProvider({ entity, children }: PageProviderProps) {
     return <PageContext.Provider value={entity}>{children}</PageContext.Provider>;
 }
-
-export default PageProvider;

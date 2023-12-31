@@ -1,8 +1,8 @@
 import { useRef } from 'react';
 
 import { useEventHandlers } from '../../hooks/useEventHandlers';
-import PageProvider, { PageProviderContext } from '../PageProvider/PageProvider';
-import Row from '../Row/Row';
+import { PageProvider, PageProviderContext } from '../PageProvider/PageProvider';
+import { Row } from '../Row/Row';
 
 export type DotcmsPageProps = {
     readonly entity: PageProviderContext;

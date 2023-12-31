@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 
 import styles from './row.module.css';
 
-import Column from '../Column/Column';
+import { Column } from '../Column/Column';
 import { PageProviderContext } from '../PageProvider/PageProvider';
 
 interface RowProps {
@@ -18,5 +18,3 @@ export const Row = forwardRef<HTMLDivElement, RowProps>(({ row }, ref) => {
         </div>
     );
 });
-
-export default Row;
