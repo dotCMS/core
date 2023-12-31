@@ -5,7 +5,7 @@ import { render, screen } from '@testing-library/react';
 import { Container } from './Container';
 
 import { mockEntity } from '../DotcmsPage/DotcmsPage.spec';
-import { PageContext } from '../PageProvider/PageProvider'; // Adjust the import path based on your file structure.
+import { PageContext } from '../PageProvider/PageProvider';
 
 describe('Container', () => {
     // Mock data for your context and container
