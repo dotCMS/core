@@ -105,32 +105,4 @@ describe('DotcmsPage', () => {
         render(<DotcmsPage entity={mockEntity} />);
         expect(screen.getAllByTestId('mockRow').length).toBe(mockEntity.layout.body.rows.length);
     });
-
-    // it('sends the correct message to parent window on pathname change', () => {
-    //     render(<DotcmsPage entity={mockEntity} />);
-
-    //     // Simulate pathname change
-    //     nextRouter.usePathname.mockImplementation(() => '/newpath');
-    //     fireEvent.popstate(window, new PopStateEvent('popstate'));
-
-    //     expect(postMessageMock).toHaveBeenCalledWith(
-    //         {
-    //             action: 'set-url',
-    //             payload: {
-    //                 url: 'newpath',
-    //             },
-    //         },
-    //         '*'
-    //     );
-    // });
-
-    // it('adds a ref to rowsRef.current when addRowRef is called', () => {
-
-    //     const { getAllByTestId } = render(<DotcmsPage entity={mockEntity} />);
-
-    //     const renderedRows = getAllByTestId('row'); // Make sure your Row component has a data-testid="row"
-    //     expect(renderedRows.length).toBe(mockEntity.layout.body.rows.length);
-    // });
-
-    // Add more tests as needed to cover other functionalities and scenarios
 });

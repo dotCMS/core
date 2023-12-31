@@ -4,7 +4,7 @@ import Container from '../Container/Container';
 import { PageProviderContext } from '../PageProvider/PageProvider';
 
 interface ColumnProps {
-    column: PageProviderContext['layout']['body']['rows'][0]['columns'][0];
+    readonly column: PageProviderContext['layout']['body']['rows'][0]['columns'][0];
 }
 
 export function Column({ column }: ColumnProps) {

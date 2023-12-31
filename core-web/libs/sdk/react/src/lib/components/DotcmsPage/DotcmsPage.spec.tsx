@@ -76,18 +76,4 @@ describe('DotcmsPage', () => {
         render(<DotcmsPage entity={mockEntity} />);
         expect(screen.getAllByTestId('mockRow').length).toBe(mockEntity.layout.body.rows.length);
     });
-
-    it('populates rowsRef with row elements', () => {
-        // This test ensures that the addRowRef function is working as expected
-        // Since useRef is a hook, you might need to mock it or use a custom renderer to access its current value.
-        // ...
-    });
-
-    it('calls useEventHandlers with the correct parameters', () => {
-        // This test ensures that useEventHandlers is called with the correct rowsRef
-        // You will need to mock useEventHandlers and check that it's called with the expected arguments.
-        // ...
-    });
-
-    // Add more tests as needed...
 });
