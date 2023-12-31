@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 
-import Row from './row';
+import Row from './Row';
 
 import { PageProviderContext } from '../page-provider/page-provider';
 

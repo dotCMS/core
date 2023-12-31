@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
 
 import '@testing-library/jest-dom';
-import { DotcmsPage } from './dotcms-page';
+import { DotcmsPage } from './DotcmsPage';
 
-import { PageProviderContext } from '../page-provider/page-provider';
+import { PageProviderContext } from '../PageProvider/PageProvider';
 
 // Mock the custom hook and components
 jest.mock('../../hooks/useEventHandlers', () => ({
@@ -16,7 +16,7 @@ jest.mock('../row/row', () => {
     return forwardRef((props, ref) => <div ref={ref} data-testid="mockRow"></div>);
 });
 
-jest.mock('../page-provider/page-provider', () => {
+jest.mock('../PageProvider/PageProvider', () => {
     return ({ children }) => <div data-testid="mockPageProvider">{children}</div>;
 });
 

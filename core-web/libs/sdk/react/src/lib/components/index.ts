@@ -1,3 +1,3 @@
-export * from './column/column';
-export * from './container/container';
-export * from './dotcms-page/dotcms-page';
+export * from './Column/Column';
+export * from './Container/Container';
+export * from './DotcmsPage/DotcmsPage';

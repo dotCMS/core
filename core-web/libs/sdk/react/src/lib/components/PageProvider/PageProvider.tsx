@@ -75,31 +75,29 @@ export const PageContext = createContext<PageProviderContext>({
                         {
                             width: 0,
                             leftOffset: 0,
-                            containers: [],
-                        },
-                    ],
-                },
-            ],
-        },
+                            containers: []
+                        }
+                    ]
+                }
+            ]
+        }
     },
     page: {
         title: '',
-        identifier: '',
+        identifier: ''
     },
     viewAs: {
         language: {
-            id: '',
+            id: ''
         },
         persona: {
-            keyTag: '',
-        },
-    },
+            keyTag: ''
+        }
+    }
 });
 
 export function PageProvider({ entity, children }: PageProviderProps) {
-    return (
-        <PageContext.Provider value={entity}>{children}</PageContext.Provider>
-    );
+    return <PageContext.Provider value={entity}>{children}</PageContext.Provider>;
 }
 
 export default PageProvider;

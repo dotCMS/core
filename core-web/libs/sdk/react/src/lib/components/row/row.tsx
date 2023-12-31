@@ -2,8 +2,8 @@ import { forwardRef } from 'react';
 
 import styles from './row.module.css';
 
-import Column from '../column/column';
-import { PageProviderContext } from '../page-provider/page-provider';
+import Column from '../Column/Column';
+import { PageProviderContext } from '../PageProvider/PageProvider';
 
 interface RowProps {
     row: PageProviderContext['layout']['body']['rows'][0];

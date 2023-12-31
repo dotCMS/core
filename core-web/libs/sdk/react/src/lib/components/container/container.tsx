@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 
 import { getContainersData } from '../../utils/utils';
-import { PageContext, PageProviderContext } from '../page-provider/page-provider';
+import { PageContext, PageProviderContext } from '../PageProvider/PageProvider';
 
 function NoContent({ contentType }: { contentType: string }) {
     return <div data-testid="no-component">No Component for {contentType}</div>;

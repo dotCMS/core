@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react';
 
 import Container from './container';
 
-import { PageContext, PageProviderContext } from '../page-provider/page-provider'; // Adjust the import path based on your file structure.
+import { PageContext, PageProviderContext } from '../PageProvider/PageProvider'; // Adjust the import path based on your file structure.
 
 describe('Container', () => {
     // Mock data for your context and container

@@ -1,7 +1,4 @@
-import {
-    ContainerData,
-    PageProviderContext,
-} from '../components/page-provider/page-provider';
+import { ContainerData, PageProviderContext } from '../components/PageProvider/PageProvider';
 
 export function getPageElementBound(rowsNodes: HTMLDivElement[] | null) {
     if (!rowsNodes) {
@@ -34,9 +31,7 @@ export function getPageElementBound(rowsNodes: HTMLDivElement[] | null) {
                     containers: containers.map((container) => {
                         const containerRect = container.getBoundingClientRect();
                         const contentlets = Array.from(
-                            container.querySelectorAll(
-                                '[data-dot="contentlet"]'
-                            )
+                            container.querySelectorAll('[data-dot="contentlet"]')
                         ) as HTMLDivElement[];
 
                         return {
@@ -46,21 +41,20 @@ export function getPageElementBound(rowsNodes: HTMLDivElement[] | null) {
                             height: containerRect.height,
                             payload: container.dataset.content,
                             contentlets: contentlets.map((contentlet) => {
-                                const contentletRect =
-                                    contentlet.getBoundingClientRect();
+                                const contentletRect = contentlet.getBoundingClientRect();
 
                                 return {
                                     x: 0,
                                     y: contentletRect.y - containerRect.y,
                                     width: contentletRect.width,
                                     height: contentletRect.height,
-                                    payload: contentlet.dataset.content,
+                                    payload: contentlet.dataset.content
                                 };
-                            }),
+                            })
                         };
-                    }),
+                    })
                 };
-            }),
+            })
         };
     });
 }
@@ -85,9 +79,7 @@ export const getPageContainers = (containers: ContainerData) => {
                         containers[container].container.path ??
                         containers[container].container.identifier,
                     uuid: key.replace('uuid-', ''),
-                    contentletsId: contentlets[key].map(
-                        (contentlet) => contentlet.identifier
-                    ),
+                    contentletsId: contentlets[key].map((contentlet) => contentlet.identifier)
                 });
             });
 
@@ -107,9 +99,7 @@ export const getContainersData = (
     const { containerStructures } = containers[identifier];
 
     // Get accepts types of content types for this container
-    const acceptTypes = containerStructures
-        .map((structure) => structure.contentTypeVar)
-        .join(',');
+    const acceptTypes = containerStructures.map((structure) => structure.contentTypeVar).join(',');
 
     // Get the contentlets for "this" container
     const contentlets = containers[identifier].contentlets[`uuid-${uuid}`];
@@ -121,6 +111,6 @@ export const getContainersData = (
         acceptTypes,
         contentlets,
         pageContainers,
-        maxContentlets: 25, // TODO: need to fix this
+        maxContentlets: 25 // TODO: need to fix this
     };
 };

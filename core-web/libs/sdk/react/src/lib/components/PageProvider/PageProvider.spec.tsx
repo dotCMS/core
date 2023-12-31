@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import React from 'react';
 
 import '@testing-library/jest-dom';
-import { PageProvider, PageContext } from './page-provider';
+import { PageProvider, PageContext } from './PageProvider';
 
 const MockChildComponent = () => {
     const context = React.useContext(PageContext);
