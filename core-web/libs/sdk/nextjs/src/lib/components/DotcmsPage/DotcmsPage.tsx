@@ -1,12 +1,7 @@
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
-import {
-    DotcmsPageProps,
-    PageProvider,
-    Row,
-    useEventHandlers,
-} from '@dotcms/react';
+import { DotcmsPageProps, PageProvider, Row, useEventHandlers } from '@dotcms/react';
 
 export function DotcmsPage({ entity }: DotcmsPageProps) {
     const router = useRouter();
@@ -17,8 +12,8 @@ export function DotcmsPage({ entity }: DotcmsPageProps) {
             {
                 action: 'set-url',
                 payload: {
-                    url: pathname === '/' ? 'index' : pathname.replace('/', ''),
-                },
+                    url: pathname === '/' ? 'index' : pathname.replace('/', '')
+                }
             },
             '*'
         );
@@ -27,7 +22,7 @@ export function DotcmsPage({ entity }: DotcmsPageProps) {
     const rowsRef = useRef<HTMLDivElement[]>([]);
     useEventHandlers({
         rows: rowsRef,
-        reload: router.refresh,
+        reload: router.refresh
     });
 
     const addRowRef = (el: HTMLDivElement) => {

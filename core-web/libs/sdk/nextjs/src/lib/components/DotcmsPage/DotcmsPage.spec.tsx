@@ -3,7 +3,7 @@ import { ReactNode } from 'react';
 
 import { PageProviderContext } from '@dotcms/react';
 
-import { DotcmsPage } from './dotcms-page';
+import { DotcmsPage } from './DotcmsPage';
 
 import '@testing-library/jest-dom';
 
