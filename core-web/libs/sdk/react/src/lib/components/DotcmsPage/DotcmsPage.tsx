@@ -5,7 +5,7 @@ import PageProvider, { PageProviderContext } from '../PageProvider/PageProvider'
 import Row from '../Row/Row';
 
 export type DotcmsPageProps = {
-    entity: PageProviderContext;
+    readonly entity: PageProviderContext;
 };
 
 export function DotcmsPage({ entity }: DotcmsPageProps) {

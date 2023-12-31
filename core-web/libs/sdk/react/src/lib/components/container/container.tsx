@@ -3,12 +3,12 @@ import { useContext } from 'react';
 import { getContainersData } from '../../utils/utils';
 import { PageContext, PageProviderContext } from '../PageProvider/PageProvider';
 
-function NoContent({ contentType }: { contentType: string }) {
+function NoContent({ contentType }: { readonly contentType: string }) {
     return <div data-testid="no-component">No Component for {contentType}</div>;
 }
 
 export interface ContainerProps {
-    containerRef: PageProviderContext['layout']['body']['rows'][0]['columns'][0]['containers'][0];
+    readonly containerRef: PageProviderContext['layout']['body']['rows'][0]['columns'][0]['containers'][0];
 }
 
 export function Container({ containerRef }: ContainerProps) {

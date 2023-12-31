@@ -2,8 +2,8 @@ import { ReactNode, createContext } from 'react';
 
 export interface PageProviderProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    entity: any;
-    children: ReactNode;
+    readonly entity: any;
+    readonly children: ReactNode;
 }
 
 export interface ContainerData {
