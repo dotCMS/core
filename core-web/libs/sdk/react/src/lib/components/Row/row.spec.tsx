@@ -6,8 +6,10 @@ import { PageProviderContext } from '../PageProvider/PageProvider';
 
 import '@testing-library/jest-dom';
 
-jest.mock('../column/column', () => {
-    return ({ column }) => <div data-testid="mockColumn">{JSON.stringify(column)}</div>;
+jest.mock('../Column/Column', () => {
+    return {
+        Column: ({ column }) => <div data-testid="mockColumn">{JSON.stringify(column)}</div>
+    };
 });
 
 describe('Row', () => {

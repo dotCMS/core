@@ -13,11 +13,19 @@ jest.mock('../../hooks/useEventHandlers', () => ({
 jest.mock('../Row/Row', () => {
     const { forwardRef } = jest.requireActual('react');
 
-    return forwardRef((props, ref) => <div ref={ref} data-testid="mockRow"></div>);
+    return {
+        Row: forwardRef(({ children }, ref) => (
+            <div data-testid="mockRow" ref={ref}>
+                {children}
+            </div>
+        ))
+    };
 });
 
 jest.mock('../PageProvider/PageProvider', () => {
-    return ({ children }) => <div data-testid="mockPageProvider">{children}</div>;
+    return {
+        PageProvider: ({ children }) => <div data-testid="mockPageProvider">{children}</div>
+    };
 });
 
 export const mockEntity: PageProviderContext = {
