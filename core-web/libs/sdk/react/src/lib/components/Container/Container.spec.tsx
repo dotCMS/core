@@ -4,60 +4,11 @@ import { render, screen } from '@testing-library/react';
 
 import { Container } from './Container';
 
-import { PageContext, PageProviderContext } from '../PageProvider/PageProvider'; // Adjust the import path based on your file structure.
+import { mockEntity } from '../DotcmsPage/DotcmsPage.spec';
+import { PageContext } from '../PageProvider/PageProvider'; // Adjust the import path based on your file structure.
 
 describe('Container', () => {
     // Mock data for your context and container
-    const mockContext: PageProviderContext = {
-        layout: {
-            header: true,
-            footer: true,
-            body: {
-                rows: [
-                    {
-                        columns: [
-                            {
-                                width: 6,
-                                leftOffset: 3,
-                                containers: [
-                                    {
-                                        identifier: 'container-1',
-                                        uuid: 'uuid-1'
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                ]
-            }
-        },
-        containers: {
-            'container-1': {
-                container: {
-                    path: 'path/to/container',
-                    identifier: 'container-1'
-                },
-                containerStructures: [
-                    {
-                        contentTypeVar: 'content-type-1'
-                    }
-                ],
-                contentlets: {
-                    'uuid-1': [
-                        {
-                            contentType: 'content-type-1',
-                            identifier: 'contentlet-1',
-                            title: 'Contentlet 1',
-                            inode: 'inode-1'
-                        }
-                    ]
-                }
-            }
-        },
-        page: { identifier: 'page-1', title: 'Hello Page' },
-        viewAs: { language: { id: 'en' }, persona: { keyTag: 'persona-1' } },
-        components: {}
-    };
 
     const mockContainerRef = {
         identifier: 'container-1',
@@ -67,7 +18,7 @@ describe('Container', () => {
 
     it('renders NoContent component for unsupported content types', () => {
         const updatedContext = {
-            ...mockContext,
+            ...mockEntity,
             components: {}
         };
 
