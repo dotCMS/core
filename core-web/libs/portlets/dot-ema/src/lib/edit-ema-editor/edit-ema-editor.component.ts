@@ -38,9 +38,10 @@ import {
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DEFAULT_PERSONA, HOST, WINDOW } from '../shared/consts';
-import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
+import { NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { ActionPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
+import { CUSTOMER_ACTIONS } from '@dotcms/client';
 
 interface BasePayload {
     type: 'contentlet' | 'content-type';

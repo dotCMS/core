@@ -1,6 +1,7 @@
 import { renderHook } from '@testing-library/react-hooks';
 
 import { useEventHandlers } from './useEventHandlers'; // Adjust the import path based on your file structure.
+import { CUSTOMER_ACTIONS } from '@dotcms/client';
 
 // Mocking reload function and getPageElementBound utility
 const mockReload = jest.fn();
@@ -56,7 +57,7 @@ describe('useEventHandlers', () => {
         window.dispatchEvent(new MessageEvent('message', { data: 'ema-request-bounds' }));
         expect(postMessageSpy).toHaveBeenCalledWith(
             {
-                action: 'set-bounds',
+                action: CUSTOMER_ACTIONS.SET_BOUNDS,
                 payload: mockGetPageElementBound()
             },
             '*'

@@ -3,6 +3,7 @@ import { useContext } from 'react';
 import { PageContext } from '../../contexts/PageContext';
 import { getContainersData } from '../../utils/utils';
 import { PageProviderContext } from '../PageProvider/PageProvider';
+import { CUSTOMER_ACTIONS } from '@dotcms/client';
 
 function NoContent({ contentType }: { readonly contentType: string }) {
     return <div data-testid="no-component">No Component for {contentType}</div>;
@@ -79,7 +80,7 @@ export function Container({ containerRef }: ContainerProps) {
 
                             window.parent.postMessage(
                                 {
-                                    action: 'set-contentlet',
+                                    action: CUSTOMER_ACTIONS.SET_CONTENTLET,
                                     payload: {
                                         x,
                                         y,

@@ -2,6 +2,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
 import { DotcmsPageProps, PageProvider, Row, useEventHandlers } from '@dotcms/react';
+import { CUSTOMER_ACTIONS } from '@dotcms/client';
 
 export function DotcmsPage({ entity }: DotcmsPageProps) {
     const router = useRouter();
@@ -10,7 +11,7 @@ export function DotcmsPage({ entity }: DotcmsPageProps) {
     useEffect(() => {
         window.parent.postMessage(
             {
-                action: 'set-url',
+                action: CUSTOMER_ACTIONS.SET_URL,
                 payload: {
                     url: pathname === '/' ? 'index' : pathname.replace('/', '')
                 }

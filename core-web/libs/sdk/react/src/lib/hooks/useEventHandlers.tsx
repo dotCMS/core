@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from 'react';
 
 import { getPageElementBound } from '../utils/utils';
+import { CUSTOMER_ACTIONS } from '@dotcms/client';
 
 type Props = {
     /**
@@ -39,7 +40,7 @@ export function useEventHandlers({ rows, reload = window.location.reload }: Prop
                 case 'ema-request-bounds':
                     window.parent.postMessage(
                         {
-                            action: 'set-bounds',
+                            action: CUSTOMER_ACTIONS.SET_BOUNDS,
                             payload: positionData
                         },
                         '*'
@@ -56,7 +57,7 @@ export function useEventHandlers({ rows, reload = window.location.reload }: Prop
     const eventScrollHandler = useCallback((_event: Event) => {
         window.parent.postMessage(
             {
-                action: 'scroll'
+                action: CUSTOMER_ACTIONS.IFRAME_SCROLL
             },
             '*'
         );
