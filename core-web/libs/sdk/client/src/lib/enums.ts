@@ -1,7 +1,25 @@
+/**
+ * Actions send to the dotcms editor
+ *
+ * @export
+ * @enum {number}
+ */
 export enum CUSTOMER_ACTIONS {
-    SET_URL = 'set-url', // User navigate internally within the ema
-    SET_BOUNDS = 'set-bounds', // Receive the position of the rows, columns, containers and contentlets
-    SET_CONTENTLET = 'set-contentlet', // Receive the position of the rows, columns, containers and contentlets
-    IFRAME_SCROLL = 'scroll', // Emit the scroll inside the iframe
+    /**
+     * Tell the dotcms editor that page change
+     */
+    SET_URL = 'set-url',
+    /**
+     * Send the element position of the rows, columnsm containers and contentlets
+     */
+    SET_BOUNDS = 'set-bounds',
+    /**
+     * Send the information of the hovered contentlet
+     */
+    SET_CONTENTLET = 'set-contentlet',
+    /**
+     * Tell the editor that the page is being scrolled
+     */
+    IFRAME_SCROLL = 'scroll',
     NOOP = 'noop'
 }
