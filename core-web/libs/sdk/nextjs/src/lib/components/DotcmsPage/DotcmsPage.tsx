@@ -1,8 +1,8 @@
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
-import { DotcmsPageProps, PageProvider, Row, useEventHandlers } from '@dotcms/react';
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
+import { DotcmsPageProps, PageProvider, Row, useEventHandlers } from '@dotcms/react';
 
 export function DotcmsPage({ entity }: DotcmsPageProps) {
     const router = useRouter();

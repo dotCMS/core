@@ -21,6 +21,7 @@ import { DialogModule } from 'primeng/dialog';
 
 import { takeUntil } from 'rxjs/operators';
 
+import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
 import { DotPersona } from '@dotcms/dotcms-models';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
@@ -41,7 +42,6 @@ import { DEFAULT_PERSONA, HOST, WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { ActionPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
-import { CUSTOMER_ACTIONS } from '@dotcms/client';
 
 interface BasePayload {
     type: 'contentlet' | 'content-type';

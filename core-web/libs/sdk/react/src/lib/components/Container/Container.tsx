@@ -1,9 +1,10 @@
 import { useContext } from 'react';
 
+import { CUSTOMER_ACTIONS } from '@dotcms/client';
+
 import { PageContext } from '../../contexts/PageContext';
 import { getContainersData } from '../../utils/utils';
 import { PageProviderContext } from '../PageProvider/PageProvider';
-import { CUSTOMER_ACTIONS } from '@dotcms/client';
 
 function NoContent({ contentType }: { readonly contentType: string }) {
     return <div data-testid="no-component">No Component for {contentType}</div>;

@@ -1,7 +1,8 @@
 import { useEffect, useCallback } from 'react';
 
-import { getPageElementBound } from '../utils/utils';
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
+
+import { getPageElementBound } from '../utils/utils';
 
 type Props = {
     /**

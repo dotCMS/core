@@ -1,7 +1,8 @@
 import { renderHook } from '@testing-library/react-hooks';
 
-import { useEventHandlers } from './useEventHandlers'; // Adjust the import path based on your file structure.
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
+
+import { useEventHandlers } from './useEventHandlers'; // Adjust the import path based on your file structure.
 
 // Mocking reload function and getPageElementBound utility
 const mockReload = jest.fn();
