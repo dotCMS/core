@@ -2,13 +2,31 @@ import { useEffect, useCallback } from 'react';
 
 import { getPageElementBound } from '../utils/utils';
 
-export function useEventHandlers({
-    rows,
-    reload = window.location.reload,
-}: {
+type Props = {
+    /**
+     * Pass the rows elements to get the bonds of the page
+     *
+     * @type {React.MutableRefObject<HTMLDivElement[]>}
+     */
     rows: React.MutableRefObject<HTMLDivElement[]>;
+    /**
+     * Reload the page
+     *
+     * @type {() => void}
+     */
     reload?: () => void;
-}) {
+};
+
+/**
+ * This hook is used to handle the events from your webapp to dotcms page editor
+ *
+ * @export
+ * @param {Props} {
+ *     rows,
+ *     reload = window.location.reload,
+ * }
+ */
+export function useEventHandlers({ rows, reload = window.location.reload }: Props) {
     const eventMessageHandler = useCallback(
         (event: MessageEvent) => {
             const positionData = getPageElementBound(rows.current);
@@ -22,7 +40,7 @@ export function useEventHandlers({
                     window.parent.postMessage(
                         {
                             action: 'set-bounds',
-                            payload: positionData,
+                            payload: positionData
                         },
                         '*'
                     );
@@ -38,7 +56,7 @@ export function useEventHandlers({
     const eventScrollHandler = useCallback((_event: Event) => {
         window.parent.postMessage(
             {
-                action: 'scroll',
+                action: 'scroll'
             },
             '*'
         );
