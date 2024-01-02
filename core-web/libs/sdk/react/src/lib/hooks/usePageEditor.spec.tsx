@@ -3,7 +3,7 @@ import { renderHook } from '@testing-library/react-hooks';
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import * as client from '@dotcms/client';
 
-import { useEventHandlers } from './useEventHandlers';
+import { useEventHandlers } from './usePageEditor';
 
 // Mocking reload function and getPageElementBound utility
 const mockReload = jest.fn();

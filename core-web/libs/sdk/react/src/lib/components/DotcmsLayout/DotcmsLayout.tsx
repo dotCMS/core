@@ -1,6 +1,4 @@
-import { useRef } from 'react';
-
-import { useEventHandlers } from '../../hooks/useEventHandlers';
+import { usePageEditor } from '../../hooks/usePageEditor';
 import { PageProvider, PageProviderContext } from '../PageProvider/PageProvider';
 import { Row } from '../Row/Row';
 
@@ -29,9 +27,8 @@ export type DotcmsPageProps = {
  */
 export function DotcmsLayout(props: DotcmsPageProps): JSX.Element {
     const { entity } = props;
-    const rowsRef = useRef<HTMLDivElement[]>([]);
 
-    useEventHandlers({ rows: rowsRef });
+    const rowsRef = usePageEditor({});
 
     const addRowRef = (el: HTMLDivElement) => {
         if (el && !rowsRef.current.includes(el)) {

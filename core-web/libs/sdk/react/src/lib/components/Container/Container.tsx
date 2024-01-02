@@ -44,10 +44,7 @@ export function Container({ containerRef }: ContainerProps) {
     };
 
     return (
-        <div
-            data-dot="container"
-            data-content={JSON.stringify(containerPayload)}
-            className="flex flex-col gap-4">
+        <div data-dot="container" data-content={JSON.stringify(containerPayload)}>
             {contentlets.map((contentlet) => {
                 const Component = components[contentlet.contentType] || NoContent;
 
@@ -92,9 +89,7 @@ export function Container({ containerRef }: ContainerProps) {
                         }}
                         data-dot="contentlet"
                         data-content={JSON.stringify(contentletPayload)}
-                        className="p-4 bg-slate-100"
                         key={contentlet.identifier}>
-                        {/* <h2>Hola</h2> */}
                         <Component {...contentlet} />
                     </div>
                 );
