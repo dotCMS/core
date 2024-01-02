@@ -221,3 +221,6 @@ This maintenance release includes the following code fixes:
 184. https://github.com/dotCMS/core/issues/26481 : Pubsub Connection should prefer SSL #26481
 185. https://github.com/dotCMS/core/issues/26486 : Folder values don't Push Published #26486
 186. https://github.com/dotCMS/core/issues/22559 : 404 redirect not working #22559
+
+**Release-22.03.13**
+
