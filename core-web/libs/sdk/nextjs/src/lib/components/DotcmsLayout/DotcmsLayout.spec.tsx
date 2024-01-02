@@ -26,15 +26,13 @@ jest.mock('@dotcms/react', () => {
         <div ref={ref} data-testid="mockRow" {...props}></div>
     ));
 
-    const useEventHandlers = jest.fn();
-
     const MockPageProvider = ({ children }: { children: ReactNode }) => (
         <div data-testid="mockPageProvider">{children}</div>
     );
 
     return {
         Row: MockRow,
-        useEventHandlers: useEventHandlers,
+        usePageEditor: jest.fn().mockReturnValue({ current: [] }),
         PageProvider: MockPageProvider
     };
 });

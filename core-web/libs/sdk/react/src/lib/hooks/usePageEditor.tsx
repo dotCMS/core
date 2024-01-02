@@ -5,26 +5,11 @@ import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/client';
 import { getPageElementBound } from '../utils/utils';
 
 /**
- * Props for the useEventHandler hook
- *
- * @interface useEventHandlerProps
- */
-export interface useEventHandlerProps {
-    /**
-     * Pass the rows elements to get the bonds of the page
-     *
-     * @type {React.MutableRefObject<HTMLDivElement[]>}
-     */
-    rows: React.MutableRefObject<HTMLDivElement[]>;
-}
-
-/**
  * This hook is used to handle the events from your webapp to dotcms page editor
  *
  * @category Hooks
  *
- * @export
- * @param {useEventHandlerProps} props
+ * @return {*}
  */
 function useRequestBounds() {
     const rows = useRef<HTMLDivElement[]>([]);
@@ -94,11 +79,35 @@ function usePostUrlToEditor(pathname: string) {
     }, [pathname]);
 }
 
+/**
+ * Properties for the usePageEditor hook
+ *
+ * @interface PageEditorOptions
+ */
 interface PageEditorOptions {
+    /**
+     * Reload function to be called when the editor needs to reload the page to get changes
+     *
+     * @memberof PageEditorOptions
+     */
     reloadFunction?: () => void;
+    /**
+     * Current pathname of your webapp, it should be send every time the pathname changes
+     *
+     * @type {string}
+     * @memberof PageEditorOptions
+     */
     pathname?: string;
 }
 
+/**
+ * This hook is used to handle the events from your webapp to dotcms page editor
+ *
+ * @category Hooks
+ * @param {PageEditorOptions} props
+ * @return {*}
+ * @throws {Error} If pathname is not provided
+ */
 export const usePageEditor = (props: PageEditorOptions) => {
     const { reloadFunction = window.location.reload, pathname = null } = props;
 

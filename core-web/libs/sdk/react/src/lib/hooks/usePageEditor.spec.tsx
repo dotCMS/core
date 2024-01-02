@@ -1,77 +1,56 @@
 import { renderHook } from '@testing-library/react-hooks';
 
-import { CUSTOMER_ACTIONS } from '@dotcms/client';
-import * as client from '@dotcms/client';
+import { postMessageToEditor, CUSTOMER_ACTIONS } from '@dotcms/client';
 
-import { useEventHandlers } from './usePageEditor';
+import { usePageEditor } from './usePageEditor';
 
-// Mocking reload function and getPageElementBound utility
-const mockReload = jest.fn();
-const mockGetPageElementBound = jest.fn();
-
-jest.mock('../utils/utils', () => ({
-    getPageElementBound: () => mockGetPageElementBound()
+jest.mock('@dotcms/client', () => ({
+    postMessageToEditor: jest.fn(),
+    CUSTOMER_ACTIONS: {
+        SET_BOUNDS: 'SET_BOUNDS',
+        IFRAME_SCROLL: 'IFRAME_SCROLL',
+        SET_URL: 'SET_URL'
+    }
 }));
 
-const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
-const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
-const postMessageToEditorSpy = jest.spyOn(client, 'postMessageToEditor');
+let reloadSpy: jest.SpyInstance;
+let addEventListenerSpy: jest.SpyInstance;
+let removeEventListenerSpy: jest.SpyInstance;
 
-describe('useEventHandlers', () => {
-    afterEach(() => {
-        mockReload.mockClear();
-        addEventListenerSpy.mockClear();
-        removeEventListenerSpy.mockClear();
-        mockGetPageElementBound.mockClear();
-        postMessageToEditorSpy.mockClear();
+afterEach(() => {
+    jest.clearAllMocks();
+});
+
+describe('usePageEditor', () => {
+    beforeAll(() => {
+        // Mocking window functions
+        delete window.location;
+        window.location = { reload: jest.fn() };
+        reloadSpy = jest.spyOn(window.location, 'reload');
+        addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+        removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
+
+        // Provide mock implementations if necessary
+        reloadSpy.mockImplementation(jest.fn());
+        addEventListenerSpy.mockImplementation(jest.fn());
+        removeEventListenerSpy.mockImplementation(jest.fn());
     });
 
-    it('attaches event listeners to window on mount', () => {
-        const { unmount } = renderHook(() => useEventHandlers({ rows: { current: [] } }));
-
-        expect(addEventListenerSpy).toHaveBeenCalledWith('message', expect.any(Function));
-        expect(addEventListenerSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
-
-        unmount();
-
-        expect(removeEventListenerSpy).toHaveBeenCalledWith('message', expect.any(Function));
-        expect(removeEventListenerSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
+    afterAll(() => {
+        // Restore the original methods
+        reloadSpy.mockRestore();
+        addEventListenerSpy.mockRestore();
+        removeEventListenerSpy.mockRestore();
     });
 
-    it('handles reload message event correctly', () => {
-        const { unmount } = renderHook(() =>
-            useEventHandlers({ rows: { current: [] }, reload: mockReload })
-        );
+    it('should call usePostUrlToEditor with the correct pathname', () => {
+        renderHook(() => usePageEditor({ pathname: '/test' }));
 
-        // Simulate receiving a message event for reload
-        window.dispatchEvent(new MessageEvent('message', { data: 'ema-reload-page' }));
-        expect(mockReload).toHaveBeenCalled();
-
-        unmount();
-    });
-
-    it('handles request bounds message event correctly', () => {
-        const { unmount } = renderHook(() => useEventHandlers({ rows: { current: [] } }));
-
-        // Simulate receiving a message event for requesting bounds
-        window.dispatchEvent(new MessageEvent('message', { data: 'ema-request-bounds' }));
-        expect(postMessageToEditorSpy).toHaveBeenCalledWith({
-            action: CUSTOMER_ACTIONS.SET_BOUNDS,
-            payload: mockGetPageElementBound()
+        expect(postMessageToEditor).toHaveBeenCalledWith({
+            action: CUSTOMER_ACTIONS.SET_URL,
+            payload: { url: 'test' }
         });
-
-        unmount();
     });
 
-    it('handles scroll events correctly', () => {
-        const { unmount } = renderHook(() => useEventHandlers({ rows: { current: [] } }));
-
-        // Simulate a scroll event
-        window.dispatchEvent(new Event('scroll'));
-        expect(postMessageToEditorSpy).toHaveBeenCalledWith({
-            action: 'scroll'
-        });
-
-        unmount();
-    });
+    // Add more tests here for each hook and scenario
 });

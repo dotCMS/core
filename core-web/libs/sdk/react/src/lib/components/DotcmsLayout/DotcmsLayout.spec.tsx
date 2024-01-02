@@ -7,8 +7,8 @@ import { DotcmsLayout } from './DotcmsLayout';
 import { PageProviderContext } from '../PageProvider/PageProvider';
 
 // Mock the custom hook and components
-jest.mock('../../hooks/useEventHandlers', () => ({
-    useEventHandlers: jest.fn()
+jest.mock('../../hooks/usePageEditor', () => ({
+    usePageEditor: jest.fn().mockReturnValue({ current: [] })
 }));
 
 jest.mock('../Row/Row', () => {
