@@ -46,14 +46,15 @@
                     <span>{{ contentlet.title }}</span>
                 </div>
             </div>
-            <p-paginator
-                *ngIf="contentlets.totalRecords > 0"
-                [rows]="contentlets.itemsPerPage"
-                [showFirstLastIcon]="false"
-                [totalRecords]="contentlets.totalRecords"
-                [pageLinkSize]="0"
-                (onPageChange)="onPaginate($event, contentlets.filter)"></p-paginator>
         </ng-container>
         <ng-template #noContent>No content to show</ng-template>
     </ng-template>
+
+    <p-paginator
+        *ngIf="contentlets.totalRecords > 0"
+        [rows]="contentlets.itemsPerPage"
+        [showFirstLastIcon]="false"
+        [totalRecords]="contentlets.totalRecords"
+        [pageLinkSize]="0"
+        (onPageChange)="onPaginate($event, contentlets.filter)"></p-paginator>
 </div>
