@@ -1,10 +1,11 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import { EMPTY, Observable } from 'rxjs';
+import { EMPTY, Observable, forkJoin } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { catchError, map, switchMap, tap } from 'rxjs/operators';
+import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
+import { DotLicenseService } from '@dotcms/data-access';
 import { DotContainerMap, DotLayout, DotPageContainerStructure } from '@dotcms/dotcms-models';
 
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
@@ -30,6 +31,7 @@ export interface EditEmaState {
     dialogIframeURL: string;
     dialogHeader: string;
     dialogIframeLoading: boolean;
+    isEnterpriseLicense: boolean;
     dialogType: DialogType;
 }
 
@@ -58,7 +60,8 @@ function getFormId(dotPageApiService) {
 export class EditEmaStore extends ComponentStore<EditEmaState> {
     constructor(
         private dotPageApiService: DotPageApiService,
-        private dotActionUrl: DotActionUrlService
+        private dotActionUrl: DotActionUrlService,
+        private dotLicenseService: DotLicenseService
     ) {
         super();
     }
@@ -80,7 +83,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     ...state.editor.viewAs,
                     persona: state.editor.viewAs.persona ?? DEFAULT_PERSONA
                 }
-            }
+            },
+            isEnterpriseLicense: state.isEnterpriseLicense
         };
     });
 
@@ -114,15 +118,19 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     readonly load = this.effect((params$: Observable<DotPageApiParams>) => {
         return params$.pipe(
             switchMap((params) =>
-                this.dotPageApiService.get(params).pipe(
+                forkJoin({
+                    pageData: this.dotPageApiService.get(params),
+                    licenseData: this.dotLicenseService.isEnterprise().pipe(take(1), shareReplay())
+                }).pipe(
                     tap({
-                        next: (editor) => {
+                        next: ({ pageData, licenseData }) => {
                             this.setState({
-                                editor,
+                                editor: pageData,
                                 url: params.url,
                                 dialogIframeURL: '',
                                 dialogHeader: '',
                                 dialogIframeLoading: false,
+                                isEnterpriseLicense: licenseData,
                                 dialogType: null
                             });
                         },

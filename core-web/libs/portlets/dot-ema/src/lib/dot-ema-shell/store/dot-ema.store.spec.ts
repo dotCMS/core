@@ -2,6 +2,7 @@ import { describe, expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { DotLicenseService } from '@dotcms/data-access';
 import {
     mockDotContainers,
     mockDotLayout,
@@ -47,7 +48,15 @@ describe('EditEmaStore', () => {
     const now = Date.now();
     const createService = createServiceFactory({
         service: EditEmaStore,
-        mocks: [DotPageApiService, DotActionUrlService]
+        mocks: [DotPageApiService, DotActionUrlService],
+        providers: [
+            {
+                provide: DotLicenseService,
+                useValue: {
+                    isEnterprise: () => of(true)
+                }
+            }
+        ]
     });
 
     beforeEach(() => {
@@ -70,7 +79,8 @@ describe('EditEmaStore', () => {
                 expect(state).toEqual({
                     editor: mockResponse,
                     apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
-                    iframeURL: `http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&t=${now}`
+                    iframeURL: `http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&t=${now}`,
+                    isEnterpriseLicense: true
                 });
                 done();
                 jest.useRealTimers();
@@ -89,7 +99,7 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: '',
                     dialogIframeLoading: true,
                     dialogHeader: '',
-
+                    isEnterpriseLicense: true,
                     dialogType: null
                 });
                 done();
@@ -108,7 +118,7 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: '',
                     dialogIframeLoading: false,
                     dialogHeader: '',
-
+                    isEnterpriseLicense: true,
                     dialogType: null
                 });
                 done();
@@ -129,6 +139,7 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: EDIT_CONTENTLET_URL + '123',
                     dialogIframeLoading: true,
                     dialogHeader: 'test',
+                    isEnterpriseLicense: true,
                     dialogType: 'content'
                 });
                 done();
@@ -150,7 +161,8 @@ describe('EditEmaStore', () => {
                         '/html/ng-contentlet-selector.jsp?ng=true&container_id=1234&add=test&language_id=1',
                     dialogIframeLoading: true,
                     dialogHeader: 'Search Content',
-                    dialogType: 'content'
+                    dialogType: 'content',
+                    isEnterpriseLicense: true
                 });
                 done();
             });
@@ -169,7 +181,8 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: 'some/really/long/url',
                     dialogIframeLoading: true,
                     dialogHeader: 'test',
-                    dialogType: 'content'
+                    dialogType: 'content',
+                    isEnterpriseLicense: true
                 });
                 done();
             });
@@ -257,7 +270,8 @@ describe('EditEmaStore', () => {
                     dialogIframeURL: '',
                     dialogIframeLoading: false,
                     dialogHeader: '',
-                    dialogType: null
+                    dialogType: null,
+                    isEnterpriseLicense: true
                 });
                 done();
             });
