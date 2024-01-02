@@ -8,7 +8,7 @@ describe('postMessageToEditor', () => {
     it('should post the correct message for SET_URL action', () => {
         const message = { action: CUSTOMER_ACTIONS.SET_URL, payload: 'test-url' };
         postMessageToEditor(message);
-        expect(window.parent.postMessage).toHaveBeenCalledWith(message, 'http://localhost');
+        expect(window.parent.postMessage).toHaveBeenCalledWith(message, '*');
     });
 
     it('should post the correct message for SET_BOUNDS action', () => {
@@ -16,7 +16,7 @@ describe('postMessageToEditor', () => {
         postMessageToEditor({ action: CUSTOMER_ACTIONS.SET_BOUNDS, payload: bounds });
         expect(window.parent.postMessage).toHaveBeenCalledWith(
             { action: CUSTOMER_ACTIONS.SET_BOUNDS, payload: bounds },
-            'http://localhost'
+            '*'
         );
     });
 });
