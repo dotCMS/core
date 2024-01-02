@@ -224,3 +224,5 @@ This maintenance release includes the following code fixes:
 
 **Release-22.03.13**
 
+187. https://github.com/dotCMS/core/issues/26970 : GraphQL Cache not working #26970
+188. 
