@@ -74,48 +74,48 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
             icon: 'pi pi-mobile',
             cssHeight: '844',
             cssWidth: '390',
-            inode: '0',
-            identifier: ''
+            inode: 'mobile-portrait',
+            identifier: 'mobile-portrait-id'
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.mobile.landscape'),
             icon: 'pi pi-mobile',
             cssHeight: '390',
             cssWidth: '844',
-            inode: '0',
-            identifier: ''
+            inode: 'mobile-landscape',
+            identifier: 'mobile-landscape-id'
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.hd.monitor'),
             icon: 'pi pi-desktop',
             cssHeight: '1080',
             cssWidth: '1920',
-            inode: '0',
-            identifier: ''
+            inode: 'hd-monitor',
+            identifier: 'hd-monitor-id'
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.4k.monitor'),
             icon: 'pi pi-desktop',
             cssHeight: '2160',
             cssWidth: '3840',
-            inode: '0',
-            identifier: ''
+            inode: '4k-monitor',
+            identifier: '4k-monitor-id'
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.tablet.portrait'),
             icon: 'pi pi-tablet',
             cssHeight: '1180',
             cssWidth: '820',
-            inode: '0',
-            identifier: ''
+            inode: 'tablet-portrait',
+            identifier: 'tablet-portrait-id'
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.tablet.landscape'),
             icon: 'pi pi-tablet',
             cssHeight: '820',
             cssWidth: '1180',
-            inode: '0',
-            identifier: ''
+            inode: 'tablet-landscape',
+            identifier: 'tablet-landscape-id'
         }
     ];
 
