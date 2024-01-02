@@ -11,7 +11,7 @@ import { DotcmsPageProps, PageProvider, Row, useEventHandlers } from '@dotcms/re
  * @param {DotcmsPageProps} { entity }
  * @return {*}
  */
-export function DotcmsPage({ entity }: DotcmsPageProps) {
+export function DotcmsLayout({ entity }: DotcmsPageProps) {
     const router = useRouter();
     const pathname = usePathname();
 

@@ -3,7 +3,7 @@ import { ReactNode } from 'react';
 
 import { PageProviderContext } from '@dotcms/react';
 
-import { DotcmsPage } from './DotcmsPage';
+import { DotcmsLayout } from './DotcmsLayout';
 
 import '@testing-library/jest-dom';
 
@@ -96,13 +96,13 @@ const mockEntity: PageProviderContext = {
     components: {}
 };
 
-describe('DotcmsPage', () => {
+describe('DotcmsLayout', () => {
     afterEach(() => {
         jest.clearAllMocks();
     });
 
     it('renders correctly with PageProvider and rows', () => {
-        render(<DotcmsPage entity={mockEntity} />);
+        render(<DotcmsLayout entity={mockEntity} />);
         expect(screen.getAllByTestId('mockRow').length).toBe(mockEntity.layout.body.rows.length);
     });
 });

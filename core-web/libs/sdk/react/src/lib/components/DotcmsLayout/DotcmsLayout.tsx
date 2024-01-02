@@ -27,7 +27,7 @@ export type DotcmsPageProps = {
  * @param {DotcmsPageProps} props
  * @return {*}  {JSX.Element}
  */
-export function DotcmsPage(props: DotcmsPageProps): JSX.Element {
+export function DotcmsLayout(props: DotcmsPageProps): JSX.Element {
     const { entity } = props;
     const rowsRef = useRef<HTMLDivElement[]>([]);
 

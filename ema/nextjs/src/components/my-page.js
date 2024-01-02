@@ -1,6 +1,6 @@
 'use client';
 
-import { DotcmsPage } from '@dotcms/nextjs';
+import { DotcmsLayout } from '@dotcms/nextjs';
 
 import WebPageContent from './content-types/webPageContent';
 import Banner from './content-types/banner';
@@ -21,7 +21,7 @@ export function MyPage({ data, nav }) {
                 </Header>
             )}
             <main className="container flex flex-col gap-8 m-auto">
-                <DotcmsPage
+                <DotcmsLayout
                     entity={{
                         components: {
                             webPageContent: WebPageContent,

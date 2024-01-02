@@ -1,1 +1,1 @@
-export * from './lib/components/DotcmsPage/DotcmsPage';
+export * from './lib/components/DotcmsLayout/DotcmsLayout';

@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react';
 
 import '@testing-library/jest-dom';
-import { DotcmsPage } from './DotcmsPage';
+
+import { DotcmsLayout } from './DotcmsLayout';
 
 import { PageProviderContext } from '../PageProvider/PageProvider';
 
@@ -79,9 +80,9 @@ export const mockEntity: PageProviderContext = {
     components: {}
 };
 
-describe('DotcmsPage', () => {
+describe('DotcmsLayout', () => {
     it('renders correctly with PageProvider and rows', () => {
-        render(<DotcmsPage entity={mockEntity} />);
+        render(<DotcmsLayout entity={mockEntity} />);
         expect(screen.getAllByTestId('mockRow').length).toBe(mockEntity.layout.body.rows.length);
     });
 });
