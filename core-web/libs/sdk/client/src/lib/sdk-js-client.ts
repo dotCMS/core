@@ -1,7 +1,7 @@
 /**
  * Thsi is the SDK client config.
  */
-interface ClientConfig {
+export interface ClientConfig {
     /**
      * The URL of the dotCMS instance.
      *
@@ -47,7 +47,13 @@ function isValidUrl(url: string): boolean {
     }
 }
 
-class DotCmsClient {
+/**
+ * @description The DotCMS SDK client.
+ *
+ * @not
+ * @class DotCmsClient
+ */
+export class DotCmsClient {
     private config: ClientConfig;
 
     constructor(config: ClientConfig) {

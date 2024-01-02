@@ -4,6 +4,12 @@ import { useEventHandlers } from '../../hooks/useEventHandlers';
 import { PageProvider, PageProviderContext } from '../PageProvider/PageProvider';
 import { Row } from '../Row/Row';
 
+/**
+ * Props for the dotCMS page
+ *
+ * @export
+ * @interface DotcmsPageProps
+ */
 export type DotcmsPageProps = {
     /**
      * Response from the dotcms page api
@@ -16,12 +22,15 @@ export type DotcmsPageProps = {
 /**
  * Renders a dotCMS page body, does not include header and footer
  *
+ * @category Components
  * @export
- * @param {DotcmsPageProps} { entity }
- * @return {*}
+ * @param {DotcmsPageProps} props
+ * @return {*}  {JSX.Element}
  */
-export function DotcmsPage({ entity }: DotcmsPageProps) {
+export function DotcmsPage(props: DotcmsPageProps): JSX.Element {
+    const { entity } = props;
     const rowsRef = useRef<HTMLDivElement[]>([]);
+
     useEventHandlers({ rows: rowsRef });
 
     const addRowRef = (el: HTMLDivElement) => {

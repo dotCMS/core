@@ -4,7 +4,12 @@ import { CUSTOMER_ACTIONS } from '@dotcms/client';
 
 import { getPageElementBound } from '../utils/utils';
 
-type Props = {
+/**
+ * Props for the useEventHandler hook
+ *
+ * @interface useEventHandlerProps
+ */
+export interface useEventHandlerProps {
     /**
      * Pass the rows elements to get the bonds of the page
      *
@@ -17,18 +22,18 @@ type Props = {
      * @type {() => void}
      */
     reload?: () => void;
-};
+}
 
 /**
  * This hook is used to handle the events from your webapp to dotcms page editor
  *
+ * @category Hooks
+ *
  * @export
- * @param {Props} {
- *     rows,
- *     reload = window.location.reload,
- * }
+ * @param {useEventHandlerProps} props
  */
-export function useEventHandlers({ rows, reload = window.location.reload }: Props) {
+export function useEventHandlers(props: useEventHandlerProps) {
+    const { rows, reload = window.location.reload } = props;
     const eventMessageHandler = useCallback(
         (event: MessageEvent) => {
             const positionData = getPageElementBound(rows.current);

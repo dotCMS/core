@@ -64,6 +64,16 @@ export interface PageProviderContext {
     };
 }
 
-export function PageProvider({ entity, children }: PageProviderProps) {
+/**
+ * Component in charge of pass the data from the page api to the global context
+ *
+ * @category Components
+ * @export
+ * @param {PageProviderProps} props
+ * @return {*}  {JSX.Element}
+ */
+export function PageProvider(props: PageProviderProps): JSX.Element {
+    const { entity, children } = props;
+
     return <PageContext.Provider value={entity}>{children}</PageContext.Provider>;
 }
