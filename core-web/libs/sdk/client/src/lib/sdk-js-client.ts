@@ -1,8 +1,26 @@
-type ClientConfig = {
+/**
+ * Thsi is the SDK client config.
+ */
+interface ClientConfig {
+    /**
+     * The URL of the dotCMS instance.
+     *
+     * @type {string}
+     */
     dotcmsUrl: string;
+    /**
+     * The id of the site you want to interact with.
+     *
+     * @type {string}
+     */
     host_id: string;
+    /**
+     * The authentication token to use for the requests.
+     *
+     * @type {string}
+     */
     authToken: string;
-};
+}
 
 type PageApiOptions = {
     path: string;
@@ -150,8 +168,19 @@ class DotCmsClient {
     }
 }
 
-// Usage
+/**
+ * @description
+ * The DotCMS SDK client.
+ *
+ * @export
+ * @type {DotCmsClient}
+ */
 export const dotcmsClient = {
+    /**
+     * Initializes the SDK client.
+     * @param config
+     * @returns
+     */
     init: (config: ClientConfig): DotCmsClient => {
         return new DotCmsClient(config);
     }

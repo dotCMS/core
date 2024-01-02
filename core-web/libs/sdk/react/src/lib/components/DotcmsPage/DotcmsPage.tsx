@@ -5,9 +5,21 @@ import { PageProvider, PageProviderContext } from '../PageProvider/PageProvider'
 import { Row } from '../Row/Row';
 
 export type DotcmsPageProps = {
+    /**
+     * Response from the dotcms page api
+     *
+     * @type {PageProviderContext}
+     */
     readonly entity: PageProviderContext;
 };
 
+/**
+ * Renders a dotCMS page body, does not include header and footer
+ *
+ * @export
+ * @param {DotcmsPageProps} { entity }
+ * @return {*}
+ */
 export function DotcmsPage({ entity }: DotcmsPageProps) {
     const rowsRef = useRef<HTMLDivElement[]>([]);
     useEventHandlers({ rows: rowsRef });

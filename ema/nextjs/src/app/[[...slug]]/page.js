@@ -1,9 +1,9 @@
 import { dotcmsClient } from '@dotcms/client';
 
 const client = dotcmsClient.init({
-    host: process.env.NEXT_PUBLIC_DOTCMS_HOST,
+    dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
     authToken: process.env.DOTCMS_AUTH_TOKEN,
-    siteId: '59bb8831-6706-4589-9ca0-ff74016e02b2'
+    host_id: '59bb8831-6706-4589-9ca0-ff74016e02b2'
 });
 
 import { MyPage } from '@/components/my-page';

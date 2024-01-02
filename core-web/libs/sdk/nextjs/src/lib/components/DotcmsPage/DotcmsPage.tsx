@@ -4,6 +4,13 @@ import { useEffect, useRef } from 'react';
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import { DotcmsPageProps, PageProvider, Row, useEventHandlers } from '@dotcms/react';
 
+/**
+ * Renders a dotCMS page body, does not include header and footer
+ *
+ * @export
+ * @param {DotcmsPageProps} { entity }
+ * @return {*}
+ */
 export function DotcmsPage({ entity }: DotcmsPageProps) {
     const router = useRouter();
     const pathname = usePathname();
