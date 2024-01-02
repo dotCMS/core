@@ -61,7 +61,7 @@ describe('DotCmsClient', () => {
             }).toThrow("Invalid configuration - 'dotcmsUrl' must be a valid URL");
         });
 
-        it('should throw error on missing siteId', () => {
+        it('should throw error on missing host_id', () => {
             const config = {
                 dotcmsUrl: 'https://example.com',
                 host_id: '',
@@ -70,7 +70,7 @@ describe('DotCmsClient', () => {
 
             expect(() => {
                 dotcmsClient.init(config);
-            }).toThrow("Invalid configuration - 'siteId' is required");
+            }).toThrow("Invalid configuration - 'host_id' is required");
         });
 
         it('should throw error on missing authToken', () => {

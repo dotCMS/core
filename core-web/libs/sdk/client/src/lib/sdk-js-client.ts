@@ -66,7 +66,7 @@ export class DotCmsClient {
         }
 
         if (!config.host_id) {
-            throw new Error("Invalid configuration - 'siteId' is required");
+            throw new Error("Invalid configuration - 'host_id' is required");
         }
 
         if (!config.authToken) {
