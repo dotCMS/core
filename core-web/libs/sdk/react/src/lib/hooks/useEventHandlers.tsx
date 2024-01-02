@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 
-import { CUSTOMER_ACTIONS } from '@dotcms/client';
+import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/client';
 
 import { getPageElementBound } from '../utils/utils';
 
@@ -44,13 +44,10 @@ export function useEventHandlers(props: useEventHandlerProps) {
                     break;
 
                 case 'ema-request-bounds':
-                    window.parent.postMessage(
-                        {
-                            action: CUSTOMER_ACTIONS.SET_BOUNDS,
-                            payload: positionData
-                        },
-                        '*'
-                    );
+                    postMessageToEditor({
+                        action: CUSTOMER_ACTIONS.SET_BOUNDS,
+                        payload: positionData
+                    });
                     break;
 
                 default:
@@ -61,12 +58,9 @@ export function useEventHandlers(props: useEventHandlerProps) {
     );
 
     const eventScrollHandler = useCallback((_event: Event) => {
-        window.parent.postMessage(
-            {
-                action: CUSTOMER_ACTIONS.IFRAME_SCROLL
-            },
-            '*'
-        );
+        postMessageToEditor({
+            action: CUSTOMER_ACTIONS.IFRAME_SCROLL
+        });
     }, []);
 
     useEffect(() => {

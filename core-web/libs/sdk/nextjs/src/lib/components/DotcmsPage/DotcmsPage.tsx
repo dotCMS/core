@@ -1,7 +1,7 @@
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
-import { CUSTOMER_ACTIONS } from '@dotcms/client';
+import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/client';
 import { DotcmsPageProps, PageProvider, Row, useEventHandlers } from '@dotcms/react';
 
 /**
@@ -16,15 +16,12 @@ export function DotcmsPage({ entity }: DotcmsPageProps) {
     const pathname = usePathname();
 
     useEffect(() => {
-        window.parent.postMessage(
-            {
-                action: CUSTOMER_ACTIONS.SET_URL,
-                payload: {
-                    url: pathname === '/' ? 'index' : pathname.replace('/', '')
-                }
-            },
-            '*'
-        );
+        postMessageToEditor({
+            action: CUSTOMER_ACTIONS.SET_URL,
+            payload: {
+                url: pathname === '/' ? 'index' : pathname.replace('/', '')
+            }
+        });
     }, [pathname]);
 
     const rowsRef = useRef<HTMLDivElement[]>([]);

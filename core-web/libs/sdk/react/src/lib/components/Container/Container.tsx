@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 
-import { CUSTOMER_ACTIONS } from '@dotcms/client';
+import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/client';
 
 import { PageContext } from '../../contexts/PageContext';
 import { getContainersData } from '../../utils/utils';
@@ -79,19 +79,16 @@ export function Container({ containerRef }: ContainerProps) {
 
                             const { x, y, width, height } = target.getBoundingClientRect();
 
-                            window.parent.postMessage(
-                                {
-                                    action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-                                    payload: {
-                                        x,
-                                        y,
-                                        width,
-                                        height,
-                                        payload: contentletPayload
-                                    }
-                                },
-                                '*'
-                            );
+                            postMessageToEditor({
+                                action: CUSTOMER_ACTIONS.SET_CONTENTLET,
+                                payload: {
+                                    x,
+                                    y,
+                                    width,
+                                    height,
+                                    payload: contentletPayload
+                                }
+                            });
                         }}
                         data-dot="contentlet"
                         data-content={JSON.stringify(contentletPayload)}

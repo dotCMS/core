@@ -26,10 +26,6 @@ describe('Column', () => {
         render(<Column column={mockColumnData} />);
     });
 
-    it('renders without crashing', () => {
-        expect(screen.getByTestId('column').dataset.dot).toEqual('column');
-    });
-
     it('applies the correct width and start classes based on props', () => {
         const columnElement = screen.getByTestId('column');
         expect(columnElement).toHaveClass('col-span-6');

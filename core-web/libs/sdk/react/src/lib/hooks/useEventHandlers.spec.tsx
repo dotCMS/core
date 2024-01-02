@@ -1,8 +1,9 @@
 import { renderHook } from '@testing-library/react-hooks';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
+import * as client from '@dotcms/client';
 
-import { useEventHandlers } from './useEventHandlers'; // Adjust the import path based on your file structure.
+import { useEventHandlers } from './useEventHandlers';
 
 // Mocking reload function and getPageElementBound utility
 const mockReload = jest.fn();
@@ -12,19 +13,17 @@ jest.mock('../utils/utils', () => ({
     getPageElementBound: () => mockGetPageElementBound()
 }));
 
-// Spies for addEventListener and removeEventListener
 const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
 const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-const postMessageSpy = jest.spyOn(window.parent, 'postMessage').mockImplementation(() => {});
+const postMessageToEditorSpy = jest.spyOn(client, 'postMessageToEditor');
 
 describe('useEventHandlers', () => {
     afterEach(() => {
         mockReload.mockClear();
         addEventListenerSpy.mockClear();
         removeEventListenerSpy.mockClear();
-        postMessageSpy.mockClear();
         mockGetPageElementBound.mockClear();
+        postMessageToEditorSpy.mockClear();
     });
 
     it('attaches event listeners to window on mount', () => {
@@ -56,13 +55,10 @@ describe('useEventHandlers', () => {
 
         // Simulate receiving a message event for requesting bounds
         window.dispatchEvent(new MessageEvent('message', { data: 'ema-request-bounds' }));
-        expect(postMessageSpy).toHaveBeenCalledWith(
-            {
-                action: CUSTOMER_ACTIONS.SET_BOUNDS,
-                payload: mockGetPageElementBound()
-            },
-            '*'
-        );
+        expect(postMessageToEditorSpy).toHaveBeenCalledWith({
+            action: CUSTOMER_ACTIONS.SET_BOUNDS,
+            payload: mockGetPageElementBound()
+        });
 
         unmount();
     });
@@ -72,12 +68,9 @@ describe('useEventHandlers', () => {
 
         // Simulate a scroll event
         window.dispatchEvent(new Event('scroll'));
-        expect(postMessageSpy).toHaveBeenCalledWith(
-            {
-                action: 'scroll'
-            },
-            '*'
-        );
+        expect(postMessageToEditorSpy).toHaveBeenCalledWith({
+            action: 'scroll'
+        });
 
         unmount();
     });
