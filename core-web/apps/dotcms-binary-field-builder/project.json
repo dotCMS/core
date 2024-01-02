@@ -54,7 +54,7 @@
                             "maximumError": "400kb"
                         }
                     ],
-                    "outputHashing": "all"
+                    "outputHashing": "none"
                 },
                 "development": {
                     "buildOptimizer": false,
