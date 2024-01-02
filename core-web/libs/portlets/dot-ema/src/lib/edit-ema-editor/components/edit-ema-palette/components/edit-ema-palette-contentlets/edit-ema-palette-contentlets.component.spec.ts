@@ -62,7 +62,7 @@ describe('EditEmaPaletteContentletsComponent', () => {
 
     it('should emit showContentTypes event on backToContentTypes', () => {
         const spy = jest.spyOn(spectator.component.showContentTypes, 'emit');
-        const button = spectator.query('.p-button-rounded');
+        const button = spectator.query(byTestId('contentlet-back-button'));
         spectator.click(button);
         expect(spy).toHaveBeenCalled();
     });
@@ -76,11 +76,8 @@ describe('EditEmaPaletteContentletsComponent', () => {
         expect(spy).toHaveBeenCalledWith({ page: 1, contentVarName: 'sample' });
     });
 
-    it('should render contentlet list', () => {
+    it('should render contentlet list with data-item attribute', () => {
         expect(spectator.query('[data-testId="contentlet-0"]')).toBeTruthy();
-    });
-
-    it('should the contentlet list item have data-item attribute', () => {
         expect(spectator.query('[data-testId="contentlet-0"]')).toHaveAttribute('data-item');
     });
 

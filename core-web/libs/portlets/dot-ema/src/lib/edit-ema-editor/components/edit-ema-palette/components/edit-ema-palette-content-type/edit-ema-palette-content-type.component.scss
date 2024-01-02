@@ -25,9 +25,9 @@
 
 .content-types {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(6rem, 1fr) minmax(6rem, 1fr);
     gap: $spacing-1;
-    padding: 0 $spacing-3 $spacing-2;
+    padding: 0 $spacing-1 $spacing-2 $spacing-3;
 
     .content-type-card {
         cursor: move;
@@ -40,12 +40,16 @@
         justify-content: center;
         align-items: center;
         background-color: $white;
+        padding: 0 $spacing-1;
 
-        .icon-go-content {
+        .button-go-content {
             position: absolute;
             top: $spacing-0;
-            right: $spacing-0;
+            right: 0;
             cursor: pointer;
+            border: none;
+            background: none;
+            color: inherit;
         }
 
         .content-type-card__content {
@@ -55,12 +59,12 @@
             color: $black;
             font-size: $font-size-sm;
             text-align: center;
-            width: 90%;
+            width: 100%;
 
             span {
                 overflow: hidden;
+                max-width: 100%;
                 white-space: nowrap;
-                max-width: 90%;
                 text-overflow: ellipsis;
             }
         }

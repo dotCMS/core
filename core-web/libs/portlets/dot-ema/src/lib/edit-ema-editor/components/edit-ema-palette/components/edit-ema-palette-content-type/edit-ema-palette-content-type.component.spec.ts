@@ -69,18 +69,13 @@ describe('EditEmaPaletteContentTypeComponent', () => {
     });
 
     it('should emit showContentlets event with contentTypeName', () => {
-        const contentTypeName = 'exampleContentType';
-
         const spy = jest.spyOn(spectator.component.showContentlets, 'emit');
-        spectator.component.showContentletsFromContentType(contentTypeName);
-        expect(spy).toHaveBeenCalledWith(contentTypeName);
+        spectator.click('[data-testId="content-type-0-button-go-content"]');
+        expect(spy).toHaveBeenCalledWith('Test1');
     });
 
-    it('should render the content type list', () => {
+    it('should render the content type list with data-item attribute', () => {
         expect(spectator.query('[data-testId="content-type-0"]')).not.toBeNull();
-    });
-
-    it('should the content type list hace data-item attribute', () => {
         expect(spectator.query('[data-testId="content-type-0"]')).toHaveAttribute('data-item');
     });
 
