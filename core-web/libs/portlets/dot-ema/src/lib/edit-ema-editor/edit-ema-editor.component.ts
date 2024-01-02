@@ -22,7 +22,7 @@ import { DialogModule } from 'primeng/dialog';
 import { takeUntil } from 'rxjs/operators';
 
 import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
-import { DotPersona } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotPersona } from '@dotcms/dotcms-models';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
@@ -360,6 +360,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     addWidget(payload: ActionPayload): void {
+        this.store.initActionAdd({
+            containerId: payload.container.identifier,
+            acceptTypes: DotCMSBaseTypesContentTypes.WIDGET,
+            language_id: payload.language_id
+        });
         this.savePayload = payload;
     }
 
@@ -436,6 +441,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         this.resetDialogIframeData();
                         this.reloadIframe();
                         this.savePayload = undefined;
+                        this.cd.detectChanges();
                     }
                 });
             },
