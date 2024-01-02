@@ -1,4 +1,7 @@
 {
-  "name": "@dotcms/react",
-  "version": "0.0.1"
+    "name": "@dotcms/react",
+    "version": "0.0.1",
+    "peerDependencies": {
+        "@dotcms/client": "^0.0.1"
+    }
 }
