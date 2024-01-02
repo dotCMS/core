@@ -22,7 +22,7 @@ import { DialogModule } from 'primeng/dialog';
 import { takeUntil } from 'rxjs/operators';
 
 import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes, DotPersona } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotDevice, DotPersona } from '@dotcms/dotcms-models';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
 import { DotDeviceSelectorSeoComponent } from './components/dot-device-selector-seo/dot-device-selector-seo.component';
@@ -114,6 +114,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     rows: Row[] = [];
     contentlet!: ContentletArea;
+    // This should be in the store, but experienced an issue that triggers a reload in the whole store when the device is updated
+    currentDevice: DotDevice & { icon?: string };
 
     ngOnInit(): void {
         fromEvent(this.window, 'message')
@@ -237,6 +239,21 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         });
     }
 
+    /**
+     * Update the current device
+     *
+     * @param {DotDevice} [device]
+     * @memberof EditEmaEditorComponent
+     */
+    updateCurrentDevice(device?: DotDevice & { icon?: string }) {
+        this.currentDevice = device;
+    }
+
+    /**
+     * Handle the copy URL action
+     *
+     * @memberof EditEmaEditorComponent
+     */
     triggerCopyToast() {
         this.messageService.add({
             severity: 'success',

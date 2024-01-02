@@ -9,13 +9,23 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
-import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
+import {
+    DotCurrentUserService,
+    DotDevicesService,
+    DotLanguagesService,
+    DotMessageService,
+    DotPersonalizeService
+} from '@dotcms/data-access';
+import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import {
     DotLanguagesServiceMock,
     MockDotMessageService,
-    DotPersonalizeServiceMock
+    DotPersonalizeServiceMock,
+    DotDevicesServiceMock,
+    mockDotDevices
 } from '@dotcms/utils-testing';
 
+import { DotCurrentUserServiceMock } from './components/dot-device-selector-seo/dot-device-selector-seo.component.spec';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { CUSTOM_PERSONA } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component.spec';
@@ -116,8 +126,20 @@ describe('EditEmaEditorComponent', () => {
                 }
             },
             {
+                provide: DotDevicesService,
+                useValue: new DotDevicesServiceMock()
+            },
+            {
+                provide: DotCurrentUserService,
+                useValue: new DotCurrentUserServiceMock()
+            },
+            {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService(messagesMock)
+            },
+            {
+                provide: CoreWebService,
+                useClass: CoreWebServiceMock
             },
             {
                 provide: WINDOW,
@@ -211,6 +233,89 @@ describe('EditEmaEditorComponent', () => {
                 expect(router.navigate).toHaveBeenCalledWith([], {
                     queryParams: { language_id: 2 },
                     queryParamsHandling: 'merge'
+                });
+            });
+        });
+
+        describe('Preview mode', () => {
+            it('should show name, sizes and icon of the selected device', () => {
+                spectator.detectChanges();
+
+                const deviceSelector = spectator.debugElement.query(
+                    By.css('[data-testId="dot-device-selector"]')
+                );
+
+                const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
+
+                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('device-name')).textContent).toBe(
+                    'iphone 200 x 100'
+                );
+                expect(spectator.query(byTestId('device-icon'))).not.toBeNull();
+            });
+
+            it('should show a x button to reset the device selection', () => {
+                spectator.detectChanges();
+
+                const deviceSelector = spectator.debugElement.query(
+                    By.css('[data-testId="dot-device-selector"]')
+                );
+
+                const iphone = mockDotDevices[0];
+
+                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('reset-device'))).not.toBeNull();
+            });
+
+            it('should reset the selection on click on the x button', () => {
+                spectator.detectChanges();
+
+                const deviceSelector = spectator.debugElement.query(
+                    By.css('[data-testId="dot-device-selector"]')
+                );
+
+                const iphone = mockDotDevices[0];
+
+                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
+                spectator.detectChanges();
+
+                const resetButton = spectator.debugElement.query(
+                    By.css('[data-testId="reset-device"]')
+                );
+
+                spectator.triggerEventHandler(resetButton, 'onClick', {});
+
+                const selectedDevice = spectator.query(byTestId('selected-device'));
+
+                expect(selectedDevice).toBeNull();
+            });
+
+            it('should hide the components that are not needed for preview mode', () => {
+                const componentsToHide = [
+                    'palette',
+                    'dropzone',
+                    'contentlet-tools',
+                    'dialog',
+                    'confirm-dialog'
+                ]; // Test id of components that should hide when entering preview modes
+
+                spectator.detectChanges();
+
+                const deviceSelector = spectator.debugElement.query(
+                    By.css('[data-testId="dot-device-selector"]')
+                );
+
+                const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
+
+                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
+                spectator.detectChanges();
+
+                componentsToHide.forEach((testId) => {
+                    expect(spectator.query(byTestId(testId))).toBeNull();
                 });
             });
         });
