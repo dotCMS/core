@@ -2,15 +2,12 @@ import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { SEO_MEDIA_TYPES, SEO_LIMITS } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotResultsSeoToolComponent } from './dot-results-seo-tool.component';
 import { seoOGTagsMock, seoOGTagsResultMock, seoOGTagsResultOgMockTwitter } from './mocks';
 
-import {
-    SEO_MEDIA_TYPES,
-    SEO_LIMITS
-} from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
 import { DotSeoMetaTagsUtilService } from '../../../content/services/html/dot-seo-meta-tags-util.service';
 import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-meta-tags.service';
 

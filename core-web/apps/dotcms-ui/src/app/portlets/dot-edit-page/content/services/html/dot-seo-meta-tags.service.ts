@@ -5,21 +5,20 @@ import { Injectable } from '@angular/core';
 import { map, switchMap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-
-import { DotSeoMetaTagsUtilService } from './dot-seo-meta-tags-util.service';
-
 import {
-    SeoMetaTags,
-    SEO_LIMITS,
-    SEO_OPTIONS,
-    SeoRulesResult,
+    SEO_MEDIA_TYPES,
     SeoMetaTagsResult,
     SeoMediaKeys,
-    ImageMetaData,
+    SEO_OPTIONS,
     OpenGraphOptions,
-    SEO_MEDIA_TYPES,
+    SeoMetaTags,
+    SeoRulesResult,
+    ImageMetaData,
+    SEO_LIMITS,
     IMG_NOT_FOUND_KEY
-} from '../dot-edit-content-html/models/meta-tags-model';
+} from '@dotcms/dotcms-models';
+
+import { DotSeoMetaTagsUtilService } from './dot-seo-meta-tags-util.service';
 
 @Injectable()
 export class DotSeoMetaTagsService {

@@ -22,15 +22,15 @@ import { PanelModule } from 'primeng/panel';
 import { filter, map, mergeMap, take, toArray } from 'rxjs/operators';
 
 import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
-import { DotCurrentUser, DotDevice, DotDeviceListItem } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-
 import {
+    DotCurrentUser,
+    DotDevice,
+    DotDeviceListItem,
     SEO_MEDIA_TYPES,
     SocialMediaOption,
     socialMediaTiles
-} from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
+} from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     standalone: true,
@@ -38,7 +38,6 @@ import {
         CommonModule,
         DropdownModule,
         FormsModule,
-        DotPipesModule,
         ButtonModule,
         OverlayPanelModule,
         PanelModule,
