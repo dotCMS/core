@@ -1,7 +1,16 @@
 <ng-container *ngIf="editorState$ | async as es">
+    <dot-device-selector-seo
+        #deviceSelector
+        [apiLink]="es.apiURL"
+        appendTo="body"
+        data-testId="dot-device-selector"></dot-device-selector-seo>
     <dot-edit-ema-toolbar>
         <ng-container left>
-            <p-button label="Preview" icon="pi pi-desktop" styleClass="p-button-text p-button-sm" />
+            <p-button
+                (onClick)="deviceSelector.openMenu($event)"
+                label="Preview"
+                icon="pi pi-desktop"
+                styleClass="p-button-text p-button-sm" />
             <p-button label="Bookmark" icon="pi pi-star" styleClass="p-button-text p-button-sm" />
             <p-button
                 [cdkCopyToClipboard]="es.iframeURL"

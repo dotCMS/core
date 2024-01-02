@@ -25,6 +25,7 @@ import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotPersona } from '@dotcms/dotcms-models';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
+import { DotDeviceSelectorSeoComponent } from './components/dot-device-selector-seo/dot-device-selector-seo.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
@@ -81,7 +82,8 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
         DotMessagePipe,
         EmaPageDropzoneComponent,
         EmaContentletToolsComponent,
-        EmaFormSelectorComponent
+        EmaFormSelectorComponent,
+        DotDeviceSelectorSeoComponent
     ],
     templateUrl: './edit-ema-editor.component.html',
     styleUrls: ['./edit-ema-editor.component.scss'],
