@@ -132,13 +132,13 @@ describe('DotResultsSeoToolComponent', () => {
     it('should display title', () => {
         const titleElement = spectator.query(byTestId('results-seo-tool-search-title'));
         expect(titleElement.textContent).toContain(seoOGTagsMock.title);
-        expect(titleElement.textContent.length).toBeLessThan(SEO_LIMITS.MAX_TITLE_LENGTH);
+        expect(titleElement.textContent.length).toBeLessThan(SEO_LIMITS.MAX_OG_TITLE_LENGTH);
     });
 
     it('should display description', () => {
         const titleElement = spectator.query(byTestId('results-seo-tool-search-description'));
         expect(titleElement.textContent).toContain(seoOGTagsMock.description);
-        expect(titleElement.textContent.length).toBeLessThan(SEO_LIMITS.MAX_DESCRIPTION_LENGTH);
+        expect(titleElement.textContent.length).toBeLessThan(SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH);
     });
 
     it('should display host Name', () => {

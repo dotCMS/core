@@ -269,7 +269,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (description?.length < SEO_LIMITS.MIN_DESCRIPTION_LENGTH) {
+        if (description?.length < SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.description.less')
@@ -277,7 +277,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (description?.length > SEO_LIMITS.MAX_DESCRIPTION_LENGTH) {
+        if (description?.length > SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.description.greater')
@@ -287,8 +287,8 @@ export class DotSeoMetaTagsService {
 
         if (
             description &&
-            description?.length >= SEO_LIMITS.MIN_DESCRIPTION_LENGTH &&
-            description?.length <= SEO_LIMITS.MAX_DESCRIPTION_LENGTH
+            description?.length >= SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH &&
+            description?.length <= SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH
         ) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getDoneItem(
@@ -332,7 +332,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (title?.length > SEO_LIMITS.MAX_TITLE_LENGTH) {
+        if (title?.length > SEO_LIMITS.MAX_OG_TITLE_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.title.greater')
@@ -340,7 +340,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (title?.length < SEO_LIMITS.MIN_TITLE_LENGTH) {
+        if (title?.length < SEO_LIMITS.MIN_OG_TITLE_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.title.less')
@@ -350,8 +350,8 @@ export class DotSeoMetaTagsService {
 
         if (
             titleElements?.length === SEO_LIMITS.MAX_TITLES &&
-            title?.length <= SEO_LIMITS.MAX_TITLE_LENGTH &&
-            title?.length >= SEO_LIMITS.MIN_TITLE_LENGTH
+            title?.length <= SEO_LIMITS.MAX_OG_TITLE_LENGTH &&
+            title?.length >= SEO_LIMITS.MIN_OG_TITLE_LENGTH
         ) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getDoneItem(
