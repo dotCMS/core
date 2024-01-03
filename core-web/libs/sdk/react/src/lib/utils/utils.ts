@@ -89,7 +89,6 @@ export const getPageContainers = (containers: ContainerData) => {
     );
 };
 
-// This extracts all the data we need in the container component
 export const getContainersData = (
     containers: ContainerData,
     containerRef: PageProviderContext['layout']['body']['rows'][0]['columns'][0]['containers'][0]
@@ -110,7 +109,6 @@ export const getContainersData = (
         ...containers[identifier].container,
         acceptTypes,
         contentlets,
-        pageContainers,
-        maxContentlets: 25 // TODO: need to fix this
+        pageContainers
     };
 };

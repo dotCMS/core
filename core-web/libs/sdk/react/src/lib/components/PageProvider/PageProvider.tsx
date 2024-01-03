@@ -13,6 +13,7 @@ export interface ContainerData {
         container: {
             path: string;
             identifier: string;
+            maxContentlets: number;
         };
         containerStructures: {
             contentTypeVar: string;
