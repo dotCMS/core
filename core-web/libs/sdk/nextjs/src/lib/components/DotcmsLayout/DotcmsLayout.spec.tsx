@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { ReactNode } from 'react';
 
-import { mockPageContext } from '@dotcms/react';
+import { mockPageContext } from '@dotcms/react/mocks';
 
 import { DotcmsLayout } from './DotcmsLayout';
 
