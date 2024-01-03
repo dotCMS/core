@@ -1,8 +1,12 @@
 <router-outlet></router-outlet>
 <ng-container *ngIf="shellProperties$ | async as sp">
-    <dot-edit-ema-navigation-bar [items]="sp.items"></dot-edit-ema-navigation-bar>
-    <p-toast position="top-center" data-testId="ema-toast"></p-toast>
-    <dot-page-tools-seo #pageTools [currentPageUrlParams]="sp.seoProperties"></dot-page-tools-seo>
+    <ng-container *ngIf="sp.canRead">
+        <dot-edit-ema-navigation-bar [items]="sp.items"></dot-edit-ema-navigation-bar>
+        <p-toast position="top-center" data-testId="ema-toast"></p-toast>
+        <dot-page-tools-seo
+            #pageTools
+            [currentPageUrlParams]="sp.seoProperties"></dot-page-tools-seo>
+    </ng-container>
 </ng-container>
 <p-dialog
     #dialog

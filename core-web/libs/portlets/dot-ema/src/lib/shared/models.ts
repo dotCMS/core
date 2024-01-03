@@ -45,4 +45,5 @@ export interface NavigationBarItem {
     label: string;
     href?: string;
     action?: () => void;
+    isDisabled?: boolean;
 }

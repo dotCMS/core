@@ -39,12 +39,8 @@ const messagesMock = {
     'dot.common.dialog.reject': 'Reject'
 };
 
-describe('EditEmaEditorComponent', () => {
-    let spectator: SpectatorRouting<EditEmaEditorComponent>;
-    let store: EditEmaStore;
-    let confirmationService: ConfirmationService;
-
-    const createComponent = createRoutingFactory({
+const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
+    createRoutingFactory({
         component: EditEmaEditorComponent,
         imports: [RouterTestingModule, HttpClientTestingModule],
         detectChanges: false,
@@ -61,6 +57,21 @@ describe('EditEmaEditorComponent', () => {
                     }
                 }
             },
+
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService(messagesMock)
+            },
+            {
+                provide: WINDOW,
+                useValue: window
+            },
+            {
+                provide: DotPersonalizeService,
+                useValue: new DotPersonalizeServiceMock()
+            }
+        ],
+        providers: [
             {
                 provide: DotPageApiService,
                 useValue: {
@@ -69,7 +80,8 @@ describe('EditEmaEditorComponent', () => {
                             2: of({
                                 page: {
                                     title: 'hello world',
-                                    identifier: '123'
+                                    identifier: '123',
+                                    ...permissions
                                 },
                                 viewAs: {
                                     language: {
@@ -85,7 +97,8 @@ describe('EditEmaEditorComponent', () => {
                             1: of({
                                 page: {
                                     title: 'hello world',
-                                    identifier: '123'
+                                    identifier: '123',
+                                    ...permissions
                                 },
                                 viewAs: {
                                     language: {
@@ -114,23 +127,17 @@ describe('EditEmaEditorComponent', () => {
                         });
                     }
                 }
-            },
-            {
-                provide: DotMessageService,
-                useValue: new MockDotMessageService(messagesMock)
-            },
-            {
-                provide: WINDOW,
-                useValue: window
-            },
-            {
-                provide: DotPersonalizeService,
-                useValue: new DotPersonalizeServiceMock()
             }
         ]
     });
+describe('EditEmaEditorComponent', () => {
+    describe('with queryParams and permission', () => {
+        let spectator: SpectatorRouting<EditEmaEditorComponent>;
+        let store: EditEmaStore;
+        let confirmationService: ConfirmationService;
 
-    describe('with queryParams', () => {
+        const createComponent = createRouting({ canEdit: true, canRead: true });
+
         beforeEach(() => {
             spectator = createComponent({
                 queryParams: { language_id: 1, url: 'page-one' }
@@ -1180,6 +1187,38 @@ describe('EditEmaEditorComponent', () => {
                 dropZone = spectator.query(EmaPageDropzoneComponent);
                 expect(dropZone.rows).toEqual([]);
             });
+        });
+    });
+
+    describe('without read permission', () => {
+        let spectator: SpectatorRouting<EditEmaEditorComponent>;
+        let store: EditEmaStore;
+
+        const createComponent = createRouting({ canEdit: false, canRead: false });
+        beforeEach(() => {
+            spectator = createComponent({
+                queryParams: { language_id: 1, url: 'page-one' }
+            });
+
+            store = spectator.inject(EditEmaStore, true);
+
+            store.load({
+                url: 'index',
+                language_id: '1',
+                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+            });
+        });
+
+        it('should not render components', () => {
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('ema-copy-url'))).toBeNull();
+            expect(spectator.query(byTestId('ema-api-link'))).toBeNull();
+            expect(spectator.query(byTestId('language-selector'))).toBeNull();
+            expect(spectator.query(byTestId('persona-selector'))).toBeNull();
+
+            expect(spectator.query(byTestId('dont-have-permission')).textContent).toBe(
+                "You don't have permission to read this page."
+            );
         });
     });
 });

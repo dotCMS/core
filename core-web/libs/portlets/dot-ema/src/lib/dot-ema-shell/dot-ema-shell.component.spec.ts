@@ -8,6 +8,7 @@ import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
 
 import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { SiteService, mockSites } from '@dotcms/dotcms-js';
@@ -17,9 +18,11 @@ import {
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
+import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { DotEmaShellComponent } from './dot-ema-shell.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
+import { DotPageToolsSeoComponent } from '../dot-page-tools-seo/dot-page-tools-seo.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
@@ -51,7 +54,9 @@ describe('DotEmaShellComponent', () => {
                             page: {
                                 title: 'hello world',
                                 identifier: '123',
-                                inode: '123'
+                                inode: '123',
+                                canEdit: true,
+                                canRead: true
                             },
                             viewAs: {
                                 language: {
@@ -81,7 +86,6 @@ describe('DotEmaShellComponent', () => {
                     }
                 }
             },
-
             {
                 provide: WINDOW,
                 useValue: window
@@ -289,6 +293,62 @@ describe('DotEmaShellComponent', () => {
                 url: 'index',
                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
             });
+        });
+    });
+
+    describe('without read permission', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: DotPageApiService,
+                        useValue: {
+                            get() {
+                                return of({
+                                    page: {
+                                        title: 'hello world',
+                                        identifier: '123',
+                                        inode: '123',
+                                        canEdit: false,
+                                        canRead: false
+                                    },
+                                    viewAs: {
+                                        language: {
+                                            id: 1,
+                                            language: 'English',
+                                            countryCode: 'US',
+                                            languageCode: 'EN',
+                                            country: 'United States'
+                                        },
+                                        persona: DEFAULT_PERSONA
+                                    },
+                                    site: mockSites[0]
+                                });
+                            },
+                            save() {
+                                return of({});
+                            },
+                            getPersonas() {
+                                return of({
+                                    entity: [DEFAULT_PERSONA],
+                                    pagination: {
+                                        totalEntries: 1,
+                                        perPage: 10,
+                                        page: 1
+                                    }
+                                });
+                            }
+                        }
+                    }
+                ]
+            });
+        });
+
+        it('should not render components', () => {
+            spectator.detectChanges();
+            expect(spectator.query(EditEmaNavigationBarComponent)).toBeNull();
+            expect(spectator.query(ToastModule)).toBeNull();
+            expect(spectator.query(DotPageToolsSeoComponent)).toBeNull();
         });
     });
 });

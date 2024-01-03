@@ -85,6 +85,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     // We need to move the logic to a function, we still need to add enterprise logic
     shellProperties$: Observable<{
         items: NavigationBarItem[];
+        canRead: boolean;
         seoProperties: DotPageToolUrlParams;
     }> = this.store.shellProperties$.pipe(
         map(({ currentUrl, page, host, languageId, siteId }) => ({
@@ -97,12 +98,14 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 {
                     icon: 'pi-table',
                     label: 'Layout',
-                    href: 'layout'
+                    href: 'layout',
+                    isDisabled: !page.canEdit
                 },
                 {
                     icon: 'pi-sliders-h',
                     label: 'Rules',
-                    href: `rules/${page.identifier}`
+                    href: `rules/${page.identifier}`,
+                    isDisabled: !page.canEdit
                 },
                 {
                     iconURL: 'experiments',
@@ -128,6 +131,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     }
                 }
             ],
+            canRead: page.canRead,
             seoProperties: {
                 currentUrl,
                 languageId,
