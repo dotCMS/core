@@ -8,8 +8,8 @@
     <dot-edit-ema-toolbar>
         <ng-container left>
             <p-button
+                [label]="'editpage.toolbar.preview.page' | dm"
                 (onClick)="deviceSelector.openMenu($event)"
-                label="Preview"
                 icon="pi pi-desktop"
                 styleClass="p-button-text p-button-sm"
                 data-testId="ema-preview" />
@@ -50,18 +50,18 @@
     <div
         class="editor-content"
         [ngClass]="{
-            'editor-content--device': currentDevice
+            'editor-content--device': !!currentDevice
         }">
         <div
             class="selected-device"
-            *ngIf="currentDevice"
+            *ngIf="!!currentDevice"
             [style]="{
                 width: currentDevice.cssWidth + 'px'
             }"
             data-testId="selected-device">
             <div class="selected-device__device">
                 <i
-                    *ngIf="currentDevice.icon"
+                    *ngIf="!!currentDevice.icon"
                     [class]="currentDevice.icon"
                     data-testId="device-icon"></i>
                 <span class="device__name" data-testId="device-name"
@@ -78,11 +78,11 @@
         <div
             class="iframe-wrapper"
             [ngClass]="{
-                'iframe-wrapper--device': currentDevice
+                'iframe-wrapper--device': !!currentDevice
             }"
             [ngStyle]="{
-                width: currentDevice ? currentDevice.cssWidth + 'px' : '100%',
-                height: currentDevice ? currentDevice.cssHeight + 'px' : '100%'
+                width: !!currentDevice ? currentDevice.cssWidth + 'px' : '100%',
+                height: !!currentDevice ? currentDevice.cssHeight + 'px' : '100%'
             }">
             <iframe
                 #iframe
