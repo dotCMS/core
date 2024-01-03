@@ -140,10 +140,6 @@ export class DotCmsClient {
             throw new Error("Invalid configuration - 'dotcmsUrl' must be a valid URL");
         }
 
-        if (!config.siteId) {
-            throw new Error("Invalid configuration - 'siteId' is required");
-        }
-
         if (!config.authToken) {
             throw new Error("Invalid configuration - 'authToken' is required");
         }
@@ -171,30 +167,34 @@ export class DotCmsClient {
         const queryParamsObj: Record<string, string> = {};
         for (const [key, value] of Object.entries(options)) {
             if (value !== undefined && key !== 'path') {
-                if (key === 'siteId') {
-                    queryParamsObj['host_id'] = String(value);
-                } else if (key === 'personaId') {
-                    queryParamsObj['com.dotmarketing.persona.id'] = String(value);
-                } else {
-                    queryParamsObj[key] = String(value);
+                if (key !== 'siteId') {
+                    if (key === 'personaId') {
+                        queryParamsObj['com.dotmarketing.persona.id'] = String(value);
+                    } else {
+                        queryParamsObj[key] = String(value);
+                    }
                 }
             }
         }
 
-        // Override or add the 'host_id' with the one from the config if it's not provided.
-        queryParamsObj['host_id'] = options.siteId || this.config.siteId;
+        const queryHostId = options.siteId ?? this.config.siteId ?? '';
+
+        if (queryHostId) {
+            queryParamsObj['host_id'] = queryHostId;
+        }
 
         const queryParams = new URLSearchParams(queryParamsObj).toString();
 
         const formattedPath = options.path.startsWith('/') ? options.path : `/${options.path}`;
-        const response = await fetch(
-            `${this.config.dotcmsUrl}/api/v1/page/json${formattedPath}?${queryParams}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${this.config.authToken}`
-                }
+        const url = `${this.config.dotcmsUrl}/api/v1/page/json${formattedPath}${
+            queryParams ? `?${queryParams}` : ''
+        }`;
+
+        const response = await fetch(url, {
+            headers: {
+                Authorization: `Bearer ${this.config.authToken}`
             }
-        );
+        });
 
         return response.json();
     }
