@@ -42,6 +42,14 @@
         "@nrwl/angular:component": {
             "style": "scss",
             "changeDetection": "OnPush"
+        },
+        "@nrwl/react": {
+            "application": {
+                "babel": true
+            },
+            "library": {
+                "unitTestRunner": "jest"
+            }
         }
     },
     "$schema": "./node_modules/nx/schemas/nx-schema.json",
@@ -74,7 +82,8 @@
             "{workspaceRoot}/angular.json",
             "{workspaceRoot}/tsconfig.base.json",
             "{workspaceRoot}/tslint.json",
-            "{workspaceRoot}/nx.json"
+            "{workspaceRoot}/nx.json",
+            "{workspaceRoot}/babel.config.json"
         ],
         "production": [
             "default",

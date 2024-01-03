@@ -214,7 +214,10 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     return this.dotActionUrl.getCreateContentletUrl(variable).pipe(
                         tapResponse(
                             (url) => {
-                                this.setDialogForCreateContent({ url, name });
+                                this.setDialogForCreateContent({
+                                    url,
+                                    name
+                                });
                             },
                             (e) => {
                                 console.error(e);

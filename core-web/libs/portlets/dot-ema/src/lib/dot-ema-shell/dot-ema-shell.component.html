@@ -19,7 +19,10 @@
     styleClass="edit-ema-dialog">
     <iframe
         #dialogIframe
-        [style]="{ border: 'none', display: ds.iframeLoading ? 'none' : 'block' }"
+        [style]="{
+            border: 'none',
+            display: ds.iframeLoading ? 'none' : 'block'
+        }"
         [src]="ds.iframeURL | safeUrl"
         (load)="onIframeLoad()"
         title="dialog"

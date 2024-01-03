@@ -38,6 +38,9 @@
             "@dotcms/portlets/dot-experiments/portlet": [
                 "libs/portlets/dot-experiments/portlet/src/index.ts"
             ],
+            "@dotcms/react": ["libs/sdk/react/src/index.ts"],
+            "@dotcms/react/mocks": ["libs/sdk/react/src/lib/mocks/index.ts"],
+            "@dotcms/client": ["libs/sdk/client/src/index.ts"],
             "@dotcms/template-builder": ["libs/template-builder/src/index.ts"],
             "@dotcms/ui": ["libs/ui/src/index.ts"],
             "@dotcms/utils": ["libs/utils/src"],
