@@ -2,7 +2,7 @@
 
 This maintenance release includes the following code fixes:
 
-**Release-23.10.24_v1 LTS**
+**Release-23.10.24 LTS**
 
 1. https://github.com/dotCMS/core/issues/26481 : Pubsub Connection should prefer SSL #26481
 2. https://github.com/dotCMS/core/issues/26890 : GraphQL Dates not using the right format #26890
@@ -20,8 +20,5 @@ This maintenance release includes the following code fixes:
 14. https://github.com/dotCMS/core/issues/26840 : "Edit Content" screen slow - Unnecessary SQL queries #26840
 15. https://github.com/dotCMS/core/issues/27047 : Binary File upload to a content type fails (Multi-part upload) #27047
 16. https://github.com/dotCMS/core/issues/27039 : Content Search Portlet not showing all language versions #27039
-
-**Release-23.10.24_v2 LTS**
-
 17. https://github.com/dotCMS/core/issues/25478 : When filter by All in the Browser Portlet we are showing the No DEFAULT Version of the Contentlet #25478
 18. https://github.com/dotCMS/core/issues/25901 : Unable to reuse content inside the variants #25901
