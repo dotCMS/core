@@ -11,7 +11,7 @@ public class Task240102AlterVarcharLengthOfRelationType implements StartupTask {
 
     @Override
     public boolean forceRun() {
-        return false;
+        return true;
     }
 
     @Override
