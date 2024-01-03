@@ -66,18 +66,39 @@
 }
 
 .searchable-dropdown__data-list ::ng-deep {
+    .site_selector__data-list {
+        .p-dataview-content {
+            .searchable-dropdown__data-list-item {
+                padding: $spacing-2 $spacing-6;
+                display: flex;
+                gap: $spacing-2;
+                i {
+                    color: $color-palette-primary;
+                }
+
+                &.default {
+                    padding-left: $spacing-1;
+                }
+
+                &.star::after {
+                    content: none;
+                }
+            }
+        }
+    }
+
     .p-dataview {
         position: unset;
     }
 
     .p-dataview-content {
         width: 100%;
-
+        max-height: 80vh;
+        overflow: scroll;
         .searchable-dropdown__data-list-item {
             cursor: pointer;
             display: block;
             line-height: normal;
-            padding: $spacing-1 $spacing-3;
             transition: background-color $basic-speed ease-in;
             width: 100%;
 

@@ -12,6 +12,7 @@ import { DotListingDataTableComponent } from '@components/dot-listing-data-table
 import {
     DotAlertConfirmService,
     DotMessageService,
+    DotRouterService,
     DotSiteBrowserService,
     PaginatorService
 } from '@dotcms/data-access';
@@ -26,7 +27,6 @@ import { ActionHeaderOptions } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
 import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 export interface DotContainerListState {
     containerBulkActions: MenuItem[];

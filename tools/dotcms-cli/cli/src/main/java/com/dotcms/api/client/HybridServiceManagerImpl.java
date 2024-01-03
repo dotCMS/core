@@ -1,6 +1,7 @@
 package com.dotcms.api.client;
 
 import com.dotcms.api.client.SecurePasswordStore.StoreSecureException;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.model.annotation.SecuredPassword;
 import com.dotcms.model.config.CredentialsBean;
 import com.dotcms.model.config.ServiceBean;
@@ -58,7 +59,7 @@ public class HybridServiceManagerImpl implements ServiceManager {
     }
 
     @Override
-    public List<ServiceBean> services() {
+    public List<ServiceBean> services() throws IOException {
         //Retrieve the beans stored in the yml file
         final List<ServiceBean> services = defaultManager.services();
         final List<ServiceBean> beans = new ArrayList<>(services.size());
@@ -91,7 +92,7 @@ public class HybridServiceManagerImpl implements ServiceManager {
 
     @Override
     @CanIgnoreReturnValue
-    public ServiceManager removeAll() {
+    public ServiceManager removeAll() throws IOException {
         List<ServiceBean> services = defaultManager.services();
         for (ServiceBean service : services) {
             CredentialsBean credentialsBean = service.credentials();
@@ -108,7 +109,7 @@ public class HybridServiceManagerImpl implements ServiceManager {
     }
 
     @Override
-    public Optional<ServiceBean> selected(){
+    public Optional<ServiceBean> selected() throws IOException {
         //It's cheaper if we use base impl
         return defaultManager.services().stream().filter(ServiceBean::active)
                 .findFirst();

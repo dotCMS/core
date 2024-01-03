@@ -20,13 +20,13 @@ import { PushPublishEnvSelectorModule } from '@components/_common/dot-push-publi
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import {
     DotAlertConfirmService,
     DotMessageService,
     DotPushPublishFilter,
-    DotPushPublishFiltersService
+    DotPushPublishFiltersService,
+    DotRouterService
 } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData } from '@dotcms/dotcms-models';

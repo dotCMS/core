@@ -32,7 +32,7 @@ export DOT_MAIL_SMTP_SSL_PROTOCOLS=${DOT_MAIL_SMTP_SSL_PROTOCOLS:-"TLSv1.2"}
 export DOT_SAMESITE_COOKIES=${DOT_SAMESITE_COOKIES:-"lax"}
 
 if [[ "${TOMCAT_REDIS_SESSION_ENABLED}" == 'true' ]]; then
-  export TOMCAT_REDIS_SESSION_CONFIG=${TOMCAT_REDIS_SESSION_CONFIG:-'<Valve className="com.dotcms.tomcat.redissessions.RedisSessionHandlerValve" /><Manager className="com.dotcms.tomcat.redissessions.RedisSessionManager" />'}
+  export TOMCAT_REDIS_SESSION_CONFIG=${TOMCAT_REDIS_SESSION_CONFIG:-'<Valve className="com.dotcms.tomcat.redissessions.RedisSessionHandlerValve" \/><Manager className="com.dotcms.tomcat.redissessions.RedisSessionManager" \/>'}
   export TOMCAT_REDIS_SESSION_HOST=${TOMCAT_REDIS_SESSION_HOST:-"redis"}
   export TOMCAT_REDIS_SESSION_PORT=${TOMCAT_REDIS_SESSION_PORT:-"6379"}
   export TOMCAT_REDIS_SESSION_PASSWORD=${TOMCAT_REDIS_SESSION_PASSWORD:-""}
@@ -88,6 +88,7 @@ export DB_PASSWORD=${DB_PASSWORD:-"password"}
 export DB_MAX_WAIT=${DB_MAX_WAIT:-"180000"}
 export DB_MAX_TOTAL=${DB_MAX_TOTAL:-"200"}
 export DB_MIN_IDLE=${DB_MIN_IDLE:-"10"}
+export DB_CONNECTION_TIMEOUT=${DB_CONNECTION_TIMEOUT:-"5000"}
 export DB_VALIDATION_QUERY=${DB_VALIDATION_QUERY:-""}
 export DB_LEAK_DETECTION_THRESHOLD=${DB_LEAK_DETECTION_THRESHOLD:-"300000"}
 export DB_DEFAULT_TRANSACTION_ISOLATION=${DB_DEFAULT_TRANSACTION_ISOLATION:-""}

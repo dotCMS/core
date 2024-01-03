@@ -2,7 +2,7 @@ package com.dotcms.api.client.files.traversal;
 
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
-import com.dotcms.api.client.ServiceManager;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.common.FilesTestHelper;
 import com.dotcms.model.config.ServiceBean;
 import io.quarkus.test.junit.QuarkusTest;

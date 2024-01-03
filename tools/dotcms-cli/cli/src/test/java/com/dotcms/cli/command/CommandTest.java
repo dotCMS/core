@@ -1,6 +1,6 @@
 package com.dotcms.cli.command;
 
-import com.dotcms.api.client.ServiceManager;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.model.config.ServiceBean;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import io.quarkus.picocli.runtime.PicocliCommandLineFactory;

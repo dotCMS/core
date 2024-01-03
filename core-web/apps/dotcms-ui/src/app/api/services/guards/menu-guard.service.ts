@@ -6,10 +6,9 @@ import { ActivatedRouteSnapshot, CanActivate, RouterStateSnapshot } from '@angul
 import { map } from 'rxjs/operators';
 
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { DotSessionStorageService } from '@dotcms/data-access';
+import { DotRouterService, DotSessionStorageService } from '@dotcms/data-access';
 
 import { DotMenuService } from '../dot-menu.service';
-import { DotRouterService } from '../dot-router/dot-router.service';
 
 /**
  * Route Guard that checks if a User have access to the specified Menu portlet.

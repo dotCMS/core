@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 form {
-    margin: $spacing-4;
+    margin: 0 $spacing-3;
 
     .p-input-icon-right {
         width: 100%;
@@ -12,7 +12,7 @@ form {
         }
 
         button,
-        .pending-label {
+        .pi-spinner {
             position: absolute;
             right: 0;
             top: 0;
@@ -21,10 +21,9 @@ form {
             background: none;
         }
 
-        .pending-label {
-            height: fit-content;
-            font-size: $font-size-xs;
+        .pi-spinner {
             margin-right: $spacing-1;
+            color: $color-palette-primary;
         }
     }
 }

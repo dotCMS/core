@@ -1,34 +1,7 @@
 <li class="notification-item {{ data.level | lowercase }}">
-    <p-button
-        class="notification-item__close"
-        id="{{ 'notification-item-button-close-' + data.id }}"
-        (click)="onClear()"
-        icon="pi pi-times"
-        title="{{ 'notifications_dismiss' | dm }}"
-        styleClass="p-button-rounded p-button-text p-button-sm p-button-danger"
-    >
-    </p-button>
     <div class="notification-item__wrapper">
         <i [class]="getIconName(data.level)"></i>
         <div class="notification-item__content">
-            <h4
-                class="notification-item__title"
-                id="{{ 'notification-item-title-' + data.id }}"
-                *ngIf="showTitleLinked"
-            >
-                <a
-                    id="{{ 'notification-item-link-' + data.id }}"
-                    [href]="data.notificationData.actions[0].action"
-                    >{{ data.notificationData.title }}</a
-                >
-            </h4>
-            <h4
-                class="notification-item__title"
-                id="{{ 'notification-item-title-' + data.id }}"
-                *ngIf="!showTitleLinked"
-            >
-                {{ data.notificationData.title }}
-            </h4>
             <p class="notification-item__message" id="{{ 'notification-item-message-' + data.id }}">
                 {{ data.notificationData.message }}
                 <a
@@ -40,10 +13,17 @@
                 >
                 <dot-custom-time
                     id="{{ 'notification-item-date-' + data.id }}"
-                    time="{{ data.timeSent }}"
-                ></dot-custom-time>
+                    time="{{ data.timeSent }}"></dot-custom-time>
             </p>
             <!--TODO: handle more than one action-->
         </div>
+        <p-button
+            class="notification-item__close"
+            id="{{ 'notification-item-button-close-' + data.id }}"
+            (click)="onClear()"
+            icon="pi pi-times"
+            title="{{ 'notifications_dismiss' | dm }}"
+            styleClass="p-button-rounded p-button-text p-button-sm p-button-primary">
+        </p-button>
     </div>
 </li>

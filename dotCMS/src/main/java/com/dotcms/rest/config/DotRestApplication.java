@@ -255,6 +255,7 @@ public class DotRestApplication extends Application {
 			.add(WebAssetResource.class)
 			.add(SystemTableResource.class)
 			.add(StorageResource.class)
+			.add(com.dotcms.rest.api.v2.tags.TagResource.class)
 			.build();
 
 	private static final Set<Class<?>> PROVIDER_CLASSES = ImmutableSet.<Class<?>>builder()

@@ -2,6 +2,7 @@ package com.dotcms.cli.command;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -23,13 +24,14 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.UUID;
+import java.util.stream.Stream;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -148,8 +150,8 @@ class PullCommandIT extends CommandTest {
             DotPull dotPull2 = mock(DotPull.class);
             DotPull dotPull3 = mock(DotPull.class);
 
-            when(pullCommands.iterator()).
-                    thenReturn(Arrays.asList(dotPull1, dotPull2, dotPull3).iterator());
+            when(pullCommands.stream())
+                    .thenReturn(Stream.of(dotPull1, dotPull2, dotPull3));
 
             pullCommand.pullCommands = pullCommands;
 
@@ -173,6 +175,89 @@ class PullCommandIT extends CommandTest {
             verify(pullCommand).createCommandLine(dotPull3);
             // Make sure we executed all the pull subcommands
             verify(commandLine, times(3)).execute(any());
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * This test ensures that all DotPull instances are called in the order specified by their
+     * getOrder() method during the execution of the PullCommand's call() method. The test employs
+     * Mockito's InOrder verification mode and specific CommandLine mocks for each DotPull instance
+     * to check that the DotPull commands are processed in the correct sequence.
+     *
+     * @throws Exception If there is any exception during the test execution. The exceptions could
+     *                   arise from file operations (like creating and deleting temp directories) or
+     *                   from the execution of the command.
+     */
+    @Test
+    void testAllPullCommandsAreCalledInOrder() throws Exception {
+
+        // Create a temporal folder
+        var tempFolder = createTempFolder();
+
+        try {
+
+            // And a workspace for it
+            workspaceManager.getOrCreate(tempFolder);
+
+            // Define pull commands
+            DotPull dotPull1 = mock(DotPull.class);
+            when(dotPull1.getOrder()).thenReturn(2);
+
+            DotPull dotPull2 = mock(DotPull.class);
+            when(dotPull2.getOrder()).thenReturn(1);
+
+            DotPull dotPull3 = mock(DotPull.class);
+            when(dotPull3.getOrder()).thenReturn(4);
+
+            DotPull dotPull4 = mock(DotPull.class);
+            when(dotPull4.getOrder()).thenReturn(3);
+
+            when(pullCommands.stream())
+                    .thenReturn(Stream.of(dotPull1, dotPull2, dotPull3, dotPull4));
+            pullCommand.pullCommands = pullCommands;
+
+            // Define matching command lines for each dot pull.
+            CommandLine commandLine1 = mock(CommandLine.class);
+            CommandLine commandLine2 = mock(CommandLine.class);
+            CommandLine commandLine3 = mock(CommandLine.class);
+            CommandLine commandLine4 = mock(CommandLine.class);
+
+            doReturn(commandLine1).when(pullCommand).createCommandLine(dotPull1);
+            doReturn(commandLine2).when(pullCommand).createCommandLine(dotPull2);
+            doReturn(commandLine3).when(pullCommand).createCommandLine(dotPull3);
+            doReturn(commandLine4).when(pullCommand).createCommandLine(dotPull4);
+
+            when(commandSpec.commandLine()).
+                    thenReturn(commandLine2, commandLine1, commandLine4, commandLine3);
+
+            when(commandLine1.getParseResult()).thenReturn(parseResult);
+            when(commandLine2.getParseResult()).thenReturn(parseResult);
+            when(commandLine3.getParseResult()).thenReturn(parseResult);
+            when(commandLine4.getParseResult()).thenReturn(parseResult);
+
+            when(parseResult.expandedArgs()).thenReturn(new ArrayList<>());
+
+            when(pullMixin.workspace()).thenReturn(tempFolder.toAbsolutePath());
+
+            pullCommand.call();
+
+            // Verify the calls to createCommandLine and execute were in the right order
+            InOrder inOrder = inOrder(
+                    pullCommand, commandLine1, commandLine2, commandLine3, commandLine4
+            );
+            inOrder.verify(pullCommand).createCommandLine(dotPull2);
+            inOrder.verify(commandLine2).execute(any());
+            inOrder.verify(pullCommand).createCommandLine(dotPull1);
+            inOrder.verify(commandLine1).execute(any());
+            inOrder.verify(pullCommand).createCommandLine(dotPull4);
+            inOrder.verify(commandLine4).execute(any());
+            inOrder.verify(pullCommand).createCommandLine(dotPull3);
+            inOrder.verify(commandLine3).execute(any());
+
+            inOrder.verifyNoMoreInteractions(); // Checks if there are no more calls after the last one checked
+
         } finally {
             deleteTempDirectory(tempFolder);
         }

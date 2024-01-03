@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.page;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -262,8 +263,14 @@ public class PageResource {
             @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
             @QueryParam(WebKeys.LANGUAGE_ID_PARAMETER) final String languageId,
             @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException, SystemException, PortalException {
-        if (HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, false) && !this.includeRenderedAttrFromEMA(originalRequest, uri)) {
-            return this.loadJson(originalRequest, response, uri, modeParam, personaId, languageId, deviceInode);
+        if (HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, false)
+                && !this.includeRenderedAttrFromEMA(originalRequest, uri)) {
+            final String depth = HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.DEPTH_PARAM, null);
+            if (UtilMethods.isSet(depth)) {
+                HttpServletRequestThreadLocal.INSTANCE.getRequest().setAttribute(WebKeys.HTMLPAGE_DEPTH, depth);
+            }
+            return this.loadJson(originalRequest, response, uri, modeParam, personaId, languageId
+                    , deviceInode);
         }
         Logger.debug(this, ()->String.format(
                 "Rendering page: uri -> %s mode-> %s language -> persona -> %s device_inode -> %s live -> %b",
@@ -310,7 +317,7 @@ public class PageResource {
         request.setAttribute(WebKeys.CURRENT_HOST, host);
         request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
 
-        res = Response.ok(new ResponseEntityView(pageRendered)).build();
+        res = Response.ok(new ResponseEntityView<>(pageRendered)).build();
 
         return res;
     }

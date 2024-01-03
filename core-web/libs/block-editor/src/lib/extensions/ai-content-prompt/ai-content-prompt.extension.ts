@@ -27,9 +27,11 @@ export const DOT_AI_TEXT_CONTENT_KEY = 'dotAITextContent';
 
 export const AI_CONTENT_PROMPT_PLUGIN_KEY = new PluginKey(DOT_AI_TEXT_CONTENT_KEY);
 
+export const AI_CONTENT_PROMPT_EXTENSION_NAME = 'aiContentPrompt';
+
 export const AIContentPromptExtension = (viewContainerRef: ViewContainerRef) => {
     return Extension.create<AIContentPromptOptions>({
-        name: 'aiContentPrompt',
+        name: AI_CONTENT_PROMPT_EXTENSION_NAME,
 
         addOptions() {
             return {
@@ -46,7 +48,9 @@ export const AIContentPromptExtension = (viewContainerRef: ViewContainerRef) => 
                     ({ chain }) => {
                         return chain()
                             .command(({ tr }) => {
-                                tr.setMeta(AI_CONTENT_PROMPT_PLUGIN_KEY, { open: true });
+                                tr.setMeta(AI_CONTENT_PROMPT_PLUGIN_KEY, {
+                                    aIContentPromptOpen: true
+                                });
 
                                 return true;
                             })
@@ -58,7 +62,9 @@ export const AIContentPromptExtension = (viewContainerRef: ViewContainerRef) => 
                     ({ chain }) => {
                         return chain()
                             .command(({ tr }) => {
-                                tr.setMeta(AI_CONTENT_PROMPT_PLUGIN_KEY, { open: false });
+                                tr.setMeta(AI_CONTENT_PROMPT_PLUGIN_KEY, {
+                                    aIContentPromptOpen: false
+                                });
 
                                 return true;
                             })
