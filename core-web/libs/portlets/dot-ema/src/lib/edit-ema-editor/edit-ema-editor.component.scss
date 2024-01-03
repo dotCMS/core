@@ -28,3 +28,7 @@ a:focus,
 a:active {
     text-decoration: none;
 }
+
+.iframe-expanded {
+    grid-column: span 2;
+}

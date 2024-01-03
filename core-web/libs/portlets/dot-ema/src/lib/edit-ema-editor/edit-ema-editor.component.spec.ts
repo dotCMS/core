@@ -1230,11 +1230,11 @@ describe('EditEmaEditorComponent', () => {
         });
     });
 
-    describe('without read permission', () => {
+    describe('without edit permission', () => {
         let spectator: SpectatorRouting<EditEmaEditorComponent>;
         let store: EditEmaStore;
 
-        const createComponent = createRouting({ canEdit: false, canRead: false });
+        const createComponent = createRouting({ canEdit: false, canRead: true });
         beforeEach(() => {
             spectator = createComponent({
                 queryParams: { language_id: 1, url: 'page-one' }
@@ -1251,14 +1251,8 @@ describe('EditEmaEditorComponent', () => {
 
         it('should not render components', () => {
             spectator.detectChanges();
-            expect(spectator.query(byTestId('ema-copy-url'))).toBeNull();
-            expect(spectator.query(byTestId('ema-api-link'))).toBeNull();
-            expect(spectator.query(byTestId('language-selector'))).toBeNull();
-            expect(spectator.query(byTestId('persona-selector'))).toBeNull();
-
-            expect(spectator.query(byTestId('dont-have-permission')).textContent).toBe(
-                "You don't have permission to read this page."
-            );
+            expect(spectator.query(EmaContentletToolsComponent)).toBeNull();
+            expect(spectator.query(EditEmaPaletteComponent)).toBeNull();
         });
     });
 });

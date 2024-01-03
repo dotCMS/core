@@ -87,8 +87,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         items: NavigationBarItem[];
         canRead: boolean;
         seoProperties: DotPageToolUrlParams;
+        error?: number;
     }> = this.store.shellProperties$.pipe(
-        map(({ currentUrl, page, host, languageId, siteId }) => ({
+        map(({ currentUrl, page, host, languageId, siteId, error }) => ({
             items: [
                 {
                     icon: 'pi-file',
@@ -137,7 +138,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 languageId,
                 siteId,
                 requestHostName: host
-            }
+            },
+            //TODO: PROBABLY NEEDS REMOVE THIS
+            error
         }))
     );
 

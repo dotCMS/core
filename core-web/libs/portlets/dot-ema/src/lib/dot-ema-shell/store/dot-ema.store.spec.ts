@@ -254,7 +254,7 @@ describe('EditEmaStore', () => {
             expect(dotActionUrlService.getCreateContentletUrl).toHaveBeenCalledWith('blogPost');
         });
 
-        it('should set empty state when request error occours', (done) => {
+        it('should set empty with error code state when request error occours', (done) => {
             const dotPageApiService = spectator.inject(DotPageApiService);
 
             dotPageApiService.get.andReturn(throwError({ status: 403 }));
@@ -300,7 +300,8 @@ describe('EditEmaStore', () => {
                     dialogHeader: '',
                     dialogIframeLoading: false,
                     isEnterpriseLicense: false,
-                    dialogType: null
+                    dialogType: null,
+                    error: 403
                 });
                 done();
             });

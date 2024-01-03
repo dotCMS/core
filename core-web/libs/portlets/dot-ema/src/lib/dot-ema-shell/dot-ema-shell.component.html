@@ -1,13 +1,22 @@
-<router-outlet></router-outlet>
 <ng-container *ngIf="shellProperties$ | async as sp">
-    <ng-container *ngIf="sp.canRead">
+    <ng-container *ngIf="sp.canRead; else error">
+        <router-outlet></router-outlet>
         <dot-edit-ema-navigation-bar [items]="sp.items"></dot-edit-ema-navigation-bar>
         <p-toast position="top-center" data-testId="ema-toast"></p-toast>
         <dot-page-tools-seo
             #pageTools
             [currentPageUrlParams]="sp.seoProperties"></dot-page-tools-seo>
     </ng-container>
+
+    <ng-template #error>
+        <ng-container [ngSwitch]="sp.error">
+            <div *ngSwitchCase="403">Dont have permissions</div>
+            <div *ngSwitchCase="404">Not found</div>
+            <div *ngSwitchDefault>output2</div>
+        </ng-container>
+    </ng-template>
 </ng-container>
+
 <p-dialog
     #dialog
     *ngIf="dialogState$ | async as ds"
