@@ -69,52 +69,53 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     options$: Observable<DotDevice[]>;
     isCMSAdmin$: Observable<boolean>;
     socialMediaTiles: SocialMediaOption[];
+
     defaultOptions: DotDeviceListItem[] = [
         {
             name: this.dotMessageService.get('editpage.device.selector.mobile.portrait'),
-            icon: 'pi pi-mobile',
-            cssHeight: '844',
-            cssWidth: '390',
+            icon: 'pi pi-mobile', //NOSONAR
+            cssHeight: '844', //NOSONAR
+            cssWidth: '390', //NOSONAR
             inode: 'mobile-portrait',
             identifier: 'mobile-portrait-id'
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.mobile.landscape'),
-            icon: 'pi pi-mobile',
-            cssHeight: '390',
-            cssWidth: '844',
+            icon: 'pi pi-mobile', //NOSONAR
+            cssHeight: '390', //NOSONAR
+            cssWidth: '844', //NOSONAR
             inode: 'mobile-landscape',
             identifier: 'mobile-landscape-id'
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.hd.monitor'),
-            icon: 'pi pi-desktop',
-            cssHeight: '1080',
-            cssWidth: '1920',
+            icon: 'pi pi-desktop', //NOSONAR
+            cssHeight: '1080', //NOSONAR
+            cssWidth: '1920', //NOSONAR
             inode: 'hd-monitor',
             identifier: 'hd-monitor-id'
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.4k.monitor'),
-            icon: 'pi pi-desktop',
-            cssHeight: '2160',
-            cssWidth: '3840',
+            icon: 'pi pi-desktop', //NOSONAR
+            cssHeight: '2160', //NOSONAR
+            cssWidth: '3840', //NOSONAR
             inode: '4k-monitor',
             identifier: '4k-monitor-id'
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.tablet.portrait'),
-            icon: 'pi pi-tablet',
-            cssHeight: '1180',
-            cssWidth: '820',
+            icon: 'pi pi-tablet', //NOSONAR
+            cssHeight: '1180', //NOSONAR
+            cssWidth: '820', //NOSONAR
             inode: 'tablet-portrait',
             identifier: 'tablet-portrait-id'
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.tablet.landscape'),
-            icon: 'pi pi-tablet',
-            cssHeight: '820',
-            cssWidth: '1180',
+            icon: 'pi pi-tablet', //NOSONAR
+            cssHeight: '820', //NOSONAR
+            cssWidth: '1180', //NOSONAR
             inode: 'tablet-landscape',
             identifier: 'tablet-landscape-id'
         }
