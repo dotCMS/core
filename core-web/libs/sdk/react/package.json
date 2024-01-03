@@ -6,22 +6,24 @@
         "react-dom": "^18",
         "@dotcms/client": "^0.0.1"
     },
-    "description": "Official JavaScript library for interacting with DotCMS REST APIs.",
+    "description": "Official React Components library to render a dotCMS page.",
     "repository": {
         "type": "git",
-        "url": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/client"
+        "url": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/react"
     },
     "keywords": [
         "dotCMS",
         "CMS",
         "Content Management",
         "API Client",
-        "REST API"
+        "REST API",
+        "React",
+        "Components"
     ],
     "author": "dotcms <dev@dotcms.com>",
     "license": "GPL-3.0",
     "bugs": {
         "url": "https://github.com/dotCMS/core/issues"
     },
-    "homepage": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/client/README.md"
+    "homepage": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/react/README.md"
 }
