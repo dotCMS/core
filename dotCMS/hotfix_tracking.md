@@ -24,3 +24,4 @@ This maintenance release includes the following code fixes:
 **Release-23.10.24_v2 LTS**
 
 17. https://github.com/dotCMS/core/issues/25478 : When filter by All in the Browser Portlet we are showing the No DEFAULT Version of the Contentlet #25478
+18. https://github.com/dotCMS/core/issues/25901 : Unable to reuse content inside the variants #25901

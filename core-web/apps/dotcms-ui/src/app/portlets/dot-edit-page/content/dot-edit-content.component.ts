@@ -89,6 +89,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     featureFlagSeo = FeaturedFlags.FEATURE_FLAG_SEO_IMPROVEMENTS;
     seoOGTags: SeoMetaTags;
     seoOGTagsResults = null;
+    pageLanguageId: string;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -184,6 +185,7 @@ browse from the page internal links
         this.subscribeOverlayService();
         this.subscribeDraggedContentType();
         this.getExperimentResolverData();
+        this.subscribeToLanguageChange();
 
         /*This is needed when the user is in the edit mode in an experiment variant
         and navigate to another page with the page menu and want to go back with the
@@ -662,5 +664,15 @@ browse from the page internal links
                 } as DotVariantData;
             })
         );
+    }
+
+    /**
+     * Subscribe to language change, because pageState.page.languageId is not being updated
+     * as should be between dev environments.
+     */
+    private subscribeToLanguageChange(): void {
+        this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+            this.pageLanguageId = params['language_id'];
+        });
     }
 }
