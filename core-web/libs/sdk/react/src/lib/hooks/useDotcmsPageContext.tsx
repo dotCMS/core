@@ -11,5 +11,5 @@ import { PageContext } from '../contexts/PageContext';
  * @return {*}
  */
 export function useDotcmsPageContext() {
-    return useContext<PageProviderContext>(PageContext);
+    return useContext<PageProviderContext | null>(PageContext);
 }

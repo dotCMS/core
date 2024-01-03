@@ -18,7 +18,9 @@ export function Container({ containerRef }: ContainerProps) {
     const { identifier, uuid } = containerRef;
 
     // Get the containers from the global context
-    const { containers, page, viewAs, components } = useContext<PageProviderContext>(PageContext);
+    const { containers, page, viewAs, components } = useContext<PageProviderContext | null>(
+        PageContext
+    ) as PageProviderContext;
 
     const { acceptTypes, contentlets, maxContentlets, pageContainers, path } = getContainersData(
         containers,

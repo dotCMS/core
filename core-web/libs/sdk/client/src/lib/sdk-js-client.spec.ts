@@ -17,7 +17,7 @@ const mockFetchResponse = (body: any, ok = true, status = 200) => {
 describe('DotCmsClient', () => {
     const client = dotcmsClient.init({
         dotcmsUrl: 'http://localhost',
-        host_id: '123456',
+        siteId: '123456',
         authToken: 'ABC'
     });
 
@@ -29,7 +29,7 @@ describe('DotCmsClient', () => {
         it('should initialize with valid configuration', () => {
             const config = {
                 dotcmsUrl: 'https://example.com',
-                host_id: '123456',
+                siteId: '123456',
                 authToken: 'ABC'
             };
 
@@ -40,7 +40,7 @@ describe('DotCmsClient', () => {
         it('should throw error on missing dotcmsUrl', () => {
             const config = {
                 dotcmsUrl: '',
-                host_id: '123456',
+                siteId: '123456',
                 authToken: 'ABC'
             };
 
@@ -52,7 +52,7 @@ describe('DotCmsClient', () => {
         it('should throw error if dotcmsUrl is not a valid URL', () => {
             const config = {
                 dotcmsUrl: '//example.com',
-                host_id: '123456',
+                siteId: '123456',
                 authToken: 'ABC'
             };
 
@@ -64,19 +64,19 @@ describe('DotCmsClient', () => {
         it('should throw error on missing host_id', () => {
             const config = {
                 dotcmsUrl: 'https://example.com',
-                host_id: '',
+                siteId: '',
                 authToken: 'ABC'
             };
 
             expect(() => {
                 dotcmsClient.init(config);
-            }).toThrow("Invalid configuration - 'host_id' is required");
+            }).toThrow("Invalid configuration - 'siteId' is required");
         });
 
         it('should throw error on missing authToken', () => {
             const config = {
                 dotcmsUrl: 'https://example.com',
-                host_id: '123456',
+                siteId: '123456',
                 authToken: ''
             };
 
@@ -124,11 +124,11 @@ describe('DotCmsClient', () => {
             );
         });
 
-        it('should get the page for specified host_id', () => {
+        it('should get the page for specified siteId', () => {
             const mockResponse = { content: 'Page data' };
             mockFetchResponse(mockResponse);
 
-            client.getPage({ path: '/home', host_id: 'host-123' });
+            client.getPage({ path: '/home', siteId: 'host-123' });
 
             expect(fetch).toHaveBeenCalledWith(
                 'http://localhost/api/v1/page/json/home?host_id=host-123',
