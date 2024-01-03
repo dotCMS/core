@@ -7,8 +7,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { SelectItemGroup } from 'primeng/api';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotWorkflowsActionsService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import { HttpCode, ResponseView } from '@dotcms/dotcms-js';
 import { mockWorkflows, mockWorkflowsActions } from '@dotcms/utils-testing';
 

@@ -5,10 +5,9 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck, take } from 'rxjs/operators';
 
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
 import { DotActionBulkResult, DotTemplate } from '@dotcms/dotcms-models';
-
-import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
 
 export const TEMPLATE_API_URL = '/api/v1/templates/';
 

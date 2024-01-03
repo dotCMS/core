@@ -14,7 +14,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     ComponentStatus,
@@ -42,7 +42,6 @@ import {
     MockDotMessageService,
     PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
 } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import {
     DotExperimentsConfigurationState,

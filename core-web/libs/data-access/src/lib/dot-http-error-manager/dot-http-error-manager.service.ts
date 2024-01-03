@@ -3,10 +3,11 @@ import { Observable, of } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotAlertConfirmService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { HttpCode, LoginService } from '@dotcms/dotcms-js';
+import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
+
+import { DotMessageDisplayService } from '../dot-message-display/dot-message-display.service';
 
 export interface DotHttpErrorHandled {
     redirected: boolean;
@@ -21,7 +22,7 @@ export interface DotHttpErrorHandled {
  */
 @Injectable()
 export class DotHttpErrorManagerService {
-    private readonly errorHandlers;
+    private readonly errorHandlers?: Record<HttpCode, (response?: HttpErrorResponse) => boolean>;
     private _unobtrusive = false;
 
     constructor(
@@ -32,13 +33,14 @@ export class DotHttpErrorManagerService {
         private dotRouterService: DotRouterService
     ) {
         if (!this.errorHandlers) {
-            this.errorHandlers = {};
-            this.errorHandlers[HttpCode.NOT_FOUND] = this.handleNotFound.bind(this);
-            this.errorHandlers[HttpCode.UNAUTHORIZED] = this.handleUnathorized.bind(this);
-            this.errorHandlers[HttpCode.FORBIDDEN] = this.handleForbidden.bind(this);
-            this.errorHandlers[HttpCode.SERVER_ERROR] = this.handleServerError.bind(this);
-            this.errorHandlers[HttpCode.BAD_REQUEST] = this.handleBadRequestError.bind(this);
-            this.errorHandlers[HttpCode.NO_CONTENT] = this.handleNotContentError.bind(this);
+            this.errorHandlers = {
+                [HttpCode.NOT_FOUND]: this.handleNotFound.bind(this),
+                [HttpCode.UNAUTHORIZED]: this.handleUnathorized.bind(this),
+                [HttpCode.FORBIDDEN]: this.handleForbidden.bind(this),
+                [HttpCode.SERVER_ERROR]: this.handleServerError.bind(this),
+                [HttpCode.BAD_REQUEST]: this.handleBadRequestError.bind(this),
+                [HttpCode.NO_CONTENT]: this.handleNotContentError.bind(this)
+            };
         }
     }
 
@@ -74,7 +76,7 @@ export class DotHttpErrorManagerService {
             ? this.isLicenseError(response)
                 ? this.handleLicense()
                 : this.handleForbidden()
-            : this.errorHandlers[code](response);
+            : this.errorHandlers?.[code as HttpCode](response) ?? false;
     }
 
     private contentletIsForbidden(error: string): boolean {
@@ -130,7 +132,7 @@ export class DotHttpErrorManagerService {
     }
 
     private handleBadRequestError(response?: HttpErrorResponse): boolean {
-        const { error } = response;
+        const { error } = response ?? { error: undefined };
 
         const header = error?.header
             ? this.dotMessageService.get(error.header)
@@ -156,7 +158,7 @@ export class DotHttpErrorManagerService {
         return false;
     }
 
-    private showErrorMessage(message: string, header?: string): void {
+    private showErrorMessage(message: string, header: string): void {
         if (this._unobtrusive) {
             this.dotMessageDisplayService.push({
                 life: 3000,
@@ -184,12 +186,12 @@ export class DotHttpErrorManagerService {
         return false;
     }
 
-    private getErrorMessage(response: HttpErrorResponse): string {
+    private getErrorMessage(response?: HttpErrorResponse): string {
         let msg: string;
-        if (Array.isArray(response['error']) || Array.isArray(response.error?.errors)) {
+        if (Array.isArray(response?.['error']) || Array.isArray(response?.error?.errors)) {
             msg = response.error[0]?.message || response.error?.errors[0]?.message;
         } else {
-            const error = response['error'];
+            const error = response?.['error'];
             msg = error?.message || error?.error;
         }
 

@@ -10,14 +10,14 @@ import { MultiSelectModule } from 'primeng/multiselect';
 
 import { of } from 'rxjs/internal/observable/of';
 
-import { DotPagesFavoritePageEmptySkeletonComponent } from '@dotcms/app/portlets/dot-pages/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
 import { DotMessageService, DotRouterService, DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
-    DotMessagePipe
+    DotMessagePipe,
+    DotPagesFavoritePageEmptySkeletonComponent
 } from '@dotcms/ui';
 import {
     LoginServiceMock,

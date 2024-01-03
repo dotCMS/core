@@ -13,7 +13,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import {
     AllowedActionsByExperimentStatus,
     ComponentStatus,
@@ -29,7 +29,6 @@ import {
     getExperimentMock,
     PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
 } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsListStore } from './dot-experiments-list-store';
 

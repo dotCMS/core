@@ -18,11 +18,11 @@ import { PushPublishEnvSelectorComponent } from '@components/_common/dot-push-pu
 import { PushPublishServiceMock } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
 import { PushPublishEnvSelectorModule } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import {
     DotAlertConfirmService,
+    DotHttpErrorManagerService,
     DotMessageService,
     DotPushPublishFilter,
     DotPushPublishFiltersService,

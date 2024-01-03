@@ -6,9 +6,7 @@ import { filter, takeUntil } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
-
-import { DotMessageSeverity } from '../model';
-import { DotMessage } from '../model/dot-message.model';
+import { DotMessage, DotMessageSeverity } from '@dotcms/dotcms-models';
 
 /**
  * Handle message send by the Backend, this message are sended as Event through the {@link DotcmsEventsService}
@@ -26,10 +24,13 @@ export class DotMessageDisplayService {
         dotcmsEventsService: DotcmsEventsService,
         private dotRouterService: DotRouterService
     ) {
-        const webSocketMessage = dotcmsEventsService.subscribeTo('MESSAGE').pipe(
-            takeUntil(this.destroy$),
+        const webSocketMessage = (
+            dotcmsEventsService.subscribeTo('MESSAGE') as Observable<DotMessage>
+        ).pipe(
+            takeUntil<DotMessage>(this.destroy$),
             filter((data: DotMessage) => this.hasPortletIdList(data))
         );
+
         this.messages$ = merge(webSocketMessage, this.localMessage$);
     }
 
@@ -74,7 +75,7 @@ export class DotMessageDisplayService {
         return (
             !dotMessage.portletIdList ||
             !dotMessage.portletIdList.length ||
-            dotMessage.portletIdList.includes(this.dotRouterService.currentPortlet.id)
+            dotMessage.portletIdList.includes(this.dotRouterService.currentPortlet.id ?? '')
         );
     }
 }

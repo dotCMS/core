@@ -24,13 +24,12 @@ import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/d
 import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
     DotMessageService,
     DotRouterService,
     DotSiteBrowserService
@@ -46,7 +45,13 @@ import {
     SiteService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { DotActionBulkResult, DotContentState, DotTemplate } from '@dotcms/dotcms-models';
+import {
+    DotActionBulkResult,
+    DotContentState,
+    DotMessageSeverity,
+    DotMessageType,
+    DotTemplate
+} from '@dotcms/dotcms-models';
 import { DotFormatDateService, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,

@@ -5,10 +5,10 @@ import { of } from 'rxjs';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotActionBulkResult, DotTemplate } from '@dotcms/dotcms-models';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotTemplatesService, TEMPLATE_API_URL } from './dot-templates.service';
 

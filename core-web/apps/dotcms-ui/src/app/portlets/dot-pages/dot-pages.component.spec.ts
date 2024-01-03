@@ -14,15 +14,12 @@ import { of } from 'rxjs/internal/observable/of';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import {
     DotAlertConfirmService,
     DotEventsService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
     DotPageRenderService,
     DotRouterService,
     DotSessionStorageService
@@ -38,13 +35,15 @@ import {
     SiteService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import { DotFormatDateService } from '@dotcms/ui';
 import {
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
     DotcmsEventsServiceMock,
+    DotMessageDisplayServiceMock,
     LoginServiceMock,
+    MockDotHttpErrorManagerService,
     MockDotRouterService,
     mockResponseView
 } from '@dotcms/utils-testing';

@@ -29,7 +29,7 @@ export const LOGOUT_URL = '/dotAdmin/logout';
     providedIn: 'root'
 })
 export class LoginService {
-    currentUserLanguageId: string = '';
+    currentUserLanguageId = '';
     private country = '';
     private lang = '';
     private urls: Record<string, string>;
@@ -38,7 +38,7 @@ export class LoginService {
         private coreWebService: CoreWebService,
         private dotcmsEventsService: DotcmsEventsService
     ) {
-        this._loginAsUsersList$ = <Subject<User[]>>new Subject();
+        this._loginAsUsersList$ = new Subject<User[]>();
 
         this.urls = {
             changePassword: 'v1/changePassword',

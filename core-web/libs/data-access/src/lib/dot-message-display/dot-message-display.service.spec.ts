@@ -1,19 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { describe, it, expect } from '@jest/globals';
 
 import { TestBed } from '@angular/core/testing';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
+import { DotMessage, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import { DotcmsEventsServiceMock } from '@dotcms/utils-testing';
 
 import { DotMessageDisplayService } from './dot-message-display.service';
 
-import { DotMessage, DotMessageSeverity, DotMessageType } from '../model';
-
 describe('DotMessageDisplayService', () => {
     const mockDotcmsEventsService: DotcmsEventsServiceMock = new DotcmsEventsServiceMock();
 
-    let dotMessageDisplayService;
+    let dotMessageDisplayService: DotMessageDisplayService;
 
     const messageExpected: any = {
         life: 3000,

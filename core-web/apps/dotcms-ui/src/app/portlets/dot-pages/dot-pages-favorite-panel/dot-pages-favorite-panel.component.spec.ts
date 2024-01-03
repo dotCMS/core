@@ -13,9 +13,8 @@ import { PanelModule } from 'primeng/panel';
 
 import { of } from 'rxjs/internal/observable/of';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import {
+    DotHttpErrorManagerService,
     DotMessageService,
     DotPageRenderService,
     DotSessionStorageService
@@ -24,6 +23,7 @@ import { CoreWebService, CoreWebServiceMock, HttpCode } from '@dotcms/dotcms-js'
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     dotcmsContentletMock,
+    MockDotHttpErrorManagerService,
     MockDotMessageService,
     mockResponseView
 } from '@dotcms/utils-testing';

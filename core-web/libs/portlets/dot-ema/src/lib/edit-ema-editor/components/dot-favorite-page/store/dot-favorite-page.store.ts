@@ -6,12 +6,12 @@ import { Injectable } from '@angular/core';
 
 import { mergeMap, switchMap, take } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import {
     DotPageRenderService,
     DotMessageService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    DotHttpErrorManagerService,
+    DotTempFileUploadService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile, DotPageRenderParameters } from '@dotcms/dotcms-models';
 

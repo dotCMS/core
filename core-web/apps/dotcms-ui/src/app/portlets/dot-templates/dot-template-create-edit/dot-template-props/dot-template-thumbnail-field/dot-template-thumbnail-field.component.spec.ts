@@ -10,10 +10,10 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import {
     DotCrudService,
     DotMessageService,
+    DotTempFileUploadService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';

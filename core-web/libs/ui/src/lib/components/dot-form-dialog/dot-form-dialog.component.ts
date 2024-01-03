@@ -1,5 +1,6 @@
 import { fromEvent, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -10,12 +11,18 @@ import {
     Output
 } from '@angular/core';
 
+import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
+import { FocusTrapModule } from 'primeng/focustrap';
 
 import { takeUntil } from 'rxjs/operators';
 
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
+
 @Component({
     selector: 'dot-form-dialog',
+    standalone: true,
+    imports: [CommonModule, ButtonModule, FocusTrapModule, DotMessagePipe],
     templateUrl: './dot-form-dialog.component.html',
     styleUrls: ['./dot-form-dialog.component.scss']
 })

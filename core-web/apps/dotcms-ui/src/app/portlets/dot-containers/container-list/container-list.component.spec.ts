@@ -21,11 +21,11 @@ import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-b
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 import { ActionHeaderModule } from '@components/dot-listing-data-table/action-header/action-header.module';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import {
     DotAlertConfirmService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
     DotMessageService,
     DotRouterService,
     DotSiteBrowserService,
@@ -50,11 +50,11 @@ import { DotFormatDateService, DotMessagePipe, DotRelativeDatePipe } from '@dotc
 import {
     DotcmsConfigServiceMock,
     DotFormatDateServiceMock,
+    DotMessageDisplayServiceMock,
     MockDotMessageService,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 
 import { ContainerListRoutingModule } from './container-list-routing.module';

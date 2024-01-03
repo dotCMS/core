@@ -19,12 +19,11 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import {
     DotAlertConfirmService,
     DotCurrentUserService,
     DotDevicesService,
+    DotHttpErrorManagerService,
     DotMessageService,
     DotPersonalizeService,
     DotPropertiesService
@@ -47,6 +46,7 @@ import {
     DotPageStateServiceMock,
     DotPersonalizeServiceMock,
     getExperimentMock,
+    MockDotHttpErrorManagerService,
     MockDotMessageService,
     mockDotRenderedPage,
     mockUser

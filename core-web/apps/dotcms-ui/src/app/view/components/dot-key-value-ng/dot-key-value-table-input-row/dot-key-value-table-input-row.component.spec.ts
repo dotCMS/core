@@ -4,9 +4,8 @@ import { By } from '@angular/platform-browser';
 
 import { InputSwitchModule } from 'primeng/inputswitch';
 
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
@@ -21,8 +20,7 @@ import { mockKeyValue } from '../dot-key-value-ng.component.spec';
         <dot-key-value-table-input-row
             [autoFocus]="autoFocus"
             [showHiddenField]="showHiddenField"
-            [variablesList]="variablesList"
-        >
+            [variablesList]="variablesList">
         </dot-key-value-table-input-row>
     `
 })

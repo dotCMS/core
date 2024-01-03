@@ -46,12 +46,11 @@ import {
     PageModelChangeEventType,
     SeoMetaTags
 } from '@dotcms/dotcms-models';
+import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema';
 import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
 
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
-
-import { DotFavoritePageComponent } from '../components/dot-favorite-page/dot-favorite-page.component';
 
 export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 

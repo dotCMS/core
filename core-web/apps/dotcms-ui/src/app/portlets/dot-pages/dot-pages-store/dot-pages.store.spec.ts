@@ -10,21 +10,19 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { PushPublishServiceMock } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
-import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import {
     DotCurrentUserService,
     DotESContentService,
     DotEventsService,
+    DotHttpErrorManagerService,
     DotLanguagesService,
     DotLicenseService,
     DotLocalstorageService,
+    DotMessageDisplayService,
     DotPageTypesService,
     DotPageWorkflowsActionsService,
     DotPropertiesService,
@@ -63,7 +61,9 @@ import {
     mockResponseView,
     mockWorkflowsActions,
     mockPublishAction,
-    mockLanguageArray
+    mockLanguageArray,
+    DotMessageDisplayServiceMock,
+    MockDotHttpErrorManagerService
 } from '@dotcms/utils-testing';
 
 import {

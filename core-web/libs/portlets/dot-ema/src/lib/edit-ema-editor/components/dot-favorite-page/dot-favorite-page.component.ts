@@ -1,13 +1,25 @@
 import { Observable, Subject } from 'rxjs';
 
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormGroup, Validators, UntypedFormBuilder } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { FormGroup, Validators, UntypedFormBuilder, ReactiveFormsModule } from '@angular/forms';
 
+import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { filter, map, startWith, takeUntil } from 'rxjs/operators';
 
+import { DotTempFileUploadService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import {
+    DotAutofocusDirective,
+    DotFormDialogComponent,
+    DotFieldValidationMessageComponent,
+    DotPagesFavoritePageEmptySkeletonComponent,
+    DotFieldRequiredDirective,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import {
     DotFavoritePageState,
@@ -33,7 +45,21 @@ export interface DotFavoritePageFormData {
     selector: 'dot-favorite-page',
     templateUrl: 'dot-favorite-page.component.html',
     styleUrls: ['./dot-favorite-page.component.scss'],
-    providers: [DotFavoritePageStore]
+    standalone: true,
+    imports: [
+        CommonModule,
+        ButtonModule,
+        DotAutofocusDirective,
+        DotFormDialogComponent,
+        DotFieldValidationMessageComponent,
+        DotPagesFavoritePageEmptySkeletonComponent,
+        InputTextModule,
+        ReactiveFormsModule,
+        DotFieldRequiredDirective,
+        DotMessagePipe
+    ],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA],
+    providers: [DotFavoritePageStore, DotTempFileUploadService, DotWorkflowActionsFireService]
 })
 export class DotFavoritePageComponent implements OnInit, OnDestroy {
     form: FormGroup;

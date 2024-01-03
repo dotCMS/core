@@ -1,9 +1,12 @@
-import { Component, DebugElement, Pipe, PipeTransform } from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotFormDialogComponent } from './dot-form-dialog.component';
 
@@ -16,20 +19,6 @@ const dispatchKeydownEvent = (comp: HTMLBaseElement, key: string, meta = false, 
     });
     comp.dispatchEvent(event);
 };
-
-@Pipe({
-    name: 'dm'
-})
-class DotMessageMockPipe implements PipeTransform {
-    transform(val): string {
-        const map = {
-            save: 'Save',
-            cancel: 'Cancel'
-        };
-
-        return map[val];
-    }
-}
 
 @Component({
     template: `<dot-form-dialog><form>Hello World</form></dot-form-dialog>`
@@ -44,16 +33,23 @@ describe('DotFormDialogComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotFormDialogComponent, TestHostComponent, DotMessageMockPipe],
+            declarations: [TestHostComponent],
             providers: [
                 {
                     provide: DynamicDialogRef,
                     useValue: {
                         close: jasmine.createSpy()
                     }
+                },
+                {
+                    provide: DotMessageService,
+                    useValue: new MockDotMessageService({
+                        save: 'Save',
+                        cancel: 'Cancel'
+                    })
                 }
             ],
-            imports: [ButtonModule]
+            imports: [ButtonModule, DotFormDialogComponent]
         }).compileComponents();
     });
 
