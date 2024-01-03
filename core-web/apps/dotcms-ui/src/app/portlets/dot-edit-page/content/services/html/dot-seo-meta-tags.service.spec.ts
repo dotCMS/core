@@ -434,7 +434,7 @@ describe('DotSetMetaTagsService', () => {
         const metaDesc = doc.createElement('meta');
         metaDesc.name = 'description';
         metaDesc.content =
-            'DESCRIPTION ****TEST.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis ante metus, posuere quis posuere eu, varius nec ante. Aenean nec dictum purus';
+            'DESCRIPTION ****TEST.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis ante metus, posuere quis posuere eu, varius nec ante. Aenean nec';
         head.appendChild(metaDesc);
 
         service.getMetaTagsResults(doc).subscribe((value) => {
