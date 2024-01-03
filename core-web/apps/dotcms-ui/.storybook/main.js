@@ -18,8 +18,6 @@ module.exports = {
         '../../../libs/portlets/**/*.stories.@(js|jsx|ts|tsx|mdx)'
     ],
     addons: ['@storybook/addon-essentials', ...rootMain.addons],
-    // storybook-design-token use 6.5.0 of storybook
-    // addons: ['storybook-design-token', '@storybook/addon-essentials', ...rootMain.addons],
     features: {
         previewMdx2: true
     },
