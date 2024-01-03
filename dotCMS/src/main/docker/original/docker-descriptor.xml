@@ -1,5 +1,5 @@
-<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<assembly xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
     xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
     <includeBaseDirectory>false</includeBaseDirectory>
 
@@ -37,6 +37,8 @@
             <outputDirectory>dotserver/tomcat-${tomcat.version}/webapps/ROOT</outputDirectory>
             <excludes>
                 <exclude>**/dotcms-webcomponents/dist/dotcms-webcomponents/**</exclude>
+                <exclude>**/dotcms-binary-field-builder/dist/dotcms-binary-field-builder/**</exclude>
+                <exclude>**/dotcms-block-editor/dist/dotcms-block-editor/**</exclude>
             </excludes>
         </fileSet>
         <fileSet>
@@ -44,6 +46,21 @@
             <outputDirectory>dotserver/tomcat-${tomcat.version}/webapps/ROOT</outputDirectory>
             <includes>
                 <include>**/dotcms-webcomponents/**</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${exploded-webapp-dir}/dotcms-binary-field-builder/dist</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}/webapps/ROOT</outputDirectory>
+            <includes>
+                <include>**/dotcms-binary-field-builder/**</include>
+            </includes>
+        </fileSet>
+
+        <fileSet>
+            <directory>${exploded-webapp-dir}/dotcms-block-editor/dist</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}/webapps/ROOT</outputDirectory>
+            <includes>
+                <include>**/dotcms-block-editor/**</include>
             </includes>
         </fileSet>
         <fileSet>

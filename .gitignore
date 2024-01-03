@@ -61,6 +61,8 @@ dotCMS/src/integration-test/resources/starter.zip
 /*.local.*
 dotCMS/src/main/webapp/dotAdmin
 dotCMS/src/main/webapp/dotcms-webcomponents
+dotCMS/src/main/webapp/dotcms-binary-field-builder
+dotCMS/src/main/webapp/dotcms-block-editor
 dotCMS/bin/*
 dotCMS/classes
 WAR/
