@@ -3,27 +3,34 @@ import { PageProvider, PageProviderContext } from '../PageProvider/PageProvider'
 import { Row } from '../Row/Row';
 
 /**
- * Props for the dotCMS page
+ * `DotcmsPageProps` is a type that defines the properties for the `DotcmsLayout` component.
+ * It includes a readonly `entity` property that represents the context for a DotCMS page.
  *
- * @export
- * @interface DotcmsPageProps
+ * @typedef {Object} DotcmsPageProps
+ *
+ * @property {PageProviderContext} entity - The context for a DotCMS page.
+ * @readonly
  */
 export type DotcmsPageProps = {
     /**
-     * Response from the dotcms page api
+     * `entity` is a readonly property of the `DotcmsPageProps` type.
+     * It represents the context for a DotCMS page and is of type `PageProviderContext`.
      *
+     * @property {PageProviderContext} entity
+     * @memberof DotcmsPageProps
      * @type {PageProviderContext}
+     * @readonly
      */
     readonly entity: PageProviderContext;
 };
 
 /**
- * Renders a dotCMS page body, does not include header and footer
+ * `DotcmsLayout` is a functional component that renders a layout for a DotCMS page.
+ * It takes a `DotcmsPageProps` object as a parameter and returns a JSX element.
  *
  * @category Components
- * @export
- * @param {DotcmsPageProps} props
- * @return {*}  {JSX.Element}
+ * @param {DotcmsPageProps} props - The properties for the DotCMS page.
+ * @returns {JSX.Element} - A JSX element that represents the layout for a DotCMS page.
  */
 export function DotcmsLayout(props: DotcmsPageProps): JSX.Element {
     const { entity } = props;

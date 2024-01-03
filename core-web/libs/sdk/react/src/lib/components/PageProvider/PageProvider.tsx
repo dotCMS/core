@@ -31,6 +31,16 @@ export interface ContainerData {
 }
 
 export interface PageProviderContext {
+    /**
+     * `components` is a property of the `PageProviderProps` type.
+     * It is an object that maps content type variables to their corresponding React components.
+     *
+     * It will be use to render the contentlets in the page.
+     *
+     * @property {Object} components
+     * @memberof PageProviderProps
+     * @type {Object.<string, React.ElementType>}
+     */
     components: {
         [contentTypeVariable: string]: React.ElementType;
     };
@@ -66,12 +76,12 @@ export interface PageProviderContext {
 }
 
 /**
- * Component in charge of pass the data from the page api to the global context
+ * `PageProvider` is a functional component that provides a context for a DotCMS page.
+ * It takes a `PageProviderProps` object as a parameter and returns a JSX element.
  *
  * @category Components
- * @export
- * @param {PageProviderProps} props
- * @return {*}  {JSX.Element}
+ * @param {PageProviderProps} props - The properties for the PageProvider. Includes an `entity` and `children`.
+ * @returns {JSX.Element} - A JSX element that provides a context for a DotCMS page.
  */
 export function PageProvider(props: PageProviderProps): JSX.Element {
     const { entity, children } = props;

@@ -23,6 +23,7 @@ export function MyPage({ data, nav }) {
             <main className="container flex flex-col gap-8 m-auto">
                 <DotcmsLayout
                     entity={{
+                        // These are the components that will be used to render the contentlets in the page.
                         components: {
                             webPageContent: WebPageContent,
                             Banner: Banner,
@@ -30,8 +31,7 @@ export function MyPage({ data, nav }) {
                             Product: Product,
                             Image: ImageComponent
                         },
-                        ...data,
-                        nav
+                        ...data
                     }}
                 />
             </main>
