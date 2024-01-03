@@ -126,6 +126,5 @@
             "!{projectRoot}/tsconfig.storybook.json",
             "!{projectRoot}/src/test-setup.[jt]s"
         ]
-    },
-    "nxCloudAccessToken": "Y2EzMjU4YWEtZGIxMy00Y2ZkLWEwMjItZjU2ODkxOTQzM2U1fHJlYWQtd3JpdGU="
+    }
 }
