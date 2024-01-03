@@ -1,11 +1,10 @@
 package com.dotcms.api;
 
 import com.dotcms.DotCMSITProfile;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.api.client.ServiceManager;
+import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldLayoutRow;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableColumnField;
@@ -40,7 +39,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import javax.inject.Inject;
-import javax.management.relation.Relation;
 import javax.ws.rs.NotFoundException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
@@ -237,7 +235,8 @@ class ContentTypeAPIIT {
         final ImmutableSimpleContentType updatedContentType = ImmutableSimpleContentType.builder().from(newContentType).description("Updated").build();
         final SaveContentTypeRequest request = AbstractSaveContentTypeRequest.builder()
                 .of(updatedContentType).build();
-        final ResponseEntityView<ContentType> responseEntityView = client.updateContentTypes(request.variable(),request);
+        final ResponseEntityView<ContentType> responseEntityView = client.updateContentType(
+                request.variable(), request);
         Assertions.assertEquals("Updated", responseEntityView.entity().description());
         //And finally test delete
         final ResponseEntityView<String> responseStringEntity = client.delete(updatedContentType.variable());
@@ -336,7 +335,7 @@ class ContentTypeAPIIT {
                         .build()).description("Modified!").build();
 
         final SaveContentTypeRequest request2 = AbstractSaveContentTypeRequest.builder().of(modifiedContentType).build();
-        final ResponseEntityView<ContentType> entityView = client.updateContentTypes(
+        final ResponseEntityView<ContentType> entityView = client.updateContentType(
                 request2.variable(), request2
         );
 
@@ -447,7 +446,11 @@ class ContentTypeAPIIT {
                 + "\t}, {\n"
                 + "\t\t\"clazz\": \"ColumnField\",\n"
                 + "\t\t\"variable\": \"col\"\n"
-                + "\t}]\n"
+                + "\t}, {\n"
+                + "\t\t\"clazz\": \"JSONField\",\n"
+                + "\t\t\"variable\": \"json\"\n"
+                + "\t}"
+                + "]\n"
                 + "}";
 
         final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);

@@ -101,6 +101,15 @@ describe('DotBinaryFieldEditorComponent', () => {
         spectator.detectChanges();
     });
 
+    describe('label', () => {
+        it('should set label and have css class required', () => {
+            const label = spectator.query(byTestId('editor-label'));
+
+            expect(label.innerHTML.trim()).toBe('File Name');
+            expect(label.className).toBe('p-label-input-required');
+        });
+    });
+
     describe('Editor', () => {
         it('should set editor language', fakeAsync(() => {
             component.form.setValue({
@@ -134,6 +143,8 @@ describe('DotBinaryFieldEditorComponent', () => {
                 .spyOn(dotUploadService, 'uploadFile')
                 .mockReturnValue(Promise.resolve(TEMP_FILE_MOCK));
             const importBtn = spectator.query('[data-testId="import-button"] button');
+            const monacoEditor = spectator.query(MonacoEditorComponent);
+            monacoEditor.init.emit();
 
             component.form.setValue({
                 name: 'file-name.ts',

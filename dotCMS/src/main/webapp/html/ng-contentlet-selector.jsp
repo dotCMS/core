@@ -128,7 +128,7 @@
             name: "create-contentlet-from-edit-page",
             data: {
                 url,
-				contentType
+				contentType,
             }
         });
 
@@ -181,6 +181,7 @@
 
         function getCurrentUrlLanguageId () {
             var obj = window.location.href;
+
             const filter = "language_id=";
             const filteredUrl = obj.substring(obj.indexOf(filter));
             return filteredUrl.replace(filter, "");

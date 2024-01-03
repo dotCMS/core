@@ -364,6 +364,10 @@ public class VersionableAPIImpl implements VersionableAPI {
                     getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId(),
                             contentlet.getVariantId());
 
+            if (info.isEmpty()) {
+                return false;
+            }
+            
             workingInode = info.get().getWorkingInode();
         } else {
 

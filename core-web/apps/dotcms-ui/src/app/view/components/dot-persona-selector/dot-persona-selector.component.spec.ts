@@ -23,17 +23,17 @@ import { DotMessageDisplayServiceMock } from '@components/dot-message-display/do
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotPersonaSelectedItemModule } from '@components/dot-persona-selected-item/dot-persona-selected-item.module';
 import { DotPersonaSelectorOptionModule } from '@components/dot-persona-selector-option/dot-persona-selector-option.module';
-import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
 import {
     DotAlertConfirmService,
     DotEventsService,
     DotMessageService,
     PaginatorService,
-    DotSessionStorageService
+    DotSessionStorageService,
+    DotRouterService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPersona } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 import {
     cleanUpDialog,
     CoreWebServiceMock,
@@ -44,7 +44,6 @@ import {
     SiteServiceMock
 } from '@dotcms/utils-testing';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
 

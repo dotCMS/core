@@ -248,7 +248,7 @@ public class PushServiceImpl implements PushService {
                     output.info(String.format("%n%nFound [@|bold,red %s|@] errors during the push process:", errors.size()));
                     long count = errors.stream().filter(TraversalTaskException.class::isInstance).count();
                     int c = 0;
-                    for (var error : errors) {
+                    for (final var error : errors) {
                         if (error instanceof TraversalTaskException) {
                             c++;
                             output.handleCommandException(error, String. format("%s %n", error.getMessage()), c == count);

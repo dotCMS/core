@@ -2,14 +2,15 @@ package com.dotcms.cli.command;
 
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.UserAPI;
-import com.dotcms.api.client.DotCmsClientConfig;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.api.client.ServiceManager;
+import com.dotcms.api.client.model.DotCmsClientConfig;
+import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.annotation.SecuredPassword;
 import com.dotcms.model.config.ServiceBean;
 import com.dotcms.model.user.User;
+import java.io.IOException;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
@@ -57,7 +58,7 @@ public class StatusCommand implements Callable<Integer>, DotCommand {
     CommandLine.Model.CommandSpec spec;
 
     @Override
-    public Integer call() {
+    public Integer call() throws IOException {
 
         // Checking for unmatched arguments
         output.throwIfUnmatchedArguments(spec.commandLine());

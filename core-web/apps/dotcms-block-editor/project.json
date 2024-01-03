@@ -25,6 +25,7 @@
                 ],
                 "styles": [
                     "node_modules/primeicons/primeicons.css",
+                    "node_modules/primeflex/primeflex.css",
                     "node_modules/primeng/resources/primeng.min.css",
                     "libs/dotcms-scss/angular/_forms.scss",
                     "libs/dotcms-scss/angular/_mixins.scss",
@@ -51,17 +52,17 @@
                         }
                     ],
                     "optimization": true,
-                    "outputHashing": "all",
+                    "outputHashing": "none",
                     "sourceMap": false,
                     "namedChunks": false,
-                    "extractLicenses": true,
+                    "extractLicenses": false,
                     "vendorChunk": false,
                     "buildOptimizer": true,
                     "budgets": [
                         {
                             "type": "initial",
                             "maximumWarning": "2mb",
-                            "maximumError": "2mb"
+                            "maximumError": "2.5mb"
                         },
                         {
                             "type": "anyComponentStyle",
@@ -71,7 +72,7 @@
                     ]
                 }
             },
-            "defaultConfiguration": ""
+            "defaultConfiguration": "production"
         },
         "serve": {
             "executor": "@angular-devkit/build-angular:dev-server",

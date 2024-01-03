@@ -51,6 +51,8 @@
     final com.dotcms.contenttype.model.field.Field newField = LegacyFieldTransformer.from(field);
 
     Object value = (Object) request.getAttribute("value");
+    ObjectMapper mapper = new ObjectMapper(); // Create an ObjectMapper instance
+
     String hint = UtilMethods.isSet(field.getHint()) ? field.getHint() : null;
     boolean isReadOnly = field.isReadOnly();
     String defaultValue = field.getDefaultValue() != null ? field
@@ -65,8 +67,6 @@
     boolean fullScreenField = Try.of(()->(boolean)request.getAttribute("DOT_FULL_SCREEN_FIELD")).getOrElse(false);
     String fullScreenClass=fullScreenField ? "edit-content-full-screen": "";
     String fullScreenHeight=fullScreenField ? "height: 100%;": "";
-
-
 %>
 
 <div class="fieldWrapper" >
@@ -171,8 +171,6 @@
             String jsonField = "{}";
             String contentletObj = "{}";
             Boolean showVideoThumbnail = Config.getBooleanProperty("SHOW_VIDEO_THUMBNAIL", true);
-
-            ObjectMapper mapper = new ObjectMapper(); // Create an ObjectMapper instance
             
             // If it can be parsed as a JSON, then it means that the value is already a Block Editor's value
             if (value != null) {
@@ -661,7 +659,6 @@
                 String mimeType="";
 
                 Contentlet contentletObj = APILocator.getContentletAPI().find(inode, user, false);
-                ObjectMapper mapper = new ObjectMapper(); // Create an ObjectMapper instance
 
                 try {
                     java.io.File fileValue = (java.io.File)value;
@@ -734,21 +731,11 @@
                     binaryField.field = fielData;
                     binaryField.contentlet = contentlet;
 
-                    binaryField.addEventListener('tempFile', (event) => {
-                        const tempFile = event.detail;
-                        field.value = tempFile?.id || '';
+                    binaryField.addEventListener('valueUpdated', ({ detail }) => {
+                        field.value = detail;
                     });
 
                     binaryFieldContainer.appendChild(binaryField);
-
-                    // Create hint
-                    const hintElement = document.createElement('small');
-                    hintElement.style.color = 'var(--color-palette-black-op-90)';
-                    hintElement.innerHTML = "<%=hint%>";
-
-                    if(hintElement.innerHTML){
-                        binaryFieldContainer.appendChild(hintElement);
-                    }
 
                     document.addEventListener(`binaryField-open-image-editor-${variable}`,({ detail }) => {
                         const { inode, variable = '', tempId } = detail;

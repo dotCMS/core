@@ -6,7 +6,7 @@
     color: $black;
     border: 1px solid $color-palette-gray-500;
     border-radius: $border-radius-md;
-    width: 12.5rem;
+    min-width: 7.5rem;
 }
 
 .p-menu .p-menuitem-link {

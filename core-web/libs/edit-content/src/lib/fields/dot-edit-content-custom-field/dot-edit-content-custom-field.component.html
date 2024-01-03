@@ -1,0 +1,16 @@
+<iframe
+    class="legacy-custom-field"
+    #iframe
+    [src]="src | safeUrl"
+    [ngClass]="{ 'legacy-custom-field--fullscreen': isFullscreen }"
+    [ngStyle]="!isFullscreen && { height: variables?.height, width: variables?.width }"
+    [title]="'Content Type ' + field.variable + ' and field ' + field.name"
+    (load)="onIframeLoad()"
+    data-testId="iframe"
+    frameborder="0"></iframe>
+
+<p-button
+    *ngIf="isFullscreen"
+    (click)="isFullscreen = false"
+    icon="pi pi-times"
+    styleClass="p-button-rounded p-button-text" />

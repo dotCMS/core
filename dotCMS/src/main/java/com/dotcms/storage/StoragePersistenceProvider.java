@@ -6,6 +6,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 
 import java.io.File;
 import java.util.Arrays;
@@ -29,6 +31,11 @@ public final class StoragePersistenceProvider {
     public static final String CHAIN1_PROVIDERS = "storage.file-metadata.chain1";
     public static final String CHAIN2_PROVIDERS = "storage.file-metadata.chain2";
     public static final String CHAIN3_PROVIDERS = "storage.file-metadata.chain3";
+
+    final static Lazy<StorageType> storageType = Lazy.of(()->{
+        String storageType= Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.DEFAULT_CHAIN.name());
+        return Try.of(()->StorageType.valueOf(storageType)).getOrElse(StorageType.DEFAULT_CHAIN);
+    });
 
     private boolean isLicenseInitialized = false;
 
@@ -146,8 +153,7 @@ public final class StoragePersistenceProvider {
      * @return The specified {@link StorageType}.
      */
     public static StorageType getStorageType(){
-        final String storageType = Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.DEFAULT_CHAIN.name());
-        return StorageType.valueOf(storageType);
+        return storageType.get();
     }
 
     /**

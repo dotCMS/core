@@ -10,15 +10,23 @@ import picocli.CommandLine;
  */
 public class PullMixin {
 
-    @CommandLine.Option(names = {"-fmt",
-            "--format"}, description = "Enum values: ${COMPLETION-CANDIDATES}")
-    InputOutputFormat inputOutputFormat = InputOutputFormat.defaultFormat();
-
     @CommandLine.Mixin(name = "workspace")
     WorkspaceMixin workspaceMixin;
 
     @CommandLine.Mixin(name = "shorten")
     ShortOutputOptionMixin shortOutputOption;
+
+    @CommandLine.Option(names = {"-ff", "--fail-fast"}, defaultValue = "false",
+            description =
+                    "Stop at first failure and exit the command. By default, this option is disabled, "
+                            + "and the command will continue on error.")
+    public boolean failFast;
+
+    @CommandLine.Option(names = {"--retry-attempts"}, defaultValue = "0",
+            description =
+                    "Number of retry attempts on errors. By default, this option is disabled, "
+                            + "and the command will not retry on error.")
+    public int retryAttempts;
 
     @CommandLine.Option(names = {"--noValidateUnmatchedArguments"},
             description = "Allows to skip the the validation of the unmatched arguments. "
@@ -26,10 +34,6 @@ public class PullMixin {
             hidden = true,
             defaultValue = "false")
     public boolean noValidateUnmatchedArguments;
-
-    public InputOutputFormat inputOutputFormat() {
-        return inputOutputFormat;
-    }
 
     public Path workspace() {
         return workspaceMixin.workspace();

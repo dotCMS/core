@@ -8,6 +8,8 @@ import com.dotcms.api.client.push.language.LanguageFetcher;
 import com.dotcms.api.client.push.language.LanguagePushHandler;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
+import com.dotcms.cli.common.ApplyCommandOrder;
+import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
 import com.dotcms.common.WorkspaceManager;
@@ -25,7 +27,6 @@ import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
-import picocli.CommandLine.ExitCode;
 
 /**
  * The LanguagePush class represents a command that allows pushing languages to the server. It
@@ -52,7 +53,7 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
     static final String LANGUAGE_PUSH_MIXIN = "languagePushMixin";
 
     @CommandLine.Mixin
-    PushMixin pushMixin;
+    FullPushOptionsMixin pushMixin;
 
     @CommandLine.Mixin(name = LANGUAGE_PUSH_MIXIN)
     LanguagePushMixin languagePushMixin;
@@ -93,33 +94,29 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
             output.throwIfUnmatchedArguments(spec.commandLine());
         }
 
-        if (null == this.getPushMixin().path && StringUtils.isEmpty(languageIso)) {
-            output.error("You must specify an iso code or file or folder to push a languages.");
-            return ExitCode.USAGE;
+        // Make sure the path is within a workspace
+        final Optional<Workspace> workspace = workspaceManager.findWorkspace(
+                this.getPushMixin().path()
+        );
+        if (workspace.isEmpty()) {
+            throw new IllegalArgumentException(
+                    String.format("No valid workspace found at path: [%s]",
+                            this.getPushMixin().path.toPath()));
+        }
+
+        File inputFile = this.getPushMixin().path().toFile();
+        if (!inputFile.isAbsolute()) {
+            inputFile = Path.of(workspace.get().languages().toString(), inputFile.getName())
+                    .toFile();
+        }
+        if (!inputFile.exists() || !inputFile.canRead()) {
+            throw new IOException(String.format(
+                    "Unable to access the path [%s] check that it does exist and that you have "
+                            + "read permissions on it.", inputFile)
+            );
         }
 
         if (StringUtils.isEmpty(languageIso)) {
-
-            // Make sure the path is within a workspace
-            final Optional<Workspace> workspace = workspaceManager.findWorkspace(
-                    this.getPushMixin().path()
-            );
-            if (workspace.isEmpty()) {
-                throw new IllegalArgumentException(
-                        String.format("No valid workspace found at path: [%s]",
-                                this.getPushMixin().path.toPath()));
-            }
-
-            File inputFile = this.getPushMixin().path().toFile();
-            if (!inputFile.isAbsolute()) {
-                inputFile = Path.of(workspace.get().languages().toString(), inputFile.getName()).toFile();
-            }
-            if (!inputFile.exists() || !inputFile.canRead()) {
-                throw new IOException(String.format(
-                        "Unable to access the path [%s] check that it does exist and that you have "
-                                + "read permissions on it.", inputFile)
-                );
-            }
 
             // To make sure that if the user is passing a directory we use the languages folder
             if (inputFile.isDirectory()) {
@@ -132,6 +129,7 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
                     PushOptions.builder().
                             failFast(pushMixin.failFast).
                             allowRemove(languagePushMixin.removeLanguages).
+                            disableAutoUpdate(pushMixin.disableAutoUpdate).
                             maxRetryAttempts(pushMixin.retryAttempts).
                             dryRun(pushMixin.dryRun).
                             build(),
@@ -145,9 +143,11 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
 
             final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
 
+            // Push the language by its ISO code
             var responseEntityView = pushLanguageByIsoCode(languageAPI);
             final Language response = responseEntityView.entity();
 
+            // Transform the response to JSON and print it
             final ObjectMapper objectMapper = mapperService.objectMapper();
             output.info(objectMapper.writeValueAsString(response));
         }
@@ -155,13 +155,25 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
         return CommandLine.ExitCode.OK;
     }
 
+    /**
+     * Pushes a language to the server by its ISO code.
+     *
+     * @param languageAPI The LanguageAPI object used for creating the language.
+     * @return The ResponseEntityView of the created language.
+     */
     private ResponseEntityView<Language> pushLanguageByIsoCode(final LanguageAPI languageAPI) {
 
-        output.info(String.format("Attempting to create language with iso code @|bold,green [%s]|@",languageIso));
+        output.info(
+                String.format("Attempting to create language with iso code @|bold,green [%s]|@",
+                        languageIso)
+        );
 
-        ResponseEntityView responseEntityView = languageAPI.create(languageIso);
+        ResponseEntityView<Language> responseEntityView = languageAPI.create(languageIso);
 
-        output.info(String.format("Language with iso code @|bold,green [%s]|@ successfully created.",languageIso));
+        output.info(
+                String.format("Language with iso code @|bold,green [%s]|@ successfully created.",
+                        languageIso)
+        );
 
         return responseEntityView;
     }
@@ -186,4 +198,9 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
         return Optional.of(LANGUAGE_PUSH_MIXIN);
     }
 
+    @Override
+    public int getOrder() {
+        return ApplyCommandOrder.LANGUAGE.getOrder();
+    }
+    
 }

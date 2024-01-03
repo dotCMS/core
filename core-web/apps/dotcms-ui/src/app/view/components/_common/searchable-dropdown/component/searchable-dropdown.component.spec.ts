@@ -39,8 +39,7 @@ import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
         [valuePropertyName]="valuePropertyName"
         [overlayWidth]="overlayWidth"
         [width]="width"
-        [disabled]="disabled"
-    >
+        [disabled]="disabled">
     </dot-searchable-dropdown>`
 })
 class HostTestComponent {
@@ -402,20 +401,18 @@ describe('SearchableDropdownComponent', () => {
         [totalRecords]="totalRecords"
         [valuePropertyName]="valuePropertyName"
         [width]="width"
-    >
+        cssClassDataList="site_selector__data-list">
         <ng-template let-data="item" pTemplate="listItem">
             <div
                 class="searchable-dropdown__data-list-item templateTestItem"
-                (click)="handleClick(item)"
-            >
+                (click)="handleClick(item)">
                 {{ data.label }}
             </div>
         </ng-template>
         <ng-template let-persona="item" pTemplate="select">
             <div
                 class="dot-persona-selector__testContainer"
-                (click)="searchableDropdown.toggleOverlayPanel($event)"
-            >
+                (click)="searchableDropdown.toggleOverlayPanel($event)">
                 Test
             </div>
         </ng-template>
@@ -455,6 +452,9 @@ class HostTestExternalTemplateComponent {
 
     @Input()
     multiple: boolean;
+
+    @Input()
+    cssClassDataList: string;
 }
 
 describe('SearchableDropdownComponent', () => {
@@ -565,5 +565,12 @@ describe('SearchableDropdownComponent', () => {
             By.css('.searchable-dropdown__data-list-item.templateTestItem')
         );
         expect(listItems.length).toBe(6);
+    });
+
+    it('should display as site selector data list', () => {
+        hostFixture.detectChanges();
+
+        const siteSelectorDataList: DebugElement = de.query(By.css('.site_selector__data-list'));
+        expect(siteSelectorDataList).not.toBeNull();
     });
 });

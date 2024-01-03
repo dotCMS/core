@@ -22,6 +22,7 @@ import {
     DotGenerateSecurePasswordService,
     DotLicenseService,
     DotPropertiesService,
+    DotRouterService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
@@ -49,7 +50,6 @@ import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@services/dot-menu.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
 import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';

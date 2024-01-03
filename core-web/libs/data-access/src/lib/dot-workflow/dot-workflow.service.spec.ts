@@ -1,66 +1,50 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
-
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock, mockWorkflows } from '@dotcms/utils-testing';
+import { mockWorkflows } from '@dotcms/utils-testing';
 
 import { DotWorkflowService } from './dot-workflow.service';
+import { DotCMSWorkflowMock, mockWorkflowstatus } from './utils/mocks';
 
 describe('DotWorkflowService', () => {
-    let injector: TestBed;
-    let dotWorkflowService: DotWorkflowService;
-    let httpMock: HttpTestingController;
+    let spectator: SpectatorHttp<DotWorkflowService>;
+    const createHttp = createHttpFactory(DotWorkflowService);
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotWorkflowService
-            ]
-        });
-        injector = getTestBed();
-        dotWorkflowService = injector.get(DotWorkflowService);
-        httpMock = injector.get(HttpTestingController);
-    });
+    beforeEach(() => (spectator = createHttp()));
 
     it('should get workflows', () => {
-        dotWorkflowService.get().subscribe((res: any) => {
-            expect(res).toEqual([
-                {
-                    hello: 'world',
-                    hola: 'mundo'
-                }
-            ]);
+        spectator.service.get().subscribe((res) => {
+            expect(res).toEqual(DotCMSWorkflowMock);
         });
 
-        const req = httpMock.expectOne('v1/workflow/schemes');
-        expect(req.request.method).toBe('GET');
-        req.flush({
-            entity: [
-                {
-                    hello: 'world',
-                    hola: 'mundo'
-                }
-            ]
+        spectator.expectOne('/api/v1/workflow/schemes', HttpMethod.GET).flush({
+            entity: DotCMSWorkflowMock
         });
     });
 
     it('should get default workflow', () => {
         const defaultSystemWorkflow = mockWorkflows.filter((workflow) => workflow.system);
 
-        dotWorkflowService.getSystem().subscribe((res: any) => {
+        spectator.service.getSystem().subscribe((res) => {
             expect(res).toEqual(defaultSystemWorkflow[0]);
         });
 
-        httpMock.expectOne('v1/workflow/schemes');
+        spectator.expectOne('/api/v1/workflow/schemes', HttpMethod.GET);
     });
 
-    afterEach(() => {
-        httpMock.verify();
+    it('should get workflow status by inode', () => {
+        spectator.service
+            .getWorkflowStatus('499b58f8-26cd-4931-9dca-677fd6040b31')
+            .subscribe((res) => {
+                expect(res).toEqual(mockWorkflowstatus);
+            });
+
+        spectator
+            .expectOne(
+                '/api/v1/workflow/status/499b58f8-26cd-4931-9dca-677fd6040b31',
+                HttpMethod.GET
+            )
+            .flush({
+                entity: mockWorkflowstatus
+            });
     });
 });
