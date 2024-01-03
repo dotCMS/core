@@ -70,45 +70,44 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     isCMSAdmin$: Observable<boolean>;
     socialMediaTiles: SocialMediaOption[];
 
-    // BEGIN-NOSCAN
     defaultOptions: DotDeviceListItem[] = [
         {
-            name: this.dotMessageService.get('editpage.device.selector.mobile.portrait'),
-            icon: 'pi pi-mobile',
-            cssHeight: '844',
-            cssWidth: '390',
             inode: 'mobile-portrait',
-            identifier: 'mobile-portrait-id'
+            icon: 'pi pi-mobile',
+            name: this.dotMessageService.get('editpage.device.selector.mobile.portrait'),
+            cssHeight: '844',
+            identifier: 'mobile-portrait-id',
+            cssWidth: '390'
         },
         {
-            name: this.dotMessageService.get('editpage.device.selector.mobile.landscape'),
+            identifier: 'mobile-landscape-id',
             icon: 'pi pi-mobile',
             cssHeight: '390',
-            cssWidth: '844',
             inode: 'mobile-landscape',
-            identifier: 'mobile-landscape-id'
+            name: this.dotMessageService.get('editpage.device.selector.mobile.landscape'),
+            cssWidth: '844'
         },
         {
-            name: this.dotMessageService.get('editpage.device.selector.hd.monitor'),
-            icon: 'pi pi-desktop',
             cssHeight: '1080',
+            icon: 'pi pi-desktop',
             cssWidth: '1920',
+            name: this.dotMessageService.get('editpage.device.selector.hd.monitor'),
             inode: 'hd-monitor',
             identifier: 'hd-monitor-id'
         },
         {
-            name: this.dotMessageService.get('editpage.device.selector.4k.monitor'),
             icon: 'pi pi-desktop',
+            identifier: '4k-monitor-id',
+            name: this.dotMessageService.get('editpage.device.selector.4k.monitor'),
             cssHeight: '2160',
-            cssWidth: '3840',
             inode: '4k-monitor',
-            identifier: '4k-monitor-id'
+            cssWidth: '3840'
         },
         {
+            cssWidth: '820',
             name: this.dotMessageService.get('editpage.device.selector.tablet.portrait'),
             icon: 'pi pi-tablet',
             cssHeight: '1180',
-            cssWidth: '820',
             inode: 'tablet-portrait',
             identifier: 'tablet-portrait-id'
         },
@@ -121,7 +120,6 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
             identifier: 'tablet-landscape-id'
         }
     ];
-    // END-NOSCAN
 
     constructor(
         private dotDevicesService: DotDevicesService,
