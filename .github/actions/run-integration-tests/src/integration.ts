@@ -257,7 +257,7 @@ const propertyMap = (): Map<string, string> => {
   properties.set('dotSecureFolder', appendToWorkspace('custom/dotsecure'))
   properties.set('dotCmsFolder', dotCmsRoot)
   properties.set('felixFolder', appendToWorkspace('custom/felix'))
-  const tomcatRoot = path.join(projectRoot, 'dist', 'dotserver', 'tomcat-9.0.60')
+  const tomcatRoot = path.join(projectRoot, 'dist', 'dotserver', 'tomcat-9.0.84')
   properties.set('systemFelixFolder', path.join(tomcatRoot, 'webapps', 'ROOT', 'WEB-INF', 'felix-system'))
   properties.set('assetsFolder', appendToWorkspace('custom/assets'))
   properties.set('esDataFolder', appendToWorkspace('custom/esdata'))

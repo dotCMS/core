@@ -39,7 +39,7 @@ const GRADLE_FOLDER = path.join(HOME_FOLDER, '.gradle');
 const M2_FOLDER = path.join(HOME_FOLDER, '.m2');
 const PROJECT_ROOT = core.getInput('project_root');
 const DOTCMS_ROOT = path.join(PROJECT_ROOT, 'dotCMS');
-const TOMCAT_WEBINF = path.join(PROJECT_ROOT, 'dist', 'dotserver', 'tomcat-9.0.60', 'webapps', 'ROOT', 'WEB-INF');
+const TOMCAT_WEBINF = path.join(PROJECT_ROOT, 'dist', 'dotserver', 'tomcat-9.0.84', 'webapps', 'ROOT', 'WEB-INF');
 const CACHE_CONFIGURATION = {
     gradle: {
         dependencies: [

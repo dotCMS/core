@@ -108,7 +108,7 @@ export const runTests = async (): Promise<PostmanTestsResult> => {
 const copyOutputs = async () => {
   const logFile = path.join(dotCmsRoot, `${normalize(parallelCollection)}.log`)
   await execCmd(
-    toCommand('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logFile])
+    toCommand('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.84/logs/dotcms.log', logFile])
   )
 }
 
