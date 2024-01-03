@@ -5,7 +5,7 @@ import { render, screen } from '@testing-library/react';
 import { Container } from './Container';
 
 import { PageContext } from '../../contexts/PageContext';
-import { mockEntity } from '../DotcmsLayout/DotcmsLayout.spec';
+import { mockPageContext } from '../../mocks/mockPageContext';
 
 describe('Container', () => {
     // Mock data for your context and container
@@ -18,7 +18,7 @@ describe('Container', () => {
 
     it('renders NoContent component for unsupported content types', () => {
         const updatedContext = {
-            ...mockEntity,
+            ...mockPageContext,
             components: {}
         };
 
