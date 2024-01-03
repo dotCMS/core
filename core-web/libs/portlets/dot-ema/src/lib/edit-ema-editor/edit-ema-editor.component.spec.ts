@@ -793,7 +793,6 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'container-identifier-123',
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
-                            contentletsId: ['contentlet-identifier-123'],
                             maxContentlets: 1
                         },
                         pageId: 'test'
