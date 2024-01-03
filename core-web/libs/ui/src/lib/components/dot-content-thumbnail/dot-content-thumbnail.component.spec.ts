@@ -60,8 +60,8 @@ describe('DotContentThumbnailComponent', () => {
             const imageElement = spectator.query(byTestId('thumbail-image'));
 
             expect(spectator.component.thumbnailType).toBe(CONTENT_THUMBNAIL_TYPE.image);
-            expect(spectator.component.src).toBe('/dA/123-456/500w/50q');
-            expect(imageElement.getAttribute('src')).toBe('/dA/123-456/500w/50q');
+            expect(spectator.component.src).toBe('/dA/123-456/500w/50q/image.png');
+            expect(imageElement.getAttribute('src')).toBe('/dA/123-456/500w/50q/image.png');
             expect(imageElement.getAttribute('title')).toBe('image.png');
             expect(imageElement.getAttribute('alt')).toBe('image.png');
             expect(imageElement).toBeTruthy();
@@ -74,7 +74,7 @@ describe('DotContentThumbnailComponent', () => {
                 props: {
                     dotThumbanilOptions: {
                         ...mockDotThumbnailOptions,
-                        name: 'unknown',
+                        name: 'image.png',
                         contentType: 'unknown',
                         titleImage: 'image.png'
                     }
@@ -88,10 +88,10 @@ describe('DotContentThumbnailComponent', () => {
             const imageElement = spectator.query(byTestId('thumbail-image'));
 
             expect(spectator.component.thumbnailType).toBe(CONTENT_THUMBNAIL_TYPE.image);
-            expect(spectator.component.src).toBe('/dA/123-456/500w/50q');
-            expect(imageElement.getAttribute('src')).toBe('/dA/123-456/500w/50q');
-            expect(imageElement.getAttribute('title')).toBe('unknown');
-            expect(imageElement.getAttribute('alt')).toBe('unknown');
+            expect(spectator.component.src).toBe('/dA/123-456/500w/50q/image.png');
+            expect(imageElement.getAttribute('src')).toBe('/dA/123-456/500w/50q/image.png');
+            expect(imageElement.getAttribute('title')).toBe('image.png');
+            expect(imageElement.getAttribute('alt')).toBe('image.png');
             expect(imageElement).toBeTruthy();
         });
     });

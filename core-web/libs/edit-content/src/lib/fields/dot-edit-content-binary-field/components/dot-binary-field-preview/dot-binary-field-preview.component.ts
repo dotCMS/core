@@ -13,6 +13,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import {
     DotContentThumbnailComponent,
+    DotFileSizeFormatPipe,
     DotMessagePipe,
     DotSpinnerModule,
     DotThumbnailOptions
@@ -39,7 +40,8 @@ type EDITABLE_FILE_FUNCTION_MAP = {
         DotContentThumbnailComponent,
         DotSpinnerModule,
         OverlayPanelModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotFileSizeFormatPipe
     ],
     templateUrl: './dot-binary-field-preview.component.html',
     styleUrls: ['./dot-binary-field-preview.component.scss'],
