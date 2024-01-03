@@ -109,6 +109,7 @@ node_modules/
 /core-web/~/dotcms/*
 
 # misc
+/core-web/.nx
 /core-web/.angular/cache
 /core-web/.sass-cache
 /core-web/connect.lock

@@ -17,8 +17,8 @@ import { DotStarterComponent } from './dot-starter.component';
         DotStarterRoutingModule,
         DotMessagePipe,
         CheckboxModule,
-        DotToolbarAnnouncementsComponent
+        DotToolbarAnnouncementsComponent,
     ],
-    providers: [DotStarterResolver]
+    providers: [DotStarterResolver],
 })
 export class DotStarterModule {}
