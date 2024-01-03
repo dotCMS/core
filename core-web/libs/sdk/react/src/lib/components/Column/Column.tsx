@@ -45,7 +45,7 @@ export function Column({ column }: ColumnProps) {
         <div
             data-dot="column"
             data-testid="column"
-            className={`${styles[widthClass]} ${styles[startClass]}`}>
+            className={`${styles[widthClass]} ${styles[startClass]} ${column.styleClass}`}>
             {column.containers.map((container) => (
                 <Container
                     key={`${container.identifier}-${container.uuid}`}
