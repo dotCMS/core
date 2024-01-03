@@ -1,4 +1,5 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { expect, describe, it } from '@jest/globals';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -120,12 +121,12 @@ describe('EditEmaPersonaSelectorComponent', () => {
             expect(component.listbox.value).toEqual(DEFAULT_PERSONA);
         });
 
-        it('should add the check icon to the personalized persona', () => {
+        it('should add the chip to the personalized persona', () => {
             spectator.click(button);
-            expect(spectator.queryAll('.pi').length).toBe(1);
-            expect(spectator.query('.pi').outerHTML).toBe(
-                `<i class="pi pi-tag ng-star-inserted"></i>`
-            );
+
+            const chip = spectator.query(byTestId('persona-chip'));
+
+            expect(chip).not.toBeNull();
         });
     });
 
@@ -155,6 +156,41 @@ describe('EditEmaPersonaSelectorComponent', () => {
                 }
             });
             expect(selectedSpy).not.toHaveBeenCalled();
+        });
+
+        it("should call onRemove when remove icon it's clicked", () => {
+            spectator.click(button);
+
+            const onRemoveSpy = jest.spyOn(component, 'onRemove');
+
+            const removeIcon = spectator.query(byTestId('persona-chip-remove'));
+            spectator.click(removeIcon);
+
+            expect(onRemoveSpy).toHaveBeenCalledWith(
+                expect.anything(), // This is a mouse event, not relevant for this test
+                {
+                    ...CUSTOM_PERSONA
+                },
+                false
+            );
+        });
+
+        it("should pass selected as true when remove icon it's clicked on a selected value", () => {
+            component.value = CUSTOM_PERSONA;
+            spectator.click(button);
+
+            const onRemoveSpy = jest.spyOn(component, 'onRemove');
+
+            const removeIcon = spectator.query(byTestId('persona-chip-remove'));
+            spectator.click(removeIcon);
+
+            expect(onRemoveSpy).toHaveBeenCalledWith(
+                expect.anything(), // This is a mouse event, not relevant for this test
+                {
+                    ...CUSTOM_PERSONA
+                },
+                true
+            );
         });
     });
 });

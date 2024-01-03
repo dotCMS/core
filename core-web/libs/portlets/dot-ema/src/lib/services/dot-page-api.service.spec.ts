@@ -12,7 +12,11 @@ describe('DotPageApiService', () => {
 
     it('should send a GET request to retrieve page data', () => {
         spectator.service
-            .get({ url: 'test-url', language_id: 'en', persona_id: 'modes.persona.no.persona' })
+            .get({
+                url: 'test-url',
+                language_id: 'en',
+                'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+            })
             .subscribe();
 
         spectator.expectOne(

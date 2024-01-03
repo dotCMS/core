@@ -10,7 +10,6 @@ import { DialogModule } from 'primeng/dialog';
 import { DotMessageService, DotPageToolsService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockPageTools } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPageToolsSeoComponent } from './dot-page-tools-seo.component';
 
@@ -23,13 +22,7 @@ export default {
     component: DotPageToolsSeoComponent,
     decorators: [
         moduleMetadata({
-            imports: [
-                CommonModule,
-                DotPipesModule,
-                DotMessagePipe,
-                BrowserAnimationsModule,
-                DialogModule
-            ],
+            imports: [CommonModule, DotMessagePipe, BrowserAnimationsModule, DialogModule],
             providers: [
                 DotPageToolsService,
                 { provide: DotMessageService, useValue: messageServiceMock },

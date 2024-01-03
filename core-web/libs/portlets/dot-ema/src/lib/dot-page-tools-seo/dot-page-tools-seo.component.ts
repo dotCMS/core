@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe, NgForOf, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnChanges } from '@angular/core';
+import { Component, Input, OnChanges } from '@angular/core';
 
 import { ChipModule } from 'primeng/chip';
 import { DialogModule } from 'primeng/dialog';
@@ -18,14 +18,13 @@ import { DotPageToolsSeoState, DotPageToolsSeoStore } from './store/dot-page-too
     imports: [NgForOf, AsyncPipe, DialogModule, DotMessagePipe, ChipModule, NgIf],
     templateUrl: './dot-page-tools-seo.component.html',
     styleUrls: ['./dot-page-tools-seo.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true
 })
 export class DotPageToolsSeoComponent implements OnChanges {
-    @Input() visible: boolean;
     @Input() currentPageUrlParams: DotPageToolUrlParams;
     dialogHeader: string;
     tools$: Observable<DotPageToolsSeoState> = this.dotPageToolsSeoStore.tools$;
+    visible = false;
 
     constructor(private dotPageToolsSeoStore: DotPageToolsSeoStore) {}
 

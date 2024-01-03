@@ -3,30 +3,8 @@
 :host {
     display: grid;
     grid-template-rows: min-content 1fr;
-    grid-template-columns: 1fr 80px;
+    grid-template-columns: 1fr 240px;
     height: 100%;
-
-    ::ng-deep {
-        .p-dialog {
-            .p-dialog-content {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                padding: 0;
-                overflow: hidden;
-            }
-        }
-
-        .p-confirm-dialog {
-            .p-dialog-content {
-                padding: 0 $spacing-6 $spacing-6 $spacing-6;
-            }
-
-            .p-dialog-footer {
-                padding-top: 0;
-            }
-        }
-    }
 }
 
 dot-ema-page-dropzone {
@@ -40,6 +18,7 @@ dot-edit-ema-toolbar {
 
 .iframe-wrapper {
     position: relative;
+    overflow: hidden;
     margin: $spacing-3;
     outline: solid 1px $color-palette-gray-500;
 }

@@ -72,6 +72,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -89,17 +90,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -1796,7 +1787,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             final User anonymousUser = APILocator.getUserAPI().getAnonymousUser();
             final Role anonymousRole = roleAPI.getUserRole(anonymousUser);
 
-		    /*
+            /*
              * Create workflow scheme
 		     */
             String schemeName = "issue5197-" + UtilMethods.dateToHTMLDate(new Date(), DATE_FORMAT);
@@ -1833,7 +1824,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertTrue(actions1.size() == 1);
             action1 = actions1.get(0);
 
-		    /*
+            /*
 		     * Add action to scheme step2
 		     */
             addWorkflowAction("Publish", 1,
@@ -1844,7 +1835,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertTrue(actions2.size() == 1);
             action2 = actions2.get(0);
 
-		    /*
+            /*
 		     * Create structure and add workflow scheme
 		     */
             st = insertContentType("Issue5197Structure", BaseContentType.CONTENT);
@@ -1882,7 +1873,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 APILocator.getVersionableAPI().setLive(contentlet1);
             }
 
-		    /*
+            /*
 		     * Test that delete is not possible for step2
 		     * while has associated step or content
 		     */
@@ -1939,7 +1930,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertNotNull(currentStep);
             assertTrue(currentStep.getId().equals(step2.getId()));
 
-		    /*
+            /*
 		     * Validate that step2 is not deleted
 		     */
             steps = workflowAPI.findSteps(ws);
@@ -1947,7 +1938,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertTrue(steps.get(0).getId().equals(step2.getId()));
 
         } finally {
-		    /*
+            /*
 		     * Clean test
 		     */
             contentTypeAPI.delete(st);
@@ -4619,6 +4610,57 @@ public class WorkflowAPITest extends IntegrationTestBase {
                         )
                 );
         return workflowStepsAndActions;
+    }
+
+    /**
+     * Method to test: {@link WorkflowAPIImpl#getCommentsAndChangeHistory(WorkflowTask)}
+     * Given Scenario: The list of comments should be the newest first.
+     * ExpectedResult: The list of comments in the correct order.
+     *
+     */
+    @Test
+    public void test_comment() throws DotDataException, DotSecurityException {
+        final User systemUser = APILocator.systemUser();
+        final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        Contentlet contentlet = null;
+        contentlet = TestDataUtils.getPageContent(true, language.getId());
+
+        //save workflow task
+        final WorkflowStep workflowStep = workflowAPI.findStep(
+                SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID);
+        workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, systemUser);
+        final WorkflowTask workflowTask = workflowAPI
+                .createWorkflowTask(contentlet, systemUser, workflowStep, "test", "test");
+        workflowAPI.saveWorkflowTask(workflowTask);
+
+        //save workflow comment
+        WorkflowComment comment = new WorkflowComment();
+        comment.setComment("comment test 1");
+        comment.setCreationDate(new Date());
+        comment.setPostedBy(systemUser.getUserId());
+        comment.setWorkflowtaskId(workflowTask.getId());
+        workflowAPI.saveComment(comment);
+
+        //set date to yesterday
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DATE, -1);
+
+        //save workflow comment
+        comment = new WorkflowComment();
+        comment.setComment("comment test 2 yesterday date");
+        comment.setCreationDate(calendar.getTime());
+        comment.setPostedBy(systemUser.getUserId());
+        comment.setWorkflowtaskId(workflowTask.getId());
+        workflowAPI.saveComment(comment);
+
+        List<WorkflowTimelineItem> comments1 = workflowAPI.getCommentsAndChangeHistory(workflowTask);
+        assertNotNull(comments1);
+        assertEquals(2, comments1.size());
+        //validate the date order of the comments
+        assertTrue(comments1.get(0).createdDate().after(comments1.get(1).createdDate()) );
+        //the comment 1 should be the first one
+        assertEquals("comment test 1", comments1.get(0).commentDescription());
     }
 
 }

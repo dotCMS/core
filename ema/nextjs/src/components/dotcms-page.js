@@ -22,20 +22,19 @@ export const DotcmsPage = () => {
     const { layout, page } = useContext(GlobalContext);
 
     useEffect(() => {
-        const url = pathname.split('/');
-
         window.parent.postMessage(
             {
                 action: 'set-url',
                 payload: {
-                    url: url === '/' ? 'index' : url.pop() //TODO: We need to enhance this, this will break for: nested/pages/like/this
+                    url: pathname === '/' ? 'index' : pathname.replace('/', '')
                 }
             },
             '*'
         );
     }, [pathname]);
 
-    const eventHandler = useCallback(
+    // useCallBack to avoid re-create on every render
+    const eventMessageHandler = useCallback(
         (event) => {
             switch (event.data) {
                 case 'ema-reload-page':
@@ -43,6 +42,7 @@ export const DotcmsPage = () => {
                     break;
                 case 'ema-request-bounds':
                     const positionData = getPageElementBound(rowsRef.current);
+
                     window.parent.postMessage(
                         {
                             action: 'set-bounds',
@@ -56,16 +56,26 @@ export const DotcmsPage = () => {
             }
         },
         [router]
-    ); // We need this because otherwise the function will create on every render otherwise and we cannot create the function outside because it's bounded to the router and to the ref
+    );
     // We need to unbound this from the component, with a custom hook maybe?
 
+    const eventScrollHandler = useCallback((_event) => {
+        window.parent.postMessage(
+            {
+                action: 'scroll'
+            },
+            '*'
+        );
+    }, []);
+
     useEffect(() => {
-        window.addEventListener('message', eventHandler);
+        window.addEventListener('message', eventMessageHandler);
+        window.addEventListener('scroll', eventScrollHandler);
 
         return () => {
-            window.removeEventListener('message', eventHandler);
+            window.removeEventListener('message', eventMessageHandler);
         };
-    }, [eventHandler]);
+    }, [eventMessageHandler]);
 
     const addRowRef = (el) => {
         if (el && !rowsRef.current.includes(el)) {
