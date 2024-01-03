@@ -157,7 +157,7 @@
                     <execution>
                         <id>build dotcms-block-editor</id>
                         <goals>
-                            <goal>npm</goal>
+                            <goal>yarn</goal>
                         </goals>
 
                         <!-- optional: the default phase is "generate-resources" -->
@@ -171,7 +171,7 @@
                     <execution>
                         <id>build dotcms-binary-field-builder</id>
                         <goals>
-                            <goal>npm</goal>
+                            <goal>yarn</goal>
                         </goals>
 
                         <!-- optional: the default phase is "generate-resources" -->
