@@ -214,15 +214,6 @@ public interface ExperimentsAPI {
 
     List<Experiment> cacheRunningExperiments() throws DotDataException;
 
-    /**
-     * Return a list of the Events into an Experiment group by {@link BrowserSession}
-     *
-     * @param experiment
-     * @param user
-     * @return
-     */
-    List<BrowserSession> getEvents(Experiment experiment, User user) throws DotDataException, DotSecurityException;
-
     /*
      * Ends finalized {@link com.dotcms.experiments.model.Experiment}s
      * <p>

@@ -20,7 +20,6 @@ import com.dotcms.analytics.bayesian.model.BayesianResult;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 
 import com.dotcms.analytics.helper.BayesianHelper;
-import com.dotcms.analytics.metrics.AbstractCondition.Operator;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
@@ -33,12 +32,9 @@ import com.dotcms.cube.CubeJSClientFactory;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
+import com.dotcms.cube.filters.SimpleFilter;
 import com.dotcms.enterprise.rules.RulesAPI;
-import com.dotcms.experiments.business.result.BrowserSession;
-import com.dotcms.experiments.business.result.Event;
-import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
-import com.dotcms.experiments.business.result.ExperimentResults;
-import com.dotcms.experiments.business.result.ExperimentResultsQueryFactory;
+import com.dotcms.experiments.business.result.*;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Goal;
@@ -94,6 +90,7 @@ import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -103,14 +100,7 @@ import io.vavr.control.Try;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -166,7 +156,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(experiment);
 
         DotPreconditions.isTrue(htmlPageAsset != null
-                && UtilMethods.isSet(htmlPageAsset.getIdentifier()),
+                        && UtilMethods.isSet(htmlPageAsset.getIdentifier()),
                 DotStateException.class, ()->"htmlPageAsset Page provided");
 
         validatePermissionToEdit(experiment, user, htmlPageAsset);
@@ -179,13 +169,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         builder.modDate(Instant.now());
         builder.lastModifiedBy(user.getUserId());
-        
+
         if(experiment.goals().isPresent()) {
             final Goals goals = experiment.goals().orElseThrow();
             MetricsUtil.INSTANCE.validateGoals(goals);
-
-            addConditionIfIsNeed(goals,
-                    APILocator.getHTMLPageAssetAPI().fromContentlet(htmlPageAsset), builder);
         }
 
         if(experiment.targetingConditions().isPresent()) {
@@ -206,7 +193,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         factory.save(experimentToSave);
 
         Logger.info(this, "Saving experiment with id: " + experimentToSave.id().get() + ", and status:"
-        + experimentToSave.status());
+                + experimentToSave.status());
 
         DotPreconditions.isTrue(experimentToSave.id().isPresent(), "Experiment doesn't have Id");
 
@@ -220,7 +207,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     ORIGINAL_VARIANT, user));
         }
 
-        return savedExperiment.get();
+        final Experiment toReturn = savedExperiment.get();
+
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been saved by User" +
+                " ID '%s'", toReturn.name(), toReturn.id(), user.getUserId()));
+
+        return toReturn;
     }
 
     private void validatePermissionToEdit(Experiment experiment, User user, Contentlet pageAsContent)
@@ -240,19 +232,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     private static boolean isExistingSchedulingChanging(Experiment experimentToSave,
-            Optional<Experiment> existingExperiment) {
+                                                        Optional<Experiment> existingExperiment) {
         return !existingExperiment.get().scheduling().
                 equals(experimentToSave.scheduling());
-    }
-
-    private void addConditionIfIsNeed(final Goals goals, final HTMLPageAsset page,
-            final Builder builder) {
-
-        if (isExitOrBounceRate(goals) && !hasCondition(goals, "url")) {
-            addUrlCondition(page, builder, goals);
-        } else if (isUrlParameterOrReachPage(goals) && !hasCondition(goals, "visitBefore")) {
-            addVisitBeforeCondition(page, builder, goals);
-        }
     }
 
     private static boolean isUrlParameterOrReachPage(Goals goals) {
@@ -269,8 +251,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final com.dotcms.analytics.metrics.Condition visitBefore = com.dotcms.analytics.metrics.Condition.builder()
                 .parameter("visitBefore")
-                .operator(Operator.REGEX)
-                .value(ExperimentUrlPatternCalculator.INSTANCE.calculateUrlRegexPattern(page))
+                //.operator(Operator.REGEX)
+                .value(ExperimentUrlPatternCalculator.INSTANCE.calculatePageUrlRegexPattern(page))
                 .build();
 
         final Goals newGoal = createNewGoals(goals, visitBefore);
@@ -288,7 +270,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @NotNull
     private static Goals createNewGoals(final Goals oldGoals,
-            final com.dotcms.analytics.metrics.Condition newConditionToAdd) {
+                                        final com.dotcms.analytics.metrics.Condition newConditionToAdd) {
         final Metric newMetric = Metric.builder().from(oldGoals.primary().getMetric())
                 .addConditions(newConditionToAdd).build();
         final Goal newGoal = GoalFactory.create(newMetric);
@@ -304,11 +286,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final HTMLPageAsset page,
             final String conditionName) {
 
-            return com.dotcms.analytics.metrics.Condition.builder()
-                    .parameter(conditionName)
-                    .operator(Operator.REGEX)
-                    .value(ExperimentUrlPatternCalculator.INSTANCE.calculateUrlRegexPattern(page))
-                    .build();
+        return com.dotcms.analytics.metrics.Condition.builder()
+                .parameter(conditionName)
+                //.operator(Operator.REGEX)
+                .value(ExperimentUrlPatternCalculator.INSTANCE.calculatePageUrlRegexPattern(page))
+                .build();
 
     }
 
@@ -319,7 +301,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         List<Rule> rules = Try.of(()->rulesAPI
-                .getAllRulesByParent(experiment, user, false))
+                        .getAllRulesByParent(experiment, user, false))
                 .getOrElse(Collections::emptyList);
 
         Rule experimentRule;
@@ -338,11 +320,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     private void createAndSaveCondition(User user, Rule experimentRule,
-            TargetingCondition targetingCondition) {
+                                        TargetingCondition targetingCondition) {
         Condition condition = targetingCondition.id().isPresent()
-            ? Try.of(()->rulesAPI.getConditionById(targetingCondition.id().get(), user, false))
+                ? Try.of(()->rulesAPI.getConditionById(targetingCondition.id().get(), user, false))
                 .getOrElseThrow(()->new IllegalArgumentException("Invalid targeting Condition Id provided. Id: " + targetingCondition.id().get()))
-            : createCondition(experimentRule);
+                : createCondition(experimentRule);
 
         condition.setOperator(targetingCondition.operator());
         condition.setConditionletId(targetingCondition.conditionKey());
@@ -450,7 +432,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 DotStateException.class);
 
         final Experiment archived = persistedExperiment.get().withStatus(ARCHIVED);
-        return save(archived, user);
+        final Experiment afterSave = save(archived, user);
+
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been archived by User" +
+                " ID '%s'", afterSave.name(), afterSave.id(), user.getUserId()));
+
+        return afterSave;
     }
 
     @Override
@@ -500,6 +487,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .forEach(variant -> deleteVariant(variant));
 
         factory.delete(persistedExperiment);
+
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been deleted by User" +
+                " ID '%s'", persistedExperiment.name(), persistedExperiment.id(), user.getUserId()));
     }
 
     private void deleteVariant(ExperimentVariant variant) {
@@ -594,7 +584,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                         .withStatus(SCHEDULED);
                 validateNoConflictsWithScheduledExperiments(experimentToSave, user);
                 toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED).
-                                withRunningIds(getRunningIds(experimentToSave)), user);
+                        withRunningIds(getRunningIds(experimentToSave)), user);
             }
 
             return toReturn;
@@ -689,7 +679,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     private void endRunningExperimentIfNeeded(User user, Experiment runningExperimentOnPage,
-            Experiment persistedExperiment) throws DotDataException, DotSecurityException {
+                                              Experiment persistedExperiment) throws DotDataException, DotSecurityException {
         if(conflictingStartOrEndDate(runningExperimentOnPage.scheduling().orElseThrow(),
                 persistedExperiment.scheduling().orElseThrow())) {
             end(runningExperimentOnPage.id().orElseThrow(), user);
@@ -738,7 +728,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     private void validateNoConflictsWithScheduledExperiments(final Experiment experimentToCheck,
-            final User user) throws DotDataException {
+                                                             final User user) throws DotDataException {
 
         final List<Experiment> scheduledExperimentsOnPage = list(ExperimentFilter.builder()
                 .pageId(experimentToCheck.pageId())
@@ -747,15 +737,15 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final boolean noConflicts = scheduledExperimentsOnPage.isEmpty() ||
                 scheduledExperimentsOnPage.stream().allMatch(scheduledExperiment -> {
-            final Scheduling scheduling = scheduledExperiment.scheduling().orElseThrow();
-            final Scheduling schedulingToCheck = experimentToCheck.scheduling().orElseThrow();
-            return schedulingToCheck.startDate().orElseThrow().isAfter(scheduling.endDate().orElseThrow()) ||
-                    schedulingToCheck.endDate().orElseThrow().isBefore(scheduling.startDate().orElseThrow());
-        });
+                    final Scheduling scheduling = scheduledExperiment.scheduling().orElseThrow();
+                    final Scheduling schedulingToCheck = experimentToCheck.scheduling().orElseThrow();
+                    return schedulingToCheck.startDate().orElseThrow().isAfter(scheduling.endDate().orElseThrow()) ||
+                            schedulingToCheck.endDate().orElseThrow().isBefore(scheduling.startDate().orElseThrow());
+                });
 
         DotPreconditions.isTrue(noConflicts, ()-> "Scheduling conflict: The same page can't be included in different experiments with overlapping schedules. "
                         + "Overlapping with Experiment: "
-                + scheduledExperimentsOnPage.get(0).name(),
+                        + scheduledExperimentsOnPage.get(0).name(),
                 DotStateException.class);
     }
 
@@ -767,7 +757,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
      * @throws DotDataException
      */
     private void cancelScheduledExperimentsUponConflicts(final Experiment experimentToCheck,
-            final User user) throws DotDataException {
+                                                         final User user) throws DotDataException {
 
         final List<Experiment> scheduledExperimentsOnPage = list(ExperimentFilter.builder()
                 .pageId(experimentToCheck.pageId())
@@ -817,23 +807,26 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 DotStateException.class);
 
         final Experiment readyToStart = save(Experiment.builder().from(persistedExperiment)
-                        .status(RUNNING).build(), user);
+                .status(RUNNING).build(), user);
 
         return innerStart(readyToStart, user, false);
     }
 
     private Experiment innerStart(final Experiment persistedExperiment, final User user,
-            final boolean generateNewRunId)
+                                  final boolean generateNewRunId)
             throws DotSecurityException, DotDataException {
 
         final Experiment experimentToSave = generateNewRunId
                 ? Experiment.builder().from(persistedExperiment).runningIds(getRunningIds(persistedExperiment)).build()
                 : persistedExperiment;
 
-        Experiment running = save(experimentToSave, user);
+        final Experiment running = save(experimentToSave, user);
         cacheRunningExperiments();
         publishExperimentPage(running, user);
         publishContentOnExperimentVariants(user, running);
+
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been started by User" +
+                " ID '%s'", running.name(), running.id(), user.getUserId()));
 
         return running;
     }
@@ -857,15 +850,15 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
 
     private void publishContentOnExperimentVariants(final User user,
-            final Experiment runningExperiment)
+                                                    final Experiment runningExperiment)
             throws DotDataException, DotSecurityException {
 
         final List<Contentlet> contentByVariants = contentletAPI.getAllContentByVariants(user, false,
-                runningExperiment.trafficProportion().variants().stream()
-                        .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
-                        .toArray(String[]::new)).stream()
-                        .filter((contentlet -> Try.of(contentlet::isWorking)
-                                .getOrElse(false))).collect(Collectors.toList());
+                        runningExperiment.trafficProportion().variants().stream()
+                                .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
+                                .toArray(String[]::new)).stream()
+                .filter((contentlet -> Try.of(contentlet::isWorking)
+                        .getOrElse(false))).collect(Collectors.toList());
 
         contentletAPI.publish(contentByVariants, user, false);
     }
@@ -890,13 +883,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             validatePublishTemplateLayoutPermissions(user, experimentFromFactory);
 
             DotPreconditions.isTrue(experimentFromFactory.status()==Status.RUNNING, ()->
-                            "Only RUNNING experiments can be ended", DotStateException.class);
+                    "Only RUNNING experiments can be ended", DotStateException.class);
 
             DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
                     ()-> "Scheduling not valid.", DotStateException.class);
 
             final Scheduling endedScheduling = Scheduling.builder().from(persistedExperimentOpt.get()
-                    .scheduling().get()).endDate(Instant.now().plus(1, ChronoUnit.MINUTES))
+                            .scheduling().get()).endDate(Instant.now().plus(1, ChronoUnit.MINUTES))
                     .build();
 
             final Experiment ended = persistedExperimentOpt.get().withStatus(ENDED)
@@ -904,6 +897,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final Experiment saved = save(ended, user);
 
             cacheRunningExperiments();
+
+            SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been ended by User" +
+                    " ID '%s'", saved.name(), saved.id(), user.getUserId()));
 
             return saved;
         } catch (DotSecurityException e) {
@@ -916,7 +912,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @WrapInTransaction
     @Override
     public Experiment addVariant(final String experimentId, final String variantDescription,
-            final User user)
+                                 final User user)
             throws DotDataException, DotSecurityException {
 
         final Experiment persistedExperiment = find(experimentId, user)
@@ -949,8 +945,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     private void copyMultiTrees(final Experiment persistedExperiment,
-            final ExperimentVariant experimentVariant)
-                throws DotDataException {
+                                final ExperimentVariant experimentVariant)
+            throws DotDataException {
 
         final HTMLPageAsset experimentPage = getHtmlPageAsset(persistedExperiment);
         final List<MultiTree> multiTreesByVariant = multiTreeAPI.getMultiTreesByVariant(
@@ -961,7 +957,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     private ExperimentVariant createExperimentVariant(final Experiment experiment,
-            final String variantDescription, final User user)
+                                                      final String variantDescription, final User user)
             throws DotDataException {
 
         final String experimentId = experiment.getIdentifier();
@@ -980,7 +976,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         final Contentlet pageContentlet = contentletAPI
-        .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
+                .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
 
         final HTMLPageAsset page = pageAssetAPI.fromContentlet(pageContentlet);
 
@@ -991,8 +987,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     private void copyPageAndItsContentForVariant(final Experiment experiment,
-            final String variantDescription, final User user,
-            final String variantName, final Contentlet pageContentlet) throws DotDataException {
+                                                 final String variantDescription, final User user,
+                                                 final String variantName, final Contentlet pageContentlet) throws DotDataException {
         if(variantDescription.equals(ORIGINAL_VARIANT)) {
             saveContentOnVariant(pageContentlet,
                     variantName, user);
@@ -1000,7 +996,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             multiTreeAPI.getMultiTrees(experiment.pageId()).forEach(
                     (multiTree -> {
                         final Contentlet contentlet = Try.of(()->contentletAPI.
-                                findContentletByIdentifierAnyLanguage(multiTree.getContentlet()))
+                                        findContentletByIdentifierAnyLanguage(multiTree.getContentlet()))
                                 .getOrElseThrow(()->new DotStateException("Unable to find content. Id:"
                                         + multiTree.getContentlet()));
 
@@ -1011,7 +1007,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     private void saveContentOnVariant(final Contentlet contentlet, final String variantName,
-            final User user) {
+                                      final User user) {
 
         final Optional<ContentletVersionInfo> versionInfo = Try.of(
                         ()->versionableAPI.getContentletVersionInfo(contentlet.getIdentifier(),
@@ -1059,7 +1055,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
 
         DotPreconditions.isTrue(variantName!= null &&
-                variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
+                        variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
                 IllegalArgumentException.class);
 
         final Variant toDelete = variantAPI.get(variantName)
@@ -1067,21 +1063,32 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final String variantDescription = toDelete.description()
                 .orElseThrow(()->new DotStateException("Variant without description. Variant name: "
-                                + toDelete.name()));
+                        + toDelete.name()));
 
         final TreeSet<ExperimentVariant> updatedVariants =
                 new TreeSet<>(persistedExperiment.trafficProportion()
-                .variants().stream().filter((variant)->
-                        !Objects.equals(variant.id(), toDelete.name())).collect(
-                        Collectors.toSet()));
+                        .variants().stream().filter((variant)->
+                                !Objects.equals(variant.id(), toDelete.name())).collect(
+                                Collectors.toSet()));
 
         final SortedSet<ExperimentVariant> weightedVariants = redistributeWeights(updatedVariants);
         final TrafficProportion weightedTraffic = persistedExperiment.trafficProportion()
                 .withVariants(weightedVariants);
         final Experiment withUpdatedTraffic = persistedExperiment.withTrafficProportion(weightedTraffic);
-        final Experiment fromDB = save(withUpdatedTraffic, user);
+        Experiment fromDB = save(withUpdatedTraffic, user);
         variantAPI.archive(toDelete.name());
         variantAPI.delete(toDelete.name());
+
+        if(withUpdatedTraffic.trafficProportion().variants().size()==1
+                && VariantAPI.DEFAULT_VARIANT.name()
+                .equals(withUpdatedTraffic.trafficProportion().variants().first().id())) {
+            final TrafficProportion currentTrafficProportion = withUpdatedTraffic.trafficProportion();
+            final TrafficProportion splitEvenlyTrafficProportion = TrafficProportion.builder()
+                    .from(currentTrafficProportion).type(Type.SPLIT_EVENLY).build();
+
+            fromDB = save(withUpdatedTraffic.withTrafficProportion(splitEvenlyTrafficProportion),
+                    user);
+        }
         return fromDB;
 
     }
@@ -1089,7 +1096,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @Override
     @WrapInTransaction
     public Experiment editVariantDescription(String experimentId, String variantName,
-            String newDescription, final User user)
+                                             String newDescription, final User user)
             throws DotDataException, DotSecurityException {
         final Experiment persistedExperiment = find(experimentId, user)
                 .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
@@ -1192,29 +1199,99 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @Override
     public ExperimentResults getResults(final Experiment experiment, final User user) throws DotDataException, DotSecurityException {
         final String experimentId = experiment.id()
-            .orElseThrow(() -> new IllegalArgumentException("The Experiment must have an Identifier"));
+                .orElseThrow(() -> new IllegalArgumentException("The Experiment must have an Identifier"));
         final Experiment experimentFromDataBase = find(experimentId, APILocator.systemUser())
                 .orElseThrow(() -> new NotFoundException("Experiment not found: " + experimentId));
 
         DotPreconditions.isTrue(
-            RESULTS_QUERY_VALID_STATUSES.contains(experimentFromDataBase.status()),
-            "The Experiment must be RUNNING or ENDED to get results");
+                RESULTS_QUERY_VALID_STATUSES.contains(experimentFromDataBase.status()),
+                "The Experiment must be RUNNING or ENDED to get results");
 
-        final List<BrowserSession> events = getEvents(experimentFromDataBase, user);
-        final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(
-                experimentFromDataBase, events);
+        final CubeJSResultSet totalSessions = getTotalSessions(experimentFromDataBase, user);
+        final CubeJSResultSet summarize = getSummary(experimentFromDataBase, user);
+        return getResults(experimentFromDataBase, totalSessions, summarize);
+    }
 
-        experimentResults.setBayesianResult(calcBayesian(experimentResults, null));
+    private ExperimentResults getResults(final Experiment experiment, final CubeJSResultSet totalSessions,
+                                         final CubeJSResultSet summarize) {
+
+        final Goals goals = experiment.goals()
+                .orElseThrow(() -> new IllegalArgumentException("The Experiment must have a Goal"));
+
+        final Goal primaryGoal = goals.primary();
+        final SortedSet<ExperimentVariant> variants = experiment.trafficProportion().variants();
+
+        final  ExperimentResults.Builder builder = new ExperimentResults.Builder(variants);
+        builder.addPrimaryGoal(primaryGoal);
+        builder.trafficProportion(experiment.trafficProportion());
+
+        for (final ResultSetItem totalSession : totalSessions) {
+            final String variantName = totalSession.get("Events.variant").orElseThrow().toString();
+            final long total = Long.parseLong(totalSession.get("Events.totalSessions").orElseThrow().toString());
+            final float convertionRate = getConvertionRate(totalSession);
+            final long success = getSuccess(totalSession);
+
+            builder.addTotalSession(variantName, total);
+
+            final VariantResults.UniqueBySessionResume uniqueBySessionResume =
+                    new VariantResults.UniqueBySessionResume(success, convertionRate);
+            builder.goal(primaryGoal).uniqueBySession(variantName, uniqueBySessionResume);
+        }
+
+        for (final ResultSetItem resultSetItem : summarize) {
+            final Map<String, Object> attributes = resultSetItem.getAll();
+
+            long totalSessionsByDate = Long.parseLong(attributes.get("Events.totalSessions").toString());
+            long success = getSuccess(resultSetItem);
+            float convertionRate = getConvertionRate(resultSetItem);
+
+            final String day = resultSetItem.get("Events.day").orElseThrow().toString().replace("T00:00:00.000", "");
+            final String variantName = resultSetItem.get("Events.variant").orElseThrow().toString();
+
+            final VariantResults.ResultResumeItem resultResumeItem = new VariantResults.ResultResumeItem(success,
+                    totalSessionsByDate, convertionRate);
+
+            builder.goal(primaryGoal).add(variantName, day, resultResumeItem);
+
+        }
+
+        final ExperimentResults experimentResults = builder.build();
+
+        if (experimentResults.getSessions().getVariants().size() >= 2) {
+            experimentResults.setBayesianResult(calcBayesian(experimentResults, null));
+        }
 
         return experimentResults;
+    }
+
+    private static float getConvertionRate(final ResultSetItem resultSetItem) {
+        final Map<String, Object> attributes = resultSetItem.getAll();
+
+        final String convertionRateAttributeName = attributes.keySet().stream()
+                .filter(attributeName -> attributeName.endsWith("ConvertionRate"))
+                .limit(1)
+                .findFirst()
+                .orElseThrow();
+        return  Float.parseFloat(resultSetItem.get(convertionRateAttributeName).orElseThrow().toString());
+    }
+
+    private static long getSuccess(final ResultSetItem resultSetItem) {
+        final Map<String, Object> attributes = resultSetItem.getAll();
+
+        final String successesAttributeName = attributes.keySet().stream()
+                .filter(attributeName -> attributeName.endsWith("Successes"))
+                .limit(1)
+                .findFirst()
+                .orElseThrow();
+        return Long.parseLong(resultSetItem.get(successesAttributeName).orElseThrow().toString());
     }
 
     @CloseDBIfOpened
     @Override
     public List<Experiment> cacheRunningExperiments() throws DotDataException {
         final List<Experiment> experiments = FactoryLocator
-            .getExperimentsFactory()
-            .list(ExperimentFilter.builder().statuses(set(Status.RUNNING)).build());
+                .getExperimentsFactory()
+                .list(ExperimentFilter.builder().statuses(set(Status.RUNNING)).build());
         experimentsCache.putList(ExperimentsCache.CACHED_EXPERIMENTS_KEY, experiments);
         return experiments;
     }
@@ -1238,58 +1315,17 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return bayesianAPI.doBayesian(bayesianInput);
     }
 
-    @Override
-    public List<BrowserSession> getEvents(final Experiment experiment,
-                                          final User user) throws DotDataException, DotSecurityException {
-        final TimeMetric timeMetric = TimeMetric.mark(getClass().getSimpleName() + ".getEvents()");
-
+    public CubeJSResultSet getSummary(final Experiment experiment,
+                                      final User user) throws DotDataException, DotSecurityException {
         final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
-        final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
-                .create(experiment);
-        final CubeJSResultSet cubeJSResultSet = cubeClient.sendWithPagination(cubeJSQuery);
+        final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE.createWithDayGranularity(experiment);
+        return cubeClient.send(cubeJSQuery);
+    }
 
-        String previousLookBackWindow = null;
-        final List<Event> currentEvents = new ArrayList<>();
-        final List<BrowserSession> sessions = new ArrayList<>();
-
-        try {
-            for (final ResultSetItem resultSetItem : cubeJSResultSet) {
-                final String currentLookBackWindow = resultSetItem.get("Events.lookBackWindow")
-                        .map(Object::toString)
-                        .orElse(StringPool.BLANK);
-
-                if (!currentLookBackWindow.equals(previousLookBackWindow)) {
-                    if (!currentEvents.isEmpty()) {
-                        sessions.add(new BrowserSession(previousLookBackWindow,
-                                new ArrayList<>(currentEvents)));
-                        currentEvents.clear();
-                    }
-                }
-
-                currentEvents.add(new Event(resultSetItem.getAll(),
-                        EventType.get(resultSetItem.get("Events.eventType")
-                                .map(Object::toString)
-                                .orElseThrow(() -> new IllegalStateException(
-                                        "Type into Event is expected")))
-                ));
-
-                previousLookBackWindow = currentLookBackWindow;
-            }
-
-            if (!currentEvents.isEmpty()) {
-                sessions.add(
-                        new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
-            }
-
-            return sessions;
-        } catch (final Exception e) {
-            final String message = String.format("Error getting result for Experiment %s: %s", experiment.name(),
-                    e.getMessage());
-            Logger.error(this, message, e);
-            throw new DotDataException(message, e);
-        } finally {
-            timeMetric.stop();
-        }
+    public CubeJSResultSet getTotalSessions(final Experiment experiment, final User user) throws DotDataException, DotSecurityException {
+        final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
+        final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE.create(experiment);
+        return cubeClient.send(cubeJSQuery);
     }
 
     @Override
@@ -1320,7 +1356,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             validatePublishTemplateLayoutPermissions(user, persistedExperiment);
 
             DotPreconditions.isTrue(persistedExperiment.status().equals(Status.RUNNING) ||
-                    persistedExperiment.status().equals(ENDED),
+                            persistedExperiment.status().equals(ENDED),
                     ()->"Experiment must be running or ended to promote a variant",
                     DotStateException.class);
 
@@ -1366,12 +1402,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     private void validateTemplateLayoutPermissions(final User user, final Experiment experiment,
-            final PermissionLevel permissionLevel, final String errorMessage) throws DotDataException, DotSecurityException {
+                                                   final PermissionLevel permissionLevel, final String errorMessage) throws DotDataException, DotSecurityException {
 
         final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(experiment);
 
         if (!UtilMethods.isSet(htmlPageAsset)) {
-             return;
+            return;
         }
 
         final Host host = APILocator.getHostAPI().find(htmlPageAsset.getHost(), APILocator.systemUser(),
@@ -1394,7 +1430,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     private Experiment getUpdatedVariants(final User user, final Experiment persistedExperiment,
-            final Variant variantToPromote) {
+                                          final Variant variantToPromote) {
 
         final String variantName = variantToPromote.name();
         final User systemUser = APILocator.systemUser();
@@ -1442,7 +1478,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .withStatus(DRAFT)
                 .withScheduling(Scheduling.builder().build());
 
-        return save(experimentCanceled, user);
+        final Experiment afterSave = save(experimentCanceled, user);
+
+        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been canceled by User" +
+                " ID '%s'", afterSave.name(), afterSave.id(), user.getUserId()));
+
+        return afterSave;
     }
 
     private static boolean canBeCanceled(final Experiment experimentFromFactory) {
@@ -1513,9 +1554,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     private void validatePageEditPermissions(final User user, final Experiment persistedExperiment,
-            final String errorMessage)
+                                             final String errorMessage)
             throws DotDataException, DotSecurityException {
-        
+
         try {
             validateExperimentPagePermissions(user, persistedExperiment, PermissionLevel.EDIT,
                     errorMessage);
@@ -1526,9 +1567,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     private void validateExperimentPagePermissions(final User user,
-            final Experiment persistedExperiment,
-            final PermissionLevel permissionLevel,
-            final String errorMessage)
+                                                   final Experiment persistedExperiment,
+                                                   final PermissionLevel permissionLevel,
+                                                   final String errorMessage)
             throws DotDataException, DotSecurityException {
 
         PermissionableProxy parentPage = new PermissionableProxy();

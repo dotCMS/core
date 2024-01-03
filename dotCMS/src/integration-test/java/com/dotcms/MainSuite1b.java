@@ -90,7 +90,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v1.contenttype.FieldVariableResourceTest.class,
         com.dotcms.rest.api.v1.contenttype.ContentTypeResourceTest.class,
-        com.dotcms.analytics.metrics.QueryParameterValuesGetterTest.class,
         com.dotcms.analytics.metrics.QueryParameterValuesTransformerTest.class,
         QuartzUtilsTest.class
 })

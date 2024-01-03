@@ -22,3 +22,7 @@ This maintenance release includes the following code fixes:
 16. https://github.com/dotCMS/core/issues/27039 : Content Search Portlet not showing all language versions #27039
 17. https://github.com/dotCMS/core/issues/25478 : When filter by All in the Browser Portlet we are showing the No DEFAULT Version of the Contentlet #25478
 18. https://github.com/dotCMS/core/issues/25901 : Unable to reuse content inside the variants #25901
+19. https://github.com/dotCMS/core/issues/26272 : Losing Experiments and their results when Moving Page to Different Path #26272
+20. https://github.com/dotCMS/core/issues/26550 : Improve performance to the Experiment results end point #26550
+21. https://github.com/dotCMS/core/issues/26273 : Experiments not Considering Redirection from Vanity URLs #26273
+22. https://github.com/dotCMS/core/issues/23623 : [BE] Change Split Traffic #23623
