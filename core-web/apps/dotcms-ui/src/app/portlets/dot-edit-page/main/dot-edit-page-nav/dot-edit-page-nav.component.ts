@@ -15,6 +15,7 @@ import {
     DotTemplate,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema';
 
 interface DotEditPageNavItem {

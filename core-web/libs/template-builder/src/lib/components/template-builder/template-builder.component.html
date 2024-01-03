@@ -50,7 +50,8 @@
                 [ngClass]="{
                     'template-builder__sidebar--small':
                         vm.layoutProperties.sidebar.width === 'small',
-                    'template-builder__sidebar--large': vm.layoutProperties.sidebar.width === 'large'
+                    'template-builder__sidebar--large':
+                        vm.layoutProperties.sidebar.width === 'large'
                 }"
                 [sidebarProperties]="vm.layoutProperties.sidebar"
                 [containerMap]="vm.containerMap" />

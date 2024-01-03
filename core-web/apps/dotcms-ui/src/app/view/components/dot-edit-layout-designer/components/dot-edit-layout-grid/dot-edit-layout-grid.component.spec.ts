@@ -22,6 +22,7 @@ import {
     PaginatorService
 } from '@dotcms/data-access';
 import { NgGridModule } from '@dotcms/dot-layout-grid';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { DotAutofocusModule } from '@dotcms/dot-rules';
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';

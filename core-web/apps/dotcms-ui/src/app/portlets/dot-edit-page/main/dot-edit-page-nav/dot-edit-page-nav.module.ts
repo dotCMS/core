@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 
 import { TooltipModule } from 'primeng/tooltip';
 
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';

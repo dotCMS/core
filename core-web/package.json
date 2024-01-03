@@ -135,8 +135,7 @@
         "@angular/cli": "~17.0.0",
         "@angular/compiler-cli": "17.0.5",
         "@angular/language-service": "17.0.5",
-        "@babel/core": "^7.12.9",
-        "@babel/preset-react": "^7.14.5",
+        "@babel/core": "^7.12.9","@babel/preset-react": "^7.14.5",
         "@compodoc/compodoc": "^1.1.11",
         "@materia-ui/ngx-monaco-editor": "^6.0.0",
         "@mdx-js/react": "^2.1.2",
@@ -236,8 +235,7 @@
         "prettier-plugin-organize-attributes": "^0.0.5",
         "pretty-quick": "^3.1.0",
         "protractor": "~7.0.0",
-        "puppeteer": "~5.3.1",
-        "react-test-renderer": "18.2.0",
+        "puppeteer": "~5.3.1","react-test-renderer": "18.2.0",
         "sass": "^1.56.2",
         "ts-jest": "29.1.1",
         "ts-node": "10.9.1",
@@ -249,4 +247,3 @@
         "webpack-bundle-analyzer": "^4.5.0"
     }
 }
-
