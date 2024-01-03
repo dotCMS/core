@@ -2,6 +2,7 @@ package com.dotcms.browser;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
@@ -281,6 +282,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         final StringBuilder luceneQuery = UtilMethods.isSet(browserQuery.luceneQuery)
                                                   ? new StringBuilder("+title:*" + browserQuery.luceneQuery.trim() + "* ")
                                                   : new StringBuilder();
+        luceneQuery.append("+" + ESMappingConstants.VARIANT + ":DEFAULT ");
         luceneQuery.append(browserQuery.showWorking ? "+working:true " : "+live:true ");
         luceneQuery.append(browserQuery.showArchived ? "+deleted:true " : "+deleted:false ");
         if (!showAllBaseTypes) {
