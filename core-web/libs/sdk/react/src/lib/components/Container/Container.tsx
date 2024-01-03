@@ -43,6 +43,33 @@ export function Container({ containerRef }: ContainerProps) {
         personaTag: viewAs.persona?.keyTag
     };
 
+    function onPointerEnterHandler(e: React.PointerEvent<HTMLDivElement>) {
+        let target = e.target as HTMLElement;
+
+        if (target.dataset.dot !== 'contentlet') {
+            target = target.closest('[data-dot="contentlet"]') as HTMLElement;
+        }
+
+        if (!target) {
+            return;
+        }
+
+        const { x, y, width, height } = target.getBoundingClientRect();
+
+        const contentletPayload = JSON.parse(target.dataset.content ?? '{}');
+
+        postMessageToEditor({
+            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
+            payload: {
+                x,
+                y,
+                width,
+                height,
+                payload: contentletPayload
+            }
+        });
+    }
+
     return (
         <div data-dot="container" data-content={JSON.stringify(containerPayload)}>
             {contentlets.map((contentlet) => {
@@ -63,30 +90,7 @@ export function Container({ containerRef }: ContainerProps) {
 
                 return (
                     <div
-                        onPointerEnter={(e) => {
-                            let target = e.target as HTMLElement;
-
-                            if (target.dataset.dot !== 'contentlet') {
-                                target = target.closest('[data-dot="contentlet"]') as HTMLElement;
-                            }
-
-                            if (!target) {
-                                return;
-                            }
-
-                            const { x, y, width, height } = target.getBoundingClientRect();
-
-                            postMessageToEditor({
-                                action: CUSTOMER_ACTIONS.SET_CONTENTLET,
-                                payload: {
-                                    x,
-                                    y,
-                                    width,
-                                    height,
-                                    payload: contentletPayload
-                                }
-                            });
-                        }}
+                        onPointerEnter={onPointerEnterHandler}
                         data-dot="contentlet"
                         data-content={JSON.stringify(contentletPayload)}
                         key={contentlet.identifier}>
