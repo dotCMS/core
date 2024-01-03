@@ -11,7 +11,7 @@
     <ng-template #error>
         <ng-container [ngSwitch]="sp.error">
             <div *ngSwitchCase="403">Dont have permissions</div>
-            <div *ngSwitchCase="404">Not found</div>
+            <dot-edit-ema-not-found *ngSwitchCase="404" />
             <div *ngSwitchDefault>output2</div>
         </ng-container>
     </ng-template>

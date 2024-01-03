@@ -21,6 +21,7 @@ import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
+import { EditEmaNotFoundComponent } from './components/edit-ema-not-found/edit-ema-not-found.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotPageToolsSeoComponent } from '../dot-page-tools-seo/dot-page-tools-seo.component';
@@ -32,16 +33,6 @@ import { NavigationBarItem } from '../shared/models';
 @Component({
     selector: 'dot-ema-shell',
     standalone: true,
-    imports: [
-        CommonModule,
-        ConfirmDialogModule,
-        ToastModule,
-        EditEmaNavigationBarComponent,
-        RouterModule,
-        DotPageToolsSeoComponent,
-        DialogModule,
-        SafeUrlPipe
-    ],
     providers: [
         EditEmaStore,
         DotPageApiService,
@@ -57,7 +48,18 @@ import { NavigationBarItem } from '../shared/models';
         }
     ],
     templateUrl: './dot-ema-shell.component.html',
-    styleUrls: ['./dot-ema-shell.component.scss']
+    styleUrls: ['./dot-ema-shell.component.scss'],
+    imports: [
+        CommonModule,
+        ConfirmDialogModule,
+        ToastModule,
+        EditEmaNavigationBarComponent,
+        RouterModule,
+        DotPageToolsSeoComponent,
+        DialogModule,
+        SafeUrlPipe,
+        EditEmaNotFoundComponent
+    ]
 })
 export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
@@ -139,7 +141,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 siteId,
                 requestHostName: host
             },
-            //TODO: PROBABLY NEEDS REMOVE THIS
             error
         }))
     );
