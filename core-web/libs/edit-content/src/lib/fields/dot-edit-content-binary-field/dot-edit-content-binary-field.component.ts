@@ -302,10 +302,16 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotBinaryFieldComponent
      */
     private setPreviewFile() {
-        const { titleImage, inode, [this.metaDataKey]: metadata } = this.contentlet;
+        const {
+            titleImage,
+            inode,
+            [this.metaDataKey]: metadata,
+            [this.variable]: url
+        } = this.contentlet;
         const { contentType: mimeType } = metadata;
 
         this.dotBinaryFieldStore.setFileAndContent({
+            url,
             inode,
             titleImage,
             mimeType,

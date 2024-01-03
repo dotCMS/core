@@ -173,6 +173,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
                     tap((content) => {
                         this.setFile({
                             ...file,
+                            url: '',
                             content
                         });
                     })
