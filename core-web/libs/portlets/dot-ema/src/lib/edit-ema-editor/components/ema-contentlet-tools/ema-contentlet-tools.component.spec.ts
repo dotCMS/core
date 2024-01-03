@@ -28,7 +28,6 @@ const payload: ActionPayload = {
         identifier: 'test',
         acceptTypes: 'test',
         uuid: 'test',
-        contentletsId: [],
         maxContentlets: 1
     },
     pageId: 'test'

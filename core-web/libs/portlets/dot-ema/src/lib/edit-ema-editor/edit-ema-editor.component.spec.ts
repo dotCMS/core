@@ -508,8 +508,7 @@ describe('EditEmaEditorComponent', () => {
                             identifier: '123',
                             uuid: '123',
                             acceptTypes: 'test',
-                            maxContentlets: 1,
-                            contentletsId: ['123']
+                            maxContentlets: 1
                         },
                         pageContainers: [
                             {
@@ -589,7 +588,6 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            contentletsId: [],
                             maxContentlets: 1
                         },
                         pageId: 'test'
@@ -662,7 +660,6 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            contentletsId: [],
                             maxContentlets: 1
                         },
                         contentlet: {
@@ -778,7 +775,6 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'container-identifier-123',
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
-                            contentletsId: ['contentlet-identifier-123'],
                             maxContentlets: 1
                         },
                         pageId: 'test'
@@ -863,7 +859,6 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'container-identifier-123',
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
-                            contentletsId: ['contentlet-identifier-123'],
                             maxContentlets: 1
                         },
                         pageId: 'test'
@@ -977,7 +972,6 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            contentletsId: [],
                             maxContentlets: 1
                         },
                         pageId: 'test'
@@ -1048,7 +1042,6 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            contentletsId: [],
                             maxContentlets: 1
                         },
                         pageId: 'test'
@@ -1090,7 +1083,6 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            contentletsId: [],
                             maxContentlets: 1
                         },
                         pageId: 'test'

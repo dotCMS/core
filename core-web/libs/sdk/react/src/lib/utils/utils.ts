@@ -1,4 +1,10 @@
-export function getPageElementBound(rowsNodes) {
+import { ContainerData, PageProviderContext } from '../components/PageProvider/PageProvider';
+
+export function getPageElementBound(rowsNodes: HTMLDivElement[] | null) {
+    if (!rowsNodes) {
+        return [];
+    }
+
     return rowsNodes.map((row) => {
         const rowRect = row.getBoundingClientRect();
         const columns = row.children;
@@ -10,7 +16,9 @@ export function getPageElementBound(rowsNodes) {
             height: rowRect.height,
             columns: Array.from(columns).map((column) => {
                 const columnRect = column.getBoundingClientRect();
-                const containers = Array.from(column.querySelectorAll('[data-dot="container"]'));
+                const containers = Array.from(
+                    column.querySelectorAll('[data-dot="container"]')
+                ) as HTMLDivElement[];
 
                 const columnX = columnRect.left - rowRect.left;
                 const columnY = columnRect.top - rowRect.top;
@@ -24,7 +32,7 @@ export function getPageElementBound(rowsNodes) {
                         const containerRect = container.getBoundingClientRect();
                         const contentlets = Array.from(
                             container.querySelectorAll('[data-dot="contentlet"]')
-                        );
+                        ) as HTMLDivElement[];
 
                         return {
                             x: 0,
@@ -51,28 +59,40 @@ export function getPageElementBound(rowsNodes) {
     });
 }
 
-export const getPageContainers = (containers) => {
-    return Object.keys(containers).reduce((acc, container) => {
-        const contentlets = containers[container].contentlets;
+export const getPageContainers = (containers: ContainerData) => {
+    return Object.keys(containers).reduce(
+        (
+            acc: {
+                identifier: string;
+                uuid: string;
+                contentletsId: string[];
+            }[],
+            container
+        ) => {
+            const contentlets = containers[container].contentlets;
 
-        const contentletsKeys = Object.keys(contentlets);
+            const contentletsKeys = Object.keys(contentlets);
 
-        contentletsKeys.forEach((key) => {
-            acc.push({
-                identifier:
-                    containers[container].container.path ??
-                    containers[container].container.identifier,
-                uuid: key.replace('uuid-', ''),
-                contentletsId: contentlets[key].map((contentlet) => contentlet.identifier)
+            contentletsKeys.forEach((key) => {
+                acc.push({
+                    identifier:
+                        containers[container].container.path ??
+                        containers[container].container.identifier,
+                    uuid: key.replace('uuid-', ''),
+                    contentletsId: contentlets[key].map((contentlet) => contentlet.identifier)
+                });
             });
-        });
 
-        return acc;
-    }, []);
+            return acc;
+        },
+        []
+    );
 };
 
-// This extracts all the data we need in the container component
-export const getContainersData = (containers, containerRef) => {
+export const getContainersData = (
+    containers: ContainerData,
+    containerRef: PageProviderContext['layout']['body']['rows'][0]['columns'][0]['containers'][0]
+) => {
     const { identifier, uuid } = containerRef;
 
     const { containerStructures } = containers[identifier];

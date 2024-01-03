@@ -1,0 +1,30 @@
+{
+    "name": "@dotcms/nextjs",
+    "version": "0.0.1",
+    "peerDependencies": {
+        "next": "14.0.4",
+        "react": "^18",
+        "react-dom": "^18",
+        "@dotcms/react": "0.0.1",
+        "@dotcms/client": "0.0.1"
+    },
+    "description": "Official NextJS library to render a dotCMS page.",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/dotCMS/core.git#master"
+    },
+    "keywords": [
+        "dotCMS",
+        "CMS",
+        "Content Management",
+        "REST API",
+        "Headless CMS",
+        "NextJS"
+    ],
+    "author": "dotcms <dev@dotcms.com>",
+    "license": "GPL-3.0",
+    "bugs": {
+        "url": "https://github.com/dotCMS/core/issues"
+    },
+    "homepage": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/nextjs/README.md"
+}

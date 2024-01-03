@@ -1,12 +1,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { useContext } from 'react';
-import { GlobalContext } from '@/lib/providers/global';
+import { useDotcmsPageContext } from '@dotcms/react';
 
 function Activity({ title, description, image, urlTitle }) {
     const {
         viewAs: { language }
-    } = useContext(GlobalContext);
+    } = useDotcmsPageContext();
 
     return (
         <article className="p-4 overflow-hidden bg-white rounded shadow-lg">

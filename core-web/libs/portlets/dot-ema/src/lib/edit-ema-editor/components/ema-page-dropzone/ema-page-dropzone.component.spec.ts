@@ -9,7 +9,6 @@ import { ActionPayload } from '../../../shared/models';
 const ACTION_MOCK: ActionPayload = {
     container: {
         acceptTypes: 'file',
-        contentletsId: ['123', '455'],
         identifier: '789',
         maxContentlets: 100,
         uuid: '2'

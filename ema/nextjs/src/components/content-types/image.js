@@ -1,11 +1,10 @@
-import { useContext } from 'react';
-import { GlobalContext } from '@/lib/providers/global';
+import { useDotcmsPageContext } from '@dotcms/react';
 import Image from 'next/image';
 
 function ImageComponent({ fileAsset, title, description }) {
     const {
         viewAs: { language }
-    } = useContext(GlobalContext);
+    } = useDotcmsPageContext();
 
     return (
         <div className="relative overflow-hidden bg-white rounded shadow-lg group">
