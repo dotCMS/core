@@ -1,5 +1,10 @@
 import { describe, expect } from '@jest/globals';
-import { SpectatorRouting, createRoutingFactory, byTestId } from '@ngneat/spectator/jest';
+import {
+    SpectatorRouting,
+    createRoutingFactory,
+    byTestId,
+    mockProvider
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -10,9 +15,11 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import {
+    DotContentTypeService,
     DotCurrentUserService,
     DotDevicesService,
     DotLanguagesService,
+    DotLicenseService,
     DotMessageService,
     DotPersonalizeService
 } from '@dotcms/data-access';
@@ -27,6 +34,7 @@ import {
 
 import { DotCurrentUserServiceMock } from './components/dot-device-selector-seo/dot-device-selector-seo.component.spec';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { CUSTOM_PERSONA } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component.spec';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
@@ -62,6 +70,12 @@ describe('EditEmaEditorComponent', () => {
             MessageService,
             EditEmaStore,
             ConfirmationService,
+            {
+                provide: DotLicenseService,
+                useValue: {
+                    isEnterprise: () => of(true)
+                }
+            },
             { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
             {
                 provide: DotActionUrlService,
@@ -148,7 +162,9 @@ describe('EditEmaEditorComponent', () => {
             {
                 provide: DotPersonalizeService,
                 useValue: new DotPersonalizeServiceMock()
-            }
+            },
+            mockProvider(DotContentTypeService),
+            mockProvider(CoreWebService)
         ]
     });
 
@@ -1207,6 +1223,13 @@ describe('EditEmaEditorComponent', () => {
         });
 
         describe('palette', () => {
+            it('should render a palette', () => {
+                spectator.detectChanges();
+
+                const palette = spectator.query(EditEmaPaletteComponent);
+                expect(palette).toBeDefined();
+            });
+
             it('should post to iframe to get bound on drag', () => {
                 spectator.detectChanges();
 
@@ -1217,7 +1240,7 @@ describe('EditEmaEditorComponent', () => {
                     'postMessage'
                 );
 
-                spectator.triggerEventHandler('div[data-type="contentlet"]', 'dragstart', {
+                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', {
                     target: {
                         dataset: {
                             type: 'contentlet',
@@ -1261,7 +1284,7 @@ describe('EditEmaEditorComponent', () => {
                 expect(dropZone.rows).toBe(BOUNDS_MOCK);
             });
 
-            xit('should hide drop zone on palette drop', () => {
+            it('should hide drop zone on palette drop', () => {
                 spectator.detectChanges();
 
                 window.dispatchEvent(
@@ -1280,10 +1303,10 @@ describe('EditEmaEditorComponent', () => {
 
                 expect(dropZone.rows).toBe(BOUNDS_MOCK);
 
-                spectator.triggerEventHandler('div[data-type="contentlet"]', 'dragend', {});
+                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragEnd', {});
                 spectator.detectComponentChanges();
                 dropZone = spectator.query(EmaPageDropzoneComponent);
-                expect(dropZone.rows).toEqual([]);
+                expect(dropZone).toBeNull();
             });
         });
     });
