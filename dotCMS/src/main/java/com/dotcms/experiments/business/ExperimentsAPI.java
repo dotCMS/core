@@ -1,7 +1,6 @@
 package com.dotcms.experiments.business;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
