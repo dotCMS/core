@@ -11,8 +11,13 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * Verifies that the Upgrade Task {@link Task240102AlterVarcharLengthOfRelationType} is working as expected.
+ *
+ * @author Andrey Melendez
+ * @since Jan 2nd, 2023
+ */
 public class Task240102AlterVarcharLengthOfRelationTypeTest {
-
 
     private void setOldLengthBeforeTask(){
 

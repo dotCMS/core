@@ -7,6 +7,13 @@ import com.dotmarketing.startup.StartupTask;
 
 import java.sql.SQLException;
 
+/**
+ * Increased the size of the varchar column {@code relation_type} in the {@code tree} table
+ * to allow for larger name fields.
+ *
+ * @author Andrey Melendez
+ * @since Jan 2nd, 2023
+ */
 public class Task240102AlterVarcharLengthOfRelationType implements StartupTask {
 
     @Override
