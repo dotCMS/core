@@ -70,7 +70,7 @@ export class DotPageApiService {
      * @memberof DotPageApiService
      */
     get(params: DotPageApiParams): Observable<DotPageApiResponse> {
-        const apiUrl = `/api/v1/page/json/${params.url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
+        const apiUrl = `/api/v1/page/json/${params.url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}&mode=EDIT_MODE`;
 
         return this.http
             .get<{

@@ -135,6 +135,43 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             });
                         },
                         error: (e) => {
+                            //Set Empty state, with both permissions denied
+                            this.setState({
+                                editor: {
+                                    page: {
+                                        title: '',
+                                        identifier: '',
+                                        inode: '',
+                                        canRead: false,
+                                        canEdit: false
+                                    },
+                                    site: {
+                                        hostname: '',
+                                        type: '',
+                                        identifier: '',
+                                        archived: false
+                                    },
+                                    viewAs: {
+                                        language: {
+                                            id: 0,
+                                            languageCode: '',
+                                            countryCode: '',
+                                            language: '',
+                                            country: ''
+                                        },
+                                        persona: undefined
+                                    },
+                                    layout: null,
+                                    template: undefined,
+                                    containers: undefined
+                                },
+                                url: '',
+                                dialogIframeURL: '',
+                                dialogHeader: '',
+                                dialogIframeLoading: false,
+                                isEnterpriseLicense: false,
+                                dialogType: null
+                            });
                             // eslint-disable-next-line no-console
                             console.log(e);
                         }

@@ -1,6 +1,6 @@
 import { describe, expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { DotLicenseService } from '@dotcms/data-access';
 import {
@@ -252,6 +252,58 @@ describe('EditEmaStore', () => {
             });
 
             expect(dotActionUrlService.getCreateContentletUrl).toHaveBeenCalledWith('blogPost');
+        });
+
+        it('should set empty state when request error occours', (done) => {
+            const dotPageApiService = spectator.inject(DotPageApiService);
+
+            dotPageApiService.get.andReturn(throwError({ status: 403 }));
+
+            spectator.service.load({
+                language_id: 'en',
+                url: 'test-url',
+                'com.dotmarketing.persona.id': '123'
+            });
+
+            spectator.service.state$.subscribe((state) => {
+                expect(state).toEqual({
+                    editor: {
+                        page: {
+                            title: '',
+                            identifier: '',
+                            inode: '',
+                            canRead: false,
+                            canEdit: false
+                        },
+                        site: {
+                            hostname: '',
+                            type: '',
+                            identifier: '',
+                            archived: false
+                        },
+                        viewAs: {
+                            language: {
+                                id: 0,
+                                languageCode: '',
+                                countryCode: '',
+                                language: '',
+                                country: ''
+                            },
+                            persona: undefined
+                        },
+                        layout: null,
+                        template: undefined,
+                        containers: undefined
+                    },
+                    url: '',
+                    dialogIframeURL: '',
+                    dialogHeader: '',
+                    dialogIframeLoading: false,
+                    isEnterpriseLicense: false,
+                    dialogType: null
+                });
+                done();
+            });
         });
 
         it('should handle successful data loading', (done) => {
