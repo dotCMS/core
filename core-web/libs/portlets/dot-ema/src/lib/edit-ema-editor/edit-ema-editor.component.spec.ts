@@ -163,8 +163,7 @@ describe('EditEmaEditorComponent', () => {
                 provide: DotPersonalizeService,
                 useValue: new DotPersonalizeServiceMock()
             },
-            mockProvider(DotContentTypeService),
-            mockProvider(CoreWebService)
+            mockProvider(DotContentTypeService)
         ]
     });
 
@@ -254,39 +253,6 @@ describe('EditEmaEditorComponent', () => {
         });
 
         describe('Preview mode', () => {
-            it('should show name, sizes and icon of the selected device', () => {
-                spectator.detectChanges();
-
-                const deviceSelector = spectator.debugElement.query(
-                    By.css('[data-testId="dot-device-selector"]')
-                );
-
-                const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
-
-                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
-                spectator.detectChanges();
-
-                expect(spectator.query(byTestId('device-name')).textContent).toBe(
-                    'iphone 200 x 100'
-                );
-                expect(spectator.query(byTestId('device-icon'))).not.toBeNull();
-            });
-
-            it('should show a x button to reset the device selection', () => {
-                spectator.detectChanges();
-
-                const deviceSelector = spectator.debugElement.query(
-                    By.css('[data-testId="dot-device-selector"]')
-                );
-
-                const iphone = mockDotDevices[0];
-
-                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
-                spectator.detectChanges();
-
-                expect(spectator.query(byTestId('reset-device'))).not.toBeNull();
-            });
-
             it('should reset the selection on click on the x button', () => {
                 spectator.detectChanges();
 
@@ -299,11 +265,11 @@ describe('EditEmaEditorComponent', () => {
                 spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
                 spectator.detectChanges();
 
-                const resetButton = spectator.debugElement.query(
-                    By.css('[data-testId="reset-device"]')
+                const deviceDisplay = spectator.debugElement.query(
+                    By.css('[data-testId="device-display"]')
                 );
 
-                spectator.triggerEventHandler(resetButton, 'onClick', {});
+                spectator.triggerEventHandler(deviceDisplay, 'resetDevice', {});
 
                 const selectedDevice = spectator.query(byTestId('selected-device'));
 

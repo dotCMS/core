@@ -33,33 +33,6 @@ dot-edit-ema-toolbar {
     grid-column: 1 / -1;
 }
 
-.selected-device {
-    height: 32px;
-    display: grid;
-    grid-template-columns: min-content auto 32px;
-    margin-bottom: $spacing-1;
-    width: 100%;
-    background-color: $white;
-}
-
-.selected-device__device {
-    height: 100%;
-    font-size: $font-size-md;
-    display: flex;
-    justify-content: center;
-    gap: $spacing-1;
-    grid-column: 2/2;
-
-    .pi {
-        color: $color-palette-primary-500;
-    }
-}
-
-.device__name {
-    display: flex;
-    align-items: center;
-}
-
 .iframe-wrapper {
     position: relative;
     overflow: hidden;
