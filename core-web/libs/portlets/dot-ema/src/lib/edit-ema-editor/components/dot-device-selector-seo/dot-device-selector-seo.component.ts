@@ -71,6 +71,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     socialMediaTiles: SocialMediaOption[];
     defaultOptions: DotDeviceListItem[] = [
         {
+            // NOSONAR
             name: this.dotMessageService.get('editpage.device.selector.mobile.portrait'),
             icon: 'pi pi-mobile',
             cssHeight: '844',
@@ -116,7 +117,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
             cssHeight: '820',
             cssWidth: '1180',
             inode: 'tablet-landscape',
-            identifier: 'tablet-landscape-id'
+            identifier: 'tablet-landscape-id' // NOSONAR
         }
     ];
 
