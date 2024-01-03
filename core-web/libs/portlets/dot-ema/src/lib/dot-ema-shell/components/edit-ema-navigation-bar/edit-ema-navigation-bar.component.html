@@ -30,6 +30,7 @@
     <button
         class="edit-ema-nav-bar__item edit-ema-nav-bar__item--button"
         [ngClass]="{ 'edit-ema-nav-bar__item--disabled': item.isDisabled }"
+        [disabled]="item.isDisabled"
         (click)="item.isDisabled ? null : item?.action()"
         data-testId="nav-bar-item">
         <ng-container
