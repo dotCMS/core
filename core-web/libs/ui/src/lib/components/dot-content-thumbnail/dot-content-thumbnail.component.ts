@@ -148,7 +148,7 @@ export class DotContentThumbnailComponent implements OnInit {
      * @memberof DotContentThumbnailComponent
      */
     private getImageThumbnailUrl(): string {
-        return `/dA/${this._inode}/500w/50q`;
+        return `/dA/${this._inode}/500w/50q/${this._name}`;
     }
 
     /**
