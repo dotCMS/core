@@ -4,13 +4,13 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 
-import { EditEmaNotFoundComponent } from './edit-ema-not-found.component';
+import { EditEmaAccessDeniedComponent } from './edit-ema-access-denied.component';
 
-describe('EditEmaNotFoundComponent', () => {
-    let spectator: Spectator<EditEmaNotFoundComponent>;
+describe('EditEmaAccessDenied', () => {
+    let spectator: Spectator<EditEmaAccessDeniedComponent>;
 
     const createComponent = createComponentFactory({
-        component: EditEmaNotFoundComponent,
+        component: EditEmaAccessDeniedComponent,
         imports: [ButtonModule, RouterLink],
         providers: [{ provide: ActivatedRoute, useValue: {} }]
     });

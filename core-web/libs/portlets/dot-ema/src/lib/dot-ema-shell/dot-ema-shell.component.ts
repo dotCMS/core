@@ -20,8 +20,8 @@ import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { SafeUrlPipe } from '@dotcms/ui';
 
+import { EditEmaAccessDeniedComponent } from './components/edit-ema-access-denied/edit-ema-access-denied.component';
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
-import { EditEmaNotFoundComponent } from './components/edit-ema-not-found/edit-ema-not-found.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotPageToolsSeoComponent } from '../dot-page-tools-seo/dot-page-tools-seo.component';
@@ -58,7 +58,7 @@ import { NavigationBarItem } from '../shared/models';
         DotPageToolsSeoComponent,
         DialogModule,
         SafeUrlPipe,
-        EditEmaNotFoundComponent
+        EditEmaAccessDeniedComponent
     ]
 })
 export class DotEmaShellComponent implements OnInit, OnDestroy {
