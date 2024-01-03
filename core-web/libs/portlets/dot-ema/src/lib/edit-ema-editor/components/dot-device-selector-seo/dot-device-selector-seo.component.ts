@@ -70,7 +70,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     isCMSAdmin$: Observable<boolean>;
     socialMediaTiles: SocialMediaOption[];
 
-    // BEGIN_NOSCAN
+    // BEGIN-NOSCAN
     defaultOptions: DotDeviceListItem[] = [
         {
             name: this.dotMessageService.get('editpage.device.selector.mobile.portrait'),
@@ -121,7 +121,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
             identifier: 'tablet-landscape-id'
         }
     ];
-    // END_NOSCAN
+    // END-NOSCAN
 
     constructor(
         private dotDevicesService: DotDevicesService,
