@@ -53,10 +53,6 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
         })
     );
 
-    constructor() {
-        super();
-    }
-
     /**
      * Update the state
      *
