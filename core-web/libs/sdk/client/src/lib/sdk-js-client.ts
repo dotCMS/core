@@ -166,14 +166,12 @@ export class DotCmsClient {
 
         const queryParamsObj: Record<string, string> = {};
         for (const [key, value] of Object.entries(options)) {
-            if (value !== undefined && key !== 'path') {
-                if (key !== 'siteId') {
-                    if (key === 'personaId') {
-                        queryParamsObj['com.dotmarketing.persona.id'] = String(value);
-                    } else {
-                        queryParamsObj[key] = String(value);
-                    }
-                }
+            if (value === undefined || key === 'path' || key === 'siteId') continue;
+
+            if (key === 'personaId') {
+                queryParamsObj['com.dotmarketing.persona.id'] = String(value);
+            } else {
+                queryParamsObj[key] = String(value);
             }
         }
 

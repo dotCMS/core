@@ -41,11 +41,12 @@ export function Column({ column }: ColumnProps) {
     const widthClass = widthClassMap[column.width];
     const startClass = statrClassMap[column.leftOffset];
 
+    const combinedClasses = [styles[widthClass], styles[startClass], column.styleClass]
+        .filter(Boolean)
+        .join(' ');
+
     return (
-        <div
-            data-dot="column"
-            data-testid="column"
-            className={`${styles[widthClass]} ${styles[startClass]} ${column.styleClass}`}>
+        <div data-dot="column" data-testid="column" className={combinedClasses}>
             {column.containers.map((container) => (
                 <Container
                     key={`${container.identifier}-${container.uuid}`}

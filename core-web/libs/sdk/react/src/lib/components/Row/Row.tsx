@@ -31,12 +31,10 @@ export interface RowProps {
 export const Row = forwardRef<HTMLDivElement, RowProps>((props: RowProps, ref) => {
     const { row } = props;
 
+    const combinedClasses = [styles.row, row.styleClass].filter(Boolean).join(' ');
+
     return (
-        <div
-            data-testid="row"
-            data-dot="row"
-            ref={ref}
-            className={`${styles.row} ${row.styleClass}`}>
+        <div data-testid="row" data-dot="row" ref={ref} className={combinedClasses}>
             {row.columns.map((column, index) => (
                 <Column key={index} column={column} />
             ))}
