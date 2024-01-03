@@ -2,6 +2,7 @@
     <dot-device-selector-seo
         #deviceSelector
         [apiLink]="es.iframeURL"
+        [hideMediaTiles]="true"
         (selected)="updateCurrentDevice($event)"
         appendTo="body"
         data-testId="dot-device-selector"></dot-device-selector-seo>

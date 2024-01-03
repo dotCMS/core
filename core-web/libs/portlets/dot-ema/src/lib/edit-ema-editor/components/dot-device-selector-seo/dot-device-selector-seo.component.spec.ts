@@ -223,4 +223,15 @@ describe('DotDeviceSelectorSeoComponent', () => {
 
         expect(selectorMask).toBeDefined();
     });
+
+    it('should hide the media tiles and show the secondary link when hideMediaTiles is true', () => {
+        component.hideMediaTiles = true;
+        fixtureHost.detectChanges();
+
+        const link = de.query(By.css('[data-testId="dot-device-selector-link-secondary"]'));
+        const mediaTiles = de.query(By.css('[data-testId="social-media-tiles"]'));
+
+        expect(link).not.toBeNull();
+        expect(mediaTiles).toBeNull();
+    });
 });
