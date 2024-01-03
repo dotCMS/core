@@ -9,7 +9,7 @@
     "description": "Official React Components library to render a dotCMS page.",
     "repository": {
         "type": "git",
-        "url": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/react"
+        "url": "git+https://github.com/dotCMS/core.git#master"
     },
     "keywords": [
         "dotCMS",

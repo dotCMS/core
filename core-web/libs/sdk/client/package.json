@@ -5,7 +5,7 @@
     "description": "Official JavaScript library for interacting with DotCMS REST APIs.",
     "repository": {
         "type": "git",
-        "url": "https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/client"
+        "url": "git+https://github.com/dotCMS/core.git#master"
     },
     "keywords": [
         "dotCMS",
