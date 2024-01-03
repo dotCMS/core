@@ -7,8 +7,10 @@ export const mockPageContext: PageProviderContext = {
         body: {
             rows: [
                 {
+                    styleClass: 'row',
                     columns: [
                         {
+                            styleClass: 'col-md-12',
                             width: 6,
                             leftOffset: 3,
                             containers: [

@@ -32,7 +32,11 @@ export const Row = forwardRef<HTMLDivElement, RowProps>((props: RowProps, ref) =
     const { row } = props;
 
     return (
-        <div data-testid="row" data-dot="row" ref={ref} className={styles.row}>
+        <div
+            data-testid="row"
+            data-dot="row"
+            ref={ref}
+            className={`${styles.row} ${row.styleClass}`}>
             {row.columns.map((column, index) => (
                 <Column key={index} column={column} />
             ))}

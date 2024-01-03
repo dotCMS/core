@@ -50,7 +50,9 @@ export interface PageProviderContext {
         footer: boolean;
         body: {
             rows: {
+                styleClass: string;
                 columns: {
+                    styleClass: string;
                     width: number;
                     leftOffset: number;
                     containers: {
