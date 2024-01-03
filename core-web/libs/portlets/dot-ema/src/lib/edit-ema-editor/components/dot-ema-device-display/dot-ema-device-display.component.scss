@@ -1,9 +1,9 @@
 @use "variables" as *;
 
 .selected-device {
-    height: 32px;
+    height: $field-height-sm; // This follows the same height as an button-sm which is the same as sm field
     display: grid;
-    grid-template-columns: min-content auto 32px;
+    grid-template-columns: min-content auto $field-height-sm;
     margin-bottom: $spacing-1;
     width: 100%;
     background-color: $white;
