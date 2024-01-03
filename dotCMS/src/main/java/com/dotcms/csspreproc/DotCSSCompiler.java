@@ -272,27 +272,21 @@ abstract class DotCSSCompiler {
         inodes.add(versionInfoMap.get("inode"));
       }
 
-      List<Contentlet> contentletList  = APILocator.getContentletAPI().findContentlets(inodes).stream()
-              .filter(contentlet -> contentlet.getBaseType().get().ordinal()==BaseContentType.FILEASSET.ordinal())
-              .filter(c-> Try.of(()->!c.isArchived()).getOrElse(false))
+      List<Contentlet> contentletList = APILocator.getContentletAPI().findContentlets(inodes).stream()
+              .filter(contentlet -> contentlet.getBaseType().get().ordinal() == BaseContentType.FILEASSET.ordinal())
+              .filter(c -> Try.of(() -> !c.isArchived()).getOrElse(false))
               .collect(Collectors.toList());
 
       for (final Contentlet con : contentletList) {
         final FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(con);
-        final File f = new File(
-            compDir.getAbsolutePath() + File.separator + inputHost.getHostname() + asset.getPath() + File.separator + asset.getFileName());
-        if (f.exists())
-          continue;
-        String assetUri = asset.getURI();
-        if (assetUri.endsWith(".scss") && StringUtils.shareSamePath(uri, assetUri)) {
+        final String assetUri = asset.getURI();
+        final File f = new File(compDir.getAbsolutePath() + File.separator + inputHost.getHostname() + asset.getPath() + File.separator + asset.getFileName());
+        if (f.exists() || (assetUri.endsWith(".scss") && StringUtils.shareSamePath(uri, assetUri)) || UtilMethods.isEmpty(asset::getFileAsset))  {
+          Logger.warn(this.getClass(),"Skipping asset:" + asset.getURI());
           continue;
         }
         getAllImportedURI().add(assetUri);
         f.getParentFile().mkdirs();
-        if(UtilMethods.isEmpty(asset::getFileAsset)){
-          Logger.warn(this.getClass(),"Unable to find file for asset:" + asset.getURI());
-          continue;
-        }
         FileUtil.copyFile(asset.getFileAsset(), f);
       }
 
