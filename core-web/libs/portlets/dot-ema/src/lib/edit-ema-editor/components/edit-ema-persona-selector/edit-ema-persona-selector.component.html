@@ -21,7 +21,7 @@
 <p-overlayPanel #op styleClass="edit-ema-selector" data-testId="persona-op">
     <p-listbox
         #listbox
-        [options]="personas$ | async"
+        [options]="personas"
         (onChange)="onSelect($event); op.toggle($event)"
         optionLabel="label"
         data-testId="persona-listbox"
@@ -36,7 +36,19 @@
                         dotAvatar></p-avatar>
                     <span>{{ persona.name }}</span>
                 </div>
-                <i class="pi pi-tag" *ngIf="persona.personalized"></i>
+                <p-chip
+                    *ngIf="persona.personalized"
+                    styleClass="p-chip-sm"
+                    data-testId="persona-chip">
+                    <i
+                        class="pi pi-times-circle p-chip-icon"
+                        (click)="
+                            onRemove($event, persona, value.identifier === persona.identifier);
+                            op.toggle($event)
+                        "
+                        data-testId="persona-chip-remove"></i>
+                    <span class="p-chip-text">{{ 'modes.persona.personalized' | dm }}</span>
+                </p-chip>
             </div>
         </ng-template>
     </p-listbox>

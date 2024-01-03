@@ -23,10 +23,11 @@ import { takeUntil } from 'rxjs/operators';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
-import { DotPersona } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotPersona } from '@dotcms/dotcms-models';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
@@ -68,6 +69,9 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
 @Component({
     selector: 'dot-edit-ema-editor',
     standalone: true,
+    templateUrl: './edit-ema-editor.component.html',
+    styleUrls: ['./edit-ema-editor.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         CommonModule,
         FormsModule,
@@ -81,12 +85,10 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
         ClipboardModule,
         DotMessagePipe,
         EmaPageDropzoneComponent,
+        EditEmaPaletteComponent,
         EmaContentletToolsComponent,
         EmaFormSelectorComponent
-    ],
-    templateUrl: './edit-ema-editor.component.html',
-    styleUrls: ['./edit-ema-editor.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    ]
 })
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
@@ -195,6 +197,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             this.updateQueryParams({
                                 'com.dotmarketing.persona.id': persona.identifier
                             });
+
+                            this.personaSelector.fetchPersonas();
                         }); // This does a take 1 under the hood
                 },
                 reject: () => {
@@ -202,6 +206,37 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
             });
         }
+    }
+
+    /**
+     * Handle the persona despersonalization
+     *
+     * @param {(DotPersona & { pageId: string })} persona
+     * @memberof EditEmaEditorComponent
+     */
+    onDespersonalize(persona: DotPersona & { pageId: string; selected: boolean }) {
+        this.confirmationService.confirm({
+            header: this.dotMessageService.get('editpage.personalization.delete.confirm.header'),
+            message: this.dotMessageService.get(
+                'editpage.personalization.delete.confirm.message',
+                persona.name
+            ),
+            acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
+            rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+            accept: () => {
+                this.personalizeService
+                    .despersonalized(persona.pageId, persona.keyTag)
+                    .subscribe(() => {
+                        this.personaSelector.fetchPersonas();
+
+                        if (persona.selected) {
+                            this.updateQueryParams({
+                                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                            });
+                        }
+                    }); // This does a take 1 under the hood
+            }
+        });
     }
 
     triggerCopyToast() {
@@ -329,6 +364,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     addWidget(payload: ActionPayload): void {
+        this.store.initActionAdd({
+            containerId: payload.container.identifier,
+            acceptTypes: DotCMSBaseTypesContentTypes.WIDGET,
+            language_id: payload.language_id
+        });
         this.savePayload = payload;
     }
 
@@ -405,6 +445,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         this.resetDialogIframeData();
                         this.reloadIframe();
                         this.savePayload = undefined;
+                        this.cd.detectChanges();
                     }
                 });
             },

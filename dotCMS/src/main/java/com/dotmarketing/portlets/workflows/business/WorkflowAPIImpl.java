@@ -4026,9 +4026,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				CollectionsUtils.join(this.findWorkFlowComments(task),
 						this.findWorkflowHistory (task));
 
-	    return workflowTimelineItems.stream()
-                .sorted(Comparator.comparing(WorkflowTimelineItem::createdDate))
-                .collect(CollectionsUtils.toImmutableList());
+	    return workflowTimelineItems.stream().collect(CollectionsUtils.toImmutableList());
 	}
 
 

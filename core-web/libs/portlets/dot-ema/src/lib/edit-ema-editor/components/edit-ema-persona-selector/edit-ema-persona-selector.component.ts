@@ -1,9 +1,8 @@
-import { Observable, of } from 'rxjs';
+import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
-    ChangeDetectionStrategy,
     Component,
     EventEmitter,
     Input,
@@ -17,6 +16,7 @@ import { FormsModule } from '@angular/forms';
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
+import { ChipModule } from 'primeng/chip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Listbox, ListboxModule } from 'primeng/listbox';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
@@ -40,33 +40,27 @@ import { DotPageApiService } from '../../../services/dot-page-api.service';
         DotMessagePipe,
         ListboxModule,
         ConfirmDialogModule,
-        FormsModule
+        FormsModule,
+        ChipModule
     ],
     templateUrl: './edit-ema-persona-selector.component.html',
-    styleUrls: ['./edit-ema-persona-selector.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ['./edit-ema-persona-selector.component.scss']
 })
 export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit, OnChanges {
     @ViewChild('listbox') listbox: Listbox;
 
     private readonly pageApiService = inject(DotPageApiService);
-    personas$: Observable<DotPersona[]>;
+    personas: DotPersona[];
 
     @Input() pageId: string;
     @Input() value: DotPersona;
 
     @Output() selected: EventEmitter<DotPersona & { pageId: string }> = new EventEmitter();
+    @Output() despersonalize: EventEmitter<DotPersona & { pageId: string; selected: boolean }> =
+        new EventEmitter();
 
     ngOnInit(): void {
-        this.personas$ = this.pageApiService
-            .getPersonas({
-                pageId: this.pageId,
-                perPage: 5000
-            })
-            .pipe(
-                map((res) => res.data),
-                catchError(() => of([]))
-            );
+        this.fetchPersonas();
     }
 
     ngOnChanges(): void {
@@ -103,5 +97,40 @@ export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit, O
     resetValue(): void {
         this.listbox.value = this.value;
         this.listbox.cd.detectChanges();
+    }
+
+    /**
+     * Handle the remove of the persona
+     *
+     * @param {MouseEvent} event
+     * @param {DotPersona} persona
+     * @memberof EditEmaPersonaSelectorComponent
+     */
+    onRemove(event: MouseEvent, persona: DotPersona, selected: boolean) {
+        event.stopPropagation();
+
+        this.despersonalize.emit({
+            ...persona,
+            selected,
+            pageId: this.pageId
+        });
+    }
+
+    /**
+     * Fetch personas from the API
+     *
+     * @memberof EditEmaPersonaSelectorComponent
+     */
+    fetchPersonas() {
+        this.pageApiService
+            .getPersonas({
+                pageId: this.pageId,
+                perPage: 5000
+            })
+            .pipe(
+                map((res) => res.data),
+                catchError(() => of([]))
+            )
+            .subscribe((personas) => (this.personas = personas));
     }
 }

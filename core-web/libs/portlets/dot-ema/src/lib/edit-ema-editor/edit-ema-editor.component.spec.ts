@@ -1,5 +1,10 @@
 import { describe, expect } from '@jest/globals';
-import { SpectatorRouting, createRoutingFactory, byTestId } from '@ngneat/spectator/jest';
+import {
+    SpectatorRouting,
+    createRoutingFactory,
+    byTestId,
+    mockProvider
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -9,7 +14,14 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
-import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotLanguagesService,
+    DotLicenseService,
+    DotMessageService,
+    DotPersonalizeService
+} from '@dotcms/data-access';
+import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotLanguagesServiceMock,
     MockDotMessageService,
@@ -17,7 +29,9 @@ import {
 } from '@dotcms/utils-testing';
 
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
+import { CUSTOM_PERSONA } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component.spec';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import { BOUNDS_MOCK } from './components/ema-page-dropzone/ema-page-dropzone.component.spec';
@@ -52,9 +66,12 @@ describe('EditEmaEditorComponent', () => {
             EditEmaStore,
             ConfirmationService,
             {
-                provide: DotLanguagesService,
-                useValue: new DotLanguagesServiceMock()
+                provide: DotLicenseService,
+                useValue: {
+                    isEnterprise: () => of(true)
+                }
             },
+            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
             {
                 provide: DotActionUrlService,
                 useValue: {
@@ -128,7 +145,9 @@ describe('EditEmaEditorComponent', () => {
             {
                 provide: DotPersonalizeService,
                 useValue: new DotPersonalizeServiceMock()
-            }
+            },
+            mockProvider(DotContentTypeService),
+            mockProvider(CoreWebService)
         ]
     });
 
@@ -256,6 +275,158 @@ describe('EditEmaEditorComponent', () => {
                 spectator.detectChanges();
 
                 expect(confirmDialogOpen).toHaveBeenCalled();
+            });
+
+            it('should fetchPersonas and navigate when confirming the personalization', () => {
+                const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...DEFAULT_PERSONA,
+                    identifier: '123',
+                    pageId: '123',
+                    personalized: false
+                });
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+                const personaSelector = spectator.debugElement.query(
+                    By.css('[data-testId="persona-selector"]')
+                ).componentInstance;
+                const routerSpy = jest.spyOn(spectator.inject(Router), 'navigate');
+                const fetchPersonasSpy = jest.spyOn(personaSelector, 'fetchPersonas');
+
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+
+                confirmDialog
+                    .querySelector('.p-confirm-dialog-accept')
+                    .dispatchEvent(new Event('click')); // This is the internal button, coudln't find a better way to test it
+
+                spectator.detectChanges();
+
+                expect(routerSpy).toBeCalledWith([], {
+                    queryParams: { 'com.dotmarketing.persona.id': '123' },
+                    queryParamsHandling: 'merge'
+                });
+                expect(fetchPersonasSpy).toHaveBeenCalled();
+            });
+
+            it('should reset the value on personalization rejection', () => {
+                const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...DEFAULT_PERSONA,
+                    identifier: '123',
+                    pageId: '123',
+                    personalized: false
+                });
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+                const personaSelector = spectator.debugElement.query(
+                    By.css('[data-testId="persona-selector"]')
+                ).componentInstance;
+
+                const resetValueSpy = jest.spyOn(personaSelector, 'resetValue');
+
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+
+                confirmDialog
+                    .querySelector('.p-confirm-dialog-reject')
+                    .dispatchEvent(new Event('click')); // This is the internal button, coudln't find a better way to test it
+
+                spectator.detectChanges();
+
+                expect(resetValueSpy).toHaveBeenCalled();
+            });
+
+            it('should open a confirmation dialog when despersonalize is triggered', () => {
+                const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'despersonalize', {
+                    ...DEFAULT_PERSONA,
+                    pageId: '123',
+                    selected: false
+                });
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+            });
+
+            it('should fetchPersonas when confirming the despersonalization', () => {
+                const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'despersonalize', {
+                    ...DEFAULT_PERSONA,
+                    pageId: '123',
+                    selected: false
+                });
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+                const personaSelector = spectator.debugElement.query(
+                    By.css('[data-testId="persona-selector"]')
+                ).componentInstance;
+
+                const fetchPersonasSpy = jest.spyOn(personaSelector, 'fetchPersonas');
+
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+
+                confirmDialog
+                    .querySelector('.p-confirm-dialog-accept')
+                    .dispatchEvent(new Event('click')); // This is the internal button, coudln't find a better way to test it
+
+                spectator.detectChanges();
+
+                expect(fetchPersonasSpy).toHaveBeenCalled();
+            });
+
+            it('should navigate with default persona as current persona when the selected is the same as the despersonalized', () => {
+                const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'despersonalize', {
+                    ...CUSTOM_PERSONA,
+                    pageId: '123',
+                    selected: true
+                });
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+
+                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+                const routerSpy = jest.spyOn(spectator.inject(Router), 'navigate');
+
+                spectator.detectChanges();
+
+                expect(confirmDialogOpen).toHaveBeenCalled();
+
+                confirmDialog
+                    .querySelector('.p-confirm-dialog-accept')
+                    .dispatchEvent(new Event('click')); // This is the internal button, coudln't find a better way to test it
+
+                spectator.detectChanges();
+
+                expect(routerSpy).toHaveBeenCalledWith([], {
+                    queryParams: { 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier },
+                    queryParamsHandling: 'merge'
+                });
             });
         });
 
@@ -597,6 +768,97 @@ describe('EditEmaEditorComponent', () => {
 
                     expect(saveMock).toHaveBeenCalled();
                 });
+
+                it('should add widget after backend emit CONTENT_SEARCH_SELECT', () => {
+                    const saveMock = jest.spyOn(store, 'savePage');
+                    const actionAdd = jest.spyOn(store, 'initActionAdd');
+
+                    spectator.detectChanges();
+
+                    const payload: ActionPayload = {
+                        language_id: '1',
+                        pageContainers: [
+                            {
+                                identifier: 'container-identifier-123',
+                                uuid: 'uuid-123',
+                                contentletsId: ['contentlet-identifier-123']
+                            }
+                        ],
+                        contentlet: {
+                            identifier: 'contentlet-identifier-123',
+                            inode: 'contentlet-inode-123',
+                            title: 'Hello World'
+                        },
+                        container: {
+                            identifier: 'container-identifier-123',
+                            acceptTypes: 'test',
+                            uuid: 'uuid-123',
+                            contentletsId: ['contentlet-identifier-123'],
+                            maxContentlets: 1
+                        },
+                        pageId: 'test'
+                    };
+
+                    spectator.setInput('contentlet', {
+                        x: 100,
+                        y: 100,
+                        width: 500,
+                        height: 500,
+                        payload
+                    });
+
+                    spectator.detectComponentChanges();
+
+                    spectator.triggerEventHandler(
+                        EmaContentletToolsComponent,
+                        'addWidget',
+                        payload
+                    );
+
+                    spectator.detectComponentChanges();
+
+                    expect(actionAdd).toHaveBeenCalledWith({
+                        containerId: 'container-identifier-123',
+                        acceptTypes: 'WIDGET',
+                        language_id: '1'
+                    });
+
+                    const dialogIframe = spectator.debugElement.query(
+                        By.css('[data-testId="dialog-iframe"]')
+                    );
+
+                    spectator.triggerEventHandler(dialogIframe, 'load', {}); // There's no way we can load the iframe, because we are setting a real src and will not load
+
+                    dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
+                        new CustomEvent('ng-event', {
+                            detail: {
+                                name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
+                                data: {
+                                    identifier: 'new-contentlet-identifier-123',
+                                    inode: '123'
+                                }
+                            }
+                        })
+                    );
+
+                    expect(saveMock).toHaveBeenCalledWith({
+                        pageContainers: [
+                            {
+                                identifier: 'container-identifier-123',
+                                uuid: 'uuid-123',
+                                contentletsId: [
+                                    'contentlet-identifier-123',
+                                    'new-contentlet-identifier-123'
+                                ],
+                                personaTag: undefined
+                            }
+                        ],
+                        pageId: 'test',
+                        whenSaved: expect.any(Function)
+                    });
+
+                    expect(saveMock).toHaveBeenCalled();
+                });
             });
 
             describe('misc', () => {
@@ -854,6 +1116,13 @@ describe('EditEmaEditorComponent', () => {
         });
 
         describe('palette', () => {
+            it('should render a palette', () => {
+                spectator.detectChanges();
+
+                const palette = spectator.query(EditEmaPaletteComponent);
+                expect(palette).toBeDefined();
+            });
+
             it('should post to iframe to get bound on drag', () => {
                 spectator.detectChanges();
 
@@ -864,7 +1133,7 @@ describe('EditEmaEditorComponent', () => {
                     'postMessage'
                 );
 
-                spectator.triggerEventHandler('div[data-type="contentlet"]', 'dragstart', {
+                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', {
                     target: {
                         dataset: {
                             type: 'contentlet',
@@ -908,7 +1177,7 @@ describe('EditEmaEditorComponent', () => {
                 expect(dropZone.rows).toBe(BOUNDS_MOCK);
             });
 
-            xit('should hide drop zone on palette drop', () => {
+            it('should hide drop zone on palette drop', () => {
                 spectator.detectChanges();
 
                 window.dispatchEvent(
@@ -927,10 +1196,10 @@ describe('EditEmaEditorComponent', () => {
 
                 expect(dropZone.rows).toBe(BOUNDS_MOCK);
 
-                spectator.triggerEventHandler('div[data-type="contentlet"]', 'dragend', {});
+                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragEnd', {});
                 spectator.detectComponentChanges();
                 dropZone = spectator.query(EmaPageDropzoneComponent);
-                expect(dropZone.rows).toEqual([]);
+                expect(dropZone).toBeNull();
             });
         });
     });
