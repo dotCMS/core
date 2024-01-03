@@ -69,9 +69,10 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     options$: Observable<DotDevice[]>;
     isCMSAdmin$: Observable<boolean>;
     socialMediaTiles: SocialMediaOption[];
+
+    // BEGIN_NOSCAN
     defaultOptions: DotDeviceListItem[] = [
         {
-            // NOSONAR
             name: this.dotMessageService.get('editpage.device.selector.mobile.portrait'),
             icon: 'pi pi-mobile',
             cssHeight: '844',
@@ -117,9 +118,10 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
             cssHeight: '820',
             cssWidth: '1180',
             inode: 'tablet-landscape',
-            identifier: 'tablet-landscape-id' // NOSONAR
+            identifier: 'tablet-landscape-id'
         }
     ];
+    // END_NOSCAN
 
     constructor(
         private dotDevicesService: DotDevicesService,
