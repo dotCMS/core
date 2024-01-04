@@ -4,6 +4,8 @@
         "rootDir": ".",
         "sourceMap": true,
         "declaration": false,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
         "moduleResolution": "node",
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,

@@ -1,4 +1,4 @@
-import * as autoScroll from 'dom-autoscroller';
+import autoScroll from 'dom-autoscroller';
 import * as _ from 'lodash';
 import { DragulaService } from 'ng2-dragula';
 import { Subject } from 'rxjs';

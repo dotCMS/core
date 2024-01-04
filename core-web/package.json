@@ -180,6 +180,7 @@
         "@types/jasminewd2": "~2.0.8",
         "@types/jest": "29.5.10",
         "@types/lodash": "^4.14.202",
+        "@types/md5": "^2.3.5",
         "@types/node": "18.16.9",
         "@types/puppeteer": "^5.4.2",
         "@types/react": "^18.2.46",
