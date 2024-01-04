@@ -15,7 +15,7 @@ import { Calendar } from 'primeng/calendar';
 import { CardModule } from 'primeng/card';
 import { Sidebar } from 'primeng/sidebar';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { ExperimentSteps, TIME_90_DAYS } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
@@ -23,7 +23,6 @@ import {
     getExperimentMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationSchedulingAddComponent } from './dot-experiments-configuration-scheduling-add.component';
 
