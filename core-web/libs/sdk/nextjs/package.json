@@ -5,8 +5,8 @@
         "next": "14.0.4",
         "react": "^18",
         "react-dom": "^18",
-        "@dotcms/react": "0.0.1",
-        "@dotcms/client": "0.0.1"
+        "@dotcms/react": "latest",
+        "@dotcms/client": "latest"
     },
     "description": "Official NextJS library to render a dotCMS page.",
     "repository": {
@@ -22,7 +22,7 @@
         "NextJS"
     ],
     "author": "dotcms <dev@dotcms.com>",
-    "license": "GPL-3.0",
+    "license": "MIT",
     "bugs": {
         "url": "https://github.com/dotCMS/core/issues"
     },
