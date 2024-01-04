@@ -282,7 +282,7 @@ abstract class DotCSSCompiler {
         final String assetUri = asset.getURI();
         final File f = new File(compDir.getAbsolutePath() + File.separator + inputHost.getHostname() + asset.getPath() + File.separator + asset.getFileName());
         if (f.exists() || (assetUri.endsWith(".scss") && StringUtils.shareSamePath(uri, assetUri)) || UtilMethods.isEmpty(asset::getFileAsset))  {
-          Logger.warn(this.getClass(),"Skipping asset:" + asset.getURI());
+          Logger.debug(this.getClass(),"Skipping asset:" + asset.getURI());
           continue;
         }
         getAllImportedURI().add(assetUri);
