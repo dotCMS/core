@@ -1,4 +1,4 @@
-<ng-container [ngSwitch]="thumbnailType">
+<ng-container [ngSwitch]="type">
     <img
         *ngSwitchCase="CONTENT_THUMBNAIL_TYPE.image"
         [src]="src"
@@ -17,7 +17,7 @@
 
     <i
         *ngSwitchDefault
-        [ngClass]="['pi', thumbnailIcon]"
+        [ngClass]="['pi', icon]"
         [ngStyle]="{ 'font-size': iconSize, color: 'var(--color-palette-secondary-400)' }"
         data-testId="thumbail-icon"></i>
 </ng-container>

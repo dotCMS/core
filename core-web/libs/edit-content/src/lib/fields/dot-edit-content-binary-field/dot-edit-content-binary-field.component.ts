@@ -152,7 +152,7 @@ export class DotEditContentBinaryFieldComponent
                 tap(() => this.dotBinaryFieldStore.setStatus(BinaryFieldStatus.UPLOADING)),
                 delay(500) // Loading animation
             )
-            .subscribe((tempFile) => this.setTempFile(tempFile));
+            .subscribe((temp) => this.dotBinaryFieldStore.setFileFromTemp(temp));
 
         this.dotBinaryFieldStore.setMaxFileSize(this.maxFileSize);
     }
@@ -160,7 +160,7 @@ export class DotEditContentBinaryFieldComponent
     ngAfterViewInit() {
         this.setFieldVariables();
         if (this.existFileMetadata()) {
-            this.setPreviewFile();
+            this.dotBinaryFieldStore.setFileFromContentlet(this.contentlet);
         }
 
         this.cd.detectChanges();
@@ -242,7 +242,7 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotBinaryFieldComponent
      */
     setTempFile(tempFile: DotCMSTempFile) {
-        this.dotBinaryFieldStore.setTempFile(tempFile);
+        this.dotBinaryFieldStore.setFileFromTemp(tempFile);
         this.closeDialog();
     }
 
@@ -293,30 +293,6 @@ export class DotEditContentBinaryFieldComponent
         }
 
         this.dotBinaryFieldStore.handleUploadFile(file);
-    }
-
-    /**
-     * Set preview file
-     *
-     * @private
-     * @memberof DotBinaryFieldComponent
-     */
-    private setPreviewFile() {
-        const {
-            titleImage,
-            inode,
-            [this.metaDataKey]: metadata,
-            [this.variable]: url
-        } = this.contentlet;
-        const { contentType: mimeType } = metadata;
-
-        this.dotBinaryFieldStore.setFileAndContent({
-            url,
-            inode,
-            titleImage,
-            mimeType,
-            ...metadata
-        });
     }
 
     /**

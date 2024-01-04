@@ -6,7 +6,12 @@
     <ng-template #contentThumnail>
         <div class="preview-image__container">
             <dot-content-thumbnail
-                [dotThumbanilOptions]="dotThumbnailOptions"></dot-content-thumbnail>
+                [url]="file.url"
+                [inode]="file.inode"
+                [name]="file.name"
+                [contentType]="file.contentType"
+                [titleImage]="file.titleImage"
+                [iconSize]="'48px'"></dot-content-thumbnail>
         </div>
 
         <div class="preview-metadata__container">

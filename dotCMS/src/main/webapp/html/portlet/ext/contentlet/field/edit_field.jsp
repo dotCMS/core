@@ -706,9 +706,11 @@
                     const metaData = <%=binaryMetadata%>;
                     const contentlet = metaData ? {
                         inode: "<%=binInode%>",
+                        titleImage: variable,
                         [variable]: `/dA/<%=contentlet.getIdentifier()%>/${variable}/${metaData.name}`,
                         [variable+"MetaData"]: {
                             ...metaData,
+                            fileSize: metaData.size,
                             contentType: "<%=mimeType%>"
                         }
                     } : null;
