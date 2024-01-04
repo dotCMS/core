@@ -89,7 +89,9 @@ describe('DotHttpErrorManagerService', () => {
             redirected: false,
             status: 401
         });
+
         expect(dotDialogService.alert).toHaveBeenCalledWith({
+            footerLabel: { accept: 'dot.common.dialog.accept' },
             message: '403 Message',
             header: '403 Header'
         });
@@ -98,6 +100,7 @@ describe('DotHttpErrorManagerService', () => {
     it('should handle 401 error when user is logout and redirect to login', () => {
         loginService.auth.user = null;
         jest.spyOn(dotDialogService, 'alert');
+        jest.spyOn(dotRouterService, 'goToLogin');
 
         service.handle(mockResponseView(401)).subscribe((res) => {
             result = res;
@@ -107,6 +110,7 @@ describe('DotHttpErrorManagerService', () => {
             redirected: true,
             status: 401
         });
+
         expect(dotDialogService.alert).not.toHaveBeenCalled();
         expect(dotRouterService.goToLogin).toHaveBeenCalledTimes(1);
     });
@@ -123,6 +127,7 @@ describe('DotHttpErrorManagerService', () => {
             status: 403
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
+            footerLabel: { accept: 'dot.common.dialog.accept' },
             message: '403 Message',
             header: '403 Header'
         });
@@ -146,6 +151,7 @@ describe('DotHttpErrorManagerService', () => {
             status: 500
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
+            footerLabel: { accept: 'dot.common.dialog.accept' },
             message: '500 Custom Message',
             header: '500 Header'
         });
@@ -168,6 +174,7 @@ describe('DotHttpErrorManagerService', () => {
             status: 403
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
+            footerLabel: { accept: 'dot.common.dialog.accept' },
             message: 'license message',
             header: 'license header'
         });
@@ -189,6 +196,7 @@ describe('DotHttpErrorManagerService', () => {
             status: 400
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
+            footerLabel: { accept: 'dot.common.dialog.accept' },
             message: 'Error',
             header: '400 Header'
         });
@@ -213,6 +221,7 @@ describe('DotHttpErrorManagerService', () => {
             status: 400
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
+            footerLabel: { accept: 'dot.common.dialog.accept' },
             message: SERVER_MESSAGE,
             header: CUSTOM_HEADER
         });
@@ -234,6 +243,7 @@ describe('DotHttpErrorManagerService', () => {
             status: 400
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
+            footerLabel: { accept: 'dot.common.dialog.accept' },
             message: 'Server Error',
             header: '400 Header'
         });
@@ -255,6 +265,7 @@ describe('DotHttpErrorManagerService', () => {
             status: 400
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
+            footerLabel: { accept: 'dot.common.dialog.accept' },
             message: 'Server Error',
             header: '400 Header'
         });
@@ -276,6 +287,7 @@ describe('DotHttpErrorManagerService', () => {
             status: 400
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
+            footerLabel: { accept: 'dot.common.dialog.accept' },
             message: 'Server Error',
             header: '400 Header'
         });
@@ -293,6 +305,7 @@ describe('DotHttpErrorManagerService', () => {
             status: 400
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
+            footerLabel: { accept: 'dot.common.dialog.accept' },
             message: '400 Message',
             header: '400 Header'
         });
@@ -310,6 +323,7 @@ describe('DotHttpErrorManagerService', () => {
             status: 204
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
+            footerLabel: { accept: 'dot.common.dialog.accept' },
             message: '204 Message',
             header: '204 Header'
         });
