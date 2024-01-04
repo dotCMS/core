@@ -34,7 +34,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18.13.0
+          node-version: 18.17.0
           cache: yarn
           cache-dependency-path: 'core-web/yarn.lock'
 
