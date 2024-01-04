@@ -19,8 +19,7 @@ import { DotFavoritePageComponent } from '../edit-ema-editor/components/dot-favo
     selector: 'dot-ema-bookmarks',
     standalone: true,
     imports: [ButtonModule, DotMessagePipe, AsyncPipe],
-    templateUrl: './dot-ema-bookmarks.component.html',
-    styleUrls: ['./dot-ema-bookmarks.component.scss']
+    templateUrl: './dot-ema-bookmarks.component.html'
 })
 export class DotEmaBookmarksComponent implements OnInit {
     @Input() url = '';
