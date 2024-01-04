@@ -1,0 +1,30 @@
+@use "variables" as *;
+
+:host {
+    display: grid;
+    grid-template-rows: min-content 1fr;
+    grid-template-columns: 1fr 240px;
+    height: 100%;
+}
+
+dot-ema-page-dropzone {
+    position: absolute;
+    inset: 0;
+}
+
+dot-edit-ema-toolbar {
+    grid-column: 1 / -1;
+}
+
+.iframe-wrapper {
+    position: relative;
+    overflow: hidden;
+    margin: $spacing-3;
+    outline: solid 1px $color-palette-gray-500;
+}
+
+a,
+a:focus,
+a:active {
+    text-decoration: none;
+}

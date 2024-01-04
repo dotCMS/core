@@ -1174,8 +1174,18 @@ public interface WorkflowAPI {
 			final int sleep);
 
 
-    int countWorkflowSchemes(User user);
+	/**
+	 * Returns the count of {@link WorkflowScheme}s in the system.
+	 * @param user the user requesting the count
+	 * @return
+	 */
+	int countWorkflowSchemes(User user);
 
+	/**
+	 * Returns the count of {@link WorkflowScheme}s in the system including archived ones.
+	 * @param user the user requesting the count
+	 * @return
+	 */
 	int countWorkflowSchemesIncludeArchived(User user);
 
     /**

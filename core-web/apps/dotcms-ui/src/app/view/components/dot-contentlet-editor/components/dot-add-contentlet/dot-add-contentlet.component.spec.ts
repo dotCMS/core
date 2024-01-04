@@ -12,10 +12,9 @@ import { DotMessageDisplayServiceMock } from '@components/dot-message-display/do
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
-import { DotAlertConfirmService, DotEventsService } from '@dotcms/data-access';
+import { DotAlertConfirmService, DotEventsService, DotRouterService } from '@dotcms/data-access';
 import {
     ApiRoot,
     CoreWebService,

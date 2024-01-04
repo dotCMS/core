@@ -4028,9 +4028,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				CollectionsUtils.join(this.findWorkFlowComments(task),
 						this.findWorkflowHistory (task));
 
-	    return workflowTimelineItems.stream()
-                .sorted(Comparator.comparing(WorkflowTimelineItem::createdDate))
-                .collect(CollectionsUtils.toImmutableList());
+	    return workflowTimelineItems.stream().collect(CollectionsUtils.toImmutableList());
 	}
 
 
@@ -4506,12 +4504,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
     }
 
 	@Override
+	@CloseDBIfOpened
 	public int countWorkflowSchemes(final User user) {
 		isUserAllowToModifiedWorkflow(user);
 		return workFlowFactory.countWorkflowSchemes(false);
 	}
 
 	@Override
+	@CloseDBIfOpened
 	public int countWorkflowSchemesIncludeArchived(final User user) {
 		isUserAllowToModifiedWorkflow(user);
 		return workFlowFactory.countWorkflowSchemes(true);

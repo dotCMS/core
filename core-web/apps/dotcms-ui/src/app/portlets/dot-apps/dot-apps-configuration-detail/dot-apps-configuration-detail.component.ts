@@ -7,7 +7,7 @@ import { pluck, take } from 'rxjs/operators';
 
 import { DotKeyValueUtil } from '@components/dot-key-value-ng/util/dot-key-value-util';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/data-access';
 import { DotApps, DotAppsSaveData, DotAppsSecrets } from '@dotcms/dotcms-models';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
