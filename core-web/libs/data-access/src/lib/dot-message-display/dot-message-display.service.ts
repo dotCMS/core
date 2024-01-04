@@ -73,8 +73,7 @@ export class DotMessageDisplayService {
 
     private hasPortletIdList(dotMessage: DotMessage): boolean {
         return (
-            !dotMessage.portletIdList ||
-            !dotMessage.portletIdList.length ||
+            !dotMessage.portletIdList?.length ||
             dotMessage.portletIdList.includes(this.dotRouterService.currentPortlet.id ?? '')
         );
     }
