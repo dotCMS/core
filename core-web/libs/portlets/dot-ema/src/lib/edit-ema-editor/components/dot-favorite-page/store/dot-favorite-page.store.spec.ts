@@ -1,3 +1,4 @@
+import { describe, expect } from '@jest/globals';
 import { Observable, of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -84,12 +85,12 @@ describe('DotFavoritePageStore', () => {
         dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
         dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
 
-        spyOn(dotPageRenderService, 'get').and.returnValue(of(mockDotRenderedPage()));
+        jest.spyOn(dotPageRenderService, 'get').mockReturnValue(of(mockDotRenderedPage()));
     });
 
     describe('New Favorite Page', () => {
         beforeEach(() => {
-            spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(true));
+            jest.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(of(true));
 
             dotFavoritePageStore.setInitialStateData({
                 favoritePageUrl: ''
@@ -170,11 +171,13 @@ describe('DotFavoritePageStore', () => {
 
         // Effects
         it('should create a Favorite Page with thumbnail', (done) => {
-            spyOn(dotTempFileUploadService, 'upload').and.returnValue(of([mockDotCMSTempFile]));
-            spyOn(
+            jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                of([mockDotCMSTempFile])
+            );
+            jest.spyOn(
                 dotWorkflowActionsFireService,
                 'publishContentletAndWaitForIndex'
-            ).and.returnValue(of(null));
+            ).mockReturnValue(of(null));
 
             const file = new File(
                 [
@@ -220,11 +223,13 @@ describe('DotFavoritePageStore', () => {
         });
 
         it('should create a Favorite Page without thumbnail', (done) => {
-            spyOn(dotTempFileUploadService, 'upload').and.returnValue(of([mockDotCMSTempFile]));
-            spyOn(
+            jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                of([mockDotCMSTempFile])
+            );
+            jest.spyOn(
                 dotWorkflowActionsFireService,
                 'publishContentletAndWaitForIndex'
-            ).and.returnValue(of(null));
+            ).mockReturnValue(of(null));
 
             dotFavoritePageStore.saveFavoritePage({
                 thumbnail: '',
@@ -262,10 +267,10 @@ describe('DotFavoritePageStore', () => {
         });
 
         it('should Edit a Favorite Page', (done) => {
-            spyOn(
+            jest.spyOn(
                 dotWorkflowActionsFireService,
                 'publishContentletAndWaitForIndex'
-            ).and.returnValue(of(null));
+            ).mockReturnValue(of(null));
 
             dotFavoritePageStore.saveFavoritePage({
                 inode: 'abc123',
@@ -304,11 +309,16 @@ describe('DotFavoritePageStore', () => {
         });
 
         it('should handle error when create/save Favorite Page', (done) => {
-            spyOn(dotTempFileUploadService, 'upload').and.returnValue(of([mockDotCMSTempFile]));
-            spyOn(dotWorkflowActionsFireService, 'publishContentletAndWaitForIndex').and.throwError(
-                'error'
+            jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                of([mockDotCMSTempFile])
             );
-            spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
+            jest.spyOn(
+                dotWorkflowActionsFireService,
+                'publishContentletAndWaitForIndex'
+            ).mockImplementation(() => {
+                throw new Error('error');
+            });
+            jest.spyOn(dotHttpErrorManagerService, 'handle');
 
             dotFavoritePageStore.saveFavoritePage({
                 thumbnail:
@@ -344,7 +354,7 @@ describe('DotFavoritePageStore', () => {
         });
 
         it('should delete Favorite Page', (done) => {
-            spyOn(dotWorkflowActionsFireService, 'deleteContentlet').and.returnValue(of(null));
+            jest.spyOn(dotWorkflowActionsFireService, 'deleteContentlet').mockReturnValue(of(null));
 
             dotFavoritePageStore.deleteFavoritePage('abc123');
 
@@ -361,8 +371,10 @@ describe('DotFavoritePageStore', () => {
         });
 
         it('should handle error when delete Favorite Page', (done) => {
-            spyOn(dotWorkflowActionsFireService, 'deleteContentlet').and.throwError('error');
-            spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
+            jest.spyOn(dotWorkflowActionsFireService, 'deleteContentlet').mockImplementation(() => {
+                throw new Error('error');
+            });
+            jest.spyOn(dotHttpErrorManagerService, 'handle');
 
             dotFavoritePageStore.deleteFavoritePage('abc123');
 
@@ -391,7 +403,7 @@ describe('DotFavoritePageStore', () => {
         };
 
         it('should set initial data', (done) => {
-            spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(true));
+            jest.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(of(true));
             dotFavoritePageStore.setInitialStateData({
                 favoritePageUrl: existingDataMock.url,
                 favoritePage: { ...existingDataMock }
@@ -423,11 +435,11 @@ describe('DotFavoritePageStore', () => {
         });
 
         it('should set right title if it is urlContentMap', (done) => {
-            spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(true));
+            jest.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(of(true));
 
-            dotPageRenderService.get = jasmine
-                .createSpy()
-                .and.returnValue(
+            dotPageRenderService.get = jest
+                .fn()
+                .mockReturnValue(
                     of({ ...mockDotRenderedPage(), urlContentMap: { title: 'test urlContentMap' } })
                 );
 
@@ -463,9 +475,7 @@ describe('DotFavoritePageStore', () => {
 
         it('should set initial data for an unknown 404 page', (done) => {
             const error404 = mockResponseView(404);
-            dotPageRenderService.checkPermission = jasmine
-                .createSpy()
-                .and.returnValue(throwError(error404));
+            dotPageRenderService.checkPermission = jest.fn().mockReturnValue(throwError(error404));
 
             dotFavoritePageStore.setInitialStateData({
                 favoritePageUrl: existingDataMock.url,

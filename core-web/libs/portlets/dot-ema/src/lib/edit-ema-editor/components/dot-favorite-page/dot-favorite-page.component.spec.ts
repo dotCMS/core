@@ -1,3 +1,5 @@
+import { describe, expect } from '@jest/globals';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, getTestBed, TestBed, tick } from '@angular/core/testing';
@@ -87,16 +89,16 @@ const storeMock = {
     get renderThumbnail$() {
         return of(true);
     },
-    saveFavoritePage: jasmine.createSpy(),
+    saveFavoritePage: jest.fn(),
     get closeDialog$() {
         return of(false);
     },
     get actionState$() {
         return of(null);
     },
-    setLoading: jasmine.createSpy(),
-    setLoaded: jasmine.createSpy(),
-    setInitialStateData: jasmine.createSpy(),
+    setLoading: jest.fn(),
+    setLoaded: jest.fn(),
+    setInitialStateData: jest.fn(),
     vm$: of({
         pageRenderedHtml: '',
         roleOptions: [],
@@ -124,13 +126,9 @@ describe('DotFavoritePageComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                DotFavoritePageComponent,
-
-                DotFormDialogMockComponent,
-                DotHtmlToImageMockComponent
-            ],
+            declarations: [DotFormDialogMockComponent, DotHtmlToImageMockComponent],
             imports: [
+                DotFavoritePageComponent,
                 ButtonModule,
                 DotMessagePipe,
                 FormsModule,
@@ -157,7 +155,7 @@ describe('DotFavoritePageComponent', () => {
                 {
                     provide: DynamicDialogRef,
                     useValue: {
-                        close: jasmine.createSpy()
+                        close: jest.fn()
                     }
                 },
                 {
@@ -168,8 +166,8 @@ describe('DotFavoritePageComponent', () => {
                                 pageState: mockRenderedPageState,
                                 pageRenderedHtml: '<p>test</p>'
                             },
-                            onSave: jasmine.createSpy(),
-                            onDelete: jasmine.createSpy()
+                            onSave: jest.fn(),
+                            onDelete: jest.fn()
                         }
                     }
                 }
@@ -206,8 +204,8 @@ describe('DotFavoritePageComponent', () => {
                     const field = de.query(By.css('[data-testId="thumbnailField"]'));
                     const webcomponent = field.query(By.css('dot-html-to-image'));
 
-                    expect(webcomponent.attributes['ng-reflect-height']).toBe('768.192048012003');
-                    expect(webcomponent.attributes['ng-reflect-width']).toBe('1024');
+                    expect(webcomponent.nativeElement.height).toBe(768.192048012003);
+                    expect(webcomponent.nativeElement.width).toBe(1024);
                 });
 
                 it('should setup title', () => {
@@ -359,13 +357,13 @@ describe('DotFavoritePageComponent', () => {
 
         describe('Store state changes', () => {
             it('should call close ref event when closeDialog event is executed from store', () => {
-                spyOnProperty(store, 'closeDialog$', 'get').and.returnValue(of(true));
+                jest.spyOn(store, 'closeDialog$', 'get').mockReturnValue(of(true));
                 fixture.detectChanges();
                 expect(dialogRef.close).toHaveBeenCalledWith(true);
             });
 
             it('should call onSave ref event when actionState event is executed from store with Saved value', () => {
-                spyOnProperty(store, 'actionState$', 'get').and.returnValue(
+                jest.spyOn(store, 'actionState$', 'get').mockReturnValue(
                     of(DotFavoritePageActionState.SAVED)
                 );
                 fixture.detectChanges();
@@ -373,7 +371,7 @@ describe('DotFavoritePageComponent', () => {
             });
 
             it('should call onDelete ref event when actionState event is executed from store with Deleted value', () => {
-                spyOnProperty(store, 'actionState$', 'get').and.returnValue(
+                jest.spyOn(store, 'actionState$', 'get').mockReturnValue(
                     of(DotFavoritePageActionState.DELETED)
                 );
                 fixture.detectChanges();
@@ -394,18 +392,18 @@ describe('DotFavoritePageComponent', () => {
                 get renderThumbnail$() {
                     return of(false);
                 },
-                setRenderThumbnail: jasmine.createSpy(),
-                saveFavoritePage: jasmine.createSpy(),
-                deleteFavoritePage: jasmine.createSpy(),
+                setRenderThumbnail: jest.fn(),
+                saveFavoritePage: jest.fn(),
+                deleteFavoritePage: jest.fn(),
                 get closeDialog$() {
                     return of(false);
                 },
                 get actionState$() {
                     return of(null);
                 },
-                setLoading: jasmine.createSpy(),
-                setLoaded: jasmine.createSpy(),
-                setInitialStateData: jasmine.createSpy(),
+                setLoading: jest.fn(),
+                setLoaded: jest.fn(),
+                setInitialStateData: jest.fn(),
                 vm$: of({
                     pageRenderedHtml: 'test',
                     roleOptions: [],
@@ -443,7 +441,7 @@ describe('DotFavoritePageComponent', () => {
             );
 
             expect(image.nativeElement['src'].includes('123')).toBe(true);
-            expect(reloadBtn.nativeElement.outerText).toBe('Reload');
+            expect(reloadBtn.nativeElement.textContent).toBe('Reload');
         });
 
         it('should button Remove Favorite be enabled', () => {
@@ -479,18 +477,18 @@ describe('DotFavoritePageComponent', () => {
                 get renderThumbnail$() {
                     return of(false);
                 },
-                setRenderThumbnail: jasmine.createSpy(),
-                saveFavoritePage: jasmine.createSpy(),
-                deleteFavoritePage: jasmine.createSpy(),
+                setRenderThumbnail: jest.fn(),
+                saveFavoritePage: jest.fn(),
+                deleteFavoritePage: jest.fn(),
                 get closeDialog$() {
                     return of(false);
                 },
                 get actionState$() {
                     return of(null);
                 },
-                setLoading: jasmine.createSpy(),
-                setLoaded: jasmine.createSpy(),
-                setInitialStateData: jasmine.createSpy(),
+                setLoading: jest.fn(),
+                setLoaded: jest.fn(),
+                setInitialStateData: jest.fn(),
                 vm$: of({
                     pageRenderedHtml: '',
                     roleOptions: [],
