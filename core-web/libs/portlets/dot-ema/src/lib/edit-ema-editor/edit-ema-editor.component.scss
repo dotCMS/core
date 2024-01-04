@@ -5,27 +5,10 @@
     grid-template-rows: min-content 1fr;
     grid-template-columns: 1fr 15.5rem;
     height: 100%;
+}
 
-    ::ng-deep {
-        .p-dialog {
-            .p-dialog-content {
-                display: flex;
-                justify-content: center;
-                align-items: flex-start;
-                padding: 0;
-            }
-        }
-
-        .p-confirm-dialog {
-            .p-dialog-content {
-                padding: 0 $spacing-6 $spacing-6 $spacing-6;
-            }
-
-            .p-dialog-footer {
-                padding-top: 0;
-            }
-        }
-    }
+dot-device-selector-seo {
+    display: none;
 }
 
 dot-ema-page-dropzone {
@@ -37,11 +20,34 @@ dot-edit-ema-toolbar {
     grid-column: 1 / -1;
 }
 
+.editor-content {
+    padding: $spacing-4 $spacing-3;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: $spacing-1;
+    overflow: auto;
+}
+.editor-content--device {
+    grid-column: 1 / -1;
+}
+
 .iframe-wrapper {
     position: relative;
     overflow: hidden;
-    margin: $spacing-3;
-    outline: solid 1px $color-palette-gray-500;
+    flex-grow: 1;
+    margin: 0 auto;
+
+    iframe {
+        outline: solid 1px $color-palette-gray-300;
+    }
+}
+
+.iframe-wrapper--device {
+    box-shadow: $shadow-l;
+    background: linear-gradient(135deg, $white 0%, rgba(240, 240, 240, 1) 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);
 }
 
 a,

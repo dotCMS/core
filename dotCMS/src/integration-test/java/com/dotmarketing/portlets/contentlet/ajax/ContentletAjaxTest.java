@@ -457,4 +457,74 @@ public class ContentletAjaxTest {
 		assertTrue(contentletData.get("hasImageFields").equals("true"));
 	}
 
+	/**
+	 * <b>Method to Test:</b> {@link ContentletAjax#searchContentletsByUser(List, String, List, List, boolean, boolean, boolean, boolean, int, String, int, User, HttpSession, String, String, String)} <p>
+	 * <b>When:</b> you create multilingual content and select All Languages, should show all content in all diff languages <p>
+	 * <b>Should:</b> Content should be shown in every possible language
+	 */
+	@Test
+	public void test_searchContentletsByUser_shouldReturnContentWithMultiLang() throws DotDataException, DotSecurityException {
+
+		// create new language
+		language = new LanguageDataGen().nextPersisted();
+		Host host = APILocator.getHostAPI().findDefaultHost(systemUser, false);
+
+		//create new content type
+		Structure structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent");
+		
+		// create multilingual contentlets
+		contentlet = new Contentlet();
+		contentlet.setContentTypeId(structure.getInode());
+		contentlet.setHost(host.getIdentifier());
+		contentlet.setLanguageId(defaultLang.getId());
+		String title = "testIssue"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
+		contentlet.setStringProperty("title", title);
+		contentlet.setStringProperty("body", "testIssueEnglish");
+		contentlet.setHost(host.getIdentifier());
+		contentlet.setIndexPolicy(IndexPolicy.FORCE);
+		contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+
+		contentlet = contentletAPI.checkin(contentlet, systemUser,false);
+		contentlet.setIndexPolicy(IndexPolicy.FORCE);
+		contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+		APILocator.getVersionableAPI().setLive(contentlet);
+		contentletAPI.isInodeIndexed(contentlet.getInode(),true);
+
+		String ident = contentlet.getIdentifier();
+		contentlet = contentletAPI.findContentletByIdentifier(ident, true, defaultLang.getId(), systemUser, false);
+		contentlet = contentletAPI.checkout(contentlet.getInode(), systemUser, false);
+		contentlet.setLanguageId(language.getId());
+		contentlet.setStringProperty("body", "testIssueItalian");
+		contentlet.setIndexPolicy(IndexPolicy.FORCE);
+		contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+
+		contentlet = contentletAPI.checkin(contentlet, systemUser,false);
+		contentlet.setIndexPolicy(IndexPolicy.FORCE);
+		contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+		APILocator.getVersionableAPI().setLive(contentlet);
+		contentletAPI.isInodeIndexed(contentlet.getInode(),true);
+		//  Validate that there are two contentlets associated to the same identifier wit different languages
+		List<Contentlet> contList = contentletAPI.getSiblings(ident);
+		Assert.assertEquals(2, contList.size());
+
+		// Gets all versions of the contentlet
+		List<String> fieldsValues = new ArrayList<>();
+		fieldsValues.add("conHost");
+		fieldsValues.add(host.getIdentifier());
+		fieldsValues.add("webPageContent.title");
+		fieldsValues.add(title);
+		List<String> categories = new ArrayList<>();
+
+		// The result should contain the two contentlets
+		List<Object> results=new ContentletAjax().searchContentletsByUser(structure.getInode(), fieldsValues, categories, false, false, false, false,1, "modDate Desc", 10,systemUser, null, null, null);
+		Map<String,Object> result = (Map<String,Object>)results.get(0);
+		Assert.assertEquals((Long)result.get("total"), Long.valueOf(2));
+		// Validate the two different languages
+		result = (Map<String,Object>)results.get(3);
+		assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==language.getId());
+		result = (Map<String,Object>)results.get(4);
+		assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==defaultLang.getId());
+
+	}
+
 }
