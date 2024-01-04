@@ -27,6 +27,7 @@ import { DotCMSBaseTypesContentTypes, DotDevice, DotPersona } from '@dotcms/dotc
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
 import { DotDeviceSelectorSeoComponent } from './components/dot-device-selector-seo/dot-device-selector-seo.component';
+import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaDeviceDisplayComponent } from './components/dot-ema-device-display/dot-ema-device-display.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
@@ -40,7 +41,6 @@ import {
     Row
 } from './components/ema-page-dropzone/ema-page-dropzone.component';
 
-import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DEFAULT_PERSONA, HOST, WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';

@@ -13,7 +13,7 @@ import { LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotFavoritePageComponent } from '../edit-ema-editor/components/dot-favorite-page/dot-favorite-page.component';
+import { DotFavoritePageComponent } from '../dot-favorite-page/dot-favorite-page.component';
 
 @Component({
     selector: 'dot-ema-bookmarks',

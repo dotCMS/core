@@ -80,7 +80,8 @@ describe('EditEmaStore', () => {
                     editor: mockResponse,
                     apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
                     iframeURL: `http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&t=${now}`,
-                    isEnterpriseLicense: true
+                    isEnterpriseLicense: true,
+                    favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1'
                 });
                 done();
                 jest.useRealTimers();

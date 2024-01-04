@@ -13,23 +13,27 @@ import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 
 import {
     DotContentTypeService,
     DotCurrentUserService,
     DotDevicesService,
+    DotESContentService,
+    DotFavoritePageService,
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
     DotPersonalizeService
 } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
+import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
 import {
     DotLanguagesServiceMock,
     MockDotMessageService,
     DotPersonalizeServiceMock,
     DotDevicesServiceMock,
-    mockDotDevices
+    mockDotDevices,
+    LoginServiceMock
 } from '@dotcms/utils-testing';
 
 import { DotCurrentUserServiceMock } from './components/dot-device-selector-seo/dot-device-selector-seo.component.spec';
@@ -70,6 +74,13 @@ describe('EditEmaEditorComponent', () => {
             MessageService,
             EditEmaStore,
             ConfirmationService,
+            DotFavoritePageService,
+            DotESContentService,
+            DialogService,
+            {
+                provide: LoginService,
+                useClass: LoginServiceMock
+            },
             {
                 provide: DotLicenseService,
                 useValue: {
@@ -95,6 +106,9 @@ describe('EditEmaEditorComponent', () => {
                                     title: 'hello world',
                                     identifier: '123'
                                 },
+                                site: {
+                                    identifier: '123'
+                                },
                                 viewAs: {
                                     language: {
                                         id: 2,
@@ -109,6 +123,9 @@ describe('EditEmaEditorComponent', () => {
                             1: of({
                                 page: {
                                     title: 'hello world',
+                                    identifier: '123'
+                                },
+                                site: {
                                     identifier: '123'
                                 },
                                 viewAs: {
