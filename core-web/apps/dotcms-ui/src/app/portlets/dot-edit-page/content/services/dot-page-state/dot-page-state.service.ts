@@ -27,12 +27,12 @@ import {
     DotPageRenderParameters,
     DotPageRenderState,
     DotPersona,
-    ESContent
+    ESContent,
+    PageModelChangeEvent,
+    PageModelChangeEventType
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
-
-import { PageModelChangeEvent, PageModelChangeEventType } from '../dot-edit-content-html/models';
 
 @Injectable()
 export class DotPageStateService {

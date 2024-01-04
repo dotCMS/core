@@ -18,7 +18,6 @@ import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockDotDevices } from '@dotcms/utils-testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotDeviceSelectorSeoComponent } from './dot-device-selector-seo.component';
 
@@ -49,7 +48,6 @@ export default {
                 DropdownModule,
                 FormsModule,
                 DotIconModule,
-                DotPipesModule,
                 ButtonModule,
                 OverlayPanelModule,
                 PanelModule,

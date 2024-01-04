@@ -1,0 +1,28 @@
+@use "variables" as *;
+
+.selected-device {
+    height: $field-height-sm; // This follows the same height as an button-sm which is the same as sm field
+    display: grid;
+    grid-template-columns: min-content auto $field-height-sm;
+    margin-bottom: $spacing-1;
+    width: 100%;
+    background-color: $white;
+}
+
+.selected-device__device {
+    height: 100%;
+    font-size: $font-size-md;
+    display: flex;
+    justify-content: center;
+    gap: $spacing-1;
+    grid-column: 2/2;
+
+    .pi {
+        color: $color-palette-primary-500;
+    }
+}
+
+.device__name {
+    display: flex;
+    align-items: center;
+}

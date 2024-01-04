@@ -57,3 +57,8 @@ export * from './lib/dot-experiments.model';
 export * from './lib/shared-models';
 export * from './lib/dot-page-tool.model';
 export * from './lib/navigation';
+export * from './lib/dot-contentlets-events.model';
+export * from './lib/meta-tags-model';
+export * from './lib/page-model-change-event';
+export * from './lib/page-model-change-event.type';
+export * from './lib/dot-page-content.model';
