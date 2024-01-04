@@ -95,7 +95,7 @@
                     "buildOptimizer": false
                 }
             },
-            "defaultConfiguration": "",
+            "defaultConfiguration": "production",
             "dependsOn": ["^build"]
         },
         "serve": {
