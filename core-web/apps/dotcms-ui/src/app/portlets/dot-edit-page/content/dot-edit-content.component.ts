@@ -31,29 +31,27 @@ import {
     DotCMSContentlet,
     DotCMSContentType,
     DotContainerStructure,
+    DotContentletEventAddContentType,
     DotExperiment,
     DotIframeEditEvent,
     DotPageContainer,
+    DotPageContent,
     DotPageMode,
     DotPageRender,
     DotPageRenderState,
     DotVariantData,
     ESContent,
-    FeaturedFlags
+    FeaturedFlags,
+    PageModelChangeEvent,
+    PageModelChangeEventType,
+    SeoMetaTags
 } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
 
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
-import {
-    PageModelChangeEvent,
-    PageModelChangeEventType
-} from './services/dot-edit-content-html/models';
-import { DotContentletEventAddContentType } from './services/dot-edit-content-html/models/dot-contentlets-events.model';
-import { SeoMetaTags } from './services/dot-edit-content-html/models/meta-tags-model';
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
 
 import { DotFavoritePageComponent } from '../components/dot-favorite-page/dot-favorite-page.component';
-import { DotPageContent } from '../shared/models';
 
 export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 

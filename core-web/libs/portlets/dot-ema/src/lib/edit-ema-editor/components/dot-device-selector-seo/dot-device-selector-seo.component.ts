@@ -22,15 +22,15 @@ import { PanelModule } from 'primeng/panel';
 import { filter, map, mergeMap, take, toArray } from 'rxjs/operators';
 
 import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
-import { DotCurrentUser, DotDevice, DotDeviceListItem } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-
 import {
+    DotCurrentUser,
+    DotDevice,
+    DotDeviceListItem,
     SEO_MEDIA_TYPES,
     SocialMediaOption,
     socialMediaTiles
-} from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
+} from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     standalone: true,
@@ -38,7 +38,6 @@ import {
         CommonModule,
         DropdownModule,
         FormsModule,
-        DotPipesModule,
         ButtonModule,
         OverlayPanelModule,
         PanelModule,
@@ -55,6 +54,7 @@ import {
 })
 export class DotDeviceSelectorSeoComponent implements OnInit {
     @Input() value: DotDevice;
+    @Input() hideMediaTiles = false;
     @Output() selected = new EventEmitter<DotDevice>();
     @Output() changeSeoMedia = new EventEmitter<string>();
     @Output() hideOverlayPanel = new EventEmitter<string>();
@@ -69,54 +69,55 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     options$: Observable<DotDevice[]>;
     isCMSAdmin$: Observable<boolean>;
     socialMediaTiles: SocialMediaOption[];
+
     defaultOptions: DotDeviceListItem[] = [
         {
-            name: this.dotMessageService.get('editpage.device.selector.mobile.portrait'),
+            inode: 'mobile-portrait',
             icon: 'pi pi-mobile',
+            name: this.dotMessageService.get('editpage.device.selector.mobile.portrait'),
             cssHeight: '844',
-            cssWidth: '390',
-            inode: '0',
-            identifier: ''
+            identifier: 'mobile-portrait-id',
+            cssWidth: '390'
         },
         {
-            name: this.dotMessageService.get('editpage.device.selector.mobile.landscape'),
+            identifier: 'mobile-landscape-id',
             icon: 'pi pi-mobile',
             cssHeight: '390',
-            cssWidth: '844',
-            inode: '0',
-            identifier: ''
+            inode: 'mobile-landscape',
+            name: this.dotMessageService.get('editpage.device.selector.mobile.landscape'),
+            cssWidth: '844'
         },
         {
-            name: this.dotMessageService.get('editpage.device.selector.hd.monitor'),
-            icon: 'pi pi-desktop',
             cssHeight: '1080',
-            cssWidth: '1920',
-            inode: '0',
-            identifier: ''
-        },
-        {
-            name: this.dotMessageService.get('editpage.device.selector.4k.monitor'),
             icon: 'pi pi-desktop',
-            cssHeight: '2160',
-            cssWidth: '3840',
-            inode: '0',
-            identifier: ''
+            cssWidth: '1920',
+            name: this.dotMessageService.get('editpage.device.selector.hd.monitor'),
+            inode: 'hd-monitor',
+            identifier: 'hd-monitor-id'
         },
         {
+            icon: 'pi pi-desktop',
+            identifier: '4k-monitor-id',
+            name: this.dotMessageService.get('editpage.device.selector.4k.monitor'),
+            cssHeight: '2160',
+            inode: '4k-monitor',
+            cssWidth: '3840'
+        },
+        {
+            cssWidth: '820',
             name: this.dotMessageService.get('editpage.device.selector.tablet.portrait'),
             icon: 'pi pi-tablet',
             cssHeight: '1180',
-            cssWidth: '820',
-            inode: '0',
-            identifier: ''
+            inode: 'tablet-portrait',
+            identifier: 'tablet-portrait-id'
         },
         {
             name: this.dotMessageService.get('editpage.device.selector.tablet.landscape'),
             icon: 'pi pi-tablet',
             cssHeight: '820',
             cssWidth: '1180',
-            inode: '0',
-            identifier: ''
+            inode: 'tablet-landscape',
+            identifier: 'tablet-landscape-id'
         }
     ];
 

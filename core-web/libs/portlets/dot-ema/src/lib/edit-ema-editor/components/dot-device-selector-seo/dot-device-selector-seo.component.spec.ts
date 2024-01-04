@@ -1,10 +1,11 @@
+import { describe, expect, it } from '@jest/globals';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA, Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { OverlayPanelModule } from 'primeng/overlaypanel';
@@ -79,7 +80,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
                 DotDeviceSelectorSeoComponent,
                 HttpClientTestingModule,
                 OverlayPanelModule,
-                BrowserAnimationsModule,
+                NoopAnimationsModule,
                 RouterTestingModule
             ],
             providers: [
@@ -107,7 +108,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
         de = deHost.query(By.css('dot-device-selector-seo'));
         component = de.componentInstance;
         TestBed.inject(DotDevicesService);
-        spyOn(component, 'getOptions').and.returnValue(of(mockDotDevices));
+        jest.spyOn(component, 'getOptions').mockReturnValue(of(mockDotDevices));
 
         dotCurrentUserService = de.injector.get(DotCurrentUserService);
 
@@ -119,7 +120,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
     it('should emit selected device on change', async () => {
         await fixtureHost.whenStable();
         fixtureHost.detectChanges();
-        spyOn(component.selected, 'emit');
+        jest.spyOn(component.selected, 'emit');
         const selectorOptions = fixtureHost.debugElement.queryAll(
             By.css('[data-testId="device-selector-option"] > .device-list__button')
         );
@@ -179,7 +180,9 @@ describe('DotDeviceSelectorSeoComponent', () => {
     });
 
     it('should not have a link to add device', async () => {
-        spyOn(dotCurrentUserService, 'getCurrentUser').and.returnValue(of(CurrentUserDataMock));
+        jest.spyOn(dotCurrentUserService, 'getCurrentUser').mockReturnValue(
+            of(CurrentUserDataMock)
+        );
 
         const link = de.query(By.css('[data-testId="dot-device-link-add"]'));
         expect(link).toBeNull();
@@ -197,7 +200,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
     });
 
     it('should trigger the changeSeoMedia', () => {
-        spyOn(component, 'changeSeoMediaEvent');
+        jest.spyOn(component, 'changeSeoMediaEvent');
         fixtureHost.detectChanges();
 
         const buttonMedia = de.query(By.css('[data-testId="device-list-button-media"]'));
@@ -208,7 +211,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
     });
 
     it('should emit hideOverlayPanel event when onHideDeviceSelector is called', () => {
-        spyOn(component.hideOverlayPanel, 'emit');
+        jest.spyOn(component.hideOverlayPanel, 'emit');
         component.onHideDeviceSelector();
         expect(component.hideOverlayPanel.emit).toHaveBeenCalled();
     });
@@ -219,5 +222,16 @@ describe('DotDeviceSelectorSeoComponent', () => {
         const selectorMask: DebugElement = de.query(By.css('[data-testId="selector-mask"]'));
 
         expect(selectorMask).toBeDefined();
+    });
+
+    it('should hide the media tiles and show the secondary link when hideMediaTiles is true', () => {
+        component.hideMediaTiles = true;
+        fixtureHost.detectChanges();
+
+        const link = de.query(By.css('[data-testId="dot-device-selector-link-secondary"]'));
+        const mediaTiles = de.query(By.css('[data-testId="social-media-tiles"]'));
+
+        expect(link).not.toBeNull();
+        expect(mediaTiles).toBeNull();
     });
 });
