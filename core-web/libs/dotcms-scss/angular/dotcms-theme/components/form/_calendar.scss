@@ -62,7 +62,7 @@
 
     &:not(.p-datepicker-inline) {
         margin-top: $spacing-3;
-        box-shadow: $md-shadow-6;
+        box-shadow: $shadow-l;
         min-width: auto;
         display: flex;
         flex-direction: column;

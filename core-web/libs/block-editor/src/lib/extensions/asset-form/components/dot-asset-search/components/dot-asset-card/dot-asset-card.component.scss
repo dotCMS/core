@@ -3,7 +3,7 @@
 :host ::ng-deep {
     .p-card {
         border: none;
-        box-shadow: $md-shadow-1;
+        box-shadow: $shadow-xs;
         cursor: pointer;
         display: flex;
         gap: $spacing-3;
