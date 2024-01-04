@@ -22,7 +22,7 @@ import java.util.Map;
  * Test for the JSEngine
  * @author jsanca
  */
-public class JsEngineTest extends IntegrationTestBase {
+public class jsenginetest extends IntegrationTestBase {
 
     private JsEngine jsEngine = null;
 
@@ -205,7 +205,7 @@ public class JsEngineTest extends IntegrationTestBase {
     public void testFunctionWithArgumentsEval() throws Exception {
 
         /*
-        (function square(x) {
+        (function square(context, x) {
                 return x * x;
         })
          */

@@ -162,7 +162,7 @@ public class JsEngine implements ScriptEngine {
                        final Reader scriptReader,
                        final Map<String, Object> contextParams) {
 
-        final DotJSON dotJSON = (DotJSON)contextParams.getOrDefault("dotJSON", new DotJSON());
+        final DotJSON dotJSON = (DotJSON)contextParams.computeIfAbsent("dotJSON", k -> new DotJSON());
         try (Context context = buildContext()) {
 
             final Object fileName   = contextParams.getOrDefault("dot:jsfilename", "sample.js");
@@ -188,26 +188,39 @@ public class JsEngine implements ScriptEngine {
 
             checkRejected (eval);
 
-            if (eval.isHostObject()) {
-                return eval.asHostObject();
-            }
-
-            if (isString(eval)) {
-                return eval.as(String.class);
-            }
-
-            final Value finalValue = eval;
-            final Map resultMap = Try.of(()-> finalValue.as(Map.class)).getOrNull();
-            if (Objects.nonNull(resultMap)) {
-                return CollectionsUtils.toSerializableMap(resultMap); // we need to do that b.c the context will be close after the return and the resultMap won;t be usable.
-            }
-
-            return CollectionsUtils.map("output", eval.asString(), "dotJSON", dotJSON);
+            return asValue(eval, dotJSON);
         } catch (final IOException e) {
 
             Logger.error(this, e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private Object asValue (final Value eval, final DotJSON dotJSON) {
+
+        if (eval.isHostObject()) {
+            return eval.asHostObject();
+        }
+
+        if (eval.isString()) {
+            return eval.as(String.class);
+        }
+
+        if (eval.isNumber()) {
+            return eval.as(Number.class);
+        }
+
+        if (eval.isBoolean()) {
+            return eval.as(Boolean.class);
+        }
+
+        final Value finalValue = eval;
+        final Map resultMap = Try.of(()-> finalValue.as(Map.class)).getOrNull();
+        if (Objects.nonNull(resultMap)) {
+            return CollectionsUtils.toSerializableMap(resultMap); // we need to do that b.c the context will be close after the return and the resultMap won;t be usable.
+        }
+
+        return CollectionsUtils.map("output", eval.asString(), "dotJSON", dotJSON);
     }
 
     private void checkRejected(final Value eval) {
@@ -272,6 +285,10 @@ public class JsEngine implements ScriptEngine {
 
     private void addModules(final List<Source> sources) throws IOException {
 
+        if (Objects.isNull(Config.CONTEXT)) {
+            Logger.warn(this, "Context is null, can't load modules");
+            return;
+        }
         final String absoluteWebInfPath  = Config.CONTEXT.getRealPath(File.separator + "WEB-INF");
         final String relativeModulesPath = File.separator + "WEB-INF" + File.separator + "javascript" + File.separator + "modules" + File.separator;
         final String absoluteModulesPath = Config.CONTEXT.getRealPath(relativeModulesPath);
@@ -291,6 +308,10 @@ public class JsEngine implements ScriptEngine {
 
     private void addFunctions(final List<Source> sources) throws IOException {
         final String relativeFunctionsPath = File.separator + "WEB-INF" + File.separator + "javascript" + File.separator + "functions" + File.separator;
+        if (Objects.isNull(Config.CONTEXT)) {
+            Logger.warn(this, "Context is null, can't load functions");
+            return;
+        }
         final String absoluteFunctionsPath = Config.CONTEXT.getRealPath(relativeFunctionsPath);
         FileUtil.walk(absoluteFunctionsPath,
                 path -> path.getFileName().toString().endsWith(".js"), path -> {

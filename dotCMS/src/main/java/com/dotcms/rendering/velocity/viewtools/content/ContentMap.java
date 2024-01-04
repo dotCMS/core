@@ -45,6 +45,7 @@ import org.apache.velocity.context.Context;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.StringWriter;
 import java.sql.Timestamp;
 import java.util.Collections;
@@ -70,7 +71,7 @@ import java.util.stream.Collectors;
  * @author Jason Tesser
  * @since 1.9.3
  */
-public class ContentMap {
+public class ContentMap implements Serializable {
 
 	private Contentlet content;
 	private ContentletAPI conAPI;
