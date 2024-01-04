@@ -40,6 +40,7 @@ import {
     Row
 } from './components/ema-page-dropzone/ema-page-dropzone.component';
 
+import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DEFAULT_PERSONA, HOST, WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
@@ -91,7 +92,8 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
         EmaContentletToolsComponent,
         EmaFormSelectorComponent,
         DotDeviceSelectorSeoComponent,
-        DotEmaDeviceDisplayComponent
+        DotEmaDeviceDisplayComponent,
+        DotEmaBookmarksComponent
     ]
 })
 export class EditEmaEditorComponent implements OnInit, OnDestroy {

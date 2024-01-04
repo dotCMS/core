@@ -7,13 +7,17 @@ import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
 import { map, skip, takeUntil } from 'rxjs/operators';
 
 import {
+    DotESContentService,
+    DotFavoritePageService,
     DotLanguagesService,
     DotPageLayoutService,
+    DotPageRenderService,
     DotPersonalizeService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
@@ -51,6 +55,10 @@ import { NavigationBarItem } from '../shared/models';
         DotPersonalizeService,
         MessageService,
         DotPageLayoutService,
+        DotFavoritePageService,
+        DotESContentService,
+        DialogService,
+        DotPageRenderService,
         {
             provide: WINDOW,
             useValue: window

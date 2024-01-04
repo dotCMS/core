@@ -5,7 +5,8 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotLicenseService } from '@dotcms/data-access';
+import { DotFavoritePageService, DotLicenseService } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import { DotContainerMap, DotLayout, DotPageContainerStructure } from '@dotcms/dotcms-models';
 
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
@@ -61,7 +62,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     constructor(
         private dotPageApiService: DotPageApiService,
         private dotActionUrl: DotActionUrlService,
-        private dotLicenseService: DotLicenseService
+        private dotLicenseService: DotLicenseService,
+        private favoritePageService: DotFavoritePageService,
+        private loginService: LoginService
     ) {
         super();
     }
@@ -74,7 +77,14 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
         });
 
+        const favoritePageURL = this.createFavoritePagesURL({
+            languageId: state.editor.viewAs.language.id,
+            pageURI: state.url,
+            siteId: state.editor.site.identifier
+        });
+
         return {
+            favoritePageURL,
             apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
             iframeURL: `${HOST}/${pageURL}` + `&t=${Date.now()}`, // The iframe will only reload if the queryParams changes, so we add a timestamp to force a reload when no queryParams change
             editor: {
@@ -362,6 +372,30 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     private createPageURL(params: DotPageApiParams): string {
         return `${params.url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
+    }
+
+    /**
+     * Create the url to add a page to favorites
+     *
+     * @private
+     * @param {{
+     *         languageId: number;
+     *         pageURI: string;
+     *         deviceInode?: string;
+     *         siteId?: string;
+     *     }} params
+     * @return {*}  {string}
+     * @memberof EditEmaStore
+     */
+    private createFavoritePagesURL(params: {
+        languageId: number;
+        pageURI: string;
+        deviceInode?: string;
+        siteId?: string;
+    }): string {
+        const { languageId, pageURI, siteId } = params;
+
+        return `/${pageURI}?` + (siteId ? `host_id=${siteId}` : '') + `&language_id=${languageId}`;
     }
 
     /**

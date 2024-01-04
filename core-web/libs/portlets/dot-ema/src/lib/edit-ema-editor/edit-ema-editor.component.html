@@ -14,7 +14,7 @@
                 icon="pi pi-desktop"
                 styleClass="p-button-text p-button-sm"
                 data-testId="ema-preview" />
-            <p-button label="Bookmark" icon="pi pi-star" styleClass="p-button-text p-button-sm" />
+            <dot-ema-bookmarks [url]="es.favoritePageURL" />
             <p-button
                 [cdkCopyToClipboard]="es.iframeURL"
                 [label]="'editpage.header.copy' | dm"
