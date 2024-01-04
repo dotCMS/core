@@ -444,7 +444,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     private setUpDragulaScroll(): void {
-        const drake = this.dragulaService.find('fields-bag').drake;
+        const drake = this.dragulaService.find('fields-bag')?.drake;
         autoScroll([this.elRef.nativeElement.parentElement], {
             margin: 100,
             maxSpeed: 60,

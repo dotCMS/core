@@ -354,18 +354,22 @@ describe('DotTemplateBuilderComponent', () => {
             fixture.detectChanges();
         });
 
-        xit('should set iframe permissions url', () => {
-            const permissions = de.query(By.css('[data-testId="permissionsIframe"]'));
-            expect(permissions.componentInstance.src).toBe(
-                '/html/templates/permissions.jsp?templateId=123&popup=true'
-            );
+        it('should set iframe permissions url', () => {
+            fixture.whenStable().then(() => {
+                const permissions = de.query(By.css('[data-testId="permissionsIframe"]'));
+                expect(permissions.componentInstance.src).toBe(
+                    '/html/templates/permissions.jsp?templateId=123&popup=true'
+                );
+            });
         });
 
-        xit('should set iframe history url', () => {
-            const historyIframe = de.query(By.css('[data-testId="historyIframe"]'));
-            expect(historyIframe.componentInstance.src).toBe(
-                '/html/templates/push_history.jsp?templateId=123&popup=true'
-            );
+        it('should set iframe history url', () => {
+            fixture.whenStable().then(() => {
+                const historyIframe = de.query(By.css('[data-testId="historyIframe"]'));
+                expect(historyIframe.componentInstance.src).toBe(
+                    '/html/templates/push_history.jsp?templateId=123&popup=true'
+                );
+            });
         });
 
         it('should reload iframe when changes in the template happens', () => {
@@ -404,22 +408,24 @@ describe('DotTemplateBuilderComponent', () => {
             ).toHaveBeenCalledTimes(1);
         });
 
-        xit('should handle custom event', () => {
+        it('should handle custom event', () => {
             spyOn(component.custom, 'emit');
 
-            const permissions: IframeMockComponent = de.query(
-                By.css('[data-testId="historyIframe"]')
-            ).componentInstance;
-            const customEvent = document.createEvent('CustomEvent');
-            customEvent.initCustomEvent('ng-event', false, false, {
-                name: 'edit-template',
-                data: {
-                    id: 'id',
-                    inode: 'inode'
-                }
+            fixture.whenStable().then(() => {
+                const permissions: IframeMockComponent = de.query(
+                    By.css('[data-testId="historyIframe"]')
+                ).componentInstance;
+                const customEvent = document.createEvent('CustomEvent');
+                customEvent.initCustomEvent('ng-event', false, false, {
+                    name: 'edit-template',
+                    data: {
+                        id: 'id',
+                        inode: 'inode'
+                    }
+                });
+                permissions.custom.emit(customEvent);
+                expect(component.custom.emit).toHaveBeenCalledWith(customEvent);
             });
-            permissions.custom.emit(customEvent);
-            expect(component.custom.emit).toHaveBeenCalledWith(customEvent);
         });
     });
 });
