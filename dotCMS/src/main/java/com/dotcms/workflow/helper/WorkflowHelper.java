@@ -19,7 +19,6 @@ import com.dotcms.rest.api.v1.workflow.WorkflowDefaultActionView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.InternalServerException;
 import com.dotcms.util.CollectionsUtils;
-import com.dotcms.util.DotPreconditions;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.workflow.form.BulkActionForm;
 import com.dotcms.workflow.form.FireBulkActionsForm;
@@ -139,6 +138,9 @@ public class WorkflowHelper {
             + "    },\n"
             + "\t\"size\":0   \n"
             + "}";
+    private static final String WORKFLOW_DOESNT_EXIST_ERROR_MSG = "Workflow-does-not-exists-action";
+    private static final String WORKFLOW_ACTION_ID_REQUIRED_ERROR_MSG = "Workflow-required-param-actionId";
+    private static final String WORKFLOW_STEP_DOESNT_EXIST_ERROR_MSG = "Workflow-does-not-exists-step";
 
     /**
      * Finds the bulk actions based on the {@link BulkActionForm}
@@ -349,12 +351,7 @@ public class WorkflowHelper {
     private Optional<WorkflowAction> findActionsOn (final String actionName, final List<WorkflowAction>  workflowActions) {
 
         if (UtilMethods.isSet(workflowActions)) {
-
-            final Optional<WorkflowAction> foundAction  =
-                    workflowActions.stream()
-                            .filter(action -> action.getName().equalsIgnoreCase(actionName)).findFirst();
-
-            return foundAction;
+            return workflowActions.stream().filter(action -> action.getName().equalsIgnoreCase(actionName)).findFirst();
         }
 
         return Optional.empty();
@@ -373,11 +370,9 @@ public class WorkflowHelper {
     public String getActionIdOnList(final String actionName,
                                     final Contentlet contentlet,
                                     final User user) throws DotSecurityException, DotDataException {
-
-        final WorkflowAPI workflowAPI                = APILocator.getWorkflowAPI();
         final Optional<WorkflowStep> workflowStepOpt = workflowAPI.findCurrentStep(contentlet);
-        Optional<WorkflowScheme> schemeOpt           = Optional.empty();
-        Optional<WorkflowAction> foundAction         = Optional.empty();
+        Optional<WorkflowScheme> schemeOpt = Optional.empty();
+        Optional<WorkflowAction> foundAction;
         if (workflowStepOpt.isPresent()) {
             // 1) look for the actions on the same step
             final WorkflowStep workflowStep = workflowStepOpt.get();
@@ -433,7 +428,7 @@ public class WorkflowHelper {
             }
             return this.workflowAPI.fireBulkActions(action, user, form.getContentletIds(), form.getPopupParamsBean());
         } else {
-            throw new DoesNotExistException("Workflow-does-not-exists-action");
+            throw new DoesNotExistException(WORKFLOW_DOESNT_EXIST_ERROR_MSG);
         }
     }
 
@@ -459,7 +454,7 @@ public class WorkflowHelper {
             }
             this.workflowAPI.fireBulkActionsNoReturn(action, user, form.getContentletIds(), form.getPopupParamsBean());
         } else {
-            throw new DoesNotExistException("Workflow-does-not-exists-action");
+            throw new DoesNotExistException(WORKFLOW_DOESNT_EXIST_ERROR_MSG);
         }
     }
 
@@ -830,7 +825,7 @@ public class WorkflowHelper {
     public WorkflowAction findAction(final String actionId, final User user) throws DotDataException, DotSecurityException{
 
         if (!UtilMethods.isSet(actionId)) {
-            final String exceptionMessage = getFormattedMessage(user.getLocale(),"Workflow-required-param-actionId",actionId);
+            final String exceptionMessage = getFormattedMessage(user.getLocale(),WORKFLOW_ACTION_ID_REQUIRED_ERROR_MSG,actionId);
             throw new IllegalArgumentException(exceptionMessage);
         }
 
@@ -853,7 +848,7 @@ public class WorkflowHelper {
     public String evaluateActionCondition(final String actionId, final User user, final HttpServletRequest request, final HttpServletResponse response) throws DotDataException, DotSecurityException{
 
         if (!UtilMethods.isSet(actionId)) {
-            final String exceptionMessage = getFormattedMessage(user.getLocale(),"Workflow-required-param-actionId",actionId);
+            final String exceptionMessage = getFormattedMessage(user.getLocale(),WORKFLOW_ACTION_ID_REQUIRED_ERROR_MSG,actionId);
             throw new IllegalArgumentException(exceptionMessage);
         }
 
@@ -886,7 +881,7 @@ public class WorkflowHelper {
     public WorkflowAction findAction(final String actionId, final String stepId, final User user) throws DotDataException, DotSecurityException{
 
         if (!UtilMethods.isSet(actionId)) {
-            final String exceptionMessage = getFormattedMessage(user.getLocale(),"Workflow-required-param-actionId",actionId);
+            final String exceptionMessage = getFormattedMessage(user.getLocale(),WORKFLOW_ACTION_ID_REQUIRED_ERROR_MSG,actionId);
             throw new IllegalArgumentException(exceptionMessage);
         }
 
@@ -912,8 +907,8 @@ public class WorkflowHelper {
     @CloseDBIfOpened
     public List<Permission> getActionsPermissions (final List<WorkflowAction> workflowActions) throws DotDataException {
 
-        final ImmutableList.Builder permissions =
-                new ImmutableList.Builder();
+        final ImmutableList.Builder<Permission> permissions =
+                new ImmutableList.Builder<>();
 
         for (final WorkflowAction action : workflowActions) {
             permissions.addAll(this.permissionAPI.getPermissions(action));
@@ -955,11 +950,11 @@ public class WorkflowHelper {
         }
 
         if (null == action) {
-            throw new DoesNotExistException("Workflow-does-not-exists-action");
+            throw new DoesNotExistException(WORKFLOW_DOESNT_EXIST_ERROR_MSG);
         }
 
         if (null == step) {
-            throw new DoesNotExistException("Workflow-does-not-exists-step");
+            throw new DoesNotExistException(WORKFLOW_STEP_DOESNT_EXIST_ERROR_MSG);
         }
 
         Logger.debug(this,  "Reordering the action: " + action.getId()
@@ -1070,7 +1065,7 @@ public class WorkflowHelper {
         try {
             step = workflowAPI.findStep(stepId);
         } catch (IndexOutOfBoundsException e){
-            throw new DoesNotExistException("Workflow-does-not-exists-step", e);
+            throw new DoesNotExistException(WORKFLOW_STEP_DOESNT_EXIST_ERROR_MSG, e);
         }
         return step;
     }
@@ -1132,7 +1127,7 @@ public class WorkflowHelper {
         try {
             workflowStep = this.workflowAPI.findStep(stepId);
         } catch (IndexOutOfBoundsException e) {
-            throw new DoesNotExistException("Workflow-does-not-exists-step");
+            throw new DoesNotExistException(WORKFLOW_STEP_DOESNT_EXIST_ERROR_MSG);
         }
         if (null != workflowStep) {
             try {
@@ -1145,7 +1140,7 @@ public class WorkflowHelper {
             }
         } else {
 
-            throw new DoesNotExistException("Workflow-does-not-exists-step");
+            throw new DoesNotExistException(WORKFLOW_STEP_DOESNT_EXIST_ERROR_MSG);
         }
     } // deleteStep.
 
@@ -1179,7 +1174,7 @@ public class WorkflowHelper {
             }
         } else {
 
-            throw new DoesNotExistException("Workflow-does-not-exists-action");
+            throw new DoesNotExistException(WORKFLOW_DOESNT_EXIST_ERROR_MSG);
         }
     } // deleteAction.
 
@@ -1217,11 +1212,11 @@ public class WorkflowHelper {
                     this.workflowAPI.findStep(stepId);
 
             if (null == action) {
-                throw new DoesNotExistException("Workflow-does-not-exists-action");
+                throw new DoesNotExistException(WORKFLOW_DOESNT_EXIST_ERROR_MSG);
             }
 
             if (null == step) {
-                throw new DoesNotExistException("Workflow-does-not-exists-step");
+                throw new DoesNotExistException(WORKFLOW_STEP_DOESNT_EXIST_ERROR_MSG);
             }
 
             Logger.debug(this, () -> "Deleting the action: " + actionId
@@ -1338,7 +1333,7 @@ public class WorkflowHelper {
                 throw new DotWorkflowException(e.getMessage(), e);
             }
         } else {
-            throw new DoesNotExistException("Workflow-does-not-exists-step");
+            throw new DoesNotExistException(WORKFLOW_STEP_DOESNT_EXIST_ERROR_MSG);
         }
 
         return (null == actions) ? Collections.emptyList() : actions;
@@ -1482,7 +1477,7 @@ public class WorkflowHelper {
             if(workflowAPI.findAction(actionId, user) != null){
                action = saveAction(actionId, workflowActionForm, user);
             } else {
-                throw new DoesNotExistException("Workflow-does-not-exists-action");
+                throw new DoesNotExistException(WORKFLOW_DOESNT_EXIST_ERROR_MSG);
             }
         } catch (DotDataException | DotSecurityException e) {
             throw new DotWorkflowException(e.getMessage(), e);
@@ -1836,16 +1831,15 @@ public class WorkflowHelper {
         }
 
         final ImmutableList.Builder<WorkflowScheme> schemes = new ImmutableList.Builder<>();
-        final ImmutableList.Builder<WorkflowDefaultActionView> results = new ImmutableList.Builder<>();
         try {
             Logger.debug(this,
-                    () -> "Getting the available workflows default actions by schemeIds: " + schemeIds);
+                    "Getting the available default workflow actions for schemeIds: " + schemeIds);
 
             //If no valid license is found we simply return the system wf.
             if (!workflowAPI.hasValidLicense()) {
                 schemes.add(workflowAPI.findSystemWorkflowScheme());
             } else {
-                for (final String id : schemeIds.split(",")) {
+                for (final String id : schemeIds.split(StringPool.COMMA)) {
                     schemes.add(this.workflowAPI.findScheme(id));
                 }
             }
@@ -1853,20 +1847,14 @@ public class WorkflowHelper {
             final List<WorkflowAction> actions = this.workflowAPI
                     .findAvailableDefaultActionsBySchemes(schemes.build(),
                             APILocator.getUserAPI().getSystemUser());
-            for (final WorkflowAction action : actions) {
-                final WorkflowScheme scheme = this.workflowAPI.findScheme(action.getSchemeId());
-                final WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme,
-                        action);
-                results.add(value);
-            }
+            return buildDefaultActionsViewObj(actions);
         } catch (DotDataException | DotSecurityException e) {
-
-            Logger.error(this, e.getMessage());
-            Logger.debug(this, e.getMessage(), e);
-            throw new DotWorkflowException(e.getMessage(), e);
+            final String errorMsg = String.format("Failed to find available default actions for Scheme ID(s) " +
+                    "'%s': %s", schemeIds, ExceptionUtil.getErrorMessage(e));
+            Logger.error(this, errorMsg);
+            Logger.debug(this, errorMsg, e);
+            throw new DotWorkflowException(errorMsg, e);
         }
-
-        return results.build();
     }
 
     /**
@@ -1883,12 +1871,11 @@ public class WorkflowHelper {
     @CloseDBIfOpened
     public List<WorkflowDefaultActionView> findInitialAvailableActionsByContentType(
             final @NotNull String contentTypeId, final User user) {
-        checkNotEmpty(contentTypeId, InternalServerException.class, "Missing required parameter contentTypeId.");
+        checkNotEmpty(contentTypeId, InternalServerException.class, "Missing required parameter contentTypeId");
 
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-        final ImmutableList.Builder<WorkflowDefaultActionView> results = new ImmutableList.Builder<>();
         try {
-            Logger.debug(this, "Asking for the available actions for the content type Id: " + contentTypeId);
+            Logger.debug(this, "Asking for the initial available actions for the content type Id: " + contentTypeId);
             final ContentType contentType = contentTypeAPI.find(contentTypeId);
             checkNotNull(contentType, DoesNotExistException.class, "Workflow-does-not-exists-content-type");
 
@@ -1897,12 +1884,7 @@ public class WorkflowHelper {
             final Contentlet emptyContentlet = new Contentlet();
             emptyContentlet.setContentType(contentType);
             final List<WorkflowAction> actions = this.workflowAPI.findAvailableActionsEditing(emptyContentlet, user);
-
-            for (final WorkflowAction action : actions) {
-                final WorkflowScheme scheme = this.workflowAPI.findScheme(action.getSchemeId());
-                final WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme, action);
-                results.add(value);
-            }
+            return buildDefaultActionsViewObj(actions);
         } catch (final DotDataException | DotSecurityException e) {
             final String errorMsg = String.format("Failed to find initial available actions for Content Type " +
                     "'%s': %s", contentTypeId, ExceptionUtil.getErrorMessage(e));
@@ -1910,8 +1892,29 @@ public class WorkflowHelper {
             Logger.debug(this, errorMsg, e);
             throw new DotWorkflowException(errorMsg, e);
         }
+    }
+
+    /**
+     * Takes the list of actions associated to a given Workflow Scheme or Content Type and builds
+     * the View object with them. This object is commonly used by the UI to render and/or interact
+     * with Workflow-related data.
+     *
+     * @param actions The list of {@link WorkflowAction} objects.
+     *
+     * @return The list of {@link WorkflowDefaultActionView} objects.
+     *
+     * @throws DotDataException     An error occurred while retrieving the data.
+     * @throws DotSecurityException A user permission error has occurred.
+     */
+    private List<WorkflowDefaultActionView> buildDefaultActionsViewObj(final List<WorkflowAction> actions) throws DotDataException, DotSecurityException {
+        final ImmutableList.Builder<WorkflowDefaultActionView> results = new ImmutableList.Builder<>();
+        for (final WorkflowAction action : actions) {
+            final WorkflowScheme scheme = this.workflowAPI.findScheme(action.getSchemeId());
+            final WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme, action);
+            results.add(value);
+        }
         return results.build();
-    } // findInitialAvailableActionsByContentType.
+    }
 
     /**
      * Saves an existing scheme or create a new one
