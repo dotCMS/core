@@ -46,6 +46,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Future;
+import java.util.function.IntSupplier;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -850,33 +853,56 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     public PaginatedArrayList<Host> search(final String filter, final boolean showArchived, final boolean
             showStopped, final boolean showSystemHost, final int limit, final int offset, final User user, final
                                            boolean respectFrontendRoles) {
-        Optional<List<Host>> siteListOpt;
+        List<Host> siteListOpt;
         if (!showStopped && !showArchived) {
             // Return live Sites
-            siteListOpt = this.getHostFactory()
-                    .findLiveSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
-            if (siteListOpt.isPresent()) {
-                return convertToSitePaginatedList(siteListOpt.get());
+            siteListOpt = getLiveSites(filter, showSystemHost, limit, offset, user, respectFrontendRoles);
+            if (!siteListOpt.isEmpty()) {
+                return convertToSitePaginatedList(siteListOpt, ()->getLiveSites(filter, showSystemHost, -1, offset, user, respectFrontendRoles).size());
             }
         }
         if (showStopped && !showArchived) {
             // Return stopped Sites, which should not include archived Sites, but should include live sites.
-            siteListOpt = this.getHostFactory()
-                    .findLiveAndStopped(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
-            if (siteListOpt.isPresent()) {
-                return convertToSitePaginatedList(siteListOpt.get());
+            siteListOpt = getLiveAndStopped(filter, showSystemHost, limit, offset, user, respectFrontendRoles);
+            if (!siteListOpt.isEmpty()) {
+                return convertToSitePaginatedList(siteListOpt, ()->getLiveAndStopped(filter, showSystemHost, -1, offset, user, respectFrontendRoles).size());
             }
         }
         if (showStopped && showArchived) {
             // Return archived Sites
-            siteListOpt = this.getHostFactory()
-                    .findArchivedSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
-            if (siteListOpt.isPresent()) {
-                return convertToSitePaginatedList(siteListOpt.get());
+            siteListOpt = getArchivedSites(filter, showSystemHost, limit, offset, user, respectFrontendRoles);
+            if (!siteListOpt.isEmpty()) {
+                return convertToSitePaginatedList(siteListOpt, ()->getArchivedSites(filter, showSystemHost, -1, offset, user, respectFrontendRoles).size());
             }
         }
         return new PaginatedArrayList<>();
     }
+
+    private List<Host> getLiveSites(String filter, boolean showSystemHost, int limit,
+            int offset, User user, boolean respectFrontendRoles) {
+        final Optional<List<Host>> liveSites = this.getHostFactory()
+                .findLiveSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
+        return liveSites.orElseGet(List::of);
+    }
+
+    private List<Host> getArchivedSites(String filter, boolean showSystemHost, int limit,
+            int offset, User user, boolean respectFrontendRoles) {
+        final Optional<List<Host>> archivedSites = this.getHostFactory()
+                .findArchivedSites(filter, limit, offset, showSystemHost, user,
+                        respectFrontendRoles);
+        return archivedSites.orElseGet(List::of);
+    }
+
+    private List<Host> getLiveAndStopped(String filter, boolean showSystemHost, int limit,
+            int offset, User user, boolean respectFrontendRoles) {
+        final Optional<List<Host>> liveAndStopped = this.getHostFactory()
+                .findLiveAndStopped(filter, limit, offset, showSystemHost, user,
+                        respectFrontendRoles);
+        return liveAndStopped.orElseGet(List::of);
+    }
+
+
+
 
     @CloseDBIfOpened
     @Override
@@ -888,12 +914,21 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @Override
     public PaginatedArrayList<Host> search(final String filter, boolean showArchived, boolean showSystemHost, int
             limit, int offset, User user, boolean respectFrontendRoles) {
-        final Optional<List<Host>> siteListOpt = showArchived ? this.getHostFactory()
-                .findArchivedSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles) :
-                this.getHostFactory().findLiveSites(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
-        if (siteListOpt.isPresent()) {
-            return convertToSitePaginatedList(siteListOpt.get());
+
+        if (showArchived){
+            final List<Host> archivedSites = getArchivedSites(filter, showSystemHost, limit, offset, user, respectFrontendRoles);
+            if (!archivedSites.isEmpty()) {
+                return convertToSitePaginatedList(archivedSites, ()->getArchivedSites(filter, showSystemHost, -1, offset, user, respectFrontendRoles).size());
+            }
         }
+
+        final List<Host> liveSites = getLiveSites(filter, showSystemHost, limit, offset, user,
+                respectFrontendRoles);
+
+        if (!liveSites.isEmpty()) {
+            return convertToSitePaginatedList(liveSites, ()->getLiveSites(filter, showSystemHost, -1, offset, user, respectFrontendRoles).size());
+        }
+
         return new PaginatedArrayList<>();
     }
 
@@ -917,10 +952,10 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
      *
      * @return The paginated list of {@link Host} objects.
      */
-    private PaginatedArrayList<Host> convertToSitePaginatedList(final List<Host> list) {
+    private PaginatedArrayList<Host> convertToSitePaginatedList(final List<Host> list, IntSupplier countSupplier) {
         final PaginatedArrayList<Host> paginatedSites = new PaginatedArrayList<>();
         paginatedSites.addAll(list);
-        paginatedSites.setTotalResults(list.size());
+        paginatedSites.setTotalResults(countSupplier.getAsInt());
         return paginatedSites;
     }
 
