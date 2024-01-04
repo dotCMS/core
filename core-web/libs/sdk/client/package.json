@@ -15,7 +15,7 @@
         "REST API"
     ],
     "author": "dotcms <dev@dotcms.com>",
-    "license": "GPL-3.0",
+    "license": "MIT",
     "bugs": {
         "url": "https://github.com/dotCMS/core/issues"
     },
