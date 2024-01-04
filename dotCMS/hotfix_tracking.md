@@ -24,5 +24,6 @@ This maintenance release includes the following code fixes:
 18. https://github.com/dotCMS/core/issues/25901 : Unable to reuse content inside the variants #25901
 19. https://github.com/dotCMS/core/issues/26272 : Losing Experiments and their results when Moving Page to Different Path #26272
 20. https://github.com/dotCMS/core/issues/26550 : Improve performance to the Experiment results end point #26550
-21. https://github.com/dotCMS/core/issues/26273 : Experiments not Considering Redirection from Vanity URLs #26273
+21. https://github.com/dotCMS/core/issues/26683 : Unable to add content on second Language to Page Variant #26683
 22. https://github.com/dotCMS/core/issues/23623 : [BE] Change Split Traffic #23623
+23. https://github.com/dotCMS/core/issues/26273 : Experiments not Considering Redirection from Vanity URLs #26273

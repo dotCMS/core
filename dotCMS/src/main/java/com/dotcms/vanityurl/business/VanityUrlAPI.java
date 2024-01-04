@@ -107,5 +107,16 @@ public interface VanityUrlAPI {
     boolean handleVanityURLRedirects(VanityUrlRequestWrapper request, HttpServletResponse response,
                 VanityUrlResult vanityUrlResult);
 
+    /**
+     * Look all the {@link VanityUrl} that are equals to forward
+     *
+     * @param host {@link VanityUrl}'s Host
+     * @param language {@link VanityUrl}'s Language
+     * @param forward forward to look for
+     * @param language action to look for
+     * @return
+     */
+    List<CachedVanityUrl> findByForward(Host host, Language language, String forward, int action);
+
 
 }
