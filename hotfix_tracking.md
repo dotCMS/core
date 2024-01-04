@@ -183,3 +183,5 @@ This maintenance release includes the following code fixes:
 150. https://github.com/dotCMS/core/issues/26934 : Add Catalina Log Back #26934
 151. https://github.com/dotCMS/core/issues/26926 : Add left indexes to inode.inode and identifier.id #26926
 152. https://github.com/dotCMS/core/issues/26890 : GraphQL Dates not using the right format #26890
+
+**Release-23.01.11**
