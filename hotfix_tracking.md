@@ -227,3 +227,6 @@ This maintenance release includes the following code fixes:
 187. https://github.com/dotCMS/core/issues/26970 : GraphQL Cache not working #26970
 188. https://github.com/dotCMS/core/issues/26934 : Add Catalina Log Back #26934
 189. https://github.com/dotCMS/core/issues/26926 : Add left indexes to inode.inode and identifier.id #26926
+
+**Release-22.03.14**
+
