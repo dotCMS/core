@@ -25,7 +25,7 @@ import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotPageToolsSeoComponent } from '../dot-page-tools-seo/dot-page-tools-seo.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
+import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_QUERY_PARAMS, WINDOW } from '../shared/consts';
 import { NavigationBarItem } from '../shared/models';
 

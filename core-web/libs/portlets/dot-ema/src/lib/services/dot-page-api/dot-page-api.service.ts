@@ -14,7 +14,7 @@ import {
     DotTemplate
 } from '@dotcms/dotcms-models';
 
-import { SavePagePayload } from '../shared/models';
+import { SavePagePayload } from '../../shared/models';
 
 export interface DotPageApiResponse {
     page: {

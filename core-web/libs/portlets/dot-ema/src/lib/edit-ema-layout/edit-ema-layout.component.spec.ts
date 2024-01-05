@@ -25,7 +25,7 @@ import { EditEmaLayoutComponent } from './edit-ema-layout.component';
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiService } from '../services/dot-page-api.service';
+import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 
 describe('EditEmaLayoutComponent', () => {
     let spectator: Spectator<EditEmaLayoutComponent>;

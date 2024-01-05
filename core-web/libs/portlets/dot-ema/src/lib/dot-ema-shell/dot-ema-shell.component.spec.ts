@@ -26,7 +26,7 @@ import { DotEmaShellComponent } from './dot-ema-shell.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiService } from '../services/dot-page-api.service';
+import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 

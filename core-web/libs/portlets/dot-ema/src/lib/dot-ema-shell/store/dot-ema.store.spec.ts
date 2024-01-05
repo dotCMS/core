@@ -13,7 +13,10 @@ import {
 import { EditEmaStore } from './dot-ema.store';
 
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
-import { DotPageApiResponse, DotPageApiService } from '../../services/dot-page-api.service';
+import {
+    DotPageApiResponse,
+    DotPageApiService
+} from '../../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA, EDIT_CONTENTLET_URL } from '../../shared/consts';
 import { ActionPayload } from '../../shared/models';
 

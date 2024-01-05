@@ -13,7 +13,7 @@ import {
     DotPageApiService,
     DotPageApiParams,
     DotPageApiResponse
-} from '../../services/dot-page-api.service';
+} from '../../services/dot-page-api/dot-page-api.service';
 import {
     DEFAULT_PERSONA,
     HOST,
