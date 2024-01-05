@@ -6,7 +6,7 @@
     "prefix": "dot",
     "targets": {
         "build": {
-            "executor": "@angular-devkit/build-angular:browser",
+            "executor": "@nx/angular:browser-esbuild",
             "options": {
                 "baseHref": "./",
                 "outputPath": "dist/apps/dotcms-ui",
@@ -95,27 +95,24 @@
                     "buildOptimizer": false
                 }
             },
-            "defaultConfiguration": "",
+            "defaultConfiguration": "production",
             "dependsOn": ["^build"]
         },
         "serve": {
             "executor": "@angular-devkit/build-angular:dev-server",
             "options": {
-                "browserTarget": "dotcms-ui:build:development",
-                "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs"
+                "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",
+                "buildTarget": "dotcms-ui:build:development"
             }
         },
         "extract-i18n": {
             "executor": "@angular-devkit/build-angular:extract-i18n",
             "options": {
-                "browserTarget": "dotcms-ui:build"
+                "buildTarget": "dotcms-ui:build"
             }
         },
         "lint": {
-            "executor": "@nrwl/linter:eslint",
-            "options": {
-                "lintFilePatterns": ["apps/dotcms-ui/src/**/*.ts", "apps/dotcms-ui/src/**/*.html"]
-            },
+            "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"]
         },
         "test": {

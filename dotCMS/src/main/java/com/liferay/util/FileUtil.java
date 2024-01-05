@@ -189,6 +189,11 @@ public class FileUtil {
 	public static void copyFile(File source, File destination, boolean hardLinks, boolean validateEmptyFile) throws IOException {
 
 
+		if(source==null || destination==null){
+			// Prevent NPE, throw expected error
+			throw new IOException("Source or Destination file is null ");
+		}
+
 		if (!source.exists()) {
 			throw new IOException("Source file does not exist " + source);
 		}

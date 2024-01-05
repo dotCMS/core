@@ -67,9 +67,11 @@ import {
     DotCMSContentlet,
     DotCMSContentType,
     DotPageContainer,
+    DotPageContent,
     DotPageMode,
     DotPageRender,
-    DotPageRenderState
+    DotPageRenderState,
+    PageModelChangeEventType
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
@@ -97,7 +99,6 @@ import {
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
 import { DotCopyContentModalService } from './services/dot-copy-content-modal/dot-copy-content-modal.service';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
-import { PageModelChangeEventType } from './services/dot-edit-content-html/models';
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
@@ -106,7 +107,6 @@ import { DotSeoMetaTagsUtilService } from './services/html/dot-seo-meta-tags-uti
 import { DotSeoMetaTagsService } from './services/html/dot-seo-meta-tags.service';
 
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
-import { DotPageContent } from '../shared/models';
 
 const EXPERIMENT_MOCK = getExperimentMock(1);
 

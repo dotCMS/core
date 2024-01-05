@@ -22,9 +22,8 @@ import {
     PaginatorService
 } from '@dotcms/data-access';
 import { NgGridModule } from '@dotcms/dot-layout-grid';
-import { DotAutofocusModule } from '@dotcms/dot-rules';
 import { DotLayoutBody } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
@@ -120,7 +119,7 @@ describe('DotEditLayoutGridComponent', () => {
                 NgGridModule,
                 DotContainerSelectorLayoutModule,
                 BrowserAnimationsModule,
-                DotAutofocusModule,
+                DotAutofocusDirective,
                 ButtonModule,
                 TooltipModule,
                 DotMessagePipe

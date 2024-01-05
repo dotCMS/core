@@ -1,10 +1,9 @@
 import { SpectatorService, createServiceFactory } from '@ngneat/spectator';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { SEO_RULES_COLORS, SEO_RULES_ICONS } from '@dotcms/dotcms-models';
 
 import { DotSeoMetaTagsUtilService } from './dot-seo-meta-tags-util.service';
-
-import { SEO_RULES_COLORS, SEO_RULES_ICONS } from '../dot-edit-content-html/models/meta-tags-model';
 
 describe('DotSeoMetaTagsUtilService', () => {
     let spectator: SpectatorService<DotSeoMetaTagsUtilService>;

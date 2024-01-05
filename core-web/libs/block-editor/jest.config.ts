@@ -3,13 +3,7 @@ export default {
     displayName: 'block-editor',
     preset: '../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-    globals: {
-        'ts-jest': {
-            stringifyContentPathRegex: '\\.(html|svg)$',
-
-            tsconfig: '<rootDir>/tsconfig.spec.json'
-        }
-    },
+    globals: {},
     coverageReporters: [['lcovonly', { file: 'TEST-block-editor.lcov' }]],
     reporters: [
         'default',
@@ -25,7 +19,14 @@ export default {
         'jest-preset-angular/build/serializers/html-comment'
     ],
     transform: {
-        '^.+.(ts|mjs|js|html)$': 'jest-preset-angular'
+        '^.+.(ts|mjs|js|html)$': [
+            'jest-preset-angular',
+            {
+                stringifyContentPathRegex: '\\.(html|svg)$',
+
+                tsconfig: '<rootDir>/tsconfig.spec.json'
+            }
+        ]
     },
     transformIgnorePatterns: ['node_modules/(?!.*.mjs$)']
 };

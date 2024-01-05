@@ -1,11 +1,10 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { SEO_MEDIA_TYPES } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotSelectSeoToolComponent } from './dot-select-seo-tool.component';
-
-import { SEO_MEDIA_TYPES } from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
 
 describe('DotSelectSeoToolComponent', () => {
     let spectator: Spectator<DotSelectSeoToolComponent>;
