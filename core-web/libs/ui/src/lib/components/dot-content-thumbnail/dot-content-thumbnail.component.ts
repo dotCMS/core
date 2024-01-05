@@ -41,8 +41,9 @@ export class DotContentThumbnailComponent implements OnInit {
 
     @Input() url: string;
     @Input() inode: string;
-    @Input() contentType = '';
     @Input() titleImage: string;
+    @Input() isImage = false;
+    @Input() contentType = '';
     @Input() name = '';
     @Input() iconSize = '1rem';
 
@@ -57,10 +58,10 @@ export class DotContentThumbnailComponent implements OnInit {
     ngOnInit(): void {
         const extension = this.name.split('.').pop();
         const fileType = this.contentType?.split('/')[0];
-        const srcFn = this.srcMap[fileType] || this.srcMap[extension];
+        const getSrc = this.srcMap[fileType] || this.srcMap[extension];
         this.icon = ICON_MAP[extension] || this.DEFAULT_ICON;
         this.type = this.getThumbnailType(fileType);
-        this.src = this.url || srcFn?.();
+        this.src = this.url || getSrc?.();
     }
 
     /**
@@ -74,7 +75,7 @@ export class DotContentThumbnailComponent implements OnInit {
     }
 
     private getThumbnailType(fileType: string) {
-        if (this.titleImage) {
+        if (this.titleImage || this.isImage) {
             return CONTENT_THUMBNAIL_TYPE.image;
         }
 

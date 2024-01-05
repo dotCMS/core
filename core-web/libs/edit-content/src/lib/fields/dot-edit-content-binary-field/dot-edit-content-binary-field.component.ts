@@ -88,6 +88,8 @@ export class DotEditContentBinaryFieldComponent
 {
     @Input() field: DotCMSContentTypeField;
     @Input() contentlet: DotCMSContentlet;
+    @Input() imageEditor = false;
+
     @Output() valueUpdated = new EventEmitter<string>();
     @ViewChild('inputFile') inputFile: ElementRef;
 
@@ -160,7 +162,10 @@ export class DotEditContentBinaryFieldComponent
     ngAfterViewInit() {
         this.setFieldVariables();
         if (this.existFileMetadata()) {
-            this.dotBinaryFieldStore.setFileFromContentlet(this.contentlet);
+            this.dotBinaryFieldStore.setFileFromContentlet({
+                ...this.contentlet,
+                variable: this.variable
+            });
         }
 
         this.cd.detectChanges();
@@ -243,7 +248,7 @@ export class DotEditContentBinaryFieldComponent
      */
     setTempFile(tempFile: DotCMSTempFile) {
         this.dotBinaryFieldStore.setFileFromTemp(tempFile);
-        this.closeDialog();
+        this.dialogOpen = false;
     }
 
     /**

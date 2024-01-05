@@ -4,7 +4,7 @@ import { from, Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { switchMap, tap } from 'rxjs/operators';
+import { switchMap, tap, map, catchError } from 'rxjs/operators';
 
 import { DotLicenseService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile, DotFileMetadata } from '@dotcms/dotcms-models';
@@ -51,6 +51,10 @@ const initialState: BinaryFieldState = {
 export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     private _maxFileSizeInMB = 0;
 
+    get maxFile() {
+        return this._maxFileSizeInMB ? `${this._maxFileSizeInMB}MB` : '';
+    }
+
     // Selectors
     readonly vm$ = this.select((state) => ({
         ...state,
@@ -78,7 +82,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     readonly setFile = this.updater<DotFilePreview>((state, file) => ({
         ...state,
         status: BinaryFieldStatus.PREVIEW,
-        value: file.id,
+        value: file?.id,
         file
     }));
 
@@ -140,29 +144,14 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         file$.pipe(
             tap(() => this.setUploading()),
             switchMap((file) =>
-                from(
-                    this.dotUploadService.uploadFile({
-                        file,
-                        maxSize: this._maxFileSizeInMB ? `${this._maxFileSizeInMB}MB` : '',
-                        signal: null
-                    })
-                ).pipe(
-                    tapResponse(
-                        (tempFile) => {
-                            const { referenceUrl, thumbnailUrl, metadata, id } = tempFile;
-                            const { name, contentType } = metadata;
+                this.uploadFile(file).pipe(
+                    switchMap((tempFile) => this.handleTempFile(tempFile)),
+                    tap((file) => this.setFile(file)),
+                    catchError(() => {
+                        this.setError(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR));
 
-                            this.setFile({
-                                id,
-                                name,
-                                contentType,
-                                titleImage: '',
-                                url: thumbnailUrl || referenceUrl,
-                                ...metadata
-                            });
-                        },
-                        () => this.setError(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR))
-                    )
+                        return of(null);
+                    })
                 )
             )
         )
@@ -172,24 +161,9 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         return file$.pipe(
             tap(() => this.setUploading()),
             switchMap((tempFile) => {
-                const { referenceUrl, thumbnailUrl, metadata, id } = tempFile;
-                const { name, contentType, editableAsText = false } = metadata;
-
-                const obs$ = editableAsText ? this.getFileContent(referenceUrl) : of('');
-
-                return obs$.pipe(
+                return this.handleTempFile(tempFile).pipe(
                     tapResponse(
-                        (content = '') => {
-                            this.setFile({
-                                id,
-                                name,
-                                contentType,
-                                titleImage: '',
-                                content,
-                                url: thumbnailUrl || referenceUrl,
-                                ...metadata
-                            });
-                        },
+                        (file) => this.setFile(file),
                         () => this.setError(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR))
                     )
                 );
@@ -202,35 +176,62 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
             return contentlet$.pipe(
                 tap(() => this.setUploading()),
                 switchMap((contentlet) => {
-                    const { titleImage, inode } = contentlet;
-                    const metadataKey = `${titleImage}MetaData`;
-                    const metaData = contentlet['metaData'] || contentlet[metadataKey];
-                    const sourceURL = contentlet[titleImage];
+                    const { titleImage, inode, fileAsset, metaData, variable } = contentlet;
+                    const metaDataKey = variable + 'MetaData';
+                    const meta = metaData || contentlet[metaDataKey];
+                    const { name, contentType, editableAsText } = meta || {};
+                    const contentURL = fileAsset || contentlet[variable];
 
-                    const { name, contentType, editableAsText = false } = metaData;
+                    const file = {
+                        id: inode,
+                        inode,
+                        name,
+                        contentType,
+                        titleImage,
+                        ...meta
+                    };
 
-                    const obs$ = editableAsText ? this.getFileContent(sourceURL) : of('');
+                    const obs$ = editableAsText ? this.getFileContent(contentURL) : of('');
 
                     return obs$.pipe(
                         tapResponse(
                             (content = '') => {
                                 this.setFile({
-                                    id: inode,
-                                    inode,
-                                    name,
-                                    contentType,
-                                    titleImage,
-                                    content,
-                                    ...metaData
+                                    ...file,
+                                    content
                                 });
                             },
-                            () => this.setError(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR))
+                            () => {
+                                this.setFile(file);
+                            }
                         )
                     );
                 })
             );
         }
     );
+
+    private handleTempFile(tempFile: DotCMSTempFile): Observable<DotFilePreview> {
+        const { referenceUrl, thumbnailUrl, metadata, id } = tempFile;
+        const { editableAsText = false } = metadata;
+        const { name, contentType } = metadata;
+
+        const obs$ = editableAsText ? this.getFileContent(referenceUrl) : of('');
+
+        return obs$.pipe(
+            map((content) => {
+                return {
+                    id,
+                    name,
+                    contentType,
+                    titleImage: '',
+                    content,
+                    url: thumbnailUrl || referenceUrl,
+                    ...metadata
+                };
+            })
+        );
+    }
 
     /**
      * Set the max file size in bytes
@@ -240,6 +241,15 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     setMaxFileSize(bytes: number): void {
         // Convert bytes to MB
         this._maxFileSizeInMB = bytes / (1024 * 1024);
+    }
+
+    private uploadFile(file: File): Observable<DotCMSTempFile> {
+        return from(
+            this.dotUploadService.uploadFile({
+                file,
+                maxSize: this.maxFile
+            })
+        );
     }
 
     /**

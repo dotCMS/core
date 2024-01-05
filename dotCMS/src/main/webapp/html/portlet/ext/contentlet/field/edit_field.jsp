@@ -732,6 +732,7 @@
 
                     binaryField.field = fielData;
                     binaryField.contentlet = contentlet;
+                    binaryField.imageEditor = true;
 
                     binaryField.addEventListener('valueUpdated', ({ detail }) => {
                         field.value = detail;
