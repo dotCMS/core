@@ -7,25 +7,16 @@ import { Injectable } from '@angular/core';
 import { switchMap, tap, map, catchError } from 'rxjs/operators';
 
 import { DotLicenseService, DotUploadService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSTempFile, DotFileMetadata } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import {
     BinaryFieldMode,
     BinaryFieldStatus,
+    DotFilePreview,
     UI_MESSAGE_KEYS,
     UiMessageI
 } from '../interfaces/index';
 import { getUiMessage } from '../utils/binary-field-utils';
-
-export interface DotFilePreview extends DotFileMetadata {
-    id: string;
-    contentType: string;
-    name: string;
-    titleImage: string;
-    inode?: string;
-    url?: string;
-    content?: string;
-}
 
 export interface BinaryFieldState {
     file: DotFilePreview;
@@ -214,7 +205,6 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     private handleTempFile(tempFile: DotCMSTempFile): Observable<DotFilePreview> {
         const { referenceUrl, thumbnailUrl, metadata, id } = tempFile;
         const { editableAsText = false } = metadata;
-        const { name, contentType } = metadata;
 
         const obs$ = editableAsText ? this.getFileContent(referenceUrl) : of('');
 
@@ -222,8 +212,6 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
             map((content) => {
                 return {
                     id,
-                    name,
-                    contentType,
                     titleImage: '',
                     content,
                     url: thumbnailUrl || referenceUrl,

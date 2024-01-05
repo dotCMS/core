@@ -18,7 +18,7 @@ import {
     DotSpinnerModule
 } from '@dotcms/ui';
 
-import { DotFilePreview } from '../../store/binary-field.store';
+import { DotFilePreview } from '../../interfaces';
 
 export enum EDITABLE_FILE {
     image = 'image',
