@@ -48,7 +48,7 @@ import {
     PermissionsType,
     UserPermissions
 } from '@dotcms/dotcms-models';
-import { DotFavoritePageComponent } from 'portlets/edit-ema/portlet';
+import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
 import { DotPagesCreatePageDialogComponent } from '../dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';

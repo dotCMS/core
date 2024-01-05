@@ -39,7 +39,7 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { DotDeviceSelectorSeoComponent } from 'portlets/edit-ema/portlet';
+import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema';
 import { DotMessagePipe, DotTabButtonsComponent } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';

@@ -94,7 +94,7 @@ const PORTLETS_ANGULAR = [
     },
     {
         path: 'edit-ema',
-        loadChildren: () => import('portlets/edit-ema/portlet').then((m) => m.DotEmaRoutes)
+        loadChildren: () => import('@dotcms/portlets/dot-ema').then((m) => m.DotEmaRoutes)
     },
     {
         canActivate: [editContentGuard],

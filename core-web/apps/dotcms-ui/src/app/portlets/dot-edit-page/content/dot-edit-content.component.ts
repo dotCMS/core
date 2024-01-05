@@ -46,7 +46,7 @@ import {
     PageModelChangeEventType,
     SeoMetaTags
 } from '@dotcms/dotcms-models';
-import { DotFavoritePageComponent } from 'portlets/edit-ema/portlet';
+import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema';
 import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
 
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
