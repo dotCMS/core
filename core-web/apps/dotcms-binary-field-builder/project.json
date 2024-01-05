@@ -63,6 +63,12 @@
                     "extractLicenses": false,
                     "sourceMap": true,
                     "namedChunks": true
+                },
+                "tomcat": {
+                    "outputPath": "../../tomcat9/webapps/ROOT/dotcms-binary-field-builder",
+                    "sourceMap": true,
+                    "optimization": false,
+                    "watch": true
                 }
             },
             "defaultConfiguration": "production"

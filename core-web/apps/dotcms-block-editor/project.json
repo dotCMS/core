@@ -44,6 +44,12 @@
                 "namedChunks": true
             },
             "configurations": {
+                "tomcat": {
+                    "outputPath": "../../tomcat9/webapps/ROOT/dotcms-block-editor",
+                    "sourceMap": true,
+                    "optimization": false,
+                    "watch": true
+                },
                 "production": {
                     "fileReplacements": [
                         {
