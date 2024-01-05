@@ -19,7 +19,7 @@
         "build:docs:dotcms": "typedoc --options libs/dotcms/typedoc.json;",
         "build:docs:dotcms-models": "typedoc --options libs/dotcms-models/typedoc.json",
         "publish:docs": "gh-pages --dist ./docs --dest ./",
-        "build:dev": "nx build dotcms-ui",
+        "build:dev": "nx run dotcms-ui:build:development",
         "build:prod": "nx run dotcms-ui:build:production",
         "build:dotcms-webcomponents": "nx build dotcms-webcomponents",
         "docker:test": "npm run docker:build;IMAGE_BASE_NAME=core-web docker-compose -f docker-compose-running-test.yml up",

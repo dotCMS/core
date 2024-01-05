@@ -86,7 +86,8 @@
                     ]
                 },
                 "development": {
-                    "deployUrl": "dotAdmin/",
+                    "deployUrl": "/dotAdmin/",
+                    "outputPath": "../../tomcat9/webapps/ROOT/dotAdmin",
                     "baseHref": "",
                     "optimization": false,
                     "sourceMap": true,
