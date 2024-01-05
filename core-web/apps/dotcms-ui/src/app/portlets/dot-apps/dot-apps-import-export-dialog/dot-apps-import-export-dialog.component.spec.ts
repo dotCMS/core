@@ -16,7 +16,7 @@ import {
     DotApps,
     DotAppsExportConfiguration,
     DotAppsImportConfiguration,
-    DotAppsSites
+    DotAppsSite
 } from '@dotcms/dotcms-models';
 import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -48,7 +48,7 @@ export class DotAppsServiceMock {
 class HostTestComponent {
     @Input() action?: string;
     @Input() app?: DotApps;
-    @Input() site?: DotAppsSites;
+    @Input() site?: DotAppsSite;
 
     resolveHandler(_$event) {
         return;

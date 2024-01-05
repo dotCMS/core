@@ -26,6 +26,7 @@ import { DotFormatDateService } from '@dotcms/ui';
 import { DotTitleStrategy } from '@shared/services/dot-title-strategy.service';
 
 import { DotAccountService } from './api/services/dot-account-service';
+import { DotAppsService } from './api/services/dot-apps/dot-apps.service';
 import { DotUiColorsService } from './api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotWorkflowEventHandlerService } from './api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
@@ -81,6 +82,7 @@ const PROVIDERS: Provider[] = [
     DotGlobalMessageService,
     CanDeactivateGuardService,
     DotSessionStorageService,
+    DotAppsService,
     {
         provide: TitleStrategy,
         useClass: DotTitleStrategy

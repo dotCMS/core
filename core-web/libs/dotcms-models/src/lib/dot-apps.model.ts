@@ -12,11 +12,11 @@ export interface DotApps {
     iconUrl?: string;
     key: string;
     name: string;
-    sites?: DotAppsSites[];
+    sites?: DotAppsSite[];
     sitesWithWarnings?: number;
 }
 
-export interface DotAppsSites {
+export interface DotAppsSite {
     configured?: boolean;
     id: string;
     name: string;

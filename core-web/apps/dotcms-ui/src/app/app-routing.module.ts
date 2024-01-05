@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { RouteReuseStrategy, RouterModule, Routes } from '@angular/router';
+import { Route, RouteReuseStrategy, RouterModule, Routes } from '@angular/router';
 
 import { IframePortletLegacyComponent } from '@components/_common/iframe/iframe-porlet-legacy/index';
 import { DotIframePortletLegacyResolver } from '@components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
@@ -14,11 +14,12 @@ import { AuthGuardService } from './api/services/guards/auth-guard.service';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
 import { DefaultGuardService } from './api/services/guards/default-guard.service';
 import { editContentGuard } from './api/services/guards/edit-content.guard';
+import { EmaAppGuard } from './api/services/guards/ema-app/ema-app.guard';
 import { MenuGuardService } from './api/services/guards/menu-guard.service';
 import { PagesGuardService } from './api/services/guards/pages-guard.service';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
 
-const PORTLETS_ANGULAR = [
+const PORTLETS_ANGULAR: Route[] = [
     {
         path: 'containers',
         loadChildren: () =>
@@ -89,6 +90,7 @@ const PORTLETS_ANGULAR = [
     },
     {
         path: 'edit-page',
+        canActivate: [EmaAppGuard],
         loadChildren: () =>
             import('@portlets/dot-edit-page/dot-edit-page.module').then((m) => m.DotEditPageModule)
     },

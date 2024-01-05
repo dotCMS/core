@@ -28,7 +28,7 @@ import {
     DotApps,
     DotAppsExportConfiguration,
     DotAppsImportConfiguration,
-    DotAppsSites
+    DotAppsSite
 } from '@dotcms/dotcms-models';
 
 @Component({
@@ -40,7 +40,7 @@ export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy 
     @ViewChild('importFile') importFile: ElementRef;
     @Input() action?: string;
     @Input() app?: DotApps;
-    @Input() site?: DotAppsSites;
+    @Input() site?: DotAppsSite;
     @Input() show? = false;
     @Output() resolved: EventEmitter<boolean> = new EventEmitter();
     @Output() shutdown: EventEmitter<boolean> = new EventEmitter();
@@ -195,7 +195,7 @@ export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy 
     private getAllKeySitesConfig(): { [key: string]: string[] } {
         const keySitesConf = {};
         if (this.app) {
-            this.app.sites.forEach((site: DotAppsSites) => {
+            this.app.sites.forEach((site: DotAppsSite) => {
                 if (site.configured) {
                     keySitesConf[site.id] = [this.app.key];
                 }
