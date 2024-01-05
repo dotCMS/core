@@ -33,10 +33,10 @@ import {
     DotPersonalizeServiceMock,
     DotDevicesServiceMock,
     mockDotDevices,
-    LoginServiceMock
+    LoginServiceMock,
+    DotCurrentUserServiceMock
 } from '@dotcms/utils-testing';
 
-import { DotCurrentUserServiceMock } from './components/dot-device-selector-seo/dot-device-selector-seo.component.spec';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
