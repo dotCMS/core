@@ -134,6 +134,15 @@ describe('DotExperimentsReportsComponent', () => {
         ]
     });
 
+    beforeAll(() => {
+        global.ResizeObserver = class ResizeObserver {
+            constructor() {}
+            observe() {}
+            unobserve() {}
+            disconnect() {}
+        };
+    });
+
     beforeEach(() => {
         spectator = createComponent({
             detectChanges: false
@@ -158,7 +167,7 @@ describe('DotExperimentsReportsComponent', () => {
 
     it("shouldn't show the skeleton component when is not loading", () => {
         spectator.component.vm$ = of({ ...defaultVmMock });
-        spectator.detectComponentChanges();
+        spectator.detectChanges();
 
         expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();
         expect(spectator.query(DotExperimentsReportsSkeletonComponent)).not.toExist();
@@ -270,5 +279,9 @@ describe('DotExperimentsReportsComponent', () => {
             variant: EXPERIMENT_RESULTS_DETAIL_DATA_MOCK[0]
         });
         expect(spectator.queryAll(byTestId('variant-promoted-tag')).length).toEqual(0);
+    });
+
+    afterAll(() => {
+        delete global.ResizeObserver;
     });
 });

@@ -37,6 +37,7 @@ import {
     DotPageRenderState,
     DotVariantData
 } from '@dotcms/dotcms-models';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema';
 import { DotTabButtonsComponent } from '@dotcms/ui';
 import {
