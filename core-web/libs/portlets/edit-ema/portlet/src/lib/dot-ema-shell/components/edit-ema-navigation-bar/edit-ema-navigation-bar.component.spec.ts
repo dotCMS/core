@@ -126,7 +126,7 @@ describe('EditEmaNavigationBarComponent', () => {
                     );
 
                     expect(image.nativeElement.getAttribute('href')).toBe(
-                        './assets/dot-ema/assets/images/experiments.svg.svg#assets/images/experiments.svg'
+                        './assets/edit-ema/assets/images/experiments.svg.svg#assets/images/experiments.svg'
                     );
                 });
             });

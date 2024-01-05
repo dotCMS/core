@@ -35,8 +35,8 @@
                     },
                     {
                         "glob": "**/*",
-                        "input": "./libs/portlets/dot-ema/src/lib/assets",
-                        "output": "./assets/dot-ema"
+                        "input": "./libs/portlets/edit-ema/portlet/src/lib/assets",
+                        "output": "./assets/edit-ema"
                     }
                 ],
                 "styles": [
