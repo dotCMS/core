@@ -1,4 +1,3 @@
-import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnInit, inject, signal } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -15,7 +14,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 @Component({
     selector: 'dot-ema-bookmarks',
     standalone: true,
-    imports: [ButtonModule, DotMessagePipe, AsyncPipe],
+    imports: [ButtonModule, DotMessagePipe],
     templateUrl: './dot-ema-bookmarks.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
