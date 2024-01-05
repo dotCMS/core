@@ -2,15 +2,15 @@ import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import {
-    AfterViewInit,
-    Component,
-    EventEmitter,
-    Input,
-    OnChanges,
-    OnInit,
-    Output,
-    ViewChild,
-    inject
+  AfterViewInit,
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnInit,
+  Output,
+  ViewChild,
+  inject,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -29,108 +29,112 @@ import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 import { DotPageApiService } from '../../../services/dot-page-api.service';
 
 @Component({
-    selector: 'dot-edit-ema-persona-selector',
-    standalone: true,
-    imports: [
-        CommonModule,
-        ButtonModule,
-        AvatarModule,
-        OverlayPanelModule,
-        DotAvatarDirective,
-        DotMessagePipe,
-        ListboxModule,
-        ConfirmDialogModule,
-        FormsModule,
-        ChipModule
-    ],
-    templateUrl: './edit-ema-persona-selector.component.html',
-    styleUrls: ['./edit-ema-persona-selector.component.scss']
+  selector: 'dot-edit-ema-persona-selector',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ButtonModule,
+    AvatarModule,
+    OverlayPanelModule,
+    DotAvatarDirective,
+    DotMessagePipe,
+    ListboxModule,
+    ConfirmDialogModule,
+    FormsModule,
+    ChipModule,
+  ],
+  templateUrl: './edit-ema-persona-selector.component.html',
+  styleUrls: ['./edit-ema-persona-selector.component.scss'],
 })
-export class EditEmaPersonaSelectorComponent implements OnInit, AfterViewInit, OnChanges {
-    @ViewChild('listbox') listbox: Listbox;
+export class EditEmaPersonaSelectorComponent
+  implements OnInit, AfterViewInit, OnChanges
+{
+  @ViewChild('listbox') listbox: Listbox;
 
-    private readonly pageApiService = inject(DotPageApiService);
-    personas: DotPersona[];
+  private readonly pageApiService = inject(DotPageApiService);
+  personas: DotPersona[];
 
-    @Input() pageId: string;
-    @Input() value: DotPersona;
+  @Input() pageId: string;
+  @Input() value: DotPersona;
 
-    @Output() selected: EventEmitter<DotPersona & { pageId: string }> = new EventEmitter();
-    @Output() despersonalize: EventEmitter<DotPersona & { pageId: string; selected: boolean }> =
-        new EventEmitter();
+  @Output() selected: EventEmitter<DotPersona & { pageId: string }> =
+    new EventEmitter();
+  @Output() despersonalize: EventEmitter<
+    DotPersona & { pageId: string; selected: boolean }
+  > = new EventEmitter();
 
-    ngOnInit(): void {
-        this.fetchPersonas();
+  ngOnInit(): void {
+    this.fetchPersonas();
+  }
+
+  ngOnChanges(): void {
+    // To select the correct persona when the page is reloaded with no queryParams
+    if (this.listbox) {
+      this.resetValue();
     }
+  }
 
-    ngOnChanges(): void {
-        // To select the correct persona when the page is reloaded with no queryParams
-        if (this.listbox) {
-            this.resetValue();
-        }
+  ngAfterViewInit(): void {
+    this.resetValue();
+  }
+
+  /**
+   * Handle the change of the persona
+   *
+   * @param {{ value: DotPersona }} { value }
+   * @memberof EditEmaPersonaSelectorComponent
+   */
+  onSelect({ value }: { value: DotPersona }) {
+    if (value.identifier !== this.value.identifier) {
+      this.selected.emit({
+        ...value,
+        pageId: this.pageId,
+      });
     }
+  }
 
-    ngAfterViewInit(): void {
-        this.resetValue();
-    }
+  /**
+   * Reset the value of the listbox
+   *
+   * @memberof EditEmaPersonaSelectorComponent
+   */
+  resetValue(): void {
+    this.listbox.value = this.value;
+    this.listbox.cd.detectChanges();
+  }
 
-    /**
-     * Handle the change of the persona
-     *
-     * @param {{ value: DotPersona }} { value }
-     * @memberof EditEmaPersonaSelectorComponent
-     */
-    onSelect({ value }: { value: DotPersona }) {
-        if (value.identifier !== this.value.identifier) {
-            this.selected.emit({
-                ...value,
-                pageId: this.pageId
-            });
-        }
-    }
+  /**
+   * Handle the remove of the persona
+   *
+   * @param {MouseEvent} event
+   * @param {DotPersona} persona
+   * @memberof EditEmaPersonaSelectorComponent
+   */
+  onRemove(event: MouseEvent, persona: DotPersona, selected: boolean) {
+    event.stopPropagation();
 
-    /**
-     * Reset the value of the listbox
-     *
-     * @memberof EditEmaPersonaSelectorComponent
-     */
-    resetValue(): void {
-        this.listbox.value = this.value;
-        this.listbox.cd.detectChanges();
-    }
+    this.despersonalize.emit({
+      ...persona,
+      selected,
+      pageId: this.pageId,
+    });
+  }
 
-    /**
-     * Handle the remove of the persona
-     *
-     * @param {MouseEvent} event
-     * @param {DotPersona} persona
-     * @memberof EditEmaPersonaSelectorComponent
-     */
-    onRemove(event: MouseEvent, persona: DotPersona, selected: boolean) {
-        event.stopPropagation();
-
-        this.despersonalize.emit({
-            ...persona,
-            selected,
-            pageId: this.pageId
-        });
-    }
-
-    /**
-     * Fetch personas from the API
-     *
-     * @memberof EditEmaPersonaSelectorComponent
-     */
-    fetchPersonas() {
-        this.pageApiService
-            .getPersonas({
-                pageId: this.pageId,
-                perPage: 5000
-            })
-            .pipe(
-                map((res) => res.data),
-                catchError(() => of([]))
-            )
-            .subscribe((personas) => (this.personas = personas));
-    }
+  /**
+   * Fetch personas from the API
+   *
+   * @memberof EditEmaPersonaSelectorComponent
+   */
+  fetchPersonas() {
+    this.pageApiService
+      .getPersonas({
+        pageId: this.pageId,
+        perPage: 5000,
+      })
+      .pipe(
+        map((res) => res.data),
+        catchError(() => of([]))
+      )
+      .subscribe((personas) => (this.personas = personas));
+  }
 }

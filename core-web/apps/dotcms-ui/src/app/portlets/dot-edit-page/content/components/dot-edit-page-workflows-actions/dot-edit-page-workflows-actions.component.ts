@@ -1,13 +1,13 @@
 import { Observable } from 'rxjs';
 
 import {
-    ChangeDetectionStrategy,
-    Component,
-    EventEmitter,
-    Input,
-    OnChanges,
-    Output,
-    SimpleChanges
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  Output,
+  SimpleChanges,
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
@@ -18,131 +18,136 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import {
-    DotHttpErrorManagerService,
-    DotMessageService,
-    DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+  DotHttpErrorManagerService,
+  DotMessageService,
+  DotWorkflowActionsFireService,
+  DotWorkflowsActionsService,
 } from '@dotcms/data-access';
 import {
-    DotCMSContentlet,
-    DotCMSWorkflowAction,
-    DotPage,
-    DotWorkflowPayload
+  DotCMSContentlet,
+  DotCMSWorkflowAction,
+  DotPage,
+  DotWorkflowPayload,
 } from '@dotcms/dotcms-models';
 
 @Component({
-    selector: 'dot-edit-page-workflows-actions',
-    templateUrl: './dot-edit-page-workflows-actions.component.html',
-    styleUrls: ['./dot-edit-page-workflows-actions.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'dot-edit-page-workflows-actions',
+  templateUrl: './dot-edit-page-workflows-actions.component.html',
+  styleUrls: ['./dot-edit-page-workflows-actions.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DotEditPageWorkflowsActionsComponent implements OnChanges {
-    @Input() page: DotPage;
+  @Input() page: DotPage;
 
-    @Output() fired: EventEmitter<DotCMSContentlet> = new EventEmitter();
+  @Output() fired: EventEmitter<DotCMSContentlet> = new EventEmitter();
 
-    actionsAvailable: boolean;
-    actions: Observable<MenuItem[]>;
+  actionsAvailable: boolean;
+  actions: Observable<MenuItem[]>;
 
-    constructor(
-        private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
-        private dotWorkflowsActionsService: DotWorkflowsActionsService,
-        private dotMessageService: DotMessageService,
-        private httpErrorManagerService: DotHttpErrorManagerService,
-        private dotGlobalMessageService: DotGlobalMessageService,
-        private dotWizardService: DotWizardService,
-        private dotWorkflowEventHandlerService: DotWorkflowEventHandlerService
-    ) {}
+  constructor(
+    private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
+    private dotWorkflowsActionsService: DotWorkflowsActionsService,
+    private dotMessageService: DotMessageService,
+    private httpErrorManagerService: DotHttpErrorManagerService,
+    private dotGlobalMessageService: DotGlobalMessageService,
+    private dotWizardService: DotWizardService,
+    private dotWorkflowEventHandlerService: DotWorkflowEventHandlerService
+  ) {}
 
-    ngOnChanges(changes: SimpleChanges) {
-        if (changes.page) {
-            this.actions = this.getWorkflowActions(this.page.workingInode);
-        }
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes.page) {
+      this.actions = this.getWorkflowActions(this.page.workingInode);
     }
+  }
 
-    private getWorkflowActions(inode: string): Observable<MenuItem[]> {
-        return this.dotWorkflowsActionsService.getByInode(inode).pipe(
-            tap((workflows: DotCMSWorkflowAction[]) => {
-                this.actionsAvailable = !!workflows.length;
-            }),
-            map((newWorkflows: DotCMSWorkflowAction[]) => {
-                return newWorkflows.length !== 0 ? this.getWorkflowOptions(newWorkflows) : [];
-            })
+  private getWorkflowActions(inode: string): Observable<MenuItem[]> {
+    return this.dotWorkflowsActionsService.getByInode(inode).pipe(
+      tap((workflows: DotCMSWorkflowAction[]) => {
+        this.actionsAvailable = !!workflows.length;
+      }),
+      map((newWorkflows: DotCMSWorkflowAction[]) => {
+        return newWorkflows.length !== 0
+          ? this.getWorkflowOptions(newWorkflows)
+          : [];
+      })
+    );
+  }
+
+  private getWorkflowOptions(workflows: DotCMSWorkflowAction[]): MenuItem[] {
+    return workflows.map((workflow: DotCMSWorkflowAction) => {
+      return {
+        label: workflow.name,
+        command: () => {
+          if (workflow.actionInputs.length) {
+            if (
+              this.dotWorkflowEventHandlerService.containsPushPublish(
+                workflow.actionInputs
+              )
+            ) {
+              this.dotWorkflowEventHandlerService
+                .checkPublishEnvironments()
+                .pipe(take(1))
+                .subscribe((hasEnviroments: boolean) => {
+                  if (hasEnviroments) {
+                    this.openWizard(workflow);
+                  }
+                });
+            } else {
+              this.openWizard(workflow);
+            }
+          } else {
+            this.fireWorkflowAction(workflow);
+          }
+        },
+      };
+    });
+  }
+
+  private openWizard(workflow: DotCMSWorkflowAction): void {
+    this.dotWizardService
+      .open<DotWorkflowPayload>(
+        this.dotWorkflowEventHandlerService.setWizardInput(
+          workflow,
+          this.dotMessageService.get('Workflow-Action')
+        )
+      )
+      .pipe(take(1))
+      .subscribe((data: DotWorkflowPayload) => {
+        this.fireWorkflowAction(
+          workflow,
+          this.dotWorkflowEventHandlerService.processWorkflowPayload(
+            data,
+            workflow.actionInputs
+          )
         );
-    }
+      });
+  }
 
-    private getWorkflowOptions(workflows: DotCMSWorkflowAction[]): MenuItem[] {
-        return workflows.map((workflow: DotCMSWorkflowAction) => {
-            return {
-                label: workflow.name,
-                command: () => {
-                    if (workflow.actionInputs.length) {
-                        if (
-                            this.dotWorkflowEventHandlerService.containsPushPublish(
-                                workflow.actionInputs
-                            )
-                        ) {
-                            this.dotWorkflowEventHandlerService
-                                .checkPublishEnvironments()
-                                .pipe(take(1))
-                                .subscribe((hasEnviroments: boolean) => {
-                                    if (hasEnviroments) {
-                                        this.openWizard(workflow);
-                                    }
-                                });
-                        } else {
-                            this.openWizard(workflow);
-                        }
-                    } else {
-                        this.fireWorkflowAction(workflow);
-                    }
-                }
-            };
-        });
-    }
+  private fireWorkflowAction<T = { [key: string]: string }>(
+    workflow: DotCMSWorkflowAction,
+    data?: T
+  ): void {
+    const currentMenuActions = this.actions;
+    this.dotWorkflowActionsFireService
+      .fireTo(this.page.workingInode, workflow.id, data)
+      .pipe(
+        take(1),
+        catchError((error) => {
+          this.httpErrorManagerService.handle(error);
 
-    private openWizard(workflow: DotCMSWorkflowAction): void {
-        this.dotWizardService
-            .open<DotWorkflowPayload>(
-                this.dotWorkflowEventHandlerService.setWizardInput(
-                    workflow,
-                    this.dotMessageService.get('Workflow-Action')
-                )
-            )
-            .pipe(take(1))
-            .subscribe((data: DotWorkflowPayload) => {
-                this.fireWorkflowAction(
-                    workflow,
-                    this.dotWorkflowEventHandlerService.processWorkflowPayload(
-                        data,
-                        workflow.actionInputs
-                    )
-                );
-            });
-    }
-
-    private fireWorkflowAction<T = { [key: string]: string }>(
-        workflow: DotCMSWorkflowAction,
-        data?: T
-    ): void {
-        const currentMenuActions = this.actions;
-        this.dotWorkflowActionsFireService
-            .fireTo(this.page.workingInode, workflow.id, data)
-            .pipe(
-                take(1),
-                catchError((error) => {
-                    this.httpErrorManagerService.handle(error);
-
-                    return currentMenuActions;
-                })
-            )
-            .subscribe((contentlet: DotCMSContentlet) => {
-                this.dotGlobalMessageService.display(
-                    this.dotMessageService.get('editpage.actions.fire.confirmation', workflow.name)
-                );
-                const newInode = contentlet.inode || this.page.workingInode;
-                this.fired.emit(contentlet);
-                this.actions = this.getWorkflowActions(newInode);
-            });
-    }
+          return currentMenuActions;
+        })
+      )
+      .subscribe((contentlet: DotCMSContentlet) => {
+        this.dotGlobalMessageService.display(
+          this.dotMessageService.get(
+            'editpage.actions.fire.confirmation',
+            workflow.name
+          )
+        );
+        const newInode = contentlet.inode || this.page.workingInode;
+        this.fired.emit(contentlet);
+        this.actions = this.getWorkflowActions(newInode);
+      });
+  }
 }

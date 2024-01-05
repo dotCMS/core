@@ -471,14 +471,12 @@ describe('DotFavoritePageStore', () => {
         .spyOn(dotPageRenderService, 'checkPermission')
         .mockReturnValue(of(true));
 
-      dotPageRenderService.get = jest
-        .fn()
-        .mockReturnValue(
-          of({
-            ...mockDotRenderedPage(),
-            urlContentMap: { title: 'test urlContentMap' },
-          })
-        );
+      dotPageRenderService.get = jest.fn().mockReturnValue(
+        of({
+          ...mockDotRenderedPage(),
+          urlContentMap: { title: 'test urlContentMap' },
+        })
+      );
 
       dotFavoritePageStore.setInitialStateData({
         favoritePageUrl: existingDataMock.url,

@@ -17,30 +17,33 @@ import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-u
 import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
-    DotAlertConfirmService,
-    DotCurrentUserService,
-    DotEventsService,
-    DotGenerateSecurePasswordService,
-    DotHttpErrorManagerService,
-    DotLicenseService,
-    DotMessageDisplayService,
-    DotRouterService,
-    DotWorkflowActionsFireService
+  dotEventSocketURLFactory,
+  MockDotUiColorsService,
+} from '@dotcms/app/test/dot-test-bed';
+import {
+  DotAlertConfirmService,
+  DotCurrentUserService,
+  DotEventsService,
+  DotGenerateSecurePasswordService,
+  DotHttpErrorManagerService,
+  DotLicenseService,
+  DotMessageDisplayService,
+  DotRouterService,
+  DotWorkflowActionsFireService,
 } from '@dotcms/data-access';
 import {
-    ApiRoot,
-    CoreWebService,
-    CoreWebServiceMock,
-    DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
-    LoggerService,
-    LoginService,
-    StringUtils,
-    UserModel
+  ApiRoot,
+  CoreWebService,
+  CoreWebServiceMock,
+  DotcmsConfigService,
+  DotcmsEventsService,
+  DotEventsSocket,
+  DotEventsSocketURL,
+  LoggerService,
+  LoginService,
+  StringUtils,
+  UserModel,
 } from '@dotcms/dotcms-js';
 import { DotFormatDateService } from '@dotcms/ui';
 import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
@@ -50,110 +53,110 @@ import { DotPortletDetailComponent } from './dot-portlet-detail.component';
 import { DotWorkflowTaskModule } from './dot-workflow-task/dot-workflow-task.module';
 
 describe('DotPortletDetailComponent', () => {
-    let fixture: ComponentFixture<DotPortletDetailComponent>;
-    let de: DebugElement;
-    let router: ActivatedRoute;
+  let fixture: ComponentFixture<DotPortletDetailComponent>;
+  let de: DebugElement;
+  let router: ActivatedRoute;
 
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            providers: [
-                DotMenuService,
-                { provide: LoginService, useClass: LoginServiceMock },
-                { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: DotUiColorsService, useClass: MockDotUiColorsService },
-                DotCustomEventHandlerService,
-                DotWorkflowEventHandlerService,
-                DotIframeService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                PushPublishService,
-                ApiRoot,
-                DotFormatDateService,
-                UserModel,
-                StringUtils,
-                DotcmsEventsService,
-                LoggerService,
-                DotEventsSocket,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-                DotcmsConfigService,
-                LoggerService,
-                DotCurrentUserService,
-                DotMessageDisplayService,
-                DotWizardService,
-                DotHttpErrorManagerService,
-                DotAlertConfirmService,
-                ConfirmationService,
-                DotWorkflowActionsFireService,
-                DotGlobalMessageService,
-                DotEventsService,
-                DotGenerateSecurePasswordService,
-                DotLicenseService
-            ],
-            declarations: [DotPortletDetailComponent],
-            imports: [
-                DotWorkflowTaskModule,
-                DotContentletsModule,
-                RouterTestingModule,
-                BrowserAnimationsModule,
-                DotDownloadBundleDialogModule,
-                HttpClientTestingModule
-            ]
-        });
-    }));
+  beforeEach(waitForAsync(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        DotMenuService,
+        { provide: LoginService, useClass: LoginServiceMock },
+        { provide: DotRouterService, useClass: MockDotRouterService },
+        { provide: DotUiColorsService, useClass: MockDotUiColorsService },
+        DotCustomEventHandlerService,
+        DotWorkflowEventHandlerService,
+        DotIframeService,
+        { provide: CoreWebService, useClass: CoreWebServiceMock },
+        PushPublishService,
+        ApiRoot,
+        DotFormatDateService,
+        UserModel,
+        StringUtils,
+        DotcmsEventsService,
+        LoggerService,
+        DotEventsSocket,
+        { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+        DotcmsConfigService,
+        LoggerService,
+        DotCurrentUserService,
+        DotMessageDisplayService,
+        DotWizardService,
+        DotHttpErrorManagerService,
+        DotAlertConfirmService,
+        ConfirmationService,
+        DotWorkflowActionsFireService,
+        DotGlobalMessageService,
+        DotEventsService,
+        DotGenerateSecurePasswordService,
+        DotLicenseService,
+      ],
+      declarations: [DotPortletDetailComponent],
+      imports: [
+        DotWorkflowTaskModule,
+        DotContentletsModule,
+        RouterTestingModule,
+        BrowserAnimationsModule,
+        DotDownloadBundleDialogModule,
+        HttpClientTestingModule,
+      ],
+    });
+  }));
 
-    beforeEach(() => {
-        fixture = TestBed.createComponent(DotPortletDetailComponent);
-        de = fixture.debugElement;
-        router = de.injector.get(ActivatedRoute);
+  beforeEach(() => {
+    fixture = TestBed.createComponent(DotPortletDetailComponent);
+    de = fixture.debugElement;
+    router = de.injector.get(ActivatedRoute);
+  });
+
+  it('should not have dot-workflow-task', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
+      parent: {
+        snapshot: {
+          params: {
+            id: '',
+          },
+        },
+      },
     });
 
-    it('should not have dot-workflow-task', () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
-            parent: {
-                snapshot: {
-                    params: {
-                        id: ''
-                    }
-                }
-            }
-        });
+    fixture.detectChanges();
+    expect(de.query(By.css('dot-workflow-task')) === null).toBe(true);
+    expect(de.query(By.css('dot-contentlets')) === null).toBe(false);
+  });
 
-        fixture.detectChanges();
-        expect(de.query(By.css('dot-workflow-task')) === null).toBe(true);
-        expect(de.query(By.css('dot-contentlets')) === null).toBe(false);
+  it('should have dot-workflow-task', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
+      parent: {
+        snapshot: {
+          params: {
+            id: 'workflow',
+          },
+        },
+      },
     });
 
-    it('should have dot-workflow-task', () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
-            parent: {
-                snapshot: {
-                    params: {
-                        id: 'workflow'
-                    }
-                }
-            }
-        });
+    fixture.detectChanges();
+    expect(de.query(By.css('dot-workflow-task'))).toBeTruthy();
+    expect(de.query(By.css('dot-contentlets')) === null).toBe(true);
+  });
 
-        fixture.detectChanges();
-        expect(de.query(By.css('dot-workflow-task'))).toBeTruthy();
-        expect(de.query(By.css('dot-contentlets')) === null).toBe(true);
+  it('should have dot-contentlets', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
+      parent: {
+        snapshot: {
+          params: {
+            id: 'content',
+          },
+        },
+      },
     });
 
-    it('should have dot-contentlets', () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
-            parent: {
-                snapshot: {
-                    params: {
-                        id: 'content'
-                    }
-                }
-            }
-        });
-
-        fixture.detectChanges();
-        expect(de.query(By.css('dot-contentlets'))).toBeTruthy();
-        expect(de.query(By.css('dot-workflow-task')) === null).toBe(true);
-    });
+    fixture.detectChanges();
+    expect(de.query(By.css('dot-contentlets'))).toBeTruthy();
+    expect(de.query(By.css('dot-workflow-task')) === null).toBe(true);
+  });
 });

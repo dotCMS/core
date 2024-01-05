@@ -11,9 +11,8 @@ import { map, switchMap } from 'rxjs/operators';
 import { DotFavoritePageService, DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
-
-import { DotFavoritePageComponent } from '../../../../../../ui/src/lib/dot-favorite-page/dot-favorite-page.component';
 
 @Component({
   selector: 'dot-ema-bookmarks',

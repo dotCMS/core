@@ -11,15 +11,15 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotPagesCardComponent } from './dot-pages-card.component';
 
 @NgModule({
-    imports: [
-        CommonModule,
-        CardModule,
-        DotPagesFavoritePageEmptySkeletonComponent,
-        ButtonModule,
-        TooltipModule,
-        DotPipesModule
-    ],
-    declarations: [DotPagesCardComponent],
-    exports: [DotPagesCardComponent]
+  imports: [
+    CommonModule,
+    CardModule,
+    DotPagesFavoritePageEmptySkeletonComponent,
+    ButtonModule,
+    TooltipModule,
+    DotPipesModule,
+  ],
+  declarations: [DotPagesCardComponent],
+  exports: [DotPagesCardComponent],
 })
 export class DotPagesCardModule {}

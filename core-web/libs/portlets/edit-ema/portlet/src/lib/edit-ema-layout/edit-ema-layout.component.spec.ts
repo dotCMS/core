@@ -1,6 +1,10 @@
 import { expect, describe } from '@jest/globals';
 import { SpyObject } from '@ngneat/spectator';
-import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import {
+  Spectator,
+  createComponentFactory,
+  mockProvider,
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -11,11 +15,11 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { MessageService } from 'primeng/api';
 
 import {
-    DotContentTypeService,
-    DotLicenseService,
-    DotMessageService,
-    DotPageLayoutService,
-    DotRouterService
+  DotContentTypeService,
+  DotLicenseService,
+  DotMessageService,
+  DotPageLayoutService,
+  DotRouterService,
 } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { TemplateBuilderComponent } from '@dotcms/template-builder';
@@ -28,165 +32,165 @@ import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.s
 import { DotPageApiService } from '../services/dot-page-api.service';
 
 describe('EditEmaLayoutComponent', () => {
-    let spectator: Spectator<EditEmaLayoutComponent>;
-    let component: EditEmaLayoutComponent;
-    let dotRouter: SpyObject<DotRouterService>;
-    let store: EditEmaStore;
-    let templateBuilder: TemplateBuilderComponent;
-    let layoutService: DotPageLayoutService;
-    let messageService: MessageService;
-    let addMock: jest.SpyInstance;
+  let spectator: Spectator<EditEmaLayoutComponent>;
+  let component: EditEmaLayoutComponent;
+  let dotRouter: SpyObject<DotRouterService>;
+  let store: EditEmaStore;
+  let templateBuilder: TemplateBuilderComponent;
+  let layoutService: DotPageLayoutService;
+  let messageService: MessageService;
+  let addMock: jest.SpyInstance;
 
-    globalThis.structuredClone = jest.fn().mockImplementation((obj) => obj);
+  globalThis.structuredClone = jest.fn().mockImplementation((obj) => obj);
 
-    const createComponent = createComponentFactory({
-        component: EditEmaLayoutComponent,
-        imports: [HttpClientTestingModule, RouterTestingModule],
-        providers: [
-            EditEmaStore,
-            MessageService,
-            DotMessageService,
-            DotActionUrlService,
-            { provide: DotRouterService, useClass: MockDotRouterJestService },
-            {
-                provide: DotLicenseService,
-                useValue: {
-                    isEnterprise: () => of(true)
-                }
-            },
-            {
-                provide: DotPageApiService,
-                useValue: {
-                    get: () => {
-                        return of({
-                            containers: {},
-                            page: {
-                                identifier: 'test'
+  const createComponent = createComponentFactory({
+    component: EditEmaLayoutComponent,
+    imports: [HttpClientTestingModule, RouterTestingModule],
+    providers: [
+      EditEmaStore,
+      MessageService,
+      DotMessageService,
+      DotActionUrlService,
+      { provide: DotRouterService, useClass: MockDotRouterJestService },
+      {
+        provide: DotLicenseService,
+        useValue: {
+          isEnterprise: () => of(true),
+        },
+      },
+      {
+        provide: DotPageApiService,
+        useValue: {
+          get: () => {
+            return of({
+              containers: {},
+              page: {
+                identifier: 'test',
+              },
+              template: {
+                theme: 'testTheme',
+              },
+              layout: {
+                body: {
+                  rows: [
+                    {
+                      columns: [
+                        {
+                          containers: [
+                            {
+                              identifier: 'test',
                             },
-                            template: {
-                                theme: 'testTheme'
-                            },
-                            layout: {
-                                body: {
-                                    rows: [
-                                        {
-                                            columns: [
-                                                {
-                                                    containers: [
-                                                        {
-                                                            identifier: 'test'
-                                                        }
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    ]
-                                }
-                            }
-                        });
-                    }
-                }
-            },
-            {
-                provide: DotPageLayoutService,
-                useValue: {
-                    save: () => {
-                        return of({
-                            layout: {}
-                        });
-                    }
-                }
-            },
-            mockProvider(DotContentTypeService),
-            mockProvider(CoreWebService)
-        ]
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              },
+            });
+          },
+        },
+      },
+      {
+        provide: DotPageLayoutService,
+        useValue: {
+          save: () => {
+            return of({
+              layout: {},
+            });
+          },
+        },
+      },
+      mockProvider(DotContentTypeService),
+      mockProvider(CoreWebService),
+    ],
+  });
+
+  beforeEach(async () => {
+    spectator = createComponent();
+    component = spectator.component;
+    dotRouter = spectator.inject(DotRouterService);
+    store = spectator.inject(EditEmaStore);
+    layoutService = spectator.inject(DotPageLayoutService);
+    messageService = spectator.inject(MessageService);
+
+    addMock = jest.spyOn(messageService, 'add');
+
+    store.load({
+      language_id: '1',
+      url: 'test',
+      'com.dotmarketing.persona.id': 'SuperCoolDude',
     });
 
-    beforeEach(async () => {
-        spectator = createComponent();
-        component = spectator.component;
-        dotRouter = spectator.inject(DotRouterService);
-        store = spectator.inject(EditEmaStore);
-        layoutService = spectator.inject(DotPageLayoutService);
-        messageService = spectator.inject(MessageService);
+    spectator.detectChanges();
+    await spectator.fixture.whenStable();
 
-        addMock = jest.spyOn(messageService, 'add');
+    templateBuilder = spectator.debugElement.query(
+      By.css('[data-testId="edit-ema-layout"]')
+    ).componentInstance;
+  });
 
-        store.load({
-            language_id: '1',
-            url: 'test',
-            'com.dotmarketing.persona.id': 'SuperCoolDude'
-        });
+  describe('Template Change', () => {
+    it('should forbid navigation', () => {
+      const spy = jest.spyOn(dotRouter, 'forbidRouteDeactivation');
 
-        spectator.detectChanges();
-        await spectator.fixture.whenStable();
+      templateBuilder.templateChange.emit();
 
-        templateBuilder = spectator.debugElement.query(
-            By.css('[data-testId="edit-ema-layout"]')
-        ).componentInstance;
+      expect(spy).toHaveBeenCalled();
     });
 
-    describe('Template Change', () => {
-        it('should forbid navigation', () => {
-            const spy = jest.spyOn(dotRouter, 'forbidRouteDeactivation');
+    it('should trigger a save after 5 secs', fakeAsync(() => {
+      const layoutServiceSave = jest.spyOn(layoutService, 'save');
 
-            templateBuilder.templateChange.emit();
+      templateBuilder.templateChange.emit();
+      tick(5000);
 
-            expect(spy).toHaveBeenCalled();
-        });
+      expect(layoutServiceSave).toHaveBeenCalled();
 
-        it('should trigger a save after 5 secs', fakeAsync(() => {
-            const layoutServiceSave = jest.spyOn(layoutService, 'save');
+      expect(addMock).toHaveBeenNthCalledWith(1, {
+        severity: 'info',
+        summary: 'Info',
+        detail: 'dot.common.message.saving',
+        life: 1000,
+      });
 
-            templateBuilder.templateChange.emit();
-            tick(5000);
+      expect(addMock).toHaveBeenNthCalledWith(2, {
+        severity: 'success',
+        summary: 'Success',
+        detail: 'dot.common.message.saved',
+      });
+    }));
 
-            expect(layoutServiceSave).toHaveBeenCalled();
+    it('should unlock navigation after saving', fakeAsync(() => {
+      const allowRouting = jest.spyOn(dotRouter, 'allowRouteDeactivation');
 
-            expect(addMock).toHaveBeenNthCalledWith(1, {
-                severity: 'info',
-                summary: 'Info',
-                detail: 'dot.common.message.saving',
-                life: 1000
-            });
+      templateBuilder.templateChange.emit();
+      tick(6000);
 
-            expect(addMock).toHaveBeenNthCalledWith(2, {
-                severity: 'success',
-                summary: 'Success',
-                detail: 'dot.common.message.saved'
-            });
-        }));
+      expect(allowRouting).toHaveBeenCalled();
+    }));
 
-        it('should unlock navigation after saving', fakeAsync(() => {
-            const allowRouting = jest.spyOn(dotRouter, 'allowRouteDeactivation');
+    it('should save right away if we request page leave before the 5 secs', () => {
+      const saveTemplate = jest.spyOn(component, 'saveTemplate');
 
-            templateBuilder.templateChange.emit();
-            tick(6000);
+      templateBuilder.templateChange.emit();
 
-            expect(allowRouting).toHaveBeenCalled();
-        }));
+      dotRouter.requestPageLeave(); // This is what the guard triggers if the page is forbid to navigate
 
-        it('should save right away if we request page leave before the 5 secs', () => {
-            const saveTemplate = jest.spyOn(component, 'saveTemplate');
+      expect(saveTemplate).toHaveBeenCalled();
 
-            templateBuilder.templateChange.emit();
+      expect(addMock).toHaveBeenNthCalledWith(1, {
+        severity: 'info',
+        summary: 'Info',
+        detail: 'dot.common.message.saving',
+        life: 1000,
+      });
 
-            dotRouter.requestPageLeave(); // This is what the guard triggers if the page is forbid to navigate
-
-            expect(saveTemplate).toHaveBeenCalled();
-
-            expect(addMock).toHaveBeenNthCalledWith(1, {
-                severity: 'info',
-                summary: 'Info',
-                detail: 'dot.common.message.saving',
-                life: 1000
-            });
-
-            expect(addMock).toHaveBeenNthCalledWith(2, {
-                severity: 'success',
-                summary: 'Success',
-                detail: 'dot.common.message.saved'
-            });
-        });
+      expect(addMock).toHaveBeenNthCalledWith(2, {
+        severity: 'success',
+        summary: 'Success',
+        detail: 'dot.common.message.saved',
+      });
     });
+  });
 });

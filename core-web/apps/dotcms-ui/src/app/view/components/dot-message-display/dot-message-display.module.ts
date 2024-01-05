@@ -9,9 +9,9 @@ import { DotIconModule } from '@dotcms/ui';
 import { DotMessageDisplayComponent } from './dot-message-display.component';
 
 @NgModule({
-    imports: [CommonModule, ToastModule, DotIconModule],
-    declarations: [DotMessageDisplayComponent],
-    providers: [DotMessageDisplayService],
-    exports: [DotMessageDisplayComponent]
+  imports: [CommonModule, ToastModule, DotIconModule],
+  declarations: [DotMessageDisplayComponent],
+  providers: [DotMessageDisplayService],
+  exports: [DotMessageDisplayComponent],
 })
 export class DotMessageDisplayModule {}

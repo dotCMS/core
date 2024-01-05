@@ -5,105 +5,110 @@ import { TestBed } from '@angular/core/testing';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
-import { DotMessage, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
+import {
+  DotMessage,
+  DotMessageSeverity,
+  DotMessageType,
+} from '@dotcms/dotcms-models';
 import { DotcmsEventsServiceMock } from '@dotcms/utils-testing';
 
 import { DotMessageDisplayService } from './dot-message-display.service';
 
 describe('DotMessageDisplayService', () => {
-    const mockDotcmsEventsService: DotcmsEventsServiceMock = new DotcmsEventsServiceMock();
+  const mockDotcmsEventsService: DotcmsEventsServiceMock =
+    new DotcmsEventsServiceMock();
 
-    let dotMessageDisplayService: DotMessageDisplayService;
+  let dotMessageDisplayService: DotMessageDisplayService;
 
-    const messageExpected: any = {
-        life: 3000,
-        message: 'Hello World',
-        portletIdList: [],
-        severity: 'ERROR',
-        type: 'SIMPLE_MESSAGE'
-    };
+  const messageExpected: any = {
+    life: 3000,
+    message: 'Hello World',
+    portletIdList: [],
+    severity: 'ERROR',
+    type: 'SIMPLE_MESSAGE',
+  };
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            providers: [
-                DotMessageDisplayService,
-                { provide: DotcmsEventsService, useValue: mockDotcmsEventsService },
-                {
-                    provide: DotRouterService,
-                    useValue: {
-                        currentPortlet: {
-                            id: 'content-types-angular',
-                            url: ''
-                        }
-                    }
-                }
-            ]
-        });
-
-        dotMessageDisplayService = TestBed.inject(DotMessageDisplayService);
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        DotMessageDisplayService,
+        { provide: DotcmsEventsService, useValue: mockDotcmsEventsService },
+        {
+          provide: DotRouterService,
+          useValue: {
+            currentPortlet: {
+              id: 'content-types-angular',
+              url: '',
+            },
+          },
+        },
+      ],
     });
 
-    xit('should emit a message', () => {
-        dotMessageDisplayService.messages().subscribe((message: DotMessage) => {
-            expect(message).toEqual({
-                ...messageExpected,
-                severity: DotMessageSeverity.ERROR,
-                type: DotMessageType.SIMPLE_MESSAGE
-            });
-        });
+    dotMessageDisplayService = TestBed.inject(DotMessageDisplayService);
+  });
 
-        mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);
+  xit('should emit a message', () => {
+    dotMessageDisplayService.messages().subscribe((message: DotMessage) => {
+      expect(message).toEqual({
+        ...messageExpected,
+        severity: DotMessageSeverity.ERROR,
+        type: DotMessageType.SIMPLE_MESSAGE,
+      });
     });
 
-    it('should push a message', () => {
-        dotMessageDisplayService.messages().subscribe((message: DotMessage) => {
-            expect(message).toEqual(messageExpected);
-        });
+    mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);
+  });
 
-        dotMessageDisplayService.push(messageExpected);
+  it('should push a message', () => {
+    dotMessageDisplayService.messages().subscribe((message: DotMessage) => {
+      expect(message).toEqual(messageExpected);
     });
 
-    it('should unsubscribe', () => {
-        let wasCalled = false;
+    dotMessageDisplayService.push(messageExpected);
+  });
 
-        dotMessageDisplayService.messages().subscribe(() => {
-            wasCalled = true;
-        });
+  it('should unsubscribe', () => {
+    let wasCalled = false;
 
-        dotMessageDisplayService.unsubscribe();
-
-        mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);
-
-        expect(wasCalled).toBe(false);
+    dotMessageDisplayService.messages().subscribe(() => {
+      wasCalled = true;
     });
 
-    describe('with portletIdList', () => {
-        it('should show message when currentPortlet is in portletIdList ', () => {
-            messageExpected.portletIdList = ['content-types-angular'];
+    dotMessageDisplayService.unsubscribe();
 
-            dotMessageDisplayService.messages().subscribe((message: DotMessage) => {
-                expect(message).toEqual({
-                    ...messageExpected,
-                    severity: DotMessageSeverity.ERROR,
-                    type: DotMessageType.SIMPLE_MESSAGE
-                });
-            });
+    mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);
 
-            mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);
+    expect(wasCalled).toBe(false);
+  });
+
+  describe('with portletIdList', () => {
+    it('should show message when currentPortlet is in portletIdList ', () => {
+      messageExpected.portletIdList = ['content-types-angular'];
+
+      dotMessageDisplayService.messages().subscribe((message: DotMessage) => {
+        expect(message).toEqual({
+          ...messageExpected,
+          severity: DotMessageSeverity.ERROR,
+          type: DotMessageType.SIMPLE_MESSAGE,
         });
+      });
 
-        it('should not show message when currentPortlet is not in portletIdList ', () => {
-            messageExpected.portletIdList = ['not-content-types-angular'];
-
-            let wasCalled = false;
-
-            dotMessageDisplayService.messages().subscribe(() => {
-                wasCalled = true;
-            });
-
-            mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);
-
-            expect(wasCalled).toBe(false);
-        });
+      mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);
     });
+
+    it('should not show message when currentPortlet is not in portletIdList ', () => {
+      messageExpected.portletIdList = ['not-content-types-angular'];
+
+      let wasCalled = false;
+
+      dotMessageDisplayService.messages().subscribe(() => {
+        wasCalled = true;
+      });
+
+      mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);
+
+      expect(wasCalled).toBe(false);
+    });
+  });
 });

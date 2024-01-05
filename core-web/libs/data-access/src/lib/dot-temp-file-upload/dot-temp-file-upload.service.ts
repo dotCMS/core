@@ -9,77 +9,77 @@ import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 
 export interface DotCMSTempFile {
-    fileName: string;
-    folder: string;
-    id: string;
-    image: boolean;
-    length: number;
-    mimeType: string;
-    referenceUrl: string;
-    thumbnailUrl: string;
+  fileName: string;
+  folder: string;
+  id: string;
+  image: boolean;
+  length: number;
+  mimeType: string;
+  referenceUrl: string;
+  thumbnailUrl: string;
 }
 
 @Injectable()
 export class DotTempFileUploadService {
-    constructor(
-        private coreWebService: CoreWebService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService
-    ) {}
+  constructor(
+    private coreWebService: CoreWebService,
+    private dotHttpErrorManagerService: DotHttpErrorManagerService
+  ) {}
 
-    /**
-     * Upload file to the dotcms temp service
-     *
-     * @param {(File | string)} file
-     * @returns {(Observable<DotCMSTempFile[] | string>)}
-     * @memberof DotTempFileUploadService
-     */
-    upload(file: File | string): Observable<DotCMSTempFile[] | string> {
-        if (typeof file === 'string') {
-            return this.uploadByUrl(file);
-        }
-
-        return this.uploadByFile(file);
+  /**
+   * Upload file to the dotcms temp service
+   *
+   * @param {(File | string)} file
+   * @returns {(Observable<DotCMSTempFile[] | string>)}
+   * @memberof DotTempFileUploadService
+   */
+  upload(file: File | string): Observable<DotCMSTempFile[] | string> {
+    if (typeof file === 'string') {
+      return this.uploadByUrl(file);
     }
 
-    private uploadByFile(file: File): Observable<DotCMSTempFile[] | string> {
-        const formData = new FormData();
-        formData.append('file', file);
+    return this.uploadByFile(file);
+  }
 
-        return this.coreWebService
-            .requestView<DotCMSTempFile[]>({
-                url: `/api/v1/temp`,
-                body: formData,
-                headers: { 'Content-Type': 'multipart/form-data' },
-                method: 'POST'
-            })
-            .pipe(
-                pluck('tempFiles'),
-                catchError((error: HttpErrorResponse) => this.handleError(error))
-            );
-    }
+  private uploadByFile(file: File): Observable<DotCMSTempFile[] | string> {
+    const formData = new FormData();
+    formData.append('file', file);
 
-    private uploadByUrl(file: string): Observable<DotCMSTempFile[] | string> {
-        return this.coreWebService
-            .requestView<DotCMSTempFile[]>({
-                url: `/api/v1/temp/byUrl`,
-                body: {
-                    remoteUrl: file
-                },
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                method: 'POST'
-            })
-            .pipe(
-                pluck('tempFiles'),
-                catchError((error: HttpErrorResponse) => this.handleError(error))
-            );
-    }
+    return this.coreWebService
+      .requestView<DotCMSTempFile[]>({
+        url: `/api/v1/temp`,
+        body: formData,
+        headers: { 'Content-Type': 'multipart/form-data' },
+        method: 'POST',
+      })
+      .pipe(
+        pluck('tempFiles'),
+        catchError((error: HttpErrorResponse) => this.handleError(error))
+      );
+  }
 
-    private handleError(error: HttpErrorResponse) {
-        return this.dotHttpErrorManagerService.handle(error).pipe(
-            take(1),
-            map((err) => err.status.toString())
-        );
-    }
+  private uploadByUrl(file: string): Observable<DotCMSTempFile[] | string> {
+    return this.coreWebService
+      .requestView<DotCMSTempFile[]>({
+        url: `/api/v1/temp/byUrl`,
+        body: {
+          remoteUrl: file,
+        },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+      })
+      .pipe(
+        pluck('tempFiles'),
+        catchError((error: HttpErrorResponse) => this.handleError(error))
+      );
+  }
+
+  private handleError(error: HttpErrorResponse) {
+    return this.dotHttpErrorManagerService.handle(error).pipe(
+      take(1),
+      map((err) => err.status.toString())
+    );
+  }
 }

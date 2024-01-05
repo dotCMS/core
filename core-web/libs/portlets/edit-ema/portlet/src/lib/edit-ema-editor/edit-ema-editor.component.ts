@@ -28,9 +28,9 @@ import {
   DotDevice,
   DotPersona,
 } from '@dotcms/dotcms-models';
+import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
-import { DotDeviceSelectorSeoComponent } from '../../../../ui/src/lib/dot-device-selector-seo/dot-device-selector-seo.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaDeviceDisplayComponent } from './components/dot-ema-device-display/dot-ema-device-display.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
