@@ -4026,7 +4026,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				CollectionsUtils.join(this.findWorkFlowComments(task),
 						this.findWorkflowHistory (task));
 
-		Comparator<WorkflowTimelineItem> comparator = Comparator.comparing(WorkflowTimelineItem::createdDate).reversed();
+		final Comparator<WorkflowTimelineItem> comparator = Comparator.comparing(WorkflowTimelineItem::createdDate).reversed();
 		return workflowTimelineItems.stream()
 				.sorted(comparator)
 				.collect(CollectionsUtils.toImmutableList());
