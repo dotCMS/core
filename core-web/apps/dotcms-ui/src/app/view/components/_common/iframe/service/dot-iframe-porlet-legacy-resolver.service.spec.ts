@@ -6,11 +6,11 @@ import { waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
   DotContentletLockerService,
   DotESContentService,
+  DotFavoritePageService,
   DotLicenseService,
   DotMessageDisplayService,
   DotPageRenderService,

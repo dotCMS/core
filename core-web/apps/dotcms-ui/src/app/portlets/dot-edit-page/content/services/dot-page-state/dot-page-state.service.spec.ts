@@ -5,11 +5,11 @@ import { getTestBed, TestBed } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import {
   DotAlertConfirmService,
   DotContentletLockerService,
   DotESContentService,
+  DotFavoritePageService,
   DotHttpErrorManagerService,
   DotLicenseService,
   DotMessageDisplayService,

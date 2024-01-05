@@ -9,11 +9,11 @@ import { ActivatedRouteSnapshot } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import {
   DotAlertConfirmService,
   DotContentletLockerService,
   DotESContentService,
+  DotFavoritePageService,
   DotHttpErrorManagerService,
   DotLicenseService,
   DotMessageDisplayService,
