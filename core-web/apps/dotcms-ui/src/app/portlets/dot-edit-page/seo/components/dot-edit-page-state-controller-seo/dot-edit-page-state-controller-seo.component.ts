@@ -38,13 +38,13 @@ import {
     DotVariantData,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { DotTabButtonsComponent, DotMessagePipe } from '@dotcms/ui';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema';
+import { DotMessagePipe, DotTabButtonsComponent } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
 
 import { DotEditPageLockInfoSeoComponent } from './components/dot-edit-page-lock-info-seo/dot-edit-page-lock-info-seo.component';
-
-import { DotDeviceSelectorSeoComponent } from '../dot-device-selector-seo/dot-device-selector-seo.component';
 
 enum DotConfirmationType {
     LOCK,

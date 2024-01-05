@@ -31,3 +31,17 @@ export interface DotAIImageResponse {
     tempFileName: string;
     url: string;
 }
+
+export interface DotAICompletionsConfig {
+    apiImageUrl: string;
+    apiKey: string;
+    apiUrl: string;
+    availableModels: string[];
+    configHost: string;
+    imageModel: string;
+    imagePrompt: string;
+    imageSize: string;
+    model: string;
+    rolePrompt: string;
+    textPrompt: string;
+}
