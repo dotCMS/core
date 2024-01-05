@@ -158,12 +158,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             );
 
             if (missing) {
-                this.router.navigate([], {
-                    queryParams: {
-                        ...queryParams,
-                        ...missingQueryParams
-                    },
-                    queryParamsHandling: 'merge'
+                this.navigate({
+                    ...queryParams,
+                    ...missingQueryParams
                 });
             } else {
                 this.store.load({
@@ -198,16 +195,22 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
                     this.queryParams.url !== url
                         ? // If the url is different we need to navigate
-                          this.router.navigate([], {
-                              queryParams: {
-                                  url
-                              },
-                              queryParamsHandling: 'merge'
+                          this.navigate({
+                              url
                           })
                         : this.store.load({
                               ...this.queryParams
                           }); // If the url is the same we need to fetch the page
                 }
             });
+    }
+
+    private navigate(queryParams) {
+        this.router.navigate([], {
+            queryParams,
+            queryParamsHandling: 'merge'
+            // replaceUrl: true,
+            // skipLocationChange: false,
+        });
     }
 }

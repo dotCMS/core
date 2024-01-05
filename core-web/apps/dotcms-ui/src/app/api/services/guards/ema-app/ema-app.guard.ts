@@ -78,6 +78,7 @@ export class EmaAppGuard implements CanActivate {
             if (doesPathMatchPattern(val.pattern, route.queryParams.url)) {
                 this.router.navigate(['edit-ema'], {
                     queryParams: newQueryParams,
+                    replaceUrl: true,
                     state: {
                         remoteUrl: 'https://google.com'
                     }

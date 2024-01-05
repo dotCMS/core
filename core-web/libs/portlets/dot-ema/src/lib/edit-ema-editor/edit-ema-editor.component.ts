@@ -572,6 +572,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     private updateQueryParams(params: Params) {
         this.router.navigate([], {
+            // replaceUrl: true,
+            // skipLocationChange: false,
             queryParams: params,
             queryParamsHandling: 'merge'
         });
