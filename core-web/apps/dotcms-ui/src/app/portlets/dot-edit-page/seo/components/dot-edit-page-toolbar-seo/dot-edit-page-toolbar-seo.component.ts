@@ -32,7 +32,7 @@ import {
     FeaturedFlags,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-import { DotDeviceSelectorSeoComponent, DotFavoritePageComponent } from '@dotcms/portlets/dot-ema';
+import { DotDeviceSelectorSeoComponent, DotFavoritePageComponent } from 'portlets/edit-ema/portlet';
 
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';

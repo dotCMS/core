@@ -1,10 +1,10 @@
 /* eslint-disable */
 export default {
-    displayName: 'portlets-dot-ema',
-    preset: '../../../jest.preset.js',
+    displayName: 'portlets-edit-ema-portlet',
+    preset: '../../../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {},
-    coverageDirectory: '../../../coverage/libs/portlets/dot-ema',
+    coverageDirectory: '../../../../coverage/libs/portlets/edit-ema/portlet',
     transform: {
         '^.+\\.(ts|mjs|js|html)$': [
             'jest-preset-angular',

@@ -12,7 +12,7 @@ import {
 } from '@dotcms/data-access';
 import { HttpCode } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema';
+import { DotFavoritePageComponent } from 'portlets/edit-ema/portlet';
 
 import {
     DotPagesState,

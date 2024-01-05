@@ -10,7 +10,7 @@ import { TooltipModule } from 'primeng/tooltip';
 // However, in this particular instance, we need to statically import something from this library.
 // The problem here is this static import would have violated the '@nx/enforce-module-boundaries' rule set by Nx,
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema';
+import { DotPageToolsSeoComponent } from 'portlets/edit-ema/portlet';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 

@@ -34,7 +34,6 @@
             "@dotcms/dotcms-webcomponents": ["libs/dotcms-webcomponents/src/index.ts"],
             "@dotcms/dotcms-webcomponents/loader": ["dist/libs/dotcms-webcomponents/loader"],
             "@dotcms/edit-content": ["libs/edit-content/src/index.ts"],
-            "@dotcms/portlets/dot-ema": ["libs/portlets/dot-ema/src/index.ts"],
             "@dotcms/portlets/dot-experiments/data-access": [
                 "libs/portlets/dot-experiments/data-access/src/index.ts"
             ],
@@ -53,7 +52,8 @@
             "@portlets/*": ["apps/dotcms-ui/src/app/portlets/*"],
             "@services/*": ["apps/dotcms-ui/src/app/api/services/*"],
             "@shared/*": ["apps/dotcms-ui/src/app/shared/*"],
-            "@tests/*": ["apps/dotcms-ui/src/app/test/*"]
+            "@tests/*": ["apps/dotcms-ui/src/app/test/*"],
+            "@dotcms/portlets/dot-ema": ["libs/portlets/edit-ema/portlet/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]
