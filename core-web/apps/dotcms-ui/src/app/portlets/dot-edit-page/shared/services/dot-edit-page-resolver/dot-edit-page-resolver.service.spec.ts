@@ -9,16 +9,14 @@ import { ActivatedRouteSnapshot } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import {
     DotAlertConfirmService,
     DotContentletLockerService,
     DotESContentService,
+    DotFavoritePageService,
+    DotHttpErrorManagerService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotPageRenderService,
     DotRouterService,
     DotSessionStorageService
@@ -29,7 +27,9 @@ import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-acc
 import { DotFormatDateService } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
+    DotMessageDisplayServiceMock,
     LoginServiceMock,
+    MockDotHttpErrorManagerService,
     mockDotRenderedPage,
     MockDotRouterService,
     mockResponseView,
@@ -80,7 +80,10 @@ describe('DotEditPageResolver', () => {
                 DotESContentService,
                 DotFavoritePageService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
                 { provide: SiteService, useClass: SiteServiceMock },
                 {
                     provide: ActivatedRouteSnapshot,

@@ -32,11 +32,12 @@ import {
     FeaturedFlags,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-// eslint-disable-next-line @nx/enforce-module-boundaries
-import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema';
+import {
+    DotFavoritePageComponent,
+    DotDeviceSelectorSeoComponent
+} from '@dotcms/portlets/dot-ema/ui';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotFavoritePageModule } from '@portlets/dot-edit-page/components/dot-favorite-page/dot-favorite-page.module';
 import { DotEditPageWorkflowsActionsModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
 
@@ -62,7 +63,7 @@ import { DotEditPageViewAsControllerSeoComponent } from '../dot-edit-page-view-a
         TooltipModule,
         DotPipesModule,
         DotGlobalMessageModule,
-        DotFavoritePageModule,
+        DotFavoritePageComponent,
         DotIconModule,
         DotEditPageNavDirective,
         RouterLink,

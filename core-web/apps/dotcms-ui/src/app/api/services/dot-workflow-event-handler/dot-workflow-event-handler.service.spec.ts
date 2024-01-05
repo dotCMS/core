@@ -12,10 +12,6 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { DotCommentAndAssignFormComponent } from '@components/_common/forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
@@ -23,6 +19,8 @@ import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotEventsService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
     DotMessageService,
     DotRouterService,
     DotWorkflowActionsFireService
@@ -42,6 +40,8 @@ import {
     DotActionBulkResult,
     DotCMSWorkflowAction,
     DotCMSWorkflowActionEvent,
+    DotMessageSeverity,
+    DotMessageType,
     DotProcessedWorkflowPayload,
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
@@ -49,6 +49,7 @@ import { DotFormatDateService } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
+    DotMessageDisplayServiceMock,
     LoginServiceMock,
     MockDotMessageService,
     mockWorkflowsActions
@@ -133,7 +134,10 @@ describe('DotWorkflowEventHandlerService', () => {
             imports: [RouterTestingModule, HttpClientTestingModule],
             providers: [
                 DotWorkflowEventHandlerService,
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
                 DotWizardService,
                 DotIframeService,
                 DotHttpErrorManagerService,
@@ -198,7 +202,9 @@ describe('DotWorkflowEventHandlerService', () => {
             expect(dotGlobalMessageService.display).toHaveBeenCalledWith(
                 `The action "${mockWorkflowsActions[0].name}" was executed correctly`
             );
-            expect(dotIframeService.run).toHaveBeenCalledWith({ name: mockWAEvent.callback });
+            expect(dotIframeService.run).toHaveBeenCalledWith({
+                name: mockWAEvent.callback
+            });
         });
 
         it('should run iframe function for legacy call', () => {
@@ -239,7 +245,9 @@ describe('DotWorkflowEventHandlerService', () => {
                         filterKey: 'Intelligent.yml',
                         timezoneId: 'America/Costa_Rica'
                     },
-                    additionalParamsMap: { _path_to_move: mockWizardOutputData.pathToMove }
+                    additionalParamsMap: {
+                        _path_to_move: mockWizardOutputData.pathToMove
+                    }
                 },
                 query: 'query'
             };
@@ -248,7 +256,10 @@ describe('DotWorkflowEventHandlerService', () => {
 
             spyOn(dotGlobalMessageService, 'display');
             spyOn(dotIframeService, 'run');
-            dotWorkflowEventHandlerService.open({ ...mockWAEvent, selectedInodes: 'query' });
+            dotWorkflowEventHandlerService.open({
+                ...mockWAEvent,
+                selectedInodes: 'query'
+            });
             dotWizardService.output$({ ...mockWizardOutputData });
 
             expect(dotWorkflowActionsFireService.bulkFire).toHaveBeenCalledWith(mockBulkRequest);
