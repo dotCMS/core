@@ -452,9 +452,7 @@ public class PageResourceHelper implements Serializable {
         final boolean useByAnotherPage = this.templateAPI.getPages(page.getTemplateId()).stream()
                 .anyMatch(pageVersion -> !page.getIdentifier().equals(pageVersion.getIdentifier()) ||
                         !((HTMLPageAsset) page).getVariantId().equals(pageVersion.getVariantName()));
-
-        final Template systemTemplate = APILocator.getTemplateAPI().systemTemplate();
-
+        
         if (!useByAnotherPage && oldTemplate.getName().equals(Template.SYSTEM_TEMPLATE)) {
             saveTemplate = oldTemplate;
         } else {
