@@ -14,7 +14,8 @@ import { AuthGuardService } from './api/services/guards/auth-guard.service';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
 import { DefaultGuardService } from './api/services/guards/default-guard.service';
 import { editContentGuard } from './api/services/guards/edit-content.guard';
-import { EmaAppGuard } from './api/services/guards/ema-app/ema-app.guard';
+import { emaAppFnGuard } from './api/services/guards/ema-app/ema-app-fn.guard';
+// import { EmaAppGuard } from './api/services/guards/ema-app/ema-app.guard';
 import { MenuGuardService } from './api/services/guards/menu-guard.service';
 import { PagesGuardService } from './api/services/guards/pages-guard.service';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
@@ -90,7 +91,8 @@ const PORTLETS_ANGULAR: Route[] = [
     },
     {
         path: 'edit-page',
-        canActivate: [EmaAppGuard],
+        // canActivate: [EmaAppGuard],
+        canActivate: [emaAppFnGuard],
         loadChildren: () =>
             import('@portlets/dot-edit-page/dot-edit-page.module').then((m) => m.DotEditPageModule)
     },

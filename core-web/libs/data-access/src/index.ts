@@ -40,3 +40,4 @@ export * from './lib/paginator/paginator.service';
 export * from './lib/dot-page-tools/dot-page-tools.service';
 export * from './lib/dot-router/dot-router.service';
 export * from './lib/can-deactivate/can-deactivate-guard.service';
+export * from './lib/ema-app-configuration/ema-app-configuration.service';
