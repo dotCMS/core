@@ -9,28 +9,22 @@ import { map } from 'rxjs/operators';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
-    DotPageRender,
-    DotPageRenderState,
-    DotPageToolUrlParams,
-    DotTemplate,
-    FeaturedFlags
+  DotPageRender,
+  DotPageRenderState,
+  DotPageToolUrlParams,
+  DotTemplate,
+  FeaturedFlags,
 } from '@dotcms/dotcms-models';
-//TODO: Remove @nx/enforce-module-boundaries exception
-// The static import of the lazy-loaded 'portlets-dot-ema' library in the following line is an exception to the general rule.
-// This library is usually lazy loaded as specified in 'apps/dotcms-ui/src/app/app-routing.module.ts'.
-// However, in this particular instance, we need to statically import something from this library.
-// The problem here is this static import would have violated the '@nx/enforce-module-boundaries' rule set by Nx,
-// eslint-disable-next-line @nx/enforce-module-boundaries
-import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema';
+import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 
 interface DotEditPageNavItem {
-    action?: (inode: string) => void;
-    disabled: boolean;
-    icon: string;
-    label: string;
-    link?: string;
-    needsEntepriseLicense: boolean;
-    tooltip?: string;
+  action?: (inode: string) => void;
+  disabled: boolean;
+  icon: string;
+  label: string;
+  link?: string;
+  needsEntepriseLicense: boolean;
+  tooltip?: string;
 }
 /**
  * Display the navigation for edit page
@@ -41,185 +35,201 @@ interface DotEditPageNavItem {
  * @deprecated use the new nav bar from edit-ema
  */
 @Component({
-    selector: 'dot-edit-page-nav',
-    templateUrl: './dot-edit-page-nav.component.html',
-    styleUrls: ['./dot-edit-page-nav.component.scss']
+  selector: 'dot-edit-page-nav',
+  templateUrl: './dot-edit-page-nav.component.html',
+  styleUrls: ['./dot-edit-page-nav.component.scss'],
 })
 export class DotEditPageNavComponent implements OnChanges {
-    @ViewChild('pageTools') pageTools: DotPageToolsSeoComponent;
-    @Input() pageState: DotPageRenderState;
+  @ViewChild('pageTools') pageTools: DotPageToolsSeoComponent;
+  @Input() pageState: DotPageRenderState;
 
-    isEnterpriseLicense: boolean;
-    model: Observable<DotEditPageNavItem[]>;
-    currentUrlParams: DotPageToolUrlParams;
+  isEnterpriseLicense: boolean;
+  model: Observable<DotEditPageNavItem[]>;
+  currentUrlParams: DotPageToolUrlParams;
 
-    queryParams: Params;
+  queryParams: Params;
 
-    isVariantMode = false;
+  isVariantMode = false;
 
-    constructor(
-        private dotLicenseService: DotLicenseService,
-        private dotContentletEditorService: DotContentletEditorService,
-        private dotMessageService: DotMessageService,
-        private readonly route: ActivatedRoute,
-        @Inject(DOCUMENT) private document: Document
-    ) {}
+  constructor(
+    private dotLicenseService: DotLicenseService,
+    private dotContentletEditorService: DotContentletEditorService,
+    private dotMessageService: DotMessageService,
+    private readonly route: ActivatedRoute,
+    @Inject(DOCUMENT) private document: Document
+  ) {}
 
-    ngOnChanges(): void {
-        this.model = !this.model
-            ? this.loadNavItems()
-            : observableOf(this.getNavItems(this.pageState, this.isEnterpriseLicense));
-
-        this.currentUrlParams = this.getCurrentURLParams();
-    }
-
-    private loadNavItems(): Observable<DotEditPageNavItem[]> {
-        return this.dotLicenseService.isEnterprise().pipe(
-            map((isEnterpriseLicense: boolean) => {
-                this.isEnterpriseLicense = isEnterpriseLicense;
-
-                return this.getNavItems(this.pageState, isEnterpriseLicense);
-            })
+  ngOnChanges(): void {
+    this.model = !this.model
+      ? this.loadNavItems()
+      : observableOf(
+          this.getNavItems(this.pageState, this.isEnterpriseLicense)
         );
-    }
 
-    private canGoToLayout(dotRenderedPage: DotPageRender): boolean {
-        // Right now we only allowing users to edit layout, so no templates or advanced template can be edit from here.
-        // https://github.com/dotCMS/core-web/pull/589
-        return dotRenderedPage.page.canEdit && dotRenderedPage.template.drawed;
-    }
+    this.currentUrlParams = this.getCurrentURLParams();
+  }
 
-    private getNavItems(
-        dotRenderedPage: DotPageRender,
-        enterpriselicense: boolean
-    ): DotEditPageNavItem[] {
-        const navItems: DotEditPageNavItem[] = [
-            {
-                needsEntepriseLicense: false,
-                disabled: false,
-                icon: 'insert_drive_file',
-                label: this.dotMessageService.get('editpage.toolbar.nav.content'),
-                link: 'content'
+  private loadNavItems(): Observable<DotEditPageNavItem[]> {
+    return this.dotLicenseService.isEnterprise().pipe(
+      map((isEnterpriseLicense: boolean) => {
+        this.isEnterpriseLicense = isEnterpriseLicense;
+
+        return this.getNavItems(this.pageState, isEnterpriseLicense);
+      })
+    );
+  }
+
+  private canGoToLayout(dotRenderedPage: DotPageRender): boolean {
+    // Right now we only allowing users to edit layout, so no templates or advanced template can be edit from here.
+    // https://github.com/dotCMS/core-web/pull/589
+    return dotRenderedPage.page.canEdit && dotRenderedPage.template.drawed;
+  }
+
+  private getNavItems(
+    dotRenderedPage: DotPageRender,
+    enterpriselicense: boolean
+  ): DotEditPageNavItem[] {
+    const navItems: DotEditPageNavItem[] = [
+      {
+        needsEntepriseLicense: false,
+        disabled: false,
+        icon: 'insert_drive_file',
+        label: this.dotMessageService.get('editpage.toolbar.nav.content'),
+        link: 'content',
+      },
+      this.getLayoutNavItem(dotRenderedPage, enterpriselicense),
+      this.getRulesNavItem(dotRenderedPage, enterpriselicense),
+      {
+        needsEntepriseLicense: false,
+        disabled: false,
+        icon: 'more_horiz',
+        label: this.dotMessageService.get('editpage.toolbar.nav.properties'),
+        action: (inode: string) => {
+          this.dotContentletEditorService.edit({
+            data: {
+              inode: inode,
             },
-            this.getLayoutNavItem(dotRenderedPage, enterpriselicense),
-            this.getRulesNavItem(dotRenderedPage, enterpriselicense),
-            {
-                needsEntepriseLicense: false,
-                disabled: false,
-                icon: 'more_horiz',
-                label: this.dotMessageService.get('editpage.toolbar.nav.properties'),
-                action: (inode: string) => {
-                    this.dotContentletEditorService.edit({
-                        data: {
-                            inode: inode
-                        }
-                    });
-                }
-            }
-        ];
+          });
+        },
+      },
+    ];
 
-        if (this.route.snapshot.data?.featuredFlags[FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS]) {
-            navItems.push(this.getExperimentsNavItem(dotRenderedPage, enterpriselicense));
-        }
-
-        if (this.route.snapshot.data?.featuredFlags[FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS]) {
-            navItems.push(this.getPageToolsNavItem(enterpriselicense));
-        }
-
-        return navItems;
+    if (
+      this.route.snapshot.data?.featuredFlags[
+        FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS
+      ]
+    ) {
+      navItems.push(
+        this.getExperimentsNavItem(dotRenderedPage, enterpriselicense)
+      );
     }
 
-    private getLayoutNavItem(
-        dotRenderedPage: DotPageRender,
-        enterpriselicense: boolean
-    ): DotEditPageNavItem {
-        // Right now we only allowing users to edit layout, so no templates or advanced template can be edit from here.
-        // https://github.com/dotCMS/core-web/pull/589
-        return {
-            needsEntepriseLicense: !enterpriselicense,
-            disabled:
-                !this.canGoToLayout(dotRenderedPage) || this.disableLayoutOnExperimentVariant(),
-            icon: 'view_quilt',
-            label: this.getTemplateItemLabel(dotRenderedPage.template),
-            link: 'layout',
-            tooltip: dotRenderedPage.template.drawed
-                ? null
-                : this.dotMessageService.get('editpage.toolbar.nav.layout.advance.disabled')
-        };
+    if (
+      this.route.snapshot.data?.featuredFlags[
+        FeaturedFlags.FEATURE_FLAG_SEO_PAGE_TOOLS
+      ]
+    ) {
+      navItems.push(this.getPageToolsNavItem(enterpriselicense));
     }
 
-    private getRulesNavItem(
-        dotRenderedPage: DotPageRender,
-        enterpriselicense: boolean
-    ): DotEditPageNavItem {
-        // Right now we only allowing users to edit layout, so no templates or advanced template can be edit from here.
-        // https://github.com/dotCMS/core-web/pull/589
-        return {
-            needsEntepriseLicense: !enterpriselicense,
-            disabled: this.isVariantMode ? true : false,
-            icon: 'tune',
-            label: this.dotMessageService.get('editpage.toolbar.nav.rules'),
-            link: `rules/${dotRenderedPage.page.identifier}`
-        };
-    }
+    return navItems;
+  }
 
-    private getExperimentsNavItem(
-        dotRenderedPage: DotPageRender,
-        enterpriselicense: boolean
-    ): DotEditPageNavItem {
-        return {
-            needsEntepriseLicense: !enterpriselicense,
-            disabled: false,
-            icon: 'science',
-            label: this.dotMessageService.get('editpage.toolbar.nav.experiments'),
-            link: `experiments/${dotRenderedPage.page.identifier}`
-        };
-    }
+  private getLayoutNavItem(
+    dotRenderedPage: DotPageRender,
+    enterpriselicense: boolean
+  ): DotEditPageNavItem {
+    // Right now we only allowing users to edit layout, so no templates or advanced template can be edit from here.
+    // https://github.com/dotCMS/core-web/pull/589
+    return {
+      needsEntepriseLicense: !enterpriselicense,
+      disabled:
+        !this.canGoToLayout(dotRenderedPage) ||
+        this.disableLayoutOnExperimentVariant(),
+      icon: 'view_quilt',
+      label: this.getTemplateItemLabel(dotRenderedPage.template),
+      link: 'layout',
+      tooltip: dotRenderedPage.template.drawed
+        ? null
+        : this.dotMessageService.get(
+            'editpage.toolbar.nav.layout.advance.disabled'
+          ),
+    };
+  }
 
-    private getPageToolsNavItem(enterpriselicense: boolean): DotEditPageNavItem {
-        return {
-            needsEntepriseLicense: !enterpriselicense,
-            disabled: false,
-            icon: 'grid_view',
-            label: this.dotMessageService.get('editpage.toolbar.nav.page.tools'),
-            action: () => {
-                this.showPageTools();
-            }
-        };
-    }
+  private getRulesNavItem(
+    dotRenderedPage: DotPageRender,
+    enterpriselicense: boolean
+  ): DotEditPageNavItem {
+    // Right now we only allowing users to edit layout, so no templates or advanced template can be edit from here.
+    // https://github.com/dotCMS/core-web/pull/589
+    return {
+      needsEntepriseLicense: !enterpriselicense,
+      disabled: this.isVariantMode ? true : false,
+      icon: 'tune',
+      label: this.dotMessageService.get('editpage.toolbar.nav.rules'),
+      link: `rules/${dotRenderedPage.page.identifier}`,
+    };
+  }
 
-    private getTemplateItemLabel(template: DotTemplate): string {
-        return this.dotMessageService.get(
-            !template ? 'editpage.toolbar.nav.layout' : 'editpage.toolbar.nav.layout'
-        );
-    }
+  private getExperimentsNavItem(
+    dotRenderedPage: DotPageRender,
+    enterpriselicense: boolean
+  ): DotEditPageNavItem {
+    return {
+      needsEntepriseLicense: !enterpriselicense,
+      disabled: false,
+      icon: 'science',
+      label: this.dotMessageService.get('editpage.toolbar.nav.experiments'),
+      link: `experiments/${dotRenderedPage.page.identifier}`,
+    };
+  }
 
-    private disableLayoutOnExperimentVariant(): boolean {
-        const experimentId = this.route.snapshot?.queryParams?.experimentId;
-        const runningExperiment = this.pageState.state?.runningExperiment;
+  private getPageToolsNavItem(enterpriselicense: boolean): DotEditPageNavItem {
+    return {
+      needsEntepriseLicense: !enterpriselicense,
+      disabled: false,
+      icon: 'grid_view',
+      label: this.dotMessageService.get('editpage.toolbar.nav.page.tools'),
+      action: () => {
+        this.showPageTools();
+      },
+    };
+  }
 
-        const isCurrentExperimentAndRunning = experimentId === runningExperiment?.id;
+  private getTemplateItemLabel(template: DotTemplate): string {
+    return this.dotMessageService.get(
+      !template ? 'editpage.toolbar.nav.layout' : 'editpage.toolbar.nav.layout'
+    );
+  }
 
-        return isCurrentExperimentAndRunning && this.isVariantMode;
-    }
+  private disableLayoutOnExperimentVariant(): boolean {
+    const experimentId = this.route.snapshot?.queryParams?.experimentId;
+    const runningExperiment = this.pageState.state?.runningExperiment;
 
-    private showPageTools(): void {
-        this.pageTools.toggleDialog();
-    }
+    const isCurrentExperimentAndRunning =
+      experimentId === runningExperiment?.id;
 
-    /**
-     * Get current URL
-     * @returns string
-     * @memberof DotEditPageMainComponent
-     * */
-    private getCurrentURLParams(): DotPageToolUrlParams {
-        const { page, site } = this.pageState;
+    return isCurrentExperimentAndRunning && this.isVariantMode;
+  }
 
-        return {
-            requestHostName: this.document.defaultView.location.host,
-            currentUrl: page.pageURI,
-            siteId: site?.identifier,
-            languageId: page.languageId
-        };
-    }
+  private showPageTools(): void {
+    this.pageTools.toggleDialog();
+  }
+
+  /**
+   * Get current URL
+   * @returns string
+   * @memberof DotEditPageMainComponent
+   * */
+  private getCurrentURLParams(): DotPageToolUrlParams {
+    const { page, site } = this.pageState;
+
+    return {
+      requestHostName: this.document.defaultView.location.host,
+      currentUrl: page.pageURI,
+      siteId: site?.identifier,
+      languageId: page.languageId,
+    };
+  }
 }

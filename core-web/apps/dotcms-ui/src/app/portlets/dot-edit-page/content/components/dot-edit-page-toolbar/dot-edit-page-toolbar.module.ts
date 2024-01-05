@@ -13,7 +13,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotGlobalMessageModule } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.module';
 import { DotPropertiesService } from '@dotcms/data-access';
-import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema';
+import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
@@ -26,28 +26,28 @@ import { DotEditPageViewAsControllerModule } from '../dot-edit-page-view-as-cont
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 
 @NgModule({
-    imports: [
-        ButtonModule,
-        CommonModule,
-        CheckboxModule,
-        DotEditPageWorkflowsActionsModule,
-        DotEditPageInfoModule,
-        DotEditPageViewAsControllerModule,
-        DotEditPageStateControllerModule,
-        DotSecondaryToolbarModule,
-        FormsModule,
-        ToolbarModule,
-        TooltipModule,
-        DotPipesModule,
-        DotGlobalMessageModule,
-        DotFavoritePageComponent,
-        DotEditPageNavDirective,
-        RouterLink,
-        TagModule,
-        DotMessagePipe
-    ],
-    exports: [DotEditPageToolbarComponent],
-    declarations: [DotEditPageToolbarComponent],
-    providers: [DialogService, DotPropertiesService]
+  imports: [
+    ButtonModule,
+    CommonModule,
+    CheckboxModule,
+    DotEditPageWorkflowsActionsModule,
+    DotEditPageInfoModule,
+    DotEditPageViewAsControllerModule,
+    DotEditPageStateControllerModule,
+    DotSecondaryToolbarModule,
+    FormsModule,
+    ToolbarModule,
+    TooltipModule,
+    DotPipesModule,
+    DotGlobalMessageModule,
+    DotFavoritePageComponent,
+    DotEditPageNavDirective,
+    RouterLink,
+    TagModule,
+    DotMessagePipe,
+  ],
+  exports: [DotEditPageToolbarComponent],
+  declarations: [DotEditPageToolbarComponent],
+  providers: [DialogService, DotPropertiesService],
 })
 export class DotEditPageToolbarModule {}
