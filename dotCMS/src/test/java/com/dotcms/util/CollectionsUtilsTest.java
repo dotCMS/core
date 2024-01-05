@@ -1,12 +1,6 @@
 package com.dotcms.util;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.mock.request.DotCMSMockRequest;
-import com.dotcms.mock.request.MockAttributeRequest;
-import com.dotcms.mock.response.DotCMSMockResponse;
-import com.dotcms.mock.response.MockHeaderResponse;
-import com.dotcms.rendering.engine.ScriptEngine;
-import com.dotcms.rendering.engine.ScriptEngineFactory;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -14,7 +8,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.Serializable;
-import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -411,8 +404,15 @@ public class CollectionsUtilsTest extends UnitTestBase {
     @Test
     public void test_toSerializableMap(){
 
-        final ScriptEngine scriptEngine = ScriptEngineFactory.getInstance().getEngine(ScriptEngineFactory.JAVASCRIPT_ENGINE);
-        final Object resultMap = scriptEngine.eval(new DotCMSMockRequest(), new DotCMSMockResponse(), new StringReader(JS_JSON_MAP), Map.of());
+        final Map nonsSerializableMap = new NoSerializableMap();
+        nonsSerializableMap.put("object", new Object());
+        nonsSerializableMap.put("string", "string");
+
+        final Map nonsSerializableMap2 = new NoSerializableMap();
+        nonsSerializableMap2.put("object", new Object());
+        nonsSerializableMap2.put("string", "string");
+        nonsSerializableMap.put("inner", nonsSerializableMap2);
+        final Object resultMap =  CollectionsUtils.toSerializableMap(nonsSerializableMap);
 
         Assert.assertNotNull(resultMap);
         Assert.assertTrue(resultMap instanceof Map);
