@@ -32,6 +32,7 @@ import {
     FeaturedFlags,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
