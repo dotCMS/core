@@ -47,9 +47,16 @@ export class EmaAppGuard implements CanActivate {
                         try {
                             const val = JSON.parse(site.secrets[0].value)[0];
 
-                            if (doesPathMatchPattern(val.pattern, route.queryParams['url'])) {
-                                return this.router.createUrlTree(['/edit-ema'], {
-                                    queryParams: route.queryParams
+                            const newQueryParams = {
+                                ...route.queryParams,
+                                url: route.queryParams.url.substring(1)
+                            };
+
+                            delete newQueryParams['device_inode'];
+
+                            if (doesPathMatchPattern(val.pattern, route.queryParams.url)) {
+                                return this.router.createUrlTree(['edit-ema'], {
+                                    queryParams: newQueryParams
                                 });
                             }
 
