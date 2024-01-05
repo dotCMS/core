@@ -5,12 +5,12 @@ import {
     CONTENT_THUMBNAIL_TYPE
 } from './dot-content-thumbnail.component';
 
-const mockDotThumbnailOptions = {
-    tempUrl: '',
+const inputs = {
+    url: '',
     inode: '123-456',
     name: 'name',
     contentType: 'video/mp4',
-    iconSize: '74',
+    iconSize: '1rem',
     titleImage: ''
 };
 
@@ -22,7 +22,7 @@ describe('DotContentThumbnailComponent', () => {
         beforeEach(async () => {
             spectator = createComponent({
                 props: {
-                    dotThumbanilOptions: mockDotThumbnailOptions
+                    ...inputs
                 }
             });
             spectator.detectChanges();
@@ -33,7 +33,7 @@ describe('DotContentThumbnailComponent', () => {
             const videoElement = spectator.query(byTestId('thumbail-video'));
             const sourceElement = videoElement.querySelector('source');
 
-            expect(spectator.component.thumbnailType).toBe(CONTENT_THUMBNAIL_TYPE.video);
+            expect(spectator.component.type).toBe(CONTENT_THUMBNAIL_TYPE.video);
             expect(spectator.component.src).toBe('/dA/123-456');
             expect(sourceElement.getAttribute('src')).toBe('/dA/123-456');
             expect(sourceElement).toBeTruthy();
@@ -45,11 +45,9 @@ describe('DotContentThumbnailComponent', () => {
         beforeEach(async () => {
             spectator = createComponent({
                 props: {
-                    dotThumbanilOptions: {
-                        ...mockDotThumbnailOptions,
-                        name: 'image.png',
-                        contentType: 'image/png'
-                    }
+                    ...inputs,
+                    name: 'image.png',
+                    contentType: 'image/png'
                 }
             });
             spectator.detectChanges();
@@ -59,7 +57,7 @@ describe('DotContentThumbnailComponent', () => {
         it('should set thumbnailType to image when contentType is image/*', () => {
             const imageElement = spectator.query(byTestId('thumbail-image'));
 
-            expect(spectator.component.thumbnailType).toBe(CONTENT_THUMBNAIL_TYPE.image);
+            expect(spectator.component.type).toBe(CONTENT_THUMBNAIL_TYPE.image);
             expect(spectator.component.src).toBe('/dA/123-456/500w/50q/image.png');
             expect(imageElement.getAttribute('src')).toBe('/dA/123-456/500w/50q/image.png');
             expect(imageElement.getAttribute('title')).toBe('image.png');
@@ -72,12 +70,10 @@ describe('DotContentThumbnailComponent', () => {
         beforeEach(async () => {
             spectator = createComponent({
                 props: {
-                    dotThumbanilOptions: {
-                        ...mockDotThumbnailOptions,
-                        name: 'image.png',
-                        contentType: 'unknown',
-                        titleImage: 'image.png'
-                    }
+                    ...inputs,
+                    name: 'image.png',
+                    contentType: 'unknown',
+                    titleImage: 'image.png'
                 }
             });
             spectator.detectChanges();
@@ -87,7 +83,7 @@ describe('DotContentThumbnailComponent', () => {
         it('should set thumbnailType to image when contentType has titleImage', () => {
             const imageElement = spectator.query(byTestId('thumbail-image'));
 
-            expect(spectator.component.thumbnailType).toBe(CONTENT_THUMBNAIL_TYPE.image);
+            expect(spectator.component.type).toBe(CONTENT_THUMBNAIL_TYPE.image);
             expect(spectator.component.src).toBe('/dA/123-456/500w/50q/image.png');
             expect(imageElement.getAttribute('src')).toBe('/dA/123-456/500w/50q/image.png');
             expect(imageElement.getAttribute('title')).toBe('image.png');
@@ -100,11 +96,9 @@ describe('DotContentThumbnailComponent', () => {
         beforeEach(async () => {
             spectator = createComponent({
                 props: {
-                    dotThumbanilOptions: {
-                        ...mockDotThumbnailOptions,
-                        name: 'name',
-                        contentType: 'unknown'
-                    }
+                    ...inputs,
+                    name: 'name',
+                    contentType: 'unknown'
                 }
             });
             spectator.detectChanges();
@@ -114,7 +108,7 @@ describe('DotContentThumbnailComponent', () => {
         it('should set thumbnailType to video when contentType is video/*', () => {
             const iconElement = spectator.query(byTestId('thumbail-icon'));
 
-            expect(spectator.component.thumbnailType).toBe(CONTENT_THUMBNAIL_TYPE.icon);
+            expect(spectator.component.type).toBe(CONTENT_THUMBNAIL_TYPE.icon);
             expect(spectator.component.src).not.toBeDefined();
             expect(iconElement.getAttribute('class')).toBe('pi pi-file');
             expect(iconElement).toBeTruthy();

@@ -55,13 +55,18 @@ export class DotContentThumbnailComponent implements OnInit {
         pdf: () => this.getPdfThumbnailUrl()
     };
 
+    get extension(): string {
+        return this.name.split('.').pop();
+    }
+
+    get fileType(): string {
+        return this.contentType?.split('/')[0];
+    }
+
     ngOnInit(): void {
-        const extension = this.name.split('.').pop();
-        const fileType = this.contentType?.split('/')[0];
-        const getSrc = this.srcMap[fileType] || this.srcMap[extension];
-        this.icon = ICON_MAP[extension] || this.DEFAULT_ICON;
-        this.type = this.getThumbnailType(fileType);
-        this.src = this.url || getSrc?.();
+        this.icon = ICON_MAP[this.extension] || this.DEFAULT_ICON;
+        this.type = this.getThumbnailType();
+        this.src = this.url || this.getURL?.();
     }
 
     /**
@@ -74,12 +79,12 @@ export class DotContentThumbnailComponent implements OnInit {
         this.type = this.CONTENT_THUMBNAIL_TYPE.icon;
     }
 
-    private getThumbnailType(fileType: string) {
+    private getThumbnailType() {
         if (this.titleImage || this.isImage) {
             return CONTENT_THUMBNAIL_TYPE.image;
         }
 
-        return CONTENT_THUMBNAIL_TYPE[fileType] || CONTENT_THUMBNAIL_TYPE.icon;
+        return CONTENT_THUMBNAIL_TYPE[this.fileType] || CONTENT_THUMBNAIL_TYPE.icon;
     }
 
     /**
@@ -113,5 +118,22 @@ export class DotContentThumbnailComponent implements OnInit {
      */
     private getVideoThumbnailUrl(): string {
         return `/dA/${this.inode}`;
+    }
+
+    private getURL(): string {
+        // If it's a pdf and has a title image, use the title image
+        if (this.extension === 'pdf' && this.titleImage) {
+            return this.getPdfThumbnailUrl();
+        }
+
+        // If it's an image and has a title image, use the title image
+        if (this.titleImage || this.isImage) {
+            return this.getImageThumbnailUrl();
+        }
+
+        // Else, check the srcMap for the file type or extension
+        const urlFn = this.srcMap[this.fileType] || this.srcMap[this.extension];
+
+        return urlFn?.();
     }
 }
