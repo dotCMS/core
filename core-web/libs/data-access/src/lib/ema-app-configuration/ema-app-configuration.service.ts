@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
 import { pluck, switchMap, map, defaultIfEmpty, takeWhile } from 'rxjs/operators';
 
 import { Site } from '@dotcms/dotcms-js';
-import { DotAppsSite, DotApps, DotAppsSecrets } from '@dotcms/dotcms-models';
+import { DotAppsSite, DotApps } from '@dotcms/dotcms-models';
 
 import { DotLicenseService } from '../dot-license/dot-license.service';
 
@@ -23,16 +23,13 @@ interface Options {
     'X-CONTENT-APP': string;
 }
 
-@Injectable({
-    providedIn: 'root'
-})
 @Injectable()
 export class EmaAppConfigurationService {
     http = inject(HttpClient);
     router = inject(Router);
     licenseService = inject(DotLicenseService);
 
-    get(url: string): Observable<SecretValue> {
+    get(url: string): Observable<SecretValue | null> {
         return this.licenseService.isEnterprise().pipe(
             takeWhile((isEnterprise: boolean) => isEnterprise), // stop if license is not enterprise
             switchMap(() => this.getCurrentSiteIdentifier()),
@@ -41,12 +38,17 @@ export class EmaAppConfigurationService {
                     map((appConfiguration) => ({ currentSiteId, appConfiguration }))
                 )
             ),
-            map(({ currentSiteId, appConfiguration }) => {
-                return this.getConfigurationForCurrentSite(appConfiguration, currentSiteId);
-            }),
-            takeWhile((site: DotAppsSite) => !!site), // stop if site is undefined
-            map((site: DotAppsSite) => site.secrets),
-            map((secrets: DotAppsSecrets[]) => {
+            map(({ currentSiteId, appConfiguration }) =>
+                this.getConfigurationForCurrentSite(appConfiguration, currentSiteId)
+            ),
+            takeWhile((site: DotAppsSite | null) => !!site), // stop if site is undefined or null
+            map((site: DotAppsSite | null) => {
+                if (!site) {
+                    return null; // Explicitly handle the null case
+                }
+
+                const secrets = site.secrets || []; // Provide a default empty array if secrets is undefined
+
                 for (const secret of secrets) {
                     try {
                         const parsedSecrets: SecretValue[] = JSON.parse(secret.value);
@@ -65,7 +67,7 @@ export class EmaAppConfigurationService {
 
                 return null;
             }),
-            defaultIfEmpty(null)
+            defaultIfEmpty<SecretValue | null>(null)
         );
     }
 
@@ -81,7 +83,12 @@ export class EmaAppConfigurationService {
             .pipe(pluck('entity'));
     }
 
-    private getConfigurationForCurrentSite(appConfiguration: DotApps, siteId: string): DotAppsSite {
-        return appConfiguration.sites.find((site) => site.id === siteId && site.configured);
+    private getConfigurationForCurrentSite(
+        appConfiguration: DotApps,
+        siteId: string
+    ): DotAppsSite | null {
+        return (
+            appConfiguration?.sites?.find((site) => site.id === siteId && site.configured) || null
+        );
     }
 }

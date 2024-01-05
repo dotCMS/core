@@ -19,7 +19,8 @@ import {
     DotRouterService,
     DotSessionStorageService,
     DotWorkflowActionsFireService,
-    PaginatorService
+    PaginatorService,
+    EmaAppConfigurationService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { DotFormatDateService } from '@dotcms/ui';
@@ -47,6 +48,7 @@ export const LOCATION_TOKEN = new InjectionToken<Location>('Window location obje
 
 const PROVIDERS: Provider[] = [
     { provide: LOCATION_TOKEN, useValue: window.location },
+    EmaAppConfigurationService,
     DotAccountService,
     AuthGuardService,
     ColorUtil,
