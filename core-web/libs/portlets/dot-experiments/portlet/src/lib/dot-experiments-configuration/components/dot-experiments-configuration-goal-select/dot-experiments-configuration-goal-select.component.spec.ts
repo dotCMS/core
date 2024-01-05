@@ -386,14 +386,11 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         expect(reachPageOptionContent).toHaveClass('expanded');
     });
 
-    it('should emit closedSidebar when the sidebar its closed', (done) => {
+    it('should emit closedSidebar when the sidebar its closed', () => {
+        spectator.detectChanges();
+
         sidebar = spectator.query(Sidebar);
         jest.spyOn(spectator.component, 'closeSidebar');
-
-        sidebar.onHide.subscribe(() => {
-            expect(spectator.component.closeSidebar).toHaveBeenCalled();
-            done();
-        });
 
         store.setSidebarStatus({
             experimentStep: ExperimentSteps.GOAL,

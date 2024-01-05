@@ -13,12 +13,24 @@
         }
     },
     "cli": {
-        "defaultCollection": "@nrwl/angular",
-        "packageManager": "npm"
+        "defaultCollection": "@nx/angular",
+        "packageManager": "yarn"
     },
     "defaultProject": "dotcms-ui",
     "generators": {
-        "@nrwl/angular": {
+        "@nx/angular:application": {
+            "style": "scss",
+            "linter": "eslint",
+            "e2eTestRunner": "cypress"
+        },
+        "@nx/angular:library": {
+            "linter": "eslint"
+        },
+        "@nx/angular:component": {
+            "style": "scss",
+            "changeDetection": "OnPush"
+        },
+        "@nx/angular": {
             "application": {
                 "linter": "eslint"
             },
@@ -72,8 +84,22 @@
                 "default",
                 "^production",
                 "{workspaceRoot}/.storybook/**/*",
-                "!{projectRoot}/.storybook/**/*"
+                "{projectRoot}/.storybook/**/*",
+                "{projectRoot}/tsconfig.storybook.json"
             ]
+        },
+        "@nx/jest:jest": {
+            "inputs": ["default", "^production", "{workspaceRoot}/karma.conf.js"],
+            "cache": true,
+            "options": {
+                "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "codeCoverage": true
+                }
+            }
         }
     },
     "namedInputs": {
@@ -96,7 +122,9 @@
             "!{projectRoot}/.storybook/**/*",
             "!{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)",
             "!{projectRoot}/.storybook/**/*",
-            "!{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)"
+            "!{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)",
+            "!{projectRoot}/tsconfig.storybook.json",
+            "!{projectRoot}/src/test-setup.[jt]s"
         ]
     }
 }

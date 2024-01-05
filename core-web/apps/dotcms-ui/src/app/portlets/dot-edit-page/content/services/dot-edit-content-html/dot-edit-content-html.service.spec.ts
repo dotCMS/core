@@ -23,8 +23,10 @@ import { CoreWebService, HttpCode, LoggerService, StringUtils } from '@dotcms/do
 import {
     DotCMSContentType,
     DotPageContainer,
+    DotPageContent,
     DotPageRender,
-    DotPageRenderState
+    DotPageRenderState,
+    PageModelChangeEventType
 } from '@dotcms/dotcms-models';
 import {
     CoreWebServiceMock,
@@ -36,13 +38,11 @@ import {
     mockResponseView,
     mockUser
 } from '@dotcms/utils-testing';
-import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
 
 import {
     CONTENTLET_PLACEHOLDER_SELECTOR,
     DotEditContentHtmlService
 } from './dot-edit-content-html.service';
-import { PageModelChangeEventType } from './models';
 
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';

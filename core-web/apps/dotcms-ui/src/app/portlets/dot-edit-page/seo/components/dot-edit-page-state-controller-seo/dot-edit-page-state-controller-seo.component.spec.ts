@@ -38,6 +38,8 @@ import {
     DotPageRenderState,
     DotVariantData
 } from '@dotcms/dotcms-models';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema';
 import { DotTabButtonsComponent } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
@@ -56,7 +58,6 @@ import { DotEditPageLockInfoSeoComponent } from './components/dot-edit-page-lock
 import { DotEditPageStateControllerSeoComponent } from './dot-edit-page-state-controller-seo.component';
 
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
-import { DotDeviceSelectorSeoComponent } from '../dot-device-selector-seo/dot-device-selector-seo.component';
 
 const mockDotMessageService = new MockDotMessageService({
     'editpage.toolbar.edit.page': 'Edit',

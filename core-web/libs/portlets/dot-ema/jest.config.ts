@@ -3,15 +3,16 @@ export default {
     displayName: 'portlets-dot-ema',
     preset: '../../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-    globals: {
-        'ts-jest': {
-            tsconfig: '<rootDir>/tsconfig.spec.json',
-            stringifyContentPathRegex: '\\.(html|svg)$'
-        }
-    },
+    globals: {},
     coverageDirectory: '../../../coverage/libs/portlets/dot-ema',
     transform: {
-        '^.+\\.(ts|mjs|js|html)$': 'jest-preset-angular'
+        '^.+\\.(ts|mjs|js|html)$': [
+            'jest-preset-angular',
+            {
+                tsconfig: '<rootDir>/tsconfig.spec.json',
+                stringifyContentPathRegex: '\\.(html|svg)$'
+            }
+        ]
     },
     transformIgnorePatterns: ['<rootDir>/node_modules/(?!.*\\.mjs$)'],
     snapshotSerializers: [

@@ -1,7 +1,19 @@
 <ng-container *ngIf="editorState$ | async as es">
+    <dot-device-selector-seo
+        #deviceSelector
+        [apiLink]="es.iframeURL"
+        [hideMediaTiles]="true"
+        (selected)="updateCurrentDevice($event)"
+        appendTo="body"
+        data-testId="dot-device-selector"></dot-device-selector-seo>
     <dot-edit-ema-toolbar>
         <ng-container left>
-            <p-button label="Preview" icon="pi pi-desktop" styleClass="p-button-text p-button-sm" />
+            <p-button
+                [label]="'editpage.toolbar.preview.page' | dm"
+                (onClick)="deviceSelector.openMenu($event)"
+                icon="pi pi-desktop"
+                styleClass="p-button-text p-button-sm"
+                data-testId="ema-preview" />
             <p-button label="Bookmark" icon="pi pi-star" styleClass="p-button-text p-button-sm" />
             <p-button
                 [cdkCopyToClipboard]="es.iframeURL"
@@ -36,39 +48,60 @@
             <p-button class="p-button-sm" label="Save" />
         </ng-container>
     </dot-edit-ema-toolbar>
-    <div class="iframe-wrapper">
-        <iframe
-            #iframe
-            [src]="es.iframeURL | safeUrl"
-            [title]="host"
-            data-testId="iframe"
-            style="border: none"
-            width="100%"
-            height="100%"></iframe>
-        <dot-ema-contentlet-tools
-            *ngIf="!rows.length && !!contentlet"
-            [contentlet]="contentlet"
-            (edit)="editContentlet($event)"
-            (delete)="deleteContentlet($event)"
-            (addWidget)="addWidget($event)"
-            (addForm)="addForm($event)"
-            (addContent)="addContentlet($event)" />
-        <dot-ema-page-dropzone
-            *ngIf="!!rows.length"
-            [rows]="rows"
-            (place)="onPlaceItem($event)"
-            data-testId="dropzone" />
+    <div
+        class="editor-content"
+        [ngClass]="{
+            'editor-content--device': !!currentDevice
+        }">
+        <dot-ema-device-display
+            *ngIf="!!currentDevice"
+            [currentDevice]="currentDevice"
+            (resetDevice)="updateCurrentDevice()"
+            data-testId="device-display" />
+        <div
+            class="iframe-wrapper"
+            [ngClass]="{
+                'iframe-wrapper--device': !!currentDevice
+            }"
+            [ngStyle]="{
+                width: !!currentDevice ? currentDevice.cssWidth + 'px' : '100%',
+                height: !!currentDevice ? currentDevice.cssHeight + 'px' : '100%'
+            }">
+            <iframe
+                #iframe
+                [src]="es.iframeURL | safeUrl"
+                [title]="host"
+                data-testId="iframe"
+                style="border: none"
+                width="100%"
+                height="100%"></iframe>
+            <dot-ema-contentlet-tools
+                *ngIf="!rows.length && !!contentlet && !currentDevice"
+                [contentlet]="contentlet"
+                (edit)="editContentlet($event)"
+                (delete)="deleteContentlet($event)"
+                (addWidget)="addWidget($event)"
+                (addForm)="addForm($event)"
+                (addContent)="addContentlet($event)"
+                data-testId="contentlet-tools" />
+            <dot-ema-page-dropzone
+                *ngIf="!!rows.length && !currentDevice"
+                [rows]="rows"
+                (place)="onPlaceItem($event)"
+                data-testId="dropzone" />
+        </div>
     </div>
     <dot-edit-ema-palette
-        *ngIf="es.isEnterpriseLicense"
+        *ngIf="es.isEnterpriseLicense && !currentDevice"
         [languageId]="es.editor.viewAs.language.id"
         [containers]="es.editor.containers"
         (dragStart)="onDragStart($event)"
-        (dragEnd)="onDragEnd($event)"></dot-edit-ema-palette>
+        (dragEnd)="onDragEnd($event)"
+        data-testId="palette" />
 </ng-container>
 <p-dialog
     #dialog
-    *ngIf="dialogState$ | async as ds"
+    *ngIf="!currentDevice && dialogState$ | async as ds"
     [visible]="!!ds.type && ds.type !== 'shell'"
     [style]="{ height: '90vh', width: '90vw' }"
     [header]="ds.header"
@@ -102,8 +135,8 @@
         </ng-container>
     </ng-container>
 </p-dialog>
-
 <p-confirmDialog
+    *ngIf="!currentDevice"
     [style]="{
         width: '400px'
     }"

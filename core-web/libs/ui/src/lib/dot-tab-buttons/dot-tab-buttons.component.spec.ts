@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -64,7 +64,7 @@ describe('DotTabButtonsComponent', () => {
 
     it('should emit openMenu event when showMenu is called', () => {
         const openMenuSpy = spyOn(spectator.component.openMenu, 'emit');
-        const tab = spectator.queryAll(byTestId('dot-tab-container'))[1];
+        const tab = spectator.queryAll(byTestId('dot-tab-container'))[1] as HTMLElement;
         const button = spectator.fixture.debugElement.queryAll(
             By.css('[data-testId="dot-tab-button-text"]')
         )[1];
@@ -82,7 +82,7 @@ describe('DotTabButtonsComponent', () => {
 
     it('should emit openMenu event when showMenu is called', () => {
         const openMenuSpy = spyOn(spectator.component.openMenu, 'emit');
-        const tab = spectator.queryAll(byTestId('dot-tab-container'))[1];
+        const tab = spectator.queryAll(byTestId('dot-tab-container'))[1] as HTMLElement;
 
         const button = spectator.fixture.debugElement.queryAll(
             By.css('[data-testId="dot-tab-button-text"]')
@@ -106,7 +106,7 @@ describe('DotTabButtonsComponent', () => {
     it('should not emit openMenu event when showMenu is called and the option does not have showDropdownButton setted to true', () => {
         const openMenuSpy = spyOn(spectator.component.openMenu, 'emit');
         spectator.component.onClickDropdown(pointerEvent, editID);
-        const tab = spectator.queryAll(byTestId('dot-tab-container'))[1];
+        const tab = spectator.queryAll(byTestId('dot-tab-container'))[1] as HTMLElement;
 
         expect(openMenuSpy).not.toHaveBeenCalledWith({
             event: pointerEvent,
@@ -145,7 +145,7 @@ describe('DotTabButtonsComponent', () => {
         const openMenuSpy = spyOn(spectator.component.openMenu, 'emit');
 
         const button = spectator.queryAll(byTestId('dot-tab-button-dropdown'))[0];
-        const tab = spectator.queryAll(byTestId('dot-tab-container'))[1];
+        const tab = spectator.queryAll(byTestId('dot-tab-container'))[1] as HTMLElement;
 
         button.dispatchEvent(pointerEvent);
 
