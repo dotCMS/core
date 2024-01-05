@@ -8,18 +8,18 @@ import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import {
-  CanDeactivateGuardService,
-  DotAlertConfirmService,
-  DotContentTypeService,
-  DotContentTypesInfoService,
-  DotCrudService,
-  DotHttpErrorManagerService,
-  DotLicenseService,
-  DotMessageService,
-  DotRouterService,
-  DotSessionStorageService,
-  DotWorkflowActionsFireService,
-  PaginatorService,
+    CanDeactivateGuardService,
+    DotAlertConfirmService,
+    DotContentTypeService,
+    DotContentTypesInfoService,
+    DotCrudService,
+    DotHttpErrorManagerService,
+    DotLicenseService,
+    DotMessageService,
+    DotRouterService,
+    DotSessionStorageService,
+    DotWorkflowActionsFireService,
+    PaginatorService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { DotFormatDateService } from '@dotcms/ui';
@@ -42,51 +42,49 @@ import { DotSaveOnDeactivateService } from './shared/dot-save-on-deactivate-serv
 import { DotIframeService } from './view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { IframeOverlayService } from './view/components/_common/iframe/service/iframe-overlay.service';
 
-export const LOCATION_TOKEN = new InjectionToken<Location>(
-  'Window location object'
-);
+export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
 
 const PROVIDERS: Provider[] = [
-  { provide: LOCATION_TOKEN, useValue: window.location },
-  DotAccountService,
-  AuthGuardService,
-  ColorUtil,
-  ConfirmationService,
-  DotContentTypesInfoService,
-  ContentletGuardService,
-  DotCrudService,
-  DefaultGuardService,
-  DotAlertConfirmService,
-  DotContentTypeService,
-  DotHttpErrorManagerService,
-  DotIframeService,
-  DotLicenseService,
-  DotMenuService,
-  DotMessageService,
-  DotRouterService,
-  DotSaveOnDeactivateService,
-  DotUiColorsService,
-  DotFormatDateService,
-  IframeOverlayService,
-  MenuGuardService,
-  NotificationsService,
-  PaginatorService,
-  PagesGuardService,
-  PublicAuthGuardService,
-  StringFormat,
-  StringPixels,
-  DotLoginPageResolver,
-  DotLoginPageStateService,
-  DotPushPublishDialogService,
-  DotWorkflowEventHandlerService,
-  DotWorkflowActionsFireService,
-  DotGlobalMessageService,
-  CanDeactivateGuardService,
-  DotSessionStorageService,
-  {
-    provide: TitleStrategy,
-    useClass: DotTitleStrategy,
-  },
+    { provide: LOCATION_TOKEN, useValue: window.location },
+    DotAccountService,
+    AuthGuardService,
+    ColorUtil,
+    ConfirmationService,
+    DotContentTypesInfoService,
+    ContentletGuardService,
+    DotCrudService,
+    DefaultGuardService,
+    DotAlertConfirmService,
+    DotContentTypeService,
+    DotHttpErrorManagerService,
+    DotIframeService,
+    DotLicenseService,
+    DotMenuService,
+    DotMessageService,
+    DotRouterService,
+    DotSaveOnDeactivateService,
+    DotUiColorsService,
+    DotFormatDateService,
+    IframeOverlayService,
+    MenuGuardService,
+    NotificationsService,
+    PaginatorService,
+    PagesGuardService,
+    PublicAuthGuardService,
+    StringFormat,
+    StringPixels,
+    DotLoginPageResolver,
+    DotLoginPageStateService,
+    DotPushPublishDialogService,
+    DotWorkflowEventHandlerService,
+    DotWorkflowActionsFireService,
+    DotGlobalMessageService,
+    CanDeactivateGuardService,
+    DotSessionStorageService,
+    {
+        provide: TitleStrategy,
+        useClass: DotTitleStrategy
+    }
 ];
 
 export const ENV_PROVIDERS = [...PROVIDERS];

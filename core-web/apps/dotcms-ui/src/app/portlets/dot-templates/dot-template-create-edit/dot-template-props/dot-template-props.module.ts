@@ -7,29 +7,29 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 
 import { DotThemeSelectorDropdownModule } from '@components/dot-theme-selector-dropdown/dot-theme-selector-dropdown.module';
 import {
-  DotFieldRequiredDirective,
-  DotFieldValidationMessageComponent,
-  DotFormDialogComponent,
-  DotMessagePipe,
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotFormDialogComponent,
+    DotMessagePipe
 } from '@dotcms/ui';
 
 import { DotTemplatePropsComponent } from './dot-template-props.component';
 import { DotTemplateThumbnailFieldModule } from './dot-template-thumbnail-field/dot-template-thumbnail-field.module';
 
 @NgModule({
-  declarations: [DotTemplatePropsComponent],
-  imports: [
-    CommonModule,
-    DotFieldValidationMessageComponent,
-    DotFormDialogComponent,
-    FormsModule,
-    InputTextModule,
-    InputTextareaModule,
-    ReactiveFormsModule,
-    DotMessagePipe,
-    DotTemplateThumbnailFieldModule,
-    DotThemeSelectorDropdownModule,
-    DotFieldRequiredDirective,
-  ],
+    declarations: [DotTemplatePropsComponent],
+    imports: [
+        CommonModule,
+        DotFieldValidationMessageComponent,
+        DotFormDialogComponent,
+        FormsModule,
+        InputTextModule,
+        InputTextareaModule,
+        ReactiveFormsModule,
+        DotMessagePipe,
+        DotTemplateThumbnailFieldModule,
+        DotThemeSelectorDropdownModule,
+        DotFieldRequiredDirective
+    ]
 })
 export class DotTemplatePropsModule {}

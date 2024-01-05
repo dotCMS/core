@@ -10,10 +10,7 @@ import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageDisplayService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import {
-  DotMessageDisplayServiceMock,
-  LoginServiceMock,
-} from '@dotcms/utils-testing';
+import { DotMessageDisplayServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotEditContentletComponent } from './dot-edit-contentlet.component';
 
@@ -22,94 +19,89 @@ import { DotContentletEditorService } from '../../services/dot-contentlet-editor
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 
 describe('DotEditContentletComponent', () => {
-  let component: DotEditContentletComponent;
-  let de: DebugElement;
-  let fixture: ComponentFixture<DotEditContentletComponent>;
-  let dotEditContentletWrapper: DebugElement;
-  let dotEditContentletWrapperComponent: DotContentletWrapperComponent;
-  let dotContentletEditorService: DotContentletEditorService;
+    let component: DotEditContentletComponent;
+    let de: DebugElement;
+    let fixture: ComponentFixture<DotEditContentletComponent>;
+    let dotEditContentletWrapper: DebugElement;
+    let dotEditContentletWrapperComponent: DotContentletWrapperComponent;
+    let dotContentletEditorService: DotContentletEditorService;
 
-  beforeEach(waitForAsync(() => {
-    DOTTestBed.configureTestingModule({
-      declarations: [DotEditContentletComponent, DotContentletWrapperComponent],
-      providers: [
-        DotContentletEditorService,
-        {
-          provide: DotMessageDisplayService,
-          useClass: DotMessageDisplayServiceMock,
-        },
-        {
-          provide: DotMenuService,
-          useValue: {
-            getDotMenuId() {
-              return observableOf('999');
-            },
-          },
-        },
-        {
-          provide: LoginService,
-          useClass: LoginServiceMock,
-        },
-      ],
-      imports: [
-        DotIframeDialogModule,
-        BrowserAnimationsModule,
-        RouterTestingModule,
-      ],
-    });
-  }));
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [DotEditContentletComponent, DotContentletWrapperComponent],
+            providers: [
+                DotContentletEditorService,
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
+                {
+                    provide: DotMenuService,
+                    useValue: {
+                        getDotMenuId() {
+                            return observableOf('999');
+                        }
+                    }
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                }
+            ],
+            imports: [DotIframeDialogModule, BrowserAnimationsModule, RouterTestingModule]
+        });
+    }));
 
-  beforeEach(() => {
-    fixture = DOTTestBed.createComponent(DotEditContentletComponent);
-    de = fixture.debugElement;
-    component = de.componentInstance;
-    dotContentletEditorService = de.injector.get(DotContentletEditorService);
+    beforeEach(() => {
+        fixture = DOTTestBed.createComponent(DotEditContentletComponent);
+        de = fixture.debugElement;
+        component = de.componentInstance;
+        dotContentletEditorService = de.injector.get(DotContentletEditorService);
 
-    spyOn(component.shutdown, 'emit');
+        spyOn(component.shutdown, 'emit');
 
-    fixture.detectChanges();
+        fixture.detectChanges();
 
-    dotEditContentletWrapper = de.query(By.css('dot-contentlet-wrapper'));
-    dotEditContentletWrapperComponent =
-      dotEditContentletWrapper.componentInstance;
-  });
-
-  describe('default', () => {
-    it('should have dot-contentlet-wrapper', () => {
-      expect(dotEditContentletWrapper).toBeTruthy();
+        dotEditContentletWrapper = de.query(By.css('dot-contentlet-wrapper'));
+        dotEditContentletWrapperComponent = dotEditContentletWrapper.componentInstance;
     });
 
-    it('should emit shutdown', () => {
-      dotEditContentletWrapper.triggerEventHandler('shutdown', {});
-      expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
+    describe('default', () => {
+        it('should have dot-contentlet-wrapper', () => {
+            expect(dotEditContentletWrapper).toBeTruthy();
+        });
+
+        it('should emit shutdown', () => {
+            dotEditContentletWrapper.triggerEventHandler('shutdown', {});
+            expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
+        });
+
+        it('should have url in null', () => {
+            expect(dotEditContentletWrapperComponent.url).toEqual(null);
+        });
+
+        it('should set url', () => {
+            dotContentletEditorService.edit({
+                header: 'This is a header for edit',
+                data: {
+                    inode: '999'
+                }
+            });
+
+            fixture.detectChanges();
+
+            expect(dotEditContentletWrapperComponent.url).toEqual(
+                [
+                    '/c/portal/layout',
+                    '?p_p_id=content',
+                    '&p_p_action=1',
+                    '&p_p_state=maximized',
+                    '&p_p_mode=view',
+                    '&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet',
+                    '&_content_cmd=edit',
+                    '&inode=999'
+                ].join('')
+            );
+        });
     });
-
-    it('should have url in null', () => {
-      expect(dotEditContentletWrapperComponent.url).toEqual(null);
-    });
-
-    it('should set url', () => {
-      dotContentletEditorService.edit({
-        header: 'This is a header for edit',
-        data: {
-          inode: '999',
-        },
-      });
-
-      fixture.detectChanges();
-
-      expect(dotEditContentletWrapperComponent.url).toEqual(
-        [
-          '/c/portal/layout',
-          '?p_p_id=content',
-          '&p_p_action=1',
-          '&p_p_state=maximized',
-          '&p_p_mode=view',
-          '&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet',
-          '&_content_cmd=edit',
-          '&inode=999',
-        ].join('')
-      );
-    });
-  });
 });

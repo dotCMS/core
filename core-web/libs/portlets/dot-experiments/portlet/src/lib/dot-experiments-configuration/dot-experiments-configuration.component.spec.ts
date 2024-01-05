@@ -1,9 +1,9 @@
 import {
-  byTestId,
-  createComponentFactory,
-  mockProvider,
-  Spectator,
-  SpyObject,
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
 } from '@ngneat/spectator/jest';
 import { MockModule } from 'ng-mocks';
 import { of } from 'rxjs';
@@ -20,16 +20,13 @@ import { Menu } from 'primeng/menu';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
 import {
-  DotHttpErrorManagerService,
-  DotMessageService,
-  DotSessionStorageService,
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import { ComponentStatus, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import {
-  getExperimentMock,
-  PARENT_RESOLVERS_ACTIVE_ROUTE_DATA,
-} from '@dotcms/utils-testing';
+import { getExperimentMock, PARENT_RESOLVERS_ACTIVE_ROUTE_DATA } from '@dotcms/utils-testing';
 import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
 
 import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
@@ -39,8 +36,8 @@ import { DotExperimentsConfigurationTrafficComponent } from './components/dot-ex
 import { DotExperimentsConfigurationVariantsComponent } from './components/dot-experiments-configuration-variants/dot-experiments-configuration-variants.component';
 import { DotExperimentsConfigurationComponent } from './dot-experiments-configuration.component';
 import {
-  ConfigurationViewModel,
-  DotExperimentsConfigurationStore,
+    ConfigurationViewModel,
+    DotExperimentsConfigurationStore
 } from './store/dot-experiments-configuration-store';
 
 import { DotExperimentsExperimentSummaryComponent } from '../dot-experiments-reports/components/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
@@ -50,222 +47,194 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
 const EXPERIMENT_MOCK = getExperimentMock(0);
 
 const ActivatedRouteMock = {
-  snapshot: {
-    params: {
-      experimentId: EXPERIMENT_MOCK.id,
-      pageId: '222',
+    snapshot: {
+        params: {
+            experimentId: EXPERIMENT_MOCK.id,
+            pageId: '222'
+        },
+        data: {
+            config: {
+                EXPERIMENTS_MIN_DURATION: '5',
+                EXPERIMENTS_MAX_DURATION: PROP_NOT_FOUND
+            }
+        }
     },
-    data: {
-      config: {
-        EXPERIMENTS_MIN_DURATION: '5',
-        EXPERIMENTS_MAX_DURATION: PROP_NOT_FOUND,
-      },
-    },
-  },
-  parent: { ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA },
+    parent: { ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA }
 };
 
 const defaultVmMock: ConfigurationViewModel = {
-  experiment: EXPERIMENT_MOCK,
-  stepStatusSidebar: {
-    status: ComponentStatus.IDLE,
-    isOpen: false,
-    experimentStep: null,
-  },
-  isLoading: false,
-  isExperimentADraft: false,
-  disabledStartExperiment: false,
-  showExperimentSummary: false,
-  isSaving: false,
-  experimentStatus: null,
-  isDescriptionSaving: false,
-  menuItems: null,
-  addToBundleContentId: null,
-  disabledTooltipLabel: null,
+    experiment: EXPERIMENT_MOCK,
+    stepStatusSidebar: {
+        status: ComponentStatus.IDLE,
+        isOpen: false,
+        experimentStep: null
+    },
+    isLoading: false,
+    isExperimentADraft: false,
+    disabledStartExperiment: false,
+    showExperimentSummary: false,
+    isSaving: false,
+    experimentStatus: null,
+    isDescriptionSaving: false,
+    menuItems: null,
+    addToBundleContentId: null,
+    disabledTooltipLabel: null
 };
 
 @Component({
-  // eslint-disable-next-line @angular-eslint/component-selector
-  selector: `p-confirmPopup`,
-  template: `ConfirmPopupMockComponent`,
-  standalone: true,
+    // eslint-disable-next-line @angular-eslint/component-selector
+    selector: `p-confirmPopup`,
+    template: `ConfirmPopupMockComponent`,
+    standalone: true
 })
 export class ConfirmPopupMockComponent {}
 
 describe('DotExperimentsConfigurationComponent', () => {
-  let spectator: Spectator<DotExperimentsConfigurationComponent>;
-  let dotExperimentsService: SpyObject<DotExperimentsService>;
-  let dotExperimentsConfigurationStore: SpyObject<DotExperimentsConfigurationStore>;
+    let spectator: Spectator<DotExperimentsConfigurationComponent>;
+    let dotExperimentsService: SpyObject<DotExperimentsService>;
+    let dotExperimentsConfigurationStore: SpyObject<DotExperimentsConfigurationStore>;
 
-  const createComponent = createComponentFactory({
-    component: DotExperimentsConfigurationComponent,
-    componentProviders: [DotExperimentsConfigurationStore],
-    imports: [MockModule(DotAddToBundleModule), DotMessagePipe],
+    const createComponent = createComponentFactory({
+        component: DotExperimentsConfigurationComponent,
+        componentProviders: [DotExperimentsConfigurationStore],
+        imports: [MockModule(DotAddToBundleModule), DotMessagePipe],
 
-    providers: [
-      ConfirmationService,
-      {
-        provide: ActivatedRoute,
-        useValue: ActivatedRouteMock,
-      },
-      mockProvider(DotMessageService),
-      mockProvider(DotExperimentsService),
-      mockProvider(MessageService),
-      mockProvider(Router),
-      mockProvider(DotHttpErrorManagerService),
-      mockProvider(Title),
-      mockProvider(DotSessionStorageService),
-    ],
-  });
-
-  beforeEach(() => {
-    spectator = createComponent({
-      detectChanges: false,
+        providers: [
+            ConfirmationService,
+            {
+                provide: ActivatedRoute,
+                useValue: ActivatedRouteMock
+            },
+            mockProvider(DotMessageService),
+            mockProvider(DotExperimentsService),
+            mockProvider(MessageService),
+            mockProvider(Router),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(Title),
+            mockProvider(DotSessionStorageService)
+        ]
     });
-    dotExperimentsService = spectator.inject(DotExperimentsService);
 
-    dotExperimentsConfigurationStore = spectator.inject(
-      DotExperimentsConfigurationStore,
-      true
-    );
+    beforeEach(() => {
+        spectator = createComponent({
+            detectChanges: false
+        });
+        dotExperimentsService = spectator.inject(DotExperimentsService);
 
-    dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
+        dotExperimentsConfigurationStore = spectator.inject(DotExperimentsConfigurationStore, true);
 
-    jest
-      .spyOn(ConfirmPopup.prototype, 'bindScrollListener')
-      .mockImplementation(jest.fn());
-  });
+        dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
 
-  it('should show the skeleton component when is loading', () => {
-    spectator.component.vm$ = of({
-      ...defaultVmMock,
-      isLoading: true,
+        jest.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(jest.fn());
     });
-    spectator.detectChanges();
 
-    expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();
-    expect(
-      spectator.query(DotExperimentsConfigurationSkeletonComponent)
-    ).toExist();
-  });
+    it('should show the skeleton component when is loading', () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            isLoading: true
+        });
+        spectator.detectChanges();
 
-  it('should load all the components', () => {
-    spectator.detectChanges();
-
-    expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();
-    expect(
-      spectator.query(DotExperimentsExperimentSummaryComponent)
-    ).not.toExist();
-    expect(
-      spectator.query(DotExperimentsConfigurationVariantsComponent)
-    ).toExist();
-    expect(
-      spectator.query(DotExperimentsConfigurationGoalsComponent)
-    ).toExist();
-    // Wait until is implemented.
-    // expect(spectator.query(DotExperimentsConfigurationTargetingComponent)).toExist();
-    expect(
-      spectator.query(DotExperimentsConfigurationTrafficComponent)
-    ).toExist();
-    expect(
-      spectator.query(DotExperimentsConfigurationSchedulingComponent)
-    ).toExist();
-    expect(spectator.query(DotExperimentsInlineEditTextComponent)).toExist();
-  });
-
-  it("shouldn't show Start Experiment button if isExperimentADraft false", () => {
-    spectator.component.vm$ = of({
-      ...defaultVmMock,
-      isExperimentADraft: false,
+        expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();
+        expect(spectator.query(DotExperimentsConfigurationSkeletonComponent)).toExist();
     });
-    spectator.detectChanges();
 
-    expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
-  });
+    it('should load all the components', () => {
+        spectator.detectChanges();
 
-  it('shouldn disable edit the name if there is an error label', () => {
-    spectator.component.vm$ = of({
-      ...defaultVmMock,
-      isExperimentADraft: true,
-      disabledTooltipLabel: 'error',
+        expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();
+        expect(spectator.query(DotExperimentsExperimentSummaryComponent)).not.toExist();
+        expect(spectator.query(DotExperimentsConfigurationVariantsComponent)).toExist();
+        expect(spectator.query(DotExperimentsConfigurationGoalsComponent)).toExist();
+        // Wait until is implemented.
+        // expect(spectator.query(DotExperimentsConfigurationTargetingComponent)).toExist();
+        expect(spectator.query(DotExperimentsConfigurationTrafficComponent)).toExist();
+        expect(spectator.query(DotExperimentsConfigurationSchedulingComponent)).toExist();
+        expect(spectator.query(DotExperimentsInlineEditTextComponent)).toExist();
     });
-    spectator.detectChanges();
 
-    expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
-    expect(
-      spectator.query(DotExperimentsInlineEditTextComponent).disabled
-    ).toEqual(true);
-  });
+    it("shouldn't show Start Experiment button if isExperimentADraft false", () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            isExperimentADraft: false
+        });
+        spectator.detectChanges();
 
-  it('should show End Experiment after confirmation', () => {
-    jest.spyOn(dotExperimentsConfigurationStore, 'stopExperiment');
-    dotExperimentsService.stop.mockReturnValue(of());
+        expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
+    });
 
-    spectator.detectChanges();
+    it('shouldn disable edit the name if there is an error label', () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            isExperimentADraft: true,
+            disabledTooltipLabel: 'error'
+        });
+        spectator.detectChanges();
 
-    expect(spectator.query(byTestId('experiment-button-menu'))).toExist();
+        expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
+        expect(spectator.query(DotExperimentsInlineEditTextComponent).disabled).toEqual(true);
+    });
 
-    spectator.dispatchMouseEvent(
-      spectator.query(byTestId('experiment-button-menu')),
-      'click'
-    );
-    spectator.detectComponentChanges();
+    it('should show End Experiment after confirmation', () => {
+        jest.spyOn(dotExperimentsConfigurationStore, 'stopExperiment');
+        dotExperimentsService.stop.mockReturnValue(of());
 
-    expect(spectator.query(Menu)).toExist();
-    spectator.query(Menu).model[1].command();
+        spectator.detectChanges();
 
-    spectator.query(ConfirmDialog).accept();
+        expect(spectator.query(byTestId('experiment-button-menu'))).toExist();
 
-    expect(
-      dotExperimentsConfigurationStore.stopExperiment
-    ).toHaveBeenCalledWith(EXPERIMENT_MOCK);
-  });
+        spectator.dispatchMouseEvent(spectator.query(byTestId('experiment-button-menu')), 'click');
+        spectator.detectComponentChanges();
 
-  it('should show and remove add to bundle dialog', () => {
-    spectator.detectChanges();
+        expect(spectator.query(Menu)).toExist();
+        spectator.query(Menu).model[1].command();
 
-    spectator.dispatchMouseEvent(
-      spectator.query(byTestId('experiment-button-menu')),
-      'click'
-    );
-    spectator.detectComponentChanges();
+        spectator.query(ConfirmDialog).accept();
 
-    //Add to bundle
-    spectator.query(Menu).model[5].command();
+        expect(dotExperimentsConfigurationStore.stopExperiment).toHaveBeenCalledWith(
+            EXPERIMENT_MOCK
+        );
+    });
 
-    spectator.detectComponentChanges();
+    it('should show and remove add to bundle dialog', () => {
+        spectator.detectChanges();
 
-    const addToBundle = spectator.query(DotAddToBundleComponent);
+        spectator.dispatchMouseEvent(spectator.query(byTestId('experiment-button-menu')), 'click');
+        spectator.detectComponentChanges();
 
-    expect(addToBundle.assetIdentifier).toEqual(EXPERIMENT_MOCK.id);
+        //Add to bundle
+        spectator.query(Menu).model[5].command();
 
-    addToBundle.cancel.emit(true);
+        spectator.detectComponentChanges();
 
-    spectator.detectComponentChanges();
+        const addToBundle = spectator.query(DotAddToBundleComponent);
 
-    expect(spectator.query(DotAddToBundleComponent)).not.toExist();
-  });
+        expect(addToBundle.assetIdentifier).toEqual(EXPERIMENT_MOCK.id);
 
-  it('should un schedule the experiment after confirmation', () => {
-    jest.spyOn(dotExperimentsConfigurationStore, 'cancelSchedule');
+        addToBundle.cancel.emit(true);
 
-    spectator.detectChanges();
+        spectator.detectComponentChanges();
 
-    expect(spectator.query(byTestId('experiment-button-menu'))).toExist();
+        expect(spectator.query(DotAddToBundleComponent)).not.toExist();
+    });
 
-    spectator.dispatchMouseEvent(
-      spectator.query(byTestId('experiment-button-menu')),
-      'click'
-    );
-    spectator.detectComponentChanges();
+    it('should un schedule the experiment after confirmation', () => {
+        jest.spyOn(dotExperimentsConfigurationStore, 'cancelSchedule');
 
-    expect(spectator.query(Menu)).toExist();
-    spectator.query(Menu).model[3].command();
+        spectator.detectChanges();
 
-    spectator.query(ConfirmDialog).accept();
+        expect(spectator.query(byTestId('experiment-button-menu'))).toExist();
 
-    expect(
-      dotExperimentsConfigurationStore.cancelSchedule
-    ).toHaveBeenCalledWith(EXPERIMENT_MOCK);
-  });
+        spectator.dispatchMouseEvent(spectator.query(byTestId('experiment-button-menu')), 'click');
+        spectator.detectComponentChanges();
+
+        expect(spectator.query(Menu)).toExist();
+        spectator.query(Menu).model[3].command();
+
+        spectator.query(ConfirmDialog).accept();
+
+        expect(dotExperimentsConfigurationStore.cancelSchedule).toHaveBeenCalledWith(
+            EXPERIMENT_MOCK
+        );
+    });
 });

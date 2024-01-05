@@ -3,26 +3,21 @@ import { of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import {
-  Component,
-  CUSTOM_ELEMENTS_SCHEMA,
-  DebugElement,
-  EventEmitter,
-  forwardRef,
-  Input,
-  Output,
+    Component,
+    CUSTOM_ELEMENTS_SCHEMA,
+    DebugElement,
+    EventEmitter,
+    forwardRef,
+    Input,
+    Output
 } from '@angular/core';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import {
-  ComponentFixture,
-  fakeAsync,
-  TestBed,
-  tick,
-} from '@angular/core/testing';
-import {
-  ControlValueAccessor,
-  FormArray,
-  NG_VALUE_ACCESSOR,
-  ReactiveFormsModule,
-  Validators,
+    ControlValueAccessor,
+    FormArray,
+    NG_VALUE_ACCESSOR,
+    ReactiveFormsModule,
+    Validators
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -40,36 +35,32 @@ import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-b
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import {
-  DotAlertConfirmService,
-  DotContentTypeService,
-  DotEventsService,
-  DotHttpErrorManagerService,
-  DotMessageDisplayService,
-  DotMessageService,
-  DotRouterService,
-  DotSiteBrowserService,
+    DotAlertConfirmService,
+    DotContentTypeService,
+    DotEventsService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotMessageService,
+    DotRouterService,
+    DotSiteBrowserService
 } from '@dotcms/data-access';
 import {
-  CoreWebService,
-  DotcmsConfigService,
-  DotcmsEventsService,
-  DotEventsSocket,
-  DotEventsSocketURL,
-  LoggerService,
-  LoginService,
-  StringUtils,
+    CoreWebService,
+    DotcmsConfigService,
+    DotcmsEventsService,
+    DotEventsSocket,
+    DotEventsSocketURL,
+    LoggerService,
+    LoginService,
+    StringUtils
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotAutofocusDirective, DotFormatDateService, DotMessagePipe } from '@dotcms/ui';
 import {
-  DotAutofocusDirective,
-  DotFormatDateService,
-  DotMessagePipe,
-} from '@dotcms/ui';
-import {
-  CoreWebServiceMock,
-  DotFormatDateServiceMock,
-  DotMessageDisplayServiceMock,
-  MockDotMessageService,
+    CoreWebServiceMock,
+    DotFormatDateServiceMock,
+    DotMessageDisplayServiceMock,
+    MockDotMessageService
 } from '@dotcms/utils-testing';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
@@ -77,410 +68,396 @@ import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 import { DotContainerPropertiesComponent } from './dot-container-properties.component';
 
 @Component({
-  selector: 'dot-container-code',
-  template: '<div></div>',
+    selector: 'dot-container-code',
+    template: '<div></div>'
 })
 export class DotContentEditorComponent {}
 
 @Component({
-  selector: 'dot-loop-editor',
-  template: '<div></div>',
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => DotLoopEditorComponent),
-      multi: true,
-    },
-  ],
+    selector: 'dot-loop-editor',
+    template: '<div></div>',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotLoopEditorComponent),
+            multi: true
+        }
+    ]
 })
 export class DotLoopEditorComponent {
-  writeValue() {
-    //
-  }
+    writeValue() {
+        //
+    }
 
-  registerOnChange() {
-    //
-  }
+    registerOnChange() {
+        //
+    }
 
-  registerOnTouched() {
-    //
-  }
+    registerOnTouched() {
+        //
+    }
 }
 
 @Component({
-  selector: 'dot-textarea-content',
-  template: '',
-  providers: [
-    {
-      multi: true,
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => DotTextareaContentMockComponent),
-    },
-  ],
+    selector: 'dot-textarea-content',
+    template: '',
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotTextareaContentMockComponent)
+        }
+    ]
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
-  @Input()
-  code;
+    @Input()
+    code;
 
-  @Input()
-  height;
+    @Input()
+    height;
 
-  @Input()
-  show;
+    @Input()
+    show;
 
-  @Input()
-  value;
+    @Input()
+    value;
 
-  @Input()
-  width;
+    @Input()
+    width;
 
-  @Output()
-  monacoInit = new EventEmitter();
+    @Output()
+    monacoInit = new EventEmitter();
 
-  @Input()
-  language;
+    @Input()
+    language;
 
-  writeValue() {
-    //
-  }
+    writeValue() {
+        //
+    }
 
-  registerOnChange() {
-    //
-  }
+    registerOnChange() {
+        //
+    }
 
-  registerOnTouched() {
-    //
-  }
+    registerOnTouched() {
+        //
+    }
 }
 
 const messages = {
-  'message.containers.create.click_to_edit': 'Click to Edit',
-  'message.containers.create.description': 'description',
-  'message.containers.create.max_contents': 'Max Contents',
-  'message.containers.create.clear': 'clear',
-  'message.containers.create.content_type_code': 'Code',
+    'message.containers.create.click_to_edit': 'Click to Edit',
+    'message.containers.create.description': 'description',
+    'message.containers.create.max_contents': 'Max Contents',
+    'message.containers.create.clear': 'clear',
+    'message.containers.create.content_type_code': 'Code'
 };
 
 const containerMockData = {
-  container: {
     container: {
-      identifier: 'eba434c6-e67a-4a64-9c88-1faffcafb40d',
-      title: 'FAQ',
-      friendlyName: 'ASD',
-      maxContentlets: 20,
-      code: 'hello',
-      preLoop: '',
-      postLoop: '',
-    },
-    contentTypes: [
-      {
-        code: '',
-        structureId: '778f3246-9b11-4a2a-a101-e7fdf111bdad',
-        containerId: 'eba434c6-e67a-4a64-9c88-1faffcafb40d',
-        containerInode: '',
-        contentTypeVar: 'Activity',
-      },
-    ],
-  },
+        container: {
+            identifier: 'eba434c6-e67a-4a64-9c88-1faffcafb40d',
+            title: 'FAQ',
+            friendlyName: 'ASD',
+            maxContentlets: 20,
+            code: 'hello',
+            preLoop: '',
+            postLoop: ''
+        },
+        contentTypes: [
+            {
+                code: '',
+                structureId: '778f3246-9b11-4a2a-a101-e7fdf111bdad',
+                containerId: 'eba434c6-e67a-4a64-9c88-1faffcafb40d',
+                containerInode: '',
+                contentTypeVar: 'Activity'
+            }
+        ]
+    }
 };
 
 const mockContentTypes: DotCMSContentType[] = [
-  {
-    baseType: 'CONTENT',
-    clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-    defaultType: false,
-    description: 'Activities available at desitnations',
-    detailPage: 'e5f131d2-1952-4596-bbbf-28fb28021b68',
-    fixed: false,
-    folder: 'SYSTEM_FOLDER',
-    host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-    iDate: 1567778770000,
-    icon: 'paragliding',
-    id: '778f3246-9b11-4a2a-a101-e7fdf111bdad',
-    modDate: 1663219138000,
-    multilingualable: false,
-    nEntries: 10,
-    name: 'Activity',
-    system: false,
-    urlMapPattern: '/activities/{urlTitle}',
-    variable: 'Activity',
-    versionable: true,
-    workflows: [],
-    fields: [],
-    layout: [],
-  },
-  {
-    baseType: 'CONTENT',
-    clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-    defaultType: false,
-    description: 'Activities available at desitnations',
-    detailPage: 'e5f131d2-1952-4596-bbbf-28fb28021b68',
-    fixed: false,
-    folder: 'SYSTEM_FOLDER',
-    host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-    iDate: 1567778770000,
-    icon: 'paragliding',
-    id: '12345',
-    modDate: 1663219138000,
-    multilingualable: false,
-    nEntries: 10,
-    name: 'Activity 2',
-    system: false,
-    urlMapPattern: '/activities/{urlTitle}',
-    variable: 'Activity2',
-    versionable: true,
-    workflows: [],
-    fields: [],
-    layout: [],
-  },
+    {
+        baseType: 'CONTENT',
+        clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+        defaultType: false,
+        description: 'Activities available at desitnations',
+        detailPage: 'e5f131d2-1952-4596-bbbf-28fb28021b68',
+        fixed: false,
+        folder: 'SYSTEM_FOLDER',
+        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+        iDate: 1567778770000,
+        icon: 'paragliding',
+        id: '778f3246-9b11-4a2a-a101-e7fdf111bdad',
+        modDate: 1663219138000,
+        multilingualable: false,
+        nEntries: 10,
+        name: 'Activity',
+        system: false,
+        urlMapPattern: '/activities/{urlTitle}',
+        variable: 'Activity',
+        versionable: true,
+        workflows: [],
+        fields: [],
+        layout: []
+    },
+    {
+        baseType: 'CONTENT',
+        clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+        defaultType: false,
+        description: 'Activities available at desitnations',
+        detailPage: 'e5f131d2-1952-4596-bbbf-28fb28021b68',
+        fixed: false,
+        folder: 'SYSTEM_FOLDER',
+        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+        iDate: 1567778770000,
+        icon: 'paragliding',
+        id: '12345',
+        modDate: 1663219138000,
+        multilingualable: false,
+        nEntries: 10,
+        name: 'Activity 2',
+        system: false,
+        urlMapPattern: '/activities/{urlTitle}',
+        variable: 'Activity2',
+        versionable: true,
+        workflows: [],
+        fields: [],
+        layout: []
+    }
 ];
 
 describe('DotContainerPropertiesComponent', () => {
-  let fixture: ComponentFixture<DotContainerPropertiesComponent>;
-  let comp: DotContainerPropertiesComponent;
-  let de: DebugElement;
-  let coreWebService: CoreWebService;
-  let dotDialogService: DotAlertConfirmService;
-  let dotRouterService: DotRouterService;
-  const messageServiceMock = new MockDotMessageService(messages);
+    let fixture: ComponentFixture<DotContainerPropertiesComponent>;
+    let comp: DotContainerPropertiesComponent;
+    let de: DebugElement;
+    let coreWebService: CoreWebService;
+    let dotDialogService: DotAlertConfirmService;
+    let dotRouterService: DotRouterService;
+    const messageServiceMock = new MockDotMessageService(messages);
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [
-        DotContainerPropertiesComponent,
-        DotContentEditorComponent,
-        DotLoopEditorComponent,
-        DotTextareaContentMockComponent,
-      ],
-      providers: [
-        { provide: DotMessageService, useValue: messageServiceMock },
-        { provide: CoreWebService, useClass: CoreWebServiceMock },
-        { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            data: of(containerMockData),
-          },
-        },
-        {
-          provide: DotRouterService,
-          useValue: {
-            gotoPortlet: jasmine.createSpy(),
-            goToEditContainer: jasmine.createSpy(),
-            goToSiteBrowser: jasmine.createSpy(),
-            goToURL: jasmine.createSpy(),
-          },
-        },
-        StringUtils,
-        DotHttpErrorManagerService,
-        DotContentTypeService,
-        DotAlertConfirmService,
-        ConfirmationService,
-        LoginService,
-        DotcmsEventsService,
-        DotEventsSocket,
-        DotcmsConfigService,
-        {
-          provide: DotMessageDisplayService,
-          useClass: DotMessageDisplayServiceMock,
-        },
-        DialogService,
-        DotSiteBrowserService,
-        DotContainersService,
-        DotGlobalMessageService,
-        DotEventsService,
-        LoggerService,
-        { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
-      ],
-      imports: [
-        CommonModule,
-        DotMessagePipe,
-        SharedModule,
-        CheckboxModule,
-        InplaceModule,
-        ReactiveFormsModule,
-        MenuModule,
-        ButtonModule,
-        DotActionButtonModule,
-        DotActionMenuButtonModule,
-        DotAddToBundleModule,
-        HttpClientTestingModule,
-        DynamicDialogModule,
-        DotAutofocusDirective,
-        BrowserAnimationsModule,
-      ],
-      schemas: [CUSTOM_ELEMENTS_SCHEMA],
-    }).compileComponents();
-    fixture = TestBed.createComponent(DotContainerPropertiesComponent);
-    comp = fixture.componentInstance;
-    de = fixture.debugElement;
-    coreWebService = TestBed.inject(CoreWebService);
-    dotDialogService = TestBed.inject(DotAlertConfirmService);
-    dotRouterService = TestBed.inject(DotRouterService);
-  });
-
-  describe('with data', () => {
-    beforeEach(() => {
-      spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
-        of({
-          entity: mockContentTypes,
-          header: (type) => (type === 'Link' ? 'test;test=test' : '10'),
-        })
-      );
-      fixture.detectChanges();
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
+            declarations: [
+                DotContainerPropertiesComponent,
+                DotContentEditorComponent,
+                DotLoopEditorComponent,
+                DotTextareaContentMockComponent
+            ],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        data: of(containerMockData)
+                    }
+                },
+                {
+                    provide: DotRouterService,
+                    useValue: {
+                        gotoPortlet: jasmine.createSpy(),
+                        goToEditContainer: jasmine.createSpy(),
+                        goToSiteBrowser: jasmine.createSpy(),
+                        goToURL: jasmine.createSpy()
+                    }
+                },
+                StringUtils,
+                DotHttpErrorManagerService,
+                DotContentTypeService,
+                DotAlertConfirmService,
+                ConfirmationService,
+                LoginService,
+                DotcmsEventsService,
+                DotEventsSocket,
+                DotcmsConfigService,
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
+                DialogService,
+                DotSiteBrowserService,
+                DotContainersService,
+                DotGlobalMessageService,
+                DotEventsService,
+                LoggerService,
+                { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
+            ],
+            imports: [
+                CommonModule,
+                DotMessagePipe,
+                SharedModule,
+                CheckboxModule,
+                InplaceModule,
+                ReactiveFormsModule,
+                MenuModule,
+                ButtonModule,
+                DotActionButtonModule,
+                DotActionMenuButtonModule,
+                DotAddToBundleModule,
+                HttpClientTestingModule,
+                DynamicDialogModule,
+                DotAutofocusDirective,
+                BrowserAnimationsModule
+            ],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA]
+        }).compileComponents();
+        fixture = TestBed.createComponent(DotContainerPropertiesComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement;
+        coreWebService = TestBed.inject(CoreWebService);
+        dotDialogService = TestBed.inject(DotAlertConfirmService);
+        dotRouterService = TestBed.inject(DotRouterService);
     });
 
-    it('should focus on title field', async () => {
-      fixture.detectChanges();
-      const title = de.query(By.css('[data-testId="title"]'));
-      expect(title.attributes.dotAutofocus).toBeDefined();
-    });
-
-    it('should setup title', () => {
-      const field = de.query(By.css('[data-testId="title"]'));
-      expect(field.attributes.pInputText).toBeDefined();
-    });
-
-    it('should setup description', () => {
-      const field = de.query(By.css('[data-testId="description"]'));
-      expect(field).toBeDefined();
-    });
-
-    it('should setup Max Contents', () => {
-      const field = de.query(By.css('[data-testId="max-contents"]'));
-      expect(field).toBeDefined();
-    });
-
-    it('should setup code', () => {
-      const field = de.query(By.css('[data-testId="code"]'));
-      expect(field).toBeDefined();
-    });
-
-    it('should render content types when max-content greater then zero', fakeAsync(() => {
-      spyOn(fixture.componentInstance, 'showContentTypeAndCode');
-      fixture.componentInstance.form.get('maxContentlets').setValue(0);
-      fixture.componentInstance.form
-        .get('maxContentlets')
-        .valueChanges.subscribe((value) => {
-          expect(value).toBe(5);
+    describe('with data', () => {
+        beforeEach(() => {
+            spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
+                of({
+                    entity: mockContentTypes,
+                    header: (type) => (type === 'Link' ? 'test;test=test' : '10')
+                })
+            );
+            fixture.detectChanges();
         });
-      expect(
-        fixture.componentInstance.form.get('maxContentlets').updateOn
-      ).toBe('change');
-      fixture.componentInstance.form.get('maxContentlets').setValue(5);
-      tick();
-      fixture.detectChanges();
-      const preLoopComponent = de.query(By.css('dot-loop-editor'));
-      const codeEditorComponent = de.query(By.css('dot-container-code'));
-      expect(preLoopComponent).toBeDefined();
-      expect(codeEditorComponent).toBeDefined();
-      expect(
-        fixture.componentInstance.showContentTypeAndCode
-      ).toHaveBeenCalled();
-    }));
 
-    it('should clear the field', fakeAsync(() => {
-      spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
-        conf.accept();
-      });
-      spyOn(comp, 'clearContentConfirmationModal').and.callThrough();
-      comp.form.get('maxContentlets').setValue(0);
-      tick();
-      fixture.detectChanges();
-      expect(comp.form.value).toEqual({
-        identifier: 'eba434c6-e67a-4a64-9c88-1faffcafb40d',
-        title: 'FAQ',
-        friendlyName: 'ASD',
-        maxContentlets: 0,
-        code: '',
-        preLoop: null,
-        postLoop: null,
-        containerStructures: [],
-      });
+        it('should focus on title field', async () => {
+            fixture.detectChanges();
+            const title = de.query(By.css('[data-testId="title"]'));
+            expect(title.attributes.dotAutofocus).toBeDefined();
+        });
 
-      expect(comp.clearContentConfirmationModal).toHaveBeenCalled();
-    }));
+        it('should setup title', () => {
+            const field = de.query(By.css('[data-testId="title"]'));
+            expect(field.attributes.pInputText).toBeDefined();
+        });
 
-    it('should clear the field when user click on clear button', () => {
-      comp.form.get('maxContentlets').setValue(0);
-      comp.form.get('maxContentlets').setValue(5);
-      fixture.detectChanges();
-      spyOn(comp, 'clearContentConfirmationModal').and.callThrough();
-      spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
-        conf.accept();
-      });
-      const clearBtn = de.query(By.css('[data-testId="clearContent"]'));
-      clearBtn.triggerEventHandler('click');
-      expect(comp.form.value).toEqual({
-        identifier: 'eba434c6-e67a-4a64-9c88-1faffcafb40d',
-        title: 'FAQ',
-        friendlyName: 'ASD',
-        maxContentlets: 0,
-        code: '',
-        preLoop: null,
-        postLoop: null,
-        containerStructures: [],
-      });
-      expect(comp.clearContentConfirmationModal).toHaveBeenCalled();
+        it('should setup description', () => {
+            const field = de.query(By.css('[data-testId="description"]'));
+            expect(field).toBeDefined();
+        });
+
+        it('should setup Max Contents', () => {
+            const field = de.query(By.css('[data-testId="max-contents"]'));
+            expect(field).toBeDefined();
+        });
+
+        it('should setup code', () => {
+            const field = de.query(By.css('[data-testId="code"]'));
+            expect(field).toBeDefined();
+        });
+
+        it('should render content types when max-content greater then zero', fakeAsync(() => {
+            spyOn(fixture.componentInstance, 'showContentTypeAndCode');
+            fixture.componentInstance.form.get('maxContentlets').setValue(0);
+            fixture.componentInstance.form.get('maxContentlets').valueChanges.subscribe((value) => {
+                expect(value).toBe(5);
+            });
+            expect(fixture.componentInstance.form.get('maxContentlets').updateOn).toBe('change');
+            fixture.componentInstance.form.get('maxContentlets').setValue(5);
+            tick();
+            fixture.detectChanges();
+            const preLoopComponent = de.query(By.css('dot-loop-editor'));
+            const codeEditorComponent = de.query(By.css('dot-container-code'));
+            expect(preLoopComponent).toBeDefined();
+            expect(codeEditorComponent).toBeDefined();
+            expect(fixture.componentInstance.showContentTypeAndCode).toHaveBeenCalled();
+        }));
+
+        it('should clear the field', fakeAsync(() => {
+            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+                conf.accept();
+            });
+            spyOn(comp, 'clearContentConfirmationModal').and.callThrough();
+            comp.form.get('maxContentlets').setValue(0);
+            tick();
+            fixture.detectChanges();
+            expect(comp.form.value).toEqual({
+                identifier: 'eba434c6-e67a-4a64-9c88-1faffcafb40d',
+                title: 'FAQ',
+                friendlyName: 'ASD',
+                maxContentlets: 0,
+                code: '',
+                preLoop: null,
+                postLoop: null,
+                containerStructures: []
+            });
+
+            expect(comp.clearContentConfirmationModal).toHaveBeenCalled();
+        }));
+
+        it('should clear the field when user click on clear button', () => {
+            comp.form.get('maxContentlets').setValue(0);
+            comp.form.get('maxContentlets').setValue(5);
+            fixture.detectChanges();
+            spyOn(comp, 'clearContentConfirmationModal').and.callThrough();
+            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+                conf.accept();
+            });
+            const clearBtn = de.query(By.css('[data-testId="clearContent"]'));
+            clearBtn.triggerEventHandler('click');
+            expect(comp.form.value).toEqual({
+                identifier: 'eba434c6-e67a-4a64-9c88-1faffcafb40d',
+                title: 'FAQ',
+                friendlyName: 'ASD',
+                maxContentlets: 0,
+                code: '',
+                preLoop: null,
+                postLoop: null,
+                containerStructures: []
+            });
+            expect(comp.clearContentConfirmationModal).toHaveBeenCalled();
+        });
+
+        it('should save button disable', () => {
+            const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
+            expect(saveBtn.attributes.disabled).toBeDefined();
+        });
+
+        it('should save button enable when data change', () => {
+            comp.form.get('title').setValue('Hello');
+            fixture.detectChanges();
+            const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
+            expect(saveBtn.attributes.disabled).not.toBeDefined();
+            comp.form.get('title').setValue('FAQ');
+
+            fixture.detectChanges();
+            expect(de.query(By.css('[data-testId="saveBtn"]')).attributes.disabled).toBeDefined();
+        });
+
+        it('should save button disable after save', fakeAsync(() => {
+            comp.form.get('title').setValue('Hello');
+            fixture.detectChanges();
+            const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
+            saveBtn.triggerEventHandler('click');
+            tick(200);
+            fixture.detectChanges();
+            expect(de.query(By.css('[data-testId="saveBtn"]')).attributes.disabled).toBeDefined();
+        }));
+
+        it('should save button disable but code field is not required', fakeAsync(() => {
+            fixture.componentInstance.form.get('maxContentlets').setValue(0);
+            fixture.componentInstance.form.get('maxContentlets').setValue(5);
+            tick(200);
+            fixture.detectChanges();
+            const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
+            saveBtn.triggerEventHandler('click');
+            fixture.detectChanges();
+            expect(de.query(By.css('[data-testId="saveBtn"]')).attributes.disabled).toBeDefined();
+            expect(
+                (fixture.componentInstance.form.get('containerStructures') as FormArray).controls[0]
+                    .get('code')
+                    .hasValidator(Validators.required)
+            ).toEqual(false);
+        }));
+
+        it('should redirect to containers list after save', () => {
+            comp.form.get('title').setValue('Hello');
+            fixture.detectChanges();
+            const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
+            saveBtn.triggerEventHandler('click');
+            fixture.detectChanges();
+            expect(dotRouterService.goToURL).toHaveBeenCalledWith('/containers');
+        });
     });
-
-    it('should save button disable', () => {
-      const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
-      expect(saveBtn.attributes.disabled).toBeDefined();
-    });
-
-    it('should save button enable when data change', () => {
-      comp.form.get('title').setValue('Hello');
-      fixture.detectChanges();
-      const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
-      expect(saveBtn.attributes.disabled).not.toBeDefined();
-      comp.form.get('title').setValue('FAQ');
-
-      fixture.detectChanges();
-      expect(
-        de.query(By.css('[data-testId="saveBtn"]')).attributes.disabled
-      ).toBeDefined();
-    });
-
-    it('should save button disable after save', fakeAsync(() => {
-      comp.form.get('title').setValue('Hello');
-      fixture.detectChanges();
-      const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
-      saveBtn.triggerEventHandler('click');
-      tick(200);
-      fixture.detectChanges();
-      expect(
-        de.query(By.css('[data-testId="saveBtn"]')).attributes.disabled
-      ).toBeDefined();
-    }));
-
-    it('should save button disable but code field is not required', fakeAsync(() => {
-      fixture.componentInstance.form.get('maxContentlets').setValue(0);
-      fixture.componentInstance.form.get('maxContentlets').setValue(5);
-      tick(200);
-      fixture.detectChanges();
-      const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
-      saveBtn.triggerEventHandler('click');
-      fixture.detectChanges();
-      expect(
-        de.query(By.css('[data-testId="saveBtn"]')).attributes.disabled
-      ).toBeDefined();
-      expect(
-        (
-          fixture.componentInstance.form.get('containerStructures') as FormArray
-        ).controls[0]
-          .get('code')
-          .hasValidator(Validators.required)
-      ).toEqual(false);
-    }));
-
-    it('should redirect to containers list after save', () => {
-      comp.form.get('title').setValue('Hello');
-      fixture.detectChanges();
-      const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
-      saveBtn.triggerEventHandler('click');
-      fixture.detectChanges();
-      expect(dotRouterService.goToURL).toHaveBeenCalledWith('/containers');
-    });
-  });
 });

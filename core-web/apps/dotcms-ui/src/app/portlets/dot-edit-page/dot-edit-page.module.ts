@@ -2,21 +2,21 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
 import {
-  DotContentletLockerService,
-  DotESContentService,
-  DotFavoritePageService,
-  DotPageLayoutService,
-  DotPageRenderService,
-  DotSessionStorageService,
+    DotContentletLockerService,
+    DotESContentService,
+    DotFavoritePageService,
+    DotPageLayoutService,
+    DotPageRenderService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import {
-  DotExperimentExperimentResolver,
-  DotExperimentsConfigResolver,
-  DotExperimentsService,
+    DotExperimentExperimentResolver,
+    DotExperimentsConfigResolver,
+    DotExperimentsService
 } from '@dotcms/portlets/dot-experiments/data-access';
 import {
-  DotPushPublishEnvironmentsResolver,
-  DotEnterpriseLicenseResolver,
+    DotPushPublishEnvironmentsResolver,
+    DotEnterpriseLicenseResolver
 } from '@portlets/shared/resolvers';
 import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
@@ -28,29 +28,29 @@ import { DotEditPageMainModule } from './main/dot-edit-page-main/dot-edit-page-m
 import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
 
 @NgModule({
-  imports: [
-    CommonModule,
-    DotEditLayoutModule,
-    DotEditPageMainModule,
-    DotEditPageRoutingModule,
-    DotDirectivesModule,
-  ],
-  declarations: [],
-  providers: [
-    DotContentletLockerService,
-    DotEditPageResolver,
-    DotExperimentExperimentResolver,
-    DotExperimentsConfigResolver,
-    DotExperimentsService,
-    DotESContentService,
-    DotPageStateService,
-    DotPageRenderService,
-    DotSessionStorageService,
-    DotPageLayoutService,
-    DotFeatureFlagResolver,
-    DotFavoritePageService,
-    DotEnterpriseLicenseResolver,
-    DotPushPublishEnvironmentsResolver,
-  ],
+    imports: [
+        CommonModule,
+        DotEditLayoutModule,
+        DotEditPageMainModule,
+        DotEditPageRoutingModule,
+        DotDirectivesModule
+    ],
+    declarations: [],
+    providers: [
+        DotContentletLockerService,
+        DotEditPageResolver,
+        DotExperimentExperimentResolver,
+        DotExperimentsConfigResolver,
+        DotExperimentsService,
+        DotESContentService,
+        DotPageStateService,
+        DotPageRenderService,
+        DotSessionStorageService,
+        DotPageLayoutService,
+        DotFeatureFlagResolver,
+        DotFavoritePageService,
+        DotEnterpriseLicenseResolver,
+        DotPushPublishEnvironmentsResolver
+    ]
 })
 export class DotEditPageModule {}

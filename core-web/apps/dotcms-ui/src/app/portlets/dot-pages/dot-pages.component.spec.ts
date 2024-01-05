@@ -1,18 +1,7 @@
 import { Observable, Subject, throwError } from 'rxjs';
 
-import {
-  HttpClient,
-  HttpErrorResponse,
-  HttpHandler,
-  HttpResponse,
-} from '@angular/common/http';
-import {
-  Component,
-  DebugElement,
-  EventEmitter,
-  Input,
-  Output,
-} from '@angular/core';
+import { HttpClient, HttpErrorResponse, HttpHandler, HttpResponse } from '@angular/common/http';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
@@ -27,446 +16,431 @@ import { IframeOverlayService } from '@components/_common/iframe/service/iframe-
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import {
-  DotAlertConfirmService,
-  DotEventsService,
-  DotHttpErrorManagerService,
-  DotMessageDisplayService,
-  DotPageRenderService,
-  DotRouterService,
-  DotSessionStorageService,
+    DotAlertConfirmService,
+    DotEventsService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotPageRenderService,
+    DotRouterService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import {
-  CoreWebService,
-  CoreWebServiceMock,
-  DotcmsEventsService,
-  HttpCode,
-  LoggerService,
-  LoginService,
-  mockSites,
-  SiteService,
-  StringUtils,
+    CoreWebService,
+    CoreWebServiceMock,
+    DotcmsEventsService,
+    HttpCode,
+    LoggerService,
+    LoginService,
+    mockSites,
+    SiteService,
+    StringUtils
 } from '@dotcms/dotcms-js';
-import {
-  ComponentStatus,
-  DotMessageSeverity,
-  DotMessageType,
-} from '@dotcms/dotcms-models';
+import { ComponentStatus, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import { DotFormatDateService } from '@dotcms/ui';
 import {
-  dotcmsContentletMock,
-  dotcmsContentTypeBasicMock,
-  DotcmsEventsServiceMock,
-  DotMessageDisplayServiceMock,
-  LoginServiceMock,
-  MockDotHttpErrorManagerService,
-  MockDotRouterService,
-  mockResponseView,
+    dotcmsContentletMock,
+    dotcmsContentTypeBasicMock,
+    DotcmsEventsServiceMock,
+    DotMessageDisplayServiceMock,
+    LoginServiceMock,
+    MockDotHttpErrorManagerService,
+    MockDotRouterService,
+    mockResponseView
 } from '@dotcms/utils-testing';
 
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
-import {
-  DotActionsMenuEventParams,
-  DotPagesComponent,
-} from './dot-pages.component';
+import { DotActionsMenuEventParams, DotPagesComponent } from './dot-pages.component';
 
 @Component({
-  selector: 'dot-pages-favorite-panel',
-  template: '',
+    selector: 'dot-pages-favorite-panel',
+    template: ''
 })
 class MockDotPagesFavoritePanelComponent {
-  @Output() goToUrl = new EventEmitter<string>();
-  @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
+    @Output() goToUrl = new EventEmitter<string>();
+    @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
 }
 
 @Component({
-  selector: 'dot-pages-listing-panel',
-  template: '',
+    selector: 'dot-pages-listing-panel',
+    template: ''
 })
 class MockDotPagesListingPanelComponent {
-  @Output() goToUrl = new EventEmitter<string>();
-  @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
+    @Output() goToUrl = new EventEmitter<string>();
+    @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
 }
 
 @Component({
-  selector: 'dot-add-to-bundle',
-  template: '',
+    selector: 'dot-add-to-bundle',
+    template: ''
 })
 class MockDotAddToBundleComponent {
-  @Input() assetIdentifier: string;
-  @Output() cancel = new EventEmitter<boolean>();
+    @Input() assetIdentifier: string;
+    @Output() cancel = new EventEmitter<boolean>();
 }
 
 export const favoritePagesInitialTestData = [
-  {
-    ...dotcmsContentletMock,
-    live: true,
-    baseType: 'CONTENT',
-    identifier: '123',
-    modDate: '2020-09-02 16:45:15.569',
-    title: 'preview1',
-    screenshot: 'test1',
-    url: '/index1?host_id=A&language_id=1&device_inode=123',
-    owner: 'admin',
-  },
-  {
-    ...dotcmsContentletMock,
-    title: 'preview2',
-    modDate: '2020-09-02 16:45:15.569',
-    identifier: '456',
-    screenshot: 'test2',
-    url: '/index2',
-    owner: 'admin2',
-  },
+    {
+        ...dotcmsContentletMock,
+        live: true,
+        baseType: 'CONTENT',
+        identifier: '123',
+        modDate: '2020-09-02 16:45:15.569',
+        title: 'preview1',
+        screenshot: 'test1',
+        url: '/index1?host_id=A&language_id=1&device_inode=123',
+        owner: 'admin'
+    },
+    {
+        ...dotcmsContentletMock,
+        title: 'preview2',
+        modDate: '2020-09-02 16:45:15.569',
+        identifier: '456',
+        screenshot: 'test2',
+        url: '/index2',
+        owner: 'admin2'
+    }
 ];
 
 const storeMock = {
-  get actionMenuDomId$() {
-    return of('');
-  },
-  get languageOptions$() {
-    return of([]);
-  },
-  get languageLabels$() {
-    return of({});
-  },
-  get pageTypes$() {
-    return of([{ ...dotcmsContentTypeBasicMock }]);
-  },
-  clearMenuActions: jasmine.createSpy(),
-  getFavoritePages: jasmine.createSpy(),
-  getPages: jasmine.createSpy(),
-  getPageTypes: jasmine.createSpy(),
-  showActionsMenu: jasmine.createSpy(),
-  setInitialStateData: jasmine.createSpy(),
-  limitFavoritePages: jasmine.createSpy(),
-  setPortletStatus: jasmine.createSpy(),
-  updateSinglePageData: jasmine.createSpy(),
-  vm$: of({
-    favoritePages: {
-      items: [],
-      showLoadMoreButton: false,
-      total: 0,
+    get actionMenuDomId$() {
+        return of('');
     },
-    isEnterprise: true,
-    environments: true,
-    languages: [],
-    loggedUser: {
-      id: 'admin',
-      canRead: { contentlets: true, htmlPages: true },
-      canWrite: { contentlets: true, htmlPages: true },
+    get languageOptions$() {
+        return of([]);
     },
-    pages: {
-      actionMenuDomId: '',
-      items: [],
-      addToBundleCTId: 'test1',
+    get languageLabels$() {
+        return of({});
     },
-    pageTypes: [],
-    portletStatus: ComponentStatus.LOADED,
-  }),
+    get pageTypes$() {
+        return of([{ ...dotcmsContentTypeBasicMock }]);
+    },
+    clearMenuActions: jasmine.createSpy(),
+    getFavoritePages: jasmine.createSpy(),
+    getPages: jasmine.createSpy(),
+    getPageTypes: jasmine.createSpy(),
+    showActionsMenu: jasmine.createSpy(),
+    setInitialStateData: jasmine.createSpy(),
+    limitFavoritePages: jasmine.createSpy(),
+    setPortletStatus: jasmine.createSpy(),
+    updateSinglePageData: jasmine.createSpy(),
+    vm$: of({
+        favoritePages: {
+            items: [],
+            showLoadMoreButton: false,
+            total: 0
+        },
+        isEnterprise: true,
+        environments: true,
+        languages: [],
+        loggedUser: {
+            id: 'admin',
+            canRead: { contentlets: true, htmlPages: true },
+            canWrite: { contentlets: true, htmlPages: true }
+        },
+        pages: {
+            actionMenuDomId: '',
+            items: [],
+            addToBundleCTId: 'test1'
+        },
+        pageTypes: [],
+        portletStatus: ComponentStatus.LOADED
+    })
 };
 
 class DotContentletEditorServiceMock {
-  get createUrl$(): Observable<unknown> {
-    return of(undefined);
-  }
+    get createUrl$(): Observable<unknown> {
+        return of(undefined);
+    }
 }
 
 describe('DotPagesComponent', () => {
-  let fixture: ComponentFixture<DotPagesComponent>;
-  let component: DotPagesComponent;
-  let de: DebugElement;
-  let store: DotPageStore;
-  let dotRouterService: DotRouterService;
-  let dotMessageDisplayService: DotMessageDisplayService;
-  let dotPageRenderService: DotPageRenderService;
-  let dotHttpErrorManagerService: DotHttpErrorManagerService;
+    let fixture: ComponentFixture<DotPagesComponent>;
+    let component: DotPagesComponent;
+    let de: DebugElement;
+    let store: DotPageStore;
+    let dotRouterService: DotRouterService;
+    let dotMessageDisplayService: DotMessageDisplayService;
+    let dotPageRenderService: DotPageRenderService;
+    let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
-  const dotContentletEditorServiceMock: DotContentletEditorServiceMock =
-    new DotContentletEditorServiceMock();
+    const dotContentletEditorServiceMock: DotContentletEditorServiceMock =
+        new DotContentletEditorServiceMock();
 
-  const switchSiteSubject = new Subject();
+    const switchSiteSubject = new Subject();
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      declarations: [
-        MockDotPagesFavoritePanelComponent,
-        MockDotPagesListingPanelComponent,
-        MockDotAddToBundleComponent,
-        DotPagesComponent,
-      ],
-      imports: [MenuModule],
-      providers: [
-        DotSessionStorageService,
-        DotEventsService,
-        HttpClient,
-        HttpHandler,
-        DotPageRenderService,
-        DotIframeService,
-        DotFormatDateService,
-        DotAlertConfirmService,
-        ConfirmationService,
-        DotUiColorsService,
-        IframeOverlayService,
-        LoggerService,
-        StringUtils,
-        {
-          provide: LoginService,
-          useClass: LoginServiceMock,
-        },
-        {
-          provide: DotHttpErrorManagerService,
-          useClass: MockDotHttpErrorManagerService,
-        },
-        { provide: CoreWebService, useClass: CoreWebServiceMock },
-        {
-          provide: DotMessageDisplayService,
-          useClass: DotMessageDisplayServiceMock,
-        },
-        { provide: DotRouterService, useClass: MockDotRouterService },
-        {
-          provide: DotContentletEditorService,
-          useValue: dotContentletEditorServiceMock,
-        },
-        {
-          provide: LoginService,
-          useClass: LoginServiceMock,
-        },
-        {
-          provide: DotcmsEventsService,
-          useClass: DotcmsEventsServiceMock,
-        },
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            get data() {
-              return of({ url: undefined });
-            },
-          },
-        },
-        {
-          provide: SiteService,
-          useValue: {
-            get currentSite() {
-              return undefined;
-            },
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            declarations: [
+                MockDotPagesFavoritePanelComponent,
+                MockDotPagesListingPanelComponent,
+                MockDotAddToBundleComponent,
+                DotPagesComponent
+            ],
+            imports: [MenuModule],
+            providers: [
+                DotSessionStorageService,
+                DotEventsService,
+                HttpClient,
+                HttpHandler,
+                DotPageRenderService,
+                DotIframeService,
+                DotFormatDateService,
+                DotAlertConfirmService,
+                ConfirmationService,
+                DotUiColorsService,
+                IframeOverlayService,
+                LoggerService,
+                StringUtils,
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                {
+                    provide: DotHttpErrorManagerService,
+                    useClass: MockDotHttpErrorManagerService
+                },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                {
+                    provide: DotContentletEditorService,
+                    useValue: dotContentletEditorServiceMock
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                {
+                    provide: DotcmsEventsService,
+                    useClass: DotcmsEventsServiceMock
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        get data() {
+                            return of({ url: undefined });
+                        }
+                    }
+                },
+                {
+                    provide: SiteService,
+                    useValue: {
+                        get currentSite() {
+                            return undefined;
+                        },
 
-            get switchSite$() {
-              return switchSiteSubject.asObservable();
-            },
-          },
-        },
-      ],
-    }).compileComponents();
-  });
-
-  beforeEach(() => {
-    TestBed.overrideProvider(DotPageStore, {
-      useValue: storeMock,
-    });
-    store = TestBed.inject(DotPageStore);
-    dotRouterService = TestBed.inject(DotRouterService);
-    dotMessageDisplayService = TestBed.inject(DotMessageDisplayService);
-    dotPageRenderService = TestBed.inject(DotPageRenderService);
-    dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
-    fixture = TestBed.createComponent(DotPagesComponent);
-    de = fixture.debugElement;
-    component = fixture.componentInstance;
-
-    fixture.detectChanges();
-    spyOn(component.menu, 'hide');
-    spyOn(component, 'scrollToTop');
-    spyOn(dotMessageDisplayService, 'push');
-    spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(true));
-    spyOn(dotHttpErrorManagerService, 'handle');
-  });
-
-  it('should init store', () => {
-    expect(store.setInitialStateData).toHaveBeenCalledWith(500);
-  });
-
-  it('should have favorite page panel, menu, pages panel and DotAddToBundle components', () => {
-    expect(de.query(By.css('dot-pages-favorite-panel'))).toBeTruthy();
-    expect(de.query(By.css('p-menu'))).toBeTruthy();
-    expect(de.query(By.css('dot-pages-listing-panel'))).toBeTruthy();
-    expect(de.query(By.css('dot-add-to-bundle'))).toBeTruthy();
-  });
-
-  it('should call goToUrl method from DotPagesFavoritePanel', () => {
-    const elem = de.query(By.css('dot-pages-favorite-panel'));
-    elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
-
-    expect(dotPageRenderService.checkPermission).toHaveBeenCalledWith({
-      lang: '1',
-      url: '/page/1',
-    });
-    expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
-      lang: '1',
-      url: '/page/1',
-    });
-  });
-
-  it('should call goToUrl method from DotPagesFavoritePanel and throw User permission error', () => {
-    dotPageRenderService.checkPermission = jasmine
-      .createSpy()
-      .and.returnValue(of(false));
-
-    const elem = de.query(By.css('dot-pages-favorite-panel'));
-    elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
-
-    expect(store.setPortletStatus).toHaveBeenCalledWith(
-      ComponentStatus.LOADING
-    );
-    expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
-      new HttpErrorResponse(
-        new HttpResponse({
-          body: null,
-          status: HttpCode.FORBIDDEN,
-          headers: null,
-          url: '',
-        })
-      )
-    );
-  });
-
-  it('should throw error dialog when call GoTo and url does not match with existing page', () => {
-    const error404 = mockResponseView(404);
-    dotPageRenderService.checkPermission = jasmine
-      .createSpy()
-      .and.returnValue(throwError(error404));
-
-    const elem = de.query(By.css('dot-pages-favorite-panel'));
-    elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
-
-    expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error404);
-    expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADED);
-  });
-
-  it('should call showActionsMenu method from DotPagesFavoritePanel', () => {
-    const eventMock = new MouseEvent('click');
-    Object.defineProperty(eventMock, 'currentTarget', {
-      value: { id: 'test' },
-      enumerable: true,
+                        get switchSite$() {
+                            return switchSiteSubject.asObservable();
+                        }
+                    }
+                }
+            ]
+        }).compileComponents();
     });
 
-    const actionMenuParam = {
-      event: eventMock,
-      actionMenuDomId: 'test1',
-      item: dotcmsContentletMock,
-    };
+    beforeEach(() => {
+        TestBed.overrideProvider(DotPageStore, {
+            useValue: storeMock
+        });
+        store = TestBed.inject(DotPageStore);
+        dotRouterService = TestBed.inject(DotRouterService);
+        dotMessageDisplayService = TestBed.inject(DotMessageDisplayService);
+        dotPageRenderService = TestBed.inject(DotPageRenderService);
+        dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
+        fixture = TestBed.createComponent(DotPagesComponent);
+        de = fixture.debugElement;
+        component = fixture.componentInstance;
 
-    const elem = de.query(By.css('dot-pages-favorite-panel'));
-    elem.triggerEventHandler('showActionsMenu', actionMenuParam);
-
-    expect(component.menu.hide).toHaveBeenCalledTimes(1);
-    expect(store.showActionsMenu).toHaveBeenCalledWith({
-      item: dotcmsContentletMock,
-      actionMenuDomId: 'test1',
-    });
-  });
-
-  it('should call goToUrl method from DotPagesListingPanel', () => {
-    const elem = de.query(By.css('dot-pages-listing-panel'));
-    elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
-
-    expect(store.setPortletStatus).toHaveBeenCalledWith(
-      ComponentStatus.LOADING
-    );
-    expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
-      lang: '1',
-      url: '/page/1',
-    });
-  });
-
-  it('should call showActionsMenu method from DotPagesListingPanel', () => {
-    const eventMock = new MouseEvent('click');
-    Object.defineProperty(eventMock, 'currentTarget', {
-      value: { id: 'test' },
-      enumerable: true,
+        fixture.detectChanges();
+        spyOn(component.menu, 'hide');
+        spyOn(component, 'scrollToTop');
+        spyOn(dotMessageDisplayService, 'push');
+        spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(true));
+        spyOn(dotHttpErrorManagerService, 'handle');
     });
 
-    const actionMenuParam = {
-      event: eventMock,
-      actionMenuDomId: 'test1',
-      item: dotcmsContentletMock,
-    };
-
-    const elem = de.query(By.css('dot-pages-listing-panel'));
-    elem.triggerEventHandler('showActionsMenu', actionMenuParam);
-
-    expect(component.menu.hide).toHaveBeenCalledTimes(1);
-    expect(store.showActionsMenu).toHaveBeenCalledWith({
-      item: dotcmsContentletMock,
-      actionMenuDomId: 'test1',
-    });
-  });
-
-  it('should call scrollToTop method from DotPagesListingPanel', () => {
-    const elem = de.query(By.css('[data-testId="pages-listing-panel"]'));
-    elem.triggerEventHandler('pageChange');
-
-    expect(component.scrollToTop).toHaveBeenCalled();
-  });
-
-  it('should call closedActionsMenu method from p-menu', () => {
-    const elem = de.query(By.css('p-menu'));
-
-    component.closedActionsMenu = jasmine.createSpy('closedActionsMenu');
-    elem.triggerEventHandler('onHide', {});
-
-    expect(component.closedActionsMenu).toHaveBeenCalledTimes(1);
-  });
-
-  it('should call push method in dotMessageDisplayService once a save-page is received for a non favorite page', () => {
-    const dotEventsService: DotEventsService =
-      de.injector.get(DotEventsService);
-
-    dotEventsService.notify('save-page', {
-      payload: { identifier: '123' },
-      value: 'test3',
+    it('should init store', () => {
+        expect(store.setInitialStateData).toHaveBeenCalledWith(500);
     });
 
-    expect(dotMessageDisplayService.push).toHaveBeenCalledWith({
-      life: 3000,
-      message: 'test3',
-      severity: DotMessageSeverity.SUCCESS,
-      type: DotMessageType.SIMPLE_MESSAGE,
-    });
-    expect(store.updateSinglePageData).toHaveBeenCalledWith({
-      identifier: '123',
-      isFavoritePage: false,
-    });
-  });
-
-  it('should update a single page once a save-page is received for a favorite page', () => {
-    const dotEventsService: DotEventsService =
-      de.injector.get(DotEventsService);
-
-    dotEventsService.notify('save-page', {
-      payload: { contentType: 'dotFavoritePage', identifier: '123' },
-      value: 'test3',
+    it('should have favorite page panel, menu, pages panel and DotAddToBundle components', () => {
+        expect(de.query(By.css('dot-pages-favorite-panel'))).toBeTruthy();
+        expect(de.query(By.css('p-menu'))).toBeTruthy();
+        expect(de.query(By.css('dot-pages-listing-panel'))).toBeTruthy();
+        expect(de.query(By.css('dot-add-to-bundle'))).toBeTruthy();
     });
 
-    expect(store.updateSinglePageData).toHaveBeenCalledWith({
-      identifier: '123',
-      isFavoritePage: true,
+    it('should call goToUrl method from DotPagesFavoritePanel', () => {
+        const elem = de.query(By.css('dot-pages-favorite-panel'));
+        elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
+
+        expect(dotPageRenderService.checkPermission).toHaveBeenCalledWith({
+            lang: '1',
+            url: '/page/1'
+        });
+        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+            lang: '1',
+            url: '/page/1'
+        });
     });
-  });
 
-  it('should trigger getPages when deactivating the router-outlet', () => {
-    const routerOutlet = de.query(By.css('router-outlet'));
+    it('should call goToUrl method from DotPagesFavoritePanel and throw User permission error', () => {
+        dotPageRenderService.checkPermission = jasmine.createSpy().and.returnValue(of(false));
 
-    routerOutlet.triggerEventHandler('activate');
-    fixture.detectChanges();
-    routerOutlet.triggerEventHandler('deactivate');
-    fixture.detectChanges();
+        const elem = de.query(By.css('dot-pages-favorite-panel'));
+        elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
 
-    expect(store.getPages).toHaveBeenCalled();
-  });
+        expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADING);
+        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
+            new HttpErrorResponse(
+                new HttpResponse({
+                    body: null,
+                    status: HttpCode.FORBIDDEN,
+                    headers: null,
+                    url: ''
+                })
+            )
+        );
+    });
 
-  it('should reload portlet only when the site change', () => {
-    switchSiteSubject.next(mockSites[0]); // setting the site
-    switchSiteSubject.next(mockSites[1]); // switching the site
-    expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
-    expect(component.scrollToTop).toHaveBeenCalled();
-  });
+    it('should throw error dialog when call GoTo and url does not match with existing page', () => {
+        const error404 = mockResponseView(404);
+        dotPageRenderService.checkPermission = jasmine
+            .createSpy()
+            .and.returnValue(throwError(error404));
+
+        const elem = de.query(By.css('dot-pages-favorite-panel'));
+        elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
+
+        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error404);
+        expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADED);
+    });
+
+    it('should call showActionsMenu method from DotPagesFavoritePanel', () => {
+        const eventMock = new MouseEvent('click');
+        Object.defineProperty(eventMock, 'currentTarget', {
+            value: { id: 'test' },
+            enumerable: true
+        });
+
+        const actionMenuParam = {
+            event: eventMock,
+            actionMenuDomId: 'test1',
+            item: dotcmsContentletMock
+        };
+
+        const elem = de.query(By.css('dot-pages-favorite-panel'));
+        elem.triggerEventHandler('showActionsMenu', actionMenuParam);
+
+        expect(component.menu.hide).toHaveBeenCalledTimes(1);
+        expect(store.showActionsMenu).toHaveBeenCalledWith({
+            item: dotcmsContentletMock,
+            actionMenuDomId: 'test1'
+        });
+    });
+
+    it('should call goToUrl method from DotPagesListingPanel', () => {
+        const elem = de.query(By.css('dot-pages-listing-panel'));
+        elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
+
+        expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADING);
+        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+            lang: '1',
+            url: '/page/1'
+        });
+    });
+
+    it('should call showActionsMenu method from DotPagesListingPanel', () => {
+        const eventMock = new MouseEvent('click');
+        Object.defineProperty(eventMock, 'currentTarget', {
+            value: { id: 'test' },
+            enumerable: true
+        });
+
+        const actionMenuParam = {
+            event: eventMock,
+            actionMenuDomId: 'test1',
+            item: dotcmsContentletMock
+        };
+
+        const elem = de.query(By.css('dot-pages-listing-panel'));
+        elem.triggerEventHandler('showActionsMenu', actionMenuParam);
+
+        expect(component.menu.hide).toHaveBeenCalledTimes(1);
+        expect(store.showActionsMenu).toHaveBeenCalledWith({
+            item: dotcmsContentletMock,
+            actionMenuDomId: 'test1'
+        });
+    });
+
+    it('should call scrollToTop method from DotPagesListingPanel', () => {
+        const elem = de.query(By.css('[data-testId="pages-listing-panel"]'));
+        elem.triggerEventHandler('pageChange');
+
+        expect(component.scrollToTop).toHaveBeenCalled();
+    });
+
+    it('should call closedActionsMenu method from p-menu', () => {
+        const elem = de.query(By.css('p-menu'));
+
+        component.closedActionsMenu = jasmine.createSpy('closedActionsMenu');
+        elem.triggerEventHandler('onHide', {});
+
+        expect(component.closedActionsMenu).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call push method in dotMessageDisplayService once a save-page is received for a non favorite page', () => {
+        const dotEventsService: DotEventsService = de.injector.get(DotEventsService);
+
+        dotEventsService.notify('save-page', {
+            payload: { identifier: '123' },
+            value: 'test3'
+        });
+
+        expect(dotMessageDisplayService.push).toHaveBeenCalledWith({
+            life: 3000,
+            message: 'test3',
+            severity: DotMessageSeverity.SUCCESS,
+            type: DotMessageType.SIMPLE_MESSAGE
+        });
+        expect(store.updateSinglePageData).toHaveBeenCalledWith({
+            identifier: '123',
+            isFavoritePage: false
+        });
+    });
+
+    it('should update a single page once a save-page is received for a favorite page', () => {
+        const dotEventsService: DotEventsService = de.injector.get(DotEventsService);
+
+        dotEventsService.notify('save-page', {
+            payload: { contentType: 'dotFavoritePage', identifier: '123' },
+            value: 'test3'
+        });
+
+        expect(store.updateSinglePageData).toHaveBeenCalledWith({
+            identifier: '123',
+            isFavoritePage: true
+        });
+    });
+
+    it('should trigger getPages when deactivating the router-outlet', () => {
+        const routerOutlet = de.query(By.css('router-outlet'));
+
+        routerOutlet.triggerEventHandler('activate');
+        fixture.detectChanges();
+        routerOutlet.triggerEventHandler('deactivate');
+        fixture.detectChanges();
+
+        expect(store.getPages).toHaveBeenCalled();
+    });
+
+    it('should reload portlet only when the site change', () => {
+        switchSiteSubject.next(mockSites[0]); // setting the site
+        switchSiteSubject.next(mockSites[1]); // switching the site
+        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+        expect(component.scrollToTop).toHaveBeenCalled();
+    });
 });

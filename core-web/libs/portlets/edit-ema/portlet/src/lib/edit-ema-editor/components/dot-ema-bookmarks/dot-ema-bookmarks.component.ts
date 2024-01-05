@@ -15,65 +15,65 @@ import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
-  selector: 'dot-ema-bookmarks',
-  standalone: true,
-  imports: [ButtonModule, DotMessagePipe, AsyncPipe],
-  templateUrl: './dot-ema-bookmarks.component.html',
+    selector: 'dot-ema-bookmarks',
+    standalone: true,
+    imports: [ButtonModule, DotMessagePipe, AsyncPipe],
+    templateUrl: './dot-ema-bookmarks.component.html'
 })
 export class DotEmaBookmarksComponent implements OnInit {
-  @Input() url = '';
-  private readonly loginService = inject(LoginService);
-  private readonly dotFavoritePageService = inject(DotFavoritePageService);
-  private readonly dialogService = inject(DialogService);
-  private readonly dotMessageService = inject(DotMessageService);
-  bookmarked = false;
-  // I used a boolean at first, but for some reason the dom wasn't updating when I changed the value
-  loading = new BehaviorSubject(true);
-  favoritePage: DotCMSContentlet;
+    @Input() url = '';
+    private readonly loginService = inject(LoginService);
+    private readonly dotFavoritePageService = inject(DotFavoritePageService);
+    private readonly dialogService = inject(DialogService);
+    private readonly dotMessageService = inject(DotMessageService);
+    bookmarked = false;
+    // I used a boolean at first, but for some reason the dom wasn't updating when I changed the value
+    loading = new BehaviorSubject(true);
+    favoritePage: DotCMSContentlet;
 
-  ngOnInit(): void {
-    this.fetchFavoritePage(this.url);
-  }
+    ngOnInit(): void {
+        this.fetchFavoritePage(this.url);
+    }
 
-  toggleBookmark(): void {
-    this.dialogService.open(DotFavoritePageComponent, {
-      header: this.dotMessageService.get('favoritePage.dialog.header'),
-      width: '80rem',
-      data: {
-        page: {
-          favoritePageUrl: this.url,
-          favoritePage: this.favoritePage,
-        },
-        onSave: (favoritePageUrl: string) => {
-          this.fetchFavoritePage(favoritePageUrl);
-        },
-        onDelete: (favoritePageUrl: string) => {
-          this.fetchFavoritePage(favoritePageUrl);
-        },
-      },
-    });
-  }
+    toggleBookmark(): void {
+        this.dialogService.open(DotFavoritePageComponent, {
+            header: this.dotMessageService.get('favoritePage.dialog.header'),
+            width: '80rem',
+            data: {
+                page: {
+                    favoritePageUrl: this.url,
+                    favoritePage: this.favoritePage
+                },
+                onSave: (favoritePageUrl: string) => {
+                    this.fetchFavoritePage(favoritePageUrl);
+                },
+                onDelete: (favoritePageUrl: string) => {
+                    this.fetchFavoritePage(favoritePageUrl);
+                }
+            }
+        });
+    }
 
-  private fetchFavoritePage(url: string): void {
-    this.loading.next(true);
+    private fetchFavoritePage(url: string): void {
+        this.loading.next(true);
 
-    this.loginService
-      .getCurrentUser()
-      .pipe(
-        switchMap((user) => {
-          return this.dotFavoritePageService
-            .get({
-              url,
-              userId: user.userId,
-              limit: 10,
-            })
-            .pipe(map((res) => res.jsonObjectView.contentlets[0]));
-        })
-      )
-      .subscribe((favoritePage) => {
-        this.loading.next(false);
-        this.bookmarked = !!favoritePage;
-        this.favoritePage = favoritePage;
-      });
-  }
+        this.loginService
+            .getCurrentUser()
+            .pipe(
+                switchMap((user) => {
+                    return this.dotFavoritePageService
+                        .get({
+                            url,
+                            userId: user.userId,
+                            limit: 10
+                        })
+                        .pipe(map((res) => res.jsonObjectView.contentlets[0]));
+                })
+            )
+            .subscribe((favoritePage) => {
+                this.loading.next(false);
+                this.bookmarked = !!favoritePage;
+                this.favoritePage = favoritePage;
+            });
+    }
 }

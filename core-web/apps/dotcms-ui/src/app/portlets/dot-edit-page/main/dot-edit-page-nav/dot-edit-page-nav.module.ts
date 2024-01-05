@@ -11,16 +11,16 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
 
 @NgModule({
-  imports: [
-    CommonModule,
-    RouterModule,
-    TooltipModule,
-    DotIconModule,
-    DotPipesModule,
-    DotMessagePipe,
-    DotPageToolsSeoComponent,
-  ],
-  declarations: [DotEditPageNavComponent],
-  exports: [DotEditPageNavComponent],
+    imports: [
+        CommonModule,
+        RouterModule,
+        TooltipModule,
+        DotIconModule,
+        DotPipesModule,
+        DotMessagePipe,
+        DotPageToolsSeoComponent
+    ],
+    declarations: [DotEditPageNavComponent],
+    exports: [DotEditPageNavComponent]
 })
 export class DotEditPageNavModule {}

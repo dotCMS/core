@@ -2,12 +2,12 @@ import { Subject } from 'rxjs';
 
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import {
-  AfterViewInit,
-  Component,
-  ElementRef,
-  HostListener,
-  OnDestroy,
-  ViewChild,
+    AfterViewInit,
+    Component,
+    ElementRef,
+    HostListener,
+    OnDestroy,
+    ViewChild
 } from '@angular/core';
 
 import { Menu } from 'primeng/menu';
@@ -16,230 +16,220 @@ import { Observable } from 'rxjs/internal/Observable';
 import { filter, skip, take, takeUntil } from 'rxjs/operators';
 
 import {
-  DotEventsService,
-  DotHttpErrorManagerService,
-  DotMessageDisplayService,
-  DotPageRenderService,
-  DotRouterService,
+    DotEventsService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotPageRenderService,
+    DotRouterService
 } from '@dotcms/data-access';
 import { HttpCode, SiteService } from '@dotcms/dotcms-js';
 import {
-  ComponentStatus,
-  DotCMSContentlet,
-  DotMessageSeverity,
-  DotMessageType,
+    ComponentStatus,
+    DotCMSContentlet,
+    DotMessageSeverity,
+    DotMessageType
 } from '@dotcms/dotcms-models';
 
 import {
-  DotPagesState,
-  DotPageStore,
-  FAVORITE_PAGE_LIMIT,
+    DotPagesState,
+    DotPageStore,
+    FAVORITE_PAGE_LIMIT
 } from './dot-pages-store/dot-pages.store';
 
 export interface DotActionsMenuEventParams {
-  event: MouseEvent;
-  actionMenuDomId: string;
-  item: DotCMSContentlet;
+    event: MouseEvent;
+    actionMenuDomId: string;
+    item: DotCMSContentlet;
 }
 
 @Component({
-  providers: [DotPageStore],
-  selector: 'dot-pages',
-  styleUrls: ['./dot-pages.component.scss'],
-  templateUrl: './dot-pages.component.html',
+    providers: [DotPageStore],
+    selector: 'dot-pages',
+    styleUrls: ['./dot-pages.component.scss'],
+    templateUrl: './dot-pages.component.html'
 })
 export class DotPagesComponent implements AfterViewInit, OnDestroy {
-  @ViewChild('menu') menu: Menu;
-  vm$: Observable<DotPagesState> = this.store.vm$;
+    @ViewChild('menu') menu: Menu;
+    vm$: Observable<DotPagesState> = this.store.vm$;
 
-  private domIdMenuAttached = '';
-  private destroy$: Subject<boolean> = new Subject<boolean>();
+    private domIdMenuAttached = '';
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
-  constructor(
-    private store: DotPageStore,
-    private dotRouterService: DotRouterService,
-    private dotMessageDisplayService: DotMessageDisplayService,
-    private dotEventsService: DotEventsService,
-    private dotHttpErrorManagerService: DotHttpErrorManagerService,
-    private dotPageRenderService: DotPageRenderService,
-    private element: ElementRef,
-    private dotSiteService: SiteService
-  ) {
-    this.store.setInitialStateData(FAVORITE_PAGE_LIMIT);
-  }
-
-  /**
-   * Event to redirect to Edit Page when Page selected
-   *
-   * @param {string} url
-   * @memberof DotPagesComponent
-   */
-  goToUrl(url: string): void {
-    this.store.setPortletStatus(ComponentStatus.LOADING);
-
-    const splittedUrl = url.split('?');
-    const urlParams = { url: splittedUrl[0] };
-    const searchParams = new URLSearchParams(splittedUrl[1]);
-
-    for (const entry of searchParams) {
-      urlParams[entry[0]] = entry[1];
+    constructor(
+        private store: DotPageStore,
+        private dotRouterService: DotRouterService,
+        private dotMessageDisplayService: DotMessageDisplayService,
+        private dotEventsService: DotEventsService,
+        private dotHttpErrorManagerService: DotHttpErrorManagerService,
+        private dotPageRenderService: DotPageRenderService,
+        private element: ElementRef,
+        private dotSiteService: SiteService
+    ) {
+        this.store.setInitialStateData(FAVORITE_PAGE_LIMIT);
     }
 
-    this.dotPageRenderService
-      .checkPermission(urlParams)
-      .pipe(take(1))
-      .subscribe(
-        (hasPermission: boolean) => {
-          if (hasPermission) {
-            this.dotRouterService.goToEditPage(urlParams);
-          } else {
-            const error = new HttpErrorResponse(
-              new HttpResponse({
-                body: null,
-                status: HttpCode.FORBIDDEN,
-                headers: null,
-                url: '',
-              })
-            );
-            this.dotHttpErrorManagerService.handle(error);
-            this.store.setPortletStatus(ComponentStatus.LOADED);
-          }
-        },
-        (error: HttpErrorResponse) => {
-          this.dotHttpErrorManagerService.handle(error);
-          this.store.setPortletStatus(ComponentStatus.LOADED);
+    /**
+     * Event to redirect to Edit Page when Page selected
+     *
+     * @param {string} url
+     * @memberof DotPagesComponent
+     */
+    goToUrl(url: string): void {
+        this.store.setPortletStatus(ComponentStatus.LOADING);
+
+        const splittedUrl = url.split('?');
+        const urlParams = { url: splittedUrl[0] };
+        const searchParams = new URLSearchParams(splittedUrl[1]);
+
+        for (const entry of searchParams) {
+            urlParams[entry[0]] = entry[1];
         }
-      );
-  }
 
-  /**
-   * Closes the menu when the user clicks outside of it
-   *
-   * @memberof DotPagesComponent
-   */
-  @HostListener('window:click')
-  closeMenu(): void {
-    if (this.menuIsLoaded(this.domIdMenuAttached)) {
-      this.menu.hide();
-      this.store.clearMenuActions();
+        this.dotPageRenderService
+            .checkPermission(urlParams)
+            .pipe(take(1))
+            .subscribe(
+                (hasPermission: boolean) => {
+                    if (hasPermission) {
+                        this.dotRouterService.goToEditPage(urlParams);
+                    } else {
+                        const error = new HttpErrorResponse(
+                            new HttpResponse({
+                                body: null,
+                                status: HttpCode.FORBIDDEN,
+                                headers: null,
+                                url: ''
+                            })
+                        );
+                        this.dotHttpErrorManagerService.handle(error);
+                        this.store.setPortletStatus(ComponentStatus.LOADED);
+                    }
+                },
+                (error: HttpErrorResponse) => {
+                    this.dotHttpErrorManagerService.handle(error);
+                    this.store.setPortletStatus(ComponentStatus.LOADED);
+                }
+            );
     }
-  }
 
-  /**
-   * Event to show/hide actions menu when each contentlet is clicked
-   *
-   * @param {DotActionsMenuEventParams} params
-   * @memberof DotPagesComponent
-   */
-  showActionsMenu({
-    event,
-    actionMenuDomId,
-    item,
-  }: DotActionsMenuEventParams): void {
-    event.stopPropagation();
-    this.store.clearMenuActions();
-    this.menu.hide();
+    /**
+     * Closes the menu when the user clicks outside of it
+     *
+     * @memberof DotPagesComponent
+     */
+    @HostListener('window:click')
+    closeMenu(): void {
+        if (this.menuIsLoaded(this.domIdMenuAttached)) {
+            this.menu.hide();
+            this.store.clearMenuActions();
+        }
+    }
 
-    this.store.showActionsMenu({ item, actionMenuDomId });
-  }
+    /**
+     * Event to show/hide actions menu when each contentlet is clicked
+     *
+     * @param {DotActionsMenuEventParams} params
+     * @memberof DotPagesComponent
+     */
+    showActionsMenu({ event, actionMenuDomId, item }: DotActionsMenuEventParams): void {
+        event.stopPropagation();
+        this.store.clearMenuActions();
+        this.menu.hide();
 
-  /**
-   * Event to reset status of menu actions when closed
-   *
-   * @memberof DotPagesComponent
-   */
-  closedActionsMenu() {
-    this.domIdMenuAttached = '';
-  }
+        this.store.showActionsMenu({ item, actionMenuDomId });
+    }
 
-  ngAfterViewInit(): void {
-    this.store.actionMenuDomId$
-      .pipe(
-        takeUntil(this.destroy$),
-        filter((actionMenuDomId) => !!actionMenuDomId)
-      )
-      .subscribe((actionMenuDomId: string) => {
-        const target = this.element.nativeElement.querySelector(
-          `#${actionMenuDomId}`
-        );
-        if (target && this.menuIsLoaded(actionMenuDomId)) {
-          this.menu.show({ currentTarget: target });
-          this.domIdMenuAttached = actionMenuDomId;
+    /**
+     * Event to reset status of menu actions when closed
+     *
+     * @memberof DotPagesComponent
+     */
+    closedActionsMenu() {
+        this.domIdMenuAttached = '';
+    }
 
-          // To hide when the contextMenu is opened
-        } else this.menu.hide();
-      });
+    ngAfterViewInit(): void {
+        this.store.actionMenuDomId$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((actionMenuDomId) => !!actionMenuDomId)
+            )
+            .subscribe((actionMenuDomId: string) => {
+                const target = this.element.nativeElement.querySelector(`#${actionMenuDomId}`);
+                if (target && this.menuIsLoaded(actionMenuDomId)) {
+                    this.menu.show({ currentTarget: target });
+                    this.domIdMenuAttached = actionMenuDomId;
 
-    this.dotEventsService
-      .listen('save-page')
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((evt) => {
-        const identifier =
-          evt.data['payload']?.identifier ||
-          evt.data['payload']?.contentletIdentifier;
+                    // To hide when the contextMenu is opened
+                } else this.menu.hide();
+            });
 
-        const isFavoritePage =
-          evt.data['payload']?.contentType === 'dotFavoritePage' ||
-          evt.data['payload']?.contentletType === 'dotFavoritePage';
+        this.dotEventsService
+            .listen('save-page')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((evt) => {
+                const identifier =
+                    evt.data['payload']?.identifier || evt.data['payload']?.contentletIdentifier;
 
-        this.store.updateSinglePageData({ identifier, isFavoritePage });
+                const isFavoritePage =
+                    evt.data['payload']?.contentType === 'dotFavoritePage' ||
+                    evt.data['payload']?.contentletType === 'dotFavoritePage';
 
-        this.dotMessageDisplayService.push({
-          life: 3000,
-          message: evt.data['value'],
-          severity: DotMessageSeverity.SUCCESS,
-          type: DotMessageType.SIMPLE_MESSAGE,
+                this.store.updateSinglePageData({ identifier, isFavoritePage });
+
+                this.dotMessageDisplayService.push({
+                    life: 3000,
+                    message: evt.data['value'],
+                    severity: DotMessageSeverity.SUCCESS,
+                    type: DotMessageType.SIMPLE_MESSAGE
+                });
+            });
+
+        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
+            this.store.getPages({ offset: 0 });
+            this.scrollToTop(); // To reset the scroll so it shows the data it retrieves
         });
-      });
+    }
 
-    this.dotSiteService.switchSite$
-      .pipe(takeUntil(this.destroy$), skip(1))
-      .subscribe(() => {
-        this.store.getPages({ offset: 0 });
-        this.scrollToTop(); // To reset the scroll so it shows the data it retrieves
-      });
-  }
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
+    }
 
-  ngOnDestroy(): void {
-    this.destroy$.next(true);
-    this.destroy$.complete();
-  }
+    /**
+     * Check if the menu is loaded
+     *
+     * @private
+     * @param {string} menuDOMID
+     * @return {*}  {boolean}
+     * @memberof DotPagesComponent
+     */
+    private menuIsLoaded(menuDOMID: string): boolean {
+        return (
+            menuDOMID.includes('pageActionButton') || menuDOMID.includes('favoritePageActionButton')
+        );
+    }
 
-  /**
-   * Check if the menu is loaded
-   *
-   * @private
-   * @param {string} menuDOMID
-   * @return {*}  {boolean}
-   * @memberof DotPagesComponent
-   */
-  private menuIsLoaded(menuDOMID: string): boolean {
-    return (
-      menuDOMID.includes('pageActionButton') ||
-      menuDOMID.includes('favoritePageActionButton')
-    );
-  }
+    /**
+     * Load pages on deactivation
+     *
+     * @memberof DotPagesComponent
+     */
+    loadPagesOnDeactivation() {
+        this.store.getPages({
+            offset: 0
+        });
+    }
 
-  /**
-   * Load pages on deactivation
-   *
-   * @memberof DotPagesComponent
-   */
-  loadPagesOnDeactivation() {
-    this.store.getPages({
-      offset: 0,
-    });
-  }
-
-  /**
-   * Scroll to top of the page
-   *
-   * @memberof DotPagesComponent
-   */
-  scrollToTop(): void {
-    this.element.nativeElement?.scroll({
-      top: 0,
-      left: 0,
-    });
-  }
+    /**
+     * Scroll to top of the page
+     *
+     * @memberof DotPagesComponent
+     */
+    scrollToTop(): void {
+        this.element.nativeElement?.scroll({
+            top: 0,
+            left: 0
+        });
+    }
 }

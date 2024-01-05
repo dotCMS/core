@@ -26,28 +26,28 @@ import { DotEditPageViewAsControllerModule } from '../dot-edit-page-view-as-cont
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 
 @NgModule({
-  imports: [
-    ButtonModule,
-    CommonModule,
-    CheckboxModule,
-    DotEditPageWorkflowsActionsModule,
-    DotEditPageInfoModule,
-    DotEditPageViewAsControllerModule,
-    DotEditPageStateControllerModule,
-    DotSecondaryToolbarModule,
-    FormsModule,
-    ToolbarModule,
-    TooltipModule,
-    DotPipesModule,
-    DotGlobalMessageModule,
-    DotFavoritePageComponent,
-    DotEditPageNavDirective,
-    RouterLink,
-    TagModule,
-    DotMessagePipe,
-  ],
-  exports: [DotEditPageToolbarComponent],
-  declarations: [DotEditPageToolbarComponent],
-  providers: [DialogService, DotPropertiesService],
+    imports: [
+        ButtonModule,
+        CommonModule,
+        CheckboxModule,
+        DotEditPageWorkflowsActionsModule,
+        DotEditPageInfoModule,
+        DotEditPageViewAsControllerModule,
+        DotEditPageStateControllerModule,
+        DotSecondaryToolbarModule,
+        FormsModule,
+        ToolbarModule,
+        TooltipModule,
+        DotPipesModule,
+        DotGlobalMessageModule,
+        DotFavoritePageComponent,
+        DotEditPageNavDirective,
+        RouterLink,
+        TagModule,
+        DotMessagePipe
+    ],
+    exports: [DotEditPageToolbarComponent],
+    declarations: [DotEditPageToolbarComponent],
+    providers: [DialogService, DotPropertiesService]
 })
 export class DotEditPageToolbarModule {}

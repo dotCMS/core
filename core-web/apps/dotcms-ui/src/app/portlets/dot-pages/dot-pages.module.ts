@@ -8,17 +8,17 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import {
-  DotESContentService,
-  DotLanguagesService,
-  DotWorkflowActionsFireService,
-  DotWorkflowsActionsService,
-  DotPageRenderService,
-  DotPageTypesService,
-  DotPageWorkflowsActionsService,
-  DotSessionStorageService,
-  DotRouterService,
-  DotTempFileUploadService,
-  DotFavoritePageService,
+    DotESContentService,
+    DotLanguagesService,
+    DotWorkflowActionsFireService,
+    DotWorkflowsActionsService,
+    DotPageRenderService,
+    DotPageTypesService,
+    DotPageWorkflowsActionsService,
+    DotSessionStorageService,
+    DotRouterService,
+    DotTempFileUploadService,
+    DotFavoritePageService
 } from '@dotcms/data-access';
 
 import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
@@ -28,32 +28,32 @@ import { DotPagesRoutingModule } from './dot-pages-routing.module';
 import { DotPagesComponent } from './dot-pages.component';
 
 @NgModule({
-  declarations: [DotPagesComponent],
-  imports: [
-    CommonModule,
-    DotAddToBundleModule,
-    DotPagesCreatePageDialogComponent,
-    DotPagesFavoritePanelModule,
-    DotPagesListingPanelModule,
-    DotPagesRoutingModule,
-    MenuModule,
-    ProgressSpinnerModule,
-  ],
-  providers: [
-    DotSessionStorageService,
-    DialogService,
-    DotESContentService,
-    DotLanguagesService,
-    DotPageRenderService,
-    DotPageTypesService,
-    DotTempFileUploadService,
-    DotWorkflowsActionsService,
-    DotPageWorkflowsActionsService,
-    DotWorkflowActionsFireService,
-    DotWorkflowEventHandlerService,
-    DotRouterService,
-    DotFavoritePageService,
-    DotSessionStorageService,
-  ],
+    declarations: [DotPagesComponent],
+    imports: [
+        CommonModule,
+        DotAddToBundleModule,
+        DotPagesCreatePageDialogComponent,
+        DotPagesFavoritePanelModule,
+        DotPagesListingPanelModule,
+        DotPagesRoutingModule,
+        MenuModule,
+        ProgressSpinnerModule
+    ],
+    providers: [
+        DotSessionStorageService,
+        DialogService,
+        DotESContentService,
+        DotLanguagesService,
+        DotPageRenderService,
+        DotPageTypesService,
+        DotTempFileUploadService,
+        DotWorkflowsActionsService,
+        DotPageWorkflowsActionsService,
+        DotWorkflowActionsFireService,
+        DotWorkflowEventHandlerService,
+        DotRouterService,
+        DotFavoritePageService,
+        DotSessionStorageService
+    ]
 })
 export class DotPagesModule {}

@@ -1,17 +1,17 @@
-@use 'variables' as *;
+@use "variables" as *;
 
 :host {
-  display: block;
+    display: block;
 }
 
 .pointer {
-  background-color: $color-palette-primary-500;
-  pointer-events: none;
-  user-select: none;
-  position: absolute;
-  height: 3px;
+    background-color: $color-palette-primary-500;
+    pointer-events: none;
+    user-select: none;
+    position: absolute;
+    height: 3px;
 }
 
-[data-type='contentlet'] {
-  outline: solid 1px $color-palette-primary-500;
+[data-type="contentlet"] {
+    outline: solid 1px $color-palette-primary-500;
 }

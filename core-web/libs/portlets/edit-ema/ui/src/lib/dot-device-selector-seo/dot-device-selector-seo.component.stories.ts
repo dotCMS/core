@@ -22,71 +22,71 @@ import { MockDotMessageService, mockDotDevices } from '@dotcms/utils-testing';
 import { DotDeviceSelectorSeoComponent } from './dot-device-selector-seo.component';
 
 const messageServiceMock = new MockDotMessageService({
-  'editpage.device.selector.title': 'Devices',
-  'editpage.device.selector.media.tile': 'Social Media Tiles',
-  'editpage.device.selector.search.engine': 'Search Engine Results Pages',
-  'editpage.device.selector.new.tab': 'Open in New Tab',
-  'editpage.device.selector.mobile.portrait': 'Mobile Portrait',
-  'editpage.device.selector.mobile.landscape': 'Mobile Landscape',
-  'editpage.device.selector.hd.monitor': 'HD Monitor',
-  'editpage.device.selector.4k.monitor': '4K Monitor',
-  'editpage.device.selector.tablet.portrait': 'Tablet Portrait',
-  'editpage.device.selector.tablet.landscape': 'Tablet Landscape',
+    'editpage.device.selector.title': 'Devices',
+    'editpage.device.selector.media.tile': 'Social Media Tiles',
+    'editpage.device.selector.search.engine': 'Search Engine Results Pages',
+    'editpage.device.selector.new.tab': 'Open in New Tab',
+    'editpage.device.selector.mobile.portrait': 'Mobile Portrait',
+    'editpage.device.selector.mobile.landscape': 'Mobile Landscape',
+    'editpage.device.selector.hd.monitor': 'HD Monitor',
+    'editpage.device.selector.4k.monitor': '4K Monitor',
+    'editpage.device.selector.tablet.portrait': 'Tablet Portrait',
+    'editpage.device.selector.tablet.landscape': 'Tablet Landscape'
 });
 
 const mockActivatedRoute = {
-  snapshot: {},
+    snapshot: {}
 };
 
 export default {
-  title: 'dotcms/Device Selector SEO',
-  component: DotDeviceSelectorSeoComponent,
-  decorators: [
-    moduleMetadata({
-      imports: [
-        CommonModule,
-        DropdownModule,
-        FormsModule,
-        DotIconModule,
-        ButtonModule,
-        OverlayPanelModule,
-        PanelModule,
-        DividerModule,
-        DotMessagePipe,
-        BrowserAnimationsModule,
-      ],
-      providers: [
-        DotDevicesService,
-        { provide: DotMessageService, useValue: messageServiceMock },
-        { provide: CoreWebService, useClass: CoreWebServiceMock },
-        {
-          provide: HttpClient,
-          useValue: {
-            get: () => of(mockDotDevices),
-            request: () => of(mockDotDevices),
-          },
-        },
-        { provide: ActivatedRoute, useValue: mockActivatedRoute },
-      ],
-    }),
-  ],
+    title: 'dotcms/Device Selector SEO',
+    component: DotDeviceSelectorSeoComponent,
+    decorators: [
+        moduleMetadata({
+            imports: [
+                CommonModule,
+                DropdownModule,
+                FormsModule,
+                DotIconModule,
+                ButtonModule,
+                OverlayPanelModule,
+                PanelModule,
+                DividerModule,
+                DotMessagePipe,
+                BrowserAnimationsModule
+            ],
+            providers: [
+                DotDevicesService,
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                {
+                    provide: HttpClient,
+                    useValue: {
+                        get: () => of(mockDotDevices),
+                        request: () => of(mockDotDevices)
+                    }
+                },
+                { provide: ActivatedRoute, useValue: mockActivatedRoute }
+            ]
+        })
+    ]
 };
 
 export const Default = () => {
-  const handleClick = () => {
-    // open selector logic
-  };
+    const handleClick = () => {
+        // open selector logic
+    };
 
-  return {
-    template: `
+    return {
+        template: `
         <p-button label="Open Selector" styleClass="p-button-outlined" (click)="op.openMenu($event)"></p-button>
         <dot-device-selector-seo #op></dot-device-selector-seo>
       `,
-    props: {
-      handleClick,
-      props: {
-        selected: action('selected'),
-      },
-    },
-  };
+        props: {
+            handleClick,
+            props: {
+                selected: action('selected')
+            }
+        }
+    };
 };

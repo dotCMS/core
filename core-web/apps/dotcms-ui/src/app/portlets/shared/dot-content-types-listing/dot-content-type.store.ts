@@ -6,84 +6,76 @@ import { Router } from '@angular/router';
 
 import { catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
 
-import {
-  DotContentTypeService,
-  DotHttpErrorManagerService,
-} from '@dotcms/data-access';
-import {
-  DotCMSAssetDialogFields,
-  DotCopyContentTypeDialogFormFields,
-} from '@dotcms/dotcms-models';
+import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotCMSAssetDialogFields, DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
 
 export type DotCMSAssetDialogCopyFields = DotCMSAssetDialogFields & {
-  data: {
-    icon: string;
-    host: string;
-  };
+    data: {
+        icon: string;
+        host: string;
+    };
 };
 
 export interface ContentTypeState {
-  isVisibleCloneDialog: boolean;
-  assetSelected: string | null;
-  isSaving: boolean;
+    isVisibleCloneDialog: boolean;
+    assetSelected: string | null;
+    isSaving: boolean;
 }
 
 const initialState: ContentTypeState = {
-  isVisibleCloneDialog: false,
-  assetSelected: null,
-  isSaving: false,
+    isVisibleCloneDialog: false,
+    assetSelected: null,
+    isSaving: false
 };
 
 @Injectable()
 export class DotContentTypeStore extends ComponentStore<ContentTypeState> {
-  readonly assetSelected$ = this.select(({ assetSelected }) => assetSelected);
-  readonly isSaving$: Observable<boolean> = this.select(
-    ({ isSaving }) => isSaving
-  );
+    readonly assetSelected$ = this.select(({ assetSelected }) => assetSelected);
+    readonly isSaving$: Observable<boolean> = this.select(({ isSaving }) => isSaving);
 
-  // UPDATERS
-  readonly setAssetSelected = this.updater((state, assetSelected: string) => ({
-    ...state,
-    assetSelected,
-    isSaving: false,
-  }));
+    // UPDATERS
+    readonly setAssetSelected = this.updater((state, assetSelected: string) => ({
+        ...state,
+        assetSelected,
+        isSaving: false
+    }));
 
-  readonly isSaving = this.updater((state, isSaving: boolean) => ({
-    ...state,
-    isSaving,
-  }));
+    readonly isSaving = this.updater((state, isSaving: boolean) => ({
+        ...state,
+        isSaving
+    }));
 
-  // EFFECTS
-  readonly saveCopyDialog = this.effect(
-    (copyDialogFormFields$: Observable<DotCopyContentTypeDialogFormFields>) => {
-      return copyDialogFormFields$.pipe(
-        tap(() => this.isSaving(true)),
-        withLatestFrom(this.assetSelected$),
-        switchMap(([formFields, assetIdentifier]) =>
-          this.dotContentTypeService
-            .saveCopyContentType(assetIdentifier, formFields)
-            .pipe(
-              tap({
-                next: ({ id }) => {
-                  this.router.navigate(['/content-types-angular/edit', id]);
-                },
-              }),
-              catchError((error) => {
-                this.isSaving(false);
+    // EFFECTS
+    readonly saveCopyDialog = this.effect(
+        (copyDialogFormFields$: Observable<DotCopyContentTypeDialogFormFields>) => {
+            return copyDialogFormFields$.pipe(
+                tap(() => this.isSaving(true)),
+                withLatestFrom(this.assetSelected$),
+                switchMap(([formFields, assetIdentifier]) =>
+                    this.dotContentTypeService
+                        .saveCopyContentType(assetIdentifier, formFields)
+                        .pipe(
+                            tap({
+                                next: ({ id }) => {
+                                    this.router.navigate(['/content-types-angular/edit', id]);
+                                }
+                            }),
+                            catchError((error) => {
+                                this.isSaving(false);
 
-                return this.httpErrorManagerService.handle(error);
-              })
-            )
-        )
-      );
+                                return this.httpErrorManagerService.handle(error);
+                            })
+                        )
+                )
+            );
+        }
+    );
+
+    constructor(
+        private readonly dotContentTypeService: DotContentTypeService,
+        private readonly httpErrorManagerService: DotHttpErrorManagerService,
+        private readonly router: Router
+    ) {
+        super(initialState);
     }
-  );
-
-  constructor(
-    private readonly dotContentTypeService: DotContentTypeService,
-    private readonly httpErrorManagerService: DotHttpErrorManagerService,
-    private readonly router: Router
-  ) {
-    super(initialState);
-  }
 }

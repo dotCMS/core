@@ -11,42 +11,37 @@ import { ConfirmationService } from 'primeng/api';
 
 import { DotGlobalMessageService } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.service';
 import {
-  DotAlertConfirmService,
-  DotEditPageService,
-  DotEventsService,
-  DotHttpErrorManagerService,
-  DotLicenseService,
-  DotMessageService,
-  DotWorkflowActionsFireService,
+    DotAlertConfirmService,
+    DotEditPageService,
+    DotEventsService,
+    DotHttpErrorManagerService,
+    DotLicenseService,
+    DotMessageService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
+import { CoreWebService, HttpCode, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
-  CoreWebService,
-  HttpCode,
-  LoggerService,
-  StringUtils,
-} from '@dotcms/dotcms-js';
-import {
-  DotCMSContentType,
-  DotPageContainer,
-  DotPageContent,
-  DotPageRender,
-  DotPageRenderState,
-  PageModelChangeEventType,
+    DotCMSContentType,
+    DotPageContainer,
+    DotPageContent,
+    DotPageRender,
+    DotPageRenderState,
+    PageModelChangeEventType
 } from '@dotcms/dotcms-models';
 import {
-  CoreWebServiceMock,
-  dotcmsContentTypeBasicMock,
-  mockDotLayout,
-  MockDotMessageService,
-  mockDotPage,
-  mockDotRenderedPage,
-  mockResponseView,
-  mockUser,
+    CoreWebServiceMock,
+    dotcmsContentTypeBasicMock,
+    mockDotLayout,
+    MockDotMessageService,
+    mockDotPage,
+    mockDotRenderedPage,
+    mockResponseView,
+    mockUser
 } from '@dotcms/utils-testing';
 
 import {
-  CONTENTLET_PLACEHOLDER_SELECTOR,
-  DotEditContentHtmlService,
+    CONTENTLET_PLACEHOLDER_SELECTOR,
+    DotEditContentHtmlService
 } from './dot-edit-content-html.service';
 
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
@@ -56,22 +51,22 @@ import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolb
 
 @Injectable()
 class MockDotLicenseService {
-  isEnterprise(): Observable<boolean> {
-    return of(false);
-  }
+    isEnterprise(): Observable<boolean> {
+        return of(false);
+    }
 }
 
 const mouseoverEvent = new MouseEvent('mouseover', {
-  view: window,
-  bubbles: true,
-  cancelable: true,
+    view: window,
+    bubbles: true,
+    cancelable: true
 });
 
 xdescribe('DotEditContentHtmlService', () => {
-  let dotLicenseService: DotLicenseService;
-  let fakeDocument: Document;
+    let dotLicenseService: DotLicenseService;
+    let fakeDocument: Document;
 
-  const fakeHTML = `
+    const fakeHTML = `
         <html>
         <head>
             <!-- <base href="/" /> -->
@@ -170,663 +165,635 @@ xdescribe('DotEditContentHtmlService', () => {
         </body>
         </html>
     `;
-  let fakeIframeEl;
+    let fakeIframeEl;
 
-  const messageServiceMock = new MockDotMessageService({
-    'editpage.content.contentlet.menu.drag': 'Drag',
-    'editpage.content.contentlet.menu.edit': 'Edit',
-    'editpage.content.contentlet.menu.remove': 'Remove',
-    'editpage.content.container.action.add': 'Add',
-    'editpage.content.container.menu.content': 'Content',
-    'editpage.content.container.menu.widget': 'Widget',
-    'editpage.content.container.menu.form': 'Form',
-    'editpage.inline.error': 'An error ocurred',
-    'dot.common.message.saved': 'All changes Saved',
-  });
-
-  let service: DotEditContentHtmlService;
-  let dotEditContentToolbarHtmlService;
-  let dotHttpErrorManagerService: DotHttpErrorManagerService;
-  let mouseOverContentlet;
-  let dotContainerContentletService: DotContainerContentletService;
-  let dotEditPageService: DotEditPageService;
-
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [
-        { provide: CoreWebService, useClass: CoreWebServiceMock },
-        DotEditContentHtmlService,
-        DotContainerContentletService,
-        DotEditContentToolbarHtmlService,
-        DotDragDropAPIHtmlService,
-        DotDOMHtmlUtilService,
-        LoggerService,
-        StringUtils,
-        DotAlertConfirmService,
-        ConfirmationService,
-        DotGlobalMessageService,
-        DotEventsService,
-        DotEditPageService,
-        {
-          provide: DotHttpErrorManagerService,
-          useValue: {
-            handle: jasmine.createSpy().and.returnValue(of({})),
-          },
-        },
-        DotWorkflowActionsFireService,
-        { provide: DotMessageService, useValue: messageServiceMock },
-        { provide: DotLicenseService, useClass: MockDotLicenseService },
-      ],
+    const messageServiceMock = new MockDotMessageService({
+        'editpage.content.contentlet.menu.drag': 'Drag',
+        'editpage.content.contentlet.menu.edit': 'Edit',
+        'editpage.content.contentlet.menu.remove': 'Remove',
+        'editpage.content.container.action.add': 'Add',
+        'editpage.content.container.menu.content': 'Content',
+        'editpage.content.container.menu.widget': 'Widget',
+        'editpage.content.container.menu.form': 'Form',
+        'editpage.inline.error': 'An error ocurred',
+        'dot.common.message.saved': 'All changes Saved'
     });
-    service = TestBed.inject(DotEditContentHtmlService);
-    dotEditContentToolbarHtmlService = TestBed.inject(
-      DotEditContentToolbarHtmlService
-    );
-    dotLicenseService = TestBed.inject(DotLicenseService);
-    dotEditPageService = TestBed.inject(DotEditPageService);
-    dotContainerContentletService = TestBed.inject(
-      DotContainerContentletService
-    );
-    dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
 
-    fakeIframeEl = document.createElement('iframe');
-    document.body.appendChild(fakeIframeEl);
+    let service: DotEditContentHtmlService;
+    let dotEditContentToolbarHtmlService;
+    let dotHttpErrorManagerService: DotHttpErrorManagerService;
+    let mouseOverContentlet;
+    let dotContainerContentletService: DotContainerContentletService;
+    let dotEditPageService: DotEditPageService;
 
-    /*
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
+            providers: [
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotEditContentHtmlService,
+                DotContainerContentletService,
+                DotEditContentToolbarHtmlService,
+                DotDragDropAPIHtmlService,
+                DotDOMHtmlUtilService,
+                LoggerService,
+                StringUtils,
+                DotAlertConfirmService,
+                ConfirmationService,
+                DotGlobalMessageService,
+                DotEventsService,
+                DotEditPageService,
+                {
+                    provide: DotHttpErrorManagerService,
+                    useValue: {
+                        handle: jasmine.createSpy().and.returnValue(of({}))
+                    }
+                },
+                DotWorkflowActionsFireService,
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotLicenseService, useClass: MockDotLicenseService }
+            ]
+        });
+        service = TestBed.inject(DotEditContentHtmlService);
+        dotEditContentToolbarHtmlService = TestBed.inject(DotEditContentToolbarHtmlService);
+        dotLicenseService = TestBed.inject(DotLicenseService);
+        dotEditPageService = TestBed.inject(DotEditPageService);
+        dotContainerContentletService = TestBed.inject(DotContainerContentletService);
+        dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
+
+        fakeIframeEl = document.createElement('iframe');
+        document.body.appendChild(fakeIframeEl);
+
+        /*
                 TODO: in the refactor we need to make this service just to generate and return stuff, pass the iframe
                 is not a good architecture.
             */
 
-    const pageState: DotPageRenderState = new DotPageRenderState(
-      mockUser(),
-      new DotPageRender({
-        ...mockDotRenderedPage(),
-        page: {
-          ...mockDotPage(),
-          rendered: fakeHTML,
-        },
-      })
-    );
+        const pageState: DotPageRenderState = new DotPageRenderState(
+            mockUser(),
+            new DotPageRender({
+                ...mockDotRenderedPage(),
+                page: {
+                    ...mockDotPage(),
+                    rendered: fakeHTML
+                }
+            })
+        );
 
-    service.initEditMode(pageState, { nativeElement: fakeIframeEl });
-    fakeDocument = fakeIframeEl.contentWindow.document;
+        service.initEditMode(pageState, { nativeElement: fakeIframeEl });
+        fakeDocument = fakeIframeEl.contentWindow.document;
 
-    mouseOverContentlet = () => {
-      const doc = service.iframe.nativeElement.contentDocument;
-      doc
-        .querySelector('[data-dot-object="contentlet"] h3')
-        .dispatchEvent(mouseoverEvent);
-    };
-  }));
+        mouseOverContentlet = () => {
+            const doc = service.iframe.nativeElement.contentDocument;
+            doc.querySelector('[data-dot-object="contentlet"] h3').dispatchEvent(mouseoverEvent);
+        };
+    }));
 
-  describe('same height containers', () => {
-    let mockLayout;
+    describe('same height containers', () => {
+        let mockLayout;
 
-    beforeEach(() => {
-      mockLayout = mockDotLayout();
-      mockLayout.body.rows = [
-        {
-          columns: [
-            {
-              containers: [
+        beforeEach(() => {
+            mockLayout = mockDotLayout();
+            mockLayout.body.rows = [
                 {
-                  identifier: '123',
-                  uuid: '456',
+                    columns: [
+                        {
+                            containers: [
+                                {
+                                    identifier: '123',
+                                    uuid: '456'
+                                }
+                            ],
+                            leftOffset: 1,
+                            width: 8
+                        },
+                        {
+                            containers: [
+                                {
+                                    identifier: '321',
+                                    uuid: '654'
+                                }
+                            ],
+                            leftOffset: 1,
+                            width: 8
+                        }
+                    ]
                 },
-              ],
-              leftOffset: 1,
-              width: 8,
-            },
-            {
-              containers: [
                 {
-                  identifier: '321',
-                  uuid: '654',
-                },
-              ],
-              leftOffset: 1,
-              width: 8,
-            },
-          ],
-        },
-        {
-          columns: [
-            {
-              containers: [
-                {
-                  identifier: '976',
-                  uuid: '156',
-                },
-              ],
-              leftOffset: 1,
-              width: 8,
-            },
-          ],
-        },
-      ];
+                    columns: [
+                        {
+                            containers: [
+                                {
+                                    identifier: '976',
+                                    uuid: '156'
+                                }
+                            ],
+                            leftOffset: 1,
+                            width: 8
+                        }
+                    ]
+                }
+            ];
+        });
+
+        xit('should redraw the body', () => {
+            // TODO need to test the change of the body.style.style but right now not sure how.
+        });
     });
 
-    xit('should redraw the body', () => {
-      // TODO need to test the change of the body.style.style but right now not sure how.
-    });
-  });
-
-  it('should add base tag', () => {
-    const base = fakeDocument.querySelector('base');
-    expect(base.outerHTML).toEqual('<base href="/an/url/">');
-  });
-
-  it('should add contentlet', () => {
-    spyOn(service, 'renderAddedContentlet');
-    service.setContainterToAppendContentlet({
-      identifier: '123',
-      uuid: '456',
+    it('should add base tag', () => {
+        const base = fakeDocument.querySelector('base');
+        expect(base.outerHTML).toEqual('<base href="/an/url/">');
     });
 
-    service.contentletEvents$.next({
-      name: 'save',
-      data: {
-        identifier: '123',
-        inode: '',
-      },
-    });
-
-    expect(service.renderAddedContentlet).toHaveBeenCalledWith({
-      identifier: '123',
-      inode: '',
-    });
-  });
-
-  it('should add uploaded DotAsset', () => {
-    spyOn(service, 'renderAddedContentlet');
-    service.setContainterToAppendContentlet({
-      identifier: '123',
-      uuid: '456',
-    });
-
-    const dataObj = {
-      contentlet: {
-        identifier: '456',
-        inode: '456',
-      },
-      placeholderId: 'id1',
-    };
-
-    service.contentletEvents$.next({
-      name: 'add-uploaded-dotAsset',
-      data: dataObj,
-    });
-
-    expect(service.renderAddedContentlet).toHaveBeenCalledWith(
-      {
-        identifier: '456',
-        inode: '456',
-      },
-      true
-    );
-  });
-
-  it('should remove placeholder', () => {
-    service.removeContentletPlaceholder();
-    expect(
-      fakeDocument.querySelector(CONTENTLET_PLACEHOLDER_SELECTOR)
-    ).toBeNull();
-  });
-
-  it('should handle http error', () => {
-    const errorResponse = new HttpErrorResponse(
-      new HttpResponse({
-        body: null,
-        status: HttpCode.FORBIDDEN,
-        headers: null,
-        url: '',
-      })
-    );
-
-    service.contentletEvents$.next({
-      name: 'handle-http-error',
-      data: <any>errorResponse,
-    });
-
-    expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
-      errorResponse
-    );
-  });
-
-  it('should render relocated contentlet', () => {
-    spyOn(
-      dotContainerContentletService,
-      'getContentletToContainer'
-    ).and.returnValue(of('<h1>new container</h1>'));
-    const insertAdjacentElement = jasmine.createSpy('insertAdjacentElement');
-    const replaceChild = jasmine.createSpy('replaceChild');
-
-    const pageState: DotPageRenderState = new DotPageRenderState(
-      mockUser(),
-      new DotPageRender({
-        ...mockDotRenderedPage(),
-        page: {
-          ...mockDotPage(),
-          rendered: fakeHTML,
-          remoteRendered: false,
-        },
-      })
-    );
-
-    service.setCurrentPage(pageState.page);
-
-    service.initEditMode(pageState, {
-      nativeElement: {
-        ...fakeIframeEl,
-        addEventListener: () => {
-          //
-        },
-        contentDocument: {
-          createElement: () => {
-            const el = document.createElement('div');
-            el.innerHTML = '<h1>new container</h1>';
-
-            return el;
-          },
-          open: () => {
-            //
-          },
-          close: () => {
-            //
-          },
-          write: () => {
-            //
-          },
-          querySelector: () => {
-            return {
-              tagName: 'DIV',
-              dataset: {
-                dotIdentifier: '888',
-                dotUuid: '999',
-              },
-              insertAdjacentElement,
-              parentNode: {
-                replaceChild,
-                dataset: {
-                  dotIdentifier: '123',
-                  dotUuid: '456',
-                },
-              },
-            };
-          },
-        },
-      },
-    });
-
-    const dataObj = {
-      container: {
-        identifier: '123',
-        uuid: '456',
-      },
-      contentlet: {
-        identifier: '456',
-        inode: '456',
-      },
-    };
-
-    service.contentletEvents$.next({
-      name: 'relocate',
-      data: dataObj,
-    });
-
-    expect(insertAdjacentElement).toHaveBeenCalledWith(
-      'afterbegin',
-      jasmine.objectContaining({
-        tagName: 'DIV',
-        className: 'loader__overlay',
-      })
-    );
-
-    expect(
-      dotContainerContentletService.getContentletToContainer
-    ).toHaveBeenCalledWith(
-      { identifier: '123', uuid: '456' },
-      { identifier: '456', inode: '456' },
-      pageState.page
-    );
-
-    expect(replaceChild).toHaveBeenCalledWith(
-      jasmine.objectContaining({
-        tagName: 'H1',
-        innerHTML: 'new container',
-      }),
-      jasmine.objectContaining({
-        tagName: 'DIV',
-        dataset: {
-          dotIdentifier: '888',
-          dotUuid: '999',
-        },
-      })
-    );
-  });
-
-  it('should show loading indicator on relocate contentlet', () => {
-    spyOn(
-      dotContainerContentletService,
-      'getContentletToContainer'
-    ).and.returnValue(of('<div></div>'));
-
-    const contentlet =
-      service.iframe.nativeElement.contentDocument.querySelector(
-        'div[data-dot-object="contentlet"][data-dot-inode="456"]'
-      );
-
-    service.contentletEvents$.next({
-      name: 'relocate',
-      data: {
-        container: {
-          identifier: '123',
-          uuid: '456',
-        },
-        contentlet: {
-          identifier: '456',
-          inode: '456',
-        },
-      },
-    });
-
-    expect(contentlet.querySelector('.loader__overlay').innerHTML.trim()).toBe(
-      '<div class="loader"></div>'
-    );
-  });
-
-  it('should not render relocated contentlet', () => {
-    spyOn(
-      dotContainerContentletService,
-      'getContentletToContainer'
-    ).and.returnValue(of('<h1>new container</h1>'));
-
-    const pageState: DotPageRenderState = new DotPageRenderState(
-      mockUser(),
-      new DotPageRender({
-        ...mockDotRenderedPage(),
-        page: {
-          ...mockDotPage(),
-          rendered: fakeHTML,
-          remoteRendered: true,
-        },
-      })
-    );
-    service.initEditMode(pageState, {
-      nativeElement: fakeIframeEl,
-    });
-
-    const dataObj = {
-      container: {
-        identifier: '123',
-        uuid: '456',
-      },
-      contentlet: {
-        identifier: '456',
-        inode: '456',
-      },
-    };
-
-    service.contentletEvents$.next({
-      name: 'relocate',
-      data: dataObj,
-    });
-
-    expect(
-      dotContainerContentletService.getContentletToContainer
-    ).not.toHaveBeenCalled();
-  });
-
-  it('should emit save when edit a piece of content outside a contentlet div', (done) => {
-    service.iframeActions$.subscribe((res) => {
-      expect(res).toEqual({
-        name: 'save',
-      });
-      done();
-    });
-
-    service.renderEditedContentlet(null);
-  });
-
-  it('should render added contentlet', () => {
-    let currentModel;
-
-    const currentContainer = {
-      identifier: '123',
-      uuid: '456',
-    };
-
-    service.currentContainer = currentContainer;
-
-    spyOn(
-      dotContainerContentletService,
-      'getContentletToContainer'
-    ).and.returnValue(of('<i>testing</i>'));
-
-    const contentlet: DotPageContent = {
-      identifier: '67',
-      inode: '89',
-      type: 'type',
-      baseType: 'CONTENT',
-    };
-
-    service.pageModel$.subscribe((model) => (currentModel = model));
-
-    service.renderAddedContentlet(contentlet);
-
-    expect(
-      dotContainerContentletService.getContentletToContainer
-    ).toHaveBeenCalledWith(currentContainer, contentlet, null);
-
-    expect(service.currentContainer).toEqual(
-      {
-        identifier: '123',
-        uuid: '456',
-      },
-      'currentContainer must be the same after add content'
-    );
-    expect(currentModel).toEqual(
-      {
-        model: [
-          { identifier: '123', uuid: '456', contentletsId: ['456'] },
-          { identifier: '321', uuid: '654', contentletsId: ['456'] },
-          { identifier: '976', uuid: '156', contentletsId: ['367'] },
-        ],
-        type: PageModelChangeEventType.ADD_CONTENT,
-      },
-      'should tigger model change event'
-    );
-  });
-
-  it('should render added Dot Asset', () => {
-    let currentModel;
-
-    const currentContainer = {
-      identifier: '123',
-      uuid: '456',
-    };
-
-    spyOn(
-      dotContainerContentletService,
-      'getContentletToContainer'
-    ).and.returnValue(
-      of(
-        '<div id="newContent" data-dot-object="contentlet" data-dot-identifier="zxc"><i>replaced contentlet</i></div>'
-      )
-    );
-
-    const contentlet: DotPageContent = {
-      identifier: '67',
-      inode: '89',
-      type: 'type',
-      baseType: 'CONTENT',
-    };
-
-    service.pageModel$.subscribe((model) => (currentModel = model));
-
-    service.renderAddedContentlet(contentlet, true);
-
-    expect(
-      dotContainerContentletService.getContentletToContainer
-    ).toHaveBeenCalledWith(currentContainer, contentlet, null);
-
-    expect(service.currentContainer).toEqual(
-      {
-        identifier: '123',
-        uuid: '456',
-      },
-      'currentContainer must be the same after add content'
-    );
-
-    expect(currentModel).toEqual(
-      {
-        model: [
-          { identifier: '123', uuid: '456', contentletsId: ['456', 'zxc'] },
-          { identifier: '321', uuid: '654', contentletsId: ['456'] },
-          { identifier: '976', uuid: '156', contentletsId: ['367'] },
-        ],
-        type: PageModelChangeEventType.ADD_CONTENT,
-      },
-      'should tigger model change event'
-    );
-  });
-
-  it('should remove contentlet and update container toolbar', () => {
-    spyOn(dotEditContentToolbarHtmlService, 'updateContainerToolbar');
-
-    let currentModel;
-
-    const contentlet: DotPageContent = {
-      identifier: '367',
-      inode: '908',
-      type: 'NewsWidgets',
-      baseType: 'CONTENT',
-    };
-
-    const container: DotPageContainer = {
-      identifier: '976',
-      uuid: '156',
-    };
-
-    service.pageModel$.subscribe((model) => (currentModel = model));
-
-    service.removeContentlet(container, contentlet);
-
-    expect(currentModel).toEqual(
-      {
-        model: [
-          {
+    it('should add contentlet', () => {
+        spyOn(service, 'renderAddedContentlet');
+        service.setContainterToAppendContentlet({
             identifier: '123',
-            uuid: '456',
-            contentletsId: ['456', 'tmpPlaceholder'],
-          },
-          { identifier: '321', uuid: '654', contentletsId: ['456'] },
-          { identifier: '976', uuid: '156', contentletsId: [] },
-        ],
-        type: PageModelChangeEventType.REMOVE_CONTENT,
-      },
-      'should tigger model change event'
-    );
+            uuid: '456'
+        });
 
-    expect(
-      dotEditContentToolbarHtmlService.updateContainerToolbar
-    ).toHaveBeenCalledTimes(1);
-  });
+        service.contentletEvents$.next({
+            name: 'save',
+            data: {
+                identifier: '123',
+                inode: ''
+            }
+        });
 
-  it('should remove contentlet', () => {
-    const remove = jasmine.createSpy('deleted');
-
-    spyOn<any>(fakeDocument, 'querySelectorAll').and.returnValue([
-      {
-        remove: remove,
-      },
-      {
-        remove: remove,
-      },
-    ]);
-
-    service.currentContentlet = {
-      identifier: '',
-      inode: '123',
-    };
-
-    service.contentletEvents$.next({
-      name: 'deleted-contenlet',
-      data: null,
+        expect(service.renderAddedContentlet).toHaveBeenCalledWith({
+            identifier: '123',
+            inode: ''
+        });
     });
 
-    expect(remove).toHaveBeenCalledTimes(2);
-  });
+    it('should add uploaded DotAsset', () => {
+        spyOn(service, 'renderAddedContentlet');
+        service.setContainterToAppendContentlet({
+            identifier: '123',
+            uuid: '456'
+        });
 
-  it('should show error message when the content already exists', () => {
-    let currentModel = null;
-    const currentContainer = {
-      identifier: '123',
-      uuid: '456',
-    };
+        const dataObj = {
+            contentlet: {
+                identifier: '456',
+                inode: '456'
+            },
+            placeholderId: 'id1'
+        };
 
-    service.currentContainer = currentContainer;
+        service.contentletEvents$.next({
+            name: 'add-uploaded-dotAsset',
+            data: dataObj
+        });
 
-    spyOn(
-      dotContainerContentletService,
-      'getContentletToContainer'
-    ).and.returnValue(of('<i>testing</i>'));
+        expect(service.renderAddedContentlet).toHaveBeenCalledWith(
+            {
+                identifier: '456',
+                inode: '456'
+            },
+            true
+        );
+    });
 
-    const dotDialogService = TestBed.inject(DotAlertConfirmService);
-    spyOn(dotDialogService, 'alert');
+    it('should remove placeholder', () => {
+        service.removeContentletPlaceholder();
+        expect(fakeDocument.querySelector(CONTENTLET_PLACEHOLDER_SELECTOR)).toBeNull();
+    });
 
-    const contentlet: DotPageContent = {
-      identifier: '456',
-      inode: '456',
-      type: 'type',
-      baseType: 'CONTENT',
-    };
+    it('should handle http error', () => {
+        const errorResponse = new HttpErrorResponse(
+            new HttpResponse({
+                body: null,
+                status: HttpCode.FORBIDDEN,
+                headers: null,
+                url: ''
+            })
+        );
 
-    service.pageModel$.subscribe((model) => (currentModel = model));
+        service.contentletEvents$.next({
+            name: 'handle-http-error',
+            data: <any>errorResponse
+        });
 
-    service.renderAddedContentlet(contentlet);
+        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(errorResponse);
+    });
 
-    const doc = service.iframe.nativeElement.contentDocument;
+    it('should render relocated contentlet', () => {
+        spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(
+            of('<h1>new container</h1>')
+        );
+        const insertAdjacentElement = jasmine.createSpy('insertAdjacentElement');
+        const replaceChild = jasmine.createSpy('replaceChild');
 
-    expect(doc.querySelector('.loader__overlay')).toBeNull();
+        const pageState: DotPageRenderState = new DotPageRenderState(
+            mockUser(),
+            new DotPageRender({
+                ...mockDotRenderedPage(),
+                page: {
+                    ...mockDotPage(),
+                    rendered: fakeHTML,
+                    remoteRendered: false
+                }
+            })
+        );
 
-    expect(
-      dotContainerContentletService.getContentletToContainer
-    ).not.toHaveBeenCalled();
-    expect(service.currentContainer).toBeNull(
-      'The current container must be null'
-    );
-    expect(currentModel).toBeNull('should not tigger model change event');
-    expect(dotDialogService.alert).toHaveBeenCalled();
-  });
+        service.setCurrentPage(pageState.page);
 
-  it('should render edit contentlet', () => {
-    window.top['changed'] = false;
+        service.initEditMode(pageState, {
+            nativeElement: {
+                ...fakeIframeEl,
+                addEventListener: () => {
+                    //
+                },
+                contentDocument: {
+                    createElement: () => {
+                        const el = document.createElement('div');
+                        el.innerHTML = '<h1>new container</h1>';
 
-    const currentContainer = {
-      identifier: '123',
-      uuid: '456',
-    };
+                        return el;
+                    },
+                    open: () => {
+                        //
+                    },
+                    close: () => {
+                        //
+                    },
+                    write: () => {
+                        //
+                    },
+                    querySelector: () => {
+                        return {
+                            tagName: 'DIV',
+                            dataset: {
+                                dotIdentifier: '888',
+                                dotUuid: '999'
+                            },
+                            insertAdjacentElement,
+                            parentNode: {
+                                replaceChild,
+                                dataset: {
+                                    dotIdentifier: '123',
+                                    dotUuid: '456'
+                                }
+                            }
+                        };
+                    }
+                }
+            }
+        });
 
-    const anotherContainer = {
-      identifier: '321',
-      uuid: '654',
-    };
+        const dataObj = {
+            container: {
+                identifier: '123',
+                uuid: '456'
+            },
+            contentlet: {
+                identifier: '456',
+                inode: '456'
+            }
+        };
 
-    service.currentContainer = currentContainer;
-    const contentlet: DotPageContent = {
-      identifier: '456',
-      inode: '456',
-      type: 'type',
-      baseType: 'CONTENT',
-    };
+        service.contentletEvents$.next({
+            name: 'relocate',
+            data: dataObj
+        });
 
-    spyOn(
-      dotContainerContentletService,
-      'getContentletToContainer'
-    ).and.returnValue(
-      of(`
+        expect(insertAdjacentElement).toHaveBeenCalledWith(
+            'afterbegin',
+            jasmine.objectContaining({
+                tagName: 'DIV',
+                className: 'loader__overlay'
+            })
+        );
+
+        expect(dotContainerContentletService.getContentletToContainer).toHaveBeenCalledWith(
+            { identifier: '123', uuid: '456' },
+            { identifier: '456', inode: '456' },
+            pageState.page
+        );
+
+        expect(replaceChild).toHaveBeenCalledWith(
+            jasmine.objectContaining({
+                tagName: 'H1',
+                innerHTML: 'new container'
+            }),
+            jasmine.objectContaining({
+                tagName: 'DIV',
+                dataset: {
+                    dotIdentifier: '888',
+                    dotUuid: '999'
+                }
+            })
+        );
+    });
+
+    it('should show loading indicator on relocate contentlet', () => {
+        spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(
+            of('<div></div>')
+        );
+
+        const contentlet = service.iframe.nativeElement.contentDocument.querySelector(
+            'div[data-dot-object="contentlet"][data-dot-inode="456"]'
+        );
+
+        service.contentletEvents$.next({
+            name: 'relocate',
+            data: {
+                container: {
+                    identifier: '123',
+                    uuid: '456'
+                },
+                contentlet: {
+                    identifier: '456',
+                    inode: '456'
+                }
+            }
+        });
+
+        expect(contentlet.querySelector('.loader__overlay').innerHTML.trim()).toBe(
+            '<div class="loader"></div>'
+        );
+    });
+
+    it('should not render relocated contentlet', () => {
+        spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(
+            of('<h1>new container</h1>')
+        );
+
+        const pageState: DotPageRenderState = new DotPageRenderState(
+            mockUser(),
+            new DotPageRender({
+                ...mockDotRenderedPage(),
+                page: {
+                    ...mockDotPage(),
+                    rendered: fakeHTML,
+                    remoteRendered: true
+                }
+            })
+        );
+        service.initEditMode(pageState, {
+            nativeElement: fakeIframeEl
+        });
+
+        const dataObj = {
+            container: {
+                identifier: '123',
+                uuid: '456'
+            },
+            contentlet: {
+                identifier: '456',
+                inode: '456'
+            }
+        };
+
+        service.contentletEvents$.next({
+            name: 'relocate',
+            data: dataObj
+        });
+
+        expect(dotContainerContentletService.getContentletToContainer).not.toHaveBeenCalled();
+    });
+
+    it('should emit save when edit a piece of content outside a contentlet div', (done) => {
+        service.iframeActions$.subscribe((res) => {
+            expect(res).toEqual({
+                name: 'save'
+            });
+            done();
+        });
+
+        service.renderEditedContentlet(null);
+    });
+
+    it('should render added contentlet', () => {
+        let currentModel;
+
+        const currentContainer = {
+            identifier: '123',
+            uuid: '456'
+        };
+
+        service.currentContainer = currentContainer;
+
+        spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(
+            of('<i>testing</i>')
+        );
+
+        const contentlet: DotPageContent = {
+            identifier: '67',
+            inode: '89',
+            type: 'type',
+            baseType: 'CONTENT'
+        };
+
+        service.pageModel$.subscribe((model) => (currentModel = model));
+
+        service.renderAddedContentlet(contentlet);
+
+        expect(dotContainerContentletService.getContentletToContainer).toHaveBeenCalledWith(
+            currentContainer,
+            contentlet,
+            null
+        );
+
+        expect(service.currentContainer).toEqual(
+            {
+                identifier: '123',
+                uuid: '456'
+            },
+            'currentContainer must be the same after add content'
+        );
+        expect(currentModel).toEqual(
+            {
+                model: [
+                    { identifier: '123', uuid: '456', contentletsId: ['456'] },
+                    { identifier: '321', uuid: '654', contentletsId: ['456'] },
+                    { identifier: '976', uuid: '156', contentletsId: ['367'] }
+                ],
+                type: PageModelChangeEventType.ADD_CONTENT
+            },
+            'should tigger model change event'
+        );
+    });
+
+    it('should render added Dot Asset', () => {
+        let currentModel;
+
+        const currentContainer = {
+            identifier: '123',
+            uuid: '456'
+        };
+
+        spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(
+            of(
+                '<div id="newContent" data-dot-object="contentlet" data-dot-identifier="zxc"><i>replaced contentlet</i></div>'
+            )
+        );
+
+        const contentlet: DotPageContent = {
+            identifier: '67',
+            inode: '89',
+            type: 'type',
+            baseType: 'CONTENT'
+        };
+
+        service.pageModel$.subscribe((model) => (currentModel = model));
+
+        service.renderAddedContentlet(contentlet, true);
+
+        expect(dotContainerContentletService.getContentletToContainer).toHaveBeenCalledWith(
+            currentContainer,
+            contentlet,
+            null
+        );
+
+        expect(service.currentContainer).toEqual(
+            {
+                identifier: '123',
+                uuid: '456'
+            },
+            'currentContainer must be the same after add content'
+        );
+
+        expect(currentModel).toEqual(
+            {
+                model: [
+                    { identifier: '123', uuid: '456', contentletsId: ['456', 'zxc'] },
+                    { identifier: '321', uuid: '654', contentletsId: ['456'] },
+                    { identifier: '976', uuid: '156', contentletsId: ['367'] }
+                ],
+                type: PageModelChangeEventType.ADD_CONTENT
+            },
+            'should tigger model change event'
+        );
+    });
+
+    it('should remove contentlet and update container toolbar', () => {
+        spyOn(dotEditContentToolbarHtmlService, 'updateContainerToolbar');
+
+        let currentModel;
+
+        const contentlet: DotPageContent = {
+            identifier: '367',
+            inode: '908',
+            type: 'NewsWidgets',
+            baseType: 'CONTENT'
+        };
+
+        const container: DotPageContainer = {
+            identifier: '976',
+            uuid: '156'
+        };
+
+        service.pageModel$.subscribe((model) => (currentModel = model));
+
+        service.removeContentlet(container, contentlet);
+
+        expect(currentModel).toEqual(
+            {
+                model: [
+                    {
+                        identifier: '123',
+                        uuid: '456',
+                        contentletsId: ['456', 'tmpPlaceholder']
+                    },
+                    { identifier: '321', uuid: '654', contentletsId: ['456'] },
+                    { identifier: '976', uuid: '156', contentletsId: [] }
+                ],
+                type: PageModelChangeEventType.REMOVE_CONTENT
+            },
+            'should tigger model change event'
+        );
+
+        expect(dotEditContentToolbarHtmlService.updateContainerToolbar).toHaveBeenCalledTimes(1);
+    });
+
+    it('should remove contentlet', () => {
+        const remove = jasmine.createSpy('deleted');
+
+        spyOn<any>(fakeDocument, 'querySelectorAll').and.returnValue([
+            {
+                remove: remove
+            },
+            {
+                remove: remove
+            }
+        ]);
+
+        service.currentContentlet = {
+            identifier: '',
+            inode: '123'
+        };
+
+        service.contentletEvents$.next({
+            name: 'deleted-contenlet',
+            data: null
+        });
+
+        expect(remove).toHaveBeenCalledTimes(2);
+    });
+
+    it('should show error message when the content already exists', () => {
+        let currentModel = null;
+        const currentContainer = {
+            identifier: '123',
+            uuid: '456'
+        };
+
+        service.currentContainer = currentContainer;
+
+        spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(
+            of('<i>testing</i>')
+        );
+
+        const dotDialogService = TestBed.inject(DotAlertConfirmService);
+        spyOn(dotDialogService, 'alert');
+
+        const contentlet: DotPageContent = {
+            identifier: '456',
+            inode: '456',
+            type: 'type',
+            baseType: 'CONTENT'
+        };
+
+        service.pageModel$.subscribe((model) => (currentModel = model));
+
+        service.renderAddedContentlet(contentlet);
+
+        const doc = service.iframe.nativeElement.contentDocument;
+
+        expect(doc.querySelector('.loader__overlay')).toBeNull();
+
+        expect(dotContainerContentletService.getContentletToContainer).not.toHaveBeenCalled();
+        expect(service.currentContainer).toBeNull('The current container must be null');
+        expect(currentModel).toBeNull('should not tigger model change event');
+        expect(dotDialogService.alert).toHaveBeenCalled();
+    });
+
+    it('should render edit contentlet', () => {
+        window.top['changed'] = false;
+
+        const currentContainer = {
+            identifier: '123',
+            uuid: '456'
+        };
+
+        const anotherContainer = {
+            identifier: '321',
+            uuid: '654'
+        };
+
+        service.currentContainer = currentContainer;
+        const contentlet: DotPageContent = {
+            identifier: '456',
+            inode: '456',
+            type: 'type',
+            baseType: 'CONTENT'
+        };
+
+        spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(
+            of(`
         <div data-dot-object="contentlet" data-dot-identifier="456">
             <script>
                 console.log('First');
@@ -850,528 +817,502 @@ xdescribe('DotEditContentHtmlService', () => {
                 </div>
             </div>
         </div>`)
-    );
-
-    service.renderEditedContentlet(contentlet);
-
-    expect(
-      dotContainerContentletService.getContentletToContainer
-    ).toHaveBeenCalledWith(currentContainer, contentlet, null);
-    expect(
-      dotContainerContentletService.getContentletToContainer
-    ).toHaveBeenCalledWith(anotherContainer, contentlet, null);
-    expect(window.top['changed']).toEqual(true);
-  });
-
-  // TODO needs to move this to a new describe to pass pageState.page.remoteRendered as true
-  xit('should emit "save" event when remote rendered edit contentlet', (done) => {
-    // service.remoteRendered = true;
-
-    const contentlet: DotPageContent = {
-      identifier: '456',
-      inode: '456',
-      type: 'type',
-      baseType: 'CONTENT',
-    };
-
-    service.iframeActions$.subscribe((res) => {
-      expect(res).toEqual({
-        name: 'save',
-      });
-      done();
-    });
-
-    service.renderEditedContentlet(contentlet);
-  });
-
-  describe('document click', () => {
-    beforeEach(() => {
-      spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
-    });
-
-    it('should open sub menu', () => {
-      const button: HTMLButtonElement = <HTMLButtonElement>(
-        fakeDocument.querySelector('[data-dot-object="popup-button"]')
-      );
-      button.click();
-      expect(button.nextElementSibling.classList.contains('active')).toBe(true);
-    });
-
-    it('should emit iframe action to add content', () => {
-      service.iframeActions$.subscribe((res) => {
-        expect(res).toEqual({
-          name: 'add',
-          container: null,
-          dataset: button.dataset,
-        });
-      });
-
-      const button: HTMLButtonElement = <HTMLButtonElement>(
-        fakeDocument.querySelector('[data-dot-object="popup-menu-item"]')
-      );
-      button.click();
-    });
-
-    it('should emit iframe action to edit content', () => {
-      mouseOverContentlet();
-
-      service.iframeActions$.subscribe((res) => {
-        expect(res).toEqual({
-          name: 'edit',
-          container: container.dataset,
-          dataset: button.dataset,
-        });
-      });
-
-      const button: HTMLButtonElement = <HTMLButtonElement>(
-        fakeDocument.querySelector('.dotedit-contentlet__edit')
-      );
-      const container = <HTMLElement>(
-        button.closest('div[data-dot-object="container"]')
-      );
-      button.click();
-    });
-
-    it('should emit iframe action to remove content', () => {
-      mouseOverContentlet();
-
-      service.iframeActions$.subscribe((res) => {
-        expect(res).toEqual({
-          name: 'remove',
-          container: container.dataset,
-          dataset: button.dataset,
-        });
-      });
-      const button: HTMLButtonElement = <HTMLButtonElement>(
-        fakeDocument.querySelector('.dotedit-contentlet__remove')
-      );
-      const container = <HTMLElement>(
-        button.closest('div[data-dot-object="container"]')
-      );
-      button.click();
-    });
-
-    it('should emit iframe action to edit vtl', () => {
-      mouseOverContentlet();
-
-      service.iframeActions$.subscribe((res) => {
-        expect(res).toEqual({
-          name: 'code',
-          container: container.dataset,
-          dataset: button.dataset,
-        });
-      });
-      const button: HTMLButtonElement = <HTMLButtonElement>(
-        fakeDocument.querySelector(
-          '.dotedit-contentlet__toolbar [data-dot-object="popup-menu-item"]'
-        )
-      );
-      const container = <HTMLElement>(
-        button.closest('div[data-dot-object="container"]')
-      );
-      button.click();
-
-      expect(service.currentContentlet).toEqual({
-        identifier: '456',
-        inode: '456',
-        type: 'NewsWidgets',
-        baseType: 'CONTENT',
-      });
-    });
-  });
-
-  describe('inline editing', () => {
-    let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
-    let dotGlobalMessageService: DotGlobalMessageService;
-
-    beforeEach(() => {
-      dotWorkflowActionsFireService = TestBed.inject(
-        DotWorkflowActionsFireService
-      );
-      dotGlobalMessageService = TestBed.inject(DotGlobalMessageService);
-    });
-
-    it('should return the content if an error occurs', () => {
-      const fakeElem: HTMLElement = fakeDocument.querySelector(
-        '[data-test-id="inline-edit-element-title"]'
-      );
-
-      const error404 = mockResponseView(404);
-      spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(
-        throwError(error404)
-      );
-
-      const events = ['focus', 'blur'];
-      events.forEach((event) => {
-        service.contentletEvents$.next({
-          name: 'inlineEdit',
-          data: {
-            eventType: event,
-            innerHTML:
-              event === 'focus' ? fakeElem.innerHTML : '<div>hello</div>',
-            isNotDirty: false,
-            dataset: {
-              fieldName: 'title',
-              inode: '999',
-              language: '1',
-              mode: 'full',
-            },
-            element: fakeElem,
-          },
-        });
-      });
-
-      expect(fakeElem.innerHTML).toBe('Hello World');
-    });
-
-    it('should call saveContentlet and save the content', () => {
-      spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(
-        of({})
-      );
-      spyOn(dotGlobalMessageService, 'success');
-      const fakeElem: HTMLElement = fakeDocument.querySelector(
-        '[data-test-id="inline-edit-element-title"]'
-      );
-
-      service.contentletEvents$.next({
-        name: 'inlineEdit',
-        data: {
-          eventType: 'blur',
-          innerHTML: '<div>hello</div>',
-          isNotDirty: false,
-          dataset: {
-            fieldName: 'title',
-            inode: '999',
-            language: '1',
-            mode: 'full',
-          },
-          element: fakeElem,
-        },
-      });
-
-      expect(dotWorkflowActionsFireService.saveContentlet).toHaveBeenCalledWith(
-        {
-          title: '<div>hello</div>',
-          inode: '999',
-        }
-      );
-
-      expect(dotGlobalMessageService.success).toHaveBeenCalledOnceWith(
-        'All changes Saved'
-      );
-    });
-
-    it('should not call saveContentlet if isNotDirty is true', () => {
-      spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(
-        of({})
-      );
-      const fakeElem: HTMLElement = fakeDocument.querySelector(
-        '[data-test-id="inline-edit-element-title"]'
-      );
-
-      service.contentletEvents$.next({
-        name: 'inlineEdit',
-        data: {
-          eventType: 'blur',
-          innerHTML: '<div>hello</div>',
-          isNotDirty: true,
-          dataset: {
-            fieldName: 'title',
-            inode: '999',
-            language: '1',
-            mode: 'full',
-          },
-          element: fakeElem,
-        },
-      });
-
-      expect(
-        dotWorkflowActionsFireService.saveContentlet
-      ).not.toHaveBeenCalled();
-    });
-
-    it('should display a toast on error', () => {
-      const error404 = mockResponseView(404, '', null, {
-        errors: [{ message: 'An error ocurred' }],
-      });
-      spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(
-        throwError(error404)
-      );
-      spyOn(dotGlobalMessageService, 'error').and.callThrough();
-
-      const fakeElem: HTMLElement = fakeDocument.querySelector(
-        '[data-test-id="inline-edit-element-title"]'
-      );
-
-      service.contentletEvents$.next({
-        name: 'inlineEdit',
-        data: {
-          eventType: 'blur',
-          innerHTML: '<div>hello</div>',
-          isNotDirty: false,
-          dataset: {
-            fieldName: 'title',
-            inode: '999',
-            language: '1',
-            mode: 'full',
-          },
-          element: fakeElem,
-        },
-      });
-
-      expect(dotGlobalMessageService.error).toHaveBeenCalledWith(
-        'An error ocurred'
-      );
-    });
-  });
-
-  describe('edit contentlets', () => {
-    beforeEach(() => {
-      spyOn(service, 'renderEditedContentlet');
-    });
-
-    it('should render main contentlet edit', () => {
-      mouseOverContentlet();
-
-      service.iframeActions$.subscribe((res) => {
-        expect(JSON.parse(JSON.stringify(res))).toEqual({
-          name: 'edit',
-          dataset: {
-            dotIdentifier: '456',
-            dotInode: '456',
-            dotObject: 'edit-content',
-          },
-          container: {
-            dotObject: 'container',
-            dotIdentifier: '123',
-            dotUuid: '456',
-            dotCanAdd: 'CONTENT',
-          },
-        });
-      });
-
-      const button: HTMLButtonElement = <HTMLButtonElement>(
-        fakeDocument.querySelector('.dotedit-contentlet__edit')
-      );
-      button.click();
-
-      service.contentletEvents$.next({
-        name: 'save',
-        data: {
-          identifier: '456',
-          inode: '999',
-        },
-      });
-
-      const doc: HTMLElement = <HTMLElement>fakeDocument.querySelector('html');
-      expect(doc.id).toContain('iframeId');
-      expect(service.renderEditedContentlet).toHaveBeenCalledWith({
-        identifier: '456',
-        inode: '999',
-        type: 'NewsWidgets',
-        baseType: 'CONTENT',
-      });
-    });
-
-    it('should render edit vtl', () => {
-      mouseOverContentlet();
-
-      service.iframeActions$.subscribe((res) => {
-        expect(JSON.parse(JSON.stringify(res))).toEqual({
-          name: 'code',
-          dataset: {
-            dotObject: 'popup-menu-item',
-            dotAction: 'code',
-            dotInode: '345274e0-3bbb-41f1-912c-b398d5745b9a',
-          },
-          container: {
-            dotObject: 'container',
-            dotIdentifier: '123',
-            dotUuid: '456',
-            dotCanAdd: 'CONTENT',
-          },
-        });
-      });
-
-      const button = fakeIframeEl.contentWindow.document.querySelector(
-        '[data-dot-action="code"][data-dot-object="popup-menu-item"]'
-      );
-      button.click();
-
-      service.contentletEvents$.next({
-        name: 'save',
-        data: {
-          identifier: '456',
-          inode: '888',
-        },
-      });
-
-      expect(service.renderEditedContentlet).toHaveBeenCalledWith({
-        identifier: '456',
-        inode: '456',
-        type: 'NewsWidgets',
-        baseType: 'CONTENT',
-      });
-    });
-
-    it('should render internal contentlet edit', () => {
-      mouseOverContentlet();
-      service.iframeActions$.subscribe((res) => {
-        expect(JSON.stringify(res)).toEqual(
-          JSON.stringify({
-            name: 'edit',
-            dataset: {
-              dotIdentifier: '456',
-              dotInode: '456',
-              dotObject: 'edit-content',
-            },
-            container: {
-              dotObject: 'container',
-              dotIdentifier: '123',
-              dotUuid: '456',
-              dotCanAdd: 'CONTENT',
-            },
-          })
         );
-      });
 
-      const button = fakeIframeEl.contentWindow.document.querySelector(
-        '[data-dot-object="edit-content"]'
-      );
+        service.renderEditedContentlet(contentlet);
 
-      button.click();
-
-      service.contentletEvents$.next({
-        name: 'save',
-        data: {
-          identifier: '34345',
-          inode: '67789',
-        },
-      });
-
-      expect(service.renderEditedContentlet).toHaveBeenCalledWith({
-        identifier: '456',
-        inode: '67789',
-        type: 'NewsWidgets',
-        baseType: 'CONTENT',
-      });
-    });
-  });
-
-  describe('render Form', () => {
-    const form: DotCMSContentType = {
-      ...dotcmsContentTypeBasicMock,
-      clazz: 'clazz',
-      defaultType: true,
-      fixed: true,
-      folder: 'folder',
-      host: 'host',
-      name: 'name',
-      owner: 'owner',
-      system: false,
-      baseType: 'form',
-      id: '2',
-      variable: 'test123',
-    };
-
-    const currentContainer = {
-      identifier: '123',
-      uuid: '456',
-    };
-
-    let dotGlobalMessageService: DotGlobalMessageService;
-
-    beforeEach(() => {
-      spyOn(service, 'renderEditedContentlet');
-
-      service.currentContainer = currentContainer;
-      dotGlobalMessageService = TestBed.get(DotGlobalMessageService);
-    });
-
-    it('should render added form', () => {
-      spyOn(
-        dotContainerContentletService,
-        'getFormToContainer'
-      ).and.returnValue(
-        of({
-          render: '<i>testing</i>',
-          content: {
-            identifier: '2',
-            inode: '123',
-          },
-        })
-      );
-
-      service.renderAddedForm('4');
-
-      expect(dotGlobalMessageService.success).toHaveBeenCalledTimes(1);
-      expect(dotEditPageService.save).toHaveBeenCalledTimes(1);
-
-      expect<any>(
-        dotContainerContentletService.getFormToContainer
-      ).toHaveBeenCalledWith(currentContainer, {
-        ...form,
-        id: '4',
-      });
-
-      expect(service.currentContainer).toEqual(
-        {
-          identifier: '123',
-          uuid: '456',
-        },
-        'currentContainer must be the same after add form'
-      );
-    });
-
-    it('should show content added message', () => {
-      spyOn(
-        dotContainerContentletService,
-        'getFormToContainer'
-      ).and.returnValue(
-        of({
-          render: '<i>testing</i>',
-          content: {
-            identifier: '4',
-            inode: '123',
-          },
-        })
-      );
-
-      service.renderAddedForm(form.id);
-
-      const doc = service.iframe.nativeElement.contentDocument;
-      expect(doc.querySelector('.loader__overlay')).toBeNull();
-    });
-  });
-
-  describe('errors', () => {
-    let httpErrorManagerService: DotHttpErrorManagerService;
-
-    describe('Error on save', () => {
-      it('should handle error on save and emit SAVE_ERROR Event Type', (done) => {
-        const errorResponse = {
-          error: { message: 'error' },
-        } as HttpErrorResponse;
-        spyOn(dotEditPageService, 'save').and.returnValue(
-          throwError(errorResponse)
+        expect(dotContainerContentletService.getContentletToContainer).toHaveBeenCalledWith(
+            currentContainer,
+            contentlet,
+            null
         );
-        spyOn(httpErrorManagerService, 'handle');
+        expect(dotContainerContentletService.getContentletToContainer).toHaveBeenCalledWith(
+            anotherContainer,
+            contentlet,
+            null
+        );
+        expect(window.top['changed']).toEqual(true);
+    });
 
-        service.pageModel$.subscribe((model) => {
-          expect(model.type).toEqual(PageModelChangeEventType.SAVE_ERROR);
-          done();
+    // TODO needs to move this to a new describe to pass pageState.page.remoteRendered as true
+    xit('should emit "save" event when remote rendered edit contentlet', (done) => {
+        // service.remoteRendered = true;
+
+        const contentlet: DotPageContent = {
+            identifier: '456',
+            inode: '456',
+            type: 'type',
+            baseType: 'CONTENT'
+        };
+
+        service.iframeActions$.subscribe((res) => {
+            expect(res).toEqual({
+                name: 'save'
+            });
+            done();
         });
 
-        service.renderAddedContentlet({ identifier: '123', inode: '' });
-
-        expect(httpErrorManagerService.handle).toHaveBeenCalledOnceWith(
-          errorResponse
-        );
-      });
+        service.renderEditedContentlet(contentlet);
     });
-  });
 
-  afterEach(() => {
-    document.body.removeChild(fakeIframeEl);
-  });
+    describe('document click', () => {
+        beforeEach(() => {
+            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+        });
+
+        it('should open sub menu', () => {
+            const button: HTMLButtonElement = <HTMLButtonElement>(
+                fakeDocument.querySelector('[data-dot-object="popup-button"]')
+            );
+            button.click();
+            expect(button.nextElementSibling.classList.contains('active')).toBe(true);
+        });
+
+        it('should emit iframe action to add content', () => {
+            service.iframeActions$.subscribe((res) => {
+                expect(res).toEqual({
+                    name: 'add',
+                    container: null,
+                    dataset: button.dataset
+                });
+            });
+
+            const button: HTMLButtonElement = <HTMLButtonElement>(
+                fakeDocument.querySelector('[data-dot-object="popup-menu-item"]')
+            );
+            button.click();
+        });
+
+        it('should emit iframe action to edit content', () => {
+            mouseOverContentlet();
+
+            service.iframeActions$.subscribe((res) => {
+                expect(res).toEqual({
+                    name: 'edit',
+                    container: container.dataset,
+                    dataset: button.dataset
+                });
+            });
+
+            const button: HTMLButtonElement = <HTMLButtonElement>(
+                fakeDocument.querySelector('.dotedit-contentlet__edit')
+            );
+            const container = <HTMLElement>button.closest('div[data-dot-object="container"]');
+            button.click();
+        });
+
+        it('should emit iframe action to remove content', () => {
+            mouseOverContentlet();
+
+            service.iframeActions$.subscribe((res) => {
+                expect(res).toEqual({
+                    name: 'remove',
+                    container: container.dataset,
+                    dataset: button.dataset
+                });
+            });
+            const button: HTMLButtonElement = <HTMLButtonElement>(
+                fakeDocument.querySelector('.dotedit-contentlet__remove')
+            );
+            const container = <HTMLElement>button.closest('div[data-dot-object="container"]');
+            button.click();
+        });
+
+        it('should emit iframe action to edit vtl', () => {
+            mouseOverContentlet();
+
+            service.iframeActions$.subscribe((res) => {
+                expect(res).toEqual({
+                    name: 'code',
+                    container: container.dataset,
+                    dataset: button.dataset
+                });
+            });
+            const button: HTMLButtonElement = <HTMLButtonElement>(
+                fakeDocument.querySelector(
+                    '.dotedit-contentlet__toolbar [data-dot-object="popup-menu-item"]'
+                )
+            );
+            const container = <HTMLElement>button.closest('div[data-dot-object="container"]');
+            button.click();
+
+            expect(service.currentContentlet).toEqual({
+                identifier: '456',
+                inode: '456',
+                type: 'NewsWidgets',
+                baseType: 'CONTENT'
+            });
+        });
+    });
+
+    describe('inline editing', () => {
+        let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
+        let dotGlobalMessageService: DotGlobalMessageService;
+
+        beforeEach(() => {
+            dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
+            dotGlobalMessageService = TestBed.inject(DotGlobalMessageService);
+        });
+
+        it('should return the content if an error occurs', () => {
+            const fakeElem: HTMLElement = fakeDocument.querySelector(
+                '[data-test-id="inline-edit-element-title"]'
+            );
+
+            const error404 = mockResponseView(404);
+            spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(
+                throwError(error404)
+            );
+
+            const events = ['focus', 'blur'];
+            events.forEach((event) => {
+                service.contentletEvents$.next({
+                    name: 'inlineEdit',
+                    data: {
+                        eventType: event,
+                        innerHTML: event === 'focus' ? fakeElem.innerHTML : '<div>hello</div>',
+                        isNotDirty: false,
+                        dataset: {
+                            fieldName: 'title',
+                            inode: '999',
+                            language: '1',
+                            mode: 'full'
+                        },
+                        element: fakeElem
+                    }
+                });
+            });
+
+            expect(fakeElem.innerHTML).toBe('Hello World');
+        });
+
+        it('should call saveContentlet and save the content', () => {
+            spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(of({}));
+            spyOn(dotGlobalMessageService, 'success');
+            const fakeElem: HTMLElement = fakeDocument.querySelector(
+                '[data-test-id="inline-edit-element-title"]'
+            );
+
+            service.contentletEvents$.next({
+                name: 'inlineEdit',
+                data: {
+                    eventType: 'blur',
+                    innerHTML: '<div>hello</div>',
+                    isNotDirty: false,
+                    dataset: {
+                        fieldName: 'title',
+                        inode: '999',
+                        language: '1',
+                        mode: 'full'
+                    },
+                    element: fakeElem
+                }
+            });
+
+            expect(dotWorkflowActionsFireService.saveContentlet).toHaveBeenCalledWith({
+                title: '<div>hello</div>',
+                inode: '999'
+            });
+
+            expect(dotGlobalMessageService.success).toHaveBeenCalledOnceWith('All changes Saved');
+        });
+
+        it('should not call saveContentlet if isNotDirty is true', () => {
+            spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(of({}));
+            const fakeElem: HTMLElement = fakeDocument.querySelector(
+                '[data-test-id="inline-edit-element-title"]'
+            );
+
+            service.contentletEvents$.next({
+                name: 'inlineEdit',
+                data: {
+                    eventType: 'blur',
+                    innerHTML: '<div>hello</div>',
+                    isNotDirty: true,
+                    dataset: {
+                        fieldName: 'title',
+                        inode: '999',
+                        language: '1',
+                        mode: 'full'
+                    },
+                    element: fakeElem
+                }
+            });
+
+            expect(dotWorkflowActionsFireService.saveContentlet).not.toHaveBeenCalled();
+        });
+
+        it('should display a toast on error', () => {
+            const error404 = mockResponseView(404, '', null, {
+                errors: [{ message: 'An error ocurred' }]
+            });
+            spyOn(dotWorkflowActionsFireService, 'saveContentlet').and.returnValue(
+                throwError(error404)
+            );
+            spyOn(dotGlobalMessageService, 'error').and.callThrough();
+
+            const fakeElem: HTMLElement = fakeDocument.querySelector(
+                '[data-test-id="inline-edit-element-title"]'
+            );
+
+            service.contentletEvents$.next({
+                name: 'inlineEdit',
+                data: {
+                    eventType: 'blur',
+                    innerHTML: '<div>hello</div>',
+                    isNotDirty: false,
+                    dataset: {
+                        fieldName: 'title',
+                        inode: '999',
+                        language: '1',
+                        mode: 'full'
+                    },
+                    element: fakeElem
+                }
+            });
+
+            expect(dotGlobalMessageService.error).toHaveBeenCalledWith('An error ocurred');
+        });
+    });
+
+    describe('edit contentlets', () => {
+        beforeEach(() => {
+            spyOn(service, 'renderEditedContentlet');
+        });
+
+        it('should render main contentlet edit', () => {
+            mouseOverContentlet();
+
+            service.iframeActions$.subscribe((res) => {
+                expect(JSON.parse(JSON.stringify(res))).toEqual({
+                    name: 'edit',
+                    dataset: {
+                        dotIdentifier: '456',
+                        dotInode: '456',
+                        dotObject: 'edit-content'
+                    },
+                    container: {
+                        dotObject: 'container',
+                        dotIdentifier: '123',
+                        dotUuid: '456',
+                        dotCanAdd: 'CONTENT'
+                    }
+                });
+            });
+
+            const button: HTMLButtonElement = <HTMLButtonElement>(
+                fakeDocument.querySelector('.dotedit-contentlet__edit')
+            );
+            button.click();
+
+            service.contentletEvents$.next({
+                name: 'save',
+                data: {
+                    identifier: '456',
+                    inode: '999'
+                }
+            });
+
+            const doc: HTMLElement = <HTMLElement>fakeDocument.querySelector('html');
+            expect(doc.id).toContain('iframeId');
+            expect(service.renderEditedContentlet).toHaveBeenCalledWith({
+                identifier: '456',
+                inode: '999',
+                type: 'NewsWidgets',
+                baseType: 'CONTENT'
+            });
+        });
+
+        it('should render edit vtl', () => {
+            mouseOverContentlet();
+
+            service.iframeActions$.subscribe((res) => {
+                expect(JSON.parse(JSON.stringify(res))).toEqual({
+                    name: 'code',
+                    dataset: {
+                        dotObject: 'popup-menu-item',
+                        dotAction: 'code',
+                        dotInode: '345274e0-3bbb-41f1-912c-b398d5745b9a'
+                    },
+                    container: {
+                        dotObject: 'container',
+                        dotIdentifier: '123',
+                        dotUuid: '456',
+                        dotCanAdd: 'CONTENT'
+                    }
+                });
+            });
+
+            const button = fakeIframeEl.contentWindow.document.querySelector(
+                '[data-dot-action="code"][data-dot-object="popup-menu-item"]'
+            );
+            button.click();
+
+            service.contentletEvents$.next({
+                name: 'save',
+                data: {
+                    identifier: '456',
+                    inode: '888'
+                }
+            });
+
+            expect(service.renderEditedContentlet).toHaveBeenCalledWith({
+                identifier: '456',
+                inode: '456',
+                type: 'NewsWidgets',
+                baseType: 'CONTENT'
+            });
+        });
+
+        it('should render internal contentlet edit', () => {
+            mouseOverContentlet();
+            service.iframeActions$.subscribe((res) => {
+                expect(JSON.stringify(res)).toEqual(
+                    JSON.stringify({
+                        name: 'edit',
+                        dataset: {
+                            dotIdentifier: '456',
+                            dotInode: '456',
+                            dotObject: 'edit-content'
+                        },
+                        container: {
+                            dotObject: 'container',
+                            dotIdentifier: '123',
+                            dotUuid: '456',
+                            dotCanAdd: 'CONTENT'
+                        }
+                    })
+                );
+            });
+
+            const button = fakeIframeEl.contentWindow.document.querySelector(
+                '[data-dot-object="edit-content"]'
+            );
+
+            button.click();
+
+            service.contentletEvents$.next({
+                name: 'save',
+                data: {
+                    identifier: '34345',
+                    inode: '67789'
+                }
+            });
+
+            expect(service.renderEditedContentlet).toHaveBeenCalledWith({
+                identifier: '456',
+                inode: '67789',
+                type: 'NewsWidgets',
+                baseType: 'CONTENT'
+            });
+        });
+    });
+
+    describe('render Form', () => {
+        const form: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
+            clazz: 'clazz',
+            defaultType: true,
+            fixed: true,
+            folder: 'folder',
+            host: 'host',
+            name: 'name',
+            owner: 'owner',
+            system: false,
+            baseType: 'form',
+            id: '2',
+            variable: 'test123'
+        };
+
+        const currentContainer = {
+            identifier: '123',
+            uuid: '456'
+        };
+
+        let dotGlobalMessageService: DotGlobalMessageService;
+
+        beforeEach(() => {
+            spyOn(service, 'renderEditedContentlet');
+
+            service.currentContainer = currentContainer;
+            dotGlobalMessageService = TestBed.get(DotGlobalMessageService);
+        });
+
+        it('should render added form', () => {
+            spyOn(dotContainerContentletService, 'getFormToContainer').and.returnValue(
+                of({
+                    render: '<i>testing</i>',
+                    content: {
+                        identifier: '2',
+                        inode: '123'
+                    }
+                })
+            );
+
+            service.renderAddedForm('4');
+
+            expect(dotGlobalMessageService.success).toHaveBeenCalledTimes(1);
+            expect(dotEditPageService.save).toHaveBeenCalledTimes(1);
+
+            expect<any>(dotContainerContentletService.getFormToContainer).toHaveBeenCalledWith(
+                currentContainer,
+                {
+                    ...form,
+                    id: '4'
+                }
+            );
+
+            expect(service.currentContainer).toEqual(
+                {
+                    identifier: '123',
+                    uuid: '456'
+                },
+                'currentContainer must be the same after add form'
+            );
+        });
+
+        it('should show content added message', () => {
+            spyOn(dotContainerContentletService, 'getFormToContainer').and.returnValue(
+                of({
+                    render: '<i>testing</i>',
+                    content: {
+                        identifier: '4',
+                        inode: '123'
+                    }
+                })
+            );
+
+            service.renderAddedForm(form.id);
+
+            const doc = service.iframe.nativeElement.contentDocument;
+            expect(doc.querySelector('.loader__overlay')).toBeNull();
+        });
+    });
+
+    describe('errors', () => {
+        let httpErrorManagerService: DotHttpErrorManagerService;
+
+        describe('Error on save', () => {
+            it('should handle error on save and emit SAVE_ERROR Event Type', (done) => {
+                const errorResponse = {
+                    error: { message: 'error' }
+                } as HttpErrorResponse;
+                spyOn(dotEditPageService, 'save').and.returnValue(throwError(errorResponse));
+                spyOn(httpErrorManagerService, 'handle');
+
+                service.pageModel$.subscribe((model) => {
+                    expect(model.type).toEqual(PageModelChangeEventType.SAVE_ERROR);
+                    done();
+                });
+
+                service.renderAddedContentlet({ identifier: '123', inode: '' });
+
+                expect(httpErrorManagerService.handle).toHaveBeenCalledOnceWith(errorResponse);
+            });
+        });
+    });
+
+    afterEach(() => {
+        document.body.removeChild(fakeIframeEl);
+    });
 });

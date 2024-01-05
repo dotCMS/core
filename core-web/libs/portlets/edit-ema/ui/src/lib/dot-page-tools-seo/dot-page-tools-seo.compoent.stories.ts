@@ -14,44 +14,39 @@ import { MockDotMessageService, mockPageTools } from '@dotcms/utils-testing';
 import { DotPageToolsSeoComponent } from './dot-page-tools-seo.component';
 
 const messageServiceMock = new MockDotMessageService({
-  'editpage.toolbar.nav.page.tools': 'Page Tools',
+    'editpage.toolbar.nav.page.tools': 'Page Tools'
 });
 
 export default {
-  title: 'dotcms/Page Tools',
-  component: DotPageToolsSeoComponent,
-  decorators: [
-    moduleMetadata({
-      imports: [
-        CommonModule,
-        DotMessagePipe,
-        BrowserAnimationsModule,
-        DialogModule,
-      ],
-      providers: [
-        DotPageToolsService,
-        { provide: DotMessageService, useValue: messageServiceMock },
-        {
-          provide: HttpClient,
-          useValue: {
-            get: () => of(mockPageTools),
-            request: () => of(mockPageTools),
-          },
-        },
-      ],
-    }),
-  ],
+    title: 'dotcms/Page Tools',
+    component: DotPageToolsSeoComponent,
+    decorators: [
+        moduleMetadata({
+            imports: [CommonModule, DotMessagePipe, BrowserAnimationsModule, DialogModule],
+            providers: [
+                DotPageToolsService,
+                { provide: DotMessageService, useValue: messageServiceMock },
+                {
+                    provide: HttpClient,
+                    useValue: {
+                        get: () => of(mockPageTools),
+                        request: () => of(mockPageTools)
+                    }
+                }
+            ]
+        })
+    ]
 };
 
 export const Default = () => ({
-  component: DotPageToolsSeoComponent,
-  props: {
-    visible: true,
-    currentPageUrlParams: {
-      currentUrl: '/index',
-      requestHostName: 'demo.dotcms.com',
-      siteId: '123',
-      languageId: 1,
-    },
-  },
+    component: DotPageToolsSeoComponent,
+    props: {
+        visible: true,
+        currentPageUrlParams: {
+            currentUrl: '/index',
+            requestHostName: 'demo.dotcms.com',
+            siteId: '123',
+            languageId: 1
+        }
+    }
 });

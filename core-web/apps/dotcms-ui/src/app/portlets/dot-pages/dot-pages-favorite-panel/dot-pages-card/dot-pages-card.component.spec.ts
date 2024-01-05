@@ -9,9 +9,9 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
-  DotIconModule,
-  DotMessagePipe,
-  DotPagesFavoritePageEmptySkeletonComponent,
+    DotIconModule,
+    DotMessagePipe,
+    DotPagesFavoritePageEmptySkeletonComponent
 } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
@@ -19,111 +19,105 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotPagesCardComponent } from './dot-pages-card.component';
 
 describe('DotPagesCardComponent', () => {
-  let component: DotPagesCardComponent;
-  let fixture: ComponentFixture<DotPagesCardComponent>;
-  let de: DebugElement;
+    let component: DotPagesCardComponent;
+    let fixture: ComponentFixture<DotPagesCardComponent>;
+    let de: DebugElement;
 
-  const messageServiceMock = new MockDotMessageService({
-    'favoritePage.listing.star.icon.tooltip': 'Edit Favorite Page',
-  });
+    const messageServiceMock = new MockDotMessageService({
+        'favoritePage.listing.star.icon.tooltip': 'Edit Favorite Page'
+    });
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      imports: [
-        CommonModule,
-        CardModule,
-        DotIconModule,
-        DotPagesFavoritePageEmptySkeletonComponent,
-        TooltipModule,
-        DotPipesModule,
-        ButtonModule,
-        DotMessagePipe,
-      ],
-      declarations: [DotPagesCardComponent],
-      providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
-    }).compileComponents();
-  }));
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [
+                CommonModule,
+                CardModule,
+                DotIconModule,
+                DotPagesFavoritePageEmptySkeletonComponent,
+                TooltipModule,
+                DotPipesModule,
+                ButtonModule,
+                DotMessagePipe
+            ],
+            declarations: [DotPagesCardComponent],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+        }).compileComponents();
+    }));
 
-  beforeEach(() => {
-    fixture = TestBed.createComponent(DotPagesCardComponent);
-    de = fixture.debugElement;
-    component = fixture.debugElement.componentInstance;
-  });
-
-  describe('With ownerPage', () => {
     beforeEach(() => {
-      component.imageUri =
-        '/dA/792c7c9f-6b6f-427b-80ff-1643376c9999/photo/mountain-persona.jpg';
-      component.title = 'test';
-      component.url = '/index';
-      component.ownerPage = true;
-
-      spyOn(component.goTo, 'emit').and.callThrough();
-      spyOn(component.edit, 'emit').and.callThrough();
-
-      fixture.detectChanges();
+        fixture = TestBed.createComponent(DotPagesCardComponent);
+        de = fixture.debugElement;
+        component = fixture.debugElement.componentInstance;
     });
 
-    it('should set preview img ', () => {
-      expect(
-        fixture.debugElement
-          .query(By.css('[data-testid="favoriteCardImageContainer"]'))
-          .nativeElement.style['background-image'].includes(component.imageUri)
-      ).toBeTrue();
-      expect(
-        fixture.debugElement
-          .query(By.css('.dot-pages-favorite-card-content__image img'))
-          .nativeElement.src.includes(component.imageUri)
-      ).toBeTrue();
+    describe('With ownerPage', () => {
+        beforeEach(() => {
+            component.imageUri =
+                '/dA/792c7c9f-6b6f-427b-80ff-1643376c9999/photo/mountain-persona.jpg';
+            component.title = 'test';
+            component.url = '/index';
+            component.ownerPage = true;
+
+            spyOn(component.goTo, 'emit').and.callThrough();
+            spyOn(component.edit, 'emit').and.callThrough();
+
+            fixture.detectChanges();
+        });
+
+        it('should set preview img ', () => {
+            expect(
+                fixture.debugElement
+                    .query(By.css('[data-testid="favoriteCardImageContainer"]'))
+                    .nativeElement.style['background-image'].includes(component.imageUri)
+            ).toBeTrue();
+            expect(
+                fixture.debugElement
+                    .query(By.css('.dot-pages-favorite-card-content__image img'))
+                    .nativeElement.src.includes(component.imageUri)
+            ).toBeTrue();
+        });
+
+        it('should set title and url as content', () => {
+            expect(
+                fixture.debugElement.query(By.css('.dot-pages-favorite-card-content__title'))
+                    .nativeElement.textContent
+            ).toBe(component.title);
+            expect(
+                fixture.debugElement.query(By.css('.dot-pages-favorite-card-content__subtitle'))
+                    .nativeElement.textContent
+            ).toBe(component.url);
+        });
+
+        it('should emit goTo event when clicked on P-Card', () => {
+            const elem = de.query(By.css('[data-testid="pageCard"]'));
+            elem.triggerEventHandler('click', {
+                stopPropagation: () => {
+                    //
+                }
+            });
+
+            expect(component.goTo.emit).toHaveBeenCalledWith(true);
+            expect(component.edit.emit).not.toHaveBeenCalledWith(true);
+        });
     });
 
-    it('should set title and url as content', () => {
-      expect(
-        fixture.debugElement.query(
-          By.css('.dot-pages-favorite-card-content__title')
-        ).nativeElement.textContent
-      ).toBe(component.title);
-      expect(
-        fixture.debugElement.query(
-          By.css('.dot-pages-favorite-card-content__subtitle')
-        ).nativeElement.textContent
-      ).toBe(component.url);
+    describe('Without thumbnail', () => {
+        beforeEach(() => {
+            component.imageUri = '';
+            component.title = 'test';
+            component.url = '/index';
+            component.ownerPage = true;
+
+            fixture.detectChanges();
+        });
+
+        it('should display empty skeleton component and hide favorite card component', () => {
+            expect(
+                fixture.debugElement.query(By.css('[data-testid="favoriteCardImageContainer"]'))
+            ).toBeNull();
+            expect(
+                fixture.debugElement.query(By.css('.dot-pages-favorite-page-empty-skeleton'))
+            ).toBeDefined();
+        });
     });
-
-    it('should emit goTo event when clicked on P-Card', () => {
-      const elem = de.query(By.css('[data-testid="pageCard"]'));
-      elem.triggerEventHandler('click', {
-        stopPropagation: () => {
-          //
-        },
-      });
-
-      expect(component.goTo.emit).toHaveBeenCalledWith(true);
-      expect(component.edit.emit).not.toHaveBeenCalledWith(true);
-    });
-  });
-
-  describe('Without thumbnail', () => {
-    beforeEach(() => {
-      component.imageUri = '';
-      component.title = 'test';
-      component.url = '/index';
-      component.ownerPage = true;
-
-      fixture.detectChanges();
-    });
-
-    it('should display empty skeleton component and hide favorite card component', () => {
-      expect(
-        fixture.debugElement.query(
-          By.css('[data-testid="favoriteCardImageContainer"]')
-        )
-      ).toBeNull();
-      expect(
-        fixture.debugElement.query(
-          By.css('.dot-pages-favorite-page-empty-skeleton')
-        )
-      ).toBeDefined();
-    });
-  });
 });
