@@ -46,18 +46,17 @@ export class EmaAppGuard implements CanActivate {
                     map((site: DotAppsSite) => {
                         try {
                             const val = JSON.parse(site.secrets[0].value)[0];
-
-                            const newQueryParams = {
-                                ...route.queryParams,
-                                url: route.queryParams.url.substring(1)
-                            };
-
-                            delete newQueryParams['device_inode'];
+                            const newQueryParams = getUpdatedQueryParams(route);
 
                             if (doesPathMatchPattern(val.pattern, route.queryParams.url)) {
-                                return this.router.createUrlTree(['edit-ema'], {
-                                    queryParams: newQueryParams
+                                this.router.navigate(['edit-ema'], {
+                                    queryParams: newQueryParams,
+                                    state: {
+                                        remoteUrl: 'https://google.com'
+                                    }
                                 });
+
+                                return false;
                             }
 
                             return true;
@@ -69,4 +68,15 @@ export class EmaAppGuard implements CanActivate {
             })
         );
     }
+}
+
+function getUpdatedQueryParams(route: ActivatedRouteSnapshot) {
+    const newQueryParams = {
+        ...route.queryParams,
+        url: route.queryParams.url.substring(1)
+    };
+
+    delete newQueryParams['device_inode'];
+
+    return newQueryParams;
 }

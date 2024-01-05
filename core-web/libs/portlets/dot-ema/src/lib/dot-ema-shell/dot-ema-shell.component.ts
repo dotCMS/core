@@ -1,6 +1,6 @@
 import { Observable, Subject, fromEvent } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Component, OnInit, inject, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
@@ -65,6 +65,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
     private readonly siteService = inject(SiteService);
+    private readonly location = inject(Location);
     readonly store = inject(EditEmaStore);
 
     private readonly destroy$ = new Subject<boolean>();
@@ -139,6 +140,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((queryParams: Params) => {
+            // eslint-disable-next-line no-console
+            console.log({ queryParams, state: this.location.getState() });
+
             const { missing, ...missingQueryParams } = DEFAULT_QUERY_PARAMS.reduce(
                 (acc, curr) => {
                     if (!queryParams[curr.key]) {
