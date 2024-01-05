@@ -1,7 +1,5 @@
-import { BehaviorSubject } from 'rxjs';
-
 import { AsyncPipe } from '@angular/common';
-import { Component, Input, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnInit, inject, signal } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -18,7 +16,8 @@ import { DotMessagePipe } from '@dotcms/ui';
     selector: 'dot-ema-bookmarks',
     standalone: true,
     imports: [ButtonModule, DotMessagePipe, AsyncPipe],
-    templateUrl: './dot-ema-bookmarks.component.html'
+    templateUrl: './dot-ema-bookmarks.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEmaBookmarksComponent implements OnInit {
     @Input() url = '';
@@ -26,10 +25,10 @@ export class DotEmaBookmarksComponent implements OnInit {
     private readonly dotFavoritePageService = inject(DotFavoritePageService);
     private readonly dialogService = inject(DialogService);
     private readonly dotMessageService = inject(DotMessageService);
-    bookmarked = false;
-    // I used a boolean at first, but for some reason the dom wasn't updating when I changed the value
-    loading = new BehaviorSubject(true);
     favoritePage: DotCMSContentlet;
+
+    bookmarked = signal(false);
+    loading = signal(false);
 
     ngOnInit(): void {
         this.fetchFavoritePage(this.url);
@@ -55,7 +54,7 @@ export class DotEmaBookmarksComponent implements OnInit {
     }
 
     private fetchFavoritePage(url: string): void {
-        this.loading.next(true);
+        this.loading.set(true);
 
         this.loginService
             .getCurrentUser()
@@ -71,8 +70,8 @@ export class DotEmaBookmarksComponent implements OnInit {
                 })
             )
             .subscribe((favoritePage) => {
-                this.loading.next(false);
-                this.bookmarked = !!favoritePage;
+                this.loading.set(false);
+                this.bookmarked.set(!!favoritePage);
                 this.favoritePage = favoritePage;
             });
     }
