@@ -18,13 +18,14 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <node.js.version>v16.14.2</node.js.version>
-        <npm.version>8.5.1</npm.version>
+        <node.js.version>v18.17.0</node.js.version>
+        <npm.version>9.8.1</npm.version>
+        <yarn.version>v1.22.19</yarn.version>
         <maven.plugin.cargo.version>1.9.0</maven.plugin.cargo.version>
         <cargo.tomcat.major.version>9</cargo.tomcat.major.version>
         <nx.build.options></nx.build.options>
         <cargo.server.port>8084</cargo.server.port>
-        <npm.install.cmd>install</npm.install.cmd>
+        <yarn.install.cmd>install --frozen-lockfile</yarn.install.cmd>
         <skip.npm.install>false</skip.npm.install>
     </properties>
 
@@ -88,7 +89,7 @@
 
                     <nodeVersion>${node.js.version}</nodeVersion>
                     <!-- <npmVersion>${npm.version}</npmVersion>-->
-                    <!--<yarnVersion>v0.16.1</yarnVersion>-->
+                    <yarnVersion>${yarn.version}</yarnVersion>
 
                     <!-- optional: where to download node and npm from. Defaults to https://nodejs.org/dist/ -->
                     <!--<downloadRoot>http://myproxy.example.org/nodejs/</downloadRoot>-->
@@ -97,28 +98,38 @@
                 <executions>
                     <execution>
                         <!-- optional: you don't really need execution ids, but it looks nice in your build log. -->
-                        <id>install node and npm</id>
+                        <id>install node and yarn</id>
                         <goals>
-                            <goal>install-node-and-npm</goal>
+                            <goal>install-node-and-yarn</goal>
                         </goals>
                         <!-- optional: default phase is "generate-resources" -->
                         <phase>generate-resources</phase>
                     </execution>
 
                     <execution>
-                        <id>config npm</id>
+                        <id>config yarn timeout</id>
                         <goals>
-                            <goal>npm</goal>
+                            <goal>yarn</goal>
                         </goals>
                         <configuration>
-                            <arguments>config set timeout 6000000</arguments>
+                            <arguments>config set network-timeout 6000000</arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>config yarn registry</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>config set registry https://dotcms-npm.b-cdn.net</arguments>
                         </configuration>
                     </execution>
 
                     <execution>
                         <id>install</id>
                         <goals>
-                            <goal>npm</goal>
+                            <goal>yarn</goal>
                         </goals>
 
                         <!-- optional: the default phase is "generate-resources" -->
@@ -126,13 +137,13 @@
 
                         <configuration>
                             <skip>${skip.npm.install}</skip>
-                            <arguments>${npm.install.cmd} --registry=https://dotcms-npm.b-cdn.net</arguments>
+                            <arguments>${yarn.install.cmd}</arguments>
                         </configuration>
                     </execution>
                     <execution>
                         <id>build dotcms-ui</id>
                         <goals>
-                            <goal>npm</goal>
+                            <goal>yarn</goal>
                         </goals>
 
                         <!-- optional: the default phase is "generate-resources" -->
@@ -146,7 +157,7 @@
                     <execution>
                         <id>build dotcms-block-editor</id>
                         <goals>
-                            <goal>npm</goal>
+                            <goal>yarn</goal>
                         </goals>
 
                         <!-- optional: the default phase is "generate-resources" -->
@@ -160,7 +171,7 @@
                     <execution>
                         <id>build dotcms-binary-field-builder</id>
                         <goals>
-                            <goal>npm</goal>
+                            <goal>yarn</goal>
                         </goals>
 
                         <!-- optional: the default phase is "generate-resources" -->
@@ -174,7 +185,7 @@
                     <execution>
                         <id>test</id>
                         <goals>
-                            <goal>npm</goal>
+                            <goal>yarn</goal>
                         </goals>
 
                         <!-- optional: the default phase is "generate-resources" -->
@@ -284,7 +295,7 @@
             </activation>
             <properties>
                 <nx.build.options>--prod</nx.build.options>
-                <npm.install.cmd>ci --no-progress</npm.install.cmd>
+                <yarn.install.cmd>--frozen-lockfile --silent</yarn.install.cmd>
             </properties>
             <build>
             </build>

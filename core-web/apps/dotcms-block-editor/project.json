@@ -6,7 +6,7 @@
     "prefix": "dotcms",
     "targets": {
         "build": {
-            "executor": "@angular-devkit/build-angular:browser",
+            "executor": "@nx/angular:browser-esbuild",
             "options": {
                 "outputPath": "dist/apps/dotcms-block-editor",
                 "index": "apps/dotcms-block-editor/src/index.html",
@@ -77,28 +77,22 @@
         "serve": {
             "executor": "@angular-devkit/build-angular:dev-server",
             "options": {
-                "browserTarget": "dotcms-block-editor:build"
+                "buildTarget": "dotcms-block-editor:build"
             },
             "configurations": {
                 "production": {
-                    "browserTarget": "dotcms-block-editor:build:production"
+                    "buildTarget": "dotcms-block-editor:build:production"
                 }
             }
         },
         "extract-i18n": {
             "executor": "@angular-devkit/build-angular:extract-i18n",
             "options": {
-                "browserTarget": "dotcms-block-editor:build"
+                "buildTarget": "dotcms-block-editor:build"
             }
         },
         "lint": {
-            "executor": "@nrwl/linter:eslint",
-            "options": {
-                "lintFilePatterns": [
-                    "apps/dotcms-block-editor/src/**/*.ts",
-                    "apps/dotcms-block-editor/src/**/*.html"
-                ]
-            },
+            "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"]
         },
         "test": {
