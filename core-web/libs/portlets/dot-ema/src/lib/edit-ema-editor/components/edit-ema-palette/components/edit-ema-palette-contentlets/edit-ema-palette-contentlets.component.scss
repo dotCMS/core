@@ -4,7 +4,7 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 .content-search {
@@ -33,7 +33,6 @@
 
 .contentlets-cards {
     flex: 1;
-    overflow: auto;
     margin-bottom: $spacing-1;
 }
 
@@ -56,6 +55,7 @@ dot-icon {
 dot-contentlet-thumbnail {
     height: 2.25rem;
     border-radius: 0.125rem;
+    pointer-events: none; //To disable drag event on the image
 }
 
 span {
