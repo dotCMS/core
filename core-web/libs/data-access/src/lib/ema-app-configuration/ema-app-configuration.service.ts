@@ -42,31 +42,7 @@ export class EmaAppConfigurationService {
                 this.getConfigurationForCurrentSite(appConfiguration, currentSiteId)
             ),
             takeWhile((site: DotAppsSite | null) => !!site), // stop if site is undefined or null
-            map((site: DotAppsSite | null) => {
-                if (!site) {
-                    return null; // Explicitly handle the null case
-                }
-
-                const secrets = site.secrets || []; // Provide a default empty array if secrets is undefined
-
-                for (const secret of secrets) {
-                    try {
-                        const parsedSecrets: SecretValue[] = JSON.parse(secret.value);
-
-                        for (const parsedSecret of parsedSecrets) {
-                            if (new RegExp(parsedSecret.pattern).test(url)) {
-                                return parsedSecret;
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Error parsing JSON:', error);
-
-                        return null;
-                    }
-                }
-
-                return null;
-            }),
+            map(getSecretByUrlMatch(url)),
             defaultIfEmpty<SecretValue | null>(null)
         );
     }
@@ -91,4 +67,32 @@ export class EmaAppConfigurationService {
             appConfiguration?.sites?.find((site) => site.id === siteId && site.configured) || null
         );
     }
+}
+
+function getSecretByUrlMatch(url: string): (value: DotAppsSite | null) => SecretValue | null {
+    return (site: DotAppsSite | null) => {
+        if (!site) {
+            return null; // Explicitly handle the null case
+        }
+
+        const secrets = site.secrets || []; // Provide a default empty array if secrets is undefined
+
+        for (const secret of secrets) {
+            try {
+                const parsedSecrets: SecretValue[] = JSON.parse(secret.value);
+
+                for (const parsedSecret of parsedSecrets) {
+                    if (new RegExp(parsedSecret.pattern).test(url)) {
+                        return parsedSecret;
+                    }
+                }
+            } catch (error) {
+                console.error('Error parsing JSON:', error);
+
+                return null;
+            }
+        }
+
+        return null;
+    };
 }
