@@ -21,10 +21,12 @@ import { DotMessagePipe } from '@dotcms/ui';
 })
 export class DotEmaBookmarksComponent implements OnInit {
     @Input() url = '';
+
     private readonly loginService = inject(LoginService);
     private readonly dotFavoritePageService = inject(DotFavoritePageService);
     private readonly dialogService = inject(DialogService);
     private readonly dotMessageService = inject(DotMessageService);
+
     favoritePage: DotCMSContentlet;
 
     bookmarked = signal(false);
@@ -53,6 +55,13 @@ export class DotEmaBookmarksComponent implements OnInit {
         });
     }
 
+    /**
+     * Fetch favorite page
+     *
+     * @private
+     * @param {string} url
+     * @memberof DotEmaBookmarksComponent
+     */
     private fetchFavoritePage(url: string): void {
         this.loading.set(true);
 
