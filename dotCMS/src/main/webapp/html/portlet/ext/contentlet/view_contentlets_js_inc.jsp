@@ -1115,9 +1115,12 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                                 href+= "&modDateTo="+dateTo;
                         }
 
-                window.location.href=href;
-
-        }
+                if (href.length > 6584) {
+                        showDotCMSErrorMessage("Error: The URL has exceeded the size limit due to the large number of content filters. Please reduce them.");
+                } else {
+                        window.location.href = href;
+                }
+}
 
 
         function copySearchForm(){
