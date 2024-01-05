@@ -20,7 +20,7 @@ public class ConsumerOutputStream extends OutputStream {
     /**
      * Writes a byte to the output stream. This method flushes automatically at the end of a line.
      *
-     * @param b DOCUMENT ME!
+     * @param b
      */
     public void write (final int b) {
         byte[] bytes = new byte[1];

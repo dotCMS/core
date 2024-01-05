@@ -22,7 +22,7 @@ import java.util.Map;
  * Test for the JSEngine
  * @author jsanca
  */
-public class jsenginetest extends IntegrationTestBase {
+public class JsEngineTest extends IntegrationTestBase {
 
     private JsEngine jsEngine = null;
 
