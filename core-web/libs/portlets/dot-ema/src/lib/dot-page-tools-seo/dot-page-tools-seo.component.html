@@ -1,5 +1,5 @@
 <p-dialog
-    [(visible)]="visible"
+    [visible]="visible"
     [position]="'right'"
     [closable]="false"
     [draggable]="false"
@@ -7,6 +7,7 @@
     [dismissableMask]="true"
     [closable]="true"
     [appendTo]="'body'"
+    (visibleChange)="visible = $event"
     maskStyleClass="page-tools-dialog"
     header="{{ 'editpage.toolbar.nav.page.tools' | dm }}">
     <div class="page-tools" *ngIf="tools$ | async as tools">

@@ -1,53 +1,18 @@
-import React from 'react';
+import { dotcmsClient } from '@dotcms/client';
 
-import GlobalProvider from '@/lib/providers/global';
-import { DotcmsPage } from '@/components/dotcms-page';
+const client = dotcmsClient.init({
+    dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
+    authToken: process.env.DOTCMS_AUTH_TOKEN,
+    siteId: '59bb8831-6706-4589-9ca0-ff74016e02b2'
+});
 
-async function getPage(params) {
-    const { url, language_id } = params;
-
-    const requestUrl = `${
-        process.env.NEXT_PUBLIC_DOTCMS_HOST
-    }/api/v1/page/json/${url}?language_id=${language_id || '1'}&com.dotmarketing.persona.id=${
-        params['com.dotmarketing.persona.id'] || 'modes.persona.no.persona'
-    }`;
-
-    const res = await fetch(requestUrl, {
-        headers: {
-            Authorization: `Bearer ${process.env.DOTCMS_AUTH_TOKEN}`
-        },
-        cache: 'no-store'
-    });
-
-    if (!res.ok) {
-        const message = await res.text();
-        throw new Error(`Failed to fetch data ${res.status} ${message}`);
-    }
-
-    return res.json();
-}
-
-async function getNav() {
-    const requestUrl = `${process.env.NEXT_PUBLIC_DOTCMS_HOST}/api/v1/nav/?depth=2`;
-
-    const res = await fetch(requestUrl, {
-        headers: {
-            Authorization: `Bearer ${process.env.DOTCMS_AUTH_TOKEN}`
-        }
-    });
-
-    if (!res.ok) {
-        const message = await res.text();
-        throw new Error(`Failed to fetch data ${res.status} ${message}`);
-    }
-
-    return res.json();
-}
+import { MyPage } from '@/components/my-page';
 
 export async function generateMetadata({ params, searchParams }) {
-    const data = await getPage({
-        url: params?.slug ? params.slug.join('/') : 'index',
-        language_id: searchParams.language_id
+    const data = await client.getPage({
+        path: params?.slug ? params.slug.join('/') : 'index',
+        language_id: searchParams.language_id,
+        'com.dotmarketing.persona.id': searchParams['com.dotmarketing.persona.id'] || ''
     });
 
     return {
@@ -56,22 +21,17 @@ export async function generateMetadata({ params, searchParams }) {
 }
 
 export default async function Home({ searchParams, params }) {
-    const data = await getPage({
-        url: params?.slug ? params.slug.join('/') : 'index',
+    const data = await client.getPage({
+        path: params?.slug ? params.slug.join('/') : 'index',
         language_id: searchParams.language_id,
-        'com.dotmarketing.persona.id': searchParams['com.dotmarketing.persona.id']
+        personaId: searchParams['com.dotmarketing.persona.id'] || ''
     });
 
-    const nav = await getNav();
+    const nav = await client.getNav({
+        path: '/',
+        depth: 2,
+        languageId: searchParams.language_id
+    });
 
-    return (
-        // Provide the page data globally
-        <GlobalProvider
-            entity={{
-                ...data.entity,
-                nav: nav.entity.children
-            }}>
-            <DotcmsPage />
-        </GlobalProvider>
-    );
+    return <MyPage nav={nav.entity.children} data={data.entity}></MyPage>;
 }

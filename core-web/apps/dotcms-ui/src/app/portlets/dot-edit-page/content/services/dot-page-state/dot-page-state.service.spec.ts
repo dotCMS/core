@@ -25,7 +25,8 @@ import {
     DotExperimentStatus,
     DotPageMode,
     DotPageRenderState,
-    DotPersona
+    DotPersona,
+    PageModelChangeEventType
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotFormatDateService } from '@dotcms/ui';
@@ -44,8 +45,6 @@ import {
 import { DotLicenseServiceMock } from '@portlets/dot-edit-page/content/services/html/dot-edit-content-toolbar-html.service.spec';
 
 import { DotPageStateService } from './dot-page-state.service';
-
-import { PageModelChangeEventType } from '../dot-edit-content-html/models';
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
 const getDotPageRenderStateMock = (favoritePage?: DotCMSContentlet, runningExperiment = null) => {

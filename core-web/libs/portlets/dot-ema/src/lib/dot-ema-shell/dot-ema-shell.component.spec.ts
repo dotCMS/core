@@ -9,7 +9,12 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
-import { DotLanguagesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
+import {
+    DotLanguagesService,
+    DotLicenseService,
+    DotMessageService,
+    DotPersonalizeService
+} from '@dotcms/data-access';
 import { SiteService, mockSites } from '@dotcms/dotcms-js';
 import {
     DotLanguagesServiceMock,
@@ -42,7 +47,10 @@ describe('DotEmaShellComponent', () => {
             ConfirmationService,
             DotActionUrlService,
             DotMessageService,
-            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
+            {
+                provide: DotLanguagesService,
+                useValue: new DotLanguagesServiceMock()
+            },
             {
                 provide: DotPageApiService,
                 useValue: {
@@ -89,6 +97,12 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: DotPersonalizeService,
                 useValue: new DotPersonalizeServiceMock()
+            },
+            {
+                provide: DotLicenseService,
+                useValue: {
+                    isEnterprise: () => of(true)
+                }
             }
         ]
     });

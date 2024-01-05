@@ -4029,6 +4029,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return workflowTimelineItems.stream()
 				.sorted(Comparator.comparing(WorkflowTimelineItem::createdDate).reversed())
 				.collect(CollectionsUtils.toImmutableList());
+
 	}
 
 

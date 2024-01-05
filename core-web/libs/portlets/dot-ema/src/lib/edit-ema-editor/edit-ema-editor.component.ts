@@ -21,11 +21,15 @@ import { DialogModule } from 'primeng/dialog';
 
 import { takeUntil } from 'rxjs/operators';
 
+import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
-import { DotPersona } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotDevice, DotPersona } from '@dotcms/dotcms-models';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
+import { DotDeviceSelectorSeoComponent } from './components/dot-device-selector-seo/dot-device-selector-seo.component';
+import { DotEmaDeviceDisplayComponent } from './components/dot-ema-device-display/dot-ema-device-display.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
@@ -38,7 +42,7 @@ import {
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DEFAULT_PERSONA, HOST, WINDOW } from '../shared/consts';
-import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
+import { NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { ActionPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
 
@@ -67,6 +71,9 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
 @Component({
     selector: 'dot-edit-ema-editor',
     standalone: true,
+    templateUrl: './edit-ema-editor.component.html',
+    styleUrls: ['./edit-ema-editor.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         CommonModule,
         FormsModule,
@@ -80,17 +87,18 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
         ClipboardModule,
         DotMessagePipe,
         EmaPageDropzoneComponent,
+        EditEmaPaletteComponent,
         EmaContentletToolsComponent,
-        EmaFormSelectorComponent
-    ],
-    templateUrl: './edit-ema-editor.component.html',
-    styleUrls: ['./edit-ema-editor.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+        EmaFormSelectorComponent,
+        DotDeviceSelectorSeoComponent,
+        DotEmaDeviceDisplayComponent
+    ]
 })
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
-    @ViewChild('personaSelector') personaSelector!: EditEmaPersonaSelectorComponent;
+    @ViewChild('personaSelector')
+    personaSelector!: EditEmaPersonaSelectorComponent;
 
     private readonly router = inject(Router);
     private readonly store = inject(EditEmaStore);
@@ -112,6 +120,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     rows: Row[] = [];
     contentlet!: ContentletArea;
+    // This should be in the store, but experienced an issue that triggers a reload in the whole store when the device is updated
+    currentDevice: DotDevice & { icon?: string };
 
     ngOnInit(): void {
         fromEvent(this.window, 'message')
@@ -193,6 +203,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             this.updateQueryParams({
                                 'com.dotmarketing.persona.id': persona.identifier
                             });
+
+                            this.personaSelector.fetchPersonas();
                         }); // This does a take 1 under the hood
                 },
                 reject: () => {
@@ -202,6 +214,54 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         }
     }
 
+    /**
+     * Handle the persona despersonalization
+     *
+     * @param {(DotPersona & { pageId: string })} persona
+     * @memberof EditEmaEditorComponent
+     */
+    onDespersonalize(persona: DotPersona & { pageId: string; selected: boolean }) {
+        this.confirmationService.confirm({
+            header: this.dotMessageService.get('editpage.personalization.delete.confirm.header'),
+            message: this.dotMessageService.get(
+                'editpage.personalization.delete.confirm.message',
+                persona.name
+            ),
+            acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
+            rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+            accept: () => {
+                this.personalizeService
+                    .despersonalized(persona.pageId, persona.keyTag)
+                    .subscribe(() => {
+                        this.personaSelector.fetchPersonas();
+
+                        if (persona.selected) {
+                            this.updateQueryParams({
+                                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                            });
+                        }
+                    }); // This does a take 1 under the hood
+            }
+        });
+    }
+
+    /**
+     * Update the current device
+     *
+     * @param {DotDevice} [device]
+     * @memberof EditEmaEditorComponent
+     */
+    updateCurrentDevice(device?: DotDevice & { icon?: string }) {
+        this.currentDevice = device;
+        this.rows = []; // We need to reset the rows when we change the device
+        this.contentlet = null; // We need to reset the contentlet when we change the device
+    }
+
+    /**
+     * Handle the copy URL action
+     *
+     * @memberof EditEmaEditorComponent
+     */
     triggerCopyToast() {
         this.messageService.add({
             severity: 'success',
@@ -327,6 +387,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     addWidget(payload: ActionPayload): void {
+        this.store.initActionAdd({
+            containerId: payload.container.identifier,
+            acceptTypes: DotCMSBaseTypesContentTypes.WIDGET,
+            language_id: payload.language_id
+        });
         this.savePayload = payload;
     }
 
@@ -403,6 +468,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         this.resetDialogIframeData();
                         this.reloadIframe();
                         this.savePayload = undefined;
+                        this.cd.detectChanges();
                     }
                 });
             },
