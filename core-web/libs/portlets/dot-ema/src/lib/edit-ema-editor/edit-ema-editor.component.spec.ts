@@ -16,18 +16,23 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import {
     DotContentTypeService,
+    DotCurrentUserService,
+    DotDevicesService,
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
     DotPersonalizeService
 } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import {
     DotLanguagesServiceMock,
     MockDotMessageService,
-    DotPersonalizeServiceMock
+    DotPersonalizeServiceMock,
+    DotDevicesServiceMock,
+    mockDotDevices
 } from '@dotcms/utils-testing';
 
+import { DotCurrentUserServiceMock } from './components/dot-device-selector-seo/dot-device-selector-seo.component.spec';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
@@ -148,8 +153,20 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                 }
             },
             {
+                provide: DotDevicesService,
+                useValue: new DotDevicesServiceMock()
+            },
+            {
+                provide: DotCurrentUserService,
+                useValue: new DotCurrentUserServiceMock()
+            },
+            {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService(messagesMock)
+            },
+            {
+                provide: CoreWebService,
+                useClass: CoreWebServiceMock
             },
             {
                 provide: WINDOW,
@@ -159,8 +176,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                 provide: DotPersonalizeService,
                 useValue: new DotPersonalizeServiceMock()
             },
-            mockProvider(DotContentTypeService),
-            mockProvider(CoreWebService)
+            mockProvider(DotContentTypeService)
         ]
     });
 describe('EditEmaEditorComponent', () => {
@@ -251,6 +267,56 @@ describe('EditEmaEditorComponent', () => {
                 expect(router.navigate).toHaveBeenCalledWith([], {
                     queryParams: { language_id: 2 },
                     queryParamsHandling: 'merge'
+                });
+            });
+        });
+
+        describe('Preview mode', () => {
+            it('should reset the selection on click on the x button', () => {
+                spectator.detectChanges();
+
+                const deviceSelector = spectator.debugElement.query(
+                    By.css('[data-testId="dot-device-selector"]')
+                );
+
+                const iphone = mockDotDevices[0];
+
+                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
+                spectator.detectChanges();
+
+                const deviceDisplay = spectator.debugElement.query(
+                    By.css('[data-testId="device-display"]')
+                );
+
+                spectator.triggerEventHandler(deviceDisplay, 'resetDevice', {});
+
+                const selectedDevice = spectator.query(byTestId('selected-device'));
+
+                expect(selectedDevice).toBeNull();
+            });
+
+            it('should hide the components that are not needed for preview mode', () => {
+                const componentsToHide = [
+                    'palette',
+                    'dropzone',
+                    'contentlet-tools',
+                    'dialog',
+                    'confirm-dialog'
+                ]; // Test id of components that should hide when entering preview modes
+
+                spectator.detectChanges();
+
+                const deviceSelector = spectator.debugElement.query(
+                    By.css('[data-testId="dot-device-selector"]')
+                );
+
+                const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
+
+                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
+                spectator.detectChanges();
+
+                componentsToHide.forEach((testId) => {
+                    expect(spectator.query(byTestId(testId))).toBeNull();
                 });
             });
         });
@@ -461,8 +527,7 @@ describe('EditEmaEditorComponent', () => {
                             identifier: '123',
                             uuid: '123',
                             acceptTypes: 'test',
-                            maxContentlets: 1,
-                            contentletsId: ['123']
+                            maxContentlets: 1
                         },
                         pageContainers: [
                             {
@@ -542,7 +607,6 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            contentletsId: [],
                             maxContentlets: 1
                         },
                         pageId: 'test'
@@ -615,7 +679,6 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            contentletsId: [],
                             maxContentlets: 1
                         },
                         contentlet: {
@@ -731,7 +794,6 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'container-identifier-123',
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
-                            contentletsId: ['contentlet-identifier-123'],
                             maxContentlets: 1
                         },
                         pageId: 'test'
@@ -816,7 +878,6 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'container-identifier-123',
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
-                            contentletsId: ['contentlet-identifier-123'],
                             maxContentlets: 1
                         },
                         pageId: 'test'
@@ -930,7 +991,6 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            contentletsId: [],
                             maxContentlets: 1
                         },
                         pageId: 'test'
@@ -1001,7 +1061,6 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            contentletsId: [],
                             maxContentlets: 1
                         },
                         pageId: 'test'
@@ -1043,7 +1102,6 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            contentletsId: [],
                             maxContentlets: 1
                         },
                         pageId: 'test'

@@ -21,10 +21,13 @@ import { DialogModule } from 'primeng/dialog';
 
 import { takeUntil } from 'rxjs/operators';
 
+import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes, DotPersona } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotDevice, DotPersona } from '@dotcms/dotcms-models';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
+import { DotDeviceSelectorSeoComponent } from './components/dot-device-selector-seo/dot-device-selector-seo.component';
+import { DotEmaDeviceDisplayComponent } from './components/dot-ema-device-display/dot-ema-device-display.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
@@ -39,7 +42,7 @@ import {
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DEFAULT_PERSONA, HOST, WINDOW } from '../shared/consts';
-import { CUSTOMER_ACTIONS, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
+import { NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { ActionPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
 
@@ -86,13 +89,16 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
         EmaPageDropzoneComponent,
         EditEmaPaletteComponent,
         EmaContentletToolsComponent,
-        EmaFormSelectorComponent
+        EmaFormSelectorComponent,
+        DotDeviceSelectorSeoComponent,
+        DotEmaDeviceDisplayComponent
     ]
 })
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
-    @ViewChild('personaSelector') personaSelector!: EditEmaPersonaSelectorComponent;
+    @ViewChild('personaSelector')
+    personaSelector!: EditEmaPersonaSelectorComponent;
 
     private readonly router = inject(Router);
     private readonly store = inject(EditEmaStore);
@@ -114,6 +120,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     rows: Row[] = [];
     contentlet!: ContentletArea;
+    // This should be in the store, but experienced an issue that triggers a reload in the whole store when the device is updated
+    currentDevice: DotDevice & { icon?: string };
 
     ngOnInit(): void {
         fromEvent(this.window, 'message')
@@ -237,6 +245,23 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         });
     }
 
+    /**
+     * Update the current device
+     *
+     * @param {DotDevice} [device]
+     * @memberof EditEmaEditorComponent
+     */
+    updateCurrentDevice(device?: DotDevice & { icon?: string }) {
+        this.currentDevice = device;
+        this.rows = []; // We need to reset the rows when we change the device
+        this.contentlet = null; // We need to reset the contentlet when we change the device
+    }
+
+    /**
+     * Handle the copy URL action
+     *
+     * @memberof EditEmaEditorComponent
+     */
     triggerCopyToast() {
         this.messageService.add({
             severity: 'success',

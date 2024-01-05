@@ -7,6 +7,10 @@
     height: 100%;
 }
 
+dot-device-selector-seo {
+    display: none;
+}
+
 dot-ema-page-dropzone {
     position: absolute;
     inset: 0;
@@ -16,11 +20,34 @@ dot-edit-ema-toolbar {
     grid-column: 1 / -1;
 }
 
+.editor-content {
+    padding: $spacing-4 $spacing-3;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: $spacing-1;
+    overflow: auto;
+}
+.editor-content--device {
+    grid-column: 1 / -1;
+}
+
 .iframe-wrapper {
     position: relative;
     overflow: hidden;
-    margin: $spacing-3;
-    outline: solid 1px $color-palette-gray-500;
+    flex-grow: 1;
+    margin: 0 auto;
+
+    iframe {
+        outline: solid 1px $color-palette-gray-300;
+    }
+}
+
+.iframe-wrapper--device {
+    box-shadow: $md-shadow-6;
+    background: linear-gradient(135deg, $white 0%, rgba(240, 240, 240, 1) 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);
 }
 
 a,

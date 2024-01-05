@@ -50,7 +50,10 @@ describe('DotEmaShellComponent', () => {
             ConfirmationService,
             DotActionUrlService,
             DotMessageService,
-            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
+            {
+                provide: DotLanguagesService,
+                useValue: new DotLanguagesServiceMock()
+            },
             {
                 provide: DotPageApiService,
                 useValue: {

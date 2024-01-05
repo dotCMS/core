@@ -18,15 +18,15 @@ import { CardModule } from 'primeng/card';
 import { map } from 'rxjs/operators';
 
 import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
-import { DotMessagePipe } from '@dotcms/ui';
-
 import {
-    MetaTagsPreview,
     SeoMetaTags,
     SeoMetaTagsResult,
     SEO_MEDIA_TYPES,
+    MetaTagsPreview,
     SEO_LIMITS
-} from '../../../content/services/dot-edit-content-html/models/meta-tags-model';
+} from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+
 import { DotSeoMetaTagsUtilService } from '../../../content/services/html/dot-seo-meta-tags-util.service';
 import { DotSeoMetaTagsService } from '../../../content/services/html/dot-seo-meta-tags.service';
 import { DotSelectSeoToolComponent } from '../dot-select-seo-tool/dot-select-seo-tool.component';
@@ -73,11 +73,11 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     ngOnInit() {
         const title =
             this.seoOGTags['og:title']?.slice(0, SEO_LIMITS.MAX_OG_TITLE_LENGTH) ||
-            this.seoOGTags.title?.slice(0, SEO_LIMITS.MAX_TITLE_LENGTH);
+            this.seoOGTags.title?.slice(0, SEO_LIMITS.MAX_OG_TITLE_LENGTH);
 
         const description =
             this.seoOGTags['og:description']?.slice(0, SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) ||
-            this.seoOGTags.description?.slice(0, SEO_LIMITS.MAX_DESCRIPTION_LENGTH);
+            this.seoOGTags.description?.slice(0, SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH);
 
         const twitterDescriptionProperties = [
             'twitter:description',

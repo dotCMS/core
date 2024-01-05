@@ -24,13 +24,7 @@ import {
     DotPageContainer,
     DotPageContainerPersonalized,
     DotPageRenderState,
-    DotPersona
-} from '@dotcms/dotcms-models';
-import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
-
-import { PageModelChangeEvent, PageModelChangeEventType } from './models';
-import {
+    DotPersona,
     DotAddContentTypePayload,
     DotAssetPayload,
     DotContentletEvent,
@@ -40,10 +34,15 @@ import {
     DotContentletEventSave,
     DotContentletEventSelect,
     DotInlineEditContent,
+    DotPageContent,
+    DotRelocatePayload,
     DotShowCopyModal,
-    DotRelocatePayload
-} from './models/dot-contentlets-events.model';
-import { SeoMetaTags, SeoMetaTagsResult } from './models/meta-tags-model';
+    PageModelChangeEvent,
+    PageModelChangeEventType,
+    SeoMetaTags,
+    SeoMetaTagsResult
+} from '@dotcms/dotcms-models';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
 import { DotCopyContentModalService } from '../dot-copy-content-modal/dot-copy-content-modal.service';
