@@ -15,8 +15,6 @@ import { pluck, switchMap, map, catchError } from 'rxjs/operators';
 import { Site } from '@dotcms/dotcms-js';
 import { DotApps, DotAppsSite } from '@dotcms/dotcms-models';
 
-import { DotAppsService } from '../../dot-apps/dot-apps.service';
-
 function doesPathMatchPattern(regexPattern: string, pathname: string) {
     return new RegExp(regexPattern).test(pathname);
 }
@@ -27,7 +25,6 @@ function doesPathMatchPattern(regexPattern: string, pathname: string) {
 export class EmaAppGuard implements CanActivate {
     http = inject(HttpClient);
     router = inject(Router);
-    appService = inject(DotAppsService);
 
     canActivate(
         route: ActivatedRouteSnapshot,
@@ -53,7 +50,7 @@ export class EmaAppGuard implements CanActivate {
         route: ActivatedRouteSnapshot,
         currentSiteId: string
     ): Observable<boolean> {
-        return this.appService.getConfiguration('dotema-config-v2', currentSiteId).pipe(
+        return this.getAppConfigration('dotema-config-v2', currentSiteId).pipe(
             map((appConfiguration) =>
                 this.getConfigurationForCurrentSite(appConfiguration, currentSiteId)
             ),
@@ -93,6 +90,12 @@ export class EmaAppGuard implements CanActivate {
 
             return of(true);
         }
+    }
+
+    private getAppConfigration(appKey: string, id: string): Observable<DotApps> {
+        return this.http
+            .get<{ entity: DotApps }>(`/api/v1/apps/${appKey}/${id}`)
+            .pipe(pluck('entity'));
     }
 }
 
