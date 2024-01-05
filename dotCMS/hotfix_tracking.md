@@ -27,3 +27,4 @@ This maintenance release includes the following code fixes:
 21. https://github.com/dotCMS/core/issues/26683 : Unable to add content on second Language to Page Variant #26683
 22. https://github.com/dotCMS/core/issues/23623 : [BE] Change Split Traffic #23623
 23. https://github.com/dotCMS/core/issues/26273 : Experiments not Considering Redirection from Vanity URLs #26273
+24. https://github.com/dotCMS/core/issues/26452 : Unable to add forms to experiment variants on dotCMS #26452
