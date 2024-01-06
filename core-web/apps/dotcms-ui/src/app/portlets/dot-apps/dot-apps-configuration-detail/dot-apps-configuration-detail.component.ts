@@ -8,7 +8,7 @@ import { pluck, take } from 'rxjs/operators';
 import { DotKeyValueUtil } from '@components/dot-key-value-ng/util/dot-key-value-util';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotRouterService } from '@dotcms/data-access';
-import { DotApps, DotAppsSaveData, DotAppsSecrets } from '@dotcms/dotcms-models';
+import { DotApps, DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
 @Component({
@@ -21,7 +21,7 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
 
     dynamicVariables: DotKeyValue[];
     formData: { [key: string]: string };
-    formFields: DotAppsSecrets[];
+    formFields: DotAppsSecret[];
     formValid = false;
 
     constructor(
@@ -117,14 +117,14 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
     }
 
     private getSecrets(
-        secrets: DotAppsSecrets[],
+        secrets: DotAppsSecret[],
         includeDinamicFields: boolean = false
-    ): DotAppsSecrets[] {
-        return secrets.filter((secret: DotAppsSecrets) => secret.dynamic === includeDinamicFields);
+    ): DotAppsSecret[] {
+        return secrets.filter((secret: DotAppsSecret) => secret.dynamic === includeDinamicFields);
     }
 
-    private transformSecretsToKeyValue(secrets: DotAppsSecrets[]): DotKeyValue[] {
-        return secrets.map(({ name, hidden, value }: DotAppsSecrets) => {
+    private transformSecretsToKeyValue(secrets: DotAppsSecret[]): DotKeyValue[] {
+        return secrets.map(({ name, hidden, value }: DotAppsSecret) => {
             return { key: name, hidden: hidden, value: value };
         });
     }
