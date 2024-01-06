@@ -1,15 +1,39 @@
 import { inject } from '@angular/core';
-import { CanActivateFn } from '@angular/router';
+import { ActivatedRouteSnapshot, CanActivateFn, Router } from '@angular/router';
+
+import { map } from 'rxjs/operators';
 
 import { EmaAppConfigurationService } from '@dotcms/data-access';
 
 export const emaAppFnGuard: CanActivateFn = (route, _state) => {
-    const service = inject(EmaAppConfigurationService);
+    const router = inject(Router);
 
-    service.get(route.queryParams.url).subscribe((res) => {
-        // eslint-disable-next-line no-console
-        console.log('guard', res);
-    });
+    const emaAppConfigurationService = inject(EmaAppConfigurationService);
 
-    return true;
+    return emaAppConfigurationService.get(route.queryParams.url).pipe(
+        map((value) => {
+            if (value) {
+                router.navigate(['edit-ema'], {
+                    queryParams: getUpdatedQueryParams(route),
+                    replaceUrl: true
+                });
+
+                return false;
+            }
+
+            return true;
+        })
+    );
 };
+
+function getUpdatedQueryParams(route: ActivatedRouteSnapshot) {
+    const newQueryParams = {
+        ...route.queryParams,
+        url: route.queryParams.url.substring(1),
+        'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+    };
+
+    delete newQueryParams['device_inode'];
+
+    return newQueryParams;
+}
