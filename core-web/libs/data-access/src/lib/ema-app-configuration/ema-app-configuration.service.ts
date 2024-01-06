@@ -1,23 +1,23 @@
-import { Observable } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { pluck, switchMap, map, defaultIfEmpty, takeWhile } from 'rxjs/operators';
+import { pluck, switchMap, map, defaultIfEmpty, takeWhile, catchError } from 'rxjs/operators';
 
 import { Site } from '@dotcms/dotcms-js';
 import { DotAppsSite, DotApps } from '@dotcms/dotcms-models';
 
 import { DotLicenseService } from '../dot-license/dot-license.service';
 
-interface SecretValue {
+interface EmaAppSecretValue {
     pattern: string;
     url: string;
-    options: Options;
+    options: EmaAppOptions;
 }
 
-interface Options {
+interface EmaAppOptions {
     authenticationToken: string;
     depth: number;
     'X-CONTENT-APP': string;
@@ -29,22 +29,26 @@ export class EmaAppConfigurationService {
     router = inject(Router);
     licenseService = inject(DotLicenseService);
 
-    get(url: string): Observable<SecretValue | null> {
-        return this.licenseService.isEnterprise().pipe(
-            takeWhile((isEnterprise: boolean) => isEnterprise), // stop if license is not enterprise
-            switchMap(() => this.getCurrentSiteIdentifier()),
-            switchMap((currentSiteId: string) =>
-                this.getEmaAppConfiguration(currentSiteId).pipe(
-                    map((appConfiguration) => ({ currentSiteId, appConfiguration }))
-                )
-            ),
-            map(({ currentSiteId, appConfiguration }) =>
-                this.getConfigurationForCurrentSite(appConfiguration, currentSiteId)
-            ),
-            takeWhile((site: DotAppsSite | null) => !!site), // stop if site is undefined or null
-            map(getSecretByUrlMatch(url)),
-            defaultIfEmpty<SecretValue | null>(null)
-        );
+    get(url: string): Observable<EmaAppSecretValue | null> {
+        return this.licenseService
+            .isEnterprise()
+            .pipe(catchError(() => EMPTY))
+            .pipe(
+                takeWhile((isEnterprise: boolean) => isEnterprise), // stop if license is not enterprise
+                switchMap(() => this.getCurrentSiteIdentifier().pipe(catchError(() => EMPTY))),
+                switchMap((currentSiteId: string) =>
+                    this.getEmaAppConfiguration(currentSiteId).pipe(
+                        map((appConfiguration) => ({ currentSiteId, appConfiguration })),
+                        catchError(() => EMPTY)
+                    )
+                ),
+                map(({ currentSiteId, appConfiguration }) =>
+                    this.getConfigurationForCurrentSite(appConfiguration, currentSiteId)
+                ),
+                takeWhile((site: DotAppsSite | null) => !!site), // stop if site is undefined or null
+                map(getSecretByUrlMatch(url)),
+                defaultIfEmpty<EmaAppSecretValue | null>(null)
+            );
     }
 
     private getCurrentSiteIdentifier(): Observable<string> {
@@ -69,7 +73,7 @@ export class EmaAppConfigurationService {
     }
 }
 
-function getSecretByUrlMatch(url: string): (value: DotAppsSite | null) => SecretValue | null {
+function getSecretByUrlMatch(url: string): (value: DotAppsSite | null) => EmaAppSecretValue | null {
     return (site: DotAppsSite | null) => {
         if (!site) {
             return null; // Explicitly handle the null case
@@ -79,7 +83,7 @@ function getSecretByUrlMatch(url: string): (value: DotAppsSite | null) => Secret
 
         for (const secret of secrets) {
             try {
-                const parsedSecrets: SecretValue[] = JSON.parse(secret.value);
+                const parsedSecrets: EmaAppSecretValue[] = JSON.parse(secret.value);
 
                 for (const parsedSecret of parsedSecrets) {
                     if (new RegExp(parsedSecret.pattern).test(url)) {
