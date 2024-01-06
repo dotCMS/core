@@ -18,7 +18,7 @@ import {
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
-import { SafeUrlPipe } from '@dotcms/ui';
+import { DotInfoPageComponent, InfoPage, SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaAccessDeniedComponent } from './components/edit-ema-access-denied/edit-ema-access-denied.component';
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
@@ -58,7 +58,8 @@ import { NavigationBarItem } from '../shared/models';
         DotPageToolsSeoComponent,
         DialogModule,
         SafeUrlPipe,
-        EditEmaAccessDeniedComponent
+        EditEmaAccessDeniedComponent,
+        DotInfoPageComponent
     ]
 })
 export class DotEmaShellComponent implements OnInit, OnDestroy {
@@ -70,6 +71,23 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly store = inject(EditEmaStore);
 
     private readonly destroy$ = new Subject<boolean>();
+
+    EMA_INFO_PAGES: Record<'NOT_FOUND' | 'ACCESS_DENIED', InfoPage> = {
+        NOT_FOUND: {
+            icon: 'compass',
+            title: 'Page Not Found',
+            description: "The page you're looking for doesn't exist or has been moved.",
+            buttonPath: '/pages',
+            buttonText: 'Go To Pages'
+        },
+        ACCESS_DENIED: {
+            icon: 'ban',
+            title: 'Permission denied',
+            description: 'You do not have the necessary permissions to view this page.',
+            buttonPath: '/pages',
+            buttonText: 'Go To pages'
+        }
+    };
 
     get queryParams(): DotPageApiParams {
         const queryParams = this.route.snapshot.queryParams;

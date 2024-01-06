@@ -17,6 +17,7 @@ import { editContentGuard } from './api/services/guards/edit-content.guard';
 import { MenuGuardService } from './api/services/guards/menu-guard.service';
 import { PagesGuardService } from './api/services/guards/pages-guard.service';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
+import { DotNotLicenseComponent } from '@dotcms/ui';
 
 const PORTLETS_ANGULAR = [
     {
@@ -84,8 +85,12 @@ const PORTLETS_ANGULAR = [
     },
     {
         path: 'notLicensed',
-        loadChildren: () =>
-            import('@components/not-licensed/not-licensed.module').then((m) => m.NotLicensedModule)
+        component: DotNotLicenseComponent
+        // Before this lazy load the component from dotcms-ui, now this component is in ui.
+        // But lazy load this generates a nx error, bcs we cannot lazy load a libs
+        // For now we are importing the component directly
+        // For discuss...
+        // loadChildren: () => import('@dotcms/ui').then((m) => m.DotNotLicenseComponent)
     },
     {
         path: 'edit-page',
