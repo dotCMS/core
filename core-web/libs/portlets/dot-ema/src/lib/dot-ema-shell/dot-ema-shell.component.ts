@@ -1,8 +1,8 @@
-import { Observable, Subject, fromEvent } from 'rxjs';
+import { Observable, Subject, combineLatest, fromEvent } from 'rxjs';
 
-import { CommonModule, Location } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, OnDestroy, ViewChild, ElementRef } from '@angular/core';
-import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -62,16 +62,15 @@ import { NavigationBarItem } from '../shared/models';
 export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
-    private readonly route = inject(ActivatedRoute);
+    private readonly activatedRoute = inject(ActivatedRoute);
     private readonly router = inject(Router);
     private readonly siteService = inject(SiteService);
-    private readonly location = inject(Location);
     readonly store = inject(EditEmaStore);
 
     private readonly destroy$ = new Subject<boolean>();
 
     get queryParams(): DotPageApiParams {
-        const queryParams = this.route.snapshot.queryParams;
+        const queryParams = this.activatedRoute.snapshot.queryParams;
 
         return {
             language_id: queryParams['language_id'],
@@ -139,35 +138,38 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     );
 
     ngOnInit(): void {
-        this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((queryParams: Params) => {
-            // eslint-disable-next-line no-console
-            console.log({ queryParams, state: this.location.getState() });
+        combineLatest([this.activatedRoute.data, this.activatedRoute.queryParams])
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(([{ data }, queryParams]) => {
+                // eslint-disable-next-line no-console
+                console.log({ queryParams, data });
 
-            const { missing, ...missingQueryParams } = DEFAULT_QUERY_PARAMS.reduce(
-                (acc, curr) => {
-                    if (!queryParams[curr.key]) {
-                        acc[curr.key] = curr.value;
-                        acc.missing = true;
+                const { missing, ...missingQueryParams } = DEFAULT_QUERY_PARAMS.reduce(
+                    (acc, curr) => {
+                        if (!queryParams[curr.key]) {
+                            acc[curr.key] = curr.value;
+                            acc.missing = true;
+                        }
+
+                        return acc;
+                    },
+                    {
+                        missing: false
                     }
+                );
 
-                    return acc;
-                },
-                {
-                    missing: false
+                if (missing) {
+                    this.navigate({
+                        ...queryParams,
+                        ...missingQueryParams
+                    });
+                } else {
+                    this.store.load({
+                        ...this.queryParams,
+                        clientHost: data.url
+                    });
                 }
-            );
-
-            if (missing) {
-                this.navigate({
-                    ...queryParams,
-                    ...missingQueryParams
-                });
-            } else {
-                this.store.load({
-                    ...this.queryParams
-                });
-            }
-        });
+            });
 
         // We need to skip one because it's the initial value
         this.siteService.switchSite$.pipe(skip(1)).subscribe(() => {
@@ -191,16 +193,15 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: CustomEvent) => {
                 if (event.detail.name === 'save-page') {
-                    const url = event.detail.payload.htmlPageReferer.split('?')[0].replace('/', '');
-
-                    this.queryParams.url !== url
-                        ? // If the url is different we need to navigate
-                          this.navigate({
-                              url
-                          })
-                        : this.store.load({
-                              ...this.queryParams
-                          }); // If the url is the same we need to fetch the page
+                    // const url = event.detail.payload.htmlPageReferer.split('?')[0].replace('/', '');
+                    // this.queryParams.url !== url
+                    //     ? // If the url is different we need to navigate
+                    //       this.navigate({
+                    //           url
+                    //       })
+                    //     : this.store.load({
+                    //           ...this.queryParams
+                    //       }); // If the url is the same we need to fetch the page
                 }
             });
     }

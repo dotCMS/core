@@ -14,12 +14,7 @@ import {
     DotPageApiParams,
     DotPageApiResponse
 } from '../../services/dot-page-api/dot-page-api.service';
-import {
-    DEFAULT_PERSONA,
-    HOST,
-    EDIT_CONTENTLET_URL,
-    ADD_CONTENTLET_URL
-} from '../../shared/consts';
+import { DEFAULT_PERSONA, EDIT_CONTENTLET_URL, ADD_CONTENTLET_URL } from '../../shared/consts';
 import { ActionPayload, SavePagePayload } from '../../shared/models';
 import { insertContentletInContainer } from '../../utils';
 
@@ -28,6 +23,7 @@ type DialogType = 'content' | 'form' | 'widget' | 'shell' | null;
 export interface EditEmaState {
     editor: DotPageApiResponse;
     url: string;
+    clientHost: string;
     dialogIframeURL: string;
     dialogHeader: string;
     dialogIframeLoading: boolean;
@@ -75,8 +71,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         });
 
         return {
+            clientHost: state.clientHost,
             apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
-            iframeURL: `${HOST}/${pageURL}` + `&t=${Date.now()}`, // The iframe will only reload if the queryParams changes, so we add a timestamp to force a reload when no queryParams change
+            iframeURL: `${state.clientHost}/${pageURL}` + `&t=${Date.now()}`, // The iframe will only reload if the queryParams changes, so we add a timestamp to force a reload when no queryParams change
             editor: {
                 ...state.editor,
                 viewAs: {
@@ -107,7 +104,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         siteId: state.editor.site.identifier,
         languageId: state.editor.viewAs.language.id,
         currentUrl: '/' + state.url,
-        host: HOST
+        host: state.clientHost
     }));
 
     /**
@@ -115,35 +112,40 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      *
      * @memberof EditEmaStore
      */
-    readonly load = this.effect((params$: Observable<DotPageApiParams>) => {
-        return params$.pipe(
-            switchMap((params) =>
-                forkJoin({
-                    pageData: this.dotPageApiService.get(params),
-                    licenseData: this.dotLicenseService.isEnterprise().pipe(take(1), shareReplay())
-                }).pipe(
-                    tap({
-                        next: ({ pageData, licenseData }) => {
-                            this.setState({
-                                editor: pageData,
-                                url: params.url,
-                                dialogIframeURL: '',
-                                dialogHeader: '',
-                                dialogIframeLoading: false,
-                                isEnterpriseLicense: licenseData,
-                                dialogType: null
-                            });
-                        },
-                        error: (e) => {
-                            // eslint-disable-next-line no-console
-                            console.log(e);
-                        }
-                    }),
-                    catchError(() => EMPTY)
-                )
-            )
-        );
-    });
+    readonly load = this.effect(
+        (params$: Observable<DotPageApiParams & { clientHost: string }>) => {
+            return params$.pipe(
+                switchMap((params) => {
+                    return forkJoin({
+                        pageData: this.dotPageApiService.get(params),
+                        licenseData: this.dotLicenseService
+                            .isEnterprise()
+                            .pipe(take(1), shareReplay())
+                    }).pipe(
+                        tap({
+                            next: ({ pageData, licenseData }) => {
+                                this.setState({
+                                    clientHost: params.clientHost,
+                                    editor: pageData,
+                                    url: params.url,
+                                    dialogIframeURL: '',
+                                    dialogHeader: '',
+                                    dialogIframeLoading: false,
+                                    isEnterpriseLicense: licenseData,
+                                    dialogType: null
+                                });
+                            },
+                            error: (e) => {
+                                // eslint-disable-next-line no-console
+                                console.log(e);
+                            }
+                        }),
+                        catchError(() => EMPTY)
+                    );
+                })
+            );
+        }
+    );
 
     /**
      * Save the page
