@@ -10,7 +10,7 @@ import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { map, skip, takeUntil } from 'rxjs/operators';
+import { map, skip, take, takeUntil } from 'rxjs/operators';
 
 import {
     DotESContentService,
@@ -201,15 +201,21 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: CustomEvent) => {
                 if (event.detail.name === 'save-page') {
-                    // const url = event.detail.payload.htmlPageReferer.split('?')[0].replace('/', '');
-                    // this.queryParams.url !== url
-                    //     ? // If the url is different we need to navigate
-                    //       this.navigate({
-                    //           url
-                    //       })
-                    //     : this.store.load({
-                    //           ...this.queryParams
-                    //       }); // If the url is the same we need to fetch the page
+                    const url = event.detail.payload.htmlPageReferer.split('?')[0].replace('/', '');
+                    if (this.queryParams.url !== url) {
+                        this.navigate({
+                            url
+                        });
+
+                        return;
+                    }
+
+                    this.activatedRoute.data.pipe(take(1)).subscribe(({ data }) => {
+                        this.store.load({
+                            clientHost: data.url,
+                            ...this.queryParams
+                        });
+                    });
                 }
             });
     }
