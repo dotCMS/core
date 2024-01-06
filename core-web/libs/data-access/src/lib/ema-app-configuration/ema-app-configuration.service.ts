@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 
 import { pluck, switchMap, map, defaultIfEmpty, catchError } from 'rxjs/operators';
 
-import { Site } from '@dotcms/dotcms-js';
+import { SiteService } from '@dotcms/dotcms-js';
 import { DotAppsSite, DotApp } from '@dotcms/dotcms-models';
 
 import { DotLicenseService } from '../dot-license/dot-license.service';
@@ -28,6 +28,7 @@ export class EmaAppConfigurationService {
     http = inject(HttpClient);
     router = inject(Router);
     licenseService = inject(DotLicenseService);
+    siteService = inject(SiteService);
 
     /**
      * Get the EMA app configuration for the current site.
@@ -54,9 +55,7 @@ export class EmaAppConfigurationService {
     }
 
     private getCurrentSiteIdentifier(): Observable<string> {
-        return this.http
-            .get<{ entity: Site }>('/api/v1/site/currentSite')
-            .pipe(pluck('entity', 'identifier'));
+        return this.siteService.getCurrentSite().pipe(pluck('identifier'));
     }
 
     private getEmaAppConfiguration(id: string): Observable<DotApp> {
