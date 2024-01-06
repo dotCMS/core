@@ -8,6 +8,7 @@ import { DotLogOutContainerComponent } from '@components/login/dot-logout-contai
 import { DotLoginPageComponent } from '@components/login/main/dot-login-page.component';
 import { MainCoreLegacyComponent } from '@components/main-core-legacy/main-core-legacy-component';
 import { MainComponentLegacyComponent } from '@components/main-legacy/main-legacy.component';
+import { DotNotLicenseComponent } from '@dotcms/ui';
 import { DotCustomReuseStrategyService } from '@shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
 
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
@@ -17,7 +18,6 @@ import { editContentGuard } from './api/services/guards/edit-content.guard';
 import { MenuGuardService } from './api/services/guards/menu-guard.service';
 import { PagesGuardService } from './api/services/guards/pages-guard.service';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
-import { DotNotLicenseComponent } from '@dotcms/ui';
 
 const PORTLETS_ANGULAR = [
     {
@@ -88,8 +88,8 @@ const PORTLETS_ANGULAR = [
         component: DotNotLicenseComponent
         // Before this lazy load the component from dotcms-ui, now this component is in ui.
         // But lazy load this generates a nx error, bcs we cannot lazy load a libs
-        // For now we are importing the component directly
-        // For discuss...
+        // For now we are importing the component directly only to resolve it and load the commit-
+        // Pending discuss
         // loadChildren: () => import('@dotcms/ui').then((m) => m.DotNotLicenseComponent)
     },
     {
