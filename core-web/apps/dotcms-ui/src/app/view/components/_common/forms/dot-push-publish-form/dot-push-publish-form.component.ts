@@ -16,9 +16,9 @@ import { SelectItem } from 'primeng/api';
 
 import { catchError, filter, map, take, takeUntil } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import {
+    DotHttpErrorManagerService,
     DotMessageService,
     DotPushPublishFilter,
     DotPushPublishFiltersService
