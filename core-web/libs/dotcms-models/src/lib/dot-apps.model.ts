@@ -20,11 +20,11 @@ export interface DotAppsSite {
     configured?: boolean;
     id: string;
     name: string;
-    secrets?: DotAppsSecrets[];
+    secrets?: DotAppsSecret[];
     secretsWithWarnings?: number;
 }
 
-export interface DotAppsSecrets {
+export interface DotAppsSecret {
     dynamic: boolean;
     hidden: boolean;
     hint: string;
