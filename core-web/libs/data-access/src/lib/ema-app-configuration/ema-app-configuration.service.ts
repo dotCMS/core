@@ -44,7 +44,7 @@ export class EmaAppConfigurationService {
                 switchMap(() => this.getCurrentSiteIdentifier()),
                 switchMap((currentSiteId: string) =>
                     this.getEmaAppConfiguration(currentSiteId).pipe(
-                        map(getTheAppSite(currentSiteId))
+                        map(getConfigurationForCurrentSite(currentSiteId))
                     )
                 ),
                 map(getSecretByUrlMatch(url)),
@@ -66,9 +66,10 @@ export class EmaAppConfigurationService {
     }
 }
 
-function getTheAppSite(currentSiteId: string): (app: DotApp) => DotAppsSite {
+function getConfigurationForCurrentSite(currentSiteId: string): (app: DotApp) => DotAppsSite {
     return (app) => {
-        const site = getConfigurationForCurrentSite(app, currentSiteId);
+        const site =
+            app?.sites?.find((site) => site.id === currentSiteId && site.configured) || null;
 
         if (!site) {
             throw new Error('No site configuration found');
@@ -76,13 +77,6 @@ function getTheAppSite(currentSiteId: string): (app: DotApp) => DotAppsSite {
 
         return site;
     };
-}
-
-function getConfigurationForCurrentSite(
-    appConfiguration: DotApp,
-    siteId: string
-): DotAppsSite | null {
-    return appConfiguration?.sites?.find((site) => site.id === siteId && site.configured) || null;
 }
 
 function getSecretByUrlMatch(url: string): (value: DotAppsSite | null) => EmaAppSecretValue | null {
@@ -103,9 +97,9 @@ function getSecretByUrlMatch(url: string): (value: DotAppsSite | null) => EmaApp
                     }
                 }
             } catch (error) {
-                console.error('Error parsing JSON:', error);
+                console.error(error);
 
-                return null;
+                throw new Error('Error parsing JSON');
             }
         }
 
