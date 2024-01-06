@@ -62,6 +62,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         super();
     }
 
+    /******************
+     * Selectors
+     *******************/
     readonly editorState$ = this.select((state) => {
         const pageURL = this.createPageURL({
             url: state.url,
@@ -114,10 +117,15 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         host: state.clientHost
     }));
 
+    /******************
+     * Effects
+     *******************/
+
     /**
-     * Load the page editor
+     * Concurrently loads page and license data to updat the state.
      *
-     * @memberof EditEmaStore
+     * @param {Observable<DotPageApiParams & { clientHost: string }>} params$ - Parameters for HTTP requests.
+     * @returns {Observable<any>} Response of the HTTP requests.
      */
     readonly load = this.effect(
         (params$: Observable<DotPageApiParams & { clientHost: string }>) => {
@@ -155,9 +163,10 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     );
 
     /**
-     * Save the page
+     * Saves data to a page.
+     * Calls `whenSaved` callback on success or error.
      *
-     * @memberof EditEmaStore
+     * @param {Observable<SavePagePayload>} payload$ - Page data to save.
      */
     readonly savePage = this.effect((payload$: Observable<SavePagePayload>) => {
         return payload$.pipe(
@@ -177,6 +186,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         );
     });
 
+    /**
+     * Saves data to a page but gets the new form identifier first.
+     * Calls `whenSaved` callback on success or error.
+     *
+     * @param {Observable<SavePagePayload>} payload$ - Page data to save.
+     */
     readonly saveFormToPage = this.effect(
         (
             payload$: Observable<{
@@ -238,6 +253,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
+    /******************
+     * Updaters
+     *******************/
     readonly setDialogForCreateContent = this.updater(
         (state, { url, name }: { url: string; name: string }) => {
             return {
