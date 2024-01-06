@@ -25,7 +25,7 @@ import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.servi
 import { DotMessageService } from '@dotcms/data-access';
 import {
     dialogAction,
-    DotApps,
+    DotApp,
     DotAppsExportConfiguration,
     DotAppsImportConfiguration,
     DotAppsSite
@@ -39,7 +39,7 @@ import {
 export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy {
     @ViewChild('importFile') importFile: ElementRef;
     @Input() action?: string;
-    @Input() app?: DotApps;
+    @Input() app?: DotApp;
     @Input() site?: DotAppsSite;
     @Input() show? = false;
     @Output() resolved: EventEmitter<boolean> = new EventEmitter();

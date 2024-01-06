@@ -5,7 +5,7 @@ export enum dialogAction {
     EXPORT = 'Export'
 }
 
-export interface DotApps {
+export interface DotApp {
     allowExtraParams: boolean;
     configurationsCount?: number;
     description?: string;
@@ -45,7 +45,7 @@ export interface DotAppsSaveData {
 }
 
 export interface DotAppsListResolverData {
-    apps: DotApps[];
+    apps: DotApp[];
     isEnterpriseLicense: boolean;
 }
 

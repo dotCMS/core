@@ -8,7 +8,7 @@ import { pluck, take } from 'rxjs/operators';
 import { DotKeyValueUtil } from '@components/dot-key-value-ng/util/dot-key-value-util';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotRouterService } from '@dotcms/data-access';
-import { DotApps, DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
+import { DotApp, DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
 @Component({
@@ -17,7 +17,7 @@ import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.mo
     styleUrls: ['./dot-apps-configuration-detail.component.scss']
 })
 export class DotAppsConfigurationDetailComponent implements OnInit {
-    apps: DotApps;
+    apps: DotApp;
 
     dynamicVariables: DotKeyValue[];
     formData: { [key: string]: string };
@@ -31,7 +31,7 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-        this.route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApps) => {
+        this.route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApp) => {
             this.apps = app;
             this.formFields = this.getSecrets(app.sites[0].secrets);
             this.dynamicVariables = this.transformSecretsToKeyValue(

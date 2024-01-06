@@ -4,10 +4,10 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { pluck, switchMap, map, defaultIfEmpty, takeWhile, catchError } from 'rxjs/operators';
+import { pluck, switchMap, map, defaultIfEmpty, catchError } from 'rxjs/operators';
 
 import { Site } from '@dotcms/dotcms-js';
-import { DotAppsSite, DotApps } from '@dotcms/dotcms-models';
+import { DotAppsSite, DotApp } from '@dotcms/dotcms-models';
 
 import { DotLicenseService } from '../dot-license/dot-license.service';
 
@@ -29,24 +29,26 @@ export class EmaAppConfigurationService {
     router = inject(Router);
     licenseService = inject(DotLicenseService);
 
+    /**
+     * Get the EMA app configuration for the current site.
+     *
+     * @param {string} url
+     * @return {*}  {(Observable<EmaAppSecretValue | null>)}
+     * @memberof EmaAppConfigurationService
+     */
     get(url: string): Observable<EmaAppSecretValue | null> {
         return this.licenseService
             .isEnterprise()
             .pipe(catchError(() => EMPTY))
             .pipe(
-                takeWhile((isEnterprise: boolean) => isEnterprise), // stop if license is not enterprise
-                switchMap(() => this.getCurrentSiteIdentifier().pipe(catchError(() => EMPTY))),
+                switchMap(() => this.getCurrentSiteIdentifier()),
                 switchMap((currentSiteId: string) =>
                     this.getEmaAppConfiguration(currentSiteId).pipe(
-                        map((appConfiguration) => ({ currentSiteId, appConfiguration })),
-                        catchError(() => EMPTY)
+                        map(getTheAppSite(currentSiteId))
                     )
                 ),
-                map(({ currentSiteId, appConfiguration }) =>
-                    this.getConfigurationForCurrentSite(appConfiguration, currentSiteId)
-                ),
-                takeWhile((site: DotAppsSite | null) => !!site), // stop if site is undefined or null
                 map(getSecretByUrlMatch(url)),
+                catchError(() => EMPTY),
                 defaultIfEmpty<EmaAppSecretValue | null>(null)
             );
     }
@@ -57,29 +59,39 @@ export class EmaAppConfigurationService {
             .pipe(pluck('entity', 'identifier'));
     }
 
-    private getEmaAppConfiguration(id: string): Observable<DotApps> {
+    private getEmaAppConfiguration(id: string): Observable<DotApp> {
         return this.http
-            .get<{ entity: DotApps }>(`/api/v1/apps/dotema-config-v2/${id}`)
+            .get<{ entity: DotApp }>(`/api/v1/apps/dotema-config-v2/${id}`)
             .pipe(pluck('entity'));
     }
+}
 
-    private getConfigurationForCurrentSite(
-        appConfiguration: DotApps,
-        siteId: string
-    ): DotAppsSite | null {
-        return (
-            appConfiguration?.sites?.find((site) => site.id === siteId && site.configured) || null
-        );
-    }
+function getTheAppSite(currentSiteId: string): (app: DotApp) => DotAppsSite {
+    return (app) => {
+        const site = getConfigurationForCurrentSite(app, currentSiteId);
+
+        if (!site) {
+            throw new Error('No site configuration found');
+        }
+
+        return site;
+    };
+}
+
+function getConfigurationForCurrentSite(
+    appConfiguration: DotApp,
+    siteId: string
+): DotAppsSite | null {
+    return appConfiguration?.sites?.find((site) => site.id === siteId && site.configured) || null;
 }
 
 function getSecretByUrlMatch(url: string): (value: DotAppsSite | null) => EmaAppSecretValue | null {
     return (site: DotAppsSite | null) => {
         if (!site) {
-            return null; // Explicitly handle the null case
+            return null;
         }
 
-        const secrets = site.secrets || []; // Provide a default empty array if secrets is undefined
+        const secrets = site.secrets || [];
 
         for (const secret of secrets) {
             try {
