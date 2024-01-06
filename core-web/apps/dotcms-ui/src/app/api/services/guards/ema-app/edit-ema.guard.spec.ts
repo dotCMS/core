@@ -1,11 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { CanActivateFn } from '@angular/router';
 
-import { emaAppFnGuard } from './ema-app-fn.guard';
+import { editEmaGuard } from './edit-ema.guard';
 
-describe('emaAppFnGuard', () => {
+describe('editEmaGuard', () => {
     const executeGuard: CanActivateFn = (...guardParameters) =>
-        TestBed.runInInjectionContext(() => emaAppFnGuard(...guardParameters));
+        TestBed.runInInjectionContext(() => editEmaGuard(...guardParameters));
 
     beforeEach(() => {
         TestBed.configureTestingModule({});

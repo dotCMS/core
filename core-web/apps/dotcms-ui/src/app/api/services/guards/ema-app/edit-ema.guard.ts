@@ -5,7 +5,7 @@ import { map } from 'rxjs/operators';
 
 import { EmaAppConfigurationService } from '@dotcms/data-access';
 
-export const emaAppFnGuard: CanActivateFn = (route, _state) => {
+export const editEmaGuard: CanActivateFn = (route, _state) => {
     const router = inject(Router);
 
     const emaAppConfigurationService = inject(EmaAppConfigurationService);
