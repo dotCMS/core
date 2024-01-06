@@ -84,7 +84,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             clientHost: state.clientHost,
             favoritePageURL,
             apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
-            iframeURL: `${state.clientHost}/${pageURL}` + `&t=${Date.now()}`, // The iframe will only reload if the queryParams changes, so we add a timestamp to force a reload when no queryParams change
+            iframeURL: `${state.clientHost}/${pageURL}`,
             editor: {
                 ...state.editor,
                 viewAs: {
