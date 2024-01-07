@@ -5,13 +5,11 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
-import {
-    DotHttpErrorHandled,
-    DotHttpErrorManagerService
-} from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import {
     DotContentletLockerService,
+    DotFavoritePageService,
+    DotHttpErrorHandled,
+    DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageService,
     DotPageRenderService,

@@ -9,8 +9,6 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { catchError, filter, map, mergeMap, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotEnvironment } from '@dotcms/app/shared/models/dot-environment/dot-environment';
@@ -19,6 +17,8 @@ import {
     DotCurrentUserService,
     DotESContentService,
     DotEventsService,
+    DotFavoritePageService,
+    DotHttpErrorManagerService,
     DotLanguagesService,
     DotLicenseService,
     DotLocalstorageService,
@@ -48,9 +48,9 @@ import {
     PermissionsType,
     UserPermissions
 } from '@dotcms/dotcms-models';
+import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
-import { DotFavoritePageComponent } from '../../dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
 import { DotPagesCreatePageDialogComponent } from '../dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
 export interface DotPagesInfo {
     actionMenuDomId?: string;
@@ -638,7 +638,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     private getFavoritePageWorflowActions(
         item: DotCMSContentlet
     ): Observable<DotCMSPageWorkflowState> {
-        const urlParams: { [key: string]: string } = { url: item.url.split('?')[0] };
+        const urlParams: { [key: string]: string } = {
+            url: item.url.split('?')[0]
+        };
         const searchParams = new URLSearchParams(item.url.split('?')[1]);
         for (const entry of searchParams) {
             urlParams[entry[0]] = entry[1];
@@ -646,7 +648,11 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
         const { host_id, language_id, url } = urlParams;
 
-        return this.dotPageWorkflowsActionsService.getByUrl({ host_id, language_id, url });
+        return this.dotPageWorkflowsActionsService.getByUrl({
+            host_id,
+            language_id,
+            url
+        });
     }
 
     private getPagesDataFn(

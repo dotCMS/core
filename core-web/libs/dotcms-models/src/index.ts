@@ -62,3 +62,6 @@ export * from './lib/meta-tags-model';
 export * from './lib/page-model-change-event';
 export * from './lib/page-model-change-event.type';
 export * from './lib/dot-page-content.model';
+export * from './lib/dot-message.model';
+export * from './lib/dot-message-severity.model';
+export * from './lib/dot-message-type.model';

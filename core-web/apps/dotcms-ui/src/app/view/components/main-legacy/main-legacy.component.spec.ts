@@ -11,9 +11,7 @@ import { ConfirmationService } from 'primeng/api';
 import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
@@ -22,7 +20,9 @@ import {
     DotAlertConfirmService,
     DotEventsService,
     DotGenerateSecurePasswordService,
+    DotHttpErrorManagerService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotRouterService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
@@ -180,7 +180,9 @@ describe('MainLegacyComponent', () => {
             spyOn(dotCustomEventHandlerService, 'handle');
             createContentlet.triggerEventHandler('custom', { data: 'test' });
 
-            expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({ data: 'test' });
+            expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({
+                data: 'test'
+            });
         });
     });
 });

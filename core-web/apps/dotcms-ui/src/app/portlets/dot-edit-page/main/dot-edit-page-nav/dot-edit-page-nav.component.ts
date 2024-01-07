@@ -15,13 +15,7 @@ import {
     DotTemplate,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-//TODO: Remove @nx/enforce-module-boundaries exception
-// The static import of the lazy-loaded 'portlets-dot-ema' library in the following line is an exception to the general rule.
-// This library is usually lazy loaded as specified in 'apps/dotcms-ui/src/app/app-routing.module.ts'.
-// However, in this particular instance, we need to statically import something from this library.
-// The problem here is this static import would have violated the '@nx/enforce-module-boundaries' rule set by Nx,
-// eslint-disable-next-line @nx/enforce-module-boundaries
-import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema';
+import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 
 interface DotEditPageNavItem {
     action?: (inode: string) => void;

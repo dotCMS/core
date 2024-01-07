@@ -9,8 +9,12 @@ import { ActivatedRoute } from '@angular/router';
 import { catchError, filter, pluck, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotContentTypeService, DotMessageService, DotRouterService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotRouterService
+} from '@dotcms/data-access';
 import {
     DotCMSContentType,
     DotContainer,

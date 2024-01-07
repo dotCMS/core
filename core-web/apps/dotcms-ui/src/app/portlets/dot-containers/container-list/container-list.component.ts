@@ -15,16 +15,16 @@ import { Menu } from 'primeng/menu';
 import { skip, takeUntil } from 'rxjs/operators';
 
 import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkResult,
     DotBulkFailItem,
     DotContainer,
     DotContentState,
-    CONTAINER_SOURCE
+    CONTAINER_SOURCE,
+    DotMessageSeverity,
+    DotMessageType
 } from '@dotcms/dotcms-models';
 import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
 import { DotContainerListStore } from '@portlets/dot-containers/container-list/store/dot-container-list.store';

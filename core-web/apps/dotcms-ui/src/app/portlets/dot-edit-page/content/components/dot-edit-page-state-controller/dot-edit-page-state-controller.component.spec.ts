@@ -17,10 +17,9 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import {
     DotAlertConfirmService,
+    DotHttpErrorManagerService,
     DotMessageService,
     DotPersonalizeService,
     DotPropertiesService
@@ -41,6 +40,7 @@ import {
     DotPageStateServiceMock,
     DotPersonalizeServiceMock,
     getExperimentMock,
+    MockDotHttpErrorManagerService,
     MockDotMessageService,
     mockDotRenderedPage,
     mockUser
@@ -191,7 +191,11 @@ describe('DotEditPageStateControllerComponent', () => {
                 expect(selectButton.options).toEqual([
                     {
                         label: 'Edit',
-                        value: { id: 'EDIT_MODE', showDropdownButton: false, shouldRefresh: false },
+                        value: {
+                            id: 'EDIT_MODE',
+                            showDropdownButton: false,
+                            shouldRefresh: false
+                        },
                         disabled: false
                     },
                     {
@@ -258,7 +262,11 @@ describe('DotEditPageStateControllerComponent', () => {
                 await expect(selectButton).toBeDefined();
                 expect(selectButton.options[1]).toEqual({
                     label: 'Preview',
-                    value: { id: 'PREVIEW_MODE', showDropdownButton: false, shouldRefresh: true },
+                    value: {
+                        id: 'PREVIEW_MODE',
+                        showDropdownButton: false,
+                        shouldRefresh: true
+                    },
                     disabled: true
                 });
                 expect(selectButton.value).toBe(DotPageMode.PREVIEW);
@@ -278,7 +286,11 @@ describe('DotEditPageStateControllerComponent', () => {
                 expect(selectButton).toBeDefined();
                 expect(selectButton.options[0]).toEqual({
                     label: 'Edit',
-                    value: { id: 'EDIT_MODE', showDropdownButton: false, shouldRefresh: false },
+                    value: {
+                        id: 'EDIT_MODE',
+                        showDropdownButton: false,
+                        shouldRefresh: false
+                    },
                     disabled: true
                 });
                 expect(selectButton.value).toBe(DotPageMode.PREVIEW);
@@ -297,7 +309,11 @@ describe('DotEditPageStateControllerComponent', () => {
                 expect(selectButton).toBeDefined();
                 expect(selectButton.options[2]).toEqual({
                     label: 'Live',
-                    value: { id: 'ADMIN_MODE', showDropdownButton: false, shouldRefresh: false },
+                    value: {
+                        id: 'ADMIN_MODE',
+                        showDropdownButton: false,
+                        shouldRefresh: false
+                    },
                     disabled: true
                 });
                 expect(selectButton.value).toBe(DotPageMode.PREVIEW);

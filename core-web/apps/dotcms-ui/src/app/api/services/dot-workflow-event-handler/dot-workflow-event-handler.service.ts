@@ -8,17 +8,21 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { DotCommentAndAssignFormComponent } from '@components/_common/forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
-import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import {
     DotActionBulkRequestOptions,
     DotActionBulkResult,
     DotCMSWorkflowAction,
     DotCMSWorkflowActionEvent,
     DotCMSWorkflowInput,
+    DotMessageSeverity,
+    DotMessageType,
     DotProcessedWorkflowPayload,
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
@@ -279,7 +283,10 @@ export class DotWorkflowEventHandlerService {
     }
 
     private getAssignableData(workflow: DotCMSWorkflowAction): DotAssignableData {
-        return { roleId: workflow.nextAssign, roleHierarchy: workflow.roleHierarchyForAssign };
+        return {
+            roleId: workflow.nextAssign,
+            roleHierarchy: workflow.roleHierarchyForAssign
+        };
     }
 
     private isValidActionInput(id: string): boolean {
