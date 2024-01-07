@@ -21,6 +21,7 @@ export interface DotPageApiResponse {
         title: string;
         identifier: string;
         inode: string;
+        url: string;
     };
     site: Site;
     viewAs: {

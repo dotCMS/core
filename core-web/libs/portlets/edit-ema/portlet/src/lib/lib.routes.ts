@@ -8,7 +8,6 @@ export const DotEmaRoutes: Route[] = [
     {
         path: '',
         component: DotEmaShellComponent,
-        runGuardsAndResolvers: 'always',
         children: [
             {
                 path: 'content',

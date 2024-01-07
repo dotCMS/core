@@ -14,8 +14,7 @@ export const editPageGuard: CanActivateFn = (route) => {
             map((value) => {
                 if (value) {
                     router.navigate(['edit-ema'], {
-                        queryParams: getUpdatedQueryParams(route),
-                        replaceUrl: true
+                        queryParams: getUpdatedQueryParams(route)
                     });
 
                     return false;

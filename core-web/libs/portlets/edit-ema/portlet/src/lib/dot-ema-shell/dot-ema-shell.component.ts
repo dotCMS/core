@@ -30,7 +30,7 @@ import { EditEmaStore } from './store/dot-ema.store';
 
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_QUERY_PARAMS, WINDOW } from '../shared/consts';
+import { WINDOW } from '../shared/consts';
 import { NavigationBarItem } from '../shared/models';
 
 @Component({
@@ -152,31 +152,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 // eslint-disable-next-line no-console
                 console.log({ queryParams, data });
 
-                const { missing, ...missingQueryParams } = DEFAULT_QUERY_PARAMS.reduce(
-                    (acc, curr) => {
-                        if (!queryParams[curr.key]) {
-                            acc[curr.key] = curr.value;
-                            acc.missing = true;
-                        }
-
-                        return acc;
-                    },
-                    {
-                        missing: false
-                    }
-                );
-
-                if (missing) {
-                    this.navigate({
-                        ...queryParams,
-                        ...missingQueryParams
-                    });
-                } else {
-                    this.store.load({
-                        ...this.queryParams,
-                        clientHost: data.url
-                    });
-                }
+                this.store.load({
+                    ...this.queryParams,
+                    clientHost: data.url
+                });
             });
 
         // We need to skip one because it's the initial value

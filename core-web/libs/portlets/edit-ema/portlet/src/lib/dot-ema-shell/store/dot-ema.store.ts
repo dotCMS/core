@@ -22,7 +22,6 @@ type DialogType = 'content' | 'form' | 'widget' | 'shell' | null;
 
 export interface EditEmaState {
     editor: DotPageApiResponse;
-    url: string;
     clientHost: string;
     dialogIframeURL: string;
     dialogHeader: string;
@@ -68,7 +67,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     readonly editorState$ = this.select((state) => {
         const pageURL = this.createPageURL({
-            url: state.url,
+            url: state.editor.page.url,
             language_id: state.editor.viewAs.language.id.toString(),
             'com.dotmarketing.persona.id':
                 state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
@@ -76,7 +75,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
         const favoritePageURL = this.createFavoritePagesURL({
             languageId: state.editor.viewAs.language.id,
-            pageURI: state.url,
+            pageURI: state.editor.page.url,
             siteId: state.editor.site.identifier
         });
 
@@ -114,7 +113,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         page: state.editor.page,
         siteId: state.editor.site.identifier,
         languageId: state.editor.viewAs.language.id,
-        currentUrl: '/' + state.url,
+        currentUrl: '/' + state.editor.page,
         host: state.clientHost
     }));
 
@@ -143,7 +142,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                 this.setState({
                                     clientHost: params.clientHost,
                                     editor: pageData,
-                                    url: params.url,
                                     dialogIframeURL: '',
                                     dialogHeader: '',
                                     dialogIframeLoading: false,
