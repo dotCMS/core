@@ -21,13 +21,13 @@ import { insertContentletInContainer } from '../../utils';
 type DialogType = 'content' | 'form' | 'widget' | 'shell' | null;
 
 export interface EditEmaState {
-    editor: DotPageApiResponse;
     clientHost: string;
-    dialogIframeURL: string;
     dialogHeader: string;
     dialogIframeLoading: boolean;
-    isEnterpriseLicense: boolean;
+    dialogIframeURL: string;
     dialogType: DialogType;
+    editor: DotPageApiResponse;
+    isEnterpriseLicense: boolean;
 }
 
 function getFormId(dotPageApiService) {
@@ -61,7 +61,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         super();
     }
 
-    /******************
+    /*******************
      * Selectors
      *******************/
 
@@ -117,7 +117,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         host: state.clientHost
     }));
 
-    /******************
+    /*******************
      * Effects
      *******************/
 
@@ -252,7 +252,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
-    /******************
+    /*******************
      * Updaters
      *******************/
     readonly setDialogForCreateContent = this.updater(
@@ -411,7 +411,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }): string {
         const { languageId, pageURI, siteId } = params;
 
-        return `/${pageURI}?` + (siteId ? `host_id=${siteId}` : '') + `&language_id=${languageId}`;
+        return (
+            `/${pageURI}?` +
+            (siteId ? `host_id=${siteId}` : '') +
+            `&language_id=${languageId}`
+        ).replace(/\/\//g, '/');
     }
 
     /**
