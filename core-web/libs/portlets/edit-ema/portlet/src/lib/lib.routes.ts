@@ -3,10 +3,12 @@ import { Route } from '@angular/router';
 import { CanDeactivateGuardService } from '@dotcms/data-access';
 
 import { DotEmaShellComponent } from './dot-ema-shell/dot-ema-shell.component';
+import { editEmaGuard } from './services/guards/edit-ema.guard';
 
 export const DotEmaRoutes: Route[] = [
     {
         path: '',
+        canActivate: [editEmaGuard],
         component: DotEmaShellComponent,
         children: [
             {

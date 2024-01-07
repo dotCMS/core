@@ -15,6 +15,8 @@ type EmaQueryParams = {
 };
 
 export const editEmaGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
+    const [content] = route.firstChild.url;
+
     const router = inject(Router);
 
     const { didQueryParamsGetCompleted, newQueryParams } = confirmQueryParams(route.queryParams);
@@ -27,7 +29,7 @@ export const editEmaGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
             map((value) => {
                 if (value) {
                     if (didQueryParamsGetCompleted) {
-                        router.navigate(['/edit-ema/content'], {
+                        router.navigate([`/edit-ema/${content.path}`], {
                             queryParams: newQueryParams,
                             replaceUrl: true
                         });
@@ -51,8 +53,6 @@ function confirmQueryParams(queryParams: Params): {
         (acc, curr) => {
             if (!queryParams[curr.key]) {
                 acc[curr.key] = curr.value;
-                // eslint-disable-next-line no-console
-                console.log('missing', curr.key, curr.value);
                 acc.missing = true;
             }
 

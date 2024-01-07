@@ -21,7 +21,6 @@ import { AuthGuardService } from './api/services/guards/auth-guard.service';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
 import { DefaultGuardService } from './api/services/guards/default-guard.service';
 import { editContentGuard } from './api/services/guards/edit-content.guard';
-import { editEmaGuard } from './api/services/guards/ema-app/edit-ema.guard';
 import { editPageGuard } from './api/services/guards/ema-app/edit-page.guard';
 import { MenuGuardService } from './api/services/guards/menu-guard.service';
 import { PagesGuardService } from './api/services/guards/pages-guard.service';
@@ -104,7 +103,6 @@ const PORTLETS_ANGULAR: Route[] = [
     },
     {
         path: 'edit-ema',
-        canActivate: [editEmaGuard],
         resolve: {
             data: (route: ActivatedRouteSnapshot) => {
                 return inject(EmaAppConfigurationService).get(route.queryParams.url);
