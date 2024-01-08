@@ -27,11 +27,11 @@ import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-
 import { DotEmaShellComponent } from './dot-ema-shell.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
-import { DotPageToolsSeoComponent } from '../dot-page-tools-seo/dot-page-tools-seo.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
+import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 
 describe('DotEmaShellComponent', () => {
     let spectator: SpectatorRouting<DotEmaShellComponent>;
