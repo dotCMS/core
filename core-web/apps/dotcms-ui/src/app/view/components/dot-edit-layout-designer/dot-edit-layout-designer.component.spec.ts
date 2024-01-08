@@ -20,10 +20,10 @@ import { DotGlobalMessageModule } from '@components/_common/dot-global-message/d
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import {
     DotEventsService,
+    DotHttpErrorManagerService,
     DotMessageService,
     DotRouterService,
     DotThemesService

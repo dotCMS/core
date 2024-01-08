@@ -1,4 +1,4 @@
-import { E2EElement, E2EPage, newE2EPage, EventSpy } from '@stencil/core/testing';
+import { E2EElement, E2EPage, EventSpy, newE2EPage } from '@stencil/core/testing';
 
 const FILE_MOCK = {
     id: 'temp_09ef3de32b',
