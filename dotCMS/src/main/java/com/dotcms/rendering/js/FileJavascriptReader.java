@@ -13,6 +13,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
 import java.io.IOException;
@@ -44,23 +45,43 @@ public class FileJavascriptReader implements JavascriptReader {
         final Host site = APILocator.getHostAPI().resolveHostName(params.getRequest().getServerName(), APILocator.systemUser(), false);
         final String jsFilePath = JsResource.JS_PATH + StringPool.SLASH + params.getFolderName() + StringPool.SLASH
                 + params.getHttpMethod().fileName() + FILE_EXTENSION;
+        return getJavascriptReaderFromPath(jsFilePath, site, currentLanguage, pageMode, params.getUser());
+    }
+
+    /**
+     * Retrieve a javascript reader from a given path
+     * @param jsFilePath
+     * @param site
+     * @param currentLanguage
+     * @param pageMode
+     * @param user
+     * @return
+     * @throws DotSecurityException
+     * @throws IOException
+     * @throws DotDataException
+     */
+    public static Reader getJavascriptReaderFromPath (final String jsFilePath, final Host site,
+                                                      final Language currentLanguage, final PageMode pageMode,
+                                                      final User user) throws DotSecurityException,
+            IOException, DotDataException {
+
         final Identifier identifier = APILocator.getIdentifierAPI().find(site, jsFilePath);
         final Contentlet getFileContent;
 
-        if (null == identifier || !UtilMethods.isSet(identifier.getId())) {
+        if (UtilMethods.isEmpty(()->identifier.getId())) {
 
             throw new DoesNotExistException ("The Javascript: " + jsFilePath + " does not exists");
         }
 
         try {
             getFileContent = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), pageMode.showLive,
-                    currentLanguage.getId(), params.getUser(), pageMode.respectAnonPerms);
+                    currentLanguage.getId(), user, pageMode.respectAnonPerms);
         } catch (DotContentletStateException e) {
 
             throw new DoesNotExistException (e.getMessage(), e);
         }
-        final FileAsset getFileAsset = APILocator.getFileAssetAPI().fromContentlet(getFileContent);
 
+        final FileAsset getFileAsset = APILocator.getFileAssetAPI().fromContentlet(getFileContent);
         return new InputStreamReader(getFileAsset.getInputStream());
     }
 

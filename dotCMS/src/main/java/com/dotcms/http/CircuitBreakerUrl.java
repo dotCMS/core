@@ -446,6 +446,6 @@ public class CircuitBreakerUrl {
         }
     }
 
-    public static Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0, null);
+    public static Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0, new Header[]{});
 
 }

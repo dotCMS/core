@@ -1,16 +1,7 @@
 package com.dotcms.rendering.js;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.api.web.HttpServletResponseThreadLocal;
-import com.dotcms.mock.request.FakeHttpRequest;
-import com.dotcms.mock.request.MockAttributeRequest;
-import com.dotcms.mock.request.MockSessionRequest;
-import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.engine.ScriptEngine;
 import com.dotcms.rendering.engine.ScriptEngineFactory;
-import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
@@ -19,15 +10,17 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
-import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.Reader;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+
+import static com.dotcms.rendering.util.ActionletUtil.getRequest;
+import static com.dotcms.rendering.util.ActionletUtil.getResponse;
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Js Script Actionlet allows to execute custom script in a workflow action
@@ -35,8 +28,7 @@ import java.util.Map;
  */
 public class JsScriptActionlet  extends WorkFlowActionlet {
 
-    private final static String ENGINE = ScriptEngineFactory.JAVASCRIPT_ENGINE;
-    private static List<WorkflowActionletParameter> parameterList = createParamList();
+    private static final List<WorkflowActionletParameter> PARAMETER_LIST = createParamList();
     private boolean stop = false;
 
     private static List<WorkflowActionletParameter> createParamList () {
@@ -44,7 +36,7 @@ public class JsScriptActionlet  extends WorkFlowActionlet {
         final ImmutableList.Builder<WorkflowActionletParameter> paramList = new ImmutableList.Builder<>();
 
         paramList.add(new WorkflowActionletParameter
-                ("script", "Script Code", null, false));
+                ("javascriptCode", "JavaScript Code", null, false));
         paramList.add(new WorkflowActionletParameter
                 ("resultKey", "Contentlet Result Property Name", "result", false));
 
@@ -53,7 +45,7 @@ public class JsScriptActionlet  extends WorkFlowActionlet {
     @Override
     public List<WorkflowActionletParameter> getParameters() {
 
-        return parameterList;
+        return PARAMETER_LIST;
     }
 
     @Override
@@ -64,52 +56,28 @@ public class JsScriptActionlet  extends WorkFlowActionlet {
     @Override
     public String getHowTo() {
         return "This actionlet give the ability to run a javascript as part of the workflow action." +
-                " The Script Code allows to add the javascript, can include a jstl by ???? directive."  +
                 " The Result Property Name is the name to store the result of the javascript execution in the contentlet, " +
                 "will store the dotJson and the output (if empty won't add any result to the contentlet).";
-    }
-
-    private HttpServletRequest  mockRequest (final User currentUser) {
-
-        final Host host = Try.of(()-> APILocator.getHostAPI()
-                .findDefaultHost(currentUser, false)).getOrElse(APILocator.systemHost());
-        return new MockAttributeRequest(
-                new MockSessionRequest(
-                        new FakeHttpRequest(host.getHostname(), StringPool.FORWARD_SLASH).request()
-                ).request()
-        ).request();
-    }
-
-    private HttpServletResponse mockResponse () {
-
-        return new BaseResponse().response();
     }
 
     @Override
     public void executeAction(WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
 
         try {
-            final User currentUser          = processor.getUser();
-            final HttpServletRequest request =
-                    null == HttpServletRequestThreadLocal.INSTANCE.getRequest()?
-                            this.mockRequest(currentUser): HttpServletRequestThreadLocal.INSTANCE.getRequest();
-            final HttpServletResponse response =
-                    null == HttpServletResponseThreadLocal.INSTANCE.getResponse()?
-                            this.mockResponse(): HttpServletResponseThreadLocal.INSTANCE.getResponse();
-            final WorkflowActionClassParameter scriptParameter = params.get("script");
+            final User currentUser              = processor.getUser();
+            final HttpServletRequest  request   = getRequest(currentUser);
+            final HttpServletResponse response  = getResponse();
+            final WorkflowActionClassParameter javascriptCodeParameter = params.get("javascriptCode");
             final WorkflowActionClassParameter keyParameter    = params.get("resultKey");
-            final ScriptEngine engine = ScriptEngineFactory.getInstance().getEngine(ENGINE);
-            final String script       = scriptParameter.getValue();
-            final String resultKey    = keyParameter.getValue();
-            final Reader reader       = new StringReader(script);
-            final Object result       = engine.eval(request, response, reader,
-                    CollectionsUtils.map("workflow", processor,
-                            "user", processor.getUser(),
-                            "contentlet", processor.getContentlet(),
-                            "content", processor.getContentlet()));
+            final ScriptEngine engine = ScriptEngineFactory.getInstance().getEngine(ScriptEngineFactory.JAVASCRIPT_ENGINE);
+            final String javascriptCode = javascriptCodeParameter.getValue();
+            final String resultKey      = keyParameter.getValue();
+            final Object result         = engine.eval(request, response, new StringReader(javascriptCode),
+                    map("workflow", processor, "user", processor.getUser(),
+                            "contentlet", processor.getContentlet(), "content", processor.getContentlet()));
 
             this.stop = processor.abort();
-            if (null != result && null != resultKey) {
+            if (Objects.nonNull(result) && Objects.nonNull(resultKey)) {
                 processor.getContentlet().setProperty(resultKey, result);
             }
         } catch (Exception e) {

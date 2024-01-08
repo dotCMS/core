@@ -479,6 +479,7 @@ public class JsResource {
         }
     }
 
+    // todo abstract this
     private void validateBodyMap(final Map bodyMap, final HTTPMethod httpMethod) {
 
         // if it is an update method (not get) and the
@@ -581,17 +582,6 @@ public class JsResource {
     }
 
 
-    private String resultToString(final Object result) {
-        if (result instanceof Map) {
-
-            final Map map = Map.class.cast(result);
-            if (map.containsKey("output")) {
-                return map.get("output").toString();
-            }
-        }
-        return result.toString();
-    }
-
     private Map getBodyMapFromMultipart(final FormDataMultiPart multipart) throws IOException, JSONException {
 
         return this.multiPartUtils.getBodyMapFromMultipart(multipart);
@@ -633,10 +623,11 @@ public class JsResource {
 
     private final String ESCAPE_ME_VALUE= " THIS_ESCAPES_LINE_BREAKS ";
 
+    // todo: move this to a util class
     private String escapeJsonValues(final String jsonStr, final char escapeFrom) {
 
-        StringWriter sw = new StringWriter();
-        char[] charArr = jsonStr.toCharArray();
+        final StringWriter sw = new StringWriter();
+        final char[] charArr = jsonStr.toCharArray();
         boolean inQuotes=false;
         for(int i=0;i <charArr.length;i++) {
             char c = charArr[i];
