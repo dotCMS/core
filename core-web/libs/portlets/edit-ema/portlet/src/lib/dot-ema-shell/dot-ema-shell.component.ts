@@ -32,6 +32,8 @@ import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.s
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
 import { NavigationBarItem } from '../shared/models';
+import { EditEmaEditorComponent } from '../edit-ema-editor/edit-ema-editor.component';
+import { NG_CUSTOM_EVENTS } from '../shared/enums';
 
 @Component({
     selector: 'dot-ema-shell',
@@ -70,12 +72,16 @@ import { NavigationBarItem } from '../shared/models';
 export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
+
     private readonly activatedRoute = inject(ActivatedRoute);
     private readonly router = inject(Router);
     private readonly siteService = inject(SiteService);
+
     readonly store = inject(EditEmaStore);
 
     private readonly destroy$ = new Subject<boolean>();
+
+    private currentComponent: unknown;
 
     get queryParams(): DotPageApiParams {
         const queryParams = this.activatedRoute.snapshot.queryParams;
@@ -169,6 +175,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.destroy$.complete();
     }
 
+    onActivateRoute(event) {
+        this.currentComponent = event;
+    }
+
     onIframeLoad() {
         this.store.setDialogIframeLoading(false);
 
@@ -179,14 +189,19 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         )
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: CustomEvent) => {
-                if (event.detail.name === 'save-page') {
+                if (event.detail.name === NG_CUSTOM_EVENTS.SAVE_PAGE) {
                     const url = event.detail.payload.htmlPageReferer.split('?')[0].replace('/', '');
+
                     if (this.queryParams.url !== url) {
                         this.navigate({
                             url
                         });
 
                         return;
+                    }
+
+                    if (this.currentComponent instanceof EditEmaEditorComponent) {
+                        this.currentComponent.reloadIframe();
                     }
 
                     this.activatedRoute.data.pipe(take(1)).subscribe(({ data }) => {

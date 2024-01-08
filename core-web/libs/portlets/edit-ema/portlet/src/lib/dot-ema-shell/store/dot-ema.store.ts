@@ -387,7 +387,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }
 
     private createPageURL(params: DotPageApiParams): string {
-        return `${params.url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
+        const url = params.url.startsWith('/') ? params.url.slice(1) : params.url;
+
+        return `${url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
     }
 
     /**

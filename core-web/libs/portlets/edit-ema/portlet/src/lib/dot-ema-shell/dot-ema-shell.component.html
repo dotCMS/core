@@ -1,4 +1,4 @@
-<router-outlet></router-outlet>
+<router-outlet (activate)="onActivateRoute($event)"></router-outlet>
 <ng-container *ngIf="shellProperties$ | async as sp">
     <dot-edit-ema-navigation-bar [items]="sp.items"></dot-edit-ema-navigation-bar>
     <p-toast position="top-center" data-testId="ema-toast"></p-toast>
