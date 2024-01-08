@@ -401,19 +401,18 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
      */
     private String encodeRedirectURL(final String uri) {
         try {
-            boolean hastProtocol = true;
+            boolean hasProtocol = true;
             String redirectURI = uri;
             if (uri.startsWith("//")) {
-                hastProtocol = false;
+                hasProtocol = false;
                 redirectURI = "none:" + uri;
             }
             final URLUtils.ParsedURL urlToEncode = URLUtils.parseURL(redirectURI);
             if (urlToEncode == null) {
-                Logger.warn(this, "Could not parse redirect URL: " + uri);
-                return uri;
+                throw new DotRuntimeException("Could not parse redirect URL: " + uri);
             }
             final URIBuilder uriBuilder = new URIBuilder();
-            if (UtilMethods.isSet(urlToEncode.getProtocol()) && hastProtocol) {
+            if (UtilMethods.isSet(urlToEncode.getProtocol()) && hasProtocol) {
                 uriBuilder.setScheme(urlToEncode.getProtocol());
             }
             if (UtilMethods.isSet(urlToEncode.getHost())) {
