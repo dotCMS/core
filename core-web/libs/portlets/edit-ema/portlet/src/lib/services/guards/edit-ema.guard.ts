@@ -30,7 +30,10 @@ export const editEmaGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
                 if (value) {
                     if (didQueryParamsGetCompleted) {
                         router.navigate([`/edit-ema/${content.path}`], {
-                            queryParams: newQueryParams,
+                            queryParams: {
+                                ...route.queryParams,
+                                ...newQueryParams
+                            },
                             replaceUrl: true
                         });
 
