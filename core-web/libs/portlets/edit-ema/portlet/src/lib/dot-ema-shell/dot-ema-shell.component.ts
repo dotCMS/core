@@ -28,12 +28,12 @@ import { SafeUrlPipe } from '@dotcms/ui';
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
+import { EditEmaEditorComponent } from '../edit-ema-editor/edit-ema-editor.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
-import { NavigationBarItem } from '../shared/models';
-import { EditEmaEditorComponent } from '../edit-ema-editor/edit-ema-editor.component';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
+import { NavigationBarItem } from '../shared/models';
 
 @Component({
     selector: 'dot-ema-shell',
