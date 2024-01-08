@@ -39,6 +39,8 @@ export class DotContentThumbnailComponent implements OnInit {
     icon: string;
     type: CONTENT_THUMBNAIL_TYPE;
 
+    private NO_TITLE_IMAGE = 'TITLE_IMAGE_NOT_FOUND';
+
     @Input() url: string;
     @Input() inode: string;
     @Input() titleImage: string;
@@ -63,6 +65,10 @@ export class DotContentThumbnailComponent implements OnInit {
         return this.contentType?.split('/')[0];
     }
 
+    get hasTitleImage(): boolean {
+        return this.titleImage && this.titleImage !== this.NO_TITLE_IMAGE;
+    }
+
     ngOnInit(): void {
         this.icon = ICON_MAP[this.extension] || this.DEFAULT_ICON;
         this.type = this.getThumbnailType();
@@ -80,7 +86,7 @@ export class DotContentThumbnailComponent implements OnInit {
     }
 
     private getThumbnailType() {
-        if (this.titleImage || this.isImage) {
+        if (this.isImage || this.hasTitleImage) {
             return CONTENT_THUMBNAIL_TYPE.image;
         }
 
@@ -122,12 +128,12 @@ export class DotContentThumbnailComponent implements OnInit {
 
     private getURL(): string {
         // If it's a pdf and has a title image, use the title image
-        if (this.extension === 'pdf' && this.titleImage) {
+        if (this.extension === 'pdf' && this.hasTitleImage) {
             return this.getPdfThumbnailUrl();
         }
 
         // If it's an image and has a title image, use the title image
-        if (this.titleImage || this.isImage) {
+        if (this.isImage || this.hasTitleImage) {
             return this.getImageThumbnailUrl();
         }
 

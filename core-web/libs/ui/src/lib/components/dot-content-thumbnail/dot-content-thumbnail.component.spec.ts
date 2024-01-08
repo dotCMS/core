@@ -90,6 +90,17 @@ describe('DotContentThumbnailComponent', () => {
             expect(imageElement.getAttribute('alt')).toBe('image.png');
             expect(imageElement).toBeTruthy();
         });
+
+        it('should not set thumbnailType to image when titleImage is "TITLE_IMAGE_NOT_FOUND"', () => {
+            spectator.setInput('titleImage', 'TITLE_IMAGE_NOT_FOUND');
+            spectator.detectChanges();
+
+            const imageElement = spectator.query(byTestId('thumbail-image'));
+
+            expect(spectator.component.type).toBe(CONTENT_THUMBNAIL_TYPE.icon);
+            expect(spectator.component.src).toBe(null);
+            expect(imageElement).toBeFalsy();
+        });
     });
 
     describe('icon', () => {
