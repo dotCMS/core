@@ -11,22 +11,16 @@ import { DotContentThumbnailComponent, DotSpinnerModule } from '@dotcms/ui';
 
 import { DotBinaryFieldPreviewComponent } from './dot-binary-field-preview.component';
 
-const previewImage = {
-    type: 'image',
-    resolution: {
-        width: '400',
-        height: '400'
-    },
-    fileSize: 8000,
-    content: '',
-    mimeType: 'image/png',
-    inode: '123456789',
-    titleImage: 'true',
-    name: 'image.jpg',
-    title: 'image.jpg',
+import { DotFilePreview } from '../../interfaces';
+import { fileMetaData } from '../../utils/mock';
 
+const previewImage: DotFilePreview = {
+    ...fileMetaData,
+    id: '123',
+    inode: '123',
+    titleImage: 'Assets',
     contentType: 'image/png',
-    contentTypeIcon: 'image'
+    name: 'test.png'
 };
 
 const previewVideo = {
@@ -144,9 +138,9 @@ Video.args = {
     variableName: 'binaryField'
 };
 
-export const file = Template.bind({});
+export const File = Template.bind({});
 
-file.args = {
+File.args = {
     file: previewFile,
     variableName: 'binaryField'
 };
