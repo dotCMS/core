@@ -227,28 +227,28 @@ public class VanityUrlFilterTest {
 
 
         String title = "VanityURL"  + System.currentTimeMillis();
-        String site = defaultHost.getIdentifier();
-        String uri = "/testing_301" + System.currentTimeMillis();
-        String forwardTo = "https://dotcms.com";
+        String baseURI = "/testing_301" + System.currentTimeMillis();
+        String vanityURIPattern = baseURI + "/(.*)";
+        String forwardBaseURI = "https://dotcms.com/redirected_301";
+        String forwardTo = forwardBaseURI + "/$1";
         int action = 301;
         int order = 1;
 
-        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, defaultHost, uri,
+        Contentlet contentlet1 = filtersUtil.createVanityUrl(title, defaultHost, vanityURIPattern,
                 forwardTo, action, order, defaultLanguage.getId());
         filtersUtil.publishVanityUrl(contentlet1);
 
-
-        final HttpServletRequest request = new MockHttpRequestIntegrationTest(defaultHost.getHostname(), uri).request();
+        final String testURI = baseURI + "/test redirect 301";
+        final HttpServletRequest request = new MockHttpRequestIntegrationTest(defaultHost.getHostname(), testURI).request();
         final HttpServletResponse response = new MockHttpStatusResponse(new MockHeaderResponse(new MockHttpResponse().response()).response()).response();
 
-        
         VanityURLFilter filter = new VanityURLFilter();
         
         filter.doFilter(request, response, null);
 
-        Collection<String> list=  response.getHeaderNames();
-        assert(response.getHeader("Location").equals(forwardTo));
-        assert(response.getStatus()==301);
+        final String expectedLocation = forwardBaseURI + "/test%20redirect%20301";
+        Assert.assertEquals(expectedLocation, response.getHeader("Location"));
+        Assert.assertEquals(301,response.getStatus());
         Assert.assertNotNull(response.getHeader("X-DOT-VanityUrl"));
 
     }
