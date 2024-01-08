@@ -27,6 +27,8 @@ import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheImpl;
 import com.dotcms.security.apps.AppsCache;
 import com.dotcms.security.apps.AppsCacheImpl;
 import com.dotcms.storage.Chainable404StorageCache;
+import com.dotcms.system.announcements.AnnouncementsCache;
+import com.dotcms.system.announcements.AnnouncementsCacheImpl;
 import com.dotcms.test.TestUtil;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
 import com.dotcms.vanityurl.cache.VanityUrlCacheImpl;
@@ -297,7 +299,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static GraphQLCache getGraphQLCache() {
 		return (GraphQLCache) getInstance(CacheIndex.GraphQLCache);
 	}
-    
+
 	/**
 	 * Returns the current instance of the {@link Chainable404StorageCache} class.
 	 *
@@ -356,6 +358,10 @@ public class CacheLocator extends Locator<CacheIndex>{
 	 */
 	public static ExperimentsCache getExperimentsCache() {
 		return (ExperimentsCache) getInstance(CacheIndex.EXPERIMENTS_CACHE);
+	}
+
+	public static AnnouncementsCache getAnnouncementsCache() {
+		return (AnnouncementsCache) getInstance(CacheIndex.ANNOUNCEMENTS_CACHE);
 	}
 
 	/**
@@ -468,7 +474,9 @@ enum CacheIndex
 	GraphQLCache("GraphQLCache"),
 	VariantCache("VariantCache"),
 	EXPERIMENTS_CACHE("ExperimentsCache"),
-	CHAINABLE_404_STORAGE_CACHE("Chainable404StorageCache");
+	CHAINABLE_404_STORAGE_CACHE("Chainable404StorageCache"),
+	ANNOUNCEMENTS_CACHE("AnnouncementsCache")
+	;
 
 	Cachable create() {
 		switch(this) {
@@ -523,6 +531,7 @@ enum CacheIndex
 			case VariantCache: return new VariantCacheImpl();
 			case EXPERIMENTS_CACHE: return new ExperimentsCacheImpl();
 			case CHAINABLE_404_STORAGE_CACHE: return new Chainable404StorageCache();
+			case ANNOUNCEMENTS_CACHE: return new AnnouncementsCacheImpl();
 
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
@@ -534,6 +543,7 @@ enum CacheIndex
 		this.value = value;
 	}
 
+	@Override
 	public String toString () {
 		return value;
 	}
