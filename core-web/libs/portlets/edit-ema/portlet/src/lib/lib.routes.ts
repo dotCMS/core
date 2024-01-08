@@ -1,15 +1,15 @@
 import { Route } from '@angular/router';
 
 import { CanDeactivateGuardService } from '@dotcms/data-access';
+import { portletHaveLicenseResolver } from '@dotcms/ui';
 
 import { DotEmaShellComponent } from './dot-ema-shell/dot-ema-shell.component';
-import { editEmaResolver } from './resolvers/edit-ema.resolver';
 
 export const DotEmaRoutes: Route[] = [
     {
         path: '',
         component: DotEmaShellComponent,
-        resolve: { haveLicense: editEmaResolver },
+        resolve: { haveLicense: portletHaveLicenseResolver },
         runGuardsAndResolvers: 'always',
         children: [
             {

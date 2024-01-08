@@ -36,3 +36,6 @@ export * from './lib/dot-message/dot-message.pipe';
 export * from './lib/pipes/dot-string-format/dot-string-format.pipe';
 export * from './lib/pipes/dot-timestamp-to-date/dot-timestamp-to-date.pipe';
 export * from './lib/pipes/safe-url/safe-url.pipe';
+
+//Resolvers
+export * from './lib/resolvers/dot-portlet-have-license.resolver';

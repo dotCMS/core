@@ -7,7 +7,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotLicenseService } from '@dotcms/data-access';
 
-import { formResolver } from './dot-form.resolver';
+import { portletHaveLicenseResolver } from './dot-portlet-have-license.resolver';
 
 describe('formResolver', () => {
     let dotLicenseService: DotLicenseService;
@@ -30,7 +30,7 @@ describe('formResolver', () => {
 
     it('should return true when canAccessEnterprisePortlet returns true', () => {
         const resolver = runInInjectionContext(TestBed.inject(EnvironmentInjector), () =>
-            formResolver({}, { url: '' } as RouterStateSnapshot)
+            portletHaveLicenseResolver({}, { url: '' } as RouterStateSnapshot)
         );
         spyOn(dotLicenseService, 'canAccessEnterprisePortlet').and.returnValue(of(true));
         resolver.subscribe((res) => {
@@ -40,7 +40,7 @@ describe('formResolver', () => {
 
     it('should return false when canAccessEnterprisePortlet returns false', () => {
         const resolver = runInInjectionContext(TestBed.inject(EnvironmentInjector), () =>
-            formResolver({}, { url: '' } as RouterStateSnapshot)
+            portletHaveLicenseResolver({}, { url: '' } as RouterStateSnapshot)
         );
         spyOn(dotLicenseService, 'canAccessEnterprisePortlet').and.returnValue(of(false));
         resolver.subscribe((res) => {
