@@ -487,5 +487,4 @@
         <display-name>Velocity Playground</display-name>
         <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
     </portlet>
-    
 </portlet-app>

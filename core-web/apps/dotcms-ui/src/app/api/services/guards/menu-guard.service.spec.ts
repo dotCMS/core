@@ -1,3 +1,4 @@
+import { mockProvider } from '@ngneat/spectator';
 import { of as observableOf } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -6,11 +7,11 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
+import { DotRouterService, DotSessionStorageService } from '@dotcms/data-access';
 
 import { MenuGuardService } from './menu-guard.service';
 
 import { DotMenuService } from '../dot-menu.service';
-import { DotRouterService } from '../dot-router/dot-router.service';
 
 @Injectable()
 class MockDotMenuService {
@@ -48,7 +49,8 @@ describe('ValidMenuGuardService', () => {
                 {
                     provide: DotNavigationService,
                     useClass: MockDotNavigationService
-                }
+                },
+                mockProvider(DotSessionStorageService)
             ]
         });
 

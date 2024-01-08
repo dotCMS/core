@@ -31,16 +31,13 @@ dd {clear:right;font-size:12px;padding-top:8px; padding-left:10px;  margin:0px 0
 dt.wide, dd.wide{width:100%; clear:both;}
 button,select,input,label{font-family:Verdana,Geneva,Arial,sans-serif;}
 
-
 .inputCaption{font-size:85%;color:#888;font-style:italic;}
 dd.inputCaption, dd.buttonCaption{margin-top:-10px;}
-
 
 .dl50-50 dt {width:50%;}
 .dl50-50 dd {margin-left:50%;}
 
 input{color:#555555;padding:2px 5px 0 5px;}
-
 
 select {font-size: 93%;padding: 2px;color:#555;}
 fieldset{border:1px solid #ccc; padding:20px;}

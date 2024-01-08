@@ -7,7 +7,6 @@ import { from } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import {
-    AfterViewInit,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
@@ -68,7 +67,7 @@ const EDITOR_CONFIG: MonacoEditorConstructionOptions = {
     styleUrls: ['./dot-binary-field-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
+export class DotBinaryFieldEditorComponent implements OnInit {
     @Input() fileName = '';
     @Input() fileContent = '';
 
@@ -114,7 +113,7 @@ export class DotBinaryFieldEditorComponent implements OnInit, AfterViewInit {
         );
     }
 
-    ngAfterViewInit(): void {
+    onEditorInit() {
         this.editor = this.editorRef.editor;
         if (this.fileName) {
             this.setEditorLanguage(this.fileName);

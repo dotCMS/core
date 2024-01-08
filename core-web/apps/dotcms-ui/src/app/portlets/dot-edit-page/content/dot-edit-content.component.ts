@@ -12,17 +12,17 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import {
     DotAlertConfirmService,
     DotCurrentUserService,
     DotESContentService,
     DotEventsService,
+    DotFavoritePageService,
     DotLicenseService,
     DotMessageService,
     DotPropertiesService,
+    DotRouterService,
     DotSessionStorageService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
@@ -31,29 +31,26 @@ import {
     DotCMSContentlet,
     DotCMSContentType,
     DotContainerStructure,
+    DotContentletEventAddContentType,
     DotExperiment,
     DotIframeEditEvent,
     DotPageContainer,
+    DotPageContent,
     DotPageMode,
     DotPageRender,
     DotPageRenderState,
     DotVariantData,
     ESContent,
-    FeaturedFlags
+    FeaturedFlags,
+    PageModelChangeEvent,
+    PageModelChangeEventType,
+    SeoMetaTags
 } from '@dotcms/dotcms-models';
+import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
 
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
-import {
-    PageModelChangeEvent,
-    PageModelChangeEventType
-} from './services/dot-edit-content-html/models';
-import { DotContentletEventAddContentType } from './services/dot-edit-content-html/models/dot-contentlets-events.model';
-import { SeoMetaTags } from './services/dot-edit-content-html/models/meta-tags-model';
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
-
-import { DotFavoritePageComponent } from '../components/dot-favorite-page/dot-favorite-page.component';
-import { DotPageContent } from '../shared/models';
 
 export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 
@@ -144,7 +141,9 @@ browse from the page internal links
                         this.dotPageStateService.setLocalState(dotRenderedPageState);
                     } else {
                         this.dotPageStateService.setInternalNavigationState(dotRenderedPageState);
-                        this.dotRouterService.goToEditPage({ url: pageRendered.page.pageURI });
+                        this.dotRouterService.goToEditPage({
+                            url: pageRendered.page.pageURI
+                        });
                     }
                 },
                 'in-iframe': () => {

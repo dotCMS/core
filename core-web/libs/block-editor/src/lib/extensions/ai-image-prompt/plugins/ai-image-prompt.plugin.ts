@@ -2,34 +2,36 @@ import { Node } from 'prosemirror-model';
 import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { Subject } from 'rxjs';
-import tippy, { Instance, Props } from 'tippy.js';
+import { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
 
-import { takeUntil } from 'rxjs/operators';
+import { filter, skip, takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
+import { findNodeByType, getAIPlaceholderImage } from '../../../shared';
+import { NodeTypes } from '../../bubble-menu/models';
 import { AIImagePromptComponent } from '../ai-image-prompt.component';
-import { AI_IMAGE_PROMPT_PLUGIN_KEY } from '../ai-image-prompt.extension';
-import { TIPPY_OPTIONS } from '../utils';
+import { AI_IMAGE_PROMPT_PLUGIN_KEY, DOT_AI_IMAGE_CONTENT_KEY } from '../ai-image-prompt.extension';
+import { DotAiImagePromptStore } from '../ai-image-prompt.store';
 
 interface AIImagePromptProps {
     pluginKey: PluginKey;
     editor: Editor;
     element: HTMLElement;
-    tippyOptions: Partial<Props>;
     component: ComponentRef<AIImagePromptComponent>;
 }
 
 interface PluginState {
-    open: boolean;
-    form: [];
+    aIImagePromptOpen: boolean;
 }
 
 export type AIImagePromptViewProps = AIImagePromptProps & {
     view: EditorView;
 };
+
+export const AI_IMAGE_PLACEHOLDER_PROPERTY = 'isAIPlaceholder';
 
 export class AIImagePromptView {
     public editor: Editor;
@@ -50,95 +52,106 @@ export class AIImagePromptView {
 
     private destroy$ = new Subject<boolean>();
 
+    private store: DotAiImagePromptStore;
+
     constructor(props: AIImagePromptViewProps) {
-        const { editor, element, view, tippyOptions = {}, pluginKey, component } = props;
+        const { editor, element, view, pluginKey, component } = props;
 
         this.editor = editor;
         this.element = element;
         this.view = view;
 
-        this.tippyOptions = tippyOptions;
-
         this.element.remove();
         this.pluginKey = pluginKey;
         this.component = component;
 
-        this.view.dom.addEventListener('keydown', this.handleKeyDown.bind(this));
+        this.store = this.component.injector.get(DotAiImagePromptStore);
 
-        this.component.instance.formSubmission.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.editor.commands.closeImagePrompt();
-            this.editor.commands.insertLoaderNode();
-        });
+        // TODO: handle the error
 
-        this.component.instance.aiResponse
-            .pipe(takeUntil(this.destroy$))
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .subscribe((contentlet: any) => {
-                this.editor.commands.deleteSelection();
-                const data = Object.values(contentlet[0])[0];
+        /**
+         * Subscription fired by the store when the dialog change of the state
+         * Handle the manual close of the dialog (esc, click outside, x button)
+         */
+        this.store.isOpenDialog$
+            .pipe(
+                skip(1),
+                filter((value) => value === false),
+                takeUntil(this.destroy$)
+            )
+            .subscribe(() => {
+                this.editor.commands.closeImagePrompt();
+            });
 
-                if (data) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    this.editor.commands.insertImage(data as any);
-                    this.editor.commands.openAIContentActions('image');
+        /**
+         * Subscription fired by the store when the dialog change of the state
+         * Handle the click of Generate button
+         */
+        this.store.isLoading$
+            .pipe(
+                filter((isLoading) => isLoading === true),
+                takeUntil(this.destroy$)
+            )
+            .subscribe(() => {
+                const placeholder = getAIPlaceholderImage(this.editor);
+
+                if (placeholder) {
+                    // A regenerate has been requested, so we need to delete the placeholder image
+                    this.editor
+                        .chain()
+                        .deleteRange({
+                            from: placeholder.from,
+                            to: placeholder.to
+                        })
+                        .insertLoaderNode(true, placeholder.from)
+                        .run();
+                } else {
+                    // A new image is being inserted
+                    this.store.hideDialog();
+                    this.editor.chain().insertLoaderNode().closeImagePrompt().run();
+                }
+            });
+
+        /**
+         * Subscription fired by the store when the prompt get a new contentlet to show
+         */
+        this.store.getContentlets$
+            .pipe(
+                filter((contentlets) => contentlets.length > 0),
+                takeUntil(this.destroy$)
+            )
+            .subscribe((contentlets) => {
+                const data = Object.values(contentlets[0])[0];
+
+                const loaderNodes = findNodeByType(this.editor, NodeTypes.LOADER);
+
+                //Trust in this property to identify the image as a placeholder, until the user accept the content.
+                data[AI_IMAGE_PLACEHOLDER_PROPERTY] = true;
+
+                if (loaderNodes) {
+                    this.editor
+                        .chain()
+                        .deleteRange({ from: loaderNodes[0].from, to: loaderNodes[0].to })
+                        .insertImage(data, loaderNodes[0].from)
+                        .openAIContentActions(DOT_AI_IMAGE_CONTENT_KEY)
+                        .run();
                 }
             });
     }
 
-    private handleKeyDown(event: KeyboardEvent) {
-        if (event.key === 'Backspace') {
-            this.editor.commands.closeAIContentActions();
-        }
-    }
-
-    update(view: EditorView, prevState?: EditorState) {
+    update(view: EditorView, prevState: EditorState) {
         const next = this.pluginKey?.getState(view.state);
-        const prev = prevState ? this.pluginKey?.getState(prevState) : { open: false };
+        const prev = prevState ? this.pluginKey?.getState(prevState) : { aIImagePromptOpen: false };
 
-        if (next?.open === prev?.open) {
-            this.tippy?.popperInstance?.forceUpdate();
-
-            return;
+        // show the dialog
+        if (next.aIImagePromptOpen && prev.aIImagePromptOpen === false) {
+            this.store.showDialog(this.editor.getText());
         }
 
-        if (!next.open) {
-            this.component.instance.cleanForm();
-        }
-
-        this.createTooltip();
-
-        next.open ? this.show() : this.hide();
-    }
-
-    createTooltip() {
-        const { element: editorElement } = this.editor.options;
-        const editorIsAttached = !!editorElement.parentElement;
-
-        if (this.tippy || !editorIsAttached) {
-            return;
-        }
-
-        this.tippy = tippy(document.body, {
-            ...TIPPY_OPTIONS,
-            ...this.tippyOptions,
-            content: this.element,
-            onHide: () => {
-                this.editor.commands.closeImagePrompt();
-            }
-        });
-    }
-
-    show() {
-        this.tippy?.show();
-    }
-
-    hide() {
-        this.tippy?.hide();
-        this.editor.view.focus();
+        // hide the dialog handled by isOpenDialog$ subscription
     }
 
     destroy() {
-        this.tippy?.destroy();
         this.destroy$.next(true);
         this.destroy$.complete();
     }
@@ -151,8 +164,7 @@ export const aiImagePromptPlugin = (options: AIImagePromptProps) => {
         state: {
             init(): PluginState {
                 return {
-                    open: false,
-                    form: []
+                    aIImagePromptOpen: false
                 };
             },
 
@@ -161,11 +173,10 @@ export const aiImagePromptPlugin = (options: AIImagePromptProps) => {
                 value: PluginState,
                 oldState: EditorState
             ): PluginState {
-                const { open, form } = transaction.getMeta(AI_IMAGE_PROMPT_PLUGIN_KEY) || {};
+                const { aIImagePromptOpen } = transaction.getMeta(AI_IMAGE_PROMPT_PLUGIN_KEY) || {};
                 const state = AI_IMAGE_PROMPT_PLUGIN_KEY.getState(oldState);
-
-                if (typeof open === 'boolean') {
-                    return { open, form };
+                if (typeof aIImagePromptOpen === 'boolean') {
+                    return { aIImagePromptOpen };
                 }
 
                 return state || value;

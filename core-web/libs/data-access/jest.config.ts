@@ -3,13 +3,7 @@ export default {
     displayName: 'data-access',
     preset: '../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-    globals: {
-        'ts-jest': {
-            isolatedModules: true, // Prevent type checking in tests and deps
-            tsconfig: '<rootDir>/tsconfig.spec.json',
-            stringifyContentPathRegex: '\\.(html|svg)$'
-        }
-    },
+    globals: {},
     coverageReporters: [['lcovonly', { file: 'TEST-template-builder.lcov' }]],
     reporters: [
         'default',
@@ -23,7 +17,14 @@ export default {
         ]
     ],
     transform: {
-        '^.+\\.(ts|mjs|js|html)$': 'jest-preset-angular'
+        '^.+\\.(ts|mjs|js|html)$': [
+            'jest-preset-angular',
+            {
+                isolatedModules: true, // Prevent type checking in tests and deps
+                tsconfig: '<rootDir>/tsconfig.spec.json',
+                stringifyContentPathRegex: '\\.(html|svg)$'
+            }
+        ]
     },
     transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
     snapshotSerializers: [

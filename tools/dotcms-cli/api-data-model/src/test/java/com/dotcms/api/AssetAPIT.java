@@ -1,8 +1,8 @@
 package com.dotcms.api;
 
 import com.dotcms.DotCMSITProfile;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.api.client.ServiceManager;
+import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.asset.AssetRequest;
 import com.dotcms.model.asset.ByPathRequest;

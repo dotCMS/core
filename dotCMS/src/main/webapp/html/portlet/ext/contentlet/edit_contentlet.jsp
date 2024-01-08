@@ -21,7 +21,7 @@
 	public boolean isNextFieldFullScreen(Structure structure, Field oldField) {
 
 		try{
-			ContentType type = new StructureTransformer(structure).from();
+			ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(structure.getInode());
 			com.dotcms.contenttype.model.field.Field fieldIn = LegacyFieldTransformer.from(oldField);
 			com.dotcms.contenttype.model.field.Field field = type.fields().subList(type.fields().indexOf(fieldIn), type.fields().size()).stream().filter(f->!(f instanceof RowField || f instanceof ColumnField || f instanceof TabDividerField)).findFirst().get();
 			return isFullScreenField(field);
@@ -77,8 +77,11 @@
 <!DOCTYPE html>
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
-<!-- dotCMS Block Editor -->
-<script src="/html/dotcms-block-editor.js"></script>
+<!--  dotCMS Block Editor Builder -->
+	<script src="/dotcms-block-editor/polyfills.js" type="module"></script>
+	<script src="/dotcms-block-editor/generator-runtime.js" defer></script>
+	<script src="/dotcms-block-editor/main.js" type="module"></script>
+<!--   End dotCMS Block Editor -->
 
 <style>
 .dijitTree {
@@ -95,7 +98,13 @@
 	String isNewBinaryFieldEnabled = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
 	if (isNewBinaryFieldEnabled != null && isNewBinaryFieldEnabled.equalsIgnoreCase("true")) {
 %>
-	<script src="/html/binary-field.js"></script>
+
+<!--  dotCMS Binary Field Builder -->
+	<script src="/dotcms-binary-field-builder/polyfills.js" type="module"></script>
+	<script src="/dotcms-binary-field-builder/generator-runtime.js" defer></script>
+	<script src="/dotcms-binary-field-builder/main.js" type="module"></script>
+<!--  dotCMS End Binary Field Builder -->
+
 <% } %>
 
 <script type="text/javascript">

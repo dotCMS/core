@@ -10,6 +10,10 @@ export * from './lib/dot-tab-buttons/dot-tab-buttons.component';
 export * from './lib/components/dot-field-validation-message/dot-field-validation-message.component';
 export * from './lib/components/dot-copy-button/dot-copy-button.component';
 export * from './lib/components/dot-content-thumbnail/dot-content-thumbnail.component';
+export * from './lib/components/dot-api-link/dot-api-link.component';
+export * from './lib/components/dot-link/dot-link.component';
+export * from './lib/components/dot-form-dialog/dot-form-dialog.component';
+export * from './lib/components/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
 
 // Directives
 export * from './lib/dot-field-required/dot-field-required.directive';
@@ -19,6 +23,7 @@ export * from './lib/directives/dot-autofocus/dot-autofocus.directive';
 export * from './lib/directives/dot-trim-input/dot-trim-input.directive';
 export * from './lib/dot-container-options/dot-container-options.directive';
 export * from './lib/directives/dot-select-item/dot-select-item.directive';
+export * from './lib/directives/dot-avatar/dot-avatar.directive';
 // Services
 export * from './lib/services/dot-format-date-service';
 export * from './lib/services/clipboard/ClipboardUtil';

@@ -7,24 +7,13 @@
         padding: $spacing-1;
         margin-left: $spacing-8;
 
-        li {
+        .p-listbox-list .p-listbox-item {
             padding: $spacing-2 $spacing-3;
+            border-bottom: 1px solid $color-palette-gray-300;
+            background-color: $white;
 
-            // accept option
-            &:first-child {
-                background-color: $color-palette-primary-200;
-            }
-
-            // regenerate option
-            &:nth-child(2) {
-                padding: $spacing-3;
-                background-color: $white;
-            }
-
-            // delete option
             &:last-child {
-                border-top: 1px solid $color-palette-gray-300;
-                background-color: $white;
+                border-bottom: none;
             }
 
             &:hover {

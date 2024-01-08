@@ -1,4 +1,4 @@
-import * as autoScroll from 'dom-autoscroller';
+import autoScroll from 'dom-autoscroller';
 import * as _ from 'lodash';
 import { DragulaService } from 'ng2-dragula';
 import { Subject } from 'rxjs';
@@ -76,16 +76,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     @Output()
     removeFields = new EventEmitter<DotCMSContentTypeField[]>();
-
-    private _loading: boolean;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    get isBlockEditorField() {
-        return (
-            this.currentFieldType?.clazz ===
-            'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
-        );
-    }
 
     constructor(
         private dotMessageService: DotMessageService,
@@ -97,6 +88,30 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         private elRef: ElementRef,
         private rendered: Renderer2
     ) {}
+
+    private _loading: boolean;
+
+    get loading(): boolean {
+        return this._loading;
+    }
+
+    @Input()
+    set loading(loading: boolean) {
+        this._loading = loading;
+
+        if (loading) {
+            this.dotLoadingIndicatorService.show();
+        } else {
+            this.dotLoadingIndicatorService.hide();
+        }
+    }
+
+    get isBlockEditorField() {
+        return (
+            this.currentFieldType?.clazz ===
+            'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
+        );
+    }
 
     private static findColumnBreakIndex(fields: DotCMSContentTypeField[]): number {
         return fields.findIndex((item: DotCMSContentTypeField) => {
@@ -211,21 +226,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         if (changes.layout && changes.layout.currentValue) {
             this.fieldRows = _.cloneDeep(changes.layout.currentValue);
         }
-    }
-
-    @Input()
-    set loading(loading: boolean) {
-        this._loading = loading;
-
-        if (loading) {
-            this.dotLoadingIndicatorService.show();
-        } else {
-            this.dotLoadingIndicatorService.hide();
-        }
-    }
-
-    get loading(): boolean {
-        return this._loading;
     }
 
     ngOnDestroy(): void {
