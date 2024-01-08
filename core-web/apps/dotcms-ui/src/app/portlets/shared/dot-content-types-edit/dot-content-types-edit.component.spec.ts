@@ -17,15 +17,14 @@ import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import {
     DotAlertConfirmService,
     DotContentTypesInfoService,
     DotCrudService,
     DotEventsService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
     DotMessageService,
     DotRouterService
 } from '@dotcms/data-access';
@@ -41,6 +40,7 @@ import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
+    DotMessageDisplayServiceMock,
     LoginServiceMock,
     MockDotMessageService,
     MockDotRouterService,
@@ -167,7 +167,10 @@ describe('DotContentTypesEditComponent', () => {
                 },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
                 ConfirmationService,
                 DotAlertConfirmService,
                 DotContentTypesInfoService,

@@ -5,15 +5,14 @@ import { getTestBed, TestBed } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import {
     DotAlertConfirmService,
     DotContentletLockerService,
     DotESContentService,
+    DotFavoritePageService,
+    DotHttpErrorManagerService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotPageRenderService,
     DotRouterService,
     DotSessionStorageService
@@ -33,6 +32,7 @@ import { DotFormatDateService } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
+    DotMessageDisplayServiceMock,
     getExperimentMock,
     LoginServiceMock,
     mockDotPersona,
@@ -84,7 +84,10 @@ describe('DotPageStateService', () => {
                 DotESContentService,
                 DotFavoritePageService,
                 DotExperimentsService,
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 {
@@ -169,7 +172,9 @@ describe('DotPageStateService', () => {
         });
 
         it('should get with url from queryParams with a Failing fetch from ES Search (favorite page)', () => {
-            const error500 = mockResponseView(500, '/test', null, { message: 'error' });
+            const error500 = mockResponseView(500, '/test', null, {
+                message: 'error'
+            });
             dotFavoritePageService.get = jasmine.createSpy().and.returnValue(throwError(error500));
             service.get();
 

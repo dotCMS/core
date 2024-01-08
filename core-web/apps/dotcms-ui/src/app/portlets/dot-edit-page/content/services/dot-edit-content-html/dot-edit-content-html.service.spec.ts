@@ -9,12 +9,12 @@ import { TestBed, waitForAsync } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotGlobalMessageService } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.service';
 import {
     DotAlertConfirmService,
     DotEditPageService,
     DotEventsService,
+    DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageService,
     DotWorkflowActionsFireService
@@ -693,7 +693,11 @@ xdescribe('DotEditContentHtmlService', () => {
         expect(currentModel).toEqual(
             {
                 model: [
-                    { identifier: '123', uuid: '456', contentletsId: ['456', 'tmpPlaceholder'] },
+                    {
+                        identifier: '123',
+                        uuid: '456',
+                        contentletsId: ['456', 'tmpPlaceholder']
+                    },
                     { identifier: '321', uuid: '654', contentletsId: ['456'] },
                     { identifier: '976', uuid: '156', contentletsId: [] }
                 ],
@@ -1290,7 +1294,9 @@ xdescribe('DotEditContentHtmlService', () => {
 
         describe('Error on save', () => {
             it('should handle error on save and emit SAVE_ERROR Event Type', (done) => {
-                const errorResponse = { error: { message: 'error' } } as HttpErrorResponse;
+                const errorResponse = {
+                    error: { message: 'error' }
+                } as HttpErrorResponse;
                 spyOn(dotEditPageService, 'save').and.returnValue(throwError(errorResponse));
                 spyOn(httpErrorManagerService, 'handle');
 

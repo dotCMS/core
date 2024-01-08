@@ -38,8 +38,7 @@ import {
     DotVariantData,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-// eslint-disable-next-line @nx/enforce-module-boundaries
-import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema';
+import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe, DotTabButtonsComponent } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
@@ -73,7 +72,8 @@ enum DotConfirmationType {
     ]
 })
 export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges {
-    @ViewChild('pageLockInfo', { static: true }) pageLockInfo: DotEditPageLockInfoSeoComponent;
+    @ViewChild('pageLockInfo', { static: true })
+    pageLockInfo: DotEditPageLockInfoSeoComponent;
     @ViewChild('deviceSelector') deviceSelector: DotDeviceSelectorSeoComponent;
     @ViewChild('menu') menu: Menu;
 
