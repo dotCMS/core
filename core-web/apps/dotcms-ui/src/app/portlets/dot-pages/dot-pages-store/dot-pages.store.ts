@@ -1112,7 +1112,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
      */
     private fireWorkflowAction(contentletInode: string, actionId: string): void {
         const value = this.dotMessageService.get('Workflow-executed');
-        this.dotWorkflowActionsFireService.fireTo(contentletInode, actionId).subscribe(
+        this.dotWorkflowActionsFireService.fireTo({ actionId, inode: contentletInode }).subscribe(
             (payload) => this.dotEventsService.notify('save-page', { payload, value }),
             (error) => this.httpErrorManagerService.handle(error, true)
         );
