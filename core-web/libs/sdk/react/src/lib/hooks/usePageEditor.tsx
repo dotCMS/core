@@ -70,7 +70,21 @@ function useEventMessageHandler({ reload = window.location.reload }: { reload: (
     const [isInsideEditor, setIsInsideEditor] = useState(false);
 
     useEffect(() => {
+        postMessageToEditor({
+            action: CUSTOMER_ACTIONS.PING_EDITOR // This is to let the editor know that the page is ready
+        });
+    }, []);
+
+    useEffect(() => {
         function eventMessageHandler(event: MessageEvent) {
+            if (!isInsideEditor) {
+                if (event.data === 'ema-editor-pong') {
+                    setIsInsideEditor(true);
+                }
+
+                return;
+            }
+
             switch (event.data) {
                 case 'ema-request-bounds': {
                     const positionData = getPageElementBound(rows.current);
@@ -88,13 +102,6 @@ function useEventMessageHandler({ reload = window.location.reload }: { reload: (
 
                     break;
                 }
-
-                case 'ema-is-inside-editor': {
-                    // console.log('ema-is-inside-editor'); Not triggering
-                    setIsInsideEditor(true);
-
-                    break;
-                }
             }
         }
 
@@ -103,7 +110,7 @@ function useEventMessageHandler({ reload = window.location.reload }: { reload: (
         return () => {
             window.removeEventListener('message', eventMessageHandler);
         };
-    }, [rows, reload]);
+    }, [rows, reload, isInsideEditor]);
 
     return {
         rowsRef: rows,

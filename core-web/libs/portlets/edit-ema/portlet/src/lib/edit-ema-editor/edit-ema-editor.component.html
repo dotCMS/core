@@ -71,7 +71,6 @@
                 #iframe
                 [src]="es.iframeURL | safeUrl"
                 [title]="host"
-                (load)="onIframeLoad($event)"
                 data-testId="iframe"
                 style="border: none"
                 width="100%"
@@ -124,7 +123,7 @@
                     display: ds.iframeLoading ? 'none' : 'block'
                 }"
                 [src]="ds.iframeURL | safeUrl"
-                (load)="onDialogIframeLoad()"
+                (load)="onIframeLoad()"
                 title="dialog"
                 data-testId="dialog-iframe"
                 width="100%"
