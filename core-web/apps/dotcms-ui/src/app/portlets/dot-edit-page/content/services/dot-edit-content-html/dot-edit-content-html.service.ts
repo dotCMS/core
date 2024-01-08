@@ -7,12 +7,12 @@ import { ElementRef, Inject, Injectable, NgZone } from '@angular/core';
 import { catchError, filter, finalize, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { INLINE_TINYMCE_SCRIPTS } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/inline-edit-mode.js';
 import {
     DotAlertConfirmService,
     DotCopyContentService,
     DotEditPageService,
+    DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageService,
     DotWorkflowActionsFireService
@@ -24,13 +24,7 @@ import {
     DotPageContainer,
     DotPageContainerPersonalized,
     DotPageRenderState,
-    DotPersona
-} from '@dotcms/dotcms-models';
-import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
-
-import { PageModelChangeEvent, PageModelChangeEventType } from './models';
-import {
+    DotPersona,
     DotAddContentTypePayload,
     DotAssetPayload,
     DotContentletEvent,
@@ -40,10 +34,15 @@ import {
     DotContentletEventSave,
     DotContentletEventSelect,
     DotInlineEditContent,
+    DotPageContent,
+    DotRelocatePayload,
     DotShowCopyModal,
-    DotRelocatePayload
-} from './models/dot-contentlets-events.model';
-import { SeoMetaTags, SeoMetaTagsResult } from './models/meta-tags-model';
+    PageModelChangeEvent,
+    PageModelChangeEventType,
+    SeoMetaTags,
+    SeoMetaTagsResult
+} from '@dotcms/dotcms-models';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
 import { DotCopyContentModalService } from '../dot-copy-content-modal/dot-copy-content-modal.service';

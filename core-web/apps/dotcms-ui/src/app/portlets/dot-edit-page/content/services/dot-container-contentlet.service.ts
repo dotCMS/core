@@ -6,9 +6,7 @@ import { pluck } from 'rxjs/operators';
 
 import { DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotPage, DotPageContainer } from '@dotcms/dotcms-models';
-
-import { DotPageContent } from '../../shared/models/dot-page-content.model';
+import { DotPage, DotPageContainer, DotPageContent } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotContainerContentletService {

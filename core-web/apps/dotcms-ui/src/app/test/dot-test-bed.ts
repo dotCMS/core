@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Injector, LOCALE_ID, Provider, ReflectiveInjector, Type } from '@angular/core';
+import { LOCALE_ID, Type } from '@angular/core';
 import { ComponentFixture, TestBed, TestModuleMetadata } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
@@ -11,6 +11,7 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import {
     DotAlertConfirmService,
     DotEventsService,
+    DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageService,
     DotRouterService
@@ -32,7 +33,6 @@ import {
 import { DotFormatDateService } from '@dotcms/ui';
 import { MockDotRouterService } from '@dotcms/utils-testing';
 
-import { DotHttpErrorManagerService } from './../api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotIframeService } from './../view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
 
 import { DotCustomEventHandlerService } from '../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
@@ -124,15 +124,5 @@ export class DOTTestBed {
 
     public static createComponent<T>(component: Type<T>): ComponentFixture<T> {
         return TestBed.createComponent(component);
-    }
-
-    public static resolveAndCreate(providers: Provider[], parent?: Injector): ReflectiveInjector {
-        const finalProviders = [];
-
-        DOTTestBed.DEFAULT_CONFIG.providers.forEach((provider) => finalProviders.push(provider));
-
-        providers.forEach((provider) => finalProviders.push(provider));
-
-        return ReflectiveInjector.resolveAndCreate(finalProviders, parent);
     }
 }
