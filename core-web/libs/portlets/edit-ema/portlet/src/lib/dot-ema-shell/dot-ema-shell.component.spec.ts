@@ -17,6 +17,7 @@ import {
     DotPersonalizeService
 } from '@dotcms/data-access';
 import { SiteService, mockSites } from '@dotcms/dotcms-js';
+import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import {
     DotLanguagesServiceMock,
     DotPersonalizeServiceMock,
@@ -31,7 +32,6 @@ import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.s
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
-import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 
 describe('DotEmaShellComponent', () => {
     let spectator: SpectatorRouting<DotEmaShellComponent>;
