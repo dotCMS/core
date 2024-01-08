@@ -96,7 +96,7 @@ public class PageResourceHelper implements Serializable {
     private final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
     private final UserAPI userAPI = APILocator.getUserAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-    private final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+    private final transient LanguageAPI languageAPI = APILocator.getLanguageAPI();
 
     /**
      * Private constructor

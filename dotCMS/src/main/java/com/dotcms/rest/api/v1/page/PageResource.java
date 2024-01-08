@@ -1152,6 +1152,8 @@ public class PageResource {
      *
      * @return A {@link Response} object containing the list of languages and the flag indicating
      * whether the page is available in such a language or not.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
      */
     @GET
     @Path("/{pageId}/languages")
@@ -1160,21 +1162,15 @@ public class PageResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response checkPageLanguageVersions(@Context final HttpServletRequest request,
                                               @Context final HttpServletResponse response,
-                                              @PathParam("pageId") final String pageId) {
+                                              @PathParam("pageId") final String pageId) throws DotDataException {
         final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .requiredBackendUser(true)
                 .init().getUser();
-        Logger.debug(this, String.format("Check the languages that page '%s' is available on", pageId));
-        try {
-            final List<ExistingLanguagesForPageView> languagesForPage =
-                    this.pageResourceHelper.getExistingLanguagesForPage(pageId, user);
-            return Response.ok(new ResponseEntityView<>(languagesForPage)).build();
-        } catch (final Exception e) {
-            Logger.error(this, String.format("Failed to check available language versions for HTML Page " +
-                    "'%s': %s", pageId, ExceptionUtil.getErrorMessage(e)), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
+        Logger.debug(this, () -> String.format("Check the languages that page '%s' is available on", pageId));
+        final List<ExistingLanguagesForPageView> languagesForPage =
+                this.pageResourceHelper.getExistingLanguagesForPage(pageId, user);
+        return Response.ok(new ResponseEntityView<>(languagesForPage)).build();
     }
 
 } // E:O:F:PageResource
