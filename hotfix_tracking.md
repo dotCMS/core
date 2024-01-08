@@ -230,3 +230,4 @@ This maintenance release includes the following code fixes:
 
 **Release-22.03.14**
 
+190. https://github.com/dotCMS/core/issues/24082 : Language Keys API throws 400 when a duplicate key exists #24082
