@@ -19,8 +19,7 @@ interface EmaAppSecretValue {
 
 interface EmaAppOptions {
     authenticationToken: string;
-    depth: number;
-    'X-CONTENT-APP': string;
+    [key: string]: string;
 }
 
 @Injectable()

@@ -13,7 +13,7 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService } from '@dotcms/data-access';
 import {
-    DotApps,
+    DotApp,
     DotAppsExportConfiguration,
     DotAppsImportConfiguration,
     DotAppsSite
@@ -47,7 +47,7 @@ export class DotAppsServiceMock {
 })
 class HostTestComponent {
     @Input() action?: string;
-    @Input() app?: DotApps;
+    @Input() app?: DotApp;
     @Input() site?: DotAppsSite;
 
     resolveHandler(_$event) {

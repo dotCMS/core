@@ -28,8 +28,10 @@ export const editPageGuard: CanActivateFn = (route) => {
 function getUpdatedQueryParams(route: ActivatedRouteSnapshot) {
     const newQueryParams = {
         ...route.queryParams,
-        url: route.queryParams.url.substring(1),
-        'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+        language_id: route.queryParams.language_id || 1,
+        url: route.queryParams.url.substring(1) || 'index',
+        'com.dotmarketing.persona.id':
+            route.queryParams['com.dotmarketing.persona.id'] || 'modes.persona.no.persona'
     };
 
     delete newQueryParams['device_inode'];
