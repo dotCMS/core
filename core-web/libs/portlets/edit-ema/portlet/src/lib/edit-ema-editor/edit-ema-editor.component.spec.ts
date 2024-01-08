@@ -48,10 +48,10 @@ import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW, HOST } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload } from '../shared/models';
+import { DotPageApiService } from '../services/dot-page-api.service';
 
 const messagesMock = {
     'editpage.content.contentlet.remove.confirmation_message.header': 'Deleting Content',
@@ -194,6 +194,7 @@ describe('EditEmaEditorComponent', () => {
             confirmationService = spectator.inject(ConfirmationService, true);
 
             store.load({
+                clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier

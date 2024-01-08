@@ -13,12 +13,10 @@ import {
 import { EditEmaStore } from './dot-ema.store';
 
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
-import {
-    DotPageApiResponse,
-    DotPageApiService
-} from '../../services/dot-page-api/dot-page-api.service';
+
 import { DEFAULT_PERSONA, EDIT_CONTENTLET_URL } from '../../shared/consts';
 import { ActionPayload } from '../../shared/models';
+import { DotPageApiResponse, DotPageApiService } from '../../services/dot-page-api.service';
 
 const mockResponse: DotPageApiResponse = {
     page: {
@@ -69,6 +67,7 @@ describe('EditEmaStore', () => {
         dotPageApiService.get.andReturn(of(mockResponse));
 
         spectator.service.load({
+            clientHost: 'http://localhost:3000',
             language_id: '1',
             url: 'test-url',
             'com.dotmarketing.persona.id': '123'
@@ -235,6 +234,7 @@ describe('EditEmaStore', () => {
             );
 
             spectator.service.load({
+                clientHost: 'http://localhost:3000',
                 language_id: 'en',
                 url: 'test-url',
                 'com.dotmarketing.persona.id': '123'
@@ -262,6 +262,7 @@ describe('EditEmaStore', () => {
             dotPageApiService.get.andReturn(of(mockResponse));
 
             spectator.service.load({
+                clientHost: 'http://localhost:3000',
                 language_id: 'en',
                 url: 'test-url',
                 'com.dotmarketing.persona.id': '123'
@@ -291,6 +292,7 @@ describe('EditEmaStore', () => {
             dotPageApiService.get.andReturn(of(mockResponse));
 
             spectator.service.load({
+                clientHost: 'http://localhost:3000',
                 language_id: 'en',
                 url: 'test-url',
                 'com.dotmarketing.persona.id': '123'
@@ -334,6 +336,7 @@ describe('EditEmaStore', () => {
             dotPageApiService.getFormIndetifier.andReturn(of('form-identifier-123'));
 
             spectator.service.load({
+                clientHost: 'http://localhost:3000',
                 language_id: 'en',
                 url: 'test-url',
                 'com.dotmarketing.persona.id': '123'

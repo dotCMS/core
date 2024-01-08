@@ -12,8 +12,8 @@ import { DotPersonalizeServiceMock } from '@dotcms/utils-testing';
 
 import { EditEmaPersonaSelectorComponent } from './edit-ema-persona-selector.component';
 
-import { DotPageApiService } from '../../../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../../../shared/consts';
+import { DotPageApiService } from '../../../services/dot-page-api.service';
 
 export const CUSTOM_PERSONA: DotPersona = {
     hostFolder: 'CUSTOM_HOST',
