@@ -22,8 +22,8 @@ import {
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
-import { DotInfoPageComponent, InfoPage, SafeUrlPipe } from '@dotcms/ui';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotInfoPageComponent, InfoPage, SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { EditEmaStore } from './store/dot-ema.store';
