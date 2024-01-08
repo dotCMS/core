@@ -1,4 +1,4 @@
-<ng-container [ngSwitch]="type">
+<ng-container *ngIf="type" [ngSwitch]="type">
     <img
         *ngSwitchCase="CONTENT_THUMBNAIL_TYPE.image"
         [src]="src"
