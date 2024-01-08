@@ -83,13 +83,6 @@ const PORTLETS_ANGULAR = [
             import('@portlets/dot-apps/dot-apps.module').then((m) => m.DotAppsModule)
     },
     {
-        path: 'notLicensed',
-        loadChildren: () =>
-            import('@components/not-license/not-license.component').then(
-                (m) => m.NotLicenseComponent
-            )
-    },
-    {
         path: 'edit-page',
         loadChildren: () =>
             import('@portlets/dot-edit-page/dot-edit-page.module').then((m) => m.DotEditPageModule)

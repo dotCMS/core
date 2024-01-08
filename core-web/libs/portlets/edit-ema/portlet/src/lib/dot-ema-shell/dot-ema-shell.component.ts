@@ -16,6 +16,7 @@ import {
     DotESContentService,
     DotFavoritePageService,
     DotLanguagesService,
+    DotLicenseService,
     DotPageLayoutService,
     DotPageRenderService,
     DotPersonalizeService
@@ -23,7 +24,7 @@ import {
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotInfoPageComponent, InfoPage, SafeUrlPipe } from '@dotcms/ui';
+import { DotInfoPageComponent, DotNotLicenseComponent, InfoPage, SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { EditEmaStore } from './store/dot-ema.store';
@@ -65,7 +66,8 @@ import { NavigationBarItem } from '../shared/models';
         DotPageToolsSeoComponent,
         DialogModule,
         SafeUrlPipe,
-        DotInfoPageComponent
+        DotInfoPageComponent,
+        DotNotLicenseComponent
     ]
 })
 export class DotEmaShellComponent implements OnInit, OnDestroy {
@@ -77,6 +79,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly store = inject(EditEmaStore);
 
     private readonly destroy$ = new Subject<boolean>();
+
+    private readonly licenseService = inject(DotLicenseService);
 
     EMA_INFO_PAGES: Record<'NOT_FOUND' | 'ACCESS_DENIED', InfoPage> = {
         NOT_FOUND: {

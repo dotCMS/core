@@ -134,6 +134,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 }).pipe(
                     tap({
                         next: ({ pageData, licenseData }) => {
+                            if (!licenseData) {
+                                this.createEmptyState({ canEdit: false, canRead: false }, 401); //Proposal 401 for Unlicensed
+
+                                return;
+                            }
+
                             this.setState({
                                 editor: pageData,
                                 url: params.url,

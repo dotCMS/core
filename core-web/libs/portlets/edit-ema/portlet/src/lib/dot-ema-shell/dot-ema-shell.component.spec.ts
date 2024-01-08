@@ -18,6 +18,7 @@ import {
 } from '@dotcms/data-access';
 import { SiteService, mockSites } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotNotLicenseComponent } from '@dotcms/ui';
 import {
     DotLanguagesServiceMock,
     DotPersonalizeServiceMock,
@@ -101,19 +102,23 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: DotPersonalizeService,
                 useValue: new DotPersonalizeServiceMock()
-            },
-            {
-                provide: DotLicenseService,
-                useValue: {
-                    isEnterprise: () => of(true)
-                }
             }
         ]
     });
 
     describe('with queryParams', () => {
         beforeEach(() => {
-            spectator = createComponent();
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: DotLicenseService,
+                        useValue: {
+                            isEnterprise: () => of(true),
+                            canAccessEnterprisePortlet: () => of(true)
+                        }
+                    }
+                ]
+            });
             siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
             store = spectator.inject(EditEmaStore, true);
             router = spectator.inject(Router);
@@ -270,7 +275,17 @@ describe('DotEmaShellComponent', () => {
 
     describe('without queryParams', () => {
         beforeEach(() => {
-            spectator = createComponent();
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: DotLicenseService,
+                        useValue: {
+                            isEnterprise: () => of(true),
+                            canAccessEnterprisePortlet: () => of(true)
+                        }
+                    }
+                ]
+            });
             siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
             store = spectator.inject(EditEmaStore, true);
             router = spectator.inject(Router);
@@ -353,6 +368,13 @@ describe('DotEmaShellComponent', () => {
                                 });
                             }
                         }
+                    },
+                    {
+                        provide: DotLicenseService,
+                        useValue: {
+                            isEnterprise: () => of(true),
+                            canAccessEnterprisePortlet: () => of(true)
+                        }
                     }
                 ]
             });
@@ -363,6 +385,67 @@ describe('DotEmaShellComponent', () => {
             expect(spectator.query(EditEmaNavigationBarComponent)).toBeNull();
             expect(spectator.query(ToastModule)).toBeNull();
             expect(spectator.query(DotPageToolsSeoComponent)).toBeNull();
+        });
+    });
+
+    describe('without license ', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: DotPageApiService,
+                        useValue: {
+                            get() {
+                                return of({
+                                    page: {
+                                        title: 'hello world',
+                                        identifier: '123',
+                                        inode: '123',
+                                        canEdit: false,
+                                        canRead: false
+                                    },
+                                    viewAs: {
+                                        language: {
+                                            id: 1,
+                                            language: 'English',
+                                            countryCode: 'US',
+                                            languageCode: 'EN',
+                                            country: 'United States'
+                                        },
+                                        persona: DEFAULT_PERSONA
+                                    },
+                                    site: mockSites[0]
+                                });
+                            },
+                            save() {
+                                return of({});
+                            },
+                            getPersonas() {
+                                return of({
+                                    entity: [DEFAULT_PERSONA],
+                                    pagination: {
+                                        totalEntries: 1,
+                                        perPage: 10,
+                                        page: 1
+                                    }
+                                });
+                            }
+                        }
+                    },
+                    {
+                        provide: DotLicenseService,
+                        useValue: {
+                            isEnterprise: () => of(false),
+                            canAccessEnterprisePortlet: () => of(false)
+                        }
+                    }
+                ]
+            });
+        });
+
+        it('should render not-license component', () => {
+            spectator.detectChanges();
+            expect(spectator.query(DotNotLicenseComponent)).toBeDefined();
         });
     });
 });

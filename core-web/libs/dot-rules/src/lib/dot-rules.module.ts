@@ -3,11 +3,13 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { AppRulesComponent, RuleEngineModule } from '@dotcms/dot-rules';
 import { ApiRoot } from '@dotcms/dotcms-js';
+import { rulesResolver } from './dot-rules.resolver';
 
 const routes: Routes = [
     {
         component: AppRulesComponent,
-        path: ''
+        path: '',
+        resolve: { haveLicense: rulesResolver }
     }
 ];
 

@@ -338,10 +338,6 @@ export class DotRouterService {
         this.router.navigate(['/public/forgotPassword']);
     }
 
-    goToNotLicensed(): void {
-        this.router.navigate(['c/notLicensed']);
-    }
-
     getPortletId(url: string): string {
         url = decodeURIComponent(url);
         if (url.indexOf('?') > 0) {

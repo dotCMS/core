@@ -64,6 +64,11 @@ const enterprisePorlets: DotUnlicensedPortletData[] = [
         icon: 'code',
         titleKey: 'com.dotcms.repackage.javax.portlet.title.velocity',
         url: '/c/velocity_playground'
+    },
+    {
+        icon: 'file-edit',
+        titleKey: 'com.dotcms.repackage.javax.portlet.title.edit-ema',
+        url: '/edit-ema'
     }
 ];
 
