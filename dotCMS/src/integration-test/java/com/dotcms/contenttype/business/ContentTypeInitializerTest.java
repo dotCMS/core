@@ -1,13 +1,14 @@
-package com.dotcms.contenttype.business.init;
+package com.dotcms.contenttype.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
-import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
@@ -22,10 +23,10 @@ import org.junit.Test;
 import java.util.List;
 
 /**
- * Test for the {@link DotFavoritePageInitializer}
+ * Test for the {@link ContentTypeInitializer}
  * @author jsanca
  */
-public class DotFavoritePageInitializerTest extends IntegrationTestBase {
+public class ContentTypeInitializerTest extends IntegrationTestBase {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -44,7 +45,7 @@ public class DotFavoritePageInitializerTest extends IntegrationTestBase {
     public void test_system_field() throws Exception {
 
         final ContentType contentType = Try.of(()-> APILocator.getContentTypeAPI(APILocator.systemUser())
-                .find(DotFavoritePageInitializer.FAVORITE_PAGE_VAR_NAME)).getOrNull();
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME)).getOrNull();
 
         new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
                 .setProperty("title", "test").setProperty("url", "test" + System.currentTimeMillis()).nextPersisted();
@@ -64,7 +65,7 @@ public class DotFavoritePageInitializerTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link DotFavoritePageInitializer#init()}
+     * Method to test: {@link ContentTypeInitializer#init()}
      * Given Scenario: If the content type exists is being deleted, and try the initializer to see if works
      * ExpectedResult: The content type should be created
      *
@@ -75,16 +76,16 @@ public class DotFavoritePageInitializerTest extends IntegrationTestBase {
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 
         ContentType contentType = Try.of(()-> APILocator.getContentTypeAPI(APILocator.systemUser())
-                .find(DotFavoritePageInitializer.FAVORITE_PAGE_VAR_NAME)).getOrNull();
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME)).getOrNull();
 
         if (null != contentType) {
             contentTypeAPI.delete(contentType);
         }
 
-        new DotFavoritePageInitializer().init();
+        new ContentTypeInitializer().init();
 
         contentType = Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser())
-                .find(DotFavoritePageInitializer.FAVORITE_PAGE_VAR_NAME)).getOrNull();
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME)).getOrNull();
 
         Assert.assertNotNull("The content type dotFavoritePage shouldn't be null", contentType);
 
@@ -94,7 +95,7 @@ public class DotFavoritePageInitializerTest extends IntegrationTestBase {
 
         //we make sure there is no content type using the legacy name
         Assert.assertNull(Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser())
-                .find(DotFavoritePageInitializer.LEGACY_FAVORITE_PAGE_VAR_NAME)).getOrNull());
+                .find(ContentTypeInitializer.LEGACY_FAVORITE_PAGE_VAR_NAME)).getOrNull());
 
         checkPermissionsOnContentlet(contentType);
     }

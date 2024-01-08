@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.announcements;
 
 import com.dotcms.content.business.json.ContentletJsonHelper;
-import com.dotcms.contenttype.business.init.DotAnnouncementsInitializer;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.system.announcements.Announcement;
 import com.dotcms.system.announcements.AnnouncementsCache;
@@ -30,8 +29,10 @@ import javax.ws.rs.core.Response;
 
 public class AnnouncementsHelperImpl implements AnnouncementsHelper{
 
-    static final String DOT_ANNOUNCEMENT = DotAnnouncementsInitializer.DOT_ANNOUNCEMENT;
+    //The CT varN/ame used to retrieve the Announcements
+    static final String DOT_ANNOUNCEMENT = Lazy.of(()-> Config.getStringProperty("DOT_ANNOUNCEMENT", "dotAnnouncement")).get();
 
+    //The query pattern to retrieve the Announcements
     static final String ANNOUNCEMENTS_QUERY_PATTERN = "%s/api/content/render/false/query/+contentType:%s +languageId:%d +deleted:false +live:true/orderBy/modDate desc";
 
     //This is the url to the dotCMS instance set to provide and feed all consumers with announcements
@@ -54,10 +55,19 @@ public class AnnouncementsHelperImpl implements AnnouncementsHelper{
         this.announcementsCache = announcementsCache;
     }
 
+    /**
+     * Get a rest client
+     * @return Client
+     */
     private Client restClient() {
         return RestClientBuilder.newClient();
     }
 
+    /**
+     * Get the language by id or code, if not found fallback to default language
+     * @param languageIdOrCode String
+     * @return Language
+     */
     private Language getLanguage(final String languageIdOrCode) {
         Language language;
         try {
@@ -76,6 +86,7 @@ public class AnnouncementsHelperImpl implements AnnouncementsHelper{
         final Language language = getLanguage(languageIdOrCode);
         final int limitValue = getLimit(limit);
         if(!refreshCache) {
+            Logger.debug(this, "Getting announcements from cache for language: " + language.getId() + " limit: " + limitValue);
             final List<Announcement> announcements = announcementsCache.get(language);
             if (announcements != null && !announcements.isEmpty()) {
                 return getSubList(limitValue, announcements);
@@ -85,14 +96,9 @@ public class AnnouncementsHelperImpl implements AnnouncementsHelper{
         //clean up double slashes in the url
         final String url = raw.replaceAll("(?<!(http:|https:))//", "/");
         try {
-
             final Client client = restClient();
             final WebTarget webTarget = client.target(url);
-
-            final Response response = webTarget.request(MediaType.APPLICATION_JSON)
-                    //.header("Authorization", AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(endpoint).get())
-                    .get();
-
+            final Response response = webTarget.request(MediaType.APPLICATION_JSON).get();
             if (response.getStatus() == 200) {
                 final String jsonString = response.readEntity(String.class);
                 final ObjectMapper mapper = ContentletJsonHelper.INSTANCE.get().objectMapper();
@@ -105,7 +111,7 @@ public class AnnouncementsHelperImpl implements AnnouncementsHelper{
                 announcementsCache.put(language, subList);
                 return subList;
             } else {
-                Logger.error(AnnouncementsHelperImpl.class, String.format(" failed to get announcements from [%s] with status: [%d]", url, response.getStatus()));
+                Logger.error(AnnouncementsHelperImpl.class, String.format(" failed to get announcements from [%s] with status: [%d] and  entity: [%s] ", url, response.getStatus(), response.getEntity()));
                 throw new DotRuntimeException(String.format(" failed to get announcements from [%s] with status: [%d]", url, response.getStatus()));
             }
 

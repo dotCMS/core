@@ -13,7 +13,7 @@ import com.dotcms.content.business.json.ContentletJsonAPITest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest;
-import com.dotcms.contenttype.business.init.DotFavoritePageInitializerTest;
+import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.StoryBlockAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
@@ -279,7 +279,7 @@ import org.junit.runners.Suite.SuiteClasses;
         BundlerUtilTest.class,
         MenuResourceTest.class,
         AWSS3PublisherTest.class,
-        DotFavoritePageInitializerTest.class,
+        ContentTypeInitializerTest.class,
         CSSPreProcessServletTest.class,
         VariantFactoryTest.class,
         VariantAPITest.class,

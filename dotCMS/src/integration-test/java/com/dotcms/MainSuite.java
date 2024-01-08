@@ -14,7 +14,7 @@ import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest;
-import com.dotcms.contenttype.business.init.DotFavoritePageInitializerTest;
+import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.business.SiteAndFolderResolverImplTest;
 import com.dotcms.contenttype.business.StoryBlockAPITest;
@@ -612,7 +612,7 @@ import org.junit.runners.Suite.SuiteClasses;
         BundlerUtilTest.class,
         MenuResourceTest.class,
         AWSS3PublisherTest.class,
-        DotFavoritePageInitializerTest.class,
+        ContentTypeInitializerTest.class,
         CSSPreProcessServletTest.class,
         VariantFactoryTest.class,
         VariantAPITest.class,
