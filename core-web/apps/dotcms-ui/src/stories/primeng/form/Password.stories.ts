@@ -1,5 +1,4 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, Story } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -24,7 +23,7 @@ export default {
 
 const PasswordTemplate = `<input type="password" pPassword />`;
 
-const Template: Story<never> = (props: never) => {
+const Template: Story<unknown> = (props: never) => {
     const template = PasswordTemplate;
 
     return {

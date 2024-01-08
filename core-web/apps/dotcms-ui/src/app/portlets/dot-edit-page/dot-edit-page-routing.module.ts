@@ -59,7 +59,7 @@ const dotEditPage: Routes = [
                     // folder with components reused in experiments to a Library to
                     // avoid this circular dependency
 
-                    // eslint-disable-next-line @nrwl/nx/enforce-module-boundaries
+                    // eslint-disable-next-line @nx/enforce-module-boundaries
                     (await import('@dotcms/portlets/dot-experiments/portlet'))
                         .DotExperimentsPortletRoutes
             }

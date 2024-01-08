@@ -6,22 +6,15 @@
     "prefix": "dotcms",
     "targets": {
         "test": {
-            "executor": "@nrwl/jest:jest",
+            "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
-                "jestConfig": "libs/data-access/jest.config.ts"
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true
-                }
+                "jestConfig": "libs/data-access/jest.config.ts",
+                "passWithNoTests": false
             }
         },
         "lint": {
-            "executor": "@nrwl/linter:eslint",
-            "options": {
-                "lintFilePatterns": ["libs/data-access/**/*.ts", "libs/data-access/**/*.html"]
-            }
+            "executor": "@nx/eslint:lint"
         }
     },
     "tags": []

@@ -1,17 +1,17 @@
 import {
-    FormGroup,
-    FormControl,
-    FormGroupDirective,
     AsyncValidator,
-    ValidatorFn,
-    Validator
+    FormControl,
+    FormGroup,
+    FormGroupDirective,
+    Validator,
+    ValidatorFn
 } from '@angular/forms';
 
 import {
+    DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
-    DotCMSContentTypeLayoutRow,
-    DotCMSContentlet
+    DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
 
 import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
@@ -1063,4 +1063,11 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
         }
     ],
     nEntries: 0
+};
+
+export const MockResizeObserver = class {
+    constructor() {}
+    observe() {}
+    unobserve() {}
+    disconnect() {}
 };

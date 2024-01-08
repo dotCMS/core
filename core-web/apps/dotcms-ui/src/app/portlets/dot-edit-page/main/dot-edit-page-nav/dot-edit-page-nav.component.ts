@@ -15,7 +15,7 @@ import {
     DotTemplate,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema';
+import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 
 interface DotEditPageNavItem {
     action?: (inode: string) => void;
