@@ -34,22 +34,6 @@ describe('DotNotLicenseComponent', () => {
     let de: DebugElement;
 
     beforeEach(async () => {
-        // DOTTestBed.configureTestingModule({
-        //     imports: [CommonModule, ButtonModule, DotIconModule, DotMessagePipe],
-        //     providers: [
-        //         {
-        //             provide: DotMessageService,
-        //             useValue: messageServiceMock
-        //         },
-        //         DotLicenseService
-        //     ]
-        // });
-
-        // fixture = DOTTestBed.createComponent(DotNotLicenseComponent);
-        // de = fixture.debugElement;
-        // dotLicenseService = de.injector.get(DotLicenseService);
-        // dotLicenseService.unlicenseData.next(portletData);
-        // fixture.detectChanges();
         await TestBed.configureTestingModule({
             imports: [CommonModule, ButtonModule, DotIconModule, DotMessagePipe],
             providers: [
