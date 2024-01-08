@@ -137,14 +137,31 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.destroy$.next(true);
         this.destroy$.complete();
     }
+
     /**
      * Handle the iframe load event
+     *
+     * @memberof EditEmaEditorComponent
+     */
+    onIframeLoad(_: Event) {
+        // console.log(this.iframe?.nativeElement?.contentWindow); Uncomment this line see that we are indeed triggering this correctly
+        // But for some reason in usePageEditor we don't recieve the event
+        // You can even try with the event.currentTarget of this event and it won't work either
+        this.iframe?.nativeElement?.contentWindow.postMessage(
+            NOTIFY_CUSTOMER.EMA_IS_INSIDE_EDITOR,
+            this.host
+        );
+    }
+
+    /**
+     * Handle the dialog iframe load event
      *
      * @param {CustomEvent} event
      * @memberof DotEmaComponent
      */
-    onIframeLoad() {
+    onDialogIframeLoad() {
         this.store.setDialogIframeLoading(false);
+
         // This event is destroyed when you close the dialog
         fromEvent(
             // The events are getting sended to the document

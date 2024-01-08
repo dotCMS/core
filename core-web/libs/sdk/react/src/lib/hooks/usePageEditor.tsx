@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/client';
 
@@ -59,24 +59,42 @@ export const usePageEditor = (props: PageEditorOptions) => {
 
     usePostUrlToEditor(pathname);
     useScrollEvent();
-    useReloadPage(reloadFunction);
-    const rowsRef = useRequestBounds();
+    const { rowsRef, isInsideEditor } = useEventMessageHandler({ reload: reloadFunction });
 
-    return rowsRef;
+    return { rowsRef, isInsideEditor };
 };
 
-function useRequestBounds() {
+function useEventMessageHandler({ reload = window.location.reload }: { reload: () => void }) {
     const rows = useRef<HTMLDivElement[]>([]);
+
+    const [isInsideEditor, setIsInsideEditor] = useState(false);
 
     useEffect(() => {
         function eventMessageHandler(event: MessageEvent) {
-            if (event.data === 'ema-request-bounds') {
-                const positionData = getPageElementBound(rows.current);
+            switch (event.data) {
+                case 'ema-request-bounds': {
+                    const positionData = getPageElementBound(rows.current);
 
-                postMessageToEditor({
-                    action: CUSTOMER_ACTIONS.SET_BOUNDS,
-                    payload: positionData
-                });
+                    postMessageToEditor({
+                        action: CUSTOMER_ACTIONS.SET_BOUNDS,
+                        payload: positionData
+                    });
+
+                    break;
+                }
+
+                case 'ema-reload-page': {
+                    reload();
+
+                    break;
+                }
+
+                case 'ema-is-inside-editor': {
+                    // console.log('ema-is-inside-editor'); Not triggering
+                    setIsInsideEditor(true);
+
+                    break;
+                }
             }
         }
 
@@ -85,9 +103,12 @@ function useRequestBounds() {
         return () => {
             window.removeEventListener('message', eventMessageHandler);
         };
-    }, [rows]);
+    }, [rows, reload]);
 
-    return rows;
+    return {
+        rowsRef: rows,
+        isInsideEditor
+    };
 }
 
 function useScrollEvent() {
@@ -104,22 +125,6 @@ function useScrollEvent() {
             window.removeEventListener('scroll', eventScrollHandler);
         };
     }, []);
-}
-
-function useReloadPage(reload: () => void = window.location.reload) {
-    useEffect(() => {
-        function eventMessageHandler(event: MessageEvent) {
-            if (event.data === 'ema-reload-page') {
-                reload();
-            }
-        }
-
-        window.addEventListener('message', eventMessageHandler);
-
-        return () => {
-            window.removeEventListener('message', eventMessageHandler);
-        };
-    }, [reload]);
 }
 
 function usePostUrlToEditor(pathname: string) {
