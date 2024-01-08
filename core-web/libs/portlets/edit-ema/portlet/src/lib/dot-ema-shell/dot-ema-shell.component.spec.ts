@@ -271,14 +271,4 @@ describe('DotEmaShellComponent', () => {
             });
         });
     });
-
-    describe('without queryParams', () => {
-        beforeEach(() => {
-            spectator = createComponent();
-            siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
-            store = spectator.inject(EditEmaStore, true);
-            router = spectator.inject(Router);
-            jest.spyOn(store, 'load');
-        });
-    });
 });
