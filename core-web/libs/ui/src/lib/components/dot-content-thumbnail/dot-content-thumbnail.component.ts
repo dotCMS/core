@@ -48,6 +48,7 @@ export class DotContentThumbnailComponent implements OnInit {
     @Input() contentType = '';
     @Input() name = '';
     @Input() iconSize = '1rem';
+    @Input() objectFit = 'cover';
 
     readonly CONTENT_THUMBNAIL_TYPE = CONTENT_THUMBNAIL_TYPE;
     private readonly DEFAULT_ICON = 'pi-file';
@@ -67,6 +68,10 @@ export class DotContentThumbnailComponent implements OnInit {
 
     get hasTitleImage(): boolean {
         return this.titleImage && this.titleImage !== this.NO_TITLE_IMAGE;
+    }
+
+    get isVeticalImage(): boolean {
+        return this.type === CONTENT_THUMBNAIL_TYPE.image && this.isImage;
     }
 
     ngOnInit(): void {

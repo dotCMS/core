@@ -62,6 +62,14 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
     private contenttype: EDITABLE_FILE;
     isEditable = false;
 
+    get objectFit(): string {
+        if (this.file?.height > this.file?.width) {
+            return 'contain';
+        }
+
+        return 'cover';
+    }
+
     ngOnChanges(): void {
         this.setIsEditable();
     }
