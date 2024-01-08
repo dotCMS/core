@@ -35,8 +35,8 @@ export interface DotThumbnailOptions {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotContentThumbnailComponent implements OnInit {
-    src: string;
-    icon: string;
+    src: string = '';
+    icon: string = '';
     type: CONTENT_THUMBNAIL_TYPE;
 
     private NO_TITLE_IMAGE = 'TITLE_IMAGE_NOT_FOUND';

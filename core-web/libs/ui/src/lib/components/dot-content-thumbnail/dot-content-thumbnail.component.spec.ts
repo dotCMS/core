@@ -69,6 +69,7 @@ describe('DotContentThumbnailComponent', () => {
     describe('titleImage', () => {
         beforeEach(async () => {
             spectator = createComponent({
+                detectChanges: false,
                 props: {
                     ...inputs,
                     name: 'image.png',
@@ -76,11 +77,11 @@ describe('DotContentThumbnailComponent', () => {
                     titleImage: 'image.png'
                 }
             });
-            spectator.detectChanges();
             await spectator.fixture.whenStable();
         });
 
         it('should set thumbnailType to image when contentType has titleImage', () => {
+            spectator.detectChanges();
             const imageElement = spectator.query(byTestId('thumbail-image'));
 
             expect(spectator.component.type).toBe(CONTENT_THUMBNAIL_TYPE.image);
@@ -98,7 +99,7 @@ describe('DotContentThumbnailComponent', () => {
             const imageElement = spectator.query(byTestId('thumbail-image'));
 
             expect(spectator.component.type).toBe(CONTENT_THUMBNAIL_TYPE.icon);
-            expect(spectator.component.src).toBe(null);
+            expect(spectator.component.src).toBeUndefined();
             expect(imageElement).toBeFalsy();
         });
     });
