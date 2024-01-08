@@ -28,3 +28,4 @@ This maintenance release includes the following code fixes:
 22. https://github.com/dotCMS/core/issues/23623 : [BE] Change Split Traffic #23623
 23. https://github.com/dotCMS/core/issues/26273 : Experiments not Considering Redirection from Vanity URLs #26273
 24. https://github.com/dotCMS/core/issues/26452 : Unable to add forms to experiment variants on dotCMS #26452
+25. https://github.com/dotCMS/core/issues/27063 : Experiments result dates in chart dates are incorrect by one day. #27063
