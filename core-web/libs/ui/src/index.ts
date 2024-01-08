@@ -14,6 +14,8 @@ export * from './lib/components/dot-api-link/dot-api-link.component';
 export * from './lib/components/dot-link/dot-link.component';
 export * from './lib/components/dot-not-license/dot-not-license.component';
 export * from './lib/components/dot-info-page/dot-info-page.component';
+export * from './lib/components/dot-form-dialog/dot-form-dialog.component';
+export * from './lib/components/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
 
 // Directives
 export * from './lib/dot-field-required/dot-field-required.directive';
