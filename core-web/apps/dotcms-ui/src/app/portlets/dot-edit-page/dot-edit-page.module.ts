@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import {
     DotContentletLockerService,
     DotESContentService,
+    DotFavoritePageService,
     DotPageLayoutService,
     DotPageRenderService,
     DotSessionStorageService
@@ -14,7 +14,6 @@ import {
     DotExperimentsConfigResolver,
     DotExperimentsService
 } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import {
     DotPushPublishEnvironmentsResolver,
     DotEnterpriseLicenseResolver
@@ -34,8 +33,7 @@ import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/do
         DotEditLayoutModule,
         DotEditPageMainModule,
         DotEditPageRoutingModule,
-        DotDirectivesModule,
-        DotPipesModule
+        DotDirectivesModule
     ],
     declarations: [],
     providers: [

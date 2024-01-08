@@ -68,4 +68,8 @@ p-chip .p-chip {
             font-size: $icon-sm;
         }
     }
+
+    &.p-chip-rounded {
+        border-radius: $border-radius-xl;
+    }
 }

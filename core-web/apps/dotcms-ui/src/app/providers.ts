@@ -6,23 +6,23 @@ import { ConfirmationService } from 'primeng/api';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import {
+    CanDeactivateGuardService,
     DotAlertConfirmService,
     DotContentTypeService,
     DotContentTypesInfoService,
     DotCrudService,
+    DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageService,
+    DotRouterService,
     DotSessionStorageService,
     DotWorkflowActionsFireService,
     PaginatorService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { DotFormatDateService } from '@dotcms/ui';
-import { CanDeactivateGuardService } from '@services/guards/can-deactivate-guard.service';
 import { DotTitleStrategy } from '@shared/services/dot-title-strategy.service';
 
 import { DotAccountService } from './api/services/dot-account-service';

@@ -1,10 +1,10 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
+import { CanDeactivateGuardService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotExperimentExperimentResolver } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
-import { CanDeactivateGuardService } from '@services/guards/can-deactivate-guard.service';
 
 import { DotEditPageMainComponent } from './main/dot-edit-page-main/dot-edit-page-main.component';
 import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
@@ -49,10 +49,8 @@ const dotEditPage: Routes = [
             },
             {
                 path: 'rules/:pageId',
-                loadChildren: () =>
-                    import('@portlets/dot-rules/dot-rules.module').then((m) => m.DotRulesModule)
+                loadChildren: () => import('@dotcms/dot-rules').then((m) => m.DotRulesModule)
             },
-
             // TODO: create a guard global of isEnterprise
             {
                 path: 'experiments',
@@ -61,7 +59,7 @@ const dotEditPage: Routes = [
                     // folder with components reused in experiments to a Library to
                     // avoid this circular dependency
 
-                    // eslint-disable-next-line @nrwl/nx/enforce-module-boundaries
+                    // eslint-disable-next-line @nx/enforce-module-boundaries
                     (await import('@dotcms/portlets/dot-experiments/portlet'))
                         .DotExperimentsPortletRoutes
             }

@@ -5,6 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck, take } from 'rxjs/operators';
 
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
 import {
     DotActionBulkResult,
@@ -12,7 +13,6 @@ import {
     DotContainerEntity,
     DotContainerPayload
 } from '@dotcms/dotcms-models';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 export const CONTAINER_API_URL = '/api/v1/containers/';
 
@@ -142,7 +142,11 @@ export class DotContainersService {
     unArchive(identifiers: string[]): Observable<DotActionBulkResult> {
         const url = `${CONTAINER_API_URL}_bulkunarchive`;
 
-        return this.request<DotActionBulkResult>({ method: 'PUT', url, body: identifiers });
+        return this.request<DotActionBulkResult>({
+            method: 'PUT',
+            url,
+            body: identifiers
+        });
     }
 
     /**
@@ -154,7 +158,11 @@ export class DotContainersService {
     archive(identifiers: string[]): Observable<DotActionBulkResult> {
         const url = `${CONTAINER_API_URL}_bulkarchive`;
 
-        return this.request<DotActionBulkResult>({ method: 'PUT', url, body: identifiers });
+        return this.request<DotActionBulkResult>({
+            method: 'PUT',
+            url,
+            body: identifiers
+        });
     }
 
     /**
@@ -166,7 +174,11 @@ export class DotContainersService {
     unPublish(identifiers: string[]): Observable<DotActionBulkResult> {
         const url = `${CONTAINER_API_URL}_bulkunpublish`;
 
-        return this.request<DotActionBulkResult>({ method: 'PUT', url, body: identifiers });
+        return this.request<DotActionBulkResult>({
+            method: 'PUT',
+            url,
+            body: identifiers
+        });
     }
 
     /**
@@ -178,7 +190,11 @@ export class DotContainersService {
     publish(identifiers: string[]): Observable<DotActionBulkResult> {
         const url = `${CONTAINER_API_URL}_bulkpublish`;
 
-        return this.request<DotActionBulkResult>({ method: 'PUT', url, body: identifiers });
+        return this.request<DotActionBulkResult>({
+            method: 'PUT',
+            url,
+            body: identifiers
+        });
     }
 
     /**

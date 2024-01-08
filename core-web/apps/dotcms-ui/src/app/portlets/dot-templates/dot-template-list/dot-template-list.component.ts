@@ -10,13 +10,12 @@ import { filter, pluck, take, takeUntil } from 'rxjs/operators';
 
 import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import {
     DotAlertConfirmService,
+    DotMessageDisplayService,
     DotMessageService,
+    DotRouterService,
     DotSiteBrowserService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, Site, SiteService } from '@dotcms/dotcms-js';
@@ -24,6 +23,8 @@ import {
     DotActionBulkResult,
     DotBulkFailItem,
     DotContentState,
+    DotMessageSeverity,
+    DotMessageType,
     DotTemplate
 } from '@dotcms/dotcms-models';
 import { ActionHeaderOptions } from '@models/action-header';

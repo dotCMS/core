@@ -21,18 +21,18 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotESContentService,
     DotEventsService,
+    DotHttpErrorManagerService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotMessageService,
     DotPropertiesService,
+    DotRouterService,
     DotSessionStorageService
 } from '@dotcms/data-access';
 import {

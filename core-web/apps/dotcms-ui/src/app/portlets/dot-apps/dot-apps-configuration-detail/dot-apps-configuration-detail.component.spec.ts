@@ -12,8 +12,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ButtonModule } from 'primeng/button';
 
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotAppsSaveData, DotAppsSecrets } from '@dotcms/dotcms-models';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';

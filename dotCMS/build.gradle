@@ -568,6 +568,8 @@ task unpackMavenUI(type: Copy) {
        from(zipTree("${project.projectDir}/../core-web/target/dotcms-core-web-${mavenUiVersion}.war")) {
                 include "dotAdmin/**"
                 include "dotcms-webcomponents/**"
+                include "dotcms-block-editor/**"
+                include "dotcms-binary-field-builder/**"
                 includeEmptyDirs = true
             }
         into layout.buildDirectory.dir("extracted-ui")
@@ -588,6 +590,7 @@ task copyDotCmsUi(type: Copy, dependsOn:['unpackMavenUI']) {
     dependsOn cleanDotCmsUi
 }
 
+// UI task: Clean the dotcms-webcomponents library
 task cleanDotCmsWebComponents {
     outputs.upToDateWhen { false }
     delete './tmp/dotcms-webcomponents.tgz'
@@ -598,13 +601,35 @@ task cleanDotCmsWebComponents {
     delete './src/main/webapp/dotcms-webcomponents/dotcms-webcomponents'
 }
 
-
-
+// UI task: Clean the dotcms-block-editor app
+task cleanDotCmsBlockEditor {
+    outputs.upToDateWhen { false }
+    delete './src/main/webapp/dotcms-block-editor'
+}
+// UI task: Clean the dotcms-binary-field-builder app
+task cleanDotCmsBinaryFields {
+    outputs.upToDateWhen { false }
+    delete './src/main/webapp/dotcms-binary-field-builder'
+}
+// UI task: Copy the dotcms-webcomponents library
 task copyDotCmsWebComponents(type: Copy, dependsOn:['unpackMavenUI']) {
     from (layout.buildDirectory.dir("extracted-ui/dotcms-webcomponents/dist"))
     into "./src/main/webapp"
     include 'dotcms-webcomponents/*'
     dependsOn cleanDotCmsWebComponents
+}
+
+// UI task: Copy the dotcms-block-editor app
+task copyDotCmsBlockEditor(type: Copy, dependsOn:['unpackMavenUI']) {
+    from (layout.buildDirectory.dir("extracted-ui/dotcms-block-editor"))
+    into "./src/main/webapp/dotcms-block-editor"
+      dependsOn cleanDotCmsBlockEditor
+}
+// UI task: Copy the dotcms-binary-field-builder app
+task copyDotCmsBinaryFields(type: Copy, dependsOn:['unpackMavenUI']) {
+    from (layout.buildDirectory.dir("extracted-ui/dotcms-binary-field-builder"))
+    into "./src/main/webapp/dotcms-binary-field-builder"
+    dependsOn cleanDotCmsBinaryFields
 }
 
 
@@ -618,7 +643,7 @@ task cleanTmp(type: Delete) {
 
 
 task extractDotCmsArtifacts {
-    dependsOn 'copyDotCmsUi', 'copyDotCmsWebComponents'
+    dependsOn 'copyDotCmsUi', 'copyDotCmsWebComponents', 'copyDotCmsBlockEditor', 'copyDotCmsBinaryFields'
     finalizedBy 'cleanTmp'
 }
 
@@ -679,6 +704,8 @@ processResources {
 war {
     dependsOn 'copyDotCmsUi'
     dependsOn 'copyDotCmsWebComponents'
+    dependsOn 'copyDotCmsBlockEditor'
+    dependsOn 'copyDotCmsBinaryFields'
     finalizedBy 'undeployPlugins'
     if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
         classpath = configurations.testRuntime
