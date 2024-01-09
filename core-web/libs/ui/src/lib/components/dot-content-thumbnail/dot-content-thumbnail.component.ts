@@ -22,8 +22,8 @@ export interface DotThumbnailOptions {
     name: string;
     contentType: string;
     tempUrl?: string;
-    iconSize?: string; // Remove
-    titleImage?: string; //
+    iconSize?: string;
+    titleImage?: string;
 }
 
 @Component({
