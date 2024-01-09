@@ -253,11 +253,11 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                             'Workflow Action'
                         );
 
-                        expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith(
-                            component.page.workingInode,
-                            mockWorkflowsActions[0].id,
-                            mappedData
-                        );
+                        expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith({
+                            actionId: mockWorkflowsActions[0].id,
+                            inode: component.page.workingInode,
+                            data: mappedData
+                        });
                     });
 
                     it('should show and alert when there is no environments and push publish action', () => {
@@ -279,18 +279,18 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
 
                 it('should fire actions on click in the menu items', () => {
                     secondButton.click();
-                    expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith(
-                        component.page.workingInode,
-                        mockWorkflowsActions[1].id,
-                        undefined
-                    );
+                    expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith({
+                        actionId: mockWorkflowsActions[1].id,
+                        inode: component.page.workingInode,
+                        data: undefined
+                    });
 
                     thirdButton.click();
-                    expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith(
-                        component.page.workingInode,
-                        mockWorkflowsActions[2].id,
-                        undefined
-                    );
+                    expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith({
+                        actionId: mockWorkflowsActions[2].id,
+                        inode: component.page.workingInode,
+                        data: undefined
+                    });
                 });
 
                 it('should show success message after fired action in the menu items', () => {
