@@ -19,6 +19,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+/**
+ * This REST Resource behaves as a proxy to the remote dotCMS instance that provides the announcements
+ */
 @Path("/v1/announcements")
 public class AnnouncementsResource {
 
@@ -26,17 +29,34 @@ public class AnnouncementsResource {
 
     private final AnnouncementsHelper helper;
 
+    /**
+     * Default constructor
+     */
     public AnnouncementsResource() {
         this.webResource = new WebResource();
         this.helper = new AnnouncementsHelperImpl();
     }
 
+    /**
+     * Constructor
+     * @param webResource WebResource
+     * @param helper AnnouncementsHelper
+     */
     @VisibleForTesting
     public AnnouncementsResource(WebResource webResource, AnnouncementsHelper helper) {
         this.webResource = webResource;
         this.helper = helper;
     }
 
+    /**
+     * Get the announcements
+     * @param request HttpServletRequest
+     * @param response HttpServletResponse
+     * @param langIdOrCode String
+     * @param refreshCache boolean
+     * @param limit int
+     * @return Response
+     */
     @GET
     @Path("/")
     @JSONP

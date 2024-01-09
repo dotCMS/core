@@ -58,6 +58,8 @@ import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMapTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockTest;
 import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
 import com.dotcms.rest.IntegrityResourceIntegrationTest;
+import com.dotcms.rest.api.v1.announcements.AnnouncementsHelperIntegrationTest;
+import com.dotcms.rest.api.v1.announcements.RemoteAnnouncementsLoaderTest;
 import com.dotcms.rest.api.v1.apps.SiteViewPaginatorIntegrationTest;
 import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.asset.AssetPathResolverImplIntegrationTest;
@@ -323,7 +325,9 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230523CreateVariantFieldInContentletIntegrationTest.class,
         DropOldContentVersionsJobTest.class,
         Task231109AddPublishDateToContentletVersionInfoTest.class,
-        Task240102AlterVarcharLengthOfRelationTypeTest.class
+        Task240102AlterVarcharLengthOfRelationTypeTest.class,
+        AnnouncementsHelperIntegrationTest.class,
+        RemoteAnnouncementsLoaderTest.class
 })
 
 public class MainSuite2b {
