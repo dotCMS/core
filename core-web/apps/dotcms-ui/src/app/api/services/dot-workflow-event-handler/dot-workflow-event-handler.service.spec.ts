@@ -193,11 +193,11 @@ describe('DotWorkflowEventHandlerService', () => {
             dotWorkflowEventHandlerService.open({ ...mockWAEvent });
             dotWizardService.output$({ ...mockWizardOutputData });
 
-            expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith(
-                mockWAEvent.inode,
-                mockWAEvent.workflow.id,
-                mockWizardOutputTransformedData
-            );
+            expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith({
+                inode: mockWAEvent.inode,
+                actionId: mockWAEvent.workflow.id,
+                data: mockWizardOutputTransformedData
+            });
 
             expect(dotGlobalMessageService.display).toHaveBeenCalledWith(
                 `The action "${mockWorkflowsActions[0].name}" was executed correctly`

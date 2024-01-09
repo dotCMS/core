@@ -89,7 +89,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ macos-13-xlarge, macOS-latest ]
+        os: [ macos-13-xlarge, macOS-latest,ubuntu-latest ] #
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -99,26 +99,44 @@ jobs:
           ref: ${{ needs.precheck.outputs.HEAD }}
           fetch-depth: 0
 
-      - name: 'Set up GraalVM for macOS ${{ matrix.os }}'
-        if: ${{ contains(matrix.os, 'macos-13-xlarge') || contains(matrix.os, 'macOS-latest') }}
+      - name: 'Set up GraalVM for ${{ matrix.os }}'
         run: |
-          if [ "${{ matrix.os }}" == "macos-13-xlarge" ]; then
-            echo "Setting GraalVM on macos-13-xlarge"
-            ARCH=aarch64
-          else
-            echo "Setting GraalVM on macOS-latest"
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            echo "GraalVM on Linux (AMD64)"
+          
             ARCH=amd64
-          fi         
+            PLATFORM=linux
+            INSTALLATION_PATH=/usr/lib/jvm
           
-          wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java11-darwin-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
-          tar -xzf graalvm-ce-java11-darwin-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
-          sudo mv graalvm-ce-java11-${{ env.GRAALVM_VERSION }} /Library/Java/JavaVirtualMachines
+          else          
+            if [ "${{ matrix.os }}" == "macos-13-xlarge" ]; then
+              echo "GraalVM on Mac (AARCH64)"
+              ARCH=aarch64
+            else
+              echo "GraalVM on Mac (AMD64)"
+              ARCH=amd64
+            fi
           
-          ls -la /Library/Java/JavaVirtualMachines
-
-          sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home
-
-          GRAALVM_HOME="/Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home"
+            PLATFORM=darwin
+            INSTALLATION_PATH=/Library/Java/JavaVirtualMachines          
+          fi 
+          
+          echo "PLATFORM=$PLATFORM"
+          echo "ARCH=$ARCH"
+          echo "INSTALLATION_PATH=$INSTALLATION_PATH"
+          
+          wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java11-${PLATFORM}-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
+          sudo mkdir -p $INSTALLATION_PATH
+          tar -xzf graalvm-ce-java11-${PLATFORM}-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz 
+          sudo mv graalvm-ce-java11-${{ env.GRAALVM_VERSION }} $INSTALLATION_PATH
+          
+          if [ "${{ matrix.os }}" != "ubuntu-latest" ]; then
+            sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home        
+            GRAALVM_HOME="${INSTALLATION_PATH}/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home"
+          else
+            GRAALVM_HOME="${INSTALLATION_PATH}/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}"
+          fi
+          
           echo "GRAALVM_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
           echo "JAVA_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
           PATH="$GRAALVM_HOME/bin:$PATH"
@@ -148,7 +166,7 @@ jobs:
           echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
           echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
 
-      - name: 'Build distribution'
+      - name: 'Compile source code'
         working-directory: ${{ github.workspace }}
         run: |
           ./mvnw clean install -Dtest.failure.ignore=true -DskipTests=${{ github.event.inputs.skipTests }} -am -pl :dotcms-cli
@@ -161,7 +179,7 @@ jobs:
       - name: 'Build Native Image'
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw package -Pnative -DskipTests=${{ github.event.inputs.skipTests }} -Dquarkus.native.additional-build-args="-H:ReflectionConfigurationFiles=reflection-config.json,-H:ResourceConfigurationFiles=resources-config.json" -pl :dotcms-cli
+          ./mvnw package -Pnative -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
 
       - name: 'Create distribution'
         working-directory: ${{ github.workspace }}

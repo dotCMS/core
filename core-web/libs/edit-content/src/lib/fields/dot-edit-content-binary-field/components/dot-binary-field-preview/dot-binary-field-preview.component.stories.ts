@@ -144,9 +144,9 @@ Video.args = {
     variableName: 'binaryField'
 };
 
-export const file = Template.bind({});
+export const File = Template.bind({});
 
-file.args = {
+File.args = {
     file: previewFile,
     variableName: 'binaryField'
 };
