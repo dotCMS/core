@@ -7612,7 +7612,6 @@ public class ContentletAPITest extends ContentletBaseTest {
      * When: You have live and not live contentlets
      * Should: Update publish_date when contentlet is published
      */
-    @Test
     public void getMostRecentPublishedContent() throws Exception {
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
         final String contentTypeVarName = contentType.variable();

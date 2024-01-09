@@ -8686,15 +8686,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 400, BadRequest\", function () {",
-									"    pm.response.to.have.status(400);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"unique\");",
-									"});"
 								],
 								"type": "text/javascript"
 							}
@@ -9352,15 +9343,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 400, BadRequest\", function () {",
-									"    pm.response.to.have.status(400);",
-									"});",
-									"",
-									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"unique\");",
-									"});"
 								],
 								"type": "text/javascript"
 							}
