@@ -508,7 +508,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230426AlterVarcharLengthOfLockedByColTest.class,
         CMSUrlUtilTest.class,
         WorkflowProcessorTest.class,
-        Task230713IncreaseDisabledWysiwygColumnSizeTest.class
+        Task230713IncreaseDisabledWysiwygColumnSizeTest.class,
+        Task231109AddPublishDateToContentletVersionInfoTest.class
 })
 public class MainSuite {
 

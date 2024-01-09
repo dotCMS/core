@@ -28,6 +28,7 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 
 import com.dotcms.api.APIProvider;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
@@ -353,11 +354,21 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             map.put("isLocked", contentlet.isLocked());
         }
         map.put("hasLiveVersion", toolBox.versionableAPI.hasLiveVersion(contentlet));
-        final Object publishDate = contentlet.get("publishDate");
-        if (null != publishDate) {
-            map.put("publishDate", publishDate);
-        } else {
-            map.put("publishDate", Try.of(contentlet::getModDate).getOrNull());
+
+        final Optional<ContentletVersionInfo> versionInfo =
+                APILocator.getVersionableAPI().getContentletVersionInfo(
+                        contentlet.getIdentifier(), contentlet.getLanguageId());
+
+        // If the contentlet is live, get the publish date from the version info
+        // unless the contentlet has a publish date property already set
+        final Object contentPublishDate = contentlet.get("publishDate");
+        final Object versionPublishDate = versionInfo.map(ContentletVersionInfo::getPublishDate)
+                .orElse(null);
+        if (null != contentPublishDate) {
+            map.put("publishDate", contentPublishDate);
+        } else if (contentlet.isLive()) {
+            map.put("publishDate", versionPublishDate != null ? versionPublishDate :
+                    Try.of(contentlet::getModDate).getOrNull());
         }
     }
 

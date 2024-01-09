@@ -43,6 +43,7 @@ public class ContentletVersionInfoTransformer implements DBTransformer<Contentle
         versionInfo.setLockedBy((String) map.get("locked_by"));
         versionInfo.setLockedOn((Date) map.get("locked_on"));
         versionInfo.setVersionTs((Date) map.get("version_ts"));
+        versionInfo.setPublishDate((Date) map.get("publish_date"));
         return versionInfo;
     }
 }

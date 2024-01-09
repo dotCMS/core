@@ -138,6 +138,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
@@ -2991,6 +2994,12 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Validations
         assertNotNull( isLive );
         assertTrue( isLive );
+
+        final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(contentlet.getIdentifier(),
+                        contentlet.getLanguageId());
+        final Date publishDate = versionInfo.map(ContentletVersionInfo::getPublishDate).orElse(null);
+        assertNotNull(publishDate);
     }
 
     /**
@@ -7596,6 +7605,45 @@ public class ContentletAPITest extends ContentletBaseTest {
                     null, false, false, null);
             PrincipalThreadLocal.setName(null);
         }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#publish(Contentlet, User, boolean)}
+     * When: You have live and not live contentlets
+     * Should: Update publish_date when contentlet is published
+     */
+    @Test
+    public void getMostRecentPublishedContent() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String contentTypeVarName = contentType.variable();
+
+        // publish contentlet
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType);
+        final Contentlet publishedContentlet = contentletDataGen.nextPersisted();
+        ContentletDataGen.publish(publishedContentlet);
+        final String contentInode = publishedContentlet.getInode();
+        contentletDataGen.nextPersisted();
+        contentletDataGen.nextPersisted();
+
+        // query published contentlet in the last half hour
+        final Date currentDate = new Date();
+        final FastDateFormat datetimeFormat = FastDateFormat.getInstance(
+                "yyyy-MM-dd't'HH:mm:ssZ", APILocator.systemTimeZone());
+        final String currentDateForQuery = datetimeFormat.format(currentDate);
+
+        final Date currentDateLessHalfHour = DateUtils.addMinutes(currentDate, -30);
+        final String currentDateLessHalfHourForQuery = datetimeFormat.format(currentDateLessHalfHour);
+
+        final Contentlet mostRecentPublishedContent = contentletAPI.search(
+                        String.format( "+contentType:%s +sysPublishDate:[%s TO %s]",
+                                contentTypeVarName, currentDateLessHalfHourForQuery, currentDateForQuery),
+                        -1, 0, "", user, false)
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+        assertNotNull(mostRecentPublishedContent);
+        assertEquals(contentInode, mostRecentPublishedContent.getInode());
     }
 
 }

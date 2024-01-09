@@ -425,6 +425,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT, datetimeFormat.format(dateOufOfRange));
 			}
 
+			loadDateTimeFieldValue(contentletMap,
+					ESMappingConstants.SYS_PUBLISH_DATE, versionInfo.get().getPublishDate());
+
 			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(versionInfo.get().getVersionTs()));
 			contentletMap.put(ESMappingConstants.VERSION_TS + TEXT, datetimeFormat.format(versionInfo.get().getVersionTs()));
 
@@ -497,6 +500,28 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                     "'%s':: %s", contentlet.getIdentifier(), e.getMessage());
             Logger.error(this, errorMsg, e);
             throw new DotMappingException(errorMsg, e);
+		}
+	}
+
+	/**
+	 * This method loads a date/time field into the map to be included in the ES index.
+	 * @param contentletMap Map to be populated with the date/time field
+	 * @param fieldName Name of the field to be populated
+	 * @param dateValue Value of the date/time field
+	 *                  If the value is null, the field will be populated with a date out of range
+	 */
+	private void loadDateTimeFieldValue(final Map<String, Object> contentletMap,
+										final String fieldName, final Date dateValue) {
+		if (UtilMethods.isSet(dateValue)) {
+			contentletMap.put(fieldName,
+					elasticSearchDateTimeFormat.format(dateValue));
+			contentletMap.put(fieldName + TEXT,
+					datetimeFormat.format(dateValue));
+		} else {
+			contentletMap.put(fieldName,
+					elasticSearchDateTimeFormat.format(dateOufOfRange));
+			contentletMap.put(fieldName + TEXT,
+					datetimeFormat.format(dateOufOfRange));
 		}
 	}
 

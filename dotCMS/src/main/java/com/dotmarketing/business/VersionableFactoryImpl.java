@@ -52,8 +52,8 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	TemplateAPI templateApi = null;
 
 	private static final String CREATE_CONTENTLET_VERSION_INFO_SQL = "INSERT INTO contentlet_version_info (identifier, lang, working_inode, deleted, locked_by, locked_on, version_ts) VALUES (?,?,?,?,?,?,?)";
-	private static final String INSERT_CONTENTLET_VERSION_INFO_SQL = "INSERT INTO contentlet_version_info (identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) VALUES (?,?,?,?,?,?,?,?)";
-	private static final String UPDATE_CONTENTLET_VERSION_INFO_SQL = "UPDATE contentlet_version_info SET working_inode=?, live_inode=?, deleted=?, locked_by=?, locked_on=?, version_ts=? WHERE identifier=? AND lang=?";
+	private static final String INSERT_CONTENTLET_VERSION_INFO_SQL = "INSERT INTO contentlet_version_info (identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts, publish_date) VALUES (?,?,?,?,?,?,?,?,?)";
+	private static final String UPDATE_CONTENTLET_VERSION_INFO_SQL = "UPDATE contentlet_version_info SET working_inode=?, live_inode=?, deleted=?, locked_by=?, locked_on=?, version_ts=?, publish_date=? WHERE identifier=? AND lang=?";
 
 	/**
 	 * Default class constructor.
@@ -425,6 +425,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			dotConnect.addParam(cvInfo.getLockedBy());
 			dotConnect.addParam(cvInfo.getLockedOn());
 			dotConnect.addParam(cvInfo.getVersionTs());
+			dotConnect.addParam(cvInfo.getPublishDate());
 			dotConnect.loadResult();
         } else {
 			dotConnect.setSQL(UPDATE_CONTENTLET_VERSION_INFO_SQL);
@@ -434,6 +435,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 			dotConnect.addParam(cvInfo.getLockedBy());
 			dotConnect.addParam(cvInfo.getLockedOn());
 			dotConnect.addParam(cvInfo.getVersionTs());
+			dotConnect.addParam(cvInfo.getPublishDate());
 			dotConnect.addParam(cvInfo.getIdentifier());
 			dotConnect.addParam(cvInfo.getLang());
 			dotConnect.loadResult();

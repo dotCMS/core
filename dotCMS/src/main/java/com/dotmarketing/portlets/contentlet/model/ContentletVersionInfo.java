@@ -3,16 +3,26 @@ package com.dotmarketing.portlets.contentlet.model;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.util.UtilMethods;
 import java.io.Serializable;
+import java.util.Date;
 
 public class ContentletVersionInfo extends VersionInfo implements Serializable {
     private static final long serialVersionUID = 8952464908349482530L;
 
     private long lang;
+    private Date publishDate;
     public long getLang() {
         return lang;
     }
     public void setLang(long lang) {
         this.lang = lang;
+    }
+
+    public Date getPublishDate() {
+        return publishDate;
+    }
+
+    public void setPublishDate(Date publishDate) {
+        this.publishDate = publishDate;
     }
 
     @Override

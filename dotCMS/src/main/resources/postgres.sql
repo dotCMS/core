@@ -565,6 +565,7 @@ create table contentlet_version_info (
    locked_by varchar(100),
    locked_on timestamptz,
    version_ts timestamptz not null,
+   publish_date timestampz,
    primary key (identifier, lang)
 );
 create table fixes_audit (
