@@ -57,9 +57,10 @@ export const usePageEditor = (props: PageEditorOptions) => {
         throw new Error('Dotcms page editor required the pathname of your webapp');
     }
 
-    usePostUrlToEditor(pathname);
-    useScrollEvent();
     const { rowsRef, isInsideEditor } = useEventMessageHandler({ reload: reloadFunction });
+
+    usePostUrlToEditor(pathname, isInsideEditor);
+    useScrollEvent(isInsideEditor);
 
     return { rowsRef, isInsideEditor };
 };
@@ -118,8 +119,10 @@ function useEventMessageHandler({ reload = window.location.reload }: { reload: (
     };
 }
 
-function useScrollEvent() {
+function useScrollEvent(isInsideEditor: boolean) {
     useEffect(() => {
+        if (!isInsideEditor) return;
+
         function eventScrollHandler() {
             postMessageToEditor({
                 action: CUSTOMER_ACTIONS.IFRAME_SCROLL
@@ -131,16 +134,18 @@ function useScrollEvent() {
         return () => {
             window.removeEventListener('scroll', eventScrollHandler);
         };
-    }, []);
+    }, [isInsideEditor]);
 }
 
-function usePostUrlToEditor(pathname: string) {
+function usePostUrlToEditor(pathname: string, isInsideEditor: boolean) {
     useEffect(() => {
+        if (!isInsideEditor) return;
+
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.SET_URL,
             payload: {
                 url: pathname === '/' ? 'index' : pathname?.replace('/', '')
             }
         });
-    }, [pathname]);
+    }, [pathname, isInsideEditor]);
 }
