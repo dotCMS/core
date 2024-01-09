@@ -12,13 +12,16 @@
     </ng-template>
 
     <ng-template #tabTemplate let-tab="tab">
-        <div class="row" *ngFor="let row of tab.layout" data-testId="row">
-            <div class="column" *ngFor="let column of row.columns" data-testId="column">
-                <dot-edit-content-field
-                    *ngFor="let field of column.fields"
-                    [field]="field"
-                    [contentlet]="formData.contentlet"
-                    data-testId="field" />
+        <div class="form__layout">
+            <div class="row" *ngFor="let row of tab.layout" data-testId="row">
+                <div class="column" *ngFor="let column of row.columns" data-testId="column">
+                    <dot-edit-content-field
+                        *ngFor="let field of column.fields"
+                        [field]="field"
+                        [contentlet]="formData.contentlet"
+                        [contentType]="formData.contentType"
+                        data-testId="field" />
+                </div>
             </div>
         </div>
     </ng-template>
