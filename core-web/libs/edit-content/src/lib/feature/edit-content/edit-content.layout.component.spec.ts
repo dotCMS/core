@@ -1,135 +1,219 @@
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
-import { MockPipe } from 'ng-mocks';
+import { expect } from '@jest/globals';
+import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { MockComponent, MockPipe } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { MessageService } from 'primeng/api';
+
+import {
+    DotContentTypeService,
+    DotMessageService,
+    DotRenderMode,
+    DotWorkflowActionsFireService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
 import { DotFormatDateService, DotMessagePipe } from '@dotcms/ui';
+import { mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { EditContentLayoutComponent } from './edit-content.layout.component';
+import { DotEditContentStore } from './store/edit-content.store';
 
+import { DotEditContentAsideComponent } from '../../components/dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
+import { DotEditContentToolbarComponent } from '../../components/dot-edit-content-toolbar/dot-edit-content-toolbar.component';
+import { EditContentPayload } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
-import { CONTENT_TYPE_MOCK, JUST_FIELDS_MOCKS, LAYOUT_MOCK } from '../../utils/mocks';
+import { BINARY_FIELD_CONTENTLET, CONTENT_TYPE_MOCK } from '../../utils/mocks';
 
-const createEditContentLayoutComponent = (params: { contentType?: string; id?: string }) => {
-    return createComponentFactory({
+describe('EditContentLayoutComponent', () => {
+    let spectator: Spectator<EditContentLayoutComponent>;
+    let dotEditContentStore: DotEditContentStore;
+    let dotEditContentService: DotEditContentService;
+    let dotWorkflowsActionsService: DotWorkflowsActionsService;
+
+    const createComponent = createComponentFactory({
         component: EditContentLayoutComponent,
-        imports: [HttpClientTestingModule, MockPipe(DotMessagePipe)],
-        componentProviders: [
-            {
-                provide: ActivatedRoute,
-                useValue: { snapshot: { params } }
-            },
-            mockProvider(DotFormatDateService)
+        imports: [
+            HttpClientTestingModule,
+            MockPipe(DotMessagePipe),
+            MockComponent(DotEditContentFormComponent),
+            MockComponent(DotEditContentToolbarComponent),
+            MockComponent(DotEditContentAsideComponent)
         ],
-        providers: [mockProvider(DotMessageService)]
+        providers: [
+            mockProvider(MessageService),
+            mockProvider(DotContentTypeService),
+            mockProvider(DotMessageService),
+            mockProvider(DotFormatDateService),
+            mockProvider(DotEditContentStore),
+            mockProvider(DotWorkflowActionsFireService)
+        ]
     });
-};
 
-describe('EditContentLayoutComponent with identifier', () => {
-    let spectator: Spectator<EditContentLayoutComponent>;
-    let dotEditContentService: SpyObject<DotEditContentService>;
+    describe('Existing content', () => {
+        const mockData: EditContentPayload = {
+            actions: mockWorkflowsActions,
+            contentType: BINARY_FIELD_CONTENTLET.contentType,
+            layout: CONTENT_TYPE_MOCK.layout,
+            fields: CONTENT_TYPE_MOCK.fields,
+            contentlet: BINARY_FIELD_CONTENTLET
+        };
 
-    const createComponent = createEditContentLayoutComponent({ contentType: undefined, id: '1' });
-
-    beforeEach(async () => {
-        spectator = createComponent({
-            detectChanges: false,
-
-            providers: [
-                {
-                    provide: DotEditContentService,
-                    useValue: {
-                        getContentTypeFormData: jest.fn().mockReturnValue(
-                            of({
-                                layout: LAYOUT_MOCK,
-                                fields: JUST_FIELDS_MOCKS
-                            })
-                        ),
-                        getContentById: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK)),
-                        saveContentlet: jest.fn().mockReturnValue(of({}))
+        beforeEach(async () => {
+            spectator = createComponent({
+                detectChanges: false,
+                providers: [
+                    {
+                        provide: DotEditContentService,
+                        useValue: {
+                            getContentById: jest.fn().mockReturnValue(of(BINARY_FIELD_CONTENTLET)),
+                            getContentType: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK))
+                        }
+                    },
+                    {
+                        provide: DotWorkflowsActionsService,
+                        useValue: {
+                            getByInode: jest.fn().mockReturnValue(of(mockWorkflowsActions)),
+                            getDefaultActions: jest.fn().mockReturnValue(of(mockWorkflowsActions))
+                        }
+                    },
+                    {
+                        provide: ActivatedRoute,
+                        useValue: { snapshot: { params: { contentType: undefined, id: '1' } } }
                     }
-                },
-                mockProvider(DotMessageService)
-            ]
+                ]
+            });
+
+            dotEditContentService = spectator.inject(DotEditContentService, true);
+            dotWorkflowsActionsService = spectator.inject(DotWorkflowsActionsService, true);
+            dotEditContentStore = spectator.inject(DotEditContentStore, true);
         });
 
-        dotEditContentService = spectator.inject(DotEditContentService, true);
-    });
+        it('should get content data', () => {
+            const spyContent = jest.spyOn(dotEditContentService, 'getContentById');
+            const spyContentType = jest.spyOn(dotEditContentService, 'getContentType');
+            const spyWorkflow = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
 
-    it('should set identifier from activatedRoute and contentType undefined', () => {
-        expect(spectator.component.contentType).toEqual(undefined);
-        expect(spectator.component.identifier).toEqual('1');
-    });
+            spectator.detectChanges();
 
-    it('should call getContentById and getContentTypeFormData with contentType if identifier is present', () => {
-        spectator.detectChanges();
-        expect(dotEditContentService.getContentById).toHaveBeenCalledWith('1');
-    });
-
-    it('should call dotEditContentService.saveContentlet with the correct parameters - Using contentType from getContentById', () => {
-        spectator.detectChanges();
-        const formComponent = spectator.query(DotEditContentFormComponent);
-        formComponent.changeValue.emit({ key: 'value' });
-        spectator.component.saveContent();
-        expect(dotEditContentService.saveContentlet).toHaveBeenCalledWith({
-            key: 'value',
-            inode: '1',
-            contentType: 'Test'
+            expect(spyContent).toHaveBeenCalledWith('1');
+            expect(spyContentType).toHaveBeenCalledWith(BINARY_FIELD_CONTENTLET.contentType);
+            expect(spyWorkflow).toHaveBeenCalledWith('1', DotRenderMode.EDITING);
         });
-    });
 
-    it('should have a [formData] reference on the <dot-edit-content-form>', async () => {
-        spectator.detectChanges();
-        const formElement = spectator.query('dot-edit-content-form');
-        expect(formElement.hasAttribute('ng-reflect-form-data')).toBe(true);
-        expect(formElement).toBeDefined();
-    });
-});
+        it('should pass the data to the DotEditContentForm Component', () => {
+            spectator.detectChanges();
+            const formComponent = spectator.query(DotEditContentFormComponent);
+            expect(formComponent).toBeDefined();
+            expect(formComponent.formData).toEqual(mockData);
+        });
 
-describe('EditContentLayoutComponent without identifier', () => {
-    let spectator: Spectator<EditContentLayoutComponent>;
-    let dotEditContentService: SpyObject<DotEditContentService>;
+        it('should pass the actions to the DotEditContentToolbar Component', () => {
+            spectator.detectChanges();
+            const toolbarComponent = spectator.query(DotEditContentToolbarComponent);
+            expect(toolbarComponent).toBeDefined();
+            expect(toolbarComponent.actions).toEqual(mockData.actions);
+        });
 
-    const createComponent = createEditContentLayoutComponent({
-        contentType: 'test',
-        id: undefined
-    });
+        it('should pass the contentlet and contentType to the DotEditContentAside Component', () => {
+            spectator.detectChanges();
+            const asideComponent = spectator.query(DotEditContentAsideComponent);
+            expect(asideComponent).toBeDefined();
+            expect(asideComponent.contentLet).toEqual(mockData.contentlet);
+            expect(asideComponent.contentType).toEqual(mockData.contentType);
+        });
 
-    beforeEach(() => {
-        spectator = createComponent({
-            detectChanges: false,
-            providers: [
-                {
-                    provide: DotEditContentService,
-                    useValue: {
-                        getContentTypeFormData: jest.fn().mockReturnValue(
-                            of({
-                                layout: LAYOUT_MOCK,
-                                fields: JUST_FIELDS_MOCKS,
-                                contentType: 'test'
-                            })
-                        ),
-                        getContentById: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK))
-                    }
+        it('should fire workflow action', () => {
+            const spyStore = jest.spyOn(dotEditContentStore, 'fireWorkflowActionEffect');
+            spectator.detectChanges();
+            const toolbarComponent = spectator.query(DotEditContentToolbarComponent);
+            toolbarComponent.actionFired.emit(mockWorkflowsActions[0]);
+
+            expect(spyStore).toHaveBeenCalledWith({
+                actionId: mockWorkflowsActions[0].id,
+                inode: BINARY_FIELD_CONTENTLET.inode,
+                data: {
+                    contentlet: expect.any(Object) // Expect any object
                 }
-            ]
+            });
+        });
+    });
+
+    describe('New content', () => {
+        const mockData: EditContentPayload = {
+            actions: mockWorkflowsActions,
+            contentType: CONTENT_TYPE_MOCK.contentType,
+            layout: CONTENT_TYPE_MOCK.layout,
+            fields: CONTENT_TYPE_MOCK.fields,
+            contentlet: null
+        };
+
+        beforeEach(async () => {
+            spectator = createComponent({
+                detectChanges: false,
+                providers: [
+                    {
+                        provide: DotEditContentService,
+                        useValue: {
+                            getContentById: jest.fn().mockReturnValue(of(BINARY_FIELD_CONTENTLET)),
+                            getContentType: jest.fn().mockReturnValue(of(CONTENT_TYPE_MOCK))
+                        }
+                    },
+                    {
+                        provide: DotWorkflowsActionsService,
+                        useValue: {
+                            getByInode: jest.fn().mockReturnValue(of(mockWorkflowsActions)),
+                            getDefaultActions: jest.fn().mockReturnValue(of(mockWorkflowsActions))
+                        }
+                    },
+                    {
+                        provide: ActivatedRoute,
+                        useValue: {
+                            snapshot: { params: { contentType: mockData.contentType, id: null } }
+                        }
+                    }
+                ]
+            });
+
+            dotEditContentService = spectator.inject(DotEditContentService, true);
+            dotWorkflowsActionsService = spectator.inject(DotWorkflowsActionsService, true);
         });
 
-        dotEditContentService = spectator.inject(DotEditContentService, true);
-        spectator.detectChanges();
-    });
+        it('should get new content data', () => {
+            const spyContent = jest.spyOn(dotEditContentService, 'getContentById');
+            const spyContentType = jest.spyOn(dotEditContentService, 'getContentType');
+            const spyWorkflow = jest.spyOn(dotWorkflowsActionsService, 'getDefaultActions');
 
-    it('should set contentType from activatedRoute - Identifier undefined.', () => {
-        expect(spectator.component.contentType).toEqual('test');
-        expect(spectator.component.identifier).toEqual(undefined);
-    });
+            spectator.detectChanges();
 
-    it('should call getContentById and getContentTypeFormData with contentType if identifier is NOT present', () => {
-        expect(dotEditContentService.getContentById).not.toHaveBeenCalled();
-        expect(dotEditContentService.getContentTypeFormData).toHaveBeenCalledWith('test');
+            expect(spyContentType).toHaveBeenCalledWith(mockData.contentType);
+            expect(spyWorkflow).toHaveBeenCalledWith(mockData.contentType);
+            expect(spyContent).not.toHaveBeenCalledWith();
+        });
+
+        it('should pass the data to the DotEditContentForm Component', () => {
+            spectator.detectChanges();
+            const formComponent = spectator.query(DotEditContentFormComponent);
+            expect(formComponent).toBeDefined();
+            expect(formComponent.formData).toEqual(mockData);
+        });
+
+        it('should pass the actions to the DotEditContentToolbar Component', () => {
+            spectator.detectChanges();
+            const toolbarComponent = spectator.query(DotEditContentToolbarComponent);
+            expect(toolbarComponent).toBeDefined();
+            expect(toolbarComponent.actions).toEqual(mockData.actions);
+        });
+
+        it('should pass the contentlet and contentType to the DotEditContentAside Component', () => {
+            spectator.detectChanges();
+            const asideComponent = spectator.query(DotEditContentAsideComponent);
+            expect(asideComponent).toBeDefined();
+            expect(asideComponent.contentLet).toEqual(mockData.contentlet);
+            expect(asideComponent.contentType).toEqual(mockData.contentType);
+        });
     });
 });
