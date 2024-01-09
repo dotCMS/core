@@ -7,8 +7,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { SelectItemGroup } from 'primeng/api';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotWorkflowsActionsService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import { HttpCode, ResponseView } from '@dotcms/dotcms-js';
 import { mockWorkflows, mockWorkflowsActions } from '@dotcms/utils-testing';
 
@@ -65,7 +64,12 @@ describe('DotWorkflowsActionsSelectorFieldService', () => {
             {
                 label: 'Default Scheme',
                 value: '85c1515c-c4f3-463c-bac2-860b8fcacc34',
-                items: [{ label: 'Assign Workflow', value: '44d4d4cd-c812-49db-adb1-1030be73e69a' }]
+                items: [
+                    {
+                        label: 'Assign Workflow',
+                        value: '44d4d4cd-c812-49db-adb1-1030be73e69a'
+                    }
+                ]
             },
             {
                 label: 'Document Management',
@@ -77,7 +81,10 @@ describe('DotWorkflowsActionsSelectorFieldService', () => {
                 value: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
                 items: [
                     { label: 'Save', value: 'ceca71a0-deee-4999-bd47-b01baa1bcfc8' },
-                    { label: 'Save / Publish', value: 'b9d89c80-3d88-4311-8365-187323c96436' }
+                    {
+                        label: 'Save / Publish',
+                        value: 'b9d89c80-3d88-4311-8365-187323c96436'
+                    }
                 ]
             }
         ]);

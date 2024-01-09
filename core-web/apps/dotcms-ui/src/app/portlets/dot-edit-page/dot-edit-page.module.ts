@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import {
     DotContentletLockerService,
     DotESContentService,
+    DotFavoritePageService,
     DotPageLayoutService,
     DotPageRenderService,
     DotSessionStorageService

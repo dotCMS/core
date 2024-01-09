@@ -5,12 +5,15 @@ import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotMessageService, DotPageRenderService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotPageRenderService
+} from '@dotcms/data-access';
 import { HttpCode } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 
-import { DotFavoritePageComponent } from '../../dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
 import {
     DotPagesState,
     DotPageStore,

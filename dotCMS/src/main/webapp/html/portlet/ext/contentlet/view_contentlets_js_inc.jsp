@@ -901,29 +901,29 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
           }
         }
 
-        function donwloadToExcel(){
+        function donwloadToExcel() {
                 var structureInode = dijit.byId('structure_inode').value;
 
-                if(structureInode ==""){
-                        dijit.byId('structure_inode').focus() ;
+                if (structureInode == "") {
+                        dijit.byId('structure_inode').focus();
                         return false;
                 }
                 cbContentInodeList = new Array();
-                var fieldsValues = new Array ();
-                if(currentStructureFields == undefined){
+                var fieldsValues = new Array();
+                if (currentStructureFields == undefined) {
                         currentStructureFields = Array();
                 }
 
-                var structureVelraw=dojo.byId("structureVelocityVarNames").value;
-                var structInoderaw=dojo.byId("structureInodesList").value;
-                var structureVel=structureVelraw.split(";");
-                var structInode=structInoderaw.split(";");
-                var selectedStruct="";
-                for(var m2=0; m2 <= structInode.length ; m2++ ){
-             if(structureInode==structInode[m2]){
-                 selectedStruct=structureVel[m2];
-                 }
+                var structureVelraw = dojo.byId("structureVelocityVarNames").value;
+                var structInoderaw = dojo.byId("structureInodesList").value;
+                var structureVel = structureVelraw.split(";");
+                var structInode = structInoderaw.split(";");
+                var selectedStruct = "";
+                for (var m2 = 0; m2 <= structInode.length; m2++) {
+                        if (structureInode == structInode[m2]) {
+                                selectedStruct = structureVel[m2];
                         }
+                }
 
                 if (hasHostFolderField) {
                         getHostValue();
@@ -939,39 +939,39 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         }
                 }
 
-				var allField = dijit.byId("allFieldTB").getValue();
-				if (allField != undefined && allField.length>0 ) {
+                var allField = dijit.byId("allFieldTB").getValue();
+                if (allField != undefined && allField.length > 0) {
 
                         fieldsValues[fieldsValues.length] = "catchall";
                         fieldsValues[fieldsValues.length] = allField + "*";
-				}
+                }
 
                 for (var j = 0; j < currentStructureFields.length; j++) {
                         var field = currentStructureFields[j];
-            var fieldId = selectedStruct+"."+field["fieldVelocityVarName"] + "Field";
+                        var fieldId = selectedStruct + "." + field["fieldVelocityVarName"] + "Field";
                         var formField = document.getElementById(fieldId);
                         var fieldValue = "";
 
-                        if(formField != null){
-                                                                if(dojo.attr(formField.id,DOT_FIELD_TYPE) == 'select'){
+                        if (formField != null) {
+                                if (dojo.attr(formField.id, DOT_FIELD_TYPE) == 'select') {
 
                                         var tempDijitObj = dijit.byId(formField.id);
-                                        fieldsValues[fieldsValues.length] = selectedStruct+"."+field["fieldVelocityVarName"];
+                                        fieldsValues[fieldsValues.length] = selectedStruct + "." + field["fieldVelocityVarName"];
                                         fieldsValues[fieldsValues.length] = tempDijitObj.value;
 
-                                }else if(formField.type=='select-one' || formField.type=='select-multiple') {
+                                } else if (formField.type == 'select-one' || formField.type == 'select-multiple') {
 
-                                     var values = "";
-                                     for (var i=0; i<formField.options.length; i++) {
-                                            if (formField.options[i].selected) {
-                                              fieldsValues[fieldsValues.length] = selectedStruct+"."+field["fieldVelocityVarName"];
-                                              fieldsValues[fieldsValues.length] = formField.options[i].value;
+                                        var values = "";
+                                        for (var i = 0; i < formField.options.length; i++) {
+                                                if (formField.options[i].selected) {
+                                                        fieldsValues[fieldsValues.length] = selectedStruct + "." + field["fieldVelocityVarName"];
+                                                        fieldsValues[fieldsValues.length] = formField.options[i].value;
 
-                                            }
-                                          }
+                                                }
+                                        }
 
-                                }else {
-                                        fieldsValues[fieldsValues.length] = selectedStruct+"."+field["fieldVelocityVarName"];
+                                } else {
+                                        fieldsValues[fieldsValues.length] = selectedStruct + "." + field["fieldVelocityVarName"];
                                         fieldsValues[fieldsValues.length] = formField.value;
 
                                 }
@@ -980,10 +980,10 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                 }
 
-        for(var i=0;i < radiobuttonsIds.length ;i++ ){
+                for (var i = 0; i < radiobuttonsIds.length; i++) {
                         var formField = document.getElementById(radiobuttonsIds[i]);
-                        if(formField != null && formField.type=='radio') {
-                            var values = "";
+                        if (formField != null && formField.type == 'radio') {
+                                var values = "";
                                 if (formField.checked) {
                                         values = formField.value;
                                         fieldsValues[fieldsValues.length] = formField.name;
@@ -992,10 +992,10 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         }
                 }
 
-                for(var i=0;i < checkboxesIds.length ;i++ ){
+                for (var i = 0; i < checkboxesIds.length; i++) {
                         var formField = document.getElementById(checkboxesIds[i]);
-                        if(formField != null && formField.type=='checkbox') {
-                            var values = "";
+                        if (formField != null && formField.type == 'checkbox') {
+                                var values = "";
                                 if (formField.checked) {
                                         values = formField.value;
                                         fieldsValues[fieldsValues.length] = formField.name;
@@ -1004,26 +1004,26 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         }
                 }
 
-                if( getSelectedLanguageId() != 0 ){
-                	fieldsValues[fieldsValues.length] = "languageId";
-                	fieldsValues[fieldsValues.length] = getSelectedLanguageId();
+                if (getSelectedLanguageId() != 0) {
+                        fieldsValues[fieldsValues.length] = "languageId";
+                        fieldsValues[fieldsValues.length] = getSelectedLanguageId();
                 }
 
                 // if we have an identifier
-            if(isInodeSet(document.getElementById("Identifier").value)){
-            var contentId = "";
-                fieldsValues[fieldsValues.length] = "identifier";
-                contentId = document.getElementById("Identifier").value;
-                    fieldsValues[fieldsValues.length] = contentId;
-            }
-
-                var allField = dijit.byId("allFieldTB").getValue();
-                if (allField != undefined && allField.length>0 ) {
-                    fieldsValues[fieldsValues.length] = "catchall";
-                    fieldsValues[fieldsValues.length] = allField + "*";
+                if (isInodeSet(document.getElementById("Identifier").value)) {
+                        var contentId = "";
+                        fieldsValues[fieldsValues.length] = "identifier";
+                        contentId = document.getElementById("Identifier").value;
+                        fieldsValues[fieldsValues.length] = contentId;
                 }
 
-                var categoriesValues = new Array ();
+                var allField = dijit.byId("allFieldTB").getValue();
+                if (allField != undefined && allField.length > 0) {
+                        fieldsValues[fieldsValues.length] = "catchall";
+                        fieldsValues[fieldsValues.length] = allField + "*";
+                }
+
+                var categoriesValues = new Array();
                 var form = document.getElementById("search_form");
                 var categories = document.getElementsByName("categories");
                 if (categories != null) {
@@ -1049,7 +1049,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         }
                 }
 
-                 var filterSystemHost = false;
+                var filterSystemHost = false;
                 if (document.getElementById("filterSystemHostCB").checked && document.getElementById("filterSystemHostTable").style.display != "none") {
                         filterSystemHost = true;
                 }
@@ -1062,7 +1062,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                 var filterUnpublish = false;
                 if (dijit.byId("showingSelect").getValue() == "unpublished") {
-                       filterUnpublish = true;
+                        filterUnpublish = true;
                 }
 
                 var showDeleted = false;
@@ -1072,6 +1072,14 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                 dijit.byId("searchButton").attr("disabled", true);
                 //dijit.byId("clearButton").attr("disabled", false);
+
+                fieldsValues = fieldsValues.map(value => {
+                        if (value.includes('[') || value.includes(']')) {
+                                return encodeURIComponent(value);
+                        } else {
+                                return value;
+                        }
+                });
 
                 document.getElementById('fieldsValues').value = fieldsValues;
                 document.getElementById('categoriesValues').value = categoriesValues;
@@ -1089,26 +1097,29 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 href += "&expStructureInode="+structureInode+"&expFieldsValues="+fieldsValues+"&expCategoriesValues="+categoriesValues+"&showDeleted="+showDeleted+"&expCurrentSortBy="+currentSortBy+"&filterSystemHost="+filterSystemHost+"&filterLocked="+filterLocked+"&filterUnpublish="+filterUnpublish;
 
                 /*if we have a date*/
-                        var dateFrom= null;
-                        var dateTo= null;
-                        if((document.getElementById("lastModDateFrom").value!="")){
-                                dateFrom = document.getElementById("lastModDateFrom").value;
-                                var dateFromsplit = dateFrom.split("/");
-                                if(dateFromsplit[0]< 10) dateFromsplit[0]= "0"+dateFromsplit[0]; if(dateFromsplit[1]< 10) dateFromsplit[1]= "0"+dateFromsplit[1];
-                                dateFrom= dateFromsplit[2]+dateFromsplit[0]+dateFromsplit[1]+"000000";
-                                href+= "&modDateFrom="+dateFrom;
-                        }
+                var dateFrom = null;
+                var dateTo = null;
+                if ((document.getElementById("lastModDateFrom").value != "")) {
+                        dateFrom = document.getElementById("lastModDateFrom").value;
+                        var dateFromsplit = dateFrom.split("/");
+                        if (dateFromsplit[0] < 10) dateFromsplit[0] = "0" + dateFromsplit[0]; if (dateFromsplit[1] < 10) dateFromsplit[1] = "0" + dateFromsplit[1];
+                        dateFrom = dateFromsplit[2] + dateFromsplit[0] + dateFromsplit[1] + "000000";
+                        href += "&modDateFrom=" + dateFrom;
+                }
 
-                        if((document.getElementById("lastModDateTo").value!="")){
-                                dateTo = document.getElementById("lastModDateTo").value;
-                                var dateTosplit = dateTo.split("/");
-                                if(dateTosplit[0]< 10) dateTosplit[0]= "0"+dateTosplit[0]; if(dateTosplit[1]< 10) dateTosplit[1]= "0"+dateTosplit[1];
-                                dateTo= dateTosplit[2]+dateTosplit[0]+dateTosplit[1]+"235959";
-                                href+= "&modDateTo="+dateTo;
-                        }
+                if ((document.getElementById("lastModDateTo").value != "")) {
+                        dateTo = document.getElementById("lastModDateTo").value;
+                        var dateTosplit = dateTo.split("/");
+                        if (dateTosplit[0] < 10) dateTosplit[0] = "0" + dateTosplit[0]; if (dateTosplit[1] < 10) dateTosplit[1] = "0" + dateTosplit[1];
+                        dateTo = dateTosplit[2] + dateTosplit[0] + dateTosplit[1] + "235959";
+                        href += "&modDateTo=" + dateTo;
+                }
 
-                window.location.href=href;
-
+                if (href.length > 6584) {
+                        showDotCMSErrorMessage("Error: The URL has exceeded the size limit due to the large number of content filters. Please reduce them.");
+                } else {
+                        window.location.href = href;
+                }
         }
 
 

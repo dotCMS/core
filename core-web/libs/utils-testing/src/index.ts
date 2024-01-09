@@ -38,3 +38,7 @@ export * from './lib/dot-experiments.mock';
 export * from './lib/match-media.mock';
 export * from './lib/dot-page-tools.mock';
 export * from './lib/dot-router-service-jest.mock';
+export * from './lib/dot-display-service-mock';
+export * from './lib/dot-http-error-manager.service.mock';
+export * from './lib/dot-temp-file.mock';
+export * from './lib/dot-current-user.mock';

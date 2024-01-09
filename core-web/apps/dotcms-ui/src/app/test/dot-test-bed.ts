@@ -11,6 +11,7 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import {
     DotAlertConfirmService,
     DotEventsService,
+    DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageService,
     DotRouterService
@@ -32,7 +33,6 @@ import {
 import { DotFormatDateService } from '@dotcms/ui';
 import { MockDotRouterService } from '@dotcms/utils-testing';
 
-import { DotHttpErrorManagerService } from './../api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotIframeService } from './../view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
 
 import { DotCustomEventHandlerService } from '../api/services/dot-custom-event-handler/dot-custom-event-handler.service';

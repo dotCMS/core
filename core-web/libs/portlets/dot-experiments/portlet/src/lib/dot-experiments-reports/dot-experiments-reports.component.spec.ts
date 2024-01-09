@@ -14,7 +14,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmPopup } from 'primeng/confirmpopup';
 import { TabView } from 'primeng/tabview';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
@@ -24,7 +24,6 @@ import {
     getExperimentResultsMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsExperimentSummaryComponent } from './components/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsReportDailyDetailsComponent } from './components/dot-experiments-report-daily-details/dot-experiments-report-daily-details.component';
@@ -113,7 +112,9 @@ describe('DotExperimentsReportsComponent', () => {
                 DotExperimentsReportsComponent,
                 {
                     remove: { imports: [DotExperimentsReportsChartComponent] },
-                    add: { imports: [MockComponent(DotExperimentsReportsChartComponent)] }
+                    add: {
+                        imports: [MockComponent(DotExperimentsReportsChartComponent)]
+                    }
                 }
             ]
         ],

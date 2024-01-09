@@ -15,7 +15,11 @@ import { ConfirmPopup } from 'primeng/confirmpopup';
 import { Inplace } from 'primeng/inplace';
 import { Tooltip } from 'primeng/tooltip';
 
-import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotSessionStorageService
+} from '@dotcms/data-access';
 import {
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
@@ -31,7 +35,6 @@ import {
     MockDotMessageService,
     PARENT_RESOLVERS_ACTIVE_ROUTE_DATA
 } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
 
@@ -206,7 +209,13 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 url: 'link1',
                 promoted: false
             },
-            { id: '1111111', name: 'test', weight: 33.33, url: 'link2', promoted: false }
+            {
+                id: '1111111',
+                name: 'test',
+                weight: 33.33,
+                url: 'link2',
+                promoted: false
+            }
         ];
         beforeEach(() => {
             loadExperiment(EXPERIMENT_MOCK, variants);

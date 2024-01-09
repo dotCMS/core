@@ -7,9 +7,13 @@ import { fakeAsync, getTestBed, TestBed, tick } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotAlertConfirmService, DotMessageService, DotRouterService } from '@dotcms/data-access';
+import {
+    DotAlertConfirmService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotMessageService,
+    DotRouterService
+} from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { DotApps, DotAppsImportConfiguration, DotAppsSaveData } from '@dotcms/dotcms-models';
 import { DotFormatDateService } from '@dotcms/ui';
@@ -17,14 +21,13 @@ import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
+    DotMessageDisplayServiceMock,
     LoginServiceMock,
     MockDotRouterService,
     mockResponseView
 } from '@dotcms/utils-testing';
 
 import { DotAppsService } from './dot-apps.service';
-
-import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
 
 // INFO: needs to import this way so we can spy on.
 
@@ -63,7 +66,10 @@ describe('DotAppsService', () => {
                     provide: LoginService,
                     useClass: LoginServiceMock
                 },
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
                 ConfirmationService,
