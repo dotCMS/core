@@ -9,6 +9,7 @@
         <i class="pi pi-search"></i>
 
         <input
+            class="p-inputtext-sm"
             [placeholder]="'Search' | dm"
             [formControl]="control"
             type="search"
@@ -35,7 +36,7 @@
                     (dragend)="dragEnd.emit($event)"
                     data-type="contentlet"
                     draggable="true">
-                    <dot-icon name="drag_indicator"></dot-icon>
+                    <dot-icon [size]="20" name="drag_indicator"></dot-icon>
 
                     <dot-contentlet-thumbnail
                         [iconSize]="'24px'"
