@@ -234,3 +234,4 @@ This maintenance release includes the following code fixes:
 191. https://github.com/dotCMS/core/issues/25233 : sysPublishDate no longer appears to be part of the ElasticSearch object we create for indexing #25233
 192. https://github.com/dotCMS/core/issues/26439 : Relationship fields not respecting the order identifiers are sent via the workflow API #26439
 193. https://github.com/dotCMS/core/issues/26706 : Change Default PUBSUB Provider #26706
+194. https://github.com/dotCMS/core/issues/26774 : text fields validation limit to 255 chars is not longer required #26774

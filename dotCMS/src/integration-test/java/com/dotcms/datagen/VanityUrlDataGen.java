@@ -104,5 +104,8 @@ public class VanityUrlDataGen extends ContentletDataGen {
     }
   }
 
-  
+  public VanityUrlDataGen allSites() {
+    host = APILocator.systemHost();
+    return this;
+  }
 }

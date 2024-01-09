@@ -27,6 +27,8 @@ import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.vanityurl.model.DefaultVanityUrl;
+import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -69,6 +71,8 @@ import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import org.apache.http.HttpStatus;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -1102,5 +1106,28 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         assertEquals(content.getContentTypeId(), type.id());
 
         assertEquals("/testing/urlMapValue1/urlMapValue2",contentletAPI.getUrlMapForContentlet(content, user, false));
+    }
+
+    /**
+     * Since we removed the validation of max length of 255 chars, we should be able to create content successfully, even
+     * thought we sent over 255 chars
+     */
+    @Test
+    public void createContentWhichTextFieldOver255Chars_success(){
+        final String textOver255Chars = "this-text-is-waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaay-longer-than-two-hundred-fifty-five-characters-so-should-be-hitting-the-limit-for-the-fields-260-charsq";
+        final DefaultVanityUrl vanityURL = (DefaultVanityUrl) new VanityUrlDataGen()
+                .allSites()
+                .title("Test VanityURL URI and Forward Over 255")
+                .uri(textOver255Chars)
+                .action(HttpStatus.SC_MOVED_PERMANENTLY)
+                .forwardTo(textOver255Chars)
+                .nextPersisted();
+
+        ContentletDataGen.publish(vanityURL);
+
+        final Contentlet checkout = ContentletDataGen.checkout(vanityURL);
+        final VanityUrl vanityURLCheckout = APILocator.getVanityUrlAPI().fromContentlet(checkout);
+        assertEquals(textOver255Chars,vanityURLCheckout.getURI());
+        assertEquals(textOver255Chars,vanityURLCheckout.getForwardTo());
     }
 }
