@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 
 import { Row } from './Row';
 
+import { MockContextRender } from '../../mocks/mockPageContext';
 import { PageProviderContext } from '../PageProvider/PageProvider';
 
 import '@testing-library/jest-dom';
@@ -23,7 +24,8 @@ describe('Row', () => {
                         identifier: '123',
                         uuid: '1'
                     }
-                ]
+                ],
+                styleClass: ''
             },
             {
                 width: 20,
@@ -33,13 +35,19 @@ describe('Row', () => {
                         identifier: '456',
                         uuid: '2'
                     }
-                ]
+                ],
+                styleClass: ''
             }
-        ]
+        ],
+        styleClass: ''
     };
 
     beforeEach(() => {
-        render(<Row row={mockRowData} />);
+        render(
+            <MockContextRender mockContext={{ isInsideEditor: true }}>
+                <Row row={mockRowData} />
+            </MockContextRender>
+        );
     });
 
     it('should set the data-dot attribute', () => {

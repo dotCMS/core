@@ -3,6 +3,8 @@ import '@testing-library/jest-dom';
 
 import { Column } from './Column';
 
+import { MockContextRender } from '../../mocks/mockPageContext';
+
 jest.mock('../Container/Container', () => {
     return {
         Container: ({ containerRef }) => (
@@ -23,7 +25,11 @@ describe('Column', () => {
     };
 
     beforeEach(() => {
-        render(<Column column={mockColumnData} />);
+        render(
+            <MockContextRender mockContext={{ isInsideEditor: true }}>
+                <Column column={mockColumnData} />
+            </MockContextRender>
+        );
     });
 
     it('applies the correct width and start classes based on props', () => {

@@ -8,7 +8,7 @@ import { mockPageContext } from '../../mocks/mockPageContext';
 
 // Mock the custom hook and components
 jest.mock('../../hooks/usePageEditor', () => ({
-    usePageEditor: jest.fn().mockReturnValue({ current: [] })
+    usePageEditor: jest.fn().mockReturnValue({ rowsRef: { current: [] }, isInsideEditor: true })
 }));
 
 jest.mock('../Row/Row', () => {
