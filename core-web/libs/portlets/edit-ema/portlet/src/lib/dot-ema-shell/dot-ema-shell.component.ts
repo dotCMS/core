@@ -154,10 +154,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         combineLatest([this.activatedRoute.data, this.activatedRoute.queryParams])
             .pipe(takeUntil(this.destroy$))
-            .subscribe(([{ data }, queryParams]) => {
-                // eslint-disable-next-line no-console
-                console.log({ queryParams, data });
-
+            .subscribe(([{ data }]) => {
                 this.store.load({
                     ...this.queryParams,
                     clientHost: data.url

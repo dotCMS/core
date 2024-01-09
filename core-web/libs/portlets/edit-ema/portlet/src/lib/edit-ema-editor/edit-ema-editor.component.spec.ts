@@ -1171,6 +1171,16 @@ describe('EditEmaEditorComponent', () => {
         });
 
         describe('DOM', () => {
+            it('iframe should have the correct src', () => {
+                spectator.detectChanges();
+
+                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+                expect(iframe.nativeElement.src).toBe(
+                    'http://localhost:3000/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                );
+            });
+
             it('should navigate to new url when postMessage SET_URL', () => {
                 const router = spectator.inject(Router);
                 jest.spyOn(router, 'navigate');
