@@ -1077,7 +1077,7 @@ class SiteCommandIT extends CommandTest {
                 + "  \"modDate\" : \"2023-05-05T00:13:25.242+00:00\",\n"
                 + "  \"modUser\" : \"dotcms.org.1\",\n"
                 + "  \"live\" : true,\n"
-                + "  \"working\" : true\n"
+                + "  \"working\" : true,\n"
                 + "  \"default\" : %b\n"
                 + "}", newSiteName, isDefault);
 
