@@ -37,7 +37,7 @@
 
         &.selected {
             border-color: $color-palette-secondary-300;
-            box-shadow: $md-shadow-6;
+            box-shadow: $shadow-l;
             cursor: default;
         }
     }

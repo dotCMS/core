@@ -6,9 +6,7 @@ import { Injectable, inject } from '@angular/core';
 import { map, pluck } from 'rxjs/operators';
 
 import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
-
-import { EditContentFormData } from '../models/dot-edit-content-form.interface';
+import { DotCMSContentType, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotEditContentService {
@@ -16,32 +14,24 @@ export class DotEditContentService {
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly http = inject(HttpClient);
 
-    private _currentContentType?: string;
-
     /**
      * Retrieves the content by its ID.
      * @param id - The ID of the content to retrieve.
      * @returns An observable of the DotCMSContentType object.
      */
-    getContentById(id: string): Observable<DotCMSContentType> {
+    getContentById(id: string): Observable<DotCMSContentlet> {
         return this.http.get(`/api/v1/content/${id}`).pipe(pluck('entity'));
     }
 
     /**
-     * Returns an Observable of an array of DotCMSContentTypeLayoutRow objects representing the form data for a given content type.
-     * @param idOrVar - The identifier or variable name of the content type to retrieve form data for.
-     * @returns An Observable of an array of DotCMSContentTypeLayoutRow objects representing the form data for the given content type.
+     * Retrieves the content type by its ID or variable name.
+     *
+     * @param {string} idOrVar - The identifier or variable name of the content type to retrieve form data for.
+     * @return {*}  {Observable<DotCMSContentType>}
+     * @memberof DotEditContentService
      */
-    getContentTypeFormData(idOrVar: string): Observable<EditContentFormData> {
-        return this.dotContentTypeService.getContentType(idOrVar).pipe(
-            map(
-                ({ layout, fields, contentType }): EditContentFormData => ({
-                    layout,
-                    fields,
-                    contentType
-                })
-            )
-        );
+    getContentType(idOrVar: string): Observable<DotCMSContentType> {
+        return this.dotContentTypeService.getContentType(idOrVar);
     }
 
     /**
@@ -65,13 +55,5 @@ export class DotEditContentService {
      */
     saveContentlet<T>(data: { [key: string]: string }): Observable<T> {
         return this.dotWorkflowActionsFireService.saveContentlet(data);
-    }
-
-    set currentContentType(contentType: string) {
-        this._currentContentType = contentType;
-    }
-
-    get currentContentType() {
-        return this._currentContentType;
     }
 }

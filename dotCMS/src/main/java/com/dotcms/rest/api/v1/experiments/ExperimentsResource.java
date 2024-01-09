@@ -47,6 +47,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+
+import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -534,9 +536,16 @@ public class ExperimentsResource {
             return new ResponseEntityView<>(Map.of(HEALTH_KEY, Health.NOT_CONFIGURED));
         }
 
-        final EventLogRunnable eventLogRunnable = new EventLogRunnable(analyticsApp);
-        return new ResponseEntityView<>(Map.of(HEALTH_KEY, eventLogRunnable.sendTestEvent()
-                .isPresent()?Health.OK:Health.CONFIGURATION_ERROR));
+        try {
+            final EventLogRunnable eventLogRunnable = new EventLogRunnable(analyticsApp);
+
+            return new ResponseEntityView<>(Map.of(HEALTH_KEY, eventLogRunnable.sendTestEvent()
+                    .isPresent()?Health.OK:Health.CONFIGURATION_ERROR));
+        } catch (IllegalStateException e) {
+            return new ResponseEntityView<>(Map.of(HEALTH_KEY, Health.CONFIGURATION_ERROR));
+        }
+
+
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,

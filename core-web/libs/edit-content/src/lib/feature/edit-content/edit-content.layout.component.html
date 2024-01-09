@@ -1,15 +1,20 @@
-<ng-container *ngIf="formData$ | async as formData; else noContent">
-    <dot-edit-content-form [formData]="formData" (changeValue)="setFormValue($event)" />
-    <aside>
-        <dot-edit-content-aside
-            [contentLet]="formData.contentlet"
-            [contentType]="formData.contentType" />
-        <p-button
-            [label]="'Save' | dm"
-            (click)="saveContent()"
-            data-testId="button-save"></p-button>
+<ng-container *ngIf="vm$ | async as vm; else noContent">
+    <dot-edit-content-toolbar
+        class="header"
+        [actions]="vm.actions"
+        (actionFired)="
+            fireWorkflowAction({
+                actionId: $event.id,
+                inode: vm.contentlet.inode,
+                contentType: vm.contentType
+            })
+        "></dot-edit-content-toolbar>
+    <dot-edit-content-form class="body" [formData]="vm" (changeValue)="setFormValue($event)" />
+    <aside class="sidebar">
+        <dot-edit-content-aside [contentLet]="vm.contentlet" [contentType]="vm.contentType" />
     </aside>
-    <p *ngIf="isContentSaved">Content saved!</p>
 </ng-container>
 
 <ng-template #noContent>No content to show</ng-template>
+
+<p-toast></p-toast>

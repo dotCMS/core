@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema';
+import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 

@@ -1,5 +1,7 @@
 @use "variables" as *;
-
+:host {
+    width: 100%;
+}
 .chart__header {
     padding-right: $spacing-1;
 }

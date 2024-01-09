@@ -4,7 +4,7 @@
     line-height: 1.5;
     background-color: $white;
     margin: 0 0 $spacing-3 0;
-    box-shadow: $md-shadow-1;
+    box-shadow: $shadow-xs;
     border-radius: $border-radius-xs;
     border: solid transparent;
     border-width: 0 0 0 0;
@@ -12,7 +12,7 @@
 }
 
 .p-toast .p-toast-message .p-toast-message-content {
-    padding: $spacing-4;
+    padding: $spacing-3;
     border-width: 0 0 0 0;
 }
 

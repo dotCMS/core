@@ -19,12 +19,11 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import {
     DotAlertConfirmService,
     DotCurrentUserService,
     DotDevicesService,
+    DotHttpErrorManagerService,
     DotMessageService,
     DotPersonalizeService,
     DotPropertiesService
@@ -38,7 +37,7 @@ import {
     DotPageRenderState,
     DotVariantData
 } from '@dotcms/dotcms-models';
-import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema';
+import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotTabButtonsComponent } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
@@ -47,6 +46,7 @@ import {
     DotPageStateServiceMock,
     DotPersonalizeServiceMock,
     getExperimentMock,
+    MockDotHttpErrorManagerService,
     MockDotMessageService,
     mockDotRenderedPage,
     mockUser
@@ -208,7 +208,11 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 expect(dotTabButtons.options).toEqual([
                     {
                         label: 'Edit',
-                        value: { id: 'EDIT_MODE', showDropdownButton: false, shouldRefresh: false },
+                        value: {
+                            id: 'EDIT_MODE',
+                            showDropdownButton: false,
+                            shouldRefresh: false
+                        },
                         disabled: false
                     },
                     {
@@ -301,7 +305,11 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 await expect(dotTabButtons).toBeDefined();
                 expect(dotTabButtons.options[1]).toEqual({
                     label: 'Preview',
-                    value: { id: 'PREVIEW_MODE', showDropdownButton: true, shouldRefresh: true },
+                    value: {
+                        id: 'PREVIEW_MODE',
+                        showDropdownButton: true,
+                        shouldRefresh: true
+                    },
                     disabled: true
                 });
                 expect(dotTabButtons.activeId).toBe(DotPageMode.PREVIEW);
@@ -318,7 +326,11 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 expect(dotTabButtons).toBeDefined();
                 expect(dotTabButtons.options[0]).toEqual({
                     label: 'Edit',
-                    value: { id: 'EDIT_MODE', showDropdownButton: false, shouldRefresh: false },
+                    value: {
+                        id: 'EDIT_MODE',
+                        showDropdownButton: false,
+                        shouldRefresh: false
+                    },
                     disabled: true
                 });
                 expect(dotTabButtons.activeId).toBe(DotPageMode.PREVIEW);

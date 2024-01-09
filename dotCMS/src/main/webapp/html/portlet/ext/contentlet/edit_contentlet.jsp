@@ -78,7 +78,6 @@
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
 <!--  dotCMS Block Editor Builder -->
-	<script src="/dotcms-block-editor/runtime.js" type="module"></script>
 	<script src="/dotcms-block-editor/polyfills.js" type="module"></script>
 	<script src="/dotcms-block-editor/generator-runtime.js" defer></script>
 	<script src="/dotcms-block-editor/main.js" type="module"></script>
@@ -101,7 +100,6 @@
 %>
 
 <!--  dotCMS Binary Field Builder -->
-	<script src="/dotcms-binary-field-builder/runtime.js" type="module"></script>
 	<script src="/dotcms-binary-field-builder/polyfills.js" type="module"></script>
 	<script src="/dotcms-binary-field-builder/generator-runtime.js" defer></script>
 	<script src="/dotcms-binary-field-builder/main.js" type="module"></script>
@@ -246,7 +244,7 @@
 	String fullScreenClass= fullScreenField ? "edit-content-full-screen": "";
 	boolean fullScreenNextField = isNextFieldFullScreen(structure, fields.get(0));
 	String fullScreenNextClass= fullScreenNextField ? "edit-content-full-screen": "";
-	List<Structure> structures = StructureFactory.getStructuresByUser(user, "", "name", 100, 0,"asc");
+
 
 	/*### DRAW THE DYNAMIC FIELDS ###*/
 

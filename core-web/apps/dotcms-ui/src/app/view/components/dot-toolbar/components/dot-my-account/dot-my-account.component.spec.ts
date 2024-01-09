@@ -16,13 +16,16 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { StringFormat } from '@dotcms/app/api/util/stringFormat';
-import { DotAlertConfirmService, DotMessageService, DotRouterService } from '@dotcms/data-access';
+import {
+    DotAlertConfirmService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotMessageService,
+    DotRouterService
+} from '@dotcms/data-access';
 import {
     CoreWebService,
     DotcmsConfigService,
@@ -34,6 +37,7 @@ import {
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
+    DotMessageDisplayServiceMock,
     LoginServiceMock,
     MockDotMessageService,
     MockDotRouterService,
@@ -102,7 +106,10 @@ describe('DotMyAccountComponent', () => {
                 },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotAccountService, useClass: DotAccountServiceMock },
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
                 StringFormat,
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
