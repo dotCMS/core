@@ -2,6 +2,7 @@
     <span class="p-input-icon-right">
         <i class="pi pi-search"></i>
         <input
+            class="p-inputtext-sm"
             [placeholder]="'Search' | dm"
             [formControl]="searchContentType"
             [value]="filter"
@@ -35,10 +36,10 @@
             </button>
 
             <div class="content-type-card__content">
-                <dot-icon [name]="contenttype.icon"></dot-icon>
+                <dot-icon [name]="contenttype.icon" [size]="24"></dot-icon>
                 <span>{{ contenttype.name }}</span>
             </div>
-            <dot-icon class="drag-icon" name="drag_indicator"></dot-icon>
+            <dot-icon class="drag-icon" [size]="20" name="drag_indicator"></dot-icon>
         </div>
     </ng-template>
 </div>
