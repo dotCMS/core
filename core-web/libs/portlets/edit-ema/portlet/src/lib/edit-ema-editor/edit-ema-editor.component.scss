@@ -3,7 +3,7 @@
 :host {
     display: grid;
     grid-template-rows: min-content 1fr;
-    grid-template-columns: 1fr 240px;
+    grid-template-columns: 1fr 15.5rem;
     height: 100%;
 }
 
@@ -45,7 +45,7 @@ dot-edit-ema-toolbar {
 }
 
 .iframe-wrapper--device {
-    box-shadow: $md-shadow-6;
+    box-shadow: $shadow-l;
     background: linear-gradient(135deg, $white 0%, rgba(240, 240, 240, 1) 100%);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);
 }

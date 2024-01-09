@@ -62,7 +62,7 @@ $number-link-icon-size: 2.28rem;
 
     .dot-starter-top-main__block {
         border-radius: $border-radius-md;
-        box-shadow: $md-shadow-7;
+        box-shadow: $shadow-l;
 
         align-content: space-between;
         border-bottom: 1px solid $color-palette-gray-300;
@@ -195,7 +195,7 @@ $number-link-icon-size: 2.28rem;
     .dot-starter-bottom__block {
         background-color: $white;
         border-bottom: 1px solid $color-palette-gray-300;
-        box-shadow: $md-shadow-4;
+        box-shadow: $shadow-m;
         display: flex;
         flex-grow: 1;
         height: 100%;
