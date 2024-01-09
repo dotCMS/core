@@ -251,11 +251,11 @@ export class DotWorkflowEventHandlerService {
                 });
             } else {
                 this.dotWorkflowActionsFireService
-                    .fireTo(
-                        event.inode,
-                        event.workflow.id,
-                        this.processWorkflowPayload(data, event.workflow.actionInputs)
-                    )
+                    .fireTo({
+                        inode: event.inode,
+                        actionId: event.workflow.id,
+                        data: this.processWorkflowPayload(data, event.workflow.actionInputs)
+                    })
                     .pipe(
                         catchError((error) => {
                             return this.httpErrorManagerService.handle(error);

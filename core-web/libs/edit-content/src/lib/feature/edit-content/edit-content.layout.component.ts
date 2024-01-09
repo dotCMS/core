@@ -1,18 +1,29 @@
-import { EMPTY, Observable } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
 
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ToastModule } from 'primeng/toast';
 
-import { map, switchMap } from 'rxjs/operators';
+import { switchMap } from 'rxjs/operators';
 
+import {
+    DotMessageService,
+    DotRenderMode,
+    DotWorkflowActionsFireService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotEditContentStore } from './store/edit-content.store';
 
 import { DotEditContentAsideComponent } from '../../components/dot-edit-content-aside/dot-edit-content-aside.component';
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
-import { EditContentFormData } from '../../models/dot-edit-content-form.interface';
+import { DotEditContentToolbarComponent } from '../../components/dot-edit-content-toolbar/dot-edit-content-toolbar.component';
+import { EditContentPayload } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 
 @Component({
@@ -20,76 +31,53 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
     standalone: true,
     imports: [
         NgIf,
+        JsonPipe,
         AsyncPipe,
         DotMessagePipe,
-        DotEditContentFormComponent,
         ButtonModule,
+        ToastModule,
+        DotEditContentFormComponent,
         DotEditContentAsideComponent,
-        JsonPipe
+        DotEditContentToolbarComponent
     ],
     templateUrl: './edit-content.layout.component.html',
     styleUrls: ['./edit-content.layout.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [DotEditContentService]
+    providers: [
+        DotWorkflowsActionsService,
+        DotWorkflowActionsFireService,
+        DotEditContentService,
+        DotMessageService,
+        MessageService,
+        DotEditContentStore
+    ]
 })
 export class EditContentLayoutComponent implements OnInit {
-    private activatedRoute = inject(ActivatedRoute);
-
-    public contentType = this.activatedRoute.snapshot.params['contentType'];
-    public identifier = this.activatedRoute.snapshot.params['id'];
+    private readonly store = inject(DotEditContentStore);
 
     private readonly dotEditContentService = inject(DotEditContentService);
+    private readonly workflowActionService = inject(DotWorkflowsActionsService);
+    private readonly activatedRoute = inject(ActivatedRoute);
+
+    private contentType = this.activatedRoute.snapshot.params['contentType'];
+    private initialInode = this.activatedRoute.snapshot.params['id'];
+
     private formValue: Record<string, string>;
-    isContentSaved = false;
 
-    formData$: Observable<EditContentFormData> = this.identifier
-        ? this.dotEditContentService.getContentById(this.identifier).pipe(
-              switchMap(({ contentType, ...contentData }) => {
-                  if (contentType) {
-                      this.contentType = contentType;
-                      this.dotEditContentService.currentContentType = contentType;
+    vm$: Observable<EditContentPayload> = this.store.vm$;
 
-                      return this.dotEditContentService.getContentTypeFormData(contentType).pipe(
-                          map(({ layout, fields }) => ({
-                              contentlet: { ...contentData },
-                              layout,
-                              fields,
-                              contentType
-                          }))
-                      );
-                  } else {
-                      return EMPTY;
-                  }
-              })
-          )
-        : this.dotEditContentService
-              .getContentTypeFormData(this.contentType)
-              .pipe(
-                  map(({ layout, fields }) => ({ layout, fields, contentType: this.contentType }))
-              );
+    ngOnInit(): void {
+        const obs$ = !this.initialInode
+            ? this.getNewContent(this.contentType)
+            : this.getExistingContent(this.initialInode);
 
-    ngOnInit() {
-        if (this.contentType) {
-            this.dotEditContentService.currentContentType = this.contentType;
-        }
-    }
-
-    /**
-     * Saves the contentlet with the given values.
-     */
-    saveContent() {
-        this.dotEditContentService
-            .saveContentlet({
-                ...this.formValue,
-                inode: this.identifier,
-                contentType: this.contentType
-            })
-            .subscribe({
-                next: () => {
-                    this.isContentSaved = true;
-                    setTimeout(() => (this.isContentSaved = false), 3000);
-                }
+        obs$.subscribe(({ contentType, actions, contentlet }) => {
+            this.store.setState({
+                contentType,
+                actions,
+                contentlet
             });
+        });
     }
 
     /**
@@ -100,5 +88,62 @@ export class EditContentLayoutComponent implements OnInit {
      */
     setFormValue(formValue: Record<string, string>) {
         this.formValue = formValue;
+    }
+
+    /**
+     * Fire the workflow action.
+     *
+     * @param {DotCMSWorkflowAction} action
+     * @memberof EditContentLayoutComponent
+     */
+    fireWorkflowAction({ actionId, inode, contentType }): void {
+        this.store.fireWorkflowActionEffect({
+            actionId,
+            inode,
+            data: {
+                contentlet: {
+                    ...this.formValue,
+                    contentType
+                }
+            }
+        });
+    }
+
+    /**
+     * Get the content type, actions and contentlet for the given contentTypeVar
+     *
+     * @private
+     * @param {string} contentTypeVar
+     * @return {*}
+     * @memberof EditContentLayoutComponent
+     */
+    private getNewContent(contentTypeVar: string) {
+        return forkJoin({
+            contentType: this.dotEditContentService.getContentType(contentTypeVar),
+            actions: this.workflowActionService.getDefaultActions(contentTypeVar),
+            contentlet: of(null)
+        });
+    }
+
+    /**
+     * Get the contentlet, content type and actions for the given inode
+     *
+     * @private
+     * @param {*} inode
+     * @return {*}
+     * @memberof EditContentLayoutComponent
+     */
+    private getExistingContent(inode) {
+        return this.dotEditContentService.getContentById(inode).pipe(
+            switchMap((contentlet) => {
+                const { contentType } = contentlet;
+
+                return forkJoin({
+                    contentType: this.dotEditContentService.getContentType(contentType),
+                    actions: this.workflowActionService.getByInode(inode, DotRenderMode.EDITING),
+                    contentlet: of(contentlet)
+                });
+            })
+        );
     }
 }
