@@ -111,6 +111,6 @@ function getSecretByUrlMatch(url: string): (value: DotAppsSite | null) => EmaApp
             }
         }
 
-        return null;
+        throw new Error('Current URL did not match any pattern');
     };
 }

@@ -108,6 +108,108 @@ describe('EmaAppConfigurationService', () => {
                 const mockResponse = { data: null };
                 req.flush(mockResponse, mockErrorResponse);
             });
+
+            it('if config does not match current site', (done) => {
+                jest.spyOn(licenseService, 'isEnterprise').mockReturnValue(of(true));
+                jest.spyOn(siteService, 'getCurrentSite').mockReturnValue(
+                    of({
+                        identifier: '123'
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    }) as any
+                );
+
+                spectator.service.get('test').subscribe((res) => {
+                    expect(res).toBeNull();
+                    done();
+                });
+
+                const req = httpTestingController.expectOne('/api/v1/apps/dotema-config-v2/123');
+
+                const mockResponse = {
+                    entity: {
+                        sites: [
+                            {
+                                id: '123',
+                                configured: false,
+                                secrets: [
+                                    {
+                                        value: '[{}]'
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                };
+                req.flush(mockResponse);
+            });
+
+            it('if pattern in value does not match url', (done) => {
+                jest.spyOn(licenseService, 'isEnterprise').mockReturnValue(of(true));
+                jest.spyOn(siteService, 'getCurrentSite').mockReturnValue(
+                    of({
+                        identifier: '123'
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    }) as any
+                );
+
+                spectator.service.get('test').subscribe((res) => {
+                    expect(res).toBeNull();
+                    done();
+                });
+
+                const req = httpTestingController.expectOne('/api/v1/apps/dotema-config-v2/123');
+
+                const mockResponse = {
+                    entity: {
+                        sites: [
+                            {
+                                id: '123',
+                                configured: true,
+                                secrets: [
+                                    {
+                                        value: '[ { "pattern":"(.*)", "url":"https://myspa.blogs.com:3000", "options": { "authenticationToken": "123", "depth": 3, "X-CONTENT-APP": "dotCMS" } } ]'
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                };
+                req.flush(mockResponse);
+            });
+
+            it('if value is not valid json', (done) => {
+                jest.spyOn(licenseService, 'isEnterprise').mockReturnValue(of(true));
+                jest.spyOn(siteService, 'getCurrentSite').mockReturnValue(
+                    of({
+                        identifier: '123'
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    }) as any
+                );
+
+                spectator.service.get('test').subscribe((res) => {
+                    expect(res).toBeNull();
+                    done();
+                });
+
+                const req = httpTestingController.expectOne('/api/v1/apps/dotema-config-v2/123');
+
+                const mockResponse = {
+                    entity: {
+                        sites: [
+                            {
+                                id: '123',
+                                configured: true,
+                                secrets: [
+                                    {
+                                        value: '[ { "pattern"", "url":"https://myspa.blogs.com:3000", "options": { "authenticationToken": "123", "depth": 3, "X-CONTENT-APP": "dotCMS" } } ]'
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                };
+                req.flush(mockResponse);
+            });
         });
     });
 });
