@@ -39,16 +39,26 @@ export class EmaAppConfigurationService {
     get(url: string): Observable<EmaAppSecretValue | null> {
         return this.licenseService
             .isEnterprise()
-            .pipe(catchError(() => EMPTY))
+            .pipe(
+                map((isEnterprise) => {
+                    if (!isEnterprise) {
+                        throw new Error('Not enterprise');
+                    }
+
+                    return isEnterprise;
+                })
+            )
             .pipe(
                 switchMap(() => this.getCurrentSiteIdentifier()),
-                switchMap((currentSiteId: string) =>
-                    this.getEmaAppConfiguration(currentSiteId).pipe(
+                switchMap((currentSiteId: string) => {
+                    return this.getEmaAppConfiguration(currentSiteId).pipe(
                         map(getConfigurationForCurrentSite(currentSiteId))
-                    )
-                ),
+                    );
+                }),
                 map(getSecretByUrlMatch(url)),
-                catchError(() => EMPTY),
+                catchError(() => {
+                    return EMPTY;
+                }),
                 defaultIfEmpty<EmaAppSecretValue | null>(null)
             );
     }
