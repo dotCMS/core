@@ -1,5 +1,6 @@
 package com.dotcms.rendering.js;
 
+import com.dotcms.rendering.util.ScriptingReaderParams;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -37,7 +38,7 @@ public class FileJavascriptReader implements JavascriptReader {
     private static final String FILE_EXTENSION = ".js";
 
     @Override
-    public Reader getJavaScriptReader(final JavascriptReaderParams params) throws DotSecurityException,
+    public Reader getJavaScriptReader(final ScriptingReaderParams params) throws DotSecurityException,
             IOException, DotDataException {
 
         final PageMode pageMode        = params.getPageMode();

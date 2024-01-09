@@ -6,6 +6,8 @@ import com.dotcms.cache.DotJSONCacheFactory;
 import com.dotcms.rendering.engine.ScriptEngine;
 import com.dotcms.rendering.engine.ScriptEngineFactory;
 import com.dotcms.rendering.js.proxy.JsUser;
+import com.dotcms.rendering.util.ScriptingReaderParams;
+import com.dotcms.rendering.util.ScriptingUtil;
 import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
@@ -15,10 +17,6 @@ import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.HTTPMethod;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.CollectionsUtils;
-import com.dotcms.uuid.shorty.ShortType;
-import com.dotcms.uuid.shorty.ShortyId;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -49,7 +47,6 @@ import javax.ws.rs.core.UriInfo;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -93,7 +90,7 @@ public class JsResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                        @PathParam("pathParam") final String pathParam, final Map<Object, Object> bodyMap) {
+                        @PathParam("pathParam") final String pathParam, final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.GET, bodyMap);
     }
@@ -105,7 +102,7 @@ public class JsResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                        final Map<Object, Object> bodyMap) {
+                        final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.GET, bodyMap);
     }
@@ -125,7 +122,7 @@ public class JsResource {
     public final Response post(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                                @PathParam("pathParam") final String pathParam,
-                               final Map<Object, Object> bodyMap) {
+                               final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.POST, bodyMap);
     }
@@ -138,7 +135,7 @@ public class JsResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response post(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                               final Map<Object, Object> bodyMap) {
+                               final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.POST, bodyMap);
     }
@@ -158,7 +155,7 @@ public class JsResource {
     public final Response put(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                               @PathParam("pathParam") final String pathParam,
-                              final Map<Object, Object> bodyMap) {
+                              final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PUT, bodyMap);
     }
@@ -171,7 +168,7 @@ public class JsResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response put(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                              final Map<Object, Object> bodyMap) {
+                              final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.PUT, bodyMap);
     }
@@ -191,7 +188,7 @@ public class JsResource {
     public final Response patch(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                 @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                                 @PathParam("pathParam") final String pathParam,
-                                final Map<Object, Object> bodyMap) {
+                                final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PATCH, bodyMap);
     }
@@ -204,7 +201,7 @@ public class JsResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response patch(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                 @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                                final Map<Object, Object> bodyMap) {
+                                final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.PATCH, bodyMap);
     }
@@ -224,7 +221,7 @@ public class JsResource {
     public final Response delete(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                  @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                                  @PathParam("pathParam") final String pathParam,
-                                 final Map<Object, Object> requestJSONMap) {
+                                 final Map<String, Object> requestJSONMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.DELETE, requestJSONMap);
     }
@@ -237,7 +234,7 @@ public class JsResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response delete(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                  @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                                 final Map<Object, Object> requestJSONMap) {
+                                 final Map<String, Object> requestJSONMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.DELETE, requestJSONMap);
     }
@@ -251,10 +248,12 @@ public class JsResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final Response postMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                        FormDataMultiPart multipart,
+    public final Response postMultipart(@Context final HttpServletRequest request,
+                                        @Context final HttpServletResponse response,
+                                        final FormDataMultiPart multipart,
                                         @PathParam("pathParam") final String pathParam,
-                                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName) {
+                                        @Context final UriInfo uriInfo,
+                                        @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.POST, multipart);
     }
@@ -265,9 +264,11 @@ public class JsResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final Response postMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                        FormDataMultiPart multipart,
-                                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName) {
+    public final Response postMultipart(@Context final HttpServletRequest request,
+                                        @Context final HttpServletResponse response,
+                                        final FormDataMultiPart multipart,
+                                        @Context final UriInfo uriInfo,
+                                        @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, null, HTTPMethod.POST, multipart);
 
@@ -282,10 +283,12 @@ public class JsResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final Response putMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                       FormDataMultiPart multipart,
+    public final Response putMultipart(@Context final HttpServletRequest request,
+                                       @Context final HttpServletResponse response,
+                                       final FormDataMultiPart multipart,
                                        @PathParam("pathParam") final String pathParam,
-                                       @Context UriInfo uriInfo, @PathParam("folder") final String folderName) {
+                                       @Context final UriInfo uriInfo,
+                                       @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PUT, multipart);
 
@@ -297,9 +300,11 @@ public class JsResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final Response putMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+    public final Response putMultipart(@Context final HttpServletRequest request,
+                                       @Context final HttpServletResponse response,
                                        final FormDataMultiPart multipart,
-                                       @Context final UriInfo uriInfo, @PathParam("folder") final String folderName) {
+                                       @Context final UriInfo uriInfo,
+                                       @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, null, HTTPMethod.PUT, multipart);
     }
@@ -313,10 +318,12 @@ public class JsResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final Response patchMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                         FormDataMultiPart multipart,
+    public final Response patchMultipart(@Context final HttpServletRequest request,
+                                         @Context final HttpServletResponse response,
+                                         final FormDataMultiPart multipart,
                                          @PathParam("pathParam") final String pathParam,
-                                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName) {
+                                         @Context final UriInfo uriInfo,
+                                         @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PATCH, multipart);
 
@@ -328,9 +335,11 @@ public class JsResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final Response patchMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+    public final Response patchMultipart(@Context final HttpServletRequest request,
+                                         @Context final HttpServletResponse response,
                                          final FormDataMultiPart multipart,
-                                         @Context final UriInfo uriInfo, @PathParam("folder") final String folderName) {
+                                         @Context final UriInfo uriInfo,
+                                         @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, null, HTTPMethod.PATCH, multipart);
     }
@@ -348,7 +357,7 @@ public class JsResource {
                                @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
                                final String bodyMapString) {
 
-        final Map<Object, Object> bodyMap = parseBodyMap(bodyMapString);
+        final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.GET, bodyMap);
     }
@@ -374,11 +383,13 @@ public class JsResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
-    public Response dynamicPost(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
+    public Response dynamicPost(@Context final HttpServletRequest request,
+                                @Context final HttpServletResponse response,
+                                @Context final UriInfo uriInfo,
+                                @PathParam("pathParam") final String pathParam,
                                 final String bodyMapString) {
 
-        final Map<Object, Object> bodyMap = parseBodyMap(bodyMapString);
+        final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.POST, bodyMap);
     }
@@ -408,7 +419,7 @@ public class JsResource {
                                @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
                                final String bodyMapString) {
 
-        final Map<Object, Object> bodyMap = parseBodyMap(bodyMapString);
+        final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.PUT, bodyMap);
     }
@@ -438,7 +449,7 @@ public class JsResource {
                                  @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
                                  final String bodyMapString) {
 
-        final Map<Object, Object> bodyMap = parseBodyMap(bodyMapString);
+        final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.PATCH, bodyMap);
     }
@@ -457,7 +468,7 @@ public class JsResource {
                                   final @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
                                   final String bodyMapString) {
 
-        final Map<Object, Object> bodyMap = parseBodyMap(bodyMapString);
+        final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.DELETE, bodyMap);
     }
@@ -469,7 +480,7 @@ public class JsResource {
                                              final FormDataMultiPart multipart) {
         try {
             final List<File> binaries = getBinariesFromMultipart(multipart);
-            final Map<Object, Object> bodyMap = getBodyMapFromMultipart(multipart);
+            final Map<String, Object> bodyMap = getBodyMapFromMultipart(multipart);
 
             return processRequest(request, response, uriInfo, folderName, pathParam, httpMethod, bodyMap,
                     binaries.toArray(new File[0]));
@@ -479,36 +490,16 @@ public class JsResource {
         }
     }
 
-    // todo abstract this
-    private void validateBodyMap(final Map bodyMap, final HTTPMethod httpMethod) {
-
-        // if it is an update method (not get) and the
-        if (UtilMethods.isSet(bodyMap) && bodyMap.containsKey(IDENTIFIER) &&
-                UtilMethods.isSet(bodyMap.get(IDENTIFIER))
-                // an non-existing identifier could be just on get or post, put, patch or delete needs an existing id.
-                && httpMethod != HTTPMethod.GET && httpMethod != HTTPMethod.POST) {
-
-            final Optional<ShortyId> shortyId = APILocator.getShortyAPI().getShorty(bodyMap.get(IDENTIFIER).toString());
-            final boolean isIdentifier = shortyId.isPresent() && shortyId.get().type == ShortType.IDENTIFIER;
-
-            if (!isIdentifier) {
-
-                throw new DoesNotExistException("The identifier: " + bodyMap.get(IDENTIFIER) + " does not exists");
-            }
-        }
-    }
-
-
     private Response processRequest(final HttpServletRequest request, final HttpServletResponse response,
                                     final UriInfo uriInfo, final String folderName,
                                     final String pathParam,
                                     final HTTPMethod httpMethod,
-                                    final Map<Object, Object> bodyMap,
+                                    final Map<String, Object> bodyMap,
                                     final File...binaries) {
 
         try {
 
-            this.validateBodyMap(bodyMap, httpMethod);
+            ScriptingUtil.getInstance().validateBodyMap(bodyMap, httpMethod);
 
             final InitDataObject initDataObject = this.webResource.init
                     (null, request, response, false, null);
@@ -521,7 +512,7 @@ public class JsResource {
                 return Response.ok(dotJSONOptional.get().getMap()).build();
             }
 
-            final JavascriptReaderParams javascriptReaderParams = new JavascriptReaderParams.JavascriptReaderParamsBuilder()
+            final ScriptingReaderParams javascriptReaderParams = new ScriptingReaderParams.ScriptingReaderParamsBuilder()
                     .setBodyMap(bodyMap)
                     .setFolderName(folderName)
                     .setHttpMethod(httpMethod)
@@ -535,7 +526,7 @@ public class JsResource {
             final Map<String, Object> contextParams = CollectionsUtils.map(
                     "pathParam", pathParam,
                     "queryParams", ProxyHashMap.from(queryParams),
-                    "bodyMap", ProxyHashMap.from(bodyMap),
+                    "bodyMap",  ProxyHashMap.from(toObjectObjectMap(bodyMap)),
                     "binaries", ProxyArray.fromList(Arrays.asList(binaries)));
 
             try(Reader reader = javascriptReader.getJavaScriptReader(javascriptReaderParams)){
@@ -547,6 +538,18 @@ public class JsResource {
             Logger.error(this,"Exception on Javascript endpoint. " + httpMethod.name() + "  method: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
+    }
+
+    private Map<Object, Object> toObjectObjectMap (final Map<String, Object> map) {
+
+        final  Map<Object, Object> objectObjectMap = new HashMap<>();
+
+        for (final Map.Entry<String, Object> entry : map.entrySet()) {
+
+            objectObjectMap.put(entry.getKey(), entry.getValue());
+        }
+
+        return objectObjectMap;
     }
 
     private Response evalJavascript(final HttpServletRequest request, final HttpServletResponse response,
@@ -582,7 +585,7 @@ public class JsResource {
     }
 
 
-    private Map getBodyMapFromMultipart(final FormDataMultiPart multipart) throws IOException, JSONException {
+    private Map<String, Object>  getBodyMapFromMultipart(final FormDataMultiPart multipart) throws IOException, JSONException {
 
         return this.multiPartUtils.getBodyMapFromMultipart(multipart);
     }
@@ -593,25 +596,25 @@ public class JsResource {
     }
 
 
-    private Map<Object, Object> parseBodyMap(final String bodyMapString) {
-        Map<Object, Object> bodyMap = new HashMap<>();
+    private Map<String, Object> parseBodyMap(final String bodyMapString) {
+        Map<String, Object> bodyMap = new HashMap<>();
 
         // 1) try parsing as is
         try {
             bodyMap = new ObjectMapper().readValue(bodyMapString, HashMap.class);
 
             if(bodyMap.containsKey("javascript")){
-                bodyMap.put("javascript", unescapeValue((String)bodyMap.get("javascript"), "\n"));
+                bodyMap.put("javascript", ScriptingUtil.getInstance().unescapeValue((String)bodyMap.get("javascript"), "\n"));
             }
         } catch (IOException e) {
             // 2) let's try escaping then parsing
-            String escapedJsonValues = escapeJsonValues(bodyMapString, '\n');
+            String escapedJsonValues = ScriptingUtil.getInstance().escapeJsonValues(bodyMapString, '\n');
 
             try {
                 bodyMap = new ObjectMapper().readValue(escapedJsonValues, HashMap.class);
 
                 if(bodyMap.containsKey("javascript")){
-                    bodyMap.put("javascript", unescapeValue((String)bodyMap.get("javascript"), "\n"));
+                    bodyMap.put("javascript", ScriptingUtil.getInstance().unescapeValue((String)bodyMap.get("javascript"), "\n"));
                 }
             } catch (IOException e1) {
                 bodyMap.put("javascript", bodyMapString);
@@ -621,29 +624,4 @@ public class JsResource {
         return bodyMap;
     }
 
-    private final String ESCAPE_ME_VALUE= " THIS_ESCAPES_LINE_BREAKS ";
-
-    // todo: move this to a util class
-    private String escapeJsonValues(final String jsonStr, final char escapeFrom) {
-
-        final StringWriter sw = new StringWriter();
-        final char[] charArr = jsonStr.toCharArray();
-        boolean inQuotes=false;
-        for(int i=0;i <charArr.length;i++) {
-            char c = charArr[i];
-            if(c=='"' && charArr[i-1] != '\\') {
-                inQuotes=!inQuotes;
-            }
-            if(inQuotes && c==escapeFrom) {
-                sw.append(ESCAPE_ME_VALUE);
-            }else {
-                sw.append(c);
-            }
-        }
-        return sw.toString();
-    }
-
-    private String unescapeValue(String escapedValue, final String escapeFrom) {
-        return escapedValue.replace(ESCAPE_ME_VALUE, escapeFrom);
-    }
 }

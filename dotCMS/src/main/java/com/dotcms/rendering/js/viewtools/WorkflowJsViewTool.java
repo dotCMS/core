@@ -23,6 +23,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -38,7 +39,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -46,6 +46,8 @@ import java.util.Optional;
  */
 public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware, JsHttpServletResponseAware, JsViewContextAware {
 
+    public static final String CONTENT_TYPE = "contentType";
+    public static final String IDENTIFIER = "identifier";
     private final ContentHelper contentHelper = ContentHelper.getInstance();
     private final WorkflowAPI  workflowAPI    = APILocator.getWorkflowAPI();
 
@@ -79,11 +81,12 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
         this.viewContext = viewContext;
     }
 
+    @SuppressWarnings({"unchecked"})
     @HostAccess.Export
     public JsContentMap fireNew(final Map contentletMap,
                                 final Map workflowOptions) {
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("contentType")) {
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(CONTENT_TYPE)) {
 
             throw new IllegalArgumentException("ContentType attribute is required on the contentMap");
         }
@@ -93,8 +96,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         try {
 
-
-            final String contentTypeVarName = contentletMap.get("contentType").toString();
+            final String contentTypeVarName = contentletMap.get(CONTENT_TYPE).toString();
             final ContentType contentType = APILocator.getContentTypeAPI(user).find(contentTypeVarName);
             final WorkflowAction workflowAction = this.findWorkflowActionMapped(systemAction, contentType, user);
 
@@ -107,20 +109,21 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
             return this.fireInternal(contentletMap, workflowAction, workflowOptions, new Contentlet(), null);
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DotWorkflowException(e.getMessage(), e);
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     @HostAccess.Export
     public JsContentMap fireEdit(final Map contentletMap,
                                 final Map workflowOptions) {
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("identifier")) {
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(IDENTIFIER)) {
 
             throw new IllegalArgumentException("Contentlet map is required or identifier");
         }
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("contentType")) {
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(CONTENT_TYPE)) {
 
             throw new IllegalArgumentException("ContentType attribute is required on the contentMap");
         }
@@ -130,7 +133,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         try {
 
-            final String contentTypeVarName = contentletMap.get("contentType").toString();
+            final String contentTypeVarName = contentletMap.get(CONTENT_TYPE).toString();
             final ContentType contentType = APILocator.getContentTypeAPI(user).find(contentTypeVarName);
             final WorkflowAction workflowAction = this.findWorkflowActionMapped(systemAction, contentType, user);
 
@@ -140,25 +143,26 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
                         + contentTypeVarName);
             }
 
-            final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString(), user);
+            final Contentlet existingContentlet = this.findById(contentletMap.get(IDENTIFIER).toString(), user);
 
             return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, null);
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DotWorkflowException(e.getMessage(), e);
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     @HostAccess.Export
     public JsContentMap firePublish(final Map contentletMap,
                                  final Map workflowOptions) {
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("identifier")) {
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(IDENTIFIER)) {
 
             throw new IllegalArgumentException("Contentlet map is required or identifier");
         }
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("contentType")) {
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(CONTENT_TYPE)) {
 
             throw new IllegalArgumentException("ContentType attribute is required on the contentMap");
         }
@@ -168,7 +172,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         try {
 
-            final String contentTypeVarName = contentletMap.get("contentType").toString();
+            final String contentTypeVarName = contentletMap.get(CONTENT_TYPE).toString();
             final ContentType contentType = APILocator.getContentTypeAPI(user).find(contentTypeVarName);
             final WorkflowAction workflowAction = this.findWorkflowActionMapped(systemAction, contentType, user);
 
@@ -178,25 +182,26 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
                         + contentTypeVarName);
             }
 
-            final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString(), user);
+            final Contentlet existingContentlet = this.findById(contentletMap.get(IDENTIFIER).toString(), user);
 
             return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, existingContentlet.getInode());
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DotWorkflowException(e.getMessage(), e);
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     @HostAccess.Export
     public JsContentMap fireUnpublish(final Map contentletMap,
                                     final Map workflowOptions) {
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("identifier")) {
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(IDENTIFIER)) {
 
             throw new IllegalArgumentException("Contentlet map is required or identifier");
         }
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("contentType")) {
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(CONTENT_TYPE)) {
 
             throw new IllegalArgumentException("ContentType attribute is required on the contentMap");
         }
@@ -206,7 +211,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         try {
 
-            final String contentTypeVarName = contentletMap.get("contentType").toString();
+            final String contentTypeVarName = contentletMap.get(CONTENT_TYPE).toString();
             final ContentType contentType = APILocator.getContentTypeAPI(user).find(contentTypeVarName);
             final WorkflowAction workflowAction = this.findWorkflowActionMapped(systemAction, contentType, user);
 
@@ -216,25 +221,26 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
                         + contentTypeVarName);
             }
 
-            final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString(), user);
+            final Contentlet existingContentlet = this.findById(contentletMap.get(IDENTIFIER).toString(), user);
 
             return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, existingContentlet.getInode());
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DotWorkflowException(e.getMessage(), e);
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     @HostAccess.Export
     public JsContentMap fireArchive(final Map contentletMap,
                                    final Map workflowOptions) {
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("identifier")) {
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(IDENTIFIER)) {
 
             throw new IllegalArgumentException("Contentlet map is required or identifier");
         }
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("contentType")) {
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(CONTENT_TYPE)) {
 
             throw new IllegalArgumentException("contentType attribute is required on the contentMap");
         }
@@ -244,7 +250,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         try {
 
-            final String contentTypeVarName = contentletMap.get("contentType").toString();
+            final String contentTypeVarName = contentletMap.get(CONTENT_TYPE).toString();
             final ContentType contentType = APILocator.getContentTypeAPI(user).find(contentTypeVarName);
             final WorkflowAction workflowAction = this.findWorkflowActionMapped(systemAction, contentType, user);
 
@@ -254,26 +260,27 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
                         + contentTypeVarName);
             }
 
-            final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString(), user);
+            final Contentlet existingContentlet = this.findById(contentletMap.get(IDENTIFIER).toString(), user);
             final String inode = (String)contentletMap.getOrDefault("inode", existingContentlet.getInode());
 
             return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, inode);
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DotWorkflowException(e.getMessage(), e);
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     @HostAccess.Export
     public JsContentMap fireUnarchive(final Map contentletMap,
                                     final Map workflowOptions) {
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("identifier")) {
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(IDENTIFIER)) {
 
             throw new IllegalArgumentException("Contentlet map is required or identifier");
         }
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("contentType")) {
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(CONTENT_TYPE)) {
 
             throw new IllegalArgumentException("ContentType attribute is required on the contentMap");
         }
@@ -283,7 +290,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         try {
 
-            final String contentTypeVarName = contentletMap.get("contentType").toString();
+            final String contentTypeVarName = contentletMap.get(CONTENT_TYPE).toString();
             final ContentType contentType = APILocator.getContentTypeAPI(user).find(contentTypeVarName);
             final WorkflowAction workflowAction = this.findWorkflowActionMapped(systemAction, contentType, user);
 
@@ -293,26 +300,27 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
                         + contentTypeVarName);
             }
 
-            final Contentlet existingContentlet = this.findById(contentletMap.get("identifier").toString(), user);
+            final Contentlet existingContentlet = this.findById(contentletMap.get(IDENTIFIER).toString(), user);
             final String inode = (String)contentletMap.getOrDefault("inode", existingContentlet.getInode());
 
             return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, inode);
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DotWorkflowException(e.getMessage(), e);
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     @HostAccess.Export
     public JsContentMap fireDelete(final Map contentletMap,
                                  final Map workflowOptions) {
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("identifier")) {
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(IDENTIFIER)) {
 
             throw new IllegalArgumentException("Contentlet map is required or identifier");
         }
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("contentType")) {
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(CONTENT_TYPE)) {
 
             throw new IllegalArgumentException("contentType attribute is required on the contentMap");
         }
@@ -322,8 +330,8 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         try {
 
-            final String identifier = (String) contentletMap.get("identifier");
-            final String contentTypeVarName = contentletMap.get("contentType").toString();
+            final String identifier = (String) contentletMap.get(IDENTIFIER);
+            final String contentTypeVarName = contentletMap.get(CONTENT_TYPE).toString();
             final ContentType contentType = APILocator.getContentTypeAPI(user).find(contentTypeVarName);
             final WorkflowAction workflowAction = this.findWorkflowActionMapped(systemAction, contentType, user);
 
@@ -340,20 +348,21 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
             return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, inode);
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DotWorkflowException(e.getMessage(), e);
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     @HostAccess.Export
     public JsContentMap fireDestroy(final Map contentletMap,
                                    final Map workflowOptions) {
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("identifier")) {
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(IDENTIFIER)) {
 
             throw new IllegalArgumentException("Contentlet map is required or identifier");
         }
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey("contentType")) {
+        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(CONTENT_TYPE)) {
 
             throw new IllegalArgumentException("ContentType attribute is required on the contentMap");
         }
@@ -363,8 +372,8 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         try {
 
-            final String identifier = (String) contentletMap.get("identifier");
-            final String contentTypeVarName = contentletMap.get("contentType").toString();
+            final String identifier = (String) contentletMap.get(IDENTIFIER);
+            final String contentTypeVarName = contentletMap.get(CONTENT_TYPE).toString();
             final ContentType contentType = APILocator.getContentTypeAPI(user).find(contentTypeVarName);
             final WorkflowAction workflowAction = this.findWorkflowActionMapped(systemAction, contentType, user);
 
@@ -381,7 +390,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
             return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, inode);
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DotWorkflowException(e.getMessage(), e);
         }
     }
 
@@ -429,6 +438,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
         return currentContentlet.get();
     }
 
+    @SuppressWarnings({"unchecked"})
     protected JsContentMap fireInternal(final Map contentletMap,
                                         final WorkflowAction workflowAction,
                                         final Map workflowOptions,
@@ -480,14 +490,15 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
                 return new JsContentMap(contentMap);
             }
 
-            throw new DotRuntimeException("No NEW System Workflow Action configurated for contentlet, type: "
-                    + contentletMap.getOrDefault("contentType", "unknown"));
+            throw new DotWorkflowException("No NEW System Workflow Action configurated for contentlet, type: "
+                    + contentletMap.getOrDefault(CONTENT_TYPE, "unknown"));
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DotWorkflowException(e.getMessage(), e);
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     private static void processWorkflowOptions(Map workflowOptions, ContentletDependencies.Builder formBuilder) {
         Optional.ofNullable(workflowOptions.get("comments")).ifPresent(comments ->
                 formBuilder.workflowActionComments(comments.toString()));

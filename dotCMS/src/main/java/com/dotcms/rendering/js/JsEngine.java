@@ -238,7 +238,7 @@ public class JsEngine implements ScriptEngine {
             }
         } catch (ClassCastException e) {
 
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(this, e.getMessage());
         }
     }
 

@@ -1,5 +1,6 @@
 package com.dotcms.rendering.js;
 
+import com.dotcms.rendering.util.ScriptingReaderParams;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 
@@ -20,5 +21,5 @@ public interface JavascriptReader {
      * @throws IOException
      * @throws DotDataException
      */
-    Reader getJavaScriptReader(final JavascriptReaderParams params) throws DotSecurityException, IOException, DotDataException;
+    Reader getJavaScriptReader(final ScriptingReaderParams params) throws DotSecurityException, IOException, DotDataException;
 }
