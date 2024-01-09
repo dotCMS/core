@@ -93,40 +93,37 @@ jobs:
         os: [ macos-13 ] # macos-13-xlarge, macOS-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - name: 'Set up Docker'
-        uses: douglascamata/setup-docker-macos-action
+      - name: 'Install colima, docker and docker-compose'
+        run: |
+          curl -o ./qemu.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/dc0669eca9479e9eeb495397ba3a7480aaa45c2e/Formula/qemu.rb
+          brew install ./qemu.rb
+
+          brew install colima docker docker-compose
+
+          mkdir -p ~/.docker/cli-plugins
+          ln -sfn /usr/local/opt/docker-compose/bin/docker-compose ~/.docker/cli-plugins/docker-compose
+
+          colima start --mount-type 9p --network-address
+
+          echo "DOCKER_HOST=unix://${HOME}/.colima/default/docker.sock" >> "$GITHUB_ENV"
+          echo "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock" >> "$GITHUB_ENV"
+          echo "TESTCONTAINERS_RYUK_DISABLED=true" >> "$GITHUB_ENV"
+          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
+
+#      - name: 'Install docker'
+#        run: |
+#          brew install colima docker docker-compose
+#          /opt/homebrew/opt/colima/bin/colima start -f --network-address
+#          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
 
       - name: 'Log docker context'
         run: |
           docker context list
           colima status
           colima version
-#          echo "DOCKER_HOST=unix:///${HOME}/.lima/docker-actions-toolkit/docker.sock" >> "$GITHUB_ENV"
-#          echo "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock" >> "$GITHUB_ENV"
+          echo "DOCKER_HOST=unix:///${HOME}/.lima/docker-actions-toolkit/docker.sock" >> "$GITHUB_ENV"
+          echo "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock" >> "$GITHUB_ENV"
 
-#      - name: 'Install colima, docker and docker-compose'
-#        run: |
-#          curl -o ./qemu.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/dc0669eca9479e9eeb495397ba3a7480aaa45c2e/Formula/qemu.rb
-#          brew install ./qemu.rb
-#
-#          brew install colima docker docker-compose
-#
-#          mkdir -p ~/.docker/cli-plugins
-#          ln -sfn /usr/local/opt/docker-compose/bin/docker-compose ~/.docker/cli-plugins/docker-compose
-#
-#          colima start --mount-type 9p
-#
-#          echo "DOCKER_HOST=unix://${HOME}/.colima/default/docker.sock" >> "$GITHUB_ENV"
-#          echo "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock" >> "$GITHUB_ENV"
-#          echo "TESTCONTAINERS_RYUK_DISABLED=true" >> "$GITHUB_ENV"
-#          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
-#      - name: 'Install docker'
-#        run: |
-#          brew install colima docker docker-compose
-#          /opt/homebrew/opt/colima/bin/colima start -f
-#          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
-#
-#
 #      - name: Checkout Repository
 #        uses: actions/checkout@v4
 #        with:
