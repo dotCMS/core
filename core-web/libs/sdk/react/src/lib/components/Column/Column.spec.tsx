@@ -24,32 +24,49 @@ describe('Column', () => {
         ]
     };
 
-    beforeEach(() => {
-        render(
-            <MockContextRender mockContext={{ isInsideEditor: true }}>
-                <Column column={mockColumnData} />
-            </MockContextRender>
-        );
+    describe('Column is inside editor', () => {
+        beforeEach(() => {
+            render(
+                <MockContextRender mockContext={{ isInsideEditor: true }}>
+                    <Column column={mockColumnData} />
+                </MockContextRender>
+            );
+        });
+
+        it('applies the correct width and start classes based on props', () => {
+            const columnElement = screen.getByTestId('column');
+            expect(columnElement).toHaveClass('col-span-6');
+            expect(columnElement).toHaveClass('col-start-3');
+        });
+
+        it('applies the correct data attr', () => {
+            expect(screen.getByTestId('column')).toHaveAttribute('data-dot', 'column');
+        });
+
+        it('renders the correct number of containers', () => {
+            const containers = screen.getAllByTestId('mockContainer');
+            expect(containers.length).toBe(mockColumnData.containers.length);
+        });
+
+        it('passes the correct props to each Container', () => {
+            mockColumnData.containers.forEach((container) => {
+                expect(screen.getByText(container.identifier)).toBeInTheDocument();
+            });
+        });
     });
 
-    it('applies the correct width and start classes based on props', () => {
-        const columnElement = screen.getByTestId('column');
-        expect(columnElement).toHaveClass('col-span-6');
-        expect(columnElement).toHaveClass('col-start-3');
-    });
+    describe('Column is not inside editor', () => {
+        beforeEach(() => {
+            render(
+                <MockContextRender mockContext={{ isInsideEditor: false }}>
+                    <Column column={mockColumnData} />
+                </MockContextRender>
+            );
+        });
 
-    it('applies the correct data attr', () => {
-        expect(screen.getByTestId('column')).toHaveAttribute('data-dot', 'column');
-    });
-
-    it('renders the correct number of containers', () => {
-        const containers = screen.getAllByTestId('mockContainer');
-        expect(containers.length).toBe(mockColumnData.containers.length);
-    });
-
-    it('passes the correct props to each Container', () => {
-        mockColumnData.containers.forEach((container) => {
-            expect(screen.getByText(container.identifier)).toBeInTheDocument();
+        it('should not have dot attrs', () => {
+            const columnElement = screen.queryByTestId('column');
+            expect(columnElement).toBeNull();
         });
     });
 });
