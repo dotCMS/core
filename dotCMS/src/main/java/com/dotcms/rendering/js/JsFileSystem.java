@@ -9,10 +9,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.UtilMethods;
-import com.oracle.truffle.js.lang.JavaScriptLanguage;
 import io.vavr.Tuple2;
 import org.apache.commons.compress.utils.SeekableInMemoryByteChannel;
 import org.graalvm.polyglot.io.FileSystem;
@@ -51,6 +49,7 @@ public class JsFileSystem implements FileSystem {
     private static final String APPLICATION_ROOT_PATH = "/application/";
     private static final String JAVASCRIPT_ROOT_PATH = "/javascript/";
     public static final String DOT_SITE_TOKEN = "/dot-site-token/";
+    public static final String PATH_IS_ONLY_ALLOWED_ON = "Path is only allowed on: (";
 
     public JsFileSystem() {
     }
@@ -75,7 +74,7 @@ public class JsFileSystem implements FileSystem {
         }
 
         if (!pathString.startsWith(JAVASCRIPT_ROOT_PATH) && !pathString.startsWith(APPLICATION_ROOT_PATH)) {
-            throw new IllegalArgumentException("Path is only allowed on: (" + JAVASCRIPT_ROOT_PATH + " or " + APPLICATION_ROOT_PATH + ")");
+            throw new IllegalArgumentException(PATH_IS_ONLY_ALLOWED_ON + JAVASCRIPT_ROOT_PATH + " or " + APPLICATION_ROOT_PATH + ")");
         }
 
         return path;
@@ -92,11 +91,11 @@ public class JsFileSystem implements FileSystem {
             }
 
             if (Objects.isNull(pathHostTuple._1())) {
-                throw new IllegalArgumentException("Path is only allowed on: (" + JAVASCRIPT_ROOT_PATH + " or " + APPLICATION_ROOT_PATH + ")");
+                throw new IllegalArgumentException(PATH_IS_ONLY_ALLOWED_ON + JAVASCRIPT_ROOT_PATH + " or " + APPLICATION_ROOT_PATH + ")");
             }
 
         } catch (Exception e) {
-            throw new IllegalArgumentException("Path is only allowed on: (" + JAVASCRIPT_ROOT_PATH + " or " + APPLICATION_ROOT_PATH + ")");
+            throw new IllegalArgumentException(PATH_IS_ONLY_ALLOWED_ON + JAVASCRIPT_ROOT_PATH + " or " + APPLICATION_ROOT_PATH + ")");
         }
     }
 
@@ -181,7 +180,7 @@ public class JsFileSystem implements FileSystem {
             }
 
             if (!modulePath.startsWith(APPLICATION_ROOT_PATH)) {
-                throw new IllegalArgumentException("Path is only allowed on: (" + JAVASCRIPT_ROOT_PATH + " or " + APPLICATION_ROOT_PATH + ")");
+                throw new IllegalArgumentException(PATH_IS_ONLY_ALLOWED_ON + JAVASCRIPT_ROOT_PATH + " or " + APPLICATION_ROOT_PATH + ")");
             }
 
             final Identifier identifier = APILocator.getIdentifierAPI().find(site, modulePath);

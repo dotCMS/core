@@ -2,7 +2,6 @@ package com.dotcms.rendering.js.proxy;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.graalvm.polyglot.HostAccess;
 
@@ -31,13 +30,6 @@ public class JsContainer implements Serializable, JsProxyObject<Container> {
 	}
 
 	@HostAccess.Export
-	/**
-	 * @deprecated  As of release 3.0, see {@link ContainerStructure#getCode()}
-	 *
-	 * <p>Since 3.0, containers can have multiple structures related. To get the code for a particular Structure related
-	 * to this container then use {@link ContainerStructure#getCode()}
-	 */
-	@Deprecated
 	public String getCode() {
 		return this.container.getCode();
 	}

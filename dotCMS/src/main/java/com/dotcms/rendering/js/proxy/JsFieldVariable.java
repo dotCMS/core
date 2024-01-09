@@ -2,14 +2,9 @@ package com.dotcms.rendering.js.proxy;
 
 
 import com.dotcms.contenttype.model.field.FieldVariable;
-import org.apache.commons.lang.time.DateUtils;
 import org.graalvm.polyglot.HostAccess;
-import org.immutables.value.Value;
 
-import javax.annotation.Nullable;
 import java.io.Serializable;
-import java.util.Calendar;
-import java.util.Date;
 
 /**
  * This class is used to expose the {@link com.dotcms.contenttype.model.field.FieldVariable} object to the javascript engine.

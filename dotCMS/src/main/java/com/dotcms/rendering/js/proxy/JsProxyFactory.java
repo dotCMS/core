@@ -151,7 +151,7 @@ public class JsProxyFactory {
     private static final class JsUserProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof User;
+            return obj instanceof User;
         }
 
         @Override
@@ -163,7 +163,7 @@ public class JsProxyFactory {
     private static final class JsRoleProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof Role;
+            return obj instanceof Role;
         }
 
         @Override
@@ -175,7 +175,7 @@ public class JsProxyFactory {
     private static final class JsResponseProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof HttpServletResponse;
+            return obj instanceof HttpServletResponse;
         }
 
         @Override
@@ -187,7 +187,7 @@ public class JsProxyFactory {
     private static final class JsRequestProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof HttpServletRequest;
+            return obj instanceof HttpServletRequest;
         }
 
         @Override
@@ -199,7 +199,7 @@ public class JsProxyFactory {
     private static final class JsLazyLoaderContentMapProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof LazyLoaderContentMap;
+            return obj instanceof LazyLoaderContentMap;
         }
 
         @Override
@@ -211,7 +211,7 @@ public class JsProxyFactory {
     private static final class JsLanguageProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof Language;
+            return obj instanceof Language;
         }
 
         @Override
@@ -223,7 +223,7 @@ public class JsProxyFactory {
     private static final class JsContentMapProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof ContentMap;
+            return obj instanceof ContentMap;
         }
 
         @Override
@@ -235,7 +235,7 @@ public class JsProxyFactory {
     private static final class JsBlobProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof Part;
+            return obj instanceof Part;
         }
 
         @Override
@@ -247,7 +247,7 @@ public class JsProxyFactory {
     private static final class JsCategoryProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof Category;
+            return obj instanceof Category;
         }
 
         @Override
@@ -259,7 +259,7 @@ public class JsProxyFactory {
     private static final class JsStoryBlockMapProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof StoryBlockMap;
+            return obj instanceof StoryBlockMap;
         }
 
         @Override
@@ -271,7 +271,7 @@ public class JsProxyFactory {
     private static final class JsJSONObjectProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof JSONObject;
+            return obj instanceof JSONObject;
         }
 
         @Override
@@ -288,7 +288,7 @@ public class JsProxyFactory {
     private static final class JsMapProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof Map;
+            return obj instanceof Map;
         }
 
         @Override
@@ -300,7 +300,7 @@ public class JsProxyFactory {
     private static final class JsCollectionProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof Collection;
+            return obj instanceof Collection;
         }
 
         @Override
@@ -319,7 +319,7 @@ public class JsProxyFactory {
     private static final class JsTagInodeProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof TagInode;
+            return obj instanceof TagInode;
         }
 
         @Override
@@ -332,7 +332,7 @@ public class JsProxyFactory {
     private static final class JsTemplateLayoutProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof TemplateLayout;
+            return obj instanceof TemplateLayout;
         }
 
         @Override
@@ -345,7 +345,7 @@ public class JsProxyFactory {
     private static final class JsBodyLayoutProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof Body;
+            return obj instanceof Body;
         }
 
         @Override
@@ -358,7 +358,7 @@ public class JsProxyFactory {
     private static final class JsSiteProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof Host;
+            return obj instanceof Host;
         }
 
         @Override
@@ -371,7 +371,7 @@ public class JsProxyFactory {
     private static final class JsContainerUUIDProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof ContainerUUID;
+            return obj instanceof ContainerUUID;
         }
 
         @Override
@@ -384,7 +384,7 @@ public class JsProxyFactory {
     private static final class JsTreeableProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof Treeable;
+            return obj instanceof Treeable;
         }
 
         @Override
@@ -397,7 +397,7 @@ public class JsProxyFactory {
     private static final class JsDateProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof Date;
+            return obj instanceof Date;
         }
 
         @Override
@@ -412,7 +412,7 @@ public class JsProxyFactory {
     private static final class JsLocaleProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof Locale;
+            return obj instanceof Locale;
         }
 
         @Override
@@ -425,7 +425,7 @@ public class JsProxyFactory {
     private static final class JsFileProxyMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof File;
+            return obj instanceof File;
         }
 
         @Override
@@ -438,7 +438,7 @@ public class JsProxyFactory {
     private static final class JsContentTypeMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof ContentType;
+            return obj instanceof ContentType;
         }
 
         @Override
@@ -451,7 +451,7 @@ public class JsProxyFactory {
     private static final class JsFieldMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof Field;
+            return obj instanceof Field;
         }
 
         @Override
@@ -464,7 +464,7 @@ public class JsProxyFactory {
     private static final class JsFieldVariableMapperStrategyImpl implements JsProxyMapperStrategy {
         @Override
         public boolean test(final Object obj) {
-            return null != obj && obj instanceof FieldVariable;
+            return obj instanceof FieldVariable;
         }
 
         @Override

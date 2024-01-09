@@ -1,8 +1,6 @@
 package com.dotcms.rendering.js.proxy;
 
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -10,8 +8,6 @@ import com.liferay.portal.model.User;
 import org.graalvm.polyglot.HostAccess;
 
 import java.io.Serializable;
-import java.util.Date;
-import java.util.List;
 
 /**
  * Encapsulates a {@link Folder} in a Js context.

@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
  */
 public class JsBlob implements Serializable, JsProxyObject<Part> {
 
+    // todo: the part is a non serializable object, so we need to find a way to serialize it or mark transient
     private final Part part;
 
     public JsBlob(final Part part) {

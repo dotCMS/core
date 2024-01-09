@@ -69,7 +69,7 @@ public class FileJavascriptReader implements JavascriptReader {
         final Identifier identifier = APILocator.getIdentifierAPI().find(site, jsFilePath);
         final Contentlet getFileContent;
 
-        if (UtilMethods.isEmpty(()->identifier.getId())) {
+        if (UtilMethods.isEmpty(identifier::getId)) {
 
             throw new DoesNotExistException ("The Javascript: " + jsFilePath + " does not exists");
         }

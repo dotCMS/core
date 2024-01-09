@@ -2,13 +2,9 @@ package com.dotcms.rendering.js.proxy;
 
 import com.dotmarketing.portlets.categories.model.Category;
 import org.graalvm.polyglot.HostAccess;
-import org.graalvm.polyglot.proxy.ProxyDate;
 import org.graalvm.polyglot.proxy.ProxyHashMap;
 
 import java.io.Serializable;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.util.Date;
 import java.util.Map;
 
 /**

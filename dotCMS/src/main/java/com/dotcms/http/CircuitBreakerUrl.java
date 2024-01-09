@@ -79,6 +79,7 @@ public class CircuitBreakerUrl {
     private static final Lazy<Boolean> allowAccessToPrivateSubnets = Lazy.of(()->Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
     private static final CircuitBreakerConnectionControl circuitBreakerConnectionControl = new CircuitBreakerConnectionControl(circuitBreakerMaxConnTotal.get());
 
+    public static final Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0, new Header[]{});
     /**
      * 
      * @param proxyUrl
@@ -397,7 +398,7 @@ public class CircuitBreakerUrl {
         }
     }
 
-    public static class Response<T extends Serializable> {
+    public static class Response<T extends Serializable> implements Serializable {
 
         private final T response;
         private final int statusCode;
@@ -445,7 +446,5 @@ public class CircuitBreakerUrl {
                 '}';
         }
     }
-
-    public static Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0, new Header[]{});
 
 }

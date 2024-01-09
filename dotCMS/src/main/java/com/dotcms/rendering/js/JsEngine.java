@@ -1,8 +1,8 @@
 package com.dotcms.rendering.js;
 
 import com.dotcms.api.vtl.model.DotJSON;
+import com.dotcms.rendering.JsEngineException;
 import com.dotcms.rendering.engine.ScriptEngine;
-import com.dotcms.rendering.js.viewtools.FetchJsViewTool;
 import com.dotcms.rendering.js.proxy.JsProxyFactory;
 import com.dotcms.rendering.js.proxy.JsRequest;
 import com.dotcms.rendering.js.proxy.JsResponse;
@@ -10,6 +10,7 @@ import com.dotcms.rendering.js.viewtools.CacheJsViewTool;
 import com.dotcms.rendering.js.viewtools.CategoriesJsViewTool;
 import com.dotcms.rendering.js.viewtools.ContainerJsViewTool;
 import com.dotcms.rendering.js.viewtools.ContentJsViewTool;
+import com.dotcms.rendering.js.viewtools.FetchJsViewTool;
 import com.dotcms.rendering.js.viewtools.LanguageJsViewTool;
 import com.dotcms.rendering.js.viewtools.SecretJsViewTool;
 import com.dotcms.rendering.js.viewtools.SiteJsViewTool;
@@ -26,24 +27,17 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.util.FileUtil;
-import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.object.DynamicObject;
 import com.oracle.truffle.api.object.JsDynamicObjectUtils;
-import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.js.lang.JavaScriptLanguage;
 import com.oracle.truffle.js.runtime.GraalJSException;
 import com.oracle.truffle.js.runtime.builtins.JSErrorObject;
 import com.oracle.truffle.js.runtime.builtins.JSPromise;
 import com.oracle.truffle.js.runtime.builtins.JSPromiseObject;
-import com.oracle.truffle.object.LayoutImpl;
-import com.oracle.truffle.object.LayoutStrategy;
-import com.oracle.truffle.object.ShapeImpl;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.tools.view.context.ChainedContext;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
 
@@ -53,8 +47,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -69,12 +63,14 @@ import java.util.stream.Stream;
 public class JsEngine implements ScriptEngine {
 
     private static final String ENGINE_JS = JavaScriptLanguage.ID;
+    public static final String DOT_JSON = "dotJSON";
+    public static final String WEB_INF = "WEB-INF";
     private final JsFileSystem jsFileSystem = new JsFileSystem();
     private final JsDotLogger jsDotLogger = new JsDotLogger();
     private final Map<String, Class> jsRequestViewToolMap = new ConcurrentHashMap<>();
     private final Map<String, JsViewTool> jsAplicationViewToolMap = new ConcurrentHashMap<>();
 
-    {
+    public JsEngine () {
         try {
             this.addJsViewTool(UserJsViewTool.class);
             this.addJsViewTool(LanguageJsViewTool.class);
@@ -111,19 +107,6 @@ public class JsEngine implements ScriptEngine {
         }
     }
 
-    private void initApplicationView() {
-
-        this.jsAplicationViewToolMap.entrySet().forEach(entry -> {
-
-            final JsViewTool instance = entry.getValue();
-
-            if (instance instanceof JsApplicationContextAware) {
-
-                JsApplicationContextAware.class.cast(instance).setContext(Config.CONTEXT);
-            }
-        });
-    }
-
     private void initApplicationView(final JsViewTool jsViewToolInstance) {
 
         if (jsViewToolInstance instanceof JsApplicationContextAware) {
@@ -147,8 +130,8 @@ public class JsEngine implements ScriptEngine {
                 .allowIO(true)
                 .allowExperimentalOptions(true)
                 .option("js.esm-eval-returns-exports", "true")
-                .out(new ConsumerOutputStream((msg)->Logger.debug(JsEngine.class, msg)))
-                .err(new ConsumerOutputStream((msg)->Logger.debug(JsEngine.class, msg)))
+                .out(new ConsumerOutputStream(msg->Logger.debug(JsEngine.class, msg)))
+                .err(new ConsumerOutputStream(msg->Logger.debug(JsEngine.class, msg)))
                 .fileSystem(jsFileSystem)
                 //.allowHostAccess(HostAccess.ALL) // todo: ask if we want all access to the classpath
                 //allows access to all Java classes
@@ -162,7 +145,7 @@ public class JsEngine implements ScriptEngine {
                        final Reader scriptReader,
                        final Map<String, Object> contextParams) {
 
-        final DotJSON dotJSON = (DotJSON)contextParams.computeIfAbsent("dotJSON", k -> new DotJSON());
+        final DotJSON dotJSON = (DotJSON)contextParams.computeIfAbsent(DOT_JSON, k -> new DotJSON());
         try (Context context = buildContext()) {
 
             final Object fileName   = contextParams.getOrDefault("dot:jsfilename", "sample.js");
@@ -174,11 +157,11 @@ public class JsEngine implements ScriptEngine {
 
             final JsRequest jsRequest   = new JsRequest(request, contextParams);
             final JsResponse jsResponse = new JsResponse(response);
-            bindings.putMember("dotJSON", dotJSON);
+            bindings.putMember(DOT_JSON, dotJSON);
             bindings.putMember("request",  jsRequest);
             bindings.putMember("response", jsResponse);
 
-            dotSources.stream().forEach(source -> context.eval(source));
+            dotSources.stream().forEach(context::eval);
             Value eval = context.eval(userSource);
             if (eval.canExecute()) {
                 eval = contextParams.containsKey("dot:arguments")?
@@ -192,7 +175,7 @@ public class JsEngine implements ScriptEngine {
         } catch (final IOException e) {
 
             Logger.error(this, e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new JsEngineException(e);
         }
     }
 
@@ -220,7 +203,7 @@ public class JsEngine implements ScriptEngine {
             return CollectionsUtils.toSerializableMap(resultMap); // we need to do that b.c the context will be close after the return and the resultMap won;t be usable.
         }
 
-        return CollectionsUtils.map("output", eval.asString(), "dotJSON", dotJSON);
+        return CollectionsUtils.map("output", eval.asString(), DOT_JSON, dotJSON);
     }
 
     private void checkRejected(final Value eval) {
@@ -263,10 +246,16 @@ public class JsEngine implements ScriptEngine {
 
     private String jsStrackTraceToString(final GraalJSException.JSStackTraceElement element) {
 
-            return null == element.getClassName()?"UnknownClass":element.getClassName() + "." + element.getFunctionName().toString() + "(" +
-                            (element.getFileName() != null && element.getLineNumber() >= 0 ?
-                                    element.getFileName() + ":" + element.getLineNumber() + ")" :
-                                    (element.getFileName() != null ?  ""+element.getFileName()+")" : "Unknown Source)"));
+            return null == element.getClassName()?
+                    "UnknownClass":
+                    element.getClassName() + "." + element.getFunctionName().toString() + getJsStrackTraceFileLineNumber(element);
+    }
+
+    private static String getJsStrackTraceFileLineNumber(final GraalJSException.JSStackTraceElement element) {
+
+        return "(" + element.getFileName() != null && element.getLineNumber() >= 0 ?
+                element.getFileName() + ":" + element.getLineNumber() + ")" :
+                (element.getFileName() != null ? "" + element.getFileName() + ")" : "Unknown Source)");
     }
 
     private List<Source> getDotSources() throws IOException {
@@ -289,8 +278,8 @@ public class JsEngine implements ScriptEngine {
             Logger.warn(this, "Context is null, can't load modules");
             return;
         }
-        final String absoluteWebInfPath  = Config.CONTEXT.getRealPath(File.separator + "WEB-INF");
-        final String relativeModulesPath = File.separator + "WEB-INF" + File.separator + "javascript" + File.separator + "modules" + File.separator;
+        final String absoluteWebInfPath  = Config.CONTEXT.getRealPath(File.separator + WEB_INF);
+        final String relativeModulesPath = File.separator + WEB_INF + File.separator + "javascript" + File.separator + "modules" + File.separator;
         final String absoluteModulesPath = Config.CONTEXT.getRealPath(relativeModulesPath);
         FileUtil.walk(absoluteModulesPath,
                 path -> path.getFileName().toString().endsWith(".mjs"), path -> {
@@ -307,7 +296,7 @@ public class JsEngine implements ScriptEngine {
     }
 
     private void addFunctions(final List<Source> sources) throws IOException {
-        final String relativeFunctionsPath = File.separator + "WEB-INF" + File.separator + "javascript" + File.separator + "functions" + File.separator;
+        final String relativeFunctionsPath = File.separator + WEB_INF + File.separator + "javascript" + File.separator + "functions" + File.separator;
         if (Objects.isNull(Config.CONTEXT)) {
             Logger.warn(this, "Context is null, can't load functions");
             return;
@@ -367,7 +356,7 @@ public class JsEngine implements ScriptEngine {
 
             final StringReader stringReader  = new StringReader(sourceContent);
             source = Try.of(() ->
-                    Source.newBuilder(ENGINE_JS, stringReader, absolutePath).build()).getOrElseThrow(e -> new RuntimeException(e));
+                    Source.newBuilder(ENGINE_JS, stringReader, absolutePath).build()).getOrElseThrow(JsEngineException::new);
         }
 
         return source;
@@ -396,10 +385,6 @@ public class JsEngine implements ScriptEngine {
         return source;
     }
 
-    private boolean isString(final Value eval) {
-        return eval.isString();
-    }
-
     private Object[] buildArgs(final JsRequest request,
                                final JsResponse response,
                                final Object[] objects) {
@@ -419,14 +404,15 @@ public class JsEngine implements ScriptEngine {
         this.jsRequestViewToolMap.entrySet().forEach(entry -> {
 
                 try {
-                    final Object instance = entry.getValue().newInstance();
+                    final Object instance = entry.getValue().getDeclaredConstructor().newInstance();
                     if (instance instanceof JsViewTool) {
 
                         final JsViewTool jsViewTool = (JsViewTool)instance;
                         initJsViewTool(request, response, jsViewTool);
                         bindings.putMember(jsViewTool.getName(), instance);
                     }
-                } catch (final InstantiationException | IllegalAccessException e) {
+                } catch (final InstantiationException | IllegalAccessException | NoSuchMethodException |
+                               InvocationTargetException e) {
 
                     Logger.error(this, e.getMessage(), e);
                 }
@@ -460,8 +446,8 @@ public class JsEngine implements ScriptEngine {
 
         if (instance instanceof JsViewContextAware) {
 
-            final ViewContext velocityContext = new ChainedContext(VelocityUtil.getBasicContext(), request,
-                    response, Config.CONTEXT);
+            final ViewContext velocityContext = new ChainedContext(
+                    VelocityUtil.getBasicContext(), null, request, response);
             JsViewContextAware.class.cast(instance).setViewContext(velocityContext);
         }
     }

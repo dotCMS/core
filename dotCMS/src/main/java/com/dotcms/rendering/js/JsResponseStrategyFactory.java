@@ -1,6 +1,7 @@
 package com.dotcms.rendering.js;
 
 import com.dotcms.api.vtl.model.DotJSON;
+import com.dotcms.rendering.JsEngineException;
 import com.dotcms.rendering.js.proxy.JsResponse;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.util.UtilMethods;
@@ -17,6 +18,8 @@ import java.util.Map;
  * @author jsanca
  */
 public class JsResponseStrategyFactory {
+
+    public static final String RESPONSE = "response";
 
     private static class SingletonHolder {
         private static final JsResponseStrategyFactory INSTANCE = new JsResponseStrategyFactory();
@@ -48,8 +51,8 @@ public class JsResponseStrategyFactory {
 
     private final JsResponseStrategy charSequenceStrategy = ((request, response, user, cache, context, result) -> {
 
-        final HttpServletResponse wrapperResponse = null != context.get("response") ?
-                (HttpServletResponse) context.get("response") : response;
+        final HttpServletResponse wrapperResponse = null != context.get(RESPONSE) ?
+                (HttpServletResponse) context.get(RESPONSE) : response;
 
         if (!wrapperResponse.isCommitted()) {
 
@@ -76,17 +79,17 @@ public class JsResponseStrategyFactory {
 
     private final JsResponseStrategy defaultStrategy = ((request, response, user, cache, context, result) -> {
 
-        final HttpServletResponse wrapperResponse = null != context.get("response") ?
-                (HttpServletResponse) context.get("response") : response;
+        final HttpServletResponse wrapperResponse = null != context.get(RESPONSE) ?
+                (HttpServletResponse) context.get(RESPONSE) : response;
 
         final StringWriter stringWriter = new StringWriter();
         Try.run(()->DotObjectMapperProvider.getInstance().
-                getDefaultObjectMapper().writeValue(stringWriter, result)).getOrElseThrow((e)->new RuntimeException(e));
+                getDefaultObjectMapper().writeValue(stringWriter, result)).getOrElseThrow(JsEngineException::new);
 
         if (!wrapperResponse.isCommitted()) {
 
             final String contentType = (wrapperResponse != null && wrapperResponse.getContentType() != null) ?
-                    wrapperResponse.getContentType() : MediaType.APPLICATION_JSON.toString();
+                    wrapperResponse.getContentType() : MediaType.APPLICATION_JSON;
 
             addHeaders(response, wrapperResponse);
 

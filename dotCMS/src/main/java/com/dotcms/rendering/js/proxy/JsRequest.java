@@ -1,8 +1,7 @@
 package com.dotcms.rendering.js.proxy;
 
+import com.dotcms.rendering.JsEngineException;
 import com.dotcms.rendering.js.JsFormData;
-import com.dotcms.rendering.js.proxy.JsBlob;
-import com.dotcms.rendering.js.proxy.JsProxyObject;
 import com.dotmarketing.util.json.JSONObject;
 import io.vavr.control.Try;
 import org.graalvm.polyglot.HostAccess;
@@ -12,11 +11,9 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Abstraction of the Request for the Javascript engine.
@@ -25,7 +22,9 @@ import java.util.stream.Collectors;
 public class JsRequest implements Serializable, JsProxyObject<HttpServletRequest> {
 
     private boolean bodyUsed = false;
-    private final HttpServletRequest request;
+
+    private final transient HttpServletRequest request;
+    // todo: may be this one has to be moved as a hashmap to make it serializable
     private final Map<String, Object> contextParams;
     public JsRequest(final HttpServletRequest request, final Map<String, Object> contextParams) {
 
@@ -64,7 +63,7 @@ public class JsRequest implements Serializable, JsProxyObject<HttpServletRequest
             bodyUsed = true;
         } catch (IOException e) {
 
-            throw new RuntimeException(e);
+            throw new JsEngineException(e);
         }
 
         return bodyText.toString();

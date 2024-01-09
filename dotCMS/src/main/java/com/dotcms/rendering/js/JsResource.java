@@ -62,10 +62,11 @@ import java.util.Optional;
 public class JsResource {
 
     public static final String IDENTIFIER = "identifier";
+    public static final String JAVASCRIPT = "javascript";
+    public static final String LINE_BREAK = "\n";
     private final MultiPartUtils multiPartUtils;
     private final WebResource webResource;
-    @VisibleForTesting
-    static final String JS_PATH = "/application/apijs";
+    public static final String JS_PATH = "/application/apijs";
 
     public JsResource() {
         this(new WebResource(), new MultiPartUtils());
@@ -608,8 +609,8 @@ public class JsResource {
         try {
             bodyMap = new ObjectMapper().readValue(bodyMapString, HashMap.class);
 
-            if(bodyMap.containsKey("javascript")){
-                bodyMap.put("javascript", ScriptingUtil.getInstance().unescapeValue((String)bodyMap.get("javascript"), "\n"));
+            if(bodyMap.containsKey(JAVASCRIPT)){
+                bodyMap.put(JAVASCRIPT, ScriptingUtil.getInstance().unescapeValue((String)bodyMap.get(JAVASCRIPT), LINE_BREAK));
             }
         } catch (IOException e) {
             // 2) let's try escaping then parsing
@@ -618,11 +619,11 @@ public class JsResource {
             try {
                 bodyMap = new ObjectMapper().readValue(escapedJsonValues, HashMap.class);
 
-                if(bodyMap.containsKey("javascript")){
-                    bodyMap.put("javascript", ScriptingUtil.getInstance().unescapeValue((String)bodyMap.get("javascript"), "\n"));
+                if(bodyMap.containsKey(JAVASCRIPT)){
+                    bodyMap.put(JAVASCRIPT, ScriptingUtil.getInstance().unescapeValue((String)bodyMap.get(JAVASCRIPT), LINE_BREAK));
                 }
             } catch (IOException e1) {
-                bodyMap.put("javascript", bodyMapString);
+                bodyMap.put(JAVASCRIPT, bodyMapString);
             }
         }
 
@@ -648,12 +649,12 @@ public class JsResource {
             this.bodyMap = bodyMap;
         }
 
-        public HttpServletRequest request;
-        public HttpServletResponse response;
-        public UriInfo uriInfo;
-        public String folderName;
-        public String pathParam;
-        public HTTPMethod httpMethod;
-        public Map<String, Object> bodyMap;
+        public final HttpServletRequest request;
+        public final HttpServletResponse response;
+        public final UriInfo uriInfo;
+        public final String folderName;
+        public final String pathParam;
+        public final HTTPMethod httpMethod;
+        public final Map<String, Object> bodyMap;
     }
 }

@@ -2,7 +2,6 @@ package com.dotcms.rendering.js.proxy;
 
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rendering.js.JsHeaders;
-import com.dotcms.rendering.js.proxy.JsProxyObject;
 import com.dotmarketing.util.json.JSONObject;
 import org.apache.http.Header;
 import org.graalvm.polyglot.HostAccess;

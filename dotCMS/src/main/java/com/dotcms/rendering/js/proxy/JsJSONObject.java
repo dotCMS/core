@@ -2,21 +2,14 @@ package com.dotcms.rendering.js.proxy;
 
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONIgnore;
 import com.dotmarketing.util.json.JSONObject;
-import com.dotmarketing.util.json.JSONString;
 import org.graalvm.polyglot.HostAccess;
 
-import java.io.IOException;
 import java.io.Serializable;
-import java.io.Writer;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 /**
  * This class is used to expose the {@link com.dotmarketing.util.json.JSONObject} object to the javascript engine.
  * @author jsanca

@@ -47,6 +47,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
     public static final String CONTENT_TYPE = "contentType";
     public static final String IDENTIFIER = "identifier";
+    public static final String INODE = "inode";
     private final ContentHelper contentHelper = ContentHelper.getInstance();
     private final WorkflowAPI  workflowAPI    = APILocator.getWorkflowAPI();
 
@@ -260,7 +261,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
             }
 
             final Contentlet existingContentlet = this.findById(contentletMap.get(IDENTIFIER).toString(), user);
-            final String inode = (String)contentletMap.getOrDefault("inode", existingContentlet.getInode());
+            final String inode = (String)contentletMap.getOrDefault(INODE, existingContentlet.getInode());
 
             return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, inode);
         } catch (DotDataException | DotSecurityException e) {
@@ -300,7 +301,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
             }
 
             final Contentlet existingContentlet = this.findById(contentletMap.get(IDENTIFIER).toString(), user);
-            final String inode = (String)contentletMap.getOrDefault("inode", existingContentlet.getInode());
+            final String inode = (String)contentletMap.getOrDefault(INODE, existingContentlet.getInode());
 
             return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, inode);
         } catch (DotDataException | DotSecurityException e) {
@@ -342,7 +343,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
             // todo; this do not work when the contentlet is archive (which is probably the case)
             final Versionable versionable = APILocator.getVersionableAPI().findWorkingVersion(identifier, user, false);
             final Contentlet existingContentlet = APILocator.getContentletAPI().find(versionable.getInode(), user, false);
-            final String inode = (String)contentletMap.getOrDefault("inode", existingContentlet.getInode());
+            final String inode = (String)contentletMap.getOrDefault(INODE, existingContentlet.getInode());
 
             return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, inode);
         } catch (DotDataException | DotSecurityException e) {
@@ -384,7 +385,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
             // todo; this do not work when the contentlet is archive (which is probably the case)
             final Versionable versionable = APILocator.getVersionableAPI().findWorkingVersion(identifier, user, false);
             final Contentlet existingContentlet = APILocator.getContentletAPI().find(versionable.getInode(), user, false);
-            final String inode = (String)contentletMap.getOrDefault("inode", existingContentlet.getInode());
+            final String inode = (String)contentletMap.getOrDefault(INODE, existingContentlet.getInode());
 
             return this.fireInternal(contentletMap, workflowAction, workflowOptions, existingContentlet, inode);
         } catch (DotDataException | DotSecurityException e) {

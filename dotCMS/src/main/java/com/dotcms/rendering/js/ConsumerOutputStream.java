@@ -1,6 +1,10 @@
 package com.dotcms.rendering.js;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -35,8 +39,24 @@ public class ConsumerOutputStream extends OutputStream {
     }
 
     /**
+     * Writes an array of bytes to the output stream. This method flushes automatically at the end of a line.
+     * @param bytes     the data.
+     * @param off   the start offset in the data.
+     * @param len   the number of bytes to write.
+     * @throws IOException
+     */
+    @Override
+    public void write(final byte[] bytes, final int off, final int len) throws IOException {
+        Objects.checkFromIndexSize(off, len, bytes.length);
+        for (int i = 0 ; i < len ; i++) {
+            write(bytes[off + i]);
+        }
+    }
+
+    /**
      * Flushes the output stream.
      */
+    @Override
     public void flush () {
         this.loggerConsumer.accept(builder.toString());
         builder.setLength(0);
