@@ -92,7 +92,7 @@ public class JsResource {
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                         @PathParam("pathParam") final String pathParam, final Map<String, Object> bodyMap) {
 
-        return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.GET, bodyMap);
+        return processRequest(new RequestParams(request, response, uriInfo, folderName, pathParam, HTTPMethod.GET, bodyMap));
     }
 
     @GET
@@ -104,7 +104,7 @@ public class JsResource {
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                         final Map<String, Object> bodyMap) {
 
-        return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.GET, bodyMap);
+        return processRequest(new RequestParams(request, response, uriInfo, folderName, null, HTTPMethod.GET, bodyMap));
     }
 
     /**
@@ -124,7 +124,7 @@ public class JsResource {
                                @PathParam("pathParam") final String pathParam,
                                final Map<String, Object> bodyMap) {
 
-        return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.POST, bodyMap);
+        return processRequest(new RequestParams(request, response, uriInfo, folderName, pathParam, HTTPMethod.POST, bodyMap));
     }
 
     @POST
@@ -137,7 +137,7 @@ public class JsResource {
                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                                final Map<String, Object> bodyMap) {
 
-        return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.POST, bodyMap);
+        return processRequest(new RequestParams(request, response, uriInfo, folderName, null, HTTPMethod.POST, bodyMap));
     }
 
     /**
@@ -157,7 +157,7 @@ public class JsResource {
                               @PathParam("pathParam") final String pathParam,
                               final Map<String, Object> bodyMap) {
 
-        return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PUT, bodyMap);
+        return processRequest(new RequestParams(request, response, uriInfo, folderName, pathParam, HTTPMethod.PUT, bodyMap));
     }
 
     @PUT
@@ -170,7 +170,7 @@ public class JsResource {
                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                               final Map<String, Object> bodyMap) {
 
-        return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.PUT, bodyMap);
+        return processRequest(new RequestParams(request, response, uriInfo, folderName, null, HTTPMethod.PUT, bodyMap));
     }
 
     /**
@@ -190,7 +190,7 @@ public class JsResource {
                                 @PathParam("pathParam") final String pathParam,
                                 final Map<String, Object> bodyMap) {
 
-        return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PATCH, bodyMap);
+        return processRequest(new RequestParams(request, response, uriInfo, folderName, pathParam, HTTPMethod.PATCH, bodyMap));
     }
 
     @PATCH
@@ -203,7 +203,7 @@ public class JsResource {
                                 @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                                 final Map<String, Object> bodyMap) {
 
-        return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.PATCH, bodyMap);
+        return processRequest(new RequestParams(request, response, uriInfo, folderName, null, HTTPMethod.PATCH, bodyMap));
     }
 
     /**
@@ -223,7 +223,7 @@ public class JsResource {
                                  @PathParam("pathParam") final String pathParam,
                                  final Map<String, Object> requestJSONMap) {
 
-        return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.DELETE, requestJSONMap);
+        return processRequest(new RequestParams(request, response, uriInfo, folderName, pathParam, HTTPMethod.DELETE, requestJSONMap));
     }
 
     @DELETE
@@ -236,7 +236,7 @@ public class JsResource {
                                  @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                                  final Map<String, Object> requestJSONMap) {
 
-        return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.DELETE, requestJSONMap);
+        return processRequest(new RequestParams(request, response, uriInfo, folderName, null, HTTPMethod.DELETE, requestJSONMap));
     }
 
     /**
@@ -359,7 +359,8 @@ public class JsResource {
 
         final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
-        return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.GET, bodyMap);
+        return processRequest(new RequestParams(request, response, uriInfo, null, pathParam, HTTPMethod.GET, bodyMap));
+
     }
 
     @GET
@@ -391,7 +392,7 @@ public class JsResource {
 
         final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
-        return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.POST, bodyMap);
+        return processRequest(new RequestParams(request, response, uriInfo, null, pathParam, HTTPMethod.POST, bodyMap));
     }
 
     @POST
@@ -421,7 +422,7 @@ public class JsResource {
 
         final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
-        return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.PUT, bodyMap);
+        return processRequest(new RequestParams(request, response, uriInfo, null, pathParam, HTTPMethod.PUT, bodyMap));
     }
 
     @PUT
@@ -451,7 +452,7 @@ public class JsResource {
 
         final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
-        return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.PATCH, bodyMap);
+        return processRequest(new RequestParams(request, response, uriInfo, null, pathParam, HTTPMethod.PATCH, bodyMap));
     }
 
 
@@ -470,7 +471,7 @@ public class JsResource {
 
         final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
-        return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.DELETE, bodyMap);
+        return processRequest(new RequestParams(request, response, uriInfo, null, pathParam, HTTPMethod.DELETE, bodyMap));
     }
 
     private Response processMultiPartRequest(final HttpServletRequest request, final HttpServletResponse response,
@@ -482,7 +483,7 @@ public class JsResource {
             final List<File> binaries = getBinariesFromMultipart(multipart);
             final Map<String, Object> bodyMap = getBodyMapFromMultipart(multipart);
 
-            return processRequest(request, response, uriInfo, folderName, pathParam, httpMethod, bodyMap,
+            return processRequest(new RequestParams(request, response, uriInfo, folderName, pathParam, httpMethod, bodyMap),
                     binaries.toArray(new File[0]));
         }  catch(Exception e) {
             Logger.error(this,"Exception on JS endpoint. POST method: " + e.getMessage(), e);
@@ -490,12 +491,16 @@ public class JsResource {
         }
     }
 
-    private Response processRequest(final HttpServletRequest request, final HttpServletResponse response,
-                                    final UriInfo uriInfo, final String folderName,
-                                    final String pathParam,
-                                    final HTTPMethod httpMethod,
-                                    final Map<String, Object> bodyMap,
+    private Response processRequest(final RequestParams requestParams,
                                     final File...binaries) {
+
+        final HttpServletRequest request = requestParams.request;
+        final HttpServletResponse response = requestParams.response;
+        final UriInfo uriInfo = requestParams.uriInfo;
+        final String folderName = requestParams.folderName;
+        final String pathParam = requestParams.pathParam;
+        final HTTPMethod httpMethod = requestParams.httpMethod;
+        final Map<String, Object> bodyMap = requestParams.bodyMap;
 
         try {
 
@@ -624,4 +629,31 @@ public class JsResource {
         return bodyMap;
     }
 
+    private class RequestParams {
+
+        public RequestParams(final HttpServletRequest request,
+                             final HttpServletResponse response,
+                             final UriInfo uriInfo,
+                             final String folderName,
+                             final String pathParam,
+                             final HTTPMethod httpMethod,
+                             final Map<String, Object> bodyMap) {
+
+            this.request = request;
+            this.response = response;
+            this.uriInfo = uriInfo;
+            this.folderName = folderName;
+            this.pathParam = pathParam;
+            this.httpMethod = httpMethod;
+            this.bodyMap = bodyMap;
+        }
+
+        public HttpServletRequest request;
+        public HttpServletResponse response;
+        public UriInfo uriInfo;
+        public String folderName;
+        public String pathParam;
+        public HTTPMethod httpMethod;
+        public Map<String, Object> bodyMap;
+    }
 }

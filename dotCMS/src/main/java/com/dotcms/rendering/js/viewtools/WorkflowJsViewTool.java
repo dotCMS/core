@@ -16,7 +16,6 @@ import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -81,7 +80,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
         this.viewContext = viewContext;
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @HostAccess.Export
     public JsContentMap fireNew(final Map contentletMap,
                                 final Map workflowOptions) {
@@ -113,7 +112,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
         }
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @HostAccess.Export
     public JsContentMap fireEdit(final Map contentletMap,
                                 final Map workflowOptions) {
@@ -152,7 +151,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
         }
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @HostAccess.Export
     public JsContentMap firePublish(final Map contentletMap,
                                  final Map workflowOptions) {
@@ -191,7 +190,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
         }
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @HostAccess.Export
     public JsContentMap fireUnpublish(final Map contentletMap,
                                     final Map workflowOptions) {
@@ -230,7 +229,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
         }
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @HostAccess.Export
     public JsContentMap fireArchive(final Map contentletMap,
                                    final Map workflowOptions) {
@@ -270,7 +269,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
         }
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @HostAccess.Export
     public JsContentMap fireUnarchive(final Map contentletMap,
                                     final Map workflowOptions) {
@@ -310,7 +309,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
         }
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @HostAccess.Export
     public JsContentMap fireDelete(final Map contentletMap,
                                  final Map workflowOptions) {
@@ -352,7 +351,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
         }
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @HostAccess.Export
     public JsContentMap fireDestroy(final Map contentletMap,
                                    final Map workflowOptions) {
@@ -438,7 +437,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
         return currentContentlet.get();
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     protected JsContentMap fireInternal(final Map contentletMap,
                                         final WorkflowAction workflowAction,
                                         final Map workflowOptions,
@@ -498,7 +497,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
         }
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private static void processWorkflowOptions(Map workflowOptions, ContentletDependencies.Builder formBuilder) {
         Optional.ofNullable(workflowOptions.get("comments")).ifPresent(comments ->
                 formBuilder.workflowActionComments(comments.toString()));

@@ -108,23 +108,13 @@ public class JsRole implements Serializable, Comparable<JsRole>, JsProxyObject<R
 	// -1  means this first
 	// 1 means Role first
 	// 0 equal
-	public int compareTo(JsRole o) {
-		if (!(o instanceof JsRole))
-			return -1;
-		JsRole role = (JsRole) o;
-		if(this.getParent().equals(this.getId())){
+	public int compareTo(final JsRole inputJsRole) {
+
+		if (!(inputJsRole instanceof JsRole)) {
 			return -1;
 		}
-		if(o.getId().equals(o.getParent())){
-			return 1;
-		}
-		if(RegEX.find(role.getDBFQN(), " --> ").size() > RegEX.find(this.getDBFQN(), " --> ").size()){
-			return -1;
-		}else if(RegEX.find(role.getDBFQN(), " --> ").size() < RegEX.find(this.getDBFQN(), " --> ").size()){
-			return 1;
-		}else{
-			return 0;
-		}
+
+		return this.getWrappedObject().compareTo(inputJsRole.getWrappedObject());
 	}
 
 	@HostAccess.Export
@@ -137,7 +127,7 @@ public class JsRole implements Serializable, Comparable<JsRole>, JsProxyObject<R
 		}
 
 		final JsRole castOther = (JsRole) other;
-		return (this.getId().equalsIgnoreCase(castOther.getId()));
+		return this.getWrappedObject().equals(castOther.getWrappedObject());
 	}
 
 	@HostAccess.Export
