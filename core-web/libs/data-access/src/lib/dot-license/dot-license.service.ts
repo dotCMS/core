@@ -52,7 +52,7 @@ const enterprisePorlets: DotUnlicensedPortletData[] = [
     },
     {
         icon: 'list',
-        titleKey: 'Forms-and-Form-Builder',
+        titleKey: 'com.dotcms.repackage.javax.app.title.edit-ema',
         url: '/forms'
     },
     {

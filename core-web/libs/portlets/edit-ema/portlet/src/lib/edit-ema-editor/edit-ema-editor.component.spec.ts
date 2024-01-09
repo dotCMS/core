@@ -1331,5 +1331,12 @@ describe('EditEmaEditorComponent', () => {
             expect(spectator.query(EmaContentletToolsComponent)).toBeNull();
             expect(spectator.query(EditEmaPaletteComponent)).toBeNull();
         });
+
+        it('should iframe wrapper to be expanded', () => {
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('editor-content')).classList).toContain(
+                'editor-content--expanded'
+            );
+        });
     });
 });

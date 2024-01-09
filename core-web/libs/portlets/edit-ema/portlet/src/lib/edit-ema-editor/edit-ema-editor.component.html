@@ -53,8 +53,10 @@
     <div
         class="editor-content"
         [ngClass]="{
-            'editor-content--device': !!currentDevice
-        }">
+            'editor-content--device': !!currentDevice,
+            'editor-content--expanded': !es.editor.page.canEdit
+        }"
+        data-testId="editor-content">
         <dot-ema-device-display
             *ngIf="!!currentDevice"
             [currentDevice]="currentDevice"
@@ -63,7 +65,7 @@
         <div
             class="iframe-wrapper"
             [ngClass]="{
-                'iframe-wrapper--device': !!currentDevice
+                'iframe-wrapper--device': !!currentDevice,     
             }"
             [ngStyle]="{
                 width: !!currentDevice ? currentDevice.cssWidth + 'px' : '100%',
