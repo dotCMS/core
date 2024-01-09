@@ -2,8 +2,9 @@
     <div *ngFor="let column of row.columns" [ngStyle]="getPosition(column)" data-type="column">
         <div
             *ngFor="let container of column.containers"
-            [attr.data-payload]="container.payload"
             [ngStyle]="getPosition(container)"
+            [attr.data-payload]="container.payload"
+            [attr.data-error]="errorMessage(container.payload) | dm"
             data-type="container">
             <div
                 *ngFor="let contentlet of container.contentlets"
