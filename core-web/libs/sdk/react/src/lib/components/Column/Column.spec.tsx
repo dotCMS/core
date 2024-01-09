@@ -4,11 +4,12 @@ import '@testing-library/jest-dom';
 import { Column } from './Column';
 
 import { MockContextRender } from '../../mocks/mockPageContext';
+import { ContainerProps } from '../Container/Container';
 
 jest.mock('../Container/Container', () => {
     return {
-        Container: ({ containerRef }) => (
-            <div data-testid="mockContainer">{containerRef.identifier}</div>
+        Container: ({ containerRef }: Partial<ContainerProps>) => (
+            <div data-testid="mockContainer">{containerRef?.identifier}</div>
         )
     };
 });
@@ -21,7 +22,8 @@ describe('Column', () => {
             { identifier: 'Container1', uuid: 'unique-id-1' },
             { identifier: 'Container2', uuid: 'unique-id-2' }
             // Add more containers as needed for your test
-        ]
+        ],
+        styleClass: ''
     };
 
     describe('Column is inside editor', () => {

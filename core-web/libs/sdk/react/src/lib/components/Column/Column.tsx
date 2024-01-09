@@ -7,7 +7,7 @@ import { combineClasses, getPositionStyleClasses } from '../../utils/utils';
 import { Container } from '../Container/Container';
 import { PageProviderContext } from '../PageProvider/PageProvider';
 
-interface ColumnProps {
+export interface ColumnProps {
     readonly column: PageProviderContext['layout']['body']['rows'][0]['columns'][0];
 }
 

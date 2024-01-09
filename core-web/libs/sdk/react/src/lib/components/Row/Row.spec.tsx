@@ -3,13 +3,16 @@ import { render, screen } from '@testing-library/react';
 import { Row } from './Row';
 
 import { MockContextRender } from '../../mocks/mockPageContext';
+import { ColumnProps } from '../Column/Column';
 import { PageProviderContext } from '../PageProvider/PageProvider';
 
 import '@testing-library/jest-dom';
 
 jest.mock('../Column/Column', () => {
     return {
-        Column: ({ column }) => <div data-testid="mockColumn">{JSON.stringify(column)}</div>
+        Column: ({ column }: ColumnProps) => (
+            <div data-testid="mockColumn">{JSON.stringify(column)}</div>
+        )
     };
 });
 
