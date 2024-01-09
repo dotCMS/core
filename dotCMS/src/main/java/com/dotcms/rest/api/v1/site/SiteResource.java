@@ -1172,6 +1172,12 @@ public class SiteResource implements Serializable {
         site.setProperty("forceExecution",newSiteForm.isForceExecution());
         site.setHostname(newSiteForm.getSiteName());
 
+        // Property needed to mark the site as default, only set it if the site is marked as default,
+        //  to avoid changing the existing default behavior.
+        if (newSiteForm.isDefault()) {
+            site.setDefault(newSiteForm.isDefault());
+        }
+
         if (UtilMethods.isSet(newSiteForm.getSiteThumbnail())) {
 
             final Optional<DotTempFile> dotTempFileOpt = tempFileAPI.getTempFile(httpServletRequest, newSiteForm.getSiteThumbnail());

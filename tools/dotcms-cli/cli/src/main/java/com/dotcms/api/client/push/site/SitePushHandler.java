@@ -77,7 +77,7 @@ public class SitePushHandler implements PushHandler<SiteView> {
         ResponseEntityView<SiteView> response;
 
         // Unarchiving the site if necessary, this is necessary because the site API doesn't allow
-        // to update an archived site
+        //  updating an archived site
         if (Boolean.TRUE.equals(serverSite.isArchived())) {
             siteAPI.unarchive(localSite.identifier());
         }
@@ -141,6 +141,7 @@ public class SitePushHandler implements PushHandler<SiteView> {
                 .siteThumbnail(siteView.siteThumbnail())
                 .embeddedDashboard(siteView.embeddedDashboard())
                 .forceExecution(forceExecution)
+                .isDefault(Boolean.TRUE.equals(siteView.isDefault()))
                 .build();
     }
 
