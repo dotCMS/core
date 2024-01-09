@@ -122,7 +122,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
             throw new IllegalArgumentException("Contentlet map is required or identifier");
         }
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(CONTENT_TYPE)) {
+        if (!contentletMap.containsKey(CONTENT_TYPE)) {
 
             throw new IllegalArgumentException("ContentType attribute is required on the contentMap");
         }
@@ -161,7 +161,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
             throw new IllegalArgumentException("Contentlet map is required or identifier");
         }
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(CONTENT_TYPE)) {
+        if (!contentletMap.containsKey(CONTENT_TYPE)) {
 
             throw new IllegalArgumentException("ContentType attribute is required on the contentMap");
         }
@@ -200,7 +200,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
             throw new IllegalArgumentException("Contentlet map is required or identifier");
         }
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(CONTENT_TYPE)) {
+        if (!contentletMap.containsKey(CONTENT_TYPE)) {
 
             throw new IllegalArgumentException("ContentType attribute is required on the contentMap");
         }
@@ -239,7 +239,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
             throw new IllegalArgumentException("Contentlet map is required or identifier");
         }
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(CONTENT_TYPE)) {
+        if (!contentletMap.containsKey(CONTENT_TYPE)) {
 
             throw new IllegalArgumentException("contentType attribute is required on the contentMap");
         }
@@ -279,7 +279,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
             throw new IllegalArgumentException("Contentlet map is required or identifier");
         }
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(CONTENT_TYPE)) {
+        if (!contentletMap.containsKey(CONTENT_TYPE)) {
 
             throw new IllegalArgumentException("ContentType attribute is required on the contentMap");
         }
@@ -319,7 +319,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
             throw new IllegalArgumentException("Contentlet map is required or identifier");
         }
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(CONTENT_TYPE)) {
+        if (!contentletMap.containsKey(CONTENT_TYPE)) {
 
             throw new IllegalArgumentException("contentType attribute is required on the contentMap");
         }
@@ -361,7 +361,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
             throw new IllegalArgumentException("Contentlet map is required or identifier");
         }
 
-        if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(CONTENT_TYPE)) {
+        if (!contentletMap.containsKey(CONTENT_TYPE)) {
 
             throw new IllegalArgumentException("ContentType attribute is required on the contentMap");
         }
