@@ -20,7 +20,9 @@ const messageServiceMock = new MockDotMessageService({
     'request.a.trial.license': 'Request License',
     'Contact-Us-for-more-Information': 'Contact Us',
     'Learn-more-about-dotCMS-Enterprise': 'Learn More',
-    'only-available-in-enterprise': 'Only in Enterprise'
+    'only-available-in': 'is only available in',
+    'dotcms-enterprise-edition': 'otCMS Enterprise Editions',
+    'for-more-information': 'For more information'
 });
 
 const portletData: DotUnlicensedPortletData = {
@@ -63,7 +65,7 @@ describe('DotNotLicenseComponent', () => {
             messageServiceMock.get('portlet.title')
         );
         expect(de.query(By.css('[data-testId="description"]')).nativeElement.innerText).toEqual(
-            'Enterprise Portlet Only in Enterprise'
+            'Enterprise Portlet is only available in otCMS Enterprise Editions. For more information:'
         );
         expect(de.query(By.css('[data-testId="contact-us"]')).nativeElement.href).toEqual(
             'https://dotcms.com/contact-us/'
