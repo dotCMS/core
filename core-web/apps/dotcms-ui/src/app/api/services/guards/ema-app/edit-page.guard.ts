@@ -29,7 +29,7 @@ function getUpdatedQueryParams(route: ActivatedRouteSnapshot) {
     const newQueryParams = {
         ...route.queryParams,
         language_id: route.queryParams.language_id || 1,
-        url: route.queryParams.url || 'index',
+        url: route.queryParams.url.substring(1) || 'index',
         'com.dotmarketing.persona.id':
             route.queryParams['com.dotmarketing.persona.id'] || 'modes.persona.no.persona'
     };

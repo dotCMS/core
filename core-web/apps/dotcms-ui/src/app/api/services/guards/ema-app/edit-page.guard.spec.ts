@@ -64,7 +64,7 @@ describe('EditPageGuard', () => {
         result.subscribe((canActivate) => {
             expect(router.navigate).toHaveBeenCalledWith(['edit-ema'], {
                 queryParams: {
-                    url: '/some-url',
+                    url: 'some-url',
                     'com.dotmarketing.persona.id': 'modes.persona.no.persona',
                     language_id: 1
                 }
@@ -103,7 +103,7 @@ describe('EditPageGuard', () => {
         result.subscribe(() => {
             expect(router.navigate).toHaveBeenCalledWith(['edit-ema'], {
                 queryParams: {
-                    url: '/some-url',
+                    url: 'some-url',
                     language_id: 2,
                     'com.dotmarketing.persona.id': 'some.real.persona'
                 }
