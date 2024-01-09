@@ -1,6 +1,5 @@
 package com.dotcms.rendering.js.proxy;
 
-import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.graalvm.polyglot.HostAccess;

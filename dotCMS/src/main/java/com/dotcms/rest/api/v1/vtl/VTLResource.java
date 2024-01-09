@@ -54,6 +54,7 @@ import org.glassfish.jersey.server.JSONP;
 public class VTLResource {
 
     public static final String IDENTIFIER = "identifier";
+    public static final String VELOCITY = "velocity";
     private final MultiPartUtils multiPartUtils;
     private final WebResource webResource;
     @VisibleForTesting
@@ -582,8 +583,8 @@ public class VTLResource {
         try {
             bodyMap = new ObjectMapper().readValue(bodyMapString, HashMap.class);
 
-            if(bodyMap.containsKey("velocity")){
-                bodyMap.put("velocity", ScriptingUtil.getInstance().unescapeValue((String)bodyMap.get("velocity"), "\n"));
+            if(bodyMap.containsKey(VELOCITY)){
+                bodyMap.put(VELOCITY, ScriptingUtil.getInstance().unescapeValue((String)bodyMap.get(VELOCITY), "\n"));
             }
         } catch (IOException e) {
             // 2) let's try escaping then parsing
@@ -592,11 +593,11 @@ public class VTLResource {
             try {
                 bodyMap = new ObjectMapper().readValue(escapedJsonValues, HashMap.class);
 
-                if(bodyMap.containsKey("velocity")){
-                    bodyMap.put("velocity", ScriptingUtil.getInstance().unescapeValue((String)bodyMap.get("velocity"), "\n"));
+                if(bodyMap.containsKey(VELOCITY)){
+                    bodyMap.put(VELOCITY, ScriptingUtil.getInstance().unescapeValue((String)bodyMap.get(VELOCITY), "\n"));
                 }
             } catch (IOException e1) {
-                bodyMap.put("velocity", bodyMapString);
+                bodyMap.put(VELOCITY, bodyMapString);
             }
         }
 

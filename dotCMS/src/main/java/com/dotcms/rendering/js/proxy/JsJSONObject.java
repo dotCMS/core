@@ -114,6 +114,7 @@ public class JsJSONObject implements Serializable, JsProxyObject<JSONObject> {
       return JsProxyFactory.createProxy(this.getAsMapInternal());
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     protected Map getAsMapInternal() {
         return this.jsonObject.getAsMap();
     }
@@ -174,7 +175,7 @@ public class JsJSONObject implements Serializable, JsProxyObject<JSONObject> {
     public Object keys() {
         return JsProxyFactory.createProxy(keysInternal());
     }
-
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     protected Iterator keysInternal() {
         return this.jsonObject.keys();
     }
@@ -466,16 +467,19 @@ public class JsJSONObject implements Serializable, JsProxyObject<JSONObject> {
         return JsProxyFactory.createProxy(this.jsonObject.get(key));
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @HostAccess.Export
     public Set keySet() { // todo: proxy it
         return this.jsonObject.keySet();
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @HostAccess.Export
     public Collection values() { // todo: proxy it
         return this.jsonObject.values();
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @HostAccess.Export
     public Set entrySet() { // todo: proxy it
         return this.jsonObject.entrySet();

@@ -379,7 +379,7 @@ public class JsEngine implements ScriptEngine {
             source = Try.of(() ->
                     Source.newBuilder(ENGINE_JS, stringReader, modulePath)
                             .mimeType("application/javascript+module")
-                            .build()).getOrElseThrow(e -> new RuntimeException(e));
+                            .build()).getOrElseThrow(JsEngineException::new);
         }
 
         return source;

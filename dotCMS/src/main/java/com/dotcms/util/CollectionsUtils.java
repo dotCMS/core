@@ -1,15 +1,13 @@
 package com.dotcms.util;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.common.collect.MapBuilder;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
-import java.util.*;
-import java.util.function.*;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1027,6 +1025,7 @@ public class CollectionsUtils implements Serializable {
      * @param nonSerializableMap Map
      * @return Serializable HashMap serializable
      */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public static HashMap<Serializable, Serializable> toSerializableMap (final Map nonSerializableMap) {
 
         final HashMap<Serializable, Serializable> serializableMap = new HashMap<>();
@@ -1060,6 +1059,7 @@ public class CollectionsUtils implements Serializable {
      * @param nonSerializableMap Map
      * @return Serializable HashMap serializable
      */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public static ArrayList<Serializable> toSerializableList(final List nonSerializableList) {
 
         final ArrayList<Serializable> serializableList = new ArrayList<>();

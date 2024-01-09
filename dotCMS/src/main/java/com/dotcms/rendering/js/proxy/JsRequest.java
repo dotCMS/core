@@ -137,6 +137,8 @@ public class JsRequest implements Serializable, JsProxyObject<HttpServletRequest
     public ProxyHashMap json() {
         return this.getJson();
     }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @HostAccess.Export
     public ProxyHashMap getJson() {
 

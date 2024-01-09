@@ -1,16 +1,13 @@
 package com.dotcms.rendering.js.proxy;
 
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.model.User;
 import org.graalvm.polyglot.HostAccess;
 
-import java.io.File;
 import java.io.Serializable;
-import java.util.List;
 
 /**
  * Encapsulates a {@link com.dotmarketing.beans.Host} in a Js context.
@@ -20,8 +17,8 @@ public class JsSite implements Serializable, JsProxyObject<Host> {
 
 	private final Host site;
 
-	public JsSite(final Host Host) {
-		this.site = Host;
+	public JsSite(final Host site) {
+		this.site = site;
 	}
 
 	@Override

@@ -303,6 +303,7 @@ public class JsProxyFactory {
             return obj instanceof Collection;
         }
 
+        @SuppressWarnings({ "rawtypes", "unchecked" })
         @Override
         public Object apply(final Object obj) {
 

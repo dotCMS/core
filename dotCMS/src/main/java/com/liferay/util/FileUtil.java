@@ -511,7 +511,7 @@ public class FileUtil {
 	 * @param pathFilter Predicate<Path> filter to be applied to the paths found
 	 * @param pathConsumer Consumer<Path> consumer to be applied to the paths found
 	 * @throws IOException
-	 */ // todo: create an unit test
+	 */
 	public static void walk(final String directoryPath,
 							final Predicate<Path> pathFilter,
 							final Consumer<Path> pathConsumer) throws IOException {

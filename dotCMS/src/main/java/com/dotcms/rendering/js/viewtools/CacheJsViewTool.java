@@ -5,7 +5,6 @@ import com.dotcms.rendering.js.proxy.JsProxyFactory;
 import com.dotcms.rendering.velocity.viewtools.dotcache.DotCacheTool;
 import com.dotcms.util.CollectionsUtils;
 import org.graalvm.polyglot.HostAccess;
-import org.graalvm.polyglot.Value;
 
 import java.io.Serializable;
 import java.util.Map;

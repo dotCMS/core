@@ -1,7 +1,5 @@
 package com.dotcms.rendering.js;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Objects;

@@ -1,8 +1,6 @@
 package com.dotcms.rendering.js.viewtools;
 
 
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.js.JsHttpServletRequestAware;
 import com.dotcms.rendering.js.JsViewContextAware;
 import com.dotcms.rendering.js.JsViewTool;
@@ -11,33 +9,20 @@ import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.rendering.velocity.viewtools.content.ContentTool;
 import com.dotcms.rendering.velocity.viewtools.content.LazyLoaderContentMap;
 import com.dotcms.rendering.velocity.viewtools.content.PaginatedContentList;
-import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.personas.model.IPersona;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.graalvm.polyglot.HostAccess;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Wraps the {@link com.dotcms.rendering.velocity.viewtools.content.ContentTool} (dotcontent) into the JS context.

@@ -147,6 +147,7 @@ import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -4197,7 +4198,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			final SystemActionWorkflowActionMapping mapping =
 					this.toSystemActionWorkflowActionMapping(rowMap, workflowScheme, user);
-			if (mapping.getSystemAction().equals(systemAction)) {
+			if (Objects.nonNull(mapping) && mapping.getSystemAction().equals(systemAction)) {
 				return Optional.ofNullable(mapping);
 			}
 		}

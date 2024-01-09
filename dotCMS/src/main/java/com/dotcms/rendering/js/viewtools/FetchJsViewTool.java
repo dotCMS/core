@@ -17,7 +17,6 @@ import java.util.function.Supplier;
  */
 public class FetchJsViewTool implements JsViewTool {
 
-   // private final Context context;
     private final Supplier<CircuitBreakerUrlBuilder> circuitBreakerUrlSupplier;
     private final Map<String, CircuitBreakerUrl.Method> methodMapMapping = Map.of(
             "GET", CircuitBreakerUrl.Method.GET,
@@ -36,6 +35,7 @@ public class FetchJsViewTool implements JsViewTool {
         return fetch(resource, Map.of());
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @HostAccess.Export
     public JsFetchResponse fetch(final String resource, final Map options) {
 
@@ -59,35 +59,9 @@ public class FetchJsViewTool implements JsViewTool {
         this.tryVerbose (builder, options);
 
         return new JsFetchResponse(builder.build().doResponse());
-        /*final CompletableFuture<JsFetchResponse> responseFuture = CompletableFuture.supplyAsync(()-> {
-            try {
-                return new JsFetchResponse(circuitBreakerUrl.doResponse());
-            } catch (final Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        return wrapPromise(responseFuture);*/
     }
 
-   /* private Value wrapPromise(final CompletableFuture<JsFetchResponse> responseFuture) {
-
-        final Value global = context.getBindings("js");
-        final Value promiseConstructor = global.getMember("Promise");
-        return promiseConstructor.newInstance((ProxyExecutable) arguments -> {
-            final Value resolve = arguments[0];
-            final Value reject = arguments[1];
-            responseFuture.whenComplete((result, ex) -> {
-                if (result != null) {
-                    resolve.execute(result);
-                } else {
-                    reject.execute(ex);
-                }
-            });
-            return null;
-        });
-    }*/
-
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private void tryVerbose(CircuitBreakerUrlBuilder builder, Map options) {
 
             if (options.containsKey("verbose")) {
@@ -96,6 +70,7 @@ public class FetchJsViewTool implements JsViewTool {
             }
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private void tryParams(final CircuitBreakerUrlBuilder builder, final Map options) {
 
             if (options.containsKey("params")) {
@@ -104,6 +79,7 @@ public class FetchJsViewTool implements JsViewTool {
             }
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private void tryAllowRedirects(final CircuitBreakerUrlBuilder builder, final Map options) {
 
             if (options.containsKey("redirect")) {
@@ -112,6 +88,7 @@ public class FetchJsViewTool implements JsViewTool {
             }
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private void tryBody(final CircuitBreakerUrlBuilder builder, final Map options) {
 
         if (options.containsKey("body")) {
@@ -120,18 +97,21 @@ public class FetchJsViewTool implements JsViewTool {
         }
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private CircuitBreakerUrl.Method getMethod(final Map options) {
 
         final String methodName = options.getOrDefault("method", "GET").toString();
         return methodMapMapping.getOrDefault(methodName, CircuitBreakerUrl.Method.GET);
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private long getTimeout(final Map options) {
 
         return ConversionUtils.toLong(options.getOrDefault("timeout",
                 Config.getLongProperty("URL_CONNECTION_TIMEOUT", 2000l)), 2000L);
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private Map<String, String> getHeaders(final Map options) {
         return options.containsKey("headers")?
                 (Map)options.get("headers"):

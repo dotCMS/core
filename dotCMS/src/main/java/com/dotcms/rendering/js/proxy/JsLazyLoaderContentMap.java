@@ -2,7 +2,6 @@ package com.dotcms.rendering.js.proxy;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.rendering.js.proxy.JsProxyObject;
 import com.dotcms.rendering.velocity.viewtools.content.LazyLoaderContentMap;
 import org.graalvm.polyglot.HostAccess;
 

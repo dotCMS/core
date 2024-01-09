@@ -1,7 +1,6 @@
 package com.dotcms.rendering.js.proxy;
 
 import com.dotmarketing.business.Role;
-import com.dotmarketing.util.RegEX;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.proxy.ProxyHashMap;

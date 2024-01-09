@@ -18,7 +18,7 @@ import java.util.Optional;
 public class ScriptingUtil {
 
     public static final String IDENTIFIER = "identifier";
-    public final String ESCAPE_ME_VALUE= " THIS_ESCAPES_LINE_BREAKS ";
+    public static final String ESCAPE_ME_VALUE= " THIS_ESCAPES_LINE_BREAKS ";
 
     private static class SingletonHolder {
         private static final ScriptingUtil INSTANCE = new ScriptingUtil();
@@ -37,6 +37,7 @@ public class ScriptingUtil {
      * @param bodyMap
      * @param httpMethod
      */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public void validateBodyMap(final Map bodyMap, final HTTPMethod httpMethod) {
 
         // if it is an update method (not get) and the
@@ -92,7 +93,7 @@ public class ScriptingUtil {
      * @param escapeFrom
      * @return String
      */
-    public String unescapeValue(String escapedValue, final String escapeFrom) {
+    public String unescapeValue(final String escapedValue, final String escapeFrom) {
 
         return escapedValue.replace(ESCAPE_ME_VALUE, escapeFrom);
     }

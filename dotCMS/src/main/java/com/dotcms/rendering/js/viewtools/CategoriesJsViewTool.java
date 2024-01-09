@@ -1,8 +1,8 @@
 package com.dotcms.rendering.js.viewtools;
 
-import com.dotcms.rendering.js.proxy.JsCategory;
 import com.dotcms.rendering.js.JsViewContextAware;
 import com.dotcms.rendering.js.JsViewTool;
+import com.dotcms.rendering.js.proxy.JsCategory;
 import com.dotcms.rendering.velocity.viewtools.CategoriesWebAPI;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -146,6 +146,7 @@ public class CategoriesJsViewTool implements JsViewTool, JsViewContextAware {
      *            parent category key
      * @return
      */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public ProxyArray getAllActiveChildrenCategoriesByKey(final String key) {
 
         return ProxyArray.fromList(this.categoriesWebAPI.getAllActiveChildrenCategoriesByKey(key).stream().map(categoryMap -> {
@@ -167,6 +168,7 @@ public class CategoriesJsViewTool implements JsViewTool, JsViewContextAware {
      *            parent inode
      * @return
      */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public ProxyArray getAllActiveChildrenCategories(final Inode inode) {
        return ProxyArray.fromList(this.categoriesWebAPI.getAllActiveChildrenCategories(inode).stream().map(categoryMap -> {
             final Map map = categoryMap;
@@ -187,7 +189,7 @@ public class CategoriesJsViewTool implements JsViewTool, JsViewContextAware {
      *            parent inode
      * @return
      */
-
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public ProxyArray getAllActiveChildrenCategories(final String inode) {
 
         return ProxyArray.fromList(this.categoriesWebAPI.getAllActiveChildrenCategories(inode).stream().map(categoryMap -> {

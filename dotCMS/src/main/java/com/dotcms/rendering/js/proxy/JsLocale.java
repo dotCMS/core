@@ -5,7 +5,6 @@ import org.graalvm.polyglot.HostAccess;
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.MissingResourceException;
-import java.util.Set;
 
 /**
  * This class is used to expose the Locale object to the javascript engine.

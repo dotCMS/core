@@ -1,5 +1,6 @@
 package com.dotcms.rendering.js.proxy;
 
+import com.dotcms.rendering.JsEngineException;
 import com.dotcms.rendering.js.JsHeaders;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import io.vavr.control.Try;
@@ -15,6 +16,7 @@ import java.io.Serializable;
  */
 public class JsResponse implements Serializable, JsProxyObject<HttpServletResponse> {
 
+    public static final String APPLICATION_JSON = "application/json";
     private final JsHeaders headers = new JsHeaders();
     private final HttpServletResponse response;
 
@@ -50,13 +52,13 @@ public class JsResponse implements Serializable, JsProxyObject<HttpServletRespon
 
     @HostAccess.Export
     public JsResponse error(final int code) {
-        Try.run(()->this.response.sendError(code)).getOrElseThrow((e)->new RuntimeException(e));
+        Try.run(()->this.response.sendError(code)).getOrElseThrow(JsEngineException::new);
         return this;
     }
 
     @HostAccess.Export
     public JsResponse redirect(final String location) {
-        Try.run(()->this.response.sendRedirect(location)).getOrElseThrow((e)->new RuntimeException(e));
+        Try.run(()->this.response.sendRedirect(location)).getOrElseThrow(JsEngineException::new);
         return this;
     }
 
@@ -65,10 +67,10 @@ public class JsResponse implements Serializable, JsProxyObject<HttpServletRespon
 
         Try.run(()->{
 
-            this.response.setContentType("application/json");
+            this.response.setContentType(APPLICATION_JSON);
             DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValue(this.response.getWriter(), json);
             this.response.getWriter().flush();
-        }).getOrElseThrow((e)->new RuntimeException(e));
+        }).getOrElseThrow(JsEngineException::new);
 
         return this;
     }
@@ -77,10 +79,10 @@ public class JsResponse implements Serializable, JsProxyObject<HttpServletRespon
     public JsResponse json(final String json) {
 
         Try.run(()->{
-            this.response.setContentType("application/json");
+            this.response.setContentType(APPLICATION_JSON);
             this.response.getWriter().write(json);
             this.response.getWriter().flush();
-        }).getOrElseThrow((e)->new RuntimeException(e));
+        }).getOrElseThrow(JsEngineException::new);
 
         return this;
     }
@@ -91,7 +93,7 @@ public class JsResponse implements Serializable, JsProxyObject<HttpServletRespon
         Try.run(()->{
             this.response.getWriter().write(text);
             this.response.getWriter().flush();
-        }).getOrElseThrow((e)->new RuntimeException(e));
+        }).getOrElseThrow(JsEngineException::new);
 
         return this;
     }

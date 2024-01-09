@@ -221,6 +221,8 @@ public class JsUser implements Serializable, JsProxyObject<User> {
         return user.isActive();
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @HostAccess.Export
     public ProxyHashMap getAdditionalInfo(){
         final Map additionalInfo = user.getAdditionalInfo();
         return ProxyHashMap.from(additionalInfo);
