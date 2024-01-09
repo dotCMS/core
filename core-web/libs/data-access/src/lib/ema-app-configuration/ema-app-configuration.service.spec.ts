@@ -167,7 +167,7 @@ describe('EmaAppConfigurationService', () => {
                                 configured: true,
                                 secrets: [
                                     {
-                                        value: '[ { "pattern":"(.*)", "url":"https://myspa.blogs.com:3000", "options": { "authenticationToken": "123", "depth": 3, "X-CONTENT-APP": "dotCMS" } } ]'
+                                        value: '[ { "pattern":"/blogs/(.*)", "url":"https://myspa.blogs.com:3000", "options": { "authenticationToken": "123", "depth": 3, "X-CONTENT-APP": "dotCMS" } } ]'
                                     }
                                 ]
                             }
@@ -210,6 +210,44 @@ describe('EmaAppConfigurationService', () => {
                 };
                 req.flush(mockResponse);
             });
+        });
+
+        it('should return value', (done) => {
+            jest.spyOn(licenseService, 'isEnterprise').mockReturnValue(of(true));
+            jest.spyOn(siteService, 'getCurrentSite').mockReturnValue(
+                of({
+                    identifier: '123'
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                }) as any
+            );
+
+            spectator.service.get('test').subscribe((res) => {
+                expect(res).toEqual({
+                    options: { 'X-CONTENT-APP': 'dotCMS', authenticationToken: '123' },
+                    pattern: '(.*)',
+                    url: 'https://myspa.blogs.com:3000'
+                });
+                done();
+            });
+
+            const req = httpTestingController.expectOne('/api/v1/apps/dotema-config-v2/123');
+
+            const mockResponse = {
+                entity: {
+                    sites: [
+                        {
+                            id: '123',
+                            configured: true,
+                            secrets: [
+                                {
+                                    value: '[ { "pattern":"(.*)", "url":"https://myspa.blogs.com:3000", "options": { "authenticationToken": "123", "X-CONTENT-APP": "dotCMS" } } ]'
+                                }
+                            ]
+                        }
+                    ]
+                }
+            };
+            req.flush(mockResponse);
         });
     });
 });

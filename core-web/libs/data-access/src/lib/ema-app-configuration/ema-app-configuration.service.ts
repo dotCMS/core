@@ -87,12 +87,8 @@ function getConfigurationForCurrentSite(currentSiteId: string): (app: DotApp) =>
     };
 }
 
-function getSecretByUrlMatch(url: string): (value: DotAppsSite | null) => EmaAppSecretValue | null {
-    return (site: DotAppsSite | null) => {
-        if (!site) {
-            return null;
-        }
-
+function getSecretByUrlMatch(url: string): (site: DotAppsSite) => EmaAppSecretValue | null {
+    return (site: DotAppsSite) => {
         const secrets = site.secrets || [];
 
         for (const secret of secrets) {
