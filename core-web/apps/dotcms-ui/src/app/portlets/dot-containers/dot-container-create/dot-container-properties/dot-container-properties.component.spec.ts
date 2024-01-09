@@ -34,12 +34,12 @@ import { DotActionButtonModule } from '@components/_common/dot-action-button/dot
 import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
     DotEventsService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
     DotMessageService,
     DotRouterService,
     DotSiteBrowserService
@@ -59,10 +59,10 @@ import { DotAutofocusDirective, DotFormatDateService, DotMessagePipe } from '@do
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
+    DotMessageDisplayServiceMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 
 import { DotContainerPropertiesComponent } from './dot-container-properties.component';
@@ -271,7 +271,10 @@ describe('DotContainerPropertiesComponent', () => {
                 DotcmsEventsService,
                 DotEventsSocket,
                 DotcmsConfigService,
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                },
                 DialogService,
                 DotSiteBrowserService,
                 DotContainersService,

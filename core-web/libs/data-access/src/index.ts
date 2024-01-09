@@ -40,3 +40,7 @@ export * from './lib/paginator/paginator.service';
 export * from './lib/dot-page-tools/dot-page-tools.service';
 export * from './lib/dot-router/dot-router.service';
 export * from './lib/can-deactivate/can-deactivate-guard.service';
+export * from './lib/dot-http-error-manager/dot-http-error-manager.service';
+export * from './lib/dot-message-display/dot-message-display.service';
+export * from './lib/dot-temp-file-upload/dot-temp-file-upload.service';
+export * from './lib/dot-favorite-page/dot-favorite-page.service';

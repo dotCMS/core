@@ -1,3 +1,4 @@
+import { Component, EventEmitter, Input, NgModule, Output } from '@angular/core';
 import {
     AsyncValidator,
     FormControl,
@@ -15,10 +16,30 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
-import { EditContentFormData } from '../models/dot-edit-content-form.interface';
+import { EditContentPayload } from '../models/dot-edit-content-form.interface';
+
+@Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
+    selector: 'p-splitButton',
+    template: `<div class="p-splitbutton">
+        <button (click)="onClick.emit()"></button>
+    </div>`
+})
+export class SplitButtonMockComponent {
+    // eslint-disable-next-line @angular-eslint/no-output-on-prefix
+    @Output() onClick = new EventEmitter();
+    @Input() styleClass;
+    @Input() model;
+    @Input() label;
+}
+
+@NgModule({
+    declarations: [SplitButtonMockComponent],
+    exports: [SplitButtonMockComponent]
+})
+export class SplitButtonMockModule {}
 
 /* FIELDS MOCK BY TYPE */
-
 export const TEXT_FIELD_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
     contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
@@ -857,7 +878,8 @@ export const LAYOUT_FIELDS_VALUES_MOCK = {
     date: '2023-11-14 19:27:53'
 };
 
-export const CONTENT_FORM_DATA_MOCK: EditContentFormData = {
+export const CONTENT_FORM_DATA_MOCK: EditContentPayload = {
+    actions: [],
     layout: LAYOUT_MOCK,
     fields: JUST_FIELDS_MOCKS,
     contentlet: {

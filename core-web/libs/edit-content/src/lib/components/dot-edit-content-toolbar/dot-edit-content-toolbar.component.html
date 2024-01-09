@@ -1,0 +1,22 @@
+<p-toolbar class="header">
+    <div class="p-toolbar-group-left"></div>
+    <div class="p-toolbar-group-right">
+        <ng-container *ngIf="groupedActions.length">
+            <ng-container *ngFor="let items of groupedActions; index as i">
+                <p-splitButton
+                    *ngIf="items.length > 1; else singleAction"
+                    [styleClass]="i !== 0 ? 'p-button-outlined' : ''"
+                    [model]="items | slice : 1"
+                    [label]="items[0].label"
+                    (onClick)="items[0].command()"></p-splitButton>
+
+                <ng-template #singleAction>
+                    <p-button
+                        [styleClass]="i !== 0 ? 'p-button-outlined' : ''"
+                        [label]="items[0].label"
+                        (onClick)="items[0].command()"></p-button>
+                </ng-template>
+            </ng-container>
+        </ng-container>
+    </div>
+</p-toolbar>
