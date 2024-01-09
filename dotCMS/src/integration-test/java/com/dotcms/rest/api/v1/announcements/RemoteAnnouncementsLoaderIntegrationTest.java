@@ -19,7 +19,7 @@ import org.junit.Test;
 /**
  * Integration test for the RemoteAnnouncementsLoader
  */
-public class RemoteAnnouncementsLoaderTest {
+public class RemoteAnnouncementsLoaderIntegrationTest {
 
 
     @BeforeClass
@@ -37,7 +37,7 @@ public class RemoteAnnouncementsLoaderTest {
      */
     @Test
     public void testAnnouncementRemoteURL() throws JsonProcessingException {
-        String expected = "http://localhost:8080/api/content/render/false/query/+contentType:dotAnnouncement +languageId:1 +deleted:false +live:true/orderBy/modDate desc";
+        String expected = "https://www.dotcms.com/api/content/render/false/query/+contentType:dotAnnouncement +languageId:1 +deleted:false +live:true/orderBy/modDate desc";
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         final String builtURL = loader.buildURL(defaultLanguage);
         Assert.assertEquals(expected, builtURL);

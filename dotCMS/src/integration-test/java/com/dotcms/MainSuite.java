@@ -89,7 +89,7 @@ import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
 import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.IntegrityResourceIntegrationTest;
 import com.dotcms.rest.api.v1.announcements.AnnouncementsHelperIntegrationTest;
-import com.dotcms.rest.api.v1.announcements.RemoteAnnouncementsLoaderTest;
+import com.dotcms.rest.api.v1.announcements.RemoteAnnouncementsLoaderIntegrationTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.apps.SiteViewPaginatorIntegrationTest;
 import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
@@ -668,7 +668,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task231109AddPublishDateToContentletVersionInfoTest.class,
         Task240102AlterVarcharLengthOfRelationTypeTest.class,
         AnnouncementsHelperIntegrationTest.class,
-        RemoteAnnouncementsLoaderTest.class
+        RemoteAnnouncementsLoaderIntegrationTest.class
 })
 
 public class MainSuite {
