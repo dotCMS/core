@@ -244,7 +244,7 @@
 	String fullScreenClass= fullScreenField ? "edit-content-full-screen": "";
 	boolean fullScreenNextField = isNextFieldFullScreen(structure, fields.get(0));
 	String fullScreenNextClass= fullScreenNextField ? "edit-content-full-screen": "";
-	List<Structure> structures = StructureFactory.getStructuresByUser(user, "", "name", 100, 0,"asc");
+
 
 	/*### DRAW THE DYNAMIC FIELDS ###*/
 

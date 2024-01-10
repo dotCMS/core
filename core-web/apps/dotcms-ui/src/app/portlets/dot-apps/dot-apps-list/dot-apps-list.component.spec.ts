@@ -10,7 +10,7 @@ import { ButtonModule } from 'primeng/button';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotApps } from '@dotcms/dotcms-models';
+import { DotApp } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
@@ -51,7 +51,7 @@ export const appsResponse = [
     template: ''
 })
 class MockDotAppsCardComponent {
-    @Input() app: DotApps;
+    @Input() app: DotApp;
     @Output() actionFired = new EventEmitter<string>();
 }
 

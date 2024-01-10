@@ -7,13 +7,13 @@
         .p-button-raised {
             background-color: $white;
             color: $black;
-            box-shadow: $md-shadow-2;
+            box-shadow: $shadow-s;
             transition: all 0.15s ease-in-out;
 
             &:hover {
                 background-color: $color-palette-primary-100;
                 color: $color-palette-primary-500;
-                box-shadow: $md-shadow-2;
+                box-shadow: $shadow-s;
                 transform: scale(1.1);
             }
         }

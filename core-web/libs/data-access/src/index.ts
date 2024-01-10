@@ -44,3 +44,4 @@ export * from './lib/dot-http-error-manager/dot-http-error-manager.service';
 export * from './lib/dot-message-display/dot-message-display.service';
 export * from './lib/dot-temp-file-upload/dot-temp-file-upload.service';
 export * from './lib/dot-favorite-page/dot-favorite-page.service';
+export * from './lib/ema-app-configuration/ema-app-configuration.service';
