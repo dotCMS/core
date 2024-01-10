@@ -165,10 +165,12 @@ export class EmaPageDropzoneComponent {
         }
 
         if (!this.contentCanFitInContainer(container)) {
-            return this.dotMessageService.get(
-                'edit.ema.page.dropzone.max.contentlets',
-                maxContentlets
-            );
+            const message =
+                maxContentlets === 1
+                    ? 'edit.ema.page.dropzone.one.max.contentlet'
+                    : 'edit.ema.page.dropzone.max.contentlets';
+
+            return this.dotMessageService.get(message, maxContentlets);
         }
 
         return '';
