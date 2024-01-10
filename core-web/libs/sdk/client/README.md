@@ -43,7 +43,7 @@ const client = dotcmsClient.init({
 Retrieve the elements of any page in your DotCMS system in JSON format.
 
 ```javascript
-const pageData = await client.getPage({
+const pageData = await client.page.get({
     path: '/your-page-path',
     language_id: 1,
     personaId: 'optional-persona-id'
@@ -57,7 +57,7 @@ console.log(pageData);
 Retrieve information about the DotCMS file and folder tree.
 
 ```javascript
-const navData = await client.getNav({
+const navData = await client.nav.get({
     path: '/',
     depth: 2,
     languageId: 1
@@ -74,11 +74,11 @@ Detailed documentation of the `@dotcms/client` methods, parameters, and types ca
 
 Initializes the DotCMS client with the specified configuration.
 
-### `DotCmsClient.getPage(options: PageApiOptions): Promise<unknown>`
+### `DotCmsClient.page.get(options: PageApiOptions): Promise<unknown>`
 
 Retrieves the specified page's elements from your DotCMS system in JSON format.
 
-### `DotCmsClient.getNav(options: NavApiOptions): Promise<unknown>`
+### `DotCmsClient.nav.get(options: NavApiOptions): Promise<unknown>`
 
 Retrieves information about the DotCMS file and folder tree.
 

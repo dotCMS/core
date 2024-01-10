@@ -77,12 +77,12 @@ describe('DotCmsClient', () => {
             });
         });
 
-        describe('getPage', () => {
+        describe('page.get', () => {
             it('should fetch page data successfully', async () => {
                 const mockResponse = { content: 'Page data' };
                 mockFetchResponse(mockResponse);
 
-                const data = await client.getPage({ path: '/home' });
+                const data = await client.page.get({ path: '/home' });
 
                 expect(fetch).toHaveBeenCalledTimes(1);
                 expect(fetch).toHaveBeenCalledWith(
@@ -95,7 +95,7 @@ describe('DotCmsClient', () => {
             });
 
             it('should throw an error if the path is not provided', async () => {
-                await expect(client.getPage({} as any)).rejects.toThrowError(
+                await expect(client.page.get({} as any)).rejects.toThrowError(
                     `The 'path' parameter is required for the Page API`
                 );
             });
@@ -104,7 +104,7 @@ describe('DotCmsClient', () => {
                 const mockResponse = { content: 'Page data' };
                 mockFetchResponse(mockResponse);
 
-                client.getPage({ path: '/home', personaId: 'doe123' });
+                client.page.get({ path: '/home', personaId: 'doe123' });
 
                 expect(fetch).toHaveBeenCalledWith(
                     'http://localhost/api/v1/page/json/home?com.dotmarketing.persona.id=doe123&host_id=123456',
@@ -118,7 +118,7 @@ describe('DotCmsClient', () => {
                 const mockResponse = { content: 'Page data' };
                 mockFetchResponse(mockResponse);
 
-                client.getPage({ path: '/home', siteId: 'host-123' });
+                client.page.get({ path: '/home', siteId: 'host-123' });
 
                 expect(fetch).toHaveBeenCalledWith(
                     'http://localhost/api/v1/page/json/home?host_id=host-123',
@@ -132,7 +132,7 @@ describe('DotCmsClient', () => {
                 const mockResponse = { content: 'Page data' };
                 mockFetchResponse(mockResponse);
 
-                client.getPage({ path: '/home', language_id: 99 });
+                client.page.get({ path: '/home', language_id: 99 });
 
                 expect(fetch).toHaveBeenCalledWith(
                     'http://localhost/api/v1/page/json/home?language_id=99&host_id=123456',
@@ -143,12 +143,12 @@ describe('DotCmsClient', () => {
             });
         });
 
-        describe('getNav', () => {
+        describe('nav.get', () => {
             it('should fetch navigation data successfully', async () => {
                 const mockResponse = { nav: 'Navigation data' };
                 mockFetchResponse(mockResponse);
 
-                const data = await client.getNav({ path: '/', depth: 1 });
+                const data = await client.nav.get({ path: '/', depth: 1 });
 
                 expect(fetch).toHaveBeenCalledTimes(1);
                 expect(fetch).toHaveBeenCalledWith('http://localhost/api/v1/nav/?depth=1', {
@@ -161,7 +161,7 @@ describe('DotCmsClient', () => {
                 const mockResponse = { nav: 'Root nav data' };
                 mockFetchResponse(mockResponse);
 
-                const data = await client.getNav({ path: '/' });
+                const data = await client.nav.get({ path: '/' });
 
                 expect(fetch).toHaveBeenCalledWith('http://localhost/api/v1/nav/', {
                     headers: { Authorization: 'Bearer ABC' }
@@ -170,7 +170,7 @@ describe('DotCmsClient', () => {
             });
 
             it('should throw an error if the path is not provided', async () => {
-                await expect(client.getNav({} as any)).rejects.toThrowError(
+                await expect(client.nav.get({} as any)).rejects.toThrowError(
                     `The 'path' parameter is required for the Nav API`
                 );
             });
@@ -193,11 +193,65 @@ describe('DotCmsClient', () => {
             const mockResponse = { content: 'Page data' };
             mockFetchResponse(mockResponse);
 
-            client.getPage({ path: '/home' });
+            client.page.get({ path: '/home' });
 
             expect(fetch).toHaveBeenCalledWith('http://localhost/api/v1/page/json/home', {
                 headers: { Authorization: 'Bearer ABC' }
             });
+        });
+    });
+
+    describe('with requestOptions', () => {
+        let client: DotCmsClient;
+
+        beforeEach(() => {
+            (fetch as jest.Mock).mockClear();
+
+            client = dotcmsClient.init({
+                dotcmsUrl: 'http://localhost',
+                siteId: '123456',
+                authToken: 'ABC',
+                requestOptions: {
+                    headers: {
+                        'X-My-Header': 'my-value'
+                    },
+                    cache: 'no-cache'
+                }
+            });
+        });
+
+        it('should fetch page data with extra headers and cache', async () => {
+            const mockResponse = { content: 'Page data' };
+            mockFetchResponse(mockResponse);
+
+            const data = await client.page.get({ path: '/home' });
+
+            expect(fetch).toHaveBeenCalledTimes(1);
+            expect(fetch).toHaveBeenCalledWith(
+                'http://localhost/api/v1/page/json/home?host_id=123456',
+                {
+                    headers: { Authorization: 'Bearer ABC', 'X-My-Header': 'my-value' },
+                    cache: 'no-cache'
+                }
+            );
+            expect(data).toEqual(mockResponse);
+        });
+
+        it('should fetch bav data with extra headers and cache', async () => {
+            const mockResponse = { content: 'Page data' };
+            mockFetchResponse(mockResponse);
+
+            const data = await client.nav.get();
+
+            expect(fetch).toHaveBeenCalledTimes(1);
+            expect(fetch).toHaveBeenCalledWith(
+                'http://localhost/api/v1/nav/?depth=0&languageId=1',
+                {
+                    headers: { Authorization: 'Bearer ABC', 'X-My-Header': 'my-value' },
+                    cache: 'no-cache'
+                }
+            );
+            expect(data).toEqual(mockResponse);
         });
     });
 });
