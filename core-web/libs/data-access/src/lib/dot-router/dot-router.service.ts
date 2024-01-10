@@ -13,7 +13,7 @@ import {
 import { filter } from 'rxjs/operators';
 
 import { LOGOUT_URL } from '@dotcms/dotcms-js';
-import { DotAppsSites, DotNavigateToOptions, PortletNav } from '@dotcms/dotcms-models';
+import { DotAppsSite, DotNavigateToOptions, PortletNav } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotRouterService {
@@ -271,7 +271,7 @@ export class DotRouterService {
      * @param DotAppsSites site
      * @memberof DotRouterService
      */
-    goToUpdateAppsConfiguration(integrationKey: string, site: DotAppsSites) {
+    goToUpdateAppsConfiguration(integrationKey: string, site: DotAppsSite) {
         const route =
             site && site.configured
                 ? `/apps/${integrationKey}/edit/${site.id}`
