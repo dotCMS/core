@@ -73,6 +73,7 @@ function useEventMessageHandler({ reload = window.location.reload }: { reload: (
     const [isInsideEditor, setIsInsideEditor] = useState(false);
 
     useEffect(() => {
+        // If the page is not inside an iframe we do nothing.
         if (window.parent === window) return;
 
         postMessageToEditor({
