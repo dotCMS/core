@@ -42,7 +42,7 @@ import {
 } from './components/ema-page-dropzone/ema-page-dropzone.component';
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
-import { DEFAULT_PERSONA, HOST, WINDOW } from '../shared/consts';
+import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { ActionPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
@@ -115,7 +115,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly editorState$ = this.store.editorState$;
     readonly destroy$ = new Subject<boolean>();
 
-    readonly host = HOST;
+    readonly host = '*';
 
     private savePayload: ActionPayload;
     private draggedPayload: DraggedPalettePayload;
@@ -516,7 +516,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     private handlePostMessage({
-        origin = this.host,
+        origin: _origin = this.host,
         data
     }: {
         origin: string;
@@ -525,8 +525,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             payload: ActionPayload | SetUrlPayload | Row[] | ContentletArea;
         };
     }): () => void {
-        const action = origin !== this.host ? CUSTOMER_ACTIONS.NOOP : data.action;
-
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
             [CUSTOMER_ACTIONS.SET_URL]: () => {
                 const payload = <SetUrlPayload>data.payload;
@@ -557,7 +555,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }
-        })[action];
+        })[data.action];
     }
 
     /**
