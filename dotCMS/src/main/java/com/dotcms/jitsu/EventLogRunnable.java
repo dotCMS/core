@@ -32,7 +32,7 @@ public class EventLogRunnable extends BaseMetricsSenderRunnable<EventsPayload>  
     @Override
     public void run() {
         final String url = analyticsApp.getAnalyticsProperties().analyticsWriteUrl();
-        final CircuitBreakerUrlBuilder builder = getCircuitBreakerUrlBuilder(url);
+        final CircuitBreakerUrlBuilder builder = getCircuitBreakerUrlBuilderNoThrow(url);
 
         for (EventPayload payload : payload.payloads()) {
             sendEvent(builder, payload).ifPresent(this::logResponse);
@@ -56,5 +56,4 @@ public class EventLogRunnable extends BaseMetricsSenderRunnable<EventsPayload>  
         final Map<String, Object> testObject = Map.of("test", "test");
         return sendEvent(builder, new EventPayload(new JSONObject(testObject)));
     }
-
 }
