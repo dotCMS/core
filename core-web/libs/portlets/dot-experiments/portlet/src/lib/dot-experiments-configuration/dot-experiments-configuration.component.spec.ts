@@ -19,11 +19,14 @@ import { Menu } from 'primeng/menu';
 
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
-import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotSessionStorageService
+} from '@dotcms/data-access';
 import { ComponentStatus, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { getExperimentMock, PARENT_RESOLVERS_ACTIVE_ROUTE_DATA } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
 
 import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';

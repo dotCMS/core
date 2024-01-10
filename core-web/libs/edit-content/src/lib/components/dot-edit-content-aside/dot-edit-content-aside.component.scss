@@ -1,5 +1,10 @@
 @use "variables" as *;
 
+:host {
+    padding: 0 $spacing-3;
+    display: block;
+}
+
 .edit-content-aside--header {
     display: flex;
     justify-content: space-between;

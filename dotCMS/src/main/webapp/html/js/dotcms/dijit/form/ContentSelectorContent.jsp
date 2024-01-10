@@ -5,11 +5,6 @@
         max-height: 88vh;
         overflow-y: auto !important;
     }
-
-    .related-content-form {
-        width: 90vw;
-        height: 90vh;
-    }
 </style>
 <form
     dojoAttachPoint="search_form"

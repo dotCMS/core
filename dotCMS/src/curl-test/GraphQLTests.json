@@ -1,9 +1,10 @@
 {
 	"info": {
-		"_postman_id": "7459e2fa-e2d9-4cd9-b488-e31b642c1be9",
+		"_postman_id": "ec9b06ea-0e55-44b2-8364-6c503499f792",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "5403727",
+		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-ec9b06ea-0e55-44b2-8364-6c503499f792?action=share&source=collection_link&creator=5403727"
 	},
 	"item": [
 		{
@@ -4203,17 +4204,24 @@
 			]
 		},
 		{
-			"name": "Test GraphQL File/Image Field fields",
+			"name": "Test File/Image Field fields",
 			"item": [
 				{
-					"name": "Create File/Image ContentType",
+					"name": "Create custom File Asset Content Type",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"fileImageContentTypeVariable\", jsonData.entity[0].variable);"
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Retrieving the var name of the created custom Content Type\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"fileImageContentTypeVariable\", jsonData.entity[0].variable);",
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -4263,19 +4271,23 @@
 					"response": []
 				},
 				{
-					"name": "Create ContentType",
+					"name": "Create Content Type with File and Image fields",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
 									"",
-									"pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
-									"",
-									"pm.collectionVariables.set(\"imageFieldVariable\", jsonData.entity[0].fields[1].variable);",
-									"",
-									"pm.collectionVariables.set(\"fileFieldVariable\", jsonData.entity[0].fields[2].variable);"
+									"pm.test(\"Retrieving the var names of the created Content Type and its File and Image fields\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+									"    pm.collectionVariables.set(\"imageFieldVariable\", jsonData.entity[0].fields[1].variable);",
+									"    pm.collectionVariables.set(\"fileFieldVariable\", jsonData.entity[0].fields[2].variable);",
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -4331,8 +4343,15 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Retrieving the ID of the custom File contentlet\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);",
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -4389,8 +4408,15 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"imageContentIdentifier\", jsonData.entity.identifier);"
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Retrieving the ID of the custom Image contentlet\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"imageContentIdentifier\", jsonData.entity.identifier);",
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -4456,8 +4482,15 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Retrieving the ID of the contentlet with File and Image fields\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);",
+									"});",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -4502,19 +4535,21 @@
 					"response": []
 				},
 				{
-					"name": "Request content with Image and File fields",
+					"name": "Validate Image and File field attributes",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
 									"",
 									"var jsonData = pm.response.json();",
 									"var contentIdentifier = pm.collectionVariables.get(\"contentIdentifier\")",
 									"var collectionName = pm.collectionVariables.get(\"contentTypeVariable\")+\"Collection\"",
 									"",
-									"pm.test(\"Image Field attributes should be present\", function () {",
+									"pm.test(\"All Image Field attributes must be present\", function () {",
 									"     // image field",
 									"    var imageFieldJson = jsonData.data[collectionName][0][\"myImage\"];",
 									"    ",
@@ -4537,32 +4572,27 @@
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"sha256\", \"d6b09b7a7d42e6a84e455e7257faf32c4351aa9bb491ceb939f7f3443c2150ae\"), 'FAILED:[sha256]').to.be.true;",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"title\", \"tommylee18005.jpeg\"), 'FAILED:[title]').to.be.true;",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"isImage\", \"true\"), 'FAILED:[isImage]').to.be.true;",
-									"    pm.expect(imageFieldJson.metaData.modDate).to.be.not.null;",
-									"    ",
-									"    ",
+									"    pm.expect(imageFieldJson.metaData.modDate).to.be.not.null;    ",
 									"});",
 									"",
-									"pm.test(\"File Field attributes should be present\", function () {",
+									"pm.test(\"All Text File Field attributes must be present\", function () {",
 									"     // File field",
 									"    var fileFieldJson = jsonData.data[collectionName][0][\"myFile\"];",
-									"    ",
+									"",
 									"    // general attributes",
 									"    pm.expect(fileFieldJson.fileName, 'FAILED:[fileName]').to.eql(\"Readme18005.md\");",
-									"    ",
+									"",
 									"    // fileAsset",
 									"    pm.expect(fileFieldJson.fileAsset.name, 'FAILED:[name]').to.eql(\"Readme18005.md\");",
 									"    pm.expect(fileFieldJson.fileAsset.size, 'FAILED:[size]').to.eql(14);",
 									"    pm.expect(fileFieldJson.fileAsset.mime, 'FAILED:[mime]').to.eql(\"text/plain; charset=ISO-8859-1\");",
-									"    ",
-									"    pm.expect(fileFieldJson.metaData.length).to.eql(10);",
+									"    pm.expect(fileFieldJson.metaData.length).to.eql(11, \"Not all the expected metadata properties are present\");",
 									"",
-									"    // console.log(fileFieldJson.metaData)",
-									"    ",
+									"    // Metadata",
 									"    pm.expect(hasProperty(fileFieldJson.metaData, \"fileSize\", \"14\"), 'FAILED:[fileSize]').to.be.true;",
 									"    pm.expect(hasProperty(fileFieldJson.metaData, \"length\", \"14\"), 'FAILED:[length]').to.be.true;",
 									"    pm.expect(hasProperty(fileFieldJson.metaData, \"contentType\", \"text/plain; charset=ISO-8859-1\"), 'FAILED:[contentType]').to.be.true;",
-									"    ",
-									"    ",
+									"    pm.expect(hasProperty(fileFieldJson.metaData, \"editableAsText\", \"true\"), 'The [editableAsText] property must be \"true\"').to.be.true;",
 									"});",
 									"",
 									"function hasProperty(metaData, name, value) {",
@@ -9792,6 +9822,197 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Test DateField Render Right Format",
+			"item": [
+				{
+					"name": "Create ContentType with Date Field",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"dateFieldContentTypeVariable\", jsonData.entity[0].variable);",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Fields check\", function () {",
+									"    pm.expect(jsonData.entity[0].fields.length).to.eql(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My DateField Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My DateField Type 26890\",\n\t\"variable\": \"dateFieldType26890\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Title\",\n\t\t\t\"variable\": \"title\",\n\t\t\t\"fixed\": true\n\t\t},\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableDateTimeField\",\n            \"dataType\": \"DATE\",\n            \"fixed\": false,\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"Publish Date\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 3,\n            \"unique\": false,\n            \"variable\": \"publishDate\"\n        }\n\t]\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Save Content",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Title check\", function () {",
+									"    pm.expect(jsonData.entity.title).to.eql(\"DateField Contentlet\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{dateFieldContentTypeVariable}}\",\n       \"title\":\"DateField Contentlet\", \n       \"contentHost\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"languageId\":\"1\",\n       \"publishDate\":\"2023-12-27\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=wait_for",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "wait_for"
+								}
+							]
+						},
+						"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
+					},
+					"response": []
+				},
+				{
+					"name": "Render content",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"console.log(jsonData.data.dateFieldType26890Collection[0].publishDate);",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Date Field Format Check\", function () {",
+									"    pm.expect(jsonData.data.dateFieldType26890Collection[0].publishDate).to.contains(\"2023-12-27\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query ContentAPI {\n  {{dateFieldContentTypeVariable}}Collection(query: \"\", limit: 1, offset: 0, sortBy: \"score\") {\n    title\n    publishDate\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "This tests that: \n* Requesting the field \"body\" with `render:true` returns the original field value when the field value is unable to be rendered."
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [
@@ -9885,6 +10106,10 @@
 		},
 		{
 			"key": "contentletIdWithEmptyStoryBlock",
+			"value": ""
+		},
+		{
+			"key": "dateFieldContentTypeVariable",
 			"value": ""
 		}
 	]

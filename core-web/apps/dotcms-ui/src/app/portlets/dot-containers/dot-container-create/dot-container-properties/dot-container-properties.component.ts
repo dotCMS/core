@@ -6,14 +6,13 @@ import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@ang
 
 import { pairwise, startWith, take, takeUntil } from 'rxjs/operators';
 
-import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { DotAlertConfirmService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotContainerPayload, DotContainerStructure } from '@dotcms/dotcms-models';
 import { MonacoEditor } from '@models/monaco-editor';
 import {
     DotContainerPropertiesState,
     DotContainerPropertiesStore
 } from '@portlets/dot-containers/dot-container-create/dot-container-properties/store/dot-container-properties.store';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({
     animations: [

@@ -1349,8 +1349,11 @@ public class FieldAPITest extends IntegrationTestBase {
             final ContentType contentType = new ContentTypeDataGen().nextPersisted();
             final Field field = createField(contentType, testCase.fieldName, null,
                     testCase.fieldType);
-
-            Assert.assertEquals(testCase.fieldName, field.variable());
+            if (FieldFactoryImpl.RESERVED_FIELD_VARS.contains(testCase.fieldName.toLowerCase())){
+                Assert.assertEquals(testCase.fieldName+1, field.variable());
+            } else {
+                Assert.assertEquals(testCase.fieldName, field.variable());
+            }
         } finally {
             contentTypeAPI.delete(type);
         }

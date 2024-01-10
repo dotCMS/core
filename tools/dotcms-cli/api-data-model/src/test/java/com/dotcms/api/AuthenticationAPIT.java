@@ -29,7 +29,7 @@ public class AuthenticationAPIT {
     }
 
     @Test
-    public void Test_Get_Token() {
+    public void Test_Get_Token() throws IOException {
         final String userString = "admin@dotCMS.com";
         final char[] passwordString = "admin".toCharArray();
         authenticationContext.login(userString, passwordString);

@@ -37,8 +37,9 @@ public interface PushHandler<T> {
      * @param localFile       the local file representing the content to be added
      * @param mappedLocalFile the mapped local file as a T
      * @param customOptions   custom options for the push operation
+     * @return the created content
      */
-    void add(File localFile, T mappedLocalFile, Map<String, Object> customOptions);
+    T add(File localFile, T mappedLocalFile, Map<String, Object> customOptions);
 
     /**
      * Updates the server content with the local T content.
@@ -47,8 +48,9 @@ public interface PushHandler<T> {
      * @param mappedLocalFile the mapped local file as a T
      * @param serverContent   the existing server content to be updated
      * @param customOptions   custom options for the push operation
+     * @return the updated content
      */
-    void edit(File localFile, T mappedLocalFile, T serverContent,
+    T edit(File localFile, T mappedLocalFile, T serverContent,
             Map<String, Object> customOptions);
 
     /**

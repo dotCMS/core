@@ -1,13 +1,15 @@
-import { Observable, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { catchError, map, pluck, switchMap } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { AiPluginResponse, DotAIImageResponse } from './dot-ai.models';
+import { AiPluginResponse, DotAICompletionsConfig, DotAIImageResponse } from './dot-ai.models';
+
+import { AI_PLUGIN_KEY } from '../../utils';
 
 const API_ENDPOINT = '/api/v1/ai';
 const API_ENDPOINT_FOR_PUBLISH = '/api/v1/workflow/actions/default/fire/PUBLISH';
@@ -19,7 +21,7 @@ type ImageSize = '1024x1024' | '1024x1792' | '1792x1024';
 
 @Injectable()
 export class DotAiService {
-    constructor(private http: HttpClient) {}
+    private http: HttpClient = inject(HttpClient);
 
     /**
      * Generates content by sending a HTTP POST request to the AI plugin endpoint.
@@ -68,6 +70,24 @@ export class DotAiService {
                 catchError(() => throwError('Error fetching AI content')),
                 switchMap((response: DotAIImageResponse) => {
                     return this.createAndPublishContentlet(response);
+                })
+            );
+    }
+
+    /**
+     * Checks if the plugin is installed and properly configured.
+     *
+     * @return {Observable<boolean>} An observable that emits a boolean value indicating if the plugin is installed and properly configured.
+     */
+    checkPluginInstallation(): Observable<boolean> {
+        return this.http
+            .get<DotAICompletionsConfig>(`${API_ENDPOINT}/completions/config`, {
+                observe: 'response'
+            })
+            .pipe(
+                map((res) => res.status === 200 && res.body.apiKey !== AI_PLUGIN_KEY.NOT_SET),
+                catchError(() => {
+                    return of(false);
                 })
             );
     }
