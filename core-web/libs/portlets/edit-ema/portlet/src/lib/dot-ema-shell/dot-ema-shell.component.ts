@@ -23,7 +23,7 @@ import {
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
-import { SafeUrlPipe } from '@dotcms/ui';
+import { DotInfoPageComponent, DotNotLicenseComponent, InfoPage, SafeUrlPipe } from '@dotcms/ui';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { EditEmaStore } from './store/dot-ema.store';
@@ -38,16 +38,6 @@ import { NavigationBarItem } from '../shared/models';
 @Component({
     selector: 'dot-ema-shell',
     standalone: true,
-    imports: [
-        CommonModule,
-        ConfirmDialogModule,
-        ToastModule,
-        EditEmaNavigationBarComponent,
-        RouterModule,
-        DotPageToolsSeoComponent,
-        DialogModule,
-        SafeUrlPipe
-    ],
     providers: [
         EditEmaStore,
         DotPageApiService,
@@ -67,7 +57,19 @@ import { NavigationBarItem } from '../shared/models';
         }
     ],
     templateUrl: './dot-ema-shell.component.html',
-    styleUrls: ['./dot-ema-shell.component.scss']
+    styleUrls: ['./dot-ema-shell.component.scss'],
+    imports: [
+        CommonModule,
+        ConfirmDialogModule,
+        ToastModule,
+        EditEmaNavigationBarComponent,
+        RouterModule,
+        DotPageToolsSeoComponent,
+        DialogModule,
+        SafeUrlPipe,
+        DotInfoPageComponent,
+        DotNotLicenseComponent
+    ]
 })
 export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
@@ -81,6 +83,22 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     private readonly destroy$ = new Subject<boolean>();
 
+    EMA_INFO_PAGES: Record<'NOT_FOUND' | 'ACCESS_DENIED', InfoPage> = {
+        NOT_FOUND: {
+            icon: 'compass',
+            title: 'editema.infopage.notfound.title',
+            description: 'editema.infopage.notfound.description',
+            buttonPath: '/pages',
+            buttonText: 'editema.infopage.button.gotopages'
+        },
+        ACCESS_DENIED: {
+            icon: 'ban',
+            title: 'editema.infopage.accessdenied.title',
+            description: 'editema.infopage.accessdenied.description',
+            buttonPath: '/pages',
+            buttonText: 'editema.infopage.button.gotopages'
+        }
+    };
     private currentComponent: unknown;
 
     get queryParams(): DotPageApiParams {
@@ -99,9 +117,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     // We need to move the logic to a function, we still need to add enterprise logic
     shellProperties$: Observable<{
         items: NavigationBarItem[];
+        canRead: boolean;
         seoProperties: DotPageToolUrlParams;
+        error?: number;
     }> = this.store.shellProperties$.pipe(
-        map(({ currentUrl, page, host, languageId, siteId }) => ({
+        map(({ currentUrl, page, host, languageId, siteId, error }) => ({
             items: [
                 {
                     icon: 'pi-file',
@@ -111,12 +131,14 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 {
                     icon: 'pi-table',
                     label: 'Layout',
-                    href: 'layout'
+                    href: 'layout',
+                    isDisabled: !page.canEdit
                 },
                 {
                     icon: 'pi-sliders-h',
                     label: 'Rules',
-                    href: `rules/${page.identifier}`
+                    href: `rules/${page.identifier}`,
+                    isDisabled: !page.canEdit
                 },
                 {
                     iconURL: 'experiments',
@@ -142,12 +164,14 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     }
                 }
             ],
+            canRead: page.canRead,
             seoProperties: {
                 currentUrl,
                 languageId,
                 siteId,
                 requestHostName: host
-            }
+            },
+            error
         }))
     );
 

@@ -1,9 +1,22 @@
-<router-outlet (activate)="onActivateRoute($event)"></router-outlet>
 <ng-container *ngIf="shellProperties$ | async as sp">
-    <dot-edit-ema-navigation-bar [items]="sp.items"></dot-edit-ema-navigation-bar>
-    <p-toast position="top-center" data-testId="ema-toast"></p-toast>
-    <dot-page-tools-seo #pageTools [currentPageUrlParams]="sp.seoProperties"></dot-page-tools-seo>
+    <ng-container *ngIf="sp.canRead; else error">
+        <router-outlet (activate)="onActivateRoute($event)"></router-outlet>
+        <dot-edit-ema-navigation-bar [items]="sp.items"></dot-edit-ema-navigation-bar>
+        <p-toast position="top-center" data-testId="ema-toast"></p-toast>
+        <dot-page-tools-seo
+            #pageTools
+            [currentPageUrlParams]="sp.seoProperties"></dot-page-tools-seo>
+    </ng-container>
+
+    <ng-template #error>
+        <ng-container [ngSwitch]="sp.error">
+            <dot-info-page *ngSwitchCase="403" [info]="EMA_INFO_PAGES.ACCESS_DENIED" />
+            <dot-info-page *ngSwitchCase="404" [info]="EMA_INFO_PAGES.NOT_FOUND" />
+            <dot-not-license *ngSwitchCase="401" />
+        </ng-container>
+    </ng-template>
 </ng-container>
+
 <p-dialog
     #dialog
     *ngIf="dialogState$ | async as ds"
