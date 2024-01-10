@@ -37,6 +37,9 @@ export class EmaAppConfigurationService {
      * @memberof EmaAppConfigurationService
      */
     get(url: string): Observable<EmaAppSecretValue | null> {
+        // Remove trailing and leading slashes
+        url = url.replace(/^\/+|\/+$/g, '');
+
         return this.licenseService
             .isEnterprise()
             .pipe(
@@ -96,7 +99,7 @@ function getSecretByUrlMatch(url: string): (site: DotAppsSite) => EmaAppSecretVa
                 const parsedSecrets: EmaAppSecretValue[] = JSON.parse(secret.value);
 
                 for (const parsedSecret of parsedSecrets) {
-                    if (new RegExp(parsedSecret.pattern).test(url)) {
+                    if (doesPathMatch(parsedSecret.pattern, url)) {
                         return parsedSecret;
                     }
                 }
@@ -109,4 +112,16 @@ function getSecretByUrlMatch(url: string): (site: DotAppsSite) => EmaAppSecretVa
 
         throw new Error('Current URL did not match any pattern');
     };
+}
+
+function doesPathMatch(pattern: string, path: string): boolean {
+    // Remove leading and trailing slashes from the pattern and the path
+    const normalizedPattern = pattern.replace(/^\/|\/$/g, '');
+    const normalizedPath = path.replace(/^\/|\/$/g, '');
+
+    // Create a RegExp object using the normalized pattern
+    const regex = new RegExp(normalizedPattern);
+
+    // Test the normalized path against the regex pattern
+    return regex.test(normalizedPath);
 }

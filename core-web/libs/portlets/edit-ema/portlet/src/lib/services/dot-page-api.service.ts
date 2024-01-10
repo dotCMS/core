@@ -69,11 +69,8 @@ export class DotPageApiService {
      * @memberof DotPageApiService
      */
     get(params: DotPageApiParams): Observable<DotPageApiResponse> {
-        let url = params.url;
-
-        if (url.startsWith('/')) {
-            url = url.substring(1);
-        }
+        // Remove trailing and leading slashes
+        let url = params.url.replace(/^\/+|\/+$/g, '');
 
         const apiUrl = `/api/v1/page/json/${url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
 

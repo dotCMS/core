@@ -62,19 +62,6 @@ describe('EmaAppConfigurationService', () => {
                 });
             });
 
-            // it('if license isEnterprise throws error', (done) => {
-            //     jest.spyOn(licenseService, 'isEnterprise').mockImplementation(() => {
-            //         throw new Error('License is not enterprise');
-            //     });
-
-            //     spectator.service.get('test').subscribe(res => {
-            //         console.log('test', res);
-
-            //         expect(res).toBeNull();
-            //         done();
-            //     });
-            // });
-
             it('if siteService getCurrentSite throws error', (done) => {
                 jest.spyOn(licenseService, 'isEnterprise').mockReturnValue(of(true));
                 jest.spyOn(siteService, 'getCurrentSite').mockImplementation(() => {
@@ -241,6 +228,44 @@ describe('EmaAppConfigurationService', () => {
                             secrets: [
                                 {
                                     value: '[ { "pattern":"(.*)", "url":"https://myspa.blogs.com:3000", "options": { "authenticationToken": "123", "X-CONTENT-APP": "dotCMS" } } ]'
+                                }
+                            ]
+                        }
+                    ]
+                }
+            };
+            req.flush(mockResponse);
+        });
+
+        it('should return value even when the url have trailing and leading slashes', (done) => {
+            jest.spyOn(licenseService, 'isEnterprise').mockReturnValue(of(true));
+            jest.spyOn(siteService, 'getCurrentSite').mockReturnValue(
+                of({
+                    identifier: '123'
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                }) as any
+            );
+
+            spectator.service.get('/blog/test/').subscribe((res) => {
+                expect(res).toEqual({
+                    options: { 'X-CONTENT-APP': 'dotCMS', authenticationToken: '123' },
+                    pattern: '/blog/(.*)/',
+                    url: 'https://myspa.blogs.com:3000'
+                });
+                done();
+            });
+
+            const req = httpTestingController.expectOne('/api/v1/apps/dotema-config-v2/123');
+
+            const mockResponse = {
+                entity: {
+                    sites: [
+                        {
+                            id: '123',
+                            configured: true,
+                            secrets: [
+                                {
+                                    value: '[ { "pattern":"/blog/(.*)/", "url":"https://myspa.blogs.com:3000", "options": { "authenticationToken": "123", "X-CONTENT-APP": "dotCMS" } } ]'
                                 }
                             ]
                         }
