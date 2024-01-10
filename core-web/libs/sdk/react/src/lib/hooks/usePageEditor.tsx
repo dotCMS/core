@@ -84,6 +84,7 @@ function useEventMessageHandler({ reload = window.location.reload }: { reload: (
     useEffect(() => {
         function eventMessageHandler(event: MessageEvent) {
             if (!isInsideEditor) {
+                // Editor is telling us that we can set ourselves into edit mode
                 if (event.data === 'ema-editor-pong') {
                     setIsInsideEditor(true);
                 }
