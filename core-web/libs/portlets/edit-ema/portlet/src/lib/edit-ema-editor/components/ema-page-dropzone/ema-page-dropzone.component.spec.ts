@@ -245,7 +245,6 @@ describe('EmaPageDropzoneComponent', () => {
             const errorZoneText = errorZone.querySelector('span').textContent;
 
             const { left, top, width, height } = errorZone.style;
-            // console.log("AQUI");
             const errorZoneReact = {
                 left,
                 top,
@@ -297,7 +296,6 @@ describe('EmaPageDropzoneComponent', () => {
             const errorZoneText = errorZone.querySelector('span').textContent;
 
             const { left, top, width, height } = errorZone.style;
-            // console.log("AQUI");
             const errorZoneReact = {
                 left,
                 top,
