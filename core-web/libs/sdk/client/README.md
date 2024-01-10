@@ -6,9 +6,9 @@ This client library provides a streamlined, promise-based interface to fetch pag
 
 ## Features
 
-- Easy-to-use methods to interact with the [DotCMS Page](https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas) and [Navigation APIs](https://www.dotcms.com/docs/latest/navigation-rest-api).
-- Support for custom actions to communicate with the DotCMS page editor.
-- Comprehensive TypeScript typings for better development experience.
+-   Easy-to-use methods to interact with the [DotCMS Page](https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas) and [Navigation APIs](https://www.dotcms.com/docs/latest/navigation-rest-api).
+-   Support for custom actions to communicate with the DotCMS page editor.
+-   Comprehensive TypeScript typings for better development experience.
 
 ## Installation
 
@@ -82,11 +82,9 @@ Retrieves the specified page's elements from your DotCMS system in JSON format.
 
 Retrieves information about the DotCMS file and folder tree.
 
-
 ## Contributing
 
 GitHub pull requests are the preferred method to contribute code to dotCMS. Before any pull requests can be accepted, an automated tool will ask you to agree to the [dotCMS Contributor's Agreement](https://gist.github.com/wezell/85ef45298c48494b90d92755b583acb3).
-
 
 ## Licensing
 
