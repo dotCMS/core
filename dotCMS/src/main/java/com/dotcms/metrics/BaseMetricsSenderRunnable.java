@@ -53,7 +53,7 @@ public abstract class BaseMetricsSenderRunnable<P extends Serializable> implemen
         }
     }
 
-    protected CircuitBreakerUrlBuilder getCircuitBreakerUrlBuilder(final String url) {
+    protected CircuitBreakerUrlBuilder getCircuitBreakerUrlBuilderNoThrow(final String url) {
         return CircuitBreakerUrl.builder()
                 .setMethod(CircuitBreakerUrl.Method.POST)
                 .setUrl(url)
@@ -63,8 +63,17 @@ public abstract class BaseMetricsSenderRunnable<P extends Serializable> implemen
                 .setThrowWhenNot2xx(false);
     }
 
+    protected CircuitBreakerUrlBuilder getCircuitBreakerUrlBuilder(final String url) {
+        return CircuitBreakerUrl.builder()
+                .setMethod(CircuitBreakerUrl.Method.POST)
+                .setUrl(url)
+                .setParams(map(TOKEN_QUERY_PARAM_NAME, analyticsApp.getAnalyticsProperties().analyticsKey()))
+                .setTimeout(4000)
+                .setHeaders(METRICS_SENDER_HEADERS);
+    }
+
     protected CircuitBreakerUrlBuilder getCircuitBreakerUrlBuilder() {
-        return getCircuitBreakerUrlBuilder(analyticsApp.getAnalyticsProperties().analyticsWriteUrl());
+        return getCircuitBreakerUrlBuilderNoThrow(analyticsApp.getAnalyticsProperties().analyticsWriteUrl());
     }
 
     protected CircuitBreakerUrl getCircuitBreakerUrl(final P payload) {

@@ -53,7 +53,7 @@ describe('DotEditContentService', () => {
             const CONTENTID_OR_VAR = '456';
             dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
 
-            spectator.service.getContentTypeFormData(CONTENTID_OR_VAR).subscribe(() => {
+            spectator.service.getContentType(CONTENTID_OR_VAR).subscribe(() => {
                 expect(dotContentTypeService.getContentType).toHaveBeenCalledWith(CONTENTID_OR_VAR);
                 done();
             });

@@ -121,6 +121,7 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
                         + field.variable() + "/" + assetName
                         + (contentLanguageSize > 1 ? "?language_id=" + contentlet.getLanguageId()
                         : StringPool.BLANK));
+
         TRANSFORMER_MAP.get().put("name", assetName);
         TRANSFORMER_MAP.get().put("size", metadata.getSize());
         TRANSFORMER_MAP.get().put("mime", metadata.getContentType());
@@ -133,5 +134,6 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
         TRANSFORMER_MAP.get().put("modDate", metadata.getModDate());
         TRANSFORMER_MAP.get().put("focalPoint",  Try.of(()->  metadata.getCustomMeta().get("focalPoint").toString()).getOrElse("0.0"));
         return TRANSFORMER_MAP.get();
+
     }
 }

@@ -38,6 +38,8 @@ export class DotEditContentFieldComponent {
     @HostBinding('class') class = 'field';
     @Input() field!: DotCMSContentTypeField;
     @Input() contentlet!: DotCMSContentlet;
+    @Input() contentType!: string;
+
     readonly fieldTypes = FIELD_TYPES;
     readonly calendarTypes = CALENDAR_FIELD_TYPES as string[];
 }

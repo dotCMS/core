@@ -15,7 +15,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotEmptyContainerComponent, DotFormatDateService } from '@dotcms/ui';
@@ -25,7 +25,6 @@ import {
     getExperimentAllMocks,
     getExperimentMock
 } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsCreateComponent } from './components/dot-experiments-create/dot-experiments-create.component';
 import { DotExperimentsListSkeletonComponent } from './components/dot-experiments-list-skeleton/dot-experiments-list-skeleton.component';
@@ -95,7 +94,10 @@ describe('ExperimentsListComponent', () => {
     });
 
     it('should show the empty component when is not loading and no experiments', () => {
-        spectator.component.vm$ = of({ ...VM_LIST_EXPERIMENTS_MOCKS$, isLoading: false });
+        spectator.component.vm$ = of({
+            ...VM_LIST_EXPERIMENTS_MOCKS$,
+            isLoading: false
+        });
         spectator.detectComponentChanges();
 
         expect(spectator.query(DotEmptyContainerComponent)).toExist();

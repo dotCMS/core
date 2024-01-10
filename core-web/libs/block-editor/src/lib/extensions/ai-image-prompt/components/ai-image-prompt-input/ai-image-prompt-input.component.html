@@ -40,7 +40,7 @@
         </div>
     </ng-container>
 
-    <form class="w-full text-center" *ngIf="isSelected" [formGroup]="form">
+    <form class="w-full text-center flex flex-column" *ngIf="isSelected" [formGroup]="form">
         <div class="field">
             <textarea
                 class="w-full h-full"
@@ -54,15 +54,16 @@
         <dot-field-validation-message
             [field]="promptControl"
             message=" {{ 'block-editor.common.input-prompt-required-error' | dm }}" />
-
-        <button
-            class="p-button-outlined"
-            [loading]="isLoading"
-            (click)="generateImage()"
-            icon="pi pi-send"
-            label="{{ 'block-editor.common.generate' | dm }}"
-            pButton
-            type="submit"></button>
+        <div>
+            <button
+                class="p-button-outlined"
+                [loading]="isLoading"
+                (click)="generateImage()"
+                icon="pi pi-send"
+                label="{{ 'block-editor.common.generate' | dm }}"
+                pButton
+                type="submit"></button>
+        </div>
     </form>
 
     <ng-template #autoHeaderTpl>

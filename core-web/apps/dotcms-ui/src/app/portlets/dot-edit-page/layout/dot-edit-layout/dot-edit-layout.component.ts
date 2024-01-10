@@ -8,9 +8,9 @@ import { debounceTime, filter, finalize, pluck, switchMap, take, takeUntil } fro
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import {
+    DotHttpErrorManagerService,
     DotMessageService,
     DotPageLayoutService,
     DotRouterService,

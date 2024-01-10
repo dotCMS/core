@@ -99,10 +99,9 @@
             cursor: pointer;
             display: block;
             line-height: normal;
-            //padding: $spacing-1 $spacing-3;
             transition: background-color $basic-speed ease-in;
             width: 100%;
-
+            padding: $spacing-1 $spacing-3;
             @include truncate-text;
 
             &.selected {
