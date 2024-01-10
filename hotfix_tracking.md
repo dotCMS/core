@@ -235,3 +235,4 @@ This maintenance release includes the following code fixes:
 192. https://github.com/dotCMS/core/issues/26439 : Relationship fields not respecting the order identifiers are sent via the workflow API #26439
 193. https://github.com/dotCMS/core/issues/26706 : Change Default PUBSUB Provider #26706
 194. https://github.com/dotCMS/core/issues/26774 : text fields validation limit to 255 chars is not longer required #26774
+195. https://github.com/dotCMS/core/issues/22698 : Limited user without Search Portlet can't Edit Content From Edit Page Portlet #22698
