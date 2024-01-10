@@ -4,7 +4,6 @@
             *ngFor="let container of column.containers"
             [ngStyle]="getPosition(container)"
             [attr.data-payload]="container.payload"
-            [attr.data-error]="getErrorMessage(container.payload)"
             data-type="container">
             <div
                 *ngFor="let contentlet of container.contentlets"
@@ -13,6 +12,12 @@
                 (drop)="onDrop($event)"
                 (dragover)="onDragover($event)"
                 data-type="contentlet"></div>
+            <div
+                class="drop-zone_error"
+                *ngIf="getErrorMessage(container.payload) as error"
+                [ngStyle]="getPosition(container)">
+                <span [innerHTML]="error"></span>
+            </div>
         </div>
     </div>
 </div>

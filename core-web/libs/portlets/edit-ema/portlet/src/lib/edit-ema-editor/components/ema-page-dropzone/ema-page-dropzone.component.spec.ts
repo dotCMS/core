@@ -14,7 +14,7 @@ const ACTION_MOCK: ActionPayload = {
     container: {
         acceptTypes: 'file',
         identifier: '789',
-        maxContentlets: 100,
+        maxContentlets: 2,
         uuid: '2',
         contentletsId: ['123', '455']
     },
@@ -56,7 +56,9 @@ export const BOUNDS_MOCK: Row[] = [
                                 payload: null
                             }
                         ],
-                        payload: null
+                        payload: {
+                            ...ACTION_MOCK
+                        }
                     }
                 ]
             }
@@ -201,22 +203,20 @@ describe('EmaPageDropzoneComponent', () => {
             spectator.setInput('contentType', 'NOT_ACCEPTED_CONTENT_TYPE');
             spectator.detectComponentChanges();
 
-            spectator.triggerEventHandler('div[data-type="contentlet"]', 'drop', {
-                target: {
-                    clientY: 100,
-                    getBoundingClientRect: () => {
-                        return {
-                            top: 100,
-                            height: 100
-                        };
-                    },
-                    dataset: {
-                        payload: JSON.stringify(ACTION_MOCK)
-                    }
-                }
+            spectator.triggerEventHandler('div.drop-zone_error', 'drop', {
+                target: {}
             });
 
             spectator.detectChanges();
+
+            const errorZone = spectator.query('.drop-zone_error');
+            const errorZoneText = errorZone.querySelector('span').textContent;
+
+            // Check that the error message is displayed
+            expect(errorZone).toBeTruthy();
+            expect(errorZoneText.trim()).toBe(
+                'The contentlet type NOT_ACCEPTED_CONTENT_TYPE is not valid for this container'
+            );
 
             expect(spectator.component.place.emit).not.toHaveBeenCalled();
             expect(spyDotMessageSerivice).toHaveBeenCalledWith(
@@ -232,29 +232,35 @@ describe('EmaPageDropzoneComponent', () => {
             spectator.setInput('contentType', 'file');
             spectator.detectComponentChanges();
 
-            spectator.triggerEventHandler('div[data-type="contentlet"]', 'drop', {
-                target: {
-                    clientY: 100,
-                    getBoundingClientRect: () => {
-                        return {
-                            top: 100,
-                            height: 100
-                        };
-                    },
-                    dataset: {
-                        payload: JSON.stringify({
-                            ...ACTION_MOCK,
-                            container: {
-                                ...ACTION_MOCK.container,
-                                maxContentlets: 2
-                            }
-                        })
-                    }
-                }
+            spectator.triggerEventHandler('div.drop-zone_error', 'drop', {
+                target: {}
             });
 
             spectator.detectChanges();
 
+            const errorZone = spectator.query('.drop-zone_error') as HTMLElement;
+            const errorZoneText = errorZone.querySelector('span').textContent;
+
+            const { left, top, width, height } = errorZone.style;
+            // console.log("AQUI");
+            const errorZoneReact = {
+                left,
+                top,
+                width,
+                height
+            };
+
+            // Check that the error message is displayed
+            expect(errorZone).toBeTruthy();
+            expect(errorZoneText.trim()).toBe('Container only accepts 2 contentlets');
+            expect(errorZoneReact).toEqual({
+                left: '10px',
+                top: '10px',
+                width: '980px',
+                height: '180px'
+            });
+
+            // Check that the place event is not emitted
             expect(spectator.component.place.emit).not.toHaveBeenCalled();
             expect(spyDotMessageSerivice).toHaveBeenCalledWith(
                 'edit.ema.page.dropzone.max.contentlets',
@@ -303,6 +309,4 @@ describe('EmaPageDropzoneComponent', () => {
             expect(preventDefaultSpy).toHaveBeenCalledTimes(1);
         });
     });
-
-    // Additional tests as necessary
 });

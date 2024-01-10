@@ -50,7 +50,6 @@ export interface Row {
     selector: 'dot-ema-page-dropzone',
     standalone: true,
     imports: [CommonModule],
-    providers: [DotMessageService],
     templateUrl: './ema-page-dropzone.component.html',
     styleUrls: ['./ema-page-dropzone.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -100,10 +99,6 @@ export class EmaPageDropzoneComponent {
         const data = JSON.parse(target.dataset.payload);
         const isTop = this.isTop(event);
 
-        if (this.getErrorMessage(data)) {
-            return;
-        }
-
         const payload = <ActionPayload>{
             ...data,
             position: isTop ? 'before' : 'after'
@@ -129,11 +124,7 @@ export class EmaPageDropzoneComponent {
         event.preventDefault();
 
         const target = event.target as HTMLDivElement;
-        const { type = '', payload = '' } = target.dataset;
-
-        if (payload && this.getErrorMessage(payload)) {
-            return;
-        }
+        const { type = '' } = target.dataset;
 
         if (type !== 'contentlet') {
             return;
