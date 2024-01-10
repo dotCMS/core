@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 :host {
-    max-height: 37rem;
+    max-height: 100vh;
     overflow: scroll;
     display: block;
     padding: $spacing-4;
@@ -70,7 +70,6 @@
     color: $color-palette-primary;
     padding: $spacing-1;
     border-radius: $border-radius-lg;
-    text-decoration: none;
     &:hover {
         background-color: $color-palette-primary-100;
     }

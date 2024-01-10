@@ -33,7 +33,7 @@ $number-link-icon-size: 2.28rem;
     }
 
     .dot-starter-description {
-        color: $color-palette-gray-700;
+        color: $black;
         margin: 0 $spacing-3;
     }
 
@@ -137,7 +137,11 @@ $number-link-icon-size: 2.28rem;
     }
     .dot-starter-top-secondary__block {
         display: flex;
-        padding: $spacing-3 0;
+        padding-bottom: 4rem;
+    }
+
+    .dot-starter-top-secondary__block:last-child {
+        padding-bottom: 0;
     }
 
     .dot-starter-top-secondary__link-icon {
@@ -212,6 +216,7 @@ $number-link-icon-size: 2.28rem;
     }
 
     .dot-starter-bottom__link-icon {
+        padding-top: 0.3rem;
         span {
             color: $color-palette-primary;
             display: inline-flex;

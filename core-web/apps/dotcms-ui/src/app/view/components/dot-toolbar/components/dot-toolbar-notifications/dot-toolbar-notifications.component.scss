@@ -24,6 +24,7 @@ $notification-padding: $spacing-3;
     .toolbar-notifications {
         padding: $notification-padding 0 $notification-padding $notification-padding;
         width: 350px;
+        margin: 0.5rem 1rem;
 
         &:before {
             background: $white;
@@ -45,9 +46,12 @@ $notification-padding: $spacing-3;
     }
 
     .toolbar-notifications__title {
-        align-self: center;
+        /*  align-self: center;
         font-size: $font-size-lg;
+       */
+        font-size: 1.5rem;
         margin: 0;
+        padding-bottom: 0.5rem;
     }
 
     .toolbar-notifications__footer {
