@@ -23,6 +23,7 @@ export interface DotPageApiResponse {
         inode: string;
         canEdit: boolean;
         canRead: boolean;
+        url: string;
     };
     site: Site;
     viewAs: {
@@ -70,7 +71,10 @@ export class DotPageApiService {
      * @memberof DotPageApiService
      */
     get(params: DotPageApiParams): Observable<DotPageApiResponse> {
-        const apiUrl = `/api/v1/page/json/${params.url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}&mode=EDIT_MODE`;
+        // Remove trailing and leading slashes
+        const url = params.url.replace(/^\/+|\/+$/g, '');
+
+        const apiUrl = `/api/v1/page/json/${url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
 
         return this.http
             .get<{

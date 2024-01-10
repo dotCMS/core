@@ -116,7 +116,8 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                 page: {
                                     title: 'hello world',
                                     identifier: '123',
-                                    ...permissions
+                                    ...permissions,
+                                    url: 'page-one'
                                 },
                                 site: {
                                     identifier: '123'
@@ -136,7 +137,8 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                 page: {
                                     title: 'hello world',
                                     identifier: '123',
-                                    ...permissions
+                                    ...permissions,
+                                    url: 'page-one'
                                 },
                                 site: {
                                     identifier: '123'
@@ -206,13 +208,19 @@ describe('EditEmaEditorComponent', () => {
 
         beforeEach(() => {
             spectator = createComponent({
-                queryParams: { language_id: 1, url: 'page-one' }
+                queryParams: { language_id: 1, url: 'page-one' },
+                data: {
+                    data: {
+                        url: 'http://localhost:3000'
+                    }
+                }
             });
 
             store = spectator.inject(EditEmaStore, true);
             confirmationService = spectator.inject(ConfirmationService, true);
 
             store.load({
+                clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -221,8 +229,6 @@ describe('EditEmaEditorComponent', () => {
 
         describe('toast', () => {
             it('should trigger messageService when clicking on ema-copy-url', () => {
-                spectator.detectChanges();
-
                 const messageService = spectator.inject(MessageService, true);
                 const messageServiceSpy = jest.spyOn(messageService, 'add');
                 spectator.detectChanges();
@@ -246,7 +252,7 @@ describe('EditEmaEditorComponent', () => {
                 const button = spectator.debugElement.query(By.css('[data-testId="ema-api-link"]'));
 
                 expect(button.nativeElement.href).toBe(
-                    'http://localhost/api/v1/page/json/index?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                    'http://localhost/api/v1/page/json/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
                 );
             });
 
@@ -661,7 +667,7 @@ describe('EditEmaEditorComponent', () => {
                     dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                         new CustomEvent('ng-event', {
                             detail: {
-                                name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET
+                                name: NG_CUSTOM_EVENTS.SAVE_PAGE
                             }
                         })
                     );
@@ -764,7 +770,7 @@ describe('EditEmaEditorComponent', () => {
                     dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                         new CustomEvent('ng-event', {
                             detail: {
-                                name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
+                                name: NG_CUSTOM_EVENTS.SAVE_PAGE,
                                 payload: {
                                     contentletIdentifier: 'new-contentlet-123'
                                 }
@@ -1037,7 +1043,7 @@ describe('EditEmaEditorComponent', () => {
                     dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                         new CustomEvent('ng-event', {
                             detail: {
-                                name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
+                                name: NG_CUSTOM_EVENTS.SAVE_PAGE,
                                 data: {
                                     contentlet: {
                                         identifier: '123'
@@ -1184,6 +1190,16 @@ describe('EditEmaEditorComponent', () => {
         });
 
         describe('DOM', () => {
+            it('iframe should have the correct src', () => {
+                spectator.detectChanges();
+
+                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+                expect(iframe.nativeElement.src).toBe(
+                    'http://localhost:3000/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                );
+            });
+
             it('should navigate to new url when postMessage SET_URL', () => {
                 const router = spectator.inject(Router);
                 jest.spyOn(router, 'navigate');
@@ -1322,6 +1338,7 @@ describe('EditEmaEditorComponent', () => {
             store.load({
                 url: 'index',
                 language_id: '1',
+                clientHost: '',
                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
             });
         });

@@ -20,7 +20,7 @@ describe('DotPageApiService', () => {
             .subscribe();
 
         spectator.expectOne(
-            '/api/v1/page/json/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE',
+            '/api/v1/page/json/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona',
             HttpMethod.GET
         );
     });
@@ -34,5 +34,20 @@ describe('DotPageApiService', () => {
             .subscribe();
 
         spectator.expectOne('/api/v1/page/test/content', HttpMethod.POST);
+    });
+
+    it('should remove trailing and leading slashes in the url', () => {
+        spectator.service
+            .get({
+                url: '///test-url///',
+                language_id: 'en',
+                'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+            })
+            .subscribe();
+
+        spectator.expectOne(
+            '/api/v1/page/json/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona',
+            HttpMethod.GET
+        );
     });
 });

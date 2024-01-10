@@ -4,10 +4,12 @@ import { CanDeactivateGuardService } from '@dotcms/data-access';
 import { portletHaveLicenseResolver } from '@dotcms/ui';
 
 import { DotEmaShellComponent } from './dot-ema-shell/dot-ema-shell.component';
+import { editEmaGuard } from './services/guards/edit-ema.guard';
 
 export const DotEmaRoutes: Route[] = [
     {
         path: '',
+        canActivate: [editEmaGuard],
         component: DotEmaShellComponent,
         resolve: { haveLicense: portletHaveLicenseResolver },
         runGuardsAndResolvers: 'always',
