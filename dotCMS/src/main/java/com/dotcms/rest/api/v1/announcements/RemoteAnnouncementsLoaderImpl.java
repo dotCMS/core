@@ -128,21 +128,27 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
             final String type = Try.of(()->node.get("type1").asText()).getOrElse("unk");
             final String url = Try.of(()->node.get("url").asText()).getOrElse("unk");
             final String langId = Try.of(() -> node.get("languageId").asText()).getOrElse("unk");
+            final String modDateString = Try.of(()->node.get("modDate").asText()).getOrElse("1970-01-01 00:00:00.0");
 
-            final LocalDateTime localDateTime = LocalDateTime.parse(dateString, formatter);
+            final LocalDateTime date = LocalDateTime.parse(dateString, formatter);
+            final LocalDateTime modDate = LocalDateTime.parse(modDateString, formatter);
+
             final Language language = getLanguage(langId);
+
 
             announcements.add(
                     Announcement.builder()
                             .identifier(identifier)
                             .inode(inode)
                             .title(title)
-                            .date(localDateTime.toInstant(java.time.ZoneOffset.UTC))
-                            .dateAsISO8601(localDateTime.toString())
+                            .date(date.toInstant(java.time.ZoneOffset.UTC))
+                            .dateAsISO8601(date.toString())
                             .type(type)
                             .url(url)
                             .languageId(language.getId())
                             .languageCode(language.getIsoCode())
+                            .modDate(modDate.toInstant(java.time.ZoneOffset.UTC))
+                            .modDateAsISO8601(modDate.toString())
                             .build()
             );
         });

@@ -14,6 +14,7 @@ public interface AbstractAnnouncement {
     String inode();
 
     String languageCode();
+
     long languageId();
 
     String type();
@@ -22,10 +23,12 @@ public interface AbstractAnnouncement {
 
     String url();
 
-    //I could have used an Instant here, but I ran into some issues with the jackson mapper since I need to register a new module to make a conversion from a string to an Instant
-    //and at the end what we need is just a string representation of the date in the front end
     Instant date();
 
     String  dateAsISO8601();
+
+    Instant modDate();
+
+    String  modDateAsISO8601();
 
 }
