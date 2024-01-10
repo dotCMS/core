@@ -73,6 +73,8 @@ function useEventMessageHandler({ reload = window.location.reload }: { reload: (
     const [isInsideEditor, setIsInsideEditor] = useState(false);
 
     useEffect(() => {
+        if (window.parent === window) return;
+
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.PING_EDITOR // This is to let the editor know that the page is ready
         });

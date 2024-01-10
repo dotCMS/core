@@ -30,8 +30,14 @@ afterEach(() => {
 describe('usePageEditor', () => {
     beforeAll(() => {
         // Mocking window functions
+
         delete window.location;
-        window.location = { reload: jest.fn() };
+        window.location = { reload: jest.fn() } as unknown as Location;
+
+        jest.spyOn(window, 'parent', 'get').mockImplementation(
+            () => 'something' as unknown as Window
+        ); // I just need to make the parent anything else to the condition to met.
+
         reloadSpy = jest.spyOn(window.location, 'reload');
 
         // Provide mock implementations if necessary
@@ -107,7 +113,7 @@ describe('usePageEditor', () => {
 
                 // Arrange: Spy on window.location.reload
                 delete window.location;
-                window.location = { reload: jest.fn() };
+                window.location = { reload: jest.fn() } as unknown as Location;
                 const reloadSpy = jest.spyOn(window.location, 'reload');
 
                 // Act: Render the hook without a custom reload function and dispatch the relevant message event
@@ -145,6 +151,7 @@ describe('usePageEditor', () => {
                 window.dispatchEvent(boundsEvent);
 
                 // Assert: Check that postMessageToEditor was called with the correct action and payload
+                // Since we are mocking the pong and we are checking the window.parent === window condition, we need to check the second call, because the ping is not happening
                 await waitFor(() => {
                     expect(postMessageToEditor).toHaveBeenNthCalledWith(3, {
                         action: CUSTOMER_ACTIONS.SET_BOUNDS,
@@ -160,7 +167,7 @@ describe('usePageEditor', () => {
             it('should not call post to parent window with the correct pathname', () => {
                 renderHook(() => usePageEditor({ pathname: '/' }));
 
-                expect(postMessageToEditor).not.toHaveBeenCalledTimes(2); // The ping is always sent
+                expect(postMessageToEditor).not.toHaveBeenCalledTimes(2); // the ping is always sent
             });
         });
 
@@ -171,7 +178,7 @@ describe('usePageEditor', () => {
                 window.dispatchEvent(new Event('scroll'));
 
                 await waitFor(() => {
-                    expect(postMessageToEditor).not.toHaveBeenCalledTimes(2); // The ping is always sent
+                    expect(postMessageToEditor).not.toHaveBeenCalledTimes(2); // the ping is always sent
                 });
             });
         });
@@ -202,7 +209,7 @@ describe('usePageEditor', () => {
 
                 // Arrange: Spy on window.location.reload
                 delete window.location;
-                window.location = { reload: jest.fn() };
+                window.location = { reload: jest.fn() } as unknown as Location;
                 const reloadSpy = jest.spyOn(window.location, 'reload');
 
                 // Act: Render the hook without a custom reload function and dispatch the relevant message event
@@ -238,7 +245,7 @@ describe('usePageEditor', () => {
 
                 // Assert: Check that postMessageToEditor was called with the correct action and payload
                 await waitFor(() => {
-                    expect(postMessageToEditor).not.toHaveBeenCalledTimes(2); // The ping is always sent
+                    expect(postMessageToEditor).not.toHaveBeenCalledTimes(2);
                 });
             });
         });
