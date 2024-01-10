@@ -32,20 +32,20 @@ import javax.ws.rs.core.Response;
 public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
 
     //The CT varN/ame used to retrieve the Announcements
-    static final String DOT_ANNOUNCEMENT_CT = Lazy.of(()-> Config.getStringProperty("DOT_ANNOUNCEMENT_CT", "dotAnnouncement")).get();
+    static final Lazy<String>DOT_ANNOUNCEMENT_CT =
+            Lazy.of(()-> Config.getStringProperty("DOT_ANNOUNCEMENT_CT", "dotAnnouncement"));
 
     //This is the url to the dotCMS instance set to provide and feed all consumers with announcements
     static final  Lazy<String> ANNOUNCEMENTS_BASE_URL =
             Lazy.of(() -> Config.getStringProperty("ANNOUNCEMENTS_BASE_URL", "https://www.dotcms.com"));
 
     //The query pattern to retrieve the Announcements
-    static final String ANNOUNCEMENTS_QUERY_PATTERN = "%s/api/content/render/false/query/+contentType:%s +languageId:%d +deleted:false +live:true/orderBy/modDate desc";
-
+    static final String ANNOUNCEMENTS_QUERY_PATTERN = "%s/api/content/render/false/query/+contentType:%s +languageId:%d +deleted:false +live:true/orderBy/%s.date desc";
 
     /**
      * Load the announcements from the remote dotCMS instance
      * @param language Language
-     * @return
+     * @return List<Announcement>
      */
     @Override
     public List<Announcement> loadAnnouncements(final Language language) {
@@ -55,10 +55,10 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
 
     /**
      * Load the announcements from the remote dotCMS instance
-     * @param language
-     * @return
+     * @param language Language
+     * @return JsonNode
      */
-    JsonNode loadRemoteAnnouncements(Language language) {
+    JsonNode loadRemoteAnnouncements(final Language language) {
         final String url = buildURL(language);
         try {
             final Client client = restClient();
@@ -88,7 +88,7 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
      */
      String buildURL(Language language) {
         final String raw = String.format(ANNOUNCEMENTS_QUERY_PATTERN, ANNOUNCEMENTS_BASE_URL.get(),
-                DOT_ANNOUNCEMENT_CT, language.getId());
+                DOT_ANNOUNCEMENT_CT.get(), language.getId(), DOT_ANNOUNCEMENT_CT.get());
         //clean up double slashes in the url
         return raw.replaceAll("(?<!(http:|https:))//", "/");
     }
