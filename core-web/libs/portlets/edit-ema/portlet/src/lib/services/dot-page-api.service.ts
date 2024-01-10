@@ -21,6 +21,8 @@ export interface DotPageApiResponse {
         title: string;
         identifier: string;
         inode: string;
+        canEdit: boolean;
+        canRead: boolean;
         url: string;
     };
     site: Site;

@@ -1,25 +1,14 @@
 import { of } from 'rxjs';
 
-import { Component, DebugElement, Input } from '@angular/core';
+import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
+import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import { DotNotLicenseComponent } from '@dotcms/ui';
+
 import { DotFormBuilderComponent } from './dot-form-builder.component';
-
-@Component({
-    selector: 'dot-unlicensed-porlet',
-    template: ''
-})
-export class MockDotUnlicensedPorletComponent {
-    @Input() data;
-}
-
-@Component({
-    selector: 'dot-content-types',
-    template: ''
-})
-export class MockDotContentTypesPortletComponent {}
 
 describe('DotFormBuilderComponent', () => {
     let fixture: ComponentFixture<DotFormBuilderComponent>;
@@ -28,11 +17,8 @@ describe('DotFormBuilderComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                DotFormBuilderComponent,
-                MockDotUnlicensedPorletComponent,
-                MockDotContentTypesPortletComponent
-            ],
+            imports: [DotNotLicenseComponent],
+            declarations: [DotFormBuilderComponent],
             providers: [
                 {
                     provide: ActivatedRoute,
@@ -40,6 +26,20 @@ describe('DotFormBuilderComponent', () => {
                         get data() {
                             return '';
                         }
+                    }
+                },
+                {
+                    provide: DotLicenseService,
+                    useValue: {
+                        unlicenseData: of({}),
+                        isEnterprise: () => of(true),
+                        canAccessEnterprisePortlet: () => of(true)
+                    }
+                },
+                {
+                    provide: DotMessageService,
+                    useValue: {
+                        get: () => ''
                     }
                 }
             ]
@@ -55,43 +55,25 @@ describe('DotFormBuilderComponent', () => {
     it('should show unlicense portlet', () => {
         spyOnProperty(router, 'data').and.returnValue(
             of({
-                unlicensed: {
-                    title: 'Title',
-                    description: 'Description',
-                    links: [
-                        {
-                            text: 'text',
-                            link: 'link'
-                        }
-                    ]
-                }
+                haveLicense: false
             })
         );
         fixture.detectChanges();
-        const unlicensed = de.query(By.css('dot-unlicensed-porlet'));
-        const contentTypes = de.query(By.css('dot-content-types'));
-        expect(unlicensed.componentInstance.data).toEqual({
-            title: 'Title',
-            description: 'Description',
-            links: [
-                {
-                    text: 'text',
-                    link: 'link'
-                }
-            ]
-        });
+        const unlicensed = de.query(By.css('[data-testId="not-license"]'));
+        const contentTypes = de.query(By.css('[data-testId="content-types"]'));
+        expect(unlicensed).toBeDefined();
         expect(contentTypes).toBeNull();
     });
 
     it('should show dot-content-types', () => {
         spyOnProperty(router, 'data').and.returnValue(
             of({
-                unlicensed: null
+                haveLicense: true
             })
         );
         fixture.detectChanges();
-        const unlicensed = de.query(By.css('dot-unlicensed-porlet'));
-        const contentTypes = de.query(By.css('dot-content-types'));
+        const unlicensed = de.query(By.css('[data-testId="not-license"]'));
+        const contentTypes = de.query(By.css('[data-testId="content-types"]'));
         expect(unlicensed).toBeNull();
         expect(contentTypes).toBeDefined();
     });

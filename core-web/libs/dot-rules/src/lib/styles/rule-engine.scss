@@ -63,7 +63,7 @@ $finder-s-input: ".ui.input input";
         padding: $spacing-3 $spacing-4;
         flex-grow: 1;
         background-color: $foreground-tertiary;
-        overflow: scroll;
+        overflow: auto;
     }
 
     .cw-message {

@@ -1,6 +1,7 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { EMPTY, Observable, forkJoin } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
@@ -26,6 +27,7 @@ export interface EditEmaState {
     dialogIframeLoading: boolean;
     dialogIframeURL: string;
     dialogType: DialogType;
+    error?: number;
     editor: DotPageApiResponse;
     isEnterpriseLicense: boolean;
 }
@@ -114,12 +116,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         siteId: state.editor.site.identifier,
         languageId: state.editor.viewAs.language.id,
         currentUrl: '/' + state.editor.page,
-        host: state.clientHost
+        host: state.clientHost,
+        error: state.error
     }));
-
-    /*******************
-     * Effects
-     *******************/
 
     /**
      * Concurrently loads page and license data to updat the state.
@@ -149,9 +148,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     dialogType: null
                                 });
                             },
-                            error: (e) => {
+                            error: ({ status }: HttpErrorResponse) => {
                                 // eslint-disable-next-line no-console
-                                console.log(e);
+                                this.createEmptyState({ canEdit: false, canRead: false }, status);
                             }
                         }),
                         catchError(() => EMPTY)
@@ -434,5 +433,53 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
             return acc;
         }, {});
+    }
+
+    /**
+     *
+     *
+     * @private
+     * @param {{ canEdit: boolean; canRead: boolean }} permissions
+     * @param {number} [error]
+     * @memberof EditEmaStore
+     */
+    private createEmptyState(permissions: { canEdit: boolean; canRead: boolean }, error?: number) {
+        this.setState({
+            editor: {
+                page: {
+                    title: '',
+                    identifier: '',
+                    inode: '',
+                    ...permissions,
+                    url: ''
+                },
+                site: {
+                    hostname: '',
+                    type: '',
+                    identifier: '',
+                    archived: false
+                },
+                viewAs: {
+                    language: {
+                        id: 0,
+                        languageCode: '',
+                        countryCode: '',
+                        language: '',
+                        country: ''
+                    },
+                    persona: undefined
+                },
+                layout: null,
+                template: undefined,
+                containers: undefined
+            },
+            clientHost: '',
+            dialogIframeURL: '',
+            dialogHeader: '',
+            dialogIframeLoading: false,
+            isEnterpriseLicense: false,
+            dialogType: null,
+            error
+        });
     }
 }

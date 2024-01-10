@@ -12,6 +12,8 @@ export * from './lib/components/dot-copy-button/dot-copy-button.component';
 export * from './lib/components/dot-content-thumbnail/dot-content-thumbnail.component';
 export * from './lib/components/dot-api-link/dot-api-link.component';
 export * from './lib/components/dot-link/dot-link.component';
+export * from './lib/components/dot-not-license/dot-not-license.component';
+export * from './lib/components/dot-info-page/dot-info-page.component';
 export * from './lib/components/dot-form-dialog/dot-form-dialog.component';
 export * from './lib/components/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
 
@@ -34,3 +36,6 @@ export * from './lib/dot-message/dot-message.pipe';
 export * from './lib/pipes/dot-string-format/dot-string-format.pipe';
 export * from './lib/pipes/dot-timestamp-to-date/dot-timestamp-to-date.pipe';
 export * from './lib/pipes/safe-url/safe-url.pipe';
+
+//Resolvers
+export * from './lib/resolvers/dot-portlet-have-license.resolver';

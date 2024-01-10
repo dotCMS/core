@@ -91,11 +91,6 @@ const PORTLETS_ANGULAR: Route[] = [
             import('@portlets/dot-apps/dot-apps.module').then((m) => m.DotAppsModule)
     },
     {
-        path: 'notLicensed',
-        loadChildren: () =>
-            import('@components/not-licensed/not-licensed.module').then((m) => m.NotLicensedModule)
-    },
-    {
         path: 'edit-page',
         canActivate: [editPageGuard],
         loadChildren: () =>

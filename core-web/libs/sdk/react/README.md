@@ -4,9 +4,9 @@
 
 ## Features
 
-- A collection of React components and hooks tailored to render dotCMS pages.
-- Streamlined integration with dotCMS page editor.
-- Improved development experience with comprehensive TypeScript typings.
+-   A collection of React components and hooks tailored to render dotCMS pages.
+-   Streamlined integration with dotCMS page editor.
+-   Improved development experience with comprehensive TypeScript typings.
 
 ## Installation
 
@@ -30,7 +30,7 @@ A functional component that renders a layout for a dotCMS page.
 
 #### Props
 
-- **entity**: The context for a dotCMS page.
+-   **entity**: The context for a dotCMS page.
 
 #### Usage
 
@@ -38,7 +38,7 @@ A functional component that renders a layout for a dotCMS page.
 import { DotcmsLayout } from '@dotcms/react';
 
 const MyPage = ({ entity }) => {
-  return <DotcmsLayout entity={entity} />;
+    return <DotcmsLayout entity={entity} />;
 };
 ```
 
@@ -50,7 +50,7 @@ A custom React hook that provides access to the `PageProviderContext`.
 
 #### Returns
 
-- `PageProviderContext | null`: The context value or `null` if it's not available.
+-   `PageProviderContext | null`: The context value or `null` if it's not available.
 
 #### Usage
 
@@ -58,8 +58,8 @@ A custom React hook that provides access to the `PageProviderContext`.
 import { useDotcmsPageContext } from '@dotcms/react';
 
 const MyComponent = () => {
-  const context = useDotcmsPageContext();
-  // Use the context
+    const context = useDotcmsPageContext();
+    // Use the context
 };
 ```
 
@@ -69,11 +69,11 @@ A custom React hook that sets up the page editor for a dotCMS page.
 
 #### Parameters
 
-- **props**: `PageEditorOptions` - The options for the page editor. Includes a `reloadFunction` and a `pathname`.
+-   **props**: `PageEditorOptions` - The options for the page editor. Includes a `reloadFunction` and a `pathname`.
 
 #### Returns
 
-- `React.RefObject<HTMLDivElement>[]`: A reference to the rows of the page.
+-   `React.RefObject<HTMLDivElement>[]`: A reference to the rows of the page.
 
 #### Usage
 
@@ -81,8 +81,8 @@ A custom React hook that sets up the page editor for a dotCMS page.
 import { usePageEditor } from '@dotcms/react';
 
 const MyEditor = () => {
-  const rowsRef = usePageEditor({ pathname: '/my-page' });
-  // Use the rowsRef
+    const rowsRef = usePageEditor({ pathname: '/my-page' });
+    // Use the rowsRef
 };
 ```
 
@@ -94,8 +94,8 @@ A functional component that provides a context for a dotCMS page.
 
 #### Props
 
-- **entity**: The entity representing the page's data.
-- **children**: The children components.
+-   **entity**: The entity representing the page's data.
+-   **children**: The children components.
 
 #### Usage
 
@@ -103,18 +103,13 @@ A functional component that provides a context for a dotCMS page.
 import { PageProvider } from '@dotcms/react';
 
 const MyApp = ({ entity }) => {
-  return (
-    <PageProvider entity={entity}>
-      {/* children */}
-    </PageProvider>
-  );
+    return <PageProvider entity={entity}>{/* children */}</PageProvider>;
 };
 ```
 
 ## Contributing
 
 GitHub pull requests are the preferred method to contribute code to dotCMS. Before any pull requests can be accepted, an automated tool will ask you to agree to the [dotCMS Contributor's Agreement](https://gist.github.com/wezell/85ef45298c48494b90d92755b583acb3).
-
 
 ## Licensing
 
