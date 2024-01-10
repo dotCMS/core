@@ -98,18 +98,19 @@ public class AnnouncementsHelperImpl implements AnnouncementsHelper{
     }
 
     /**
-     * Get the sublist
+     * Get a sub list of the list based on the limit
+     * if the limit is greater than the list size then the list is returned
      * @param limit int
      * @param list List<T>
      * @param <T> T
      * @return List<T>
      */
-     <T> List<T> getSubList(int limit, List<T> list) {
+     <T> List<T> getSubList(final int limit, final List<T> list) {
         if (list.isEmpty()) {
             return List.of(); // Return an empty list for an empty input list
         }
 
-        int endIndex = Math.min(limit, list.size());
+        final int endIndex = Math.min(limit, list.size());
         return list.subList(0, endIndex);
     }
 

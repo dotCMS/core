@@ -17,7 +17,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
 /**
  * This REST Resource behaves as a proxy to the remote dotCMS instance that provides the announcements
@@ -33,8 +32,7 @@ public class AnnouncementsResource {
      * Default constructor
      */
     public AnnouncementsResource() {
-        this.webResource = new WebResource();
-        this.helper = new AnnouncementsHelperImpl();
+        this(new WebResource(), new AnnouncementsHelperImpl());
     }
 
     /**
@@ -43,7 +41,7 @@ public class AnnouncementsResource {
      * @param helper AnnouncementsHelper
      */
     @VisibleForTesting
-    public AnnouncementsResource(WebResource webResource, AnnouncementsHelper helper) {
+    AnnouncementsResource(final WebResource webResource, final AnnouncementsHelper helper) {
         this.webResource = webResource;
         this.helper = helper;
     }
@@ -62,7 +60,7 @@ public class AnnouncementsResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response announcements(@Context final HttpServletRequest request,
+    public final ResponseEntityView<List<Announcement>> announcements(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @QueryParam("langIdOrCode") final String langIdOrCode,
             @QueryParam("refreshCache") final boolean refreshCache,
@@ -77,7 +75,7 @@ public class AnnouncementsResource {
                             .init();
             final User user = initData.getUser();
             final List<Announcement> announcements = helper.getAnnouncements(langIdOrCode, refreshCache , limit, user);
-            return Response.ok(new ResponseEntityView<>(announcements)).build(); // 200
+            return new ResponseEntityView<>(announcements); // 200
     }
 
 }

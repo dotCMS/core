@@ -25,7 +25,6 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * `AnnouncementsLoader` implementation that loads the announcements from a remote dotCMS instance
@@ -43,12 +42,22 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
     static final String ANNOUNCEMENTS_QUERY_PATTERN = "%s/api/content/render/false/query/+contentType:%s +languageId:%d +deleted:false +live:true/orderBy/modDate desc";
 
 
+    /**
+     * Load the announcements from the remote dotCMS instance
+     * @param language Language
+     * @return
+     */
     @Override
-    public List<Announcement> loadAnnouncements(Language language) {
+    public List<Announcement> loadAnnouncements(final Language language) {
         final JsonNode jsonNode = loadRemoteAnnouncements(language);
         return toAnnouncements(jsonNode);
     }
 
+    /**
+     * Load the announcements from the remote dotCMS instance
+     * @param language
+     * @return
+     */
     JsonNode loadRemoteAnnouncements(Language language) {
         final String url = buildURL(language);
         try {
@@ -72,7 +81,11 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
         }
     }
 
-    @NotNull
+    /**
+     * Build the url to retrieve the announcements
+     * @param language Language
+     * @return String
+     */
      String buildURL(Language language) {
         final String raw = String.format(ANNOUNCEMENTS_QUERY_PATTERN, ANNOUNCEMENTS_BASE_URL.get(),
                 DOT_ANNOUNCEMENT_CT, language.getId());
