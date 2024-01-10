@@ -67,6 +67,12 @@ describe('usePageEditor', () => {
                     payload: { url: 'index' }
                 });
             });
+
+            it('should not call post to parent window with the correct pathname', () => {
+                renderHook(() => usePageEditor({ pathname: '/' }));
+
+                expect(postMessageToEditor).not.toHaveBeenCalledTimes(2); // the ping is always sent
+            });
         });
 
         describe('scrollEvent', () => {
@@ -81,6 +87,16 @@ describe('usePageEditor', () => {
                     expect(postMessageToEditor).toHaveBeenCalledWith({
                         action: CUSTOMER_ACTIONS.IFRAME_SCROLL
                     });
+                });
+            });
+
+            it('should not post to parent window on scroll', async () => {
+                renderHook(() => usePageEditor({ pathname: '/test' }));
+
+                window.dispatchEvent(new Event('scroll'));
+
+                await waitFor(() => {
+                    expect(postMessageToEditor).not.toHaveBeenCalledTimes(2); // the ping is always sent
                 });
             });
         });
@@ -135,55 +151,7 @@ describe('usePageEditor', () => {
                 // Cleanup: Remove the spy
                 reloadSpy.mockRestore();
             });
-        });
 
-        describe('request bounds', () => {
-            it('should call postMessageToEditor with SET_BOUNDS action and position data', async () => {
-                // Act: Render the hook and dispatch the relevant message event
-                renderHook(() => usePageEditor({ pathname: '/test' }));
-
-                pong();
-
-                // Simulate the message event that should trigger the bounds request
-                const boundsEvent = new MessageEvent('message', {
-                    data: 'ema-request-bounds'
-                });
-                window.dispatchEvent(boundsEvent);
-
-                // Assert: Check that postMessageToEditor was called with the correct action and payload
-                // Since we are mocking the pong and we are checking the window.parent === window condition, we need to check the second call, because the ping is not happening
-                await waitFor(() => {
-                    expect(postMessageToEditor).toHaveBeenNthCalledWith(3, {
-                        action: CUSTOMER_ACTIONS.SET_BOUNDS,
-                        payload: mockBounds
-                    });
-                });
-            });
-        });
-    });
-
-    describe('When editor doesnt pong back', () => {
-        describe('postUrlToEditor', () => {
-            it('should not call post to parent window with the correct pathname', () => {
-                renderHook(() => usePageEditor({ pathname: '/' }));
-
-                expect(postMessageToEditor).not.toHaveBeenCalledTimes(2); // the ping is always sent
-            });
-        });
-
-        describe('scrollEvent', () => {
-            it('should not post to parent window on scroll', async () => {
-                renderHook(() => usePageEditor({ pathname: '/test' }));
-
-                window.dispatchEvent(new Event('scroll'));
-
-                await waitFor(() => {
-                    expect(postMessageToEditor).not.toHaveBeenCalledTimes(2); // the ping is always sent
-                });
-            });
-        });
-
-        describe('reloadFunction', () => {
             it('should not reload the page when receiving the reload message', async () => {
                 const mockReloadFunction = jest.fn();
                 const testPathname = '/test';
@@ -232,6 +200,27 @@ describe('usePageEditor', () => {
         });
 
         describe('request bounds', () => {
+            it('should call postMessageToEditor with SET_BOUNDS action and position data', async () => {
+                // Act: Render the hook and dispatch the relevant message event
+                renderHook(() => usePageEditor({ pathname: '/test' }));
+
+                pong();
+
+                // Simulate the message event that should trigger the bounds request
+                const boundsEvent = new MessageEvent('message', {
+                    data: 'ema-request-bounds'
+                });
+                window.dispatchEvent(boundsEvent);
+
+                // Assert: Check that postMessageToEditor was called with the correct action and payload
+                // Since we are mocking the pong and we are checking the window.parent === window condition, we need to check the second call, because the ping is not happening
+                await waitFor(() => {
+                    expect(postMessageToEditor).toHaveBeenNthCalledWith(3, {
+                        action: CUSTOMER_ACTIONS.SET_BOUNDS,
+                        payload: mockBounds
+                    });
+                });
+            });
             it('should not call postMessageToEditor with SET_BOUNDS action and position data', async () => {
                 // Act: Render the hook and dispatch the relevant message event
                 renderHook(() => usePageEditor({ pathname: '/test' }));
