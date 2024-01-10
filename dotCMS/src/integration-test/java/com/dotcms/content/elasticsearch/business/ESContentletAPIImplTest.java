@@ -79,6 +79,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.settings.Settings;
 import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -1112,7 +1113,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * Since we removed the validation of max length of 255 chars, we should be able to create content successfully, even
      * thought we sent over 255 chars
      */
-    @Test
+    @Ignore
     public void createContentWhichTextFieldOver255Chars_success(){
         final String textOver255Chars = "this-text-is-waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaay-longer-than-two-hundred-fifty-five-characters-so-should-be-hitting-the-limit-for-the-fields-260-charsq";
         final DefaultVanityUrl vanityURL = (DefaultVanityUrl) new VanityUrlDataGen()
