@@ -1332,6 +1332,11 @@ describe('EditEmaEditorComponent', () => {
             expect(spectator.query(EditEmaPaletteComponent)).toBeNull();
         });
 
+        it('should render a "Dont have permission" message', () => {
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('cant-edit-message'))).toBeDefined();
+        });
+
         it('should iframe wrapper to be expanded', () => {
             spectator.detectChanges();
             expect(spectator.query(byTestId('editor-content')).classList).toContain(

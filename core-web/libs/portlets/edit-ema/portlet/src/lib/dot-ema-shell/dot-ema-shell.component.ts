@@ -16,7 +16,6 @@ import {
     DotESContentService,
     DotFavoritePageService,
     DotLanguagesService,
-    DotLicenseService,
     DotPageLayoutService,
     DotPageRenderService,
     DotPersonalizeService
@@ -80,22 +79,20 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     private readonly destroy$ = new Subject<boolean>();
 
-    private readonly licenseService = inject(DotLicenseService);
-
     EMA_INFO_PAGES: Record<'NOT_FOUND' | 'ACCESS_DENIED', InfoPage> = {
         NOT_FOUND: {
             icon: 'compass',
-            title: 'Page Not Found',
-            description: "The page you're looking for doesn't exist or has been moved.",
+            title: 'editema.infopage.notfound.title',
+            description: 'editema.infopage.notfound.description',
             buttonPath: '/pages',
-            buttonText: 'Go To Pages'
+            buttonText: 'editema.infopage.button.gotopages'
         },
         ACCESS_DENIED: {
             icon: 'ban',
-            title: 'Permission denied',
-            description: 'You do not have the necessary permissions to view this page.',
+            title: 'editema.infopage.accessdenied.title',
+            description: 'editema.infopage.accessdenied.description',
             buttonPath: '/pages',
-            buttonText: 'Go To pages'
+            buttonText: 'editema.infopage.button.gotopages'
         }
     };
 
