@@ -474,12 +474,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     }
                 });
             },
-            [NG_CUSTOM_EVENTS.SAVE_CONTENTLET]: () => {
+            [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
                 if (this.savePayload) {
                     const pageContainers = insertContentletInContainer({
                         ...this.savePayload,
                         newContentletId: detail.payload.contentletIdentifier
-                    }); // This won't add anything if the contentlet is already on the container, so is safe to call it even when we just edited a contentlet
+                    });
 
                     // Save when created
                     this.store.savePage({
@@ -558,7 +558,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @private
      * @memberof DotEmaComponent
      */
-    private reloadIframe() {
+    reloadIframe() {
         this.iframe.nativeElement.contentWindow?.postMessage(
             NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
             this.host
@@ -574,6 +574,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     private updateQueryParams(params: Params) {
         this.router.navigate([], {
+            // replaceUrl: true,
+            // skipLocationChange: false,
             queryParams: params,
             queryParamsHandling: 'merge'
         });

@@ -8,5 +8,5 @@ export enum NG_CUSTOM_EVENTS {
     EDIT_CONTENTLET_LOADED = 'edit-contentlet-loaded',
     CONTENT_SEARCH_SELECT = 'select-contentlet',
     CREATE_CONTENTLET = 'create-contentlet-from-edit-page',
-    SAVE_CONTENTLET = 'save-page'
+    SAVE_PAGE = 'save-page'
 }

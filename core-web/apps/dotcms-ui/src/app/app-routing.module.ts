@@ -1,5 +1,11 @@
-import { NgModule } from '@angular/core';
-import { RouteReuseStrategy, RouterModule, Routes } from '@angular/router';
+import { NgModule, inject } from '@angular/core';
+import {
+    ActivatedRouteSnapshot,
+    Route,
+    RouteReuseStrategy,
+    RouterModule,
+    Routes
+} from '@angular/router';
 
 import { IframePortletLegacyComponent } from '@components/_common/iframe/iframe-porlet-legacy/index';
 import { DotIframePortletLegacyResolver } from '@components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
@@ -8,17 +14,19 @@ import { DotLogOutContainerComponent } from '@components/login/dot-logout-contai
 import { DotLoginPageComponent } from '@components/login/main/dot-login-page.component';
 import { MainCoreLegacyComponent } from '@components/main-core-legacy/main-core-legacy-component';
 import { MainComponentLegacyComponent } from '@components/main-legacy/main-legacy.component';
+import { EmaAppConfigurationService } from '@dotcms/data-access';
 import { DotCustomReuseStrategyService } from '@shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
 
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
 import { DefaultGuardService } from './api/services/guards/default-guard.service';
 import { editContentGuard } from './api/services/guards/edit-content.guard';
+import { editPageGuard } from './api/services/guards/ema-app/edit-page.guard';
 import { MenuGuardService } from './api/services/guards/menu-guard.service';
 import { PagesGuardService } from './api/services/guards/pages-guard.service';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
 
-const PORTLETS_ANGULAR = [
+const PORTLETS_ANGULAR: Route[] = [
     {
         path: 'containers',
         loadChildren: () =>
@@ -89,11 +97,17 @@ const PORTLETS_ANGULAR = [
     },
     {
         path: 'edit-page',
+        canActivate: [editPageGuard],
         loadChildren: () =>
             import('@portlets/dot-edit-page/dot-edit-page.module').then((m) => m.DotEditPageModule)
     },
     {
         path: 'edit-ema',
+        resolve: {
+            data: (route: ActivatedRouteSnapshot) => {
+                return inject(EmaAppConfigurationService).get(route.queryParams.url);
+            }
+        },
         loadChildren: () => import('@dotcms/portlets/dot-ema').then((m) => m.DotEmaRoutes)
     },
     {
