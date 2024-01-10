@@ -4,7 +4,7 @@
             *ngFor="let container of column.containers"
             [ngStyle]="getPosition(container)"
             [attr.data-payload]="container.payload"
-            [attr.data-error]="errorMessage(container.payload) | dm"
+            [attr.data-error]="getErrorMessage(container.payload)"
             data-type="container">
             <div
                 *ngFor="let contentlet of container.contentlets"

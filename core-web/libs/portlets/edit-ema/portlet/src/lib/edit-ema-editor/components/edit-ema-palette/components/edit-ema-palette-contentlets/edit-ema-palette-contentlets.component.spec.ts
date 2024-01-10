@@ -49,17 +49,19 @@ describe('EditEmaPaletteContentletsComponent', () => {
     it('should emit dragStart event on drag start', () => {
         const dragSpy = jest.spyOn(spectator.component.dragStart, 'emit');
         spectator.triggerEventHandler('[data-testId="contentlet-0"]', 'dragstart', {
-            identifier: '123'
+            identifier: '123',
+            contentType: 'Activity'
         });
-        expect(dragSpy).toHaveBeenCalledWith({ identifier: '123' });
+        expect(dragSpy).toHaveBeenCalledWith({ identifier: '123', contentType: 'Activity' });
     });
 
     it('should emit dragEnd event on drag end', () => {
         const dragSpy = jest.spyOn(spectator.component.dragEnd, 'emit');
         spectator.triggerEventHandler('[data-testId="contentlet-0"]', 'dragend', {
-            inode: '123'
+            identifier: '123',
+            contentType: 'Activity'
         });
-        expect(dragSpy).toHaveBeenCalledWith({ inode: '123' });
+        expect(dragSpy).toHaveBeenCalledWith({ identifier: '123', contentType: 'Activity' });
     });
 
     it('should emit showContentTypes event on backToContentTypes', () => {
@@ -79,8 +81,14 @@ describe('EditEmaPaletteContentletsComponent', () => {
     });
 
     it('should render contentlet list with data-item attribute', () => {
+        const dataItem = spectator.query('[data-testId="contentlet-0"]').getAttribute('data-item');
+        const data = JSON.parse(dataItem);
         expect(spectator.query('[data-testId="contentlet-0"]')).toBeTruthy();
         expect(spectator.query('[data-testId="contentlet-0"]')).toHaveAttribute('data-item');
+        expect(data).toEqual({
+            identifier: CONTENTLETS_MOCK[0].identifier,
+            contentType: CONTENTLETS_MOCK[0].contentType
+        });
     });
 
     it('should emit search event on search contentlet', fakeAsync(() => {

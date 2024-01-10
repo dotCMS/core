@@ -1,6 +1,10 @@
 import { Spectator, createComponentFactory } from '@ngneat/spectator';
 
 import { CommonModule } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { EmaPageDropzoneComponent, Row } from './ema-page-dropzone.component';
 
@@ -11,7 +15,8 @@ const ACTION_MOCK: ActionPayload = {
         acceptTypes: 'file',
         identifier: '789',
         maxContentlets: 100,
-        uuid: '2'
+        uuid: '2',
+        contentletsId: ['123', '455']
     },
     language_id: '1',
     pageContainers: [
@@ -59,15 +64,30 @@ export const BOUNDS_MOCK: Row[] = [
     }
 ];
 
+const messageServiceMock = new MockDotMessageService({
+    'edit.ema.page.dropzone.invalid.contentlet.type':
+        'The contentlet type {0} is not valid for this container',
+    'edit.ema.page.dropzone.max.contentlets': 'Container only accepts {0} contentlets'
+});
+
 describe('EmaPageDropzoneComponent', () => {
     let spectator: Spectator<EmaPageDropzoneComponent>;
+    let dotMessageService: DotMessageService;
+
     const createComponent = createComponentFactory({
         component: EmaPageDropzoneComponent,
-        imports: [CommonModule]
+        imports: [CommonModule, HttpClientTestingModule],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            }
+        ]
     });
 
     beforeEach(() => {
         spectator = createComponent();
+        dotMessageService = spectator.inject(DotMessageService, true);
     });
 
     it('should render rows, columns, containers, and contentlets based on input', () => {
@@ -137,6 +157,7 @@ describe('EmaPageDropzoneComponent', () => {
             jest.spyOn(spectator.component.place, 'emit');
 
             spectator.setInput('rows', BOUNDS_MOCK);
+            spectator.setInput('contentType', 'file');
             spectator.detectComponentChanges();
 
             spectator.triggerEventHandler('div[data-type="contentlet"]', 'drop', {
@@ -172,8 +193,78 @@ describe('EmaPageDropzoneComponent', () => {
             // Additional assertions as necessary
         });
 
+        it('should not emit place event when the contentType is not accepted in the container', () => {
+            const spyDotMessageSerivice = jest.spyOn(dotMessageService, 'get');
+            jest.spyOn(spectator.component.place, 'emit');
+
+            spectator.setInput('rows', BOUNDS_MOCK);
+            spectator.setInput('contentType', 'NOT_ACCEPTED_CONTENT_TYPE');
+            spectator.detectComponentChanges();
+
+            spectator.triggerEventHandler('div[data-type="contentlet"]', 'drop', {
+                target: {
+                    clientY: 100,
+                    getBoundingClientRect: () => {
+                        return {
+                            top: 100,
+                            height: 100
+                        };
+                    },
+                    dataset: {
+                        payload: JSON.stringify(ACTION_MOCK)
+                    }
+                }
+            });
+
+            spectator.detectChanges();
+
+            expect(spectator.component.place.emit).not.toHaveBeenCalled();
+            expect(spyDotMessageSerivice).toHaveBeenCalledWith(
+                'edit.ema.page.dropzone.invalid.contentlet.type',
+                'NOT_ACCEPTED_CONTENT_TYPE'
+            );
+        });
+
+        it('should not emit place event when the container is full', () => {
+            const spyDotMessageSerivice = jest.spyOn(dotMessageService, 'get');
+            jest.spyOn(spectator.component.place, 'emit');
+            spectator.setInput('rows', BOUNDS_MOCK);
+            spectator.setInput('contentType', 'file');
+            spectator.detectComponentChanges();
+
+            spectator.triggerEventHandler('div[data-type="contentlet"]', 'drop', {
+                target: {
+                    clientY: 100,
+                    getBoundingClientRect: () => {
+                        return {
+                            top: 100,
+                            height: 100
+                        };
+                    },
+                    dataset: {
+                        payload: JSON.stringify({
+                            ...ACTION_MOCK,
+                            container: {
+                                ...ACTION_MOCK.container,
+                                maxContentlets: 2
+                            }
+                        })
+                    }
+                }
+            });
+
+            spectator.detectChanges();
+
+            expect(spectator.component.place.emit).not.toHaveBeenCalled();
+            expect(spyDotMessageSerivice).toHaveBeenCalledWith(
+                'edit.ema.page.dropzone.max.contentlets',
+                2
+            );
+        });
+
         it('should set pointer on drag over', () => {
             spectator.setInput('rows', BOUNDS_MOCK);
+            spectator.setInput('contentType', 'file');
             spectator.detectComponentChanges();
 
             const stopPropagationSpy = jest.fn();
