@@ -1247,10 +1247,7 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectComponentChanges();
 
-                expect(postMessageSpy).toHaveBeenCalledWith(
-                    'ema-request-bounds',
-                    'http://localhost:3000'
-                );
+                expect(postMessageSpy).toHaveBeenCalledWith('ema-request-bounds', '*');
             });
 
             it('should show drop zone on iframe message', () => {

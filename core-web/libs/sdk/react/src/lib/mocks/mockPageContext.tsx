@@ -1,4 +1,4 @@
-import { PageProviderContext } from '../components/PageProvider/PageProvider';
+import { PageProvider, PageProviderContext } from '../components/PageProvider/PageProvider';
 
 export const mockPageContext: PageProviderContext = {
     layout: {
@@ -51,5 +51,16 @@ export const mockPageContext: PageProviderContext = {
     },
     page: { identifier: 'page-1', title: 'Hello Page' },
     viewAs: { language: { id: 'en' }, persona: { keyTag: 'persona-1' } },
-    components: {}
+    components: {},
+    isInsideEditor: false
+};
+
+export const MockContextRender = ({
+    children,
+    mockContext
+}: {
+    children: JSX.Element;
+    mockContext: Partial<PageProviderContext>;
+}) => {
+    return <PageProvider entity={mockContext}>{children}</PageProvider>;
 };
