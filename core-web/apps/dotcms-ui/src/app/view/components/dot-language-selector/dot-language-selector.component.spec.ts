@@ -5,16 +5,15 @@ import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
 import {
     DotLanguagesServiceMock,
     mockDotLanguage,
     MockDotMessageService,
     mockLanguageArray
 } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@tests/dot-test-bed';
 
 import { DotLanguageSelectorComponent } from './dot-language-selector.component';
 
@@ -41,7 +40,7 @@ describe('DotLanguageSelectorComponent', () => {
     beforeEach(() => {
         const testbed = DOTTestBed.configureTestingModule({
             declarations: [TestHostComponent, DotLanguageSelectorComponent],
-            imports: [BrowserAnimationsModule, DotIconModule],
+            imports: [BrowserAnimationsModule],
             providers: [
                 {
                     provide: DotMessageService,

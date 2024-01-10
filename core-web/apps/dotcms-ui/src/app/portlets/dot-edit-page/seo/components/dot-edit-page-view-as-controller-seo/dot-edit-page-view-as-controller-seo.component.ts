@@ -1,17 +1,20 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, Input, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
+import { ConfirmationService } from 'primeng/api';
 import { CheckboxModule } from 'primeng/checkbox';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
 
 import { DotDeviceSelectorModule } from '@components/dot-device-selector/dot-device-selector.module';
-import { DotLanguageSelectorModule } from '@components/dot-language-selector/dot-language-selector.module';
+import { DotIframeDialogModule } from '@components/dot-iframe-dialog/dot-iframe-dialog.module';
 import { DotPersonaSelectorModule } from '@components/dot-persona-selector/dot-persona.selector.module';
 import {
     DotAlertConfirmService,
@@ -27,7 +30,7 @@ import {
     DotPersona,
     DotVariantData
 } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotLanguageSelectorComponent, DotMessagePipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
@@ -43,24 +46,33 @@ import { DotPageStateService } from '../../../content/services/dot-page-state/do
         FormsModule,
         TooltipModule,
         DotPersonaSelectorModule,
-        DotLanguageSelectorModule,
+        DotLanguageSelectorComponent,
         DotDeviceSelectorModule,
         DotPipesModule,
         DotIconModule,
-        CheckboxModule
-    ]
+        CheckboxModule,
+        ConfirmDialogModule,
+        DotIframeDialogModule,
+        DotMessagePipe
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditPageViewAsControllerSeoComponent implements OnInit {
     isEnterpriseLicense$: Observable<boolean>;
+    showEditJSPDialog = signal(false);
+    urlEditPageIframeDialog = signal('');
+
     @Input() pageState: DotPageRenderState;
     @Input() variant: DotVariantData | null = null;
+    private confirmationService = inject(ConfirmationService);
 
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService,
         private dotLicenseService: DotLicenseService,
-        public dotPageStateService: DotPageStateService,
-        private dotPersonalizeService: DotPersonalizeService
+        private dotPageStateService: DotPageStateService,
+        private dotPersonalizeService: DotPersonalizeService,
+        private router: Router
     ) {}
 
     ngOnInit(): void {
@@ -70,8 +82,8 @@ export class DotEditPageViewAsControllerSeoComponent implements OnInit {
     /**
      * Handle the changes in Persona Selector.
      *
-     * @param DotPersona persona
      * @memberof DotEditPageViewAsControllerComponent
+     * @param persona
      */
     changePersonaHandler(persona: DotPersona): void {
         this.dotPageStateService.setPersona(persona);
@@ -80,18 +92,22 @@ export class DotEditPageViewAsControllerSeoComponent implements OnInit {
     /**
      * Handle changes in Language Selector.
      *
-     * @param DotLanguage language
      * @memberof DotEditPageViewAsControllerComponent
+     * @param language
      */
-    changeLanguageHandler({ id }: DotLanguage): void {
-        this.dotPageStateService.setLanguage(id);
+    changeLanguageHandler(language: DotLanguage): void {
+        if (language.translated) {
+            this.dotPageStateService.setLanguage(language.id);
+        } else {
+            this.askForCreateNewTranslation(language);
+        }
     }
 
     /**
      * Handle changes in Device Selector.
      *
-     * @param DotDevice device
      * @memberof DotEditPageViewAsControllerComponent
+     * @param device
      */
     changeDeviceHandler(device: DotDevice): void {
         this.dotPageStateService.setDevice(device);
@@ -124,5 +140,76 @@ export class DotEditPageViewAsControllerSeoComponent implements OnInit {
                     });
             }
         });
+    }
+
+    /**
+     * Removes the edit JSP dialog.
+     *
+     * @return {void}
+     */
+    removeEditJSPDialog(): void {
+        this.showEditJSPDialog.set(false);
+    }
+
+    /**
+     * Asks the user for confirmation to create a new translation for a given language.
+     *
+     * @param {DotLanguage} language - The language to create a new translation for.
+     * @private
+     *
+     * @return {void}
+     */
+
+    private askForCreateNewTranslation(language: DotLanguage): void {
+        this.confirmationService.confirm({
+            message: this.dotMessageService.get(
+                'Populate-the-new-language-content-with-previous-language-content',
+                language.language,
+                this.pageState.viewAs.language.language
+            ),
+            header: this.dotMessageService.get('Populate-Confirmation'),
+            rejectIcon: 'hidden',
+            acceptIcon: 'hidden',
+            accept: () => {
+                this.urlEditPageIframeDialog.set(this.getUrlEditPageJSP(language.id));
+                // TODO: el caso del editor nuevo
+                this.showEditJSPDialog.set(true);
+            },
+            reject: () => {
+                this.router.navigate(['/edit-page/content'], {
+                    queryParamsHandling: 'preserve'
+                });
+            }
+        });
+    }
+
+    /**
+     * Returns the URL of the edit page in JSP format with the specified new language.
+     *
+     * @param {number} newLanguage - The new language to use.
+     * @returns {string} The URL of the edit page.
+     * @private
+     */
+    private getUrlEditPageJSP(newLanguage: number): string {
+        const pageLiveInode = this.pageState.page.liveInode;
+
+        const queryStringParts = [
+            'p_p_id=content',
+            'p_p_action=1',
+            'p_p_state=maximized',
+            'angularCurrentPortlet=pages',
+            `_content_sibbling=${pageLiveInode}`,
+            '_content_cmd=edit',
+            `_content_sibblingStructure=${pageLiveInode}`,
+            '_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet',
+            'inode=',
+            `lang=${newLanguage}`,
+            'populateaccept=true',
+            'reuseLastLang=true'
+        ];
+
+        const queryString = queryStringParts.join('&');
+
+        return `/c/portal/layout?${queryString}`;
     }
 }
