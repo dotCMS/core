@@ -5,13 +5,13 @@ import { DotcmsPageProps, PageProvider, Row, usePageEditor } from '@dotcms/react
 /**
  * `DotcmsLayout` is a functional component that renders a layout for a DotCMS page.
  * It takes a `DotcmsPageProps` object as a parameter and returns a JSX element.
- * 
+ *
  * This component should use as a client component becuase it uses the some of the hooks from the `@dotcms/react` package.
- * 
+ *
  * @example
  * ```tsx
  * 'use client';
- * 
+ *
  * export function MyPage({ data, nav }) {
     return (
         <div className="flex flex-col min-h-screen gap-6">
@@ -40,7 +40,7 @@ import { DotcmsPageProps, PageProvider, Row, usePageEditor } from '@dotcms/react
     );
 }
  * ```
- * 
+ *
  * @category Components
  * @param {DotcmsPageProps} props - The properties for the DotCMS page.
  * @returns {JSX.Element} - A JSX element that represents the layout for a DotCMS page.
@@ -50,7 +50,7 @@ export function DotcmsLayout(props: DotcmsPageProps) {
     const router = useRouter();
     const pathname = usePathname();
 
-    const rowsRef = usePageEditor({
+    const { rowsRef, isInsideEditor } = usePageEditor({
         reloadFunction: router.refresh,
         pathname
     });
@@ -60,6 +60,8 @@ export function DotcmsLayout(props: DotcmsPageProps) {
             rowsRef.current.push(el);
         }
     };
+
+    entity.isInsideEditor = isInsideEditor;
 
     return (
         <PageProvider entity={entity}>

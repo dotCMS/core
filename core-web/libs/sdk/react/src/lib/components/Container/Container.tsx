@@ -18,9 +18,8 @@ export function Container({ containerRef }: ContainerProps) {
     const { identifier, uuid } = containerRef;
 
     // Get the containers from the global context
-    const { containers, page, viewAs, components } = useContext<PageProviderContext | null>(
-        PageContext
-    ) as PageProviderContext;
+    const { containers, page, viewAs, components, isInsideEditor } =
+        useContext<PageProviderContext | null>(PageContext) as PageProviderContext;
 
     const { acceptTypes, contentlets, maxContentlets, pageContainers, path } = getContainersData(
         containers,
@@ -72,34 +71,41 @@ export function Container({ containerRef }: ContainerProps) {
         });
     }
 
-    return (
+    const renderContentlets = contentlets.map((contentlet) => {
+        const Component = components[contentlet.contentType] || NoContent;
+
+        const contentletPayload = {
+            container,
+            contentlet: {
+                identifier: contentlet.identifier,
+                title: contentlet.widgetTitle || contentlet.title,
+                inode: contentlet.inode
+            },
+            language_id: viewAs.language.id,
+            pageContainers,
+            pageId: page.identifier,
+            personaTag: viewAs.persona?.keyTag
+        };
+
+        return isInsideEditor ? (
+            <div
+                onPointerEnter={onPointerEnterHandler}
+                data-dot="contentlet"
+                data-content={JSON.stringify(contentletPayload)}
+                key={contentlet.identifier}>
+                <Component {...contentlet} />
+            </div>
+        ) : (
+            <Component {...contentlet} key={contentlet.identifier} />
+        );
+    });
+
+    return isInsideEditor ? (
         <div data-dot="container" data-content={JSON.stringify(containerPayload)}>
-            {contentlets.map((contentlet) => {
-                const Component = components[contentlet.contentType] || NoContent;
-
-                const contentletPayload = {
-                    container,
-                    contentlet: {
-                        identifier: contentlet.identifier,
-                        title: contentlet.widgetTitle || contentlet.title,
-                        inode: contentlet.inode
-                    },
-                    language_id: viewAs.language.id,
-                    pageContainers,
-                    pageId: page.identifier,
-                    personaTag: viewAs.persona?.keyTag
-                };
-
-                return (
-                    <div
-                        onPointerEnter={onPointerEnterHandler}
-                        data-dot="contentlet"
-                        data-content={JSON.stringify(contentletPayload)}
-                        key={contentlet.identifier}>
-                        <Component {...contentlet} />
-                    </div>
-                );
-            })}
+            {renderContentlets}
         </div>
+    ) : (
+        // eslint-disable-next-line react/jsx-no-useless-fragment
+        <>{renderContentlets}</>
     );
 }
