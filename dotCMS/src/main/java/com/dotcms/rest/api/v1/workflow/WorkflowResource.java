@@ -2539,6 +2539,9 @@ public class WorkflowResource {
 
             contentlet = this.populateContentlet(fireActionForm, contentlet, initDataObject.getUser(),mode);
         }
+        if (contentlet.getInode().isEmpty() && !currentContentlet.getInode().isEmpty()) {
+            contentlet.setInode(currentContentlet.getInode());
+        }
         return contentlet;
     }
 
