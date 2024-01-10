@@ -14629,7 +14629,12 @@
 									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
 									"});",
 									"",
-									""
+		
+									"",
+									"pm.test(\"Missing boundary string\", function() {",
+									"    pm.response.to.have.status(500);",
+									"    pm.response.to.have.jsonBody(\"message\", \"Missing start boundary\");",
+									"});"
 								],
 								"type": "text/javascript"
 							}
