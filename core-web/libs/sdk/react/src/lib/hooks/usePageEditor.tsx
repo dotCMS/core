@@ -47,10 +47,12 @@ interface PageEditorOptions {
  *
  * @category Hooks
  * @param {PageEditorOptions} props - The options for the page editor. Includes a `reloadFunction` and a `pathname`.
- * @returns {React.RefObject<HTMLDivElement>[]} - A reference to the rows of the page.
+ * @returns {{rowsRef: React.RefObject<HTMLDivElement>[], isInsideEditor: boolean}} - Returns a reference to the rows of the page and a boolean that indicates if the page is inside the editor.
  * @throws {Error} - Throws an error if the `pathname` is not provided.
  */
-export const usePageEditor = (props: PageEditorOptions) => {
+export const usePageEditor = (
+    props: PageEditorOptions
+): { rowsRef: React.MutableRefObject<HTMLDivElement[]>; isInsideEditor: boolean } => {
     const { reloadFunction = window.location.reload, pathname = null } = props;
 
     if (!pathname) {
