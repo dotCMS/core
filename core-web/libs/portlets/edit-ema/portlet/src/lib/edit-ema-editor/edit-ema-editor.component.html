@@ -71,8 +71,10 @@
                 #iframe
                 [src]="es.iframeURL | safeUrl"
                 [title]="host"
+                [ngStyle]="{
+                    pointerEvents: this.rows.length ? 'none' : 'auto'
+                }"
                 data-testId="iframe"
-                style="border: none"
                 width="100%"
                 height="100%"></iframe>
             <dot-ema-contentlet-tools

@@ -4,7 +4,7 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 .content-search {
@@ -14,7 +14,7 @@
     top: 0;
     padding: $spacing-3 $spacing-3;
     position: sticky;
-    z-index: 99;
+    z-index: 9;
     background: white;
 
     .p-input-icon-right {
@@ -28,49 +28,56 @@
 .contentlets {
     display: flex;
     flex-direction: column;
-    padding: 0 $spacing-3;
     height: 100%;
+}
 
-    .contentlets-cards {
-        flex: 1;
-        overflow: auto;
-    }
+.contentlets-cards {
+    flex: 1;
+    margin-bottom: $spacing-1;
+}
 
-    .contentlet-card {
-        display: grid;
-        grid-template-columns: max-content 3.37rem auto;
-        height: $spacing-8;
-        gap: $spacing-1;
-        padding: 14px $spacing-0;
-        align-items: center;
-        background-color: $white;
-        cursor: move;
+.contentlet-card {
+    display: grid;
+    grid-template-columns: max-content 3.37rem auto;
+    height: $spacing-8;
+    gap: $spacing-1;
+    padding: 14px $spacing-0;
+    align-items: center;
+    background-color: $white;
+    cursor: grab;
+    margin: 0 $spacing-3;
+}
 
-        dot-icon {
-            color: $color-palette-gray-400;
-        }
+dot-icon {
+    color: $color-palette-gray-400;
+}
 
-        dot-contentlet-thumbnail {
-            height: 2.25rem;
-            border-radius: $spacing-1;
-        }
+dot-contentlet-thumbnail {
+    height: 2.25rem;
+    border-radius: 0.125rem;
+    pointer-events: none; //To disable drag event on the image
+}
 
-        span {
-            overflow: hidden;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            text-overflow: ellipsis;
-            font-size: $font-size-sm;
-            line-height: 18.2px;
-        }
-    }
+span {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
+    font-size: $font-size-sm;
+    line-height: 18.2px;
+}
 
-    dot-spinner {
-        align-self: center;
-        justify-self: center;
-        grid-column: 1/-1;
-    }
+.contentlet-card:hover {
+    box-shadow: $shadow-m;
+    position: relative;
+    border-radius: 8px;
+}
+
+dot-spinner {
+    align-self: center;
+    justify-self: center;
+    grid-column: 1/-1;
 }
 
 p-paginator {

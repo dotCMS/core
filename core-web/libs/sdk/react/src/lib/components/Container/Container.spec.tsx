@@ -4,8 +4,7 @@ import { render, screen } from '@testing-library/react';
 
 import { Container } from './Container';
 
-import { PageContext } from '../../contexts/PageContext';
-import { mockPageContext } from '../../mocks/mockPageContext';
+import { MockContextRender, mockPageContext } from '../../mocks/mockPageContext';
 
 describe('Container', () => {
     // Mock data for your context and container
@@ -19,13 +18,14 @@ describe('Container', () => {
     it('renders NoContent component for unsupported content types', () => {
         const updatedContext = {
             ...mockPageContext,
-            components: {}
+            components: {},
+            isInsideEditor: true
         };
 
         render(
-            <PageContext.Provider value={updatedContext}>
+            <MockContextRender mockContext={updatedContext}>
                 <Container containerRef={mockContainerRef} />
-            </PageContext.Provider>
+            </MockContextRender>
         );
 
         expect(screen.getByTestId('no-component')).toHaveTextContent(

@@ -12,7 +12,7 @@
     top: 0;
     padding: $spacing-3 $spacing-3;
     position: sticky;
-    z-index: 99;
+    z-index: 9;
     background: $white;
 
     .p-input-icon-right {
@@ -27,57 +27,70 @@
     display: grid;
     grid-template-columns: minmax(6rem, 1fr) minmax(6rem, 1fr);
     gap: $spacing-1;
-    padding: 0 $spacing-1 $spacing-2 $spacing-3;
+    padding: 0 $spacing-3 $spacing-2;
+}
 
-    .content-type-card {
-        cursor: move;
-        height: 5.75rem;
-        border: 1px solid $color-palette-gray-400;
-        border-radius: $spacing-1;
-        position: relative;
-        color: $color-palette-gray-500;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background-color: $white;
-        padding: 0 $spacing-1;
+.content-type-card {
+    cursor: grab;
+    height: 5.75rem;
+    border: 1px solid $color-palette-gray-400;
+    border-radius: $spacing-1;
+    position: relative;
+    color: $color-palette-gray-500;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: $white;
+    padding: 0 $spacing-1;
+}
 
-        .button-go-content {
-            position: absolute;
-            top: $spacing-0;
-            right: 0;
-            cursor: pointer;
-            border: none;
-            background: none;
-            color: inherit;
-        }
+.content-type-card:hover {
+    box-shadow: $shadow-m;
+}
 
-        .content-type-card__content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: $black;
-            font-size: $font-size-sm;
-            text-align: center;
-            width: 100%;
+.button-go-content {
+    position: absolute;
+    top: 0;
+    right: 0;
+    border: 0;
+    border-radius: 50%;
+    background-color: transparent;
+    width: $spacing-5;
+    height: $spacing-5;
+    color: $color-palette-gray-500;
+    cursor: pointer;
+}
 
-            span {
-                overflow: hidden;
-                max-width: 100%;
-                white-space: nowrap;
-                text-overflow: ellipsis;
-            }
-        }
+.button-go-content:hover {
+    background-color: var(--color-palette-primary-op-10);
+}
 
-        .drag-icon {
-            position: absolute;
-            bottom: -3px;
-            transform: rotate(90deg);
-        }
+.content-type-card__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: $color-palette-gray-900;
+    font-size: $font-size-sm;
+    text-align: center;
+    width: 100%;
+    gap: $spacing-0;
+
+    span {
+        overflow: hidden;
+        max-width: 100%;
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
-    dot-spinner {
-        align-self: center;
-        justify-self: center;
-        grid-column: 1/-1;
-    }
+}
+
+.drag-icon {
+    position: absolute;
+    bottom: -3px;
+    transform: rotate(90deg);
+}
+
+dot-spinner {
+    align-self: center;
+    justify-self: center;
+    grid-column: 1/-1;
 }

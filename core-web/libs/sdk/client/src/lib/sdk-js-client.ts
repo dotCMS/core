@@ -26,6 +26,15 @@ export interface ClientConfig {
      * @required
      */
     authToken: string;
+    /**
+     * Additional options to pass to the fetch request.
+     *
+     * @description These options will be used in the fetch request. Any option can be specified except for 'body' and 'method' which are omitted.
+     * @example `{ headers: { 'Content-Type': 'application/json' } }`
+     * @type {Omit<RequestInit, 'body' | 'method'>}
+     * @optional
+     */
+    requestOptions?: Omit<RequestInit, 'body' | 'method'>;
 }
 
 type PageApiOptions = {
@@ -123,15 +132,18 @@ function isValidUrl(url: string): boolean {
  *
  * @method constructor(config: ClientConfig) - Constructs a new instance of the DotCmsClient class.
  *
- * @method getPage(options: PageApiOptions): Promise<unknown> - Retrieves all the elements of any Page in your dotCMS system in JSON format.
+ * @method page.get(options: PageApiOptions): Promise<unknown> - Retrieves all the elements of any Page in your dotCMS system in JSON format.
  *
- * @method getNav(options: NavApiOptions = { depth: 0, path: '/', languageId: 1 }): Promise<unknown> - Retrieves information about the dotCMS file and folder tree.
+ * @method nav.get(options: NavApiOptions = { depth: 0, path: '/', languageId: 1 }): Promise<unknown> - Retrieves information about the dotCMS file and folder tree.
  *
  */
 export class DotCmsClient {
     private config: ClientConfig;
+    private requestOptions!: Omit<RequestInit, 'body' | 'method'>;
 
-    constructor(config: ClientConfig) {
+    constructor(
+        config: ClientConfig = { dotcmsUrl: '', authToken: '', requestOptions: {}, siteId: '' }
+    ) {
         if (!config.dotcmsUrl) {
             throw new Error("Invalid configuration - 'dotcmsUrl' is required");
         }
@@ -145,100 +157,101 @@ export class DotCmsClient {
         }
 
         this.config = config;
-    }
 
-    /**
-     * `getPage` is an asynchronous method of the `DotCmsClient` class that retrieves all the elements of any Page in your dotCMS system in JSON format.
-     * It takes a `PageApiOptions` object as a parameter and returns a Promise that resolves to the response from the DotCMS API.
-     *
-     * The Page API enables you to retrieve all the elements of any Page in your dotCMS system.
-     * The elements may be retrieved in JSON format.
-     *
-     * @link https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas
-     * @method getPage
-     * @async
-     * @param {PageApiOptions} options - The options for the Page API call.
-     * @returns {Promise<unknown>} - A Promise that resolves to the response from the DotCMS API.
-     * @throws {Error} - Throws an error if the options are not valid.
-     */
-    async getPage(options: PageApiOptions): Promise<unknown> {
-        this.validatePageOptions(options);
-
-        const queryParamsObj: Record<string, string> = {};
-        for (const [key, value] of Object.entries(options)) {
-            if (value === undefined || key === 'path' || key === 'siteId') continue;
-
-            if (key === 'personaId') {
-                queryParamsObj['com.dotmarketing.persona.id'] = String(value);
-            } else {
-                queryParamsObj[key] = String(value);
-            }
-        }
-
-        const queryHostId = options.siteId ?? this.config.siteId ?? '';
-
-        if (queryHostId) {
-            queryParamsObj['host_id'] = queryHostId;
-        }
-
-        const queryParams = new URLSearchParams(queryParamsObj).toString();
-
-        const formattedPath = options.path.startsWith('/') ? options.path : `/${options.path}`;
-        const url = `${this.config.dotcmsUrl}/api/v1/page/json${formattedPath}${
-            queryParams ? `?${queryParams}` : ''
-        }`;
-
-        const response = await fetch(url, {
+        this.requestOptions = {
+            ...this.config.requestOptions,
             headers: {
-                Authorization: `Bearer ${this.config.authToken}`
+                Authorization: `Bearer ${this.config.authToken}`,
+                ...this.config.requestOptions?.headers
             }
-        });
-
-        return response.json();
+        };
     }
 
-    /**
-     * `getNav` is an asynchronous method of the `DotCmsClient` class that retrieves information about the dotCMS file and folder tree.
-     * It takes a `NavApiOptions` object as a parameter (with default values) and returns a Promise that resolves to the response from the DotCMS API.
-     *
-     * The navigation REST API enables you to retrieve information about the dotCMS file and folder tree through REST API calls.
-     * @link https://www.dotcms.com/docs/latest/navigation-rest-api
-     * @method getNav
-     * @async
-     * @param {NavApiOptions} options - The options for the Nav API call. Defaults to `{ depth: 0, path: '/', languageId: 1 }`.
-     * @returns {Promise<unknown>} - A Promise that resolves to the response from the DotCMS API.
-     * @throws {Error} - Throws an error if the options are not valid.
-     */
-    async getNav(
-        options: NavApiOptions = { depth: 0, path: '/', languageId: 1 }
-    ): Promise<unknown> {
-        this.validateNavOptions(options);
+    page = {
+        /**
+         * `page.get` is an asynchronous method of the `DotCmsClient` class that retrieves all the elements of any Page in your dotCMS system in JSON format.
+         * It takes a `PageApiOptions` object as a parameter and returns a Promise that resolves to the response from the DotCMS API.
+         *
+         * The Page API enables you to retrieve all the elements of any Page in your dotCMS system.
+         * The elements may be retrieved in JSON format.
+         *
+         * @link https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas
+         * @async
+         * @param {PageApiOptions} options - The options for the Page API call.
+         * @returns {Promise<unknown>} - A Promise that resolves to the response from the DotCMS API.
+         * @throws {Error} - Throws an error if the options are not valid.
+         */
+        get: async (options: PageApiOptions): Promise<unknown> => {
+            this.validatePageOptions(options);
 
-        // Extract the 'path' from the options and prepare the rest as query parameters
-        const { path, ...queryParamsOptions } = options;
-        const queryParamsObj: Record<string, string> = {};
-        Object.entries(queryParamsOptions).forEach(([key, value]) => {
-            if (value !== undefined) {
-                queryParamsObj[key] = String(value);
+            const queryParamsObj: Record<string, string> = {};
+            for (const [key, value] of Object.entries(options)) {
+                if (value === undefined || key === 'path' || key === 'siteId') continue;
+
+                if (key === 'personaId') {
+                    queryParamsObj['com.dotmarketing.persona.id'] = String(value);
+                } else {
+                    queryParamsObj[key] = String(value);
+                }
             }
-        });
 
-        const queryParams = new URLSearchParams(queryParamsObj).toString();
+            const queryHostId = options.siteId ?? this.config.siteId ?? '';
 
-        // Format the URL correctly depending on the 'path' value
-        const formattedPath = path === '/' ? '/' : `/${path}`;
-        const url = `${this.config.dotcmsUrl}/api/v1/nav${formattedPath}${
-            queryParams ? `?${queryParams}` : ''
-        }`;
-
-        const response = await fetch(url, {
-            headers: {
-                Authorization: `Bearer ${this.config.authToken}`
+            if (queryHostId) {
+                queryParamsObj['host_id'] = queryHostId;
             }
-        });
 
-        return response.json();
-    }
+            const queryParams = new URLSearchParams(queryParamsObj).toString();
+
+            const formattedPath = options.path.startsWith('/') ? options.path : `/${options.path}`;
+            const url = `${this.config.dotcmsUrl}/api/v1/page/json${formattedPath}${
+                queryParams ? `?${queryParams}` : ''
+            }`;
+            const response = await fetch(url, this.requestOptions);
+
+            return response.json();
+        }
+    };
+
+    nav = {
+        /**
+         * `nav.get` is an asynchronous method of the `DotCmsClient` class that retrieves information about the dotCMS file and folder tree.
+         * It takes a `NavApiOptions` object as a parameter (with default values) and returns a Promise that resolves to the response from the DotCMS API.
+         *
+         * The navigation REST API enables you to retrieve information about the dotCMS file and folder tree through REST API calls.
+         * @link https://www.dotcms.com/docs/latest/navigation-rest-api
+         * @async
+         * @param {NavApiOptions} options - The options for the Nav API call. Defaults to `{ depth: 0, path: '/', languageId: 1 }`.
+         * @returns {Promise<unknown>} - A Promise that resolves to the response from the DotCMS API.
+         * @throws {Error} - Throws an error if the options are not valid.
+         */
+        get: async (
+            options: NavApiOptions = { depth: 0, path: '/', languageId: 1 }
+        ): Promise<unknown> => {
+            this.validateNavOptions(options);
+
+            // Extract the 'path' from the options and prepare the rest as query parameters
+            const { path, ...queryParamsOptions } = options;
+            const queryParamsObj: Record<string, string> = {};
+            Object.entries(queryParamsOptions).forEach(([key, value]) => {
+                if (value !== undefined) {
+                    queryParamsObj[key] = String(value);
+                }
+            });
+
+            const queryParams = new URLSearchParams(queryParamsObj).toString();
+
+            // Format the URL correctly depending on the 'path' value
+            const formattedPath = path === '/' ? '/' : `/${path}`;
+            const url = `${this.config.dotcmsUrl}/api/v1/nav${formattedPath}${
+                queryParams ? `?${queryParams}` : ''
+            }`;
+
+            const response = await fetch(url, this.requestOptions);
+
+            return response.json();
+        }
+    };
 
     private validatePageOptions(options: PageApiOptions): void {
         if (!options.path) {
