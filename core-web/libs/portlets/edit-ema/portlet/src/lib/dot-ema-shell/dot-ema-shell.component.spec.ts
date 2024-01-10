@@ -121,6 +121,11 @@ describe('DotEmaShellComponent', () => {
                     language_id: 1,
                     url: 'index',
                     'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+                },
+                data: {
+                    data: {
+                        url: 'http://localhost:3000'
+                    }
                 }
             });
         });
@@ -137,6 +142,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
 
                 expect(store.load).toHaveBeenCalledWith({
+                    clientHost: 'http://localhost:3000',
                     language_id: 1,
                     url: 'index',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -155,6 +161,7 @@ describe('DotEmaShellComponent', () => {
 
                 spectator.detectChanges();
                 expect(store.load).toHaveBeenCalledWith({
+                    clientHost: 'http://localhost:3000',
                     language_id: 2,
                     url: 'my-awesome-page',
                     'com.dotmarketing.persona.id': 'SomeCoolDude'
@@ -209,7 +216,7 @@ describe('DotEmaShellComponent', () => {
                 dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                     new CustomEvent('ng-event', {
                         detail: {
-                            name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
+                            name: NG_CUSTOM_EVENTS.SAVE_PAGE,
                             payload: {
                                 htmlPageReferer: '/my-awesome-page'
                             }
@@ -246,7 +253,7 @@ describe('DotEmaShellComponent', () => {
                 dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                     new CustomEvent('ng-event', {
                         detail: {
-                            name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
+                            name: NG_CUSTOM_EVENTS.SAVE_PAGE,
                             payload: {
                                 htmlPageReferer: '/index'
                             }
@@ -256,52 +263,11 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
 
                 expect(loadMock).toHaveBeenCalledWith({
+                    clientHost: 'http://localhost:3000',
                     language_id: 1,
                     url: 'index',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                 });
-            });
-        });
-    });
-
-    describe('without queryParams', () => {
-        beforeEach(() => {
-            spectator = createComponent();
-            siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
-            store = spectator.inject(EditEmaStore, true);
-            router = spectator.inject(Router);
-            jest.spyOn(store, 'load');
-        });
-
-        it("should trigger a navigate to set the queryParams if there's no queryParams", async () => {
-            spectator.detectChanges();
-            const navigate = jest.spyOn(router, 'navigate');
-
-            spectator.detectChanges();
-
-            expect(navigate).toHaveBeenCalledWith([], {
-                queryParams: {
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                },
-                queryParamsHandling: 'merge'
-            });
-
-            // We need to trigger the navigation manually because we are not using the router
-            spectator.triggerNavigation({
-                url: [],
-                queryParams: {
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                }
-            });
-
-            expect(store.load).toHaveBeenCalledWith({
-                language_id: 1,
-                url: 'index',
-                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
             });
         });
     });

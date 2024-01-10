@@ -19,14 +19,14 @@
 
     &:hover:not(.ui-draggable-dragging) {
         transform: rotate(-3.66deg) translate(0, -0.5rem);
-        box-shadow: $md-shadow-6;
+        box-shadow: $shadow-l;
     }
 
     // Class added by the gridstack library when the widget is being dragged
     &.ui-draggable-dragging {
         transition: none;
         transform: rotate(-3.66deg);
-        box-shadow: $md-shadow-6;
+        box-shadow: $shadow-l;
     }
 
     .add-widget-container {

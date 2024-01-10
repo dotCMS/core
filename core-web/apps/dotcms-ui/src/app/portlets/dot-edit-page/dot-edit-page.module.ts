@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
+import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import {
     DotContentletLockerService,
     DotESContentService,
@@ -37,6 +38,7 @@ import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/do
     ],
     declarations: [],
     providers: [
+        DotAppsService,
         DotContentletLockerService,
         DotEditPageResolver,
         DotExperimentExperimentResolver,
