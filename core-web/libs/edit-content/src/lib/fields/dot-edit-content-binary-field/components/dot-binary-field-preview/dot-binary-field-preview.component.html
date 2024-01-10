@@ -6,21 +6,24 @@
     <ng-template #contentThumnail>
         <div class="preview-image__container">
             <dot-content-thumbnail
-                [dotThumbanilOptions]="dotThumbnailOptions"></dot-content-thumbnail>
+                [url]="file.url"
+                [inode]="file.inode"
+                [name]="file.name"
+                [contentType]="file.contentType"
+                [titleImage]="file.titleImage"
+                [objectFit]="objectFit"
+                [iconSize]="'48px'"></dot-content-thumbnail>
         </div>
 
         <div class="preview-metadata__container">
             <span class="preview-metadata_header">{{ file.name }}</span>
             <div class="preview-metadata" *ngIf="file.width && file.height">
                 <i class="pi pi-arrows-alt"></i>
-                <span>{{ file.width }}px, {{ file.height }}px</span>
+                <span>{{ file.width }} x {{ file.height }}</span>
             </div>
-            <div class="preview-metadata">
+            <div class="preview-metadata" *ngIf="file.fileSize">
                 <i class="pi pi-file"></i>
-                <span
-                    >{{ file.fileSize | number : '1.0-2' }}
-                    {{ 'dot.binary.field.file.bytes' | dm }}</span
-                >
+                <span>{{ file.fileSize | dotFileSizeFormat }}</span>
             </div>
         </div>
     </ng-template>

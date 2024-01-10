@@ -5,7 +5,7 @@
         (actionFired)="
             fireWorkflowAction({
                 actionId: $event.id,
-                inode: vm.contentlet.inode,
+                inode: vm.contentlet?.inode,
                 contentType: vm.contentType
             })
         "></dot-edit-content-toolbar>

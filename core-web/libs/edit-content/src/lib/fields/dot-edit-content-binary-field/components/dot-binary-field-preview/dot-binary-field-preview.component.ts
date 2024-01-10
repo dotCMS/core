@@ -13,12 +13,12 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import {
     DotContentThumbnailComponent,
+    DotFileSizeFormatPipe,
     DotMessagePipe,
-    DotSpinnerModule,
-    DotThumbnailOptions
+    DotSpinnerModule
 } from '@dotcms/ui';
 
-import { BinaryFile } from '../../interfaces';
+import { DotFilePreview } from '../../interfaces';
 
 export enum EDITABLE_FILE {
     image = 'image',
@@ -39,14 +39,15 @@ type EDITABLE_FILE_FUNCTION_MAP = {
         DotContentThumbnailComponent,
         DotSpinnerModule,
         OverlayPanelModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotFileSizeFormatPipe
     ],
     templateUrl: './dot-binary-field-preview.component.html',
     styleUrls: ['./dot-binary-field-preview.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBinaryFieldPreviewComponent implements OnChanges {
-    @Input() file: BinaryFile;
+    @Input() file: DotFilePreview;
     @Input() editableImage: boolean;
 
     @Output() editImage: EventEmitter<void> = new EventEmitter();
@@ -61,15 +62,12 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
     private contenttype: EDITABLE_FILE;
     isEditable = false;
 
-    get dotThumbnailOptions(): DotThumbnailOptions {
-        return {
-            tempUrl: this.file.url,
-            inode: this.file.inode,
-            name: this.file.name,
-            contentType: this.file.mimeType,
-            iconSize: '48px',
-            titleImage: this.file.name
-        };
+    get objectFit(): string {
+        if (this.file?.height > this.file?.width) {
+            return 'contain';
+        }
+
+        return 'cover';
     }
 
     ngOnChanges(): void {
@@ -93,7 +91,7 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
     }
 
     private setIsEditable() {
-        const type = this.file.mimeType?.split('/')[0];
+        const type = this.file.contentType?.split('/')[0];
         this.contenttype = EDITABLE_FILE[type] || EDITABLE_FILE.unknown;
         this.isEditable = this.EDITABLE_FILE_FUNCTION_MAP[this.contenttype]();
     }
