@@ -1,4 +1,5 @@
-import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
+import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator';
+import { mockProvider } from '@ngneat/spectator/jest';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -13,7 +14,7 @@ describe('DotBinaryFieldUiMessageComponent', () => {
     const createHost = createHostFactory({
         component: DotBinaryFieldUiMessageComponent,
         imports: [CommonModule, DotMessagePipe, HttpClientTestingModule],
-        providers: []
+        providers: [mockProvider(DotMessagePipe)]
     });
 
     beforeEach(async () => {

@@ -1,0 +1,21 @@
+<p-table [value]="data | async" [tableStyle]="{ 'min-width': '100%' }">
+    <ng-template pTemplate="header">
+        <tr>
+            <th id="name">{{ 'name' | dm }}</th>
+            <th id="description">{{ 'description' | dm }}</th>
+            <th id="action" [attr.aria-label]="'Actions' | dm"></th>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-contenttype>
+        <tr>
+            <td headers="name">{{ contenttype.name }}</td>
+            <td headers="description">{{ contenttype.description }}</td>
+            <td headers="action" style="min-width: fit-content; text-align: right">
+                <p-button
+                    (click)="selected.emit(contenttype.id)"
+                    styleClass="p-button-outlined"
+                    label="Select" />
+            </td>
+        </tr>
+    </ng-template>
+</p-table>

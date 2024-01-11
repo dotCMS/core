@@ -4,7 +4,6 @@ import { CommonModule } from '@angular/common';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { BrowserDynamicTestingModule } from '@angular/platform-browser-dynamic/testing';
 
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
@@ -85,11 +84,6 @@ describe('DotWizardComponent', () => {
             ]
         }).compileComponents();
 
-        TestBed.overrideModule(BrowserDynamicTestingModule, {
-            set: {
-                entryComponents: [FormOneComponent, FormTwoComponent]
-            }
-        });
         TestBed.compileComponents();
     }));
 

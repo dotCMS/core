@@ -5,8 +5,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotEditPageService } from '@dotcms/data-access';
+import { DotEditPageService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { DotDOMHtmlUtilService } from '@portlets/dot-edit-page/content/services/html/dot-dom-html-util.service';
 

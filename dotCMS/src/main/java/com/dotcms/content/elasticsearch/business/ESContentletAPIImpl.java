@@ -7896,14 +7896,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             "] in contentlet", e);
                     continue;
                 }
-                if (s.length() > 255) {
-                    hasError = true;
-                    cve.addMaxLengthField(field);
-                    Logger.warn(this, "Value of String field [" + field.getVelocityVarName()
-                            + "] is greater than 255" +
-                            " characters");
-                    continue;
-                }
             }
 
             // validate regex
@@ -9063,7 +9055,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
 
-                if (tempField.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
+                //verify if the velocity var name is not Host to avoid override the host
+                if (tempField.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())
+                        && !Host.HOST_VELOCITY_VAR_NAME.equalsIgnoreCase(tempField.getVelocityVarName())) {
                     if (folder != null || host != null) {
                         newContentlet.setStringProperty(tempField.getVelocityVarName(),
                                 folder != null ? folder.getInode() : host.getIdentifier());

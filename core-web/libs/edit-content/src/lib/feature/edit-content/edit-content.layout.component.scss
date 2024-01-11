@@ -2,20 +2,24 @@
 
 :host {
     display: grid;
-    grid-template-columns: 1fr 16rem;
-    gap: $spacing-4;
-    padding: $spacing-4;
+    grid-template-areas:
+        "header header"
+        "body sidebar";
+    grid-template-columns: 1fr 21.875rem;
+    grid-template-rows: auto 1fr;
     padding-bottom: 0;
     height: 100%;
     width: 100%;
-    overflow: auto;
 }
 
-code {
-    display: block;
-    overflow: scroll;
+.header {
+    grid-area: header;
 }
 
-dot-edit-content-form {
-    min-width: 0; // Make it shrinkable
+.body {
+    grid-area: body;
+}
+
+.sidebar {
+    grid-area: sidebar;
 }

@@ -10,13 +10,13 @@ import {
 } from '@angular/core';
 import { NgForm, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 
-import { DotAppsSecrets } from '@dotcms/dotcms-models';
+import { DotAppsSecret } from '@dotcms/dotcms-models';
 
 const getFieldValueFn = {
-    BOOL: (field: DotAppsSecrets) => {
+    BOOL: (field: DotAppsSecret) => {
         return field.value ? JSON.parse(field.value) : field.value;
     },
-    SELECT: (field: DotAppsSecrets) => {
+    SELECT: (field: DotAppsSecret) => {
         return field.value === '' ? field.options[0].value : field.value;
     }
 };
@@ -30,7 +30,7 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, AfterVie
     @ViewChild('form', { static: true }) public form: NgForm;
     @ViewChild('formContainer', { static: true }) public formContainer: ElementRef;
 
-    @Input() formFields: DotAppsSecrets[];
+    @Input() formFields: DotAppsSecret[];
     @Input() appConfigured = false;
     @Output() data = new EventEmitter<{ [key: string]: string }>();
     @Output() valid = new EventEmitter<boolean>();
@@ -38,7 +38,7 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, AfterVie
 
     ngOnInit() {
         const group = {};
-        this.formFields.forEach((field: DotAppsSecrets) => {
+        this.formFields.forEach((field: DotAppsSecret) => {
             group[field.name] = new UntypedFormControl(
                 this.getFieldValue(field),
                 field.required ? Validators.required : null
@@ -67,7 +67,7 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, AfterVie
         window.open(url, '_blank');
     }
 
-    private getFieldValue(field: DotAppsSecrets): string | boolean {
+    private getFieldValue(field: DotAppsSecret): string | boolean {
         return getFieldValueFn[field.type] ? getFieldValueFn[field.type](field) : field.value;
     }
 

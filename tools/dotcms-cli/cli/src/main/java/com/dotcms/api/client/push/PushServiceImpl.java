@@ -7,6 +7,7 @@ import static com.dotcms.cli.command.files.TreePrinter.COLOR_NEW;
 import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.push.exception.PushException;
 import com.dotcms.api.client.push.task.PushTask;
+import com.dotcms.api.client.push.task.PushTaskParams;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
@@ -239,15 +240,19 @@ public class PushServiceImpl implements PushService {
             CompletableFuture<List<Exception>> pushFuture = CompletableFuture.supplyAsync(
                     () -> {
                         var forkJoinPool = ForkJoinPool.commonPool();
+
                         var task = new PushTask<>(
-                                analysisResults,
-                                options.allowRemove(),
-                                customOptions,
-                                options.failFast(),
-                                pushHandler,
-                                mapperService,
-                                logger,
-                                progressBar
+                                PushTaskParams.<T>builder().
+                                        results(analysisResults).
+                                        allowRemove(options.allowRemove()).
+                                        disableAutoUpdate(options.disableAutoUpdate()).
+                                        failFast(options.failFast()).
+                                        customOptions(customOptions).
+                                        pushHandler(pushHandler).
+                                        mapperService(mapperService).
+                                        logger(logger).
+                                        progressBar(progressBar).
+                                        build()
                         );
                         return forkJoinPool.invoke(task);
                     });

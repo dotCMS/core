@@ -33,7 +33,9 @@ export enum NodeTypes {
     HEADING = 'heading',
     HORIZONTAL_RULE = 'horizontalRule',
     TEXT = 'text',
-    TABLE_CELL = 'tableCell'
+    TABLE_CELL = 'tableCell',
+    AI_CONTENT = 'aiContent',
+    LOADER = 'loader'
 }
 
 export const CustomNodeTypes: Array<NodeTypes> = [NodeTypes.DOT_IMAGE, NodeTypes.DOT_CONTENT];

@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotApps } from '@dotcms/dotcms-models';
+import { DotRouterService } from '@dotcms/data-access';
+import { DotApp } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-apps-configuration-header',
@@ -11,7 +11,7 @@ import { DotApps } from '@dotcms/dotcms-models';
 export class DotAppsConfigurationHeaderComponent {
     showMore: boolean;
 
-    @Input() app: DotApps;
+    @Input() app: DotApp;
 
     constructor(private dotRouterService: DotRouterService) {}
 

@@ -20,10 +20,12 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @ApplicationScoped
 public class YAMLFactoryServiceManagerImpl implements ServiceManager {
 
+    static final String DOT_SERVICE_YML = "dot-service.yml";
+
     private static final ObjectMapper mapper = new YAMLMapperSupplier().get();
 
     //for testing purposes Overridable
-    @ConfigProperty(name = "com.dotcms.service.config", defaultValue = "dot-service.yml")
+    @ConfigProperty(name = "com.dotcms.service.config", defaultValue = DOT_SERVICE_YML)
     String dotServiceYml;
 
     @Override
@@ -41,7 +43,7 @@ public class YAMLFactoryServiceManagerImpl implements ServiceManager {
     private List<ServiceBean> cached;
 
     @Override
-    public List<ServiceBean> services() {
+    public List<ServiceBean> services() throws IOException {
         if(null != cached){
            return cached;
         }
@@ -53,15 +55,13 @@ public class YAMLFactoryServiceManagerImpl implements ServiceManager {
         try (InputStream inputStream = Files.newInputStream(path)) {
             cached = mapper.readValue(inputStream, new TypeReference<>() {
             });
-        } catch (IOException e){
-            throw new IllegalStateException(e);
         }
         return cached;
     }
 
     @Override
     @CanIgnoreReturnValue
-    public ServiceManager removeAll() {
+    public ServiceManager removeAll() throws IOException {
         final Path path = filePath();
         final File yaml = path.toFile();
         if(yaml.exists()){
@@ -75,10 +75,11 @@ public class YAMLFactoryServiceManagerImpl implements ServiceManager {
         return this;
     }
 
-    Path filePath() {
+    Path filePath() throws IOException {
         final Path homeDir = Path.of(System.getProperty("user.home"),".dotcms").toAbsolutePath();
-        final File homeDirFile = homeDir.toFile();
-        homeDirFile.mkdirs();
+        if(Files.notExists(homeDir)){
+            Files.createDirectories(homeDir);
+        }
         return Path.of(homeDir.toString(), dotServiceYml);
     }
 
@@ -89,7 +90,7 @@ public class YAMLFactoryServiceManagerImpl implements ServiceManager {
         final Iterator<ServiceBean> iterator =  new ArrayList<>(beans).iterator();
         while (iterator.hasNext()) {
             ServiceBean serviceBean = iterator.next();
-            //if the new incoming bean is meant to be the new active one.. We mark all others inactive
+            //if the new incoming bean is meant to be the new active one... We mark all others inactive
             serviceBean = newServiceBean.active() ? serviceBean.withActive(false) : serviceBean;
             if (newServiceBean.name().equals(serviceBean.name())) {
                 //Remove cuz it's about to get replaced with the new `newServiceBean`

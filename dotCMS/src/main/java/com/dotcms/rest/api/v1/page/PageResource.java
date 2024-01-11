@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.page;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -9,6 +10,7 @@ import com.dotcms.ema.EMAConfigurations;
 import com.dotcms.ema.EMAWebInterceptor;
 import com.dotcms.ema.resolver.EMAConfigStrategy;
 import com.dotcms.ema.resolver.EMAConfigStrategyResolver;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityView;
@@ -110,9 +112,6 @@ import java.util.stream.Collectors;
 @Tag(name = "Page")
 public class PageResource {
 
-    private static final String LISTING       = "listing";
-    private static final String EDITING       = "editing";
-
     private final PageResourceHelper pageResourceHelper;
     private final WebResource webResource;
     private final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI;
@@ -121,6 +120,7 @@ public class PageResource {
     /**
      * Creates an instance of this REST end-point.
      */
+    @SuppressWarnings("unused")
     public PageResource() {
         this(
                 PageResourceHelper.getInstance(),
@@ -262,8 +262,14 @@ public class PageResource {
             @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
             @QueryParam(WebKeys.LANGUAGE_ID_PARAMETER) final String languageId,
             @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException, SystemException, PortalException {
-        if (HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, false) && !this.includeRenderedAttrFromEMA(originalRequest, uri)) {
-            return this.loadJson(originalRequest, response, uri, modeParam, personaId, languageId, deviceInode);
+        if (HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, false)
+                && !this.includeRenderedAttrFromEMA(originalRequest, uri)) {
+            final String depth = HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.DEPTH_PARAM, null);
+            if (UtilMethods.isSet(depth)) {
+                HttpServletRequestThreadLocal.INSTANCE.getRequest().setAttribute(WebKeys.HTMLPAGE_DEPTH, depth);
+            }
+            return this.loadJson(originalRequest, response, uri, modeParam, personaId, languageId
+                    , deviceInode);
         }
         Logger.debug(this, ()->String.format(
                 "Rendering page: uri -> %s mode-> %s language -> persona -> %s device_inode -> %s live -> %b",
@@ -310,7 +316,7 @@ public class PageResource {
         request.setAttribute(WebKeys.CURRENT_HOST, host);
         request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
 
-        res = Response.ok(new ResponseEntityView(pageRendered)).build();
+        res = Response.ok(new ResponseEntityView<>(pageRendered)).build();
 
         return res;
     }
@@ -1130,4 +1136,41 @@ public class PageResource {
 
         throw new DoesNotExistException("The page: " + findAvailableActionsForm.getPath() + " do not exist");
     } // findAvailableActions.
+
+    /**
+     * Receives the Identifier of an HTML Page, returns all the available languages in dotCMS and,
+     * for each of them, adds a flag indicating whether the page is available in that language or
+     * not. This may be particularly useful when requiring the system to provide a specific action
+     * when a page is NOT available in a given language. Here's an example of how you can use it:
+     * <pre>
+     *     GET <a href="http://localhost:8080/api/v1/page/${PAGE_ID}/languages">http://localhost:8080/api/v1/page/${PAGE_ID}/languages</a>
+     * </pre>
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     * @param pageId   The Identifier of the HTML Page whose available languages will be checked.
+     *
+     * @return A {@link Response} object containing the list of languages and the flag indicating
+     * whether the page is available in such a language or not.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
+    @GET
+    @Path("/{pageId}/languages")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response checkPageLanguageVersions(@Context final HttpServletRequest request,
+                                              @Context final HttpServletResponse response,
+                                              @PathParam("pageId") final String pageId) throws DotDataException {
+        final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredBackendUser(true)
+                .init().getUser();
+        Logger.debug(this, () -> String.format("Check the languages that page '%s' is available on", pageId));
+        final List<ExistingLanguagesForPageView> languagesForPage =
+                this.pageResourceHelper.getExistingLanguagesForPage(pageId, user);
+        return Response.ok(new ResponseEntityView<>(languagesForPage)).build();
+    }
+
 } // E:O:F:PageResource

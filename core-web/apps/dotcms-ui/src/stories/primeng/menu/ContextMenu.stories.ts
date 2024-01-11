@@ -1,5 +1,4 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, Story } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -27,7 +26,7 @@ const ContextMenuTemplate = `
   <p-contextMenu [target]="img" [model]="items"></p-contextMenu>
 `;
 
-const Template: Story<never> = () => {
+const Template: Story<unknown> = () => {
     const template = ContextMenuTemplate;
 
     return {

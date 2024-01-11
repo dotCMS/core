@@ -12,9 +12,8 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ButtonModule } from 'primeng/button';
 
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotAppsSaveData, DotAppsSecrets } from '@dotcms/dotcms-models';
+import { DotMessageService, DotRouterService } from '@dotcms/data-access';
+import { DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
@@ -124,7 +123,7 @@ class MockDotKeyValueComponent {
 })
 class MockDotAppsConfigurationDetailFormComponent {
     @Input() appConfigured: boolean;
-    @Input() formFields: DotAppsSecrets[];
+    @Input() formFields: DotAppsSecret[];
     @Output() data = new EventEmitter<{ [key: string]: string }>();
     @Output() valid = new EventEmitter<boolean>();
 }
