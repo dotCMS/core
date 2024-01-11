@@ -654,11 +654,8 @@
                 String accept="";
                 String maxFileLength="0";
                 String helperText="";
-                String binaryMetadata = "''"; // Empty String by default
                 String jsonField = "{}";
                 String mimeType="";
-
-                Contentlet contentletObj = APILocator.getContentletAPI().find(inode, user, false);
 
                 try {
                     java.io.File fileValue = (java.io.File)value;
@@ -668,9 +665,6 @@
                 }
 
                 try{
-                    java.io.File binaryFile = contentletObj.getBinary(field.getVelocityVarName());
-                    com.dotcms.storage.model.Metadata metadata = contentletObj.getBinaryMetadata(field);
-                    binaryMetadata = mapper.writeValueAsString(metadata); // Metadata
                     jsonField = mapper.writeValueAsString(field); // Field
                 } catch(Exception e){
                     Logger.error(this.getClass(), e.getMessage());
@@ -700,60 +694,62 @@
             <script>
                 // Create a new scope so that variables defined here can have the same name without being overwritten.
                 (function autoexecute() {
-                    const binaryFieldContainer = document.getElementById("container-binary-field-<%=field.getVelocityVarName()%>");
-                    const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
-                    const variable = "<%=field.getVelocityVarName()%>";
-                    const metaData = <%=binaryMetadata%>;
-                    const contentlet = metaData ? {
-                        inode: "<%=binInode%>",
-                        titleImage: variable,
-                        [variable]: `/dA/<%=contentlet.getIdentifier()%>/${variable}/${metaData.name}`,
-                        [variable+"MetaData"]: {
-                            ...metaData,
-                            fileSize: metaData.size,
-                            contentType: "<%=mimeType%>"
+
+                    // Getting the contentlet
+                    fetch('/api/content/id/<%=contentlet.getIdentifier()%>', {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
                         }
-                    } : null;
-                    const fielData = {
-                        hint: '<%=hint%>',
-                        ...(<%=jsonField%>),
-                        variable,
-                        fieldVariables: JSON.parse('<%=fieldVariablesContent%>')
-                    }
-
-                    // Setting the value of the field
-                    field.value = "<%=value%>"
-
-                    // Creating the binary field dynamically
-                    // Help us to set inputs before the ngInit is executed.
-                    const binaryField = document.createElement('dotcms-binary-field');
-                    binaryField.id = "binary-field-<%=field.getVelocityVarName()%>";
-                    binaryField.setAttribute("fieldName", "<%=field.getVelocityVarName()%>");
-
-                    binaryField.field = fielData;
-                    binaryField.contentlet = contentlet;
-                    binaryField.imageEditor = true;
-
-                    binaryField.addEventListener('valueUpdated', ({ detail }) => {
-                        field.value = detail;
-                    });
-
-                    binaryFieldContainer.appendChild(binaryField);
-
-                    document.addEventListener(`binaryField-open-image-editor-${variable}`,({ detail }) => {
-                        const { inode, variable = '', tempId } = detail;
-
-                        const imageEditor = new dotcms.dijit.image.ImageEditor({
-                            inode,
-                            tempId,
+                    }).then(response => response.json())
+                    .then(({ contentlets }) => {
+                        const binaryFieldContainer = document.getElementById("container-binary-field-<%=field.getVelocityVarName()%>");
+                        const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
+                        const variable = "<%=field.getVelocityVarName()%>";
+                        const fielData = {
+                            ...(<%=jsonField%>),
+                            hint: '<%=hint%>',
                             variable,
-                            fieldName: variable,
-                            binaryFieldId:  variable,
-                            focalPoint: "0.0,0.0",
+                            fieldVariables: JSON.parse('<%=fieldVariablesContent%>')
+                        }
+
+                        // Setting the value of the field
+                        field.value = "<%=value%>"
+
+                        // Creating the binary field dynamically
+                        // Help us to set inputs before the ngInit is executed.
+                        const binaryField = document.createElement('dotcms-binary-field');
+                        binaryField.id = "binary-field-<%=field.getVelocityVarName()%>";
+                        binaryField.setAttribute("fieldName", "<%=field.getVelocityVarName()%>");
+
+                        binaryField.field = fielData;
+                        binaryField.contentlet = contentlets[0];
+                        binaryField.imageEditor = true;
+
+                        binaryField.addEventListener('valueUpdated', ({ detail }) => {
+                            field.value = detail;
                         });
 
-                        imageEditor.execute();
-                    });
+                        binaryFieldContainer.appendChild(binaryField);
+
+                        document.addEventListener(`binaryField-open-image-editor-${variable}`,({ detail }) => {
+                            const { inode, variable = '', tempId } = detail;
+
+                            const imageEditor = new dotcms.dijit.image.ImageEditor({
+                                inode,
+                                tempId,
+                                variable,
+                                fieldName: variable,
+                                binaryFieldId:  variable,
+                                focalPoint: "0.0,0.0",
+                            });
+
+                            imageEditor.execute();
+                        });
+                    })
+                    .catch(() => {
+                        console.log("ERROR")
+                    })
                 })();
 
             </script>

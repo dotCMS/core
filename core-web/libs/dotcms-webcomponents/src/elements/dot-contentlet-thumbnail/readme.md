@@ -12,6 +12,7 @@
 | `cover`              | `cover`                |             | `boolean`           | `true`      |
 | `height`             | `height`               |             | `string`            | `''`        |
 | `iconSize`           | `icon-size`            |             | `string`            | `''`        |
+| `playableVideo`      | `playable-video`       |             | `boolean`           | `false`     |
 | `showVideoThumbnail` | `show-video-thumbnail` |             | `boolean`           | `true`      |
 | `width`              | `width`                |             | `string`            | `''`        |
 

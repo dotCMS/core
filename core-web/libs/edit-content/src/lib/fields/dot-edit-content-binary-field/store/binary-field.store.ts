@@ -12,14 +12,14 @@ import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 import {
     BinaryFieldMode,
     BinaryFieldStatus,
-    DotFilePreview,
     UI_MESSAGE_KEYS,
     UiMessageI
 } from '../interfaces/index';
 import { getUiMessage } from '../utils/binary-field-utils';
 
 export interface BinaryFieldState {
-    file: DotFilePreview;
+    contentlet: DotCMSContentlet;
+    tempFile: DotCMSTempFile;
     value: string;
     mode: BinaryFieldMode;
     status: BinaryFieldStatus;
@@ -29,7 +29,8 @@ export interface BinaryFieldState {
 }
 
 const initialState: BinaryFieldState = {
-    file: null,
+    contentlet: null,
+    tempFile: null,
     value: null,
     mode: BinaryFieldMode.DROPZONE,
     status: BinaryFieldStatus.INIT,
@@ -70,11 +71,18 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         dropZoneActive
     }));
 
-    readonly setFile = this.updater<DotFilePreview>((state, file) => ({
+    readonly setContentlet = this.updater<DotCMSContentlet>((state, contentlet) => ({
         ...state,
+        contentlet,
         status: BinaryFieldStatus.PREVIEW,
-        value: file?.id,
-        file
+        value: contentlet.inode
+    }));
+
+    readonly setTempFile = this.updater<DotCMSTempFile>((state, tempFile) => ({
+        ...state,
+        tempFile,
+        status: BinaryFieldStatus.PREVIEW,
+        value: tempFile?.id
     }));
 
     readonly setValue = this.updater<string>((state, value) => ({
@@ -137,7 +145,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
             switchMap((file) =>
                 this.uploadFile(file).pipe(
                     switchMap((tempFile) => this.handleTempFile(tempFile)),
-                    tap((file) => this.setFile(file)),
+                    tap((file) => this.setTempFile(file)),
                     catchError(() => {
                         this.setError(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR));
 
@@ -151,10 +159,11 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
     readonly setFileFromTemp = this.effect<DotCMSTempFile>((file$: Observable<DotCMSTempFile>) => {
         return file$.pipe(
             tap(() => this.setUploading()),
+
             switchMap((tempFile) => {
                 return this.handleTempFile(tempFile).pipe(
                     tapResponse(
-                        (file) => this.setFile(file),
+                        (file) => this.setTempFile(file),
                         () => this.setError(getUiMessage(UI_MESSAGE_KEYS.SERVER_ERROR))
                     )
                 );
@@ -167,33 +176,27 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
             return contentlet$.pipe(
                 tap(() => this.setUploading()),
                 switchMap((contentlet) => {
-                    const { titleImage, inode, fileAsset, metaData, variable } = contentlet;
-                    const metaDataKey = variable + 'MetaData';
-                    const meta = metaData || contentlet[metaDataKey];
-                    const { name, contentType, editableAsText } = meta || {};
-                    const contentURL = fileAsset || contentlet[variable];
-
-                    const file = {
-                        id: inode,
-                        inode,
-                        name,
-                        contentType,
-                        titleImage,
-                        ...meta
-                    };
+                    const { fileAsset, metaData, fieldVariable } = contentlet;
+                    const metadata = metaData || contentlet[`${fieldVariable}MetaData`];
+                    const { contentType: mimeType, editableAsText } = metadata || {};
+                    const contentURL = fileAsset || contentlet[fieldVariable];
 
                     const obs$ = editableAsText ? this.getFileContent(contentURL) : of('');
 
                     return obs$.pipe(
                         tapResponse(
                             (content = '') => {
-                                this.setFile({
-                                    ...file,
+                                this.setContentlet({
+                                    ...contentlet,
+                                    mimeType,
                                     content
                                 });
                             },
                             () => {
-                                this.setFile(file);
+                                this.setContentlet({
+                                    ...contentlet,
+                                    mimeType
+                                });
                             }
                         )
                     );
@@ -202,8 +205,8 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         }
     );
 
-    private handleTempFile(tempFile: DotCMSTempFile): Observable<DotFilePreview> {
-        const { referenceUrl, thumbnailUrl, metadata, id } = tempFile;
+    private handleTempFile(tempFile: DotCMSTempFile): Observable<DotCMSTempFile> {
+        const { referenceUrl, metadata } = tempFile;
         const { editableAsText = false } = metadata;
 
         const obs$ = editableAsText ? this.getFileContent(referenceUrl) : of('');
@@ -211,11 +214,8 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         return obs$.pipe(
             map((content) => {
                 return {
-                    id,
-                    titleImage: '',
-                    content,
-                    url: thumbnailUrl || referenceUrl,
-                    ...metadata
+                    ...tempFile,
+                    content
                 };
             })
         );

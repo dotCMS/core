@@ -1,9 +1,9 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
 import {
-    DotContentThumbnailComponent,
+    DotTempFileThumbnailComponent,
     CONTENT_THUMBNAIL_TYPE
-} from './dot-content-thumbnail.component';
+} from './dot-temp-file-thumbnail.component';
 
 const inputs = {
     url: '',
@@ -14,9 +14,9 @@ const inputs = {
     titleImage: ''
 };
 
-describe('DotContentThumbnailComponent', () => {
-    let spectator: Spectator<DotContentThumbnailComponent>;
-    const createComponent = createComponentFactory(DotContentThumbnailComponent);
+describe('DotTempFileThumbnailComponent', () => {
+    let spectator: Spectator<DotTempFileThumbnailComponent>;
+    const createComponent = createComponentFactory(DotTempFileThumbnailComponent);
 
     describe('video', () => {
         beforeEach(async () => {

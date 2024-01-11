@@ -5,10 +5,11 @@
 
 ## Properties
 
-| Property     | Attribute | Description | Type                | Default     |
-| ------------ | --------- | ----------- | ------------------- | ----------- |
-| `contentlet` | --        |             | `DotContentletItem` | `undefined` |
-| `cover`      | `cover`   |             | `boolean`           | `true`      |
+| Property     | Attribute  | Description                      | Type                | Default     |
+| ------------ | ---------- | -------------------------------- | ------------------- | ----------- |
+| `contentlet` | --         |                                  | `DotContentletItem` | `undefined` |
+| `cover`      | `cover`    |                                  | `boolean`           | `true`      |
+| `playable`   | `playable` | If the video is playable or not. | `boolean`           | `false`     |
 
 
 ## Dependencies
