@@ -67,7 +67,7 @@
 
     .preview-metadata_header {
         font-size: $font-size-md;
-        font-weight: $font-weight-bold;
+        font-weight: $font-weight-semi-bold;
         margin: 0;
         color: $black;
     }
@@ -87,7 +87,7 @@
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    gap: $spacing-1;
+    gap: $spacing-0;
 }
 
 .preview-metadata__actions {

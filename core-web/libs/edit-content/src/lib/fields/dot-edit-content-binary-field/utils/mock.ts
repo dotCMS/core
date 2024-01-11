@@ -122,6 +122,21 @@ export const CONTENTLET = {
     variant: 'DEFAULT'
 };
 
+export const fileMetaData = {
+    contentType: 'image/png',
+    fileSize: 12312,
+    length: 12312,
+    modDate: 12312,
+    name: 'image.png',
+    sha256: '12345',
+    title: 'Asset',
+    version: 1,
+    height: 100,
+    width: 100,
+    editableAsText: false,
+    isImage: true
+};
+
 export const FIELD = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
     contentTypeId: 'd1901a41d38b6686dd5ed8f910346d7a',

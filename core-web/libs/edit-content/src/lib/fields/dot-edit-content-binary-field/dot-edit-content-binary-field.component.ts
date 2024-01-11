@@ -88,6 +88,8 @@ export class DotEditContentBinaryFieldComponent
 {
     @Input() field: DotCMSContentTypeField;
     @Input() contentlet: DotCMSContentlet;
+    @Input() imageEditor = false;
+
     @Output() valueUpdated = new EventEmitter<string>();
     @ViewChild('inputFile') inputFile: ElementRef;
 
@@ -152,7 +154,7 @@ export class DotEditContentBinaryFieldComponent
                 tap(() => this.dotBinaryFieldStore.setStatus(BinaryFieldStatus.UPLOADING)),
                 delay(500) // Loading animation
             )
-            .subscribe((tempFile) => this.setTempFile(tempFile));
+            .subscribe((temp) => this.dotBinaryFieldStore.setFileFromTemp(temp));
 
         this.dotBinaryFieldStore.setMaxFileSize(this.maxFileSize);
     }
@@ -160,7 +162,10 @@ export class DotEditContentBinaryFieldComponent
     ngAfterViewInit() {
         this.setFieldVariables();
         if (this.existFileMetadata()) {
-            this.setPreviewFile();
+            this.dotBinaryFieldStore.setFileFromContentlet({
+                ...this.contentlet,
+                variable: this.variable
+            });
         }
 
         this.cd.detectChanges();
@@ -242,8 +247,8 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotBinaryFieldComponent
      */
     setTempFile(tempFile: DotCMSTempFile) {
-        this.dotBinaryFieldStore.setTempFile(tempFile);
-        this.closeDialog();
+        this.dotBinaryFieldStore.setFileFromTemp(tempFile);
+        this.dialogOpen = false;
     }
 
     /**
@@ -293,30 +298,6 @@ export class DotEditContentBinaryFieldComponent
         }
 
         this.dotBinaryFieldStore.handleUploadFile(file);
-    }
-
-    /**
-     * Set preview file
-     *
-     * @private
-     * @memberof DotBinaryFieldComponent
-     */
-    private setPreviewFile() {
-        const {
-            titleImage,
-            inode,
-            [this.metaDataKey]: metadata,
-            [this.variable]: url
-        } = this.contentlet;
-        const { contentType: mimeType } = metadata;
-
-        this.dotBinaryFieldStore.setFileAndContent({
-            inode,
-            titleImage,
-            mimeType,
-            url,
-            ...metadata
-        });
     }
 
     /**

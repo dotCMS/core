@@ -9,7 +9,7 @@ import { PageContext } from '../../contexts/PageContext';
 const MockChildComponent = () => {
     const context = React.useContext(PageContext);
 
-    return <div data-testid="mockChild">{JSON.stringify(context.page.title)}</div>;
+    return <div data-testid="mockChild">{JSON.stringify(context?.page.title)}</div>;
 };
 
 describe('PageProvider', () => {
