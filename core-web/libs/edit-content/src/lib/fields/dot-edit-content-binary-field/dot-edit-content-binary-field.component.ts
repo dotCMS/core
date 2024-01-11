@@ -164,7 +164,7 @@ export class DotEditContentBinaryFieldComponent
         if (this.existFileMetadata()) {
             this.dotBinaryFieldStore.setFileFromContentlet({
                 ...this.contentlet,
-                variable: this.variable
+                fieldVariable: this.variable
             });
         }
 

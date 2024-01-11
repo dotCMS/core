@@ -6,6 +6,12 @@
     height: 100%;
 }
 
+dot-contentlet-thumbnail::ng-deep {
+    img {
+        object-fit: cover;
+    }
+}
+
 .preview-container {
     display: flex;
     gap: $spacing-1;
@@ -31,7 +37,8 @@
     user-select: none;
 }
 
-.preview-image__container {
+.preview-image__container,
+dot-contentlet-thumbnail {
     height: 100%;
     width: 100%;
     display: flex;
