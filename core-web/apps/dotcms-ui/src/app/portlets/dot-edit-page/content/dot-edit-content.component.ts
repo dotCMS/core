@@ -410,6 +410,8 @@ browse from the page internal links
                 .getActionUrl($event.data.contentType.variable)
                 .pipe(take(1))
                 .subscribe((url) => {
+                    //TODO: check if the getActionUrl can accept a lang as param.
+                    url = this.setCurrentContentLang(url);
                     this.dotContentletEditorService.create({
                         data: { url },
                         events: {
@@ -542,6 +544,7 @@ browse from the page internal links
     }
 
     private subscribeIframeActions(): void {
+        console.log('subscribeIframeActions');
         this.dotEditContentHtmlService.iframeActions$
             .pipe(takeUntil(this.destroy$))
             .subscribe((contentletEvent: DotIframeEditEvent) => {
@@ -673,5 +676,17 @@ browse from the page internal links
         this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
             this.pageLanguageId = params['language_id'];
         });
+    }
+
+    /**
+     * Replaces the value of "_content_lang" in the given string with a new value.
+     * @param {string} inputString - The original string containing the "_content_lang" parameter.
+     * @returns {string} - The updated string with the replaced "_content_lang" value.
+     */
+    private setCurrentContentLang(inputString: string): string {
+        const regex = /(_content_lang=)(\d+)(?=&|$)/;
+        const replacement = `$1${this.pageLanguageId}`;
+
+        return inputString.replace(regex, replacement);
     }
 }
