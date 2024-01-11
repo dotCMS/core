@@ -22,7 +22,7 @@ public class DotPubSubProviderLocator {
         final String pubsubClazz = System.getProperty(DOT_PUBSUB_PROVIDER_OVERRIDE) != null
                         ? System.getProperty(DOT_PUBSUB_PROVIDER_OVERRIDE)
                         : Config.getStringProperty(DOT_PUBSUB_PROVIDER_OVERRIDE,
-                                        PostgresPubSubImpl.class.getCanonicalName());
+                                        JDBCPubSubImpl.class.getCanonicalName());
 
         DotPubSubProvider provider = (DotPubSubProvider) Try.of(() -> Class.forName(pubsubClazz).newInstance())
                         .getOrElseThrow(e -> new DotRuntimeException(e));

@@ -210,3 +210,6 @@ This maintenance release includes the following code fixes:
 125. https://github.com/dotCMS/core/issues/24781 : Performance Optimization - don't force field invalidations for non-velocity fields #24781
 
 **Release-21.06.16**
+
+126. https://github.com/dotCMS/core/issues/26019 : PubSubListener with vanilla postgres #26019
+127. https://github.com/dotCMS/core/issues/26706 : Change Default PUBSUB Provider #26706
