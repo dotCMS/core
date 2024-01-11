@@ -67,24 +67,36 @@
         <div
             class="iframe-wrapper"
             [ngClass]="{
-                'iframe-wrapper--device': !!currentDevice,     
+                'iframe-wrapper--device': !!currentDevice,
             }"
             [ngStyle]="{
                 width: !!currentDevice ? currentDevice.cssWidth + 'px' : '100%',
                 height: !!currentDevice ? currentDevice.cssHeight + 'px' : '100%'
             }">
+            {{ es.state }}
             <iframe
                 #iframe
                 [src]="es.iframeURL | safeUrl"
                 [title]="host"
                 [ngStyle]="{
-                    pointerEvents: this.rows.length ? 'none' : 'auto'
+                    pointerEvents: this.rows.length ? 'none' : 'auto',
+                    display: es.state === editorState.LOADING ? 'none' : 'block'
                 }"
                 data-testId="iframe"
                 width="100%"
                 height="100%"></iframe>
+            <dot-spinner
+                *ngIf="es.state === editorState.LOADING"
+                [ngStyle]="{ position: 'absolute', top: '50%', left: '50%' }"
+                data-testId="spinner"></dot-spinner>
             <dot-ema-contentlet-tools
-                *ngIf="!rows.length && !!contentlet && !currentDevice && es.editor.page.canEdit"
+                *ngIf="
+                    !rows.length &&
+                    !!contentlet &&
+                    !currentDevice &&
+                    es.editor.page.canEdit &&
+                    es.state === editorState.LOADED
+                "
                 [contentlet]="contentlet"
                 (edit)="editContentlet($event)"
                 (delete)="deleteContentlet($event)"
@@ -93,7 +105,12 @@
                 (addContent)="addContentlet($event)"
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
-                *ngIf="!!rows.length && !!dragItemType && !currentDevice"
+                *ngIf="
+                    !!rows.length &&
+                    !!dragItemType &&
+                    !currentDevice &&
+                    es.state === editorState.LOADED
+                "
                 [rows]="rows"
                 [contentType]="dragItemType"
                 (place)="onPlaceItem($event)"

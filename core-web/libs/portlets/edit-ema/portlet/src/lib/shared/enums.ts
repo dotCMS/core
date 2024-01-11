@@ -11,3 +11,10 @@ export enum NG_CUSTOM_EVENTS {
     CREATE_CONTENTLET = 'create-contentlet-from-edit-page',
     SAVE_PAGE = 'save-page'
 }
+
+// The current state of the editor
+export enum EDITOR_STATE {
+    LOADING = 'loading',
+    LOADED = 'loaded',
+    ERROR = 'error'
+}

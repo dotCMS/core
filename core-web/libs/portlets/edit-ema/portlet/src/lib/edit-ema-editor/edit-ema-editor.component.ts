@@ -13,7 +13,7 @@ import {
     inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Params, Router } from '@angular/router';
+import { ActivatedRoute, Params, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -43,7 +43,7 @@ import {
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
-import { NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
+import { EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { ActionPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
 
@@ -103,6 +103,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     personaSelector!: EditEmaPersonaSelectorComponent;
 
     private readonly router = inject(Router);
+    private readonly activatedRoute = inject(ActivatedRoute);
     private readonly store = inject(EditEmaStore);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
@@ -116,6 +117,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly destroy$ = new Subject<boolean>();
 
     readonly host = '*';
+    readonly editorState = EDITOR_STATE;
 
     private savePayload: ActionPayload;
     private draggedPayload: DraggedPalettePayload;
@@ -133,6 +135,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe((event: MessageEvent) => {
                 this.handlePostMessage(event)?.();
             });
+
+        this.store.updateEditorState(EDITOR_STATE.LOADING);
     }
 
     ngOnDestroy(): void {
@@ -556,6 +560,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     NOTIFY_CUSTOMER.EMA_EDITOR_PONG,
                     this.host
                 );
+
+                this.store.updateEditorState(EDITOR_STATE.LOADED); // First time we receive a message from the iframe we can assume that is loaded
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
@@ -590,5 +596,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             queryParams: params,
             queryParamsHandling: 'merge'
         });
+
+        // Reset this on queryParams update
+        this.rows = [];
+        this.contentlet = null;
     }
 }

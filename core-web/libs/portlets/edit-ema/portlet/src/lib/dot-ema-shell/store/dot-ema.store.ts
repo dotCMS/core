@@ -16,6 +16,7 @@ import {
     DotPageApiService
 } from '../../services/dot-page-api.service';
 import { DEFAULT_PERSONA, EDIT_CONTENTLET_URL, ADD_CONTENTLET_URL } from '../../shared/consts';
+import { EDITOR_STATE } from '../../shared/enums';
 import { ActionPayload, SavePagePayload } from '../../shared/models';
 import { insertContentletInContainer } from '../../utils';
 
@@ -30,6 +31,7 @@ export interface EditEmaState {
     error?: number;
     editor: DotPageApiResponse;
     isEnterpriseLicense: boolean;
+    editorState: EDITOR_STATE;
 }
 
 function getFormId(dotPageApiService) {
@@ -93,7 +95,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     persona: state.editor.viewAs.persona ?? DEFAULT_PERSONA
                 }
             },
-            isEnterpriseLicense: state.isEnterpriseLicense
+            isEnterpriseLicense: state.isEnterpriseLicense,
+            state: state.editorState ?? EDITOR_STATE.LOADING
         };
     });
 
@@ -145,7 +148,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     dialogHeader: '',
                                     dialogIframeLoading: false,
                                     isEnterpriseLicense: licenseData,
-                                    dialogType: null
+                                    dialogType: null,
+                                    editorState: EDITOR_STATE.LOADED
                                 });
                             },
                             error: ({ status }: HttpErrorResponse) => {
@@ -168,15 +172,20 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      */
     readonly savePage = this.effect((payload$: Observable<SavePagePayload>) => {
         return payload$.pipe(
+            tap(() => {
+                this.updateEditorState(EDITOR_STATE.LOADING);
+            }),
             switchMap((payload) => {
                 return this.dotPageApiService.save(payload).pipe(
                     tapResponse(
                         () => {
                             payload.whenSaved?.();
+                            this.updateEditorState(EDITOR_STATE.LOADED);
                         },
                         (e) => {
                             console.error(e);
                             payload.whenSaved?.();
+                            this.updateEditorState(EDITOR_STATE.ERROR);
                         }
                     )
                 );
@@ -199,6 +208,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             }>
         ) => {
             return payload$.pipe(
+                tap(() => {
+                    this.updateEditorState(EDITOR_STATE.LOADING);
+                }),
                 getFormId(this.dotPageApiService),
                 switchMap(({ whenSaved, payload }) => {
                     const pageContainers = insertContentletInContainer(payload);
@@ -212,10 +224,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             tapResponse(
                                 () => {
                                     whenSaved?.();
+                                    this.updateEditorState(EDITOR_STATE.LOADED);
                                 },
                                 (e) => {
                                     console.error(e);
                                     whenSaved?.();
+                                    this.updateEditorState(EDITOR_STATE.ERROR);
                                 }
                             )
                         );
@@ -352,6 +366,16 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }));
 
     /**
+     * Update the editor state
+     *
+     * @memberof EditEmaStore
+     */
+    readonly updateEditorState = this.updater((state, editorState: EDITOR_STATE) => ({
+        ...state,
+        editorState
+    }));
+
+    /**
      * Create the url to edit a contentlet
      *
      * @private
@@ -479,7 +503,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             dialogIframeLoading: false,
             isEnterpriseLicense: false,
             dialogType: null,
-            error
+            error,
+            editorState: EDITOR_STATE.LOADED
         });
     }
 }
