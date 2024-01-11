@@ -31,8 +31,11 @@
                     class="contentlet-card"
                     *ngFor="let contentlet of contentlets.items; let i = index"
                     [attr.data-item]="
-                        { identifier: contentlet.identifier, contentType: contentlet?.contentType }
-                            | json
+                        {
+                            identifier: contentlet.identifier,
+                            contentType: contentlet?.contentType,
+                            baseType: contentlet.baseType
+                        } | json
                     "
                     [attr.data-testId]="'contentlet-' + i"
                     (dragstart)="dragStart.emit($event)"

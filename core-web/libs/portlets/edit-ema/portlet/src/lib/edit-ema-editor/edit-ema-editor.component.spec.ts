@@ -68,7 +68,8 @@ const dragEventMock = {
             item: JSON.stringify({
                 identifier: '123',
                 title: 'hello world',
-                contentType: 'File'
+                contentType: 'File',
+                baseType: 'CONTENT'
             })
         }
     }
@@ -1333,7 +1334,10 @@ describe('EditEmaEditorComponent', () => {
                 dropZone = spectator.query(EmaPageDropzoneComponent);
 
                 expect(dropZone.rows).toBe(BOUNDS_MOCK);
-                expect(dropZone.contentType).toBe('File');
+                expect(dropZone.item).toEqual({
+                    contentType: 'File',
+                    baseType: 'CONTENT'
+                });
             });
 
             it('should hide drop zone on palette drop', () => {
@@ -1355,8 +1359,11 @@ describe('EditEmaEditorComponent', () => {
 
                 let dropZone = spectator.query(EmaPageDropzoneComponent);
 
+                expect(dropZone.item).toEqual({
+                    contentType: 'File',
+                    baseType: 'CONTENT'
+                });
                 expect(dropZone.rows).toBe(BOUNDS_MOCK);
-                expect(dropZone.contentType).toBe('File');
 
                 spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragEnd', {});
                 spectator.detectComponentChanges();

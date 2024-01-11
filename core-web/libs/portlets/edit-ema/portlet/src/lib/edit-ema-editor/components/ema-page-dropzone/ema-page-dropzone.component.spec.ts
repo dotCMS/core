@@ -14,7 +14,7 @@ const ACTION_MOCK: ActionPayload = {
     container: {
         acceptTypes: 'file',
         identifier: '789',
-        maxContentlets: 2,
+        maxContentlets: 100,
         uuid: '2',
         contentletsId: ['123', '455']
     },
@@ -27,6 +27,11 @@ const ACTION_MOCK: ActionPayload = {
         }
     ],
     pageId: '123'
+};
+
+const ITEM_MOCK = {
+    contentType: 'file',
+    baseType: 'FILEASSET'
 };
 
 const getBoundsMock = (payload: ActionPayload): Row[] => {
@@ -91,7 +96,12 @@ describe('EmaPageDropzoneComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent();
+        spectator = createComponent({
+            props: {
+                rows: [],
+                item: ITEM_MOCK
+            }
+        });
         dotMessageService = spectator.inject(DotMessageService, true);
     });
 
@@ -161,8 +171,8 @@ describe('EmaPageDropzoneComponent', () => {
         it('should handle drop event correctly', () => {
             jest.spyOn(spectator.component.place, 'emit');
 
+            spectator.setInput('item', ITEM_MOCK);
             spectator.setInput('rows', BOUNDS_MOCK);
-            spectator.setInput('contentType', 'file');
             spectator.detectComponentChanges();
 
             spectator.triggerEventHandler('div[data-type="contentlet"]', 'drop', {
@@ -198,12 +208,61 @@ describe('EmaPageDropzoneComponent', () => {
             // Additional assertions as necessary
         });
 
+        it('should allow drag and drop when baseType is WIDGET', () => {
+            jest.spyOn(spectator.component.place, 'emit');
+
+            spectator.setInput('item', {
+                baseType: 'WIDGET',
+                contentType: 'NOT_ACCEPTED_CONTENT_TYPE'
+            });
+            spectator.setInput('rows', BOUNDS_MOCK);
+            spectator.detectComponentChanges();
+
+            spectator.triggerEventHandler('div[data-type="contentlet"]', 'drop', {
+                target: {
+                    clientY: 100,
+                    getBoundingClientRect: () => {
+                        return {
+                            top: 100,
+                            height: 100
+                        };
+                    },
+                    dataset: {
+                        payload: JSON.stringify(ACTION_MOCK)
+                    }
+                }
+            });
+
+            spectator.detectChanges();
+
+            const errorZone = spectator.query('.drop-zone_error');
+
+            // Check that the error message is not displayed
+            expect(errorZone).toBeFalsy();
+
+            // Assert that the pointerPosition is reset
+            expect(spectator.component.pointerPosition).toEqual({
+                left: '0',
+                width: '0',
+                opacity: '0',
+                top: '0'
+            });
+
+            expect(spectator.component.place.emit).toHaveBeenCalledWith({
+                ...ACTION_MOCK,
+                position: 'after'
+            });
+        });
+
         it('should not emit place event when the contentType is not accepted in the container', () => {
             const spyDotMessageSerivice = jest.spyOn(dotMessageService, 'get');
             jest.spyOn(spectator.component.place, 'emit');
 
+            spectator.setInput('item', {
+                ...ITEM_MOCK,
+                contentType: 'NOT_ACCEPTED_CONTENT_TYPE'
+            });
             spectator.setInput('rows', BOUNDS_MOCK);
-            spectator.setInput('contentType', 'NOT_ACCEPTED_CONTENT_TYPE');
             spectator.detectComponentChanges();
 
             spectator.triggerEventHandler('div.drop-zone_error', 'drop', {
@@ -231,8 +290,16 @@ describe('EmaPageDropzoneComponent', () => {
         it('should not emit place event when container is full', () => {
             const spyDotMessageSerivice = jest.spyOn(dotMessageService, 'get');
             jest.spyOn(spectator.component.place, 'emit');
-            spectator.setInput('rows', BOUNDS_MOCK);
-            spectator.setInput('contentType', 'file');
+            const NEW_BOUNDS_MOCK = getBoundsMock({
+                ...ACTION_MOCK,
+                container: {
+                    ...ACTION_MOCK.container,
+                    maxContentlets: 2
+                }
+            });
+
+            spectator.setInput('item', ITEM_MOCK);
+            spectator.setInput('rows', NEW_BOUNDS_MOCK);
             spectator.detectComponentChanges();
 
             spectator.triggerEventHandler('div.drop-zone_error', 'drop', {
@@ -270,7 +337,7 @@ describe('EmaPageDropzoneComponent', () => {
             );
         });
 
-        it('should show"one maximum content error when container is full and only allow one', () => {
+        it('should show one maximum content error when container is full and only allow one', () => {
             jest.spyOn(spectator.component.place, 'emit');
 
             const spyDotMessageSerivice = jest.spyOn(dotMessageService, 'get');
@@ -282,8 +349,8 @@ describe('EmaPageDropzoneComponent', () => {
                 }
             });
 
+            spectator.setInput('item', ITEM_MOCK);
             spectator.setInput('rows', NEW_BOUNDS_MOCK);
-            spectator.setInput('contentType', 'file');
             spectator.detectComponentChanges();
 
             spectator.triggerEventHandler('div.drop-zone_error', 'drop', {
@@ -322,8 +389,8 @@ describe('EmaPageDropzoneComponent', () => {
         });
 
         it('should set pointer on drag over', () => {
+            spectator.setInput('item', ITEM_MOCK);
             spectator.setInput('rows', BOUNDS_MOCK);
-            spectator.setInput('contentType', 'file');
             spectator.detectComponentChanges();
 
             const stopPropagationSpy = jest.fn();
