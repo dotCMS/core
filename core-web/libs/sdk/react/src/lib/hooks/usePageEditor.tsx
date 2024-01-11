@@ -94,7 +94,7 @@ function useEventMessageHandler({ reload = window.location.reload }: { reload: (
             }
         });
 
-        observer.current.observe(document.querySelectorAll['[data-dot="container"]'], { attributes: true, childList: true, subtree: true });
+        observer.current.observe(document.querySelectorAll['[data-dot="container"]'], { attributes: false, childList: true, subtree: false });
 
         return () => {
             if (observer.current) observer.current.disconnect();
