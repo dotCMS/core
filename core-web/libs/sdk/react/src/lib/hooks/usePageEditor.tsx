@@ -69,8 +69,37 @@ export const usePageEditor = (
 
 function useEventMessageHandler({ reload = window.location.reload }: { reload: () => void }) {
     const rows = useRef<HTMLDivElement[]>([]);
+    const observer = useRef<MutationObserver | null>(null);
 
     const [isInsideEditor, setIsInsideEditor] = useState(false);
+
+    useEffect(() => {
+        observer.current = new MutationObserver((mutationsList) => {
+            for (const mutation of mutationsList) {
+                if (mutation.type === 'childList') {
+                    console.log('A child node has been added or removed.')
+                    const contentletAdded = Array.from(mutation.addedNodes)
+                        .filter((node) => (node as HTMLDivElement).dataset.dot === 'contentlet')
+
+
+                    const contentletRemoved = Array.from(mutation.removedNodes)
+                        .filter((node) => (node as HTMLDivElement).dataset.dot === 'contentlet')
+
+                    if (contentletAdded.length || contentletRemoved.length) {
+                        postMessageToEditor({
+                            action: CUSTOMER_ACTIONS.CONTENT_CHANGE
+                        });
+                    }
+                }
+            }
+        });
+
+        observer.current.observe(document.querySelectorAll['[data-dot="container"]'], { attributes: true, childList: true, subtree: true });
+
+        return () => {
+            if (observer.current) observer.current.disconnect();
+        };
+    }, []);
 
     useEffect(() => {
         // If the page is not inside an iframe we do nothing.
@@ -106,6 +135,7 @@ function useEventMessageHandler({ reload = window.location.reload }: { reload: (
 
                 case 'ema-reload-page': {
                     reload();
+                    console.log('reload');
 
                     break;
                 }

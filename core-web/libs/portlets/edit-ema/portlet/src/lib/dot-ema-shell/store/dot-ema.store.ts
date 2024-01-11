@@ -180,7 +180,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     tapResponse(
                         () => {
                             payload.whenSaved?.();
-                            this.updateEditorState(EDITOR_STATE.LOADED);
                         },
                         (e) => {
                             console.error(e);

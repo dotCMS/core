@@ -18,6 +18,8 @@ import { ActivatedRoute, Params, Router } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { ProgressBarModule } from 'primeng/progressbar';
+
 
 import { takeUntil } from 'rxjs/operators';
 
@@ -94,7 +96,8 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
         EmaFormSelectorComponent,
         DotDeviceSelectorSeoComponent,
         DotEmaDeviceDisplayComponent,
-        DotEmaBookmarksComponent
+        DotEmaBookmarksComponent,
+        ProgressBarModule
     ]
 })
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
@@ -104,7 +107,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     personaSelector!: EditEmaPersonaSelectorComponent;
 
     private readonly router = inject(Router);
-    private readonly activatedRoute = inject(ActivatedRoute);
     private readonly store = inject(EditEmaStore);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
@@ -543,7 +545,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         };
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
-            [CUSTOMER_ACTIONS.SET_URL]: () => {
+            [CUSTOMER_ACTIONS.CONTENT_CHANGE]: () => {
+                this.store.updateEditorState(EDITOR_STATE.LOADED);
+            },
+
+            [CUSTOMER_ACTIONS.SET_URL]: () => {                
                 const payload = <SetUrlPayload>data.payload;
 
                 this.updateQueryParams({
