@@ -17,6 +17,7 @@ import com.liferay.portal.model.User;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -111,10 +112,10 @@ public class AnnouncementsHelperIntegrationTest {
      * Generate a JsonNode with n contentlets
      * @param n
      * @param lang
-     * @return
+     * @return JsonNode
      * @throws JsonProcessingException
      */
-    public  JsonNode generateJson(int n, Language lang) throws JsonProcessingException {
+    public  JsonNode generateJson(final int n, final Language lang) throws JsonProcessingException {
 
         ObjectMapper objectMapper = new ObjectMapper();
         ArrayNode contentletsArray = objectMapper.createArrayNode();
@@ -164,6 +165,34 @@ public class AnnouncementsHelperIntegrationTest {
         mainObject.set("contentlets", contentletsArray);
 
         return objectMapper.convertValue(mainObject, JsonNode.class);
+    }
+
+    /**
+     * Given scenario: We're testing the cache using a TTL of 10 seconds
+     * Expected result: We test that the cache has expired after 20 seconds and no longer contains any elements
+     */
+    @Test
+    public void testAnnouncementCache() throws JsonProcessingException, InterruptedException {
+        final Language language = new LanguageDataGen().nextPersisted();
+        //Create a cache
+        AnnouncementsCacheImpl cache = new AnnouncementsCacheImpl();
+        //Seed the cache
+        RemoteAnnouncementsLoaderImpl loader = new RemoteAnnouncementsLoaderImpl();
+        final JsonNode jsonNode = generateJson(100, language);
+        final List<Announcement> announcements = loader.toAnnouncements(jsonNode);
+        //Here we are using a TTL of 10 seconds
+        cache.put(language, announcements, 10);
+        //Get the cache and verify that it contains 100 elements
+        final List<Announcement> cached = cache.get(language);
+        Assert.assertNotNull(cached);
+        Assert.assertEquals(100, cached.size());
+        //Wait for the cache to expire sleeping for 11 seconds
+        Thread.sleep(TimeUnit.SECONDS.toMillis(11));
+        //Get the cache again
+        final List<Announcement> cached2 = cache.get(language);
+        Assert.assertNotNull(cached2);
+        //Verify that the cache is empty
+        Assert.assertEquals(0, cached2.size());
     }
 
 }

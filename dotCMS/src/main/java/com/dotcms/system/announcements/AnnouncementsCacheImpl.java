@@ -7,6 +7,7 @@ import com.dotcms.cache.Expirable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
+import com.google.common.annotations.VisibleForTesting;
 import io.vavr.Lazy;
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -36,7 +37,12 @@ public class AnnouncementsCacheImpl implements AnnouncementsCache {
 
     @Override
     public void put(final Language language, final List<Announcement> announcements) {
-        systemCache.put(hashKey(language), new CacheEntryImpl(announcements));
+        this.put(language, announcements, ANNOUNCEMENTS_TTL.get());
+    }
+
+    @VisibleForTesting
+    public void put(final Language language, final List<Announcement> announcements , final long ttl) {
+        systemCache.put(hashKey(language), new CacheEntryImpl(announcements,ttl));
     }
 
     @SuppressWarnings("unchecked")
@@ -58,11 +64,15 @@ public class AnnouncementsCacheImpl implements AnnouncementsCache {
     private static class CacheEntryImpl implements Expirable, Serializable {
         private static final long serialVersionUID = 1L;
 
+        private final long ttl;
+
         private final LocalDateTime since;
         private final List<Announcement> announcements;
 
-        public CacheEntryImpl(List<Announcement> announcements) {
+
+        CacheEntryImpl(final List<Announcement> announcements, final long ttl) {
             this.announcements = announcements;
+            this.ttl = ttl;
             this.since = LocalDateTime.now();
         }
 
@@ -71,7 +81,7 @@ public class AnnouncementsCacheImpl implements AnnouncementsCache {
         }
 
         public boolean isExpired() {
-            return LocalDateTime.now().isAfter(since.plus(ANNOUNCEMENTS_TTL.get(), SECONDS));
+            return LocalDateTime.now().isAfter(since.plus(ttl, SECONDS));
         }
     }
 }

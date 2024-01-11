@@ -12,7 +12,7 @@ import java.util.List;
 public interface AnnouncementsHelper {
 
     Lazy<Integer> ANNOUNCEMENTS_LIMIT =
-            Lazy.of(() -> Config.getIntProperty("ANNOUNCEMENTS_LIMIT", 10));
+            Lazy.of(() -> Config.getIntProperty("ANNOUNCEMENTS_LIMIT", 5));
 
 
     List<Announcement> getAnnouncements(String languageIdOrCode, boolean refreshCache,

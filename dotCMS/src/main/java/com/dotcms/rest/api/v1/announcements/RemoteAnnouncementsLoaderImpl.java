@@ -112,7 +112,7 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
         try {
             language = languageAPI.getLanguage(languageIdOrCode);
         } catch (Exception e) {
-            Logger.error(AnnouncementsHelperImpl.class, String.format(" failed to get lang [%s] with message: [%s] fallback to default language", languageIdOrCode, e.getMessage()));
+            Logger.debug(AnnouncementsHelperImpl.class, String.format(" failed to get lang [%s] with message: [%s] fallback to default language", languageIdOrCode, e.getMessage()));
             language = languageAPI.getDefaultLanguage();
         }
         return language;
