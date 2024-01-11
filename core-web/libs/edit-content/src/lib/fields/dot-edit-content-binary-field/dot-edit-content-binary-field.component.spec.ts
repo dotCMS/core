@@ -122,11 +122,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
     it('should emit temp file', () => {
         const spyEmit = jest.spyOn(spectator.component.valueUpdated, 'emit');
         spectator.detectChanges();
-        store.setFile({
-            id: TEMP_FILE_MOCK.id,
-            titleImage: '',
-            ...TEMP_FILE_MOCK.metadata
-        });
+        store.setTempFile(TEMP_FILE_MOCK);
         expect(spyEmit).toHaveBeenCalledWith(TEMP_FILE_MOCK.id);
     });
 
@@ -216,11 +212,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
     describe('Preview', () => {
         beforeEach(async () => {
             store.setStatus(BinaryFieldStatus.PREVIEW);
-            store.setFile({
-                id: TEMP_FILE_MOCK.id,
-                titleImage: '',
-                ...TEMP_FILE_MOCK.metadata
-            });
+            store.setTempFile(TEMP_FILE_MOCK);
             spectator.detectChanges();
             await spectator.fixture.whenStable();
         });
@@ -309,11 +301,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
         });
 
         it('should show preview when status is PREVIEW', async () => {
-            store.setFile({
-                id: TEMP_FILE_MOCK.id,
-                titleImage: '',
-                ...TEMP_FILE_MOCK.metadata
-            });
+            store.setTempFile(TEMP_FILE_MOCK);
             spectator.detectChanges();
 
             await spectator.fixture.whenStable();
@@ -380,7 +368,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 spectator.detectChanges();
                 expect(spy).toHaveBeenCalledWith({
                     ...mockFileAsset,
-                    variable: FIELD.variable
+                    fieldVariable: FIELD.variable
                 });
             });
         });
@@ -402,7 +390,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 spectator.detectChanges();
                 expect(spy).toHaveBeenCalledWith({
                     ...mockFileAsset,
-                    variable: FIELD.variable
+                    fieldVariable: FIELD.variable
                 });
             });
         });

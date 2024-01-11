@@ -180,7 +180,6 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
                     const metadata = metaData || contentlet[`${fieldVariable}MetaData`];
                     const { contentType: mimeType, editableAsText } = metadata || {};
                     const contentURL = fileAsset || contentlet[fieldVariable];
-
                     const obs$ = editableAsText ? this.getFileContent(contentURL) : of('');
 
                     return obs$.pipe(

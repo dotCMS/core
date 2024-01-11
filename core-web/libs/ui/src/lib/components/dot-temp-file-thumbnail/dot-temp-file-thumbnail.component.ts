@@ -47,6 +47,10 @@ export class DotTempFileThumbnailComponent implements OnInit {
     icon: string;
     type: CONTENT_THUMBNAIL_TYPE;
 
+    get name(): string {
+        return this.metadata.name;
+    }
+
     get metadata(): DotFileMetadata {
         return this.tempFile.metadata;
     }
@@ -58,6 +62,7 @@ export class DotTempFileThumbnailComponent implements OnInit {
     get fileType(): string {
         return this.metadata.contentType?.split('/')[0];
     }
+
     ngOnInit(): void {
         this.icon = ICON_MAP[this.extension] || this.DEFAULT_ICON;
         this.type = this.getThumbnailType();

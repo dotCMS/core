@@ -8,7 +8,8 @@
             <ng-container *ngIf="tempFile; else contentletThumbnail">
                 <dot-temp-file-thumbnail
                     [tempFile]="tempFile"
-                    [iconSize]="'48px'"></dot-temp-file-thumbnail>
+                    [iconSize]="'48px'"
+                    data-testId="temp-file-thumbnail"></dot-temp-file-thumbnail>
             </ng-container>
 
             <ng-template #contentletThumbnail>
@@ -16,7 +17,8 @@
                     [iconSize]="'48px'"
                     [cover]="false"
                     [contentlet]="contentlet"
-                    [playableVideo]="true">
+                    [playableVideo]="true"
+                    data-testId="contentlet-thumbnail">
                 </dot-contentlet-thumbnail>
             </ng-template>
         </div>

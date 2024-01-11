@@ -26,10 +26,6 @@ export enum EDITABLE_FILE {
     unknown = 'unknown'
 }
 
-type EDITABLE_FILE_FUNCTION_MAP = {
-    [key in EDITABLE_FILE]: () => boolean;
-};
-
 @Component({
     selector: 'dot-binary-field-preview',
     standalone: true,
@@ -56,6 +52,8 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
     @Output() editFile: EventEmitter<void> = new EventEmitter();
     @Output() removeFile: EventEmitter<void> = new EventEmitter();
 
+    isEditable = false;
+
     get content(): string {
         return this.tempFile?.content || this.contentlet?.content;
     }
@@ -65,18 +63,10 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
     }
 
     get contentletMetadata(): DotFileMetadata {
-        const { metaData, fieldVariable } = this.contentlet;
+        const { metaData = '', fieldVariable = '' } = this.contentlet;
 
         return metaData || this.contentlet[`${fieldVariable}MetaData`];
     }
-
-    private readonly EDITABLE_FILE_FUNCTION_MAP: EDITABLE_FILE_FUNCTION_MAP = {
-        [EDITABLE_FILE.image]: () => this.editableImage,
-        [EDITABLE_FILE.text]: () => !!this.content,
-        [EDITABLE_FILE.unknown]: () => !!this.content
-    };
-    private contenttype: EDITABLE_FILE;
-    isEditable = false;
 
     get objectFit(): string {
         if (this.metadata?.height > this.metadata?.width) {
@@ -97,18 +87,17 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
      * @memberof DotBinaryFieldPreviewComponent
      */
     onEdit(): void {
-        if (this.contenttype === EDITABLE_FILE.image) {
-            this.editImage.emit();
+        if (this.metadata.editableAsText) {
+            this.editFile.emit();
 
             return;
         }
 
-        this.editFile.emit();
+        this.editImage.emit();
     }
 
     private setIsEditable() {
-        const type = this.metadata.contentType?.split('/')[0];
-        this.contenttype = EDITABLE_FILE[type] || EDITABLE_FILE.unknown;
-        this.isEditable = this.EDITABLE_FILE_FUNCTION_MAP[this.contenttype]();
+        this.isEditable =
+            this.metadata.editableAsText || (this.metadata.isImage && this.editableImage);
     }
 }
