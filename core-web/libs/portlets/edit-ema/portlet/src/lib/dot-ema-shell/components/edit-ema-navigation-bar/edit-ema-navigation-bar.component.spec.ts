@@ -3,9 +3,10 @@ import { byTestId, byText, createRoutingFactory, SpectatorRouting } from '@ngnea
 
 import { By } from '@angular/platform-browser';
 
-import { EditEmaNavigationBarComponent } from './edit-ema-navigation-bar.component';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { EditEmaNavigationBarComponent } from './edit-ema-navigation-bar.component';
 
 const messages = {
     'editema.editor.navbar.content': 'Content',

@@ -2,8 +2,9 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
-import { NavigationBarItem } from '../../../shared/models';
 import { DotMessagePipe } from '@dotcms/ui';
+
+import { NavigationBarItem } from '../../../shared/models';
 
 @Component({
     selector: 'dot-edit-ema-navigation-bar',
