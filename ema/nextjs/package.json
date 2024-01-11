@@ -9,8 +9,8 @@
         "lint": "next lint"
     },
     "dependencies": {
-        "@dotcms/client": "latest",
-        "@dotcms/nextjs": "latest",
+        "@dotcms/client": "0.0.1-alpha.2",
+        "@dotcms/nextjs": "0.0.1-alpha.2",
         "next": "14.0.4",
         "react": "^18",
         "react-dom": "^18"
