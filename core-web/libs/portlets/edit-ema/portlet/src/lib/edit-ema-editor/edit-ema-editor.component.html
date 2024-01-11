@@ -93,9 +93,9 @@
                 (addContent)="addContentlet($event)"
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
-                *ngIf="!!rows.length && !!dragItemType && !currentDevice"
+                *ngIf="!!rows.length && !!dragItem.contentType && !currentDevice"
                 [rows]="rows"
-                [contentType]="dragItemType"
+                [item]="dragItem"
                 (place)="onPlaceItem($event)"
                 data-testId="dropzone" />
         </div>

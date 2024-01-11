@@ -12,12 +12,14 @@ export const CONTENT_TYPE_MOCK = [
     {
         name: 'Test Content Type',
         variable: 'Test1',
-        icon: 'icon'
+        icon: 'icon',
+        baseType: 'CONTENT'
     },
     {
         name: 'Test Content Type 2',
         variable: 'Test2',
-        icon: 'icon'
+        icon: 'icon',
+        baseType: 'CONTENT'
     }
 ];
 
@@ -54,12 +56,14 @@ describe('EditEmaPaletteContentTypeComponent', () => {
         spectator.triggerEventHandler('[data-testId="content-type-0"]', 'dragstart', {
             variable: 'test',
             name: 'Test',
-            contentType: 'test'
+            contentType: 'test',
+            baseType: 'CONTENT'
         });
         expect(dragSpy).toHaveBeenCalledWith({
             variable: 'test',
             name: 'Test',
-            contentType: 'test'
+            contentType: 'test',
+            baseType: 'CONTENT'
         });
     });
 
@@ -69,12 +73,14 @@ describe('EditEmaPaletteContentTypeComponent', () => {
         spectator.triggerEventHandler('[data-testId="content-type-0"]', 'dragend', {
             variable: 'test',
             name: 'Test',
-            contentType: 'test'
+            contentType: 'test',
+            baseType: 'CONTENT'
         });
         expect(dragSpy).toHaveBeenCalledWith({
             variable: 'test',
             name: 'Test',
-            contentType: 'test'
+            contentType: 'test',
+            baseType: 'CONTENT'
         });
     });
 
@@ -94,7 +100,8 @@ describe('EditEmaPaletteContentTypeComponent', () => {
         expect(data).toEqual({
             variable: 'Test1',
             name: 'Test Content Type',
-            contentType: 'Test1'
+            contentType: 'Test1',
+            baseType: 'CONTENT'
         });
     });
 
