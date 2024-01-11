@@ -5,8 +5,8 @@ import { RouterModule } from '@angular/router';
 
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 import { DotSafeUrlPipe } from '@components/_common/iframe/pipes/dot-safe-url/dot-safe-url.pipe';
-import { NotLicensedModule } from '@components/not-licensed/not-licensed.module';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotNotLicenseComponent } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotLoadingIndicatorModule } from './dot-loading-indicator/dot-loading-indicator.module';
@@ -27,7 +27,7 @@ import { SearchableDropDownModule } from '../searchable-dropdown/searchable-drop
         DotLoadingIndicatorModule,
         RouterModule,
         DotOverlayMaskModule,
-        NotLicensedModule,
+        DotNotLicenseComponent,
         DotPipesModule,
         DotSafeUrlPipe
     ],

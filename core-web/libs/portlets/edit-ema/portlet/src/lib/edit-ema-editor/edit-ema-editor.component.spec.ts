@@ -61,12 +61,8 @@ const messagesMock = {
     'dot.common.dialog.reject': 'Reject'
 };
 
-describe('EditEmaEditorComponent', () => {
-    let spectator: SpectatorRouting<EditEmaEditorComponent>;
-    let store: EditEmaStore;
-    let confirmationService: ConfirmationService;
-
-    const createComponent = createRoutingFactory({
+const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
+    createRoutingFactory({
         component: EditEmaEditorComponent,
         imports: [RouterTestingModule, HttpClientTestingModule],
         detectChanges: false,
@@ -96,6 +92,21 @@ describe('EditEmaEditorComponent', () => {
                     }
                 }
             },
+
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService(messagesMock)
+            },
+            {
+                provide: WINDOW,
+                useValue: window
+            },
+            {
+                provide: DotPersonalizeService,
+                useValue: new DotPersonalizeServiceMock()
+            }
+        ],
+        providers: [
             {
                 provide: DotPageApiService,
                 useValue: {
@@ -105,6 +116,7 @@ describe('EditEmaEditorComponent', () => {
                                 page: {
                                     title: 'hello world',
                                     identifier: '123',
+                                    ...permissions,
                                     url: 'page-one'
                                 },
                                 site: {
@@ -125,6 +137,7 @@ describe('EditEmaEditorComponent', () => {
                                 page: {
                                     title: 'hello world',
                                     identifier: '123',
+                                    ...permissions,
                                     url: 'page-one'
                                 },
                                 site: {
@@ -185,8 +198,14 @@ describe('EditEmaEditorComponent', () => {
             mockProvider(DotContentTypeService)
         ]
     });
+describe('EditEmaEditorComponent', () => {
+    describe('with queryParams and permission', () => {
+        let spectator: SpectatorRouting<EditEmaEditorComponent>;
+        let store: EditEmaStore;
+        let confirmationService: ConfirmationService;
 
-    describe('with queryParams', () => {
+        const createComponent = createRouting({ canEdit: true, canRead: true });
+
         beforeEach(() => {
             spectator = createComponent({
                 queryParams: { language_id: 1, url: 'page-one' },
@@ -1298,6 +1317,45 @@ describe('EditEmaEditorComponent', () => {
                 dropZone = spectator.query(EmaPageDropzoneComponent);
                 expect(dropZone).toBeNull();
             });
+        });
+    });
+
+    describe('without edit permission', () => {
+        let spectator: SpectatorRouting<EditEmaEditorComponent>;
+        let store: EditEmaStore;
+
+        const createComponent = createRouting({ canEdit: false, canRead: true });
+        beforeEach(() => {
+            spectator = createComponent({
+                queryParams: { language_id: 1, url: 'page-one' }
+            });
+
+            store = spectator.inject(EditEmaStore, true);
+
+            store.load({
+                url: 'index',
+                language_id: '1',
+                clientHost: '',
+                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+            });
+        });
+
+        it('should not render components', () => {
+            spectator.detectChanges();
+            expect(spectator.query(EmaContentletToolsComponent)).toBeNull();
+            expect(spectator.query(EditEmaPaletteComponent)).toBeNull();
+        });
+
+        it('should render a "Dont have permission" message', () => {
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('cant-edit-message'))).toBeDefined();
+        });
+
+        it('should iframe wrapper to be expanded', () => {
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('editor-content')).classList).toContain(
+                'editor-content--expanded'
+            );
         });
     });
 });
