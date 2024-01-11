@@ -13,10 +13,7 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
@@ -62,14 +59,10 @@ import com.dotcms.business.WrapInTransaction;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-import java.util.Map;
-import java.util.Optional;
+
 import java.util.stream.Collectors;
 
 import org.apache.http.HttpStatus;
@@ -1130,5 +1123,35 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         final VanityUrl vanityURLCheckout = APILocator.getVanityUrlAPI().fromContentlet(checkout);
         assertEquals(textOver255Chars,vanityURLCheckout.getURI());
         assertEquals(textOver255Chars,vanityURLCheckout.getForwardTo());
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#copyContentlet(Contentlet, User, boolean)}
+     * Given Scenario:
+     * Unable to copy a contentlet with Host/Folder field. Error is thrown when the field name is "Host"
+     * ExpectedResult: Copy action should execute successfully without null-pointer error.
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void test_copy_contentlet() throws DotDataException, DotSecurityException {
+        final List<Field> fields = new ArrayList<>();
+        fields.add(new FieldDataGen().name("Title").velocityVarName("title").next());
+        fields.add(new FieldDataGen().type(HostFolderField.class)
+                .name(Host.HOST_VELOCITY_VAR_NAME)
+                .velocityVarName(Host.HOST_VELOCITY_VAR_NAME)
+                .next());
+        final ContentType cType = new ContentTypeDataGen()
+                .host(APILocator.systemHost())
+                .fields(fields)
+                .nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(cType.id())
+                .host(APILocator.systemHost())
+                .nextPersisted();
+        final Contentlet respCont =  contentletAPI.copyContentlet(contentlet, user, false);
+
+        assertNotEquals(respCont.getIdentifier(), contentlet.getIdentifier());
+        assertEquals(respCont.getHost(), APILocator.systemHost().getIdentifier());
+
     }
 }
