@@ -1,19 +1,5 @@
-<div
-    class="selected-device"
-    [style]="{
-        width: currentDevice.cssWidth + 'px'
-    }"
-    data-testId="selected-device">
-    <div class="selected-device__device">
-        <i *ngIf="!!currentDevice.icon" [class]="currentDevice.icon" data-testId="device-icon"></i>
-        <span class="device__name" data-testId="device-name"
-            >{{ currentDevice.name }} {{ currentDevice.cssWidth }} x
-            {{ currentDevice.cssHeight }}</span
-        >
-    </div>
-    <p-button
-        (onClick)="handleDeviceReset()"
-        icon="pi pi-times"
-        styleClass="p-button-text p-button-sm p-button-rounded"
-        data-testId="reset-device" />
-</div>
+<i *ngIf="!!currentDevice.icon" [class]="currentDevice.icon" data-testId="device-icon"></i>
+<span class="device__name" data-testId="device-name">
+    {{ currentDevice.name }} {{ currentDevice.cssWidth }} x
+    {{ currentDevice.cssHeight }}
+</span>
