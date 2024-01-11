@@ -1,15 +1,15 @@
-<div class="dot-language-selector h-full flex-auto flex align-items-center gap-3">
+<div class="dot-language-selector h-full flex-auto flex align-items-center gap-2">
     <span class="icon-lg"><i class="pi pi-globe"></i></span>
-    <div class="device-selector__field flex-grow-1 flex">
+    <div class="language-selector__field flex-grow-1 flex">
         @if (!readonly){
         <p-dropdown
             class="p-dropdown-sm w-full"
             [(ngModel)]="value"
-            [disabled]="disabled"
+            [disabled]="disabled || languagesList().length === 0"
             [options]="languagesList()"
-            (onChange)="change($event.value)"
+            (onChange)="selectedItem($event.value)"
+            data-testId="language-selector"
             dataKey="id"
-            lazy="true"
             optionLabel="language" />
         }@else{
         <div class="h-full w-full flex align-items-center gap-3">
