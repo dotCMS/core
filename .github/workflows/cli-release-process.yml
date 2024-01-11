@@ -9,10 +9,6 @@ on:
         description: 'Skip tests'
         default: true
         required: false
-      packageType:
-        description: 'Package type'
-        default: 'uber-jar'
-        required: false
 
 defaults:
   run:
@@ -23,6 +19,8 @@ env:
   JAVA_DISTRO: temurin
   NEXT_VERSION: '1.0.0-SNAPSHOT'
   GRAALVM_VERSION: '22.1.0'
+  GITHUB_USER: 'victoralfaro-dotcms'
+  PACKAGE_TYPE: 'uber-jar'
 
 jobs:
   precheck:
@@ -76,7 +74,7 @@ jobs:
           ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$RELEASE_VERSION
 
           git commit --allow-empty -a -m "🏁 Releasing version $RELEASE_VERSION"
-          git push origin "$HEAD"
+          git push https://${{ env.GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotCMS/core.git
 
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
           echo "NEXT_VERSION=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
@@ -89,7 +87,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ macos-13-xlarge, macOS-latest,ubuntu-latest ] #
+        os: [ macos-13-xlarge, macOS-latest, ubuntu-latest ] #
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -125,7 +123,7 @@ jobs:
           echo "ARCH=$ARCH"
           echo "INSTALLATION_PATH=$INSTALLATION_PATH"
           
-          wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${GRAALVM_VERSION}/graalvm-ce-java11-${PLATFORM}-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
+          wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${{ env.GRAALVM_VERSION }}/graalvm-ce-java11-${PLATFORM}-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
           sudo mkdir -p $INSTALLATION_PATH
           tar -xzf graalvm-ce-java11-${PLATFORM}-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz 
           sudo mv graalvm-ce-java11-${{ env.GRAALVM_VERSION }} $INSTALLATION_PATH
@@ -174,7 +172,7 @@ jobs:
       - name: 'Build uber-jar'
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw package -Dquarkus.package.type=${{ github.event.inputs.packageType }} -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
+          ./mvnw package -Dquarkus.package.type=${{ env.PACKAGE_TYPE }} -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
 
       - name: 'Build Native Image'
         working-directory: ${{ github.workspace }}
@@ -265,5 +263,5 @@ jobs:
           ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$NEXT_VERSION
 
           git commit --allow-empty -a -m "⬆️  Next version $NEXT_VERSION"
-          git push origin "$HEAD"
-
+          git push https://${{ env.GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotCMS/core.git
+#          git push origin "$HEAD"
