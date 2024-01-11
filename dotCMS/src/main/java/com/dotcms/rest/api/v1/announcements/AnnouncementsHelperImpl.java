@@ -2,8 +2,8 @@ package com.dotcms.rest.api.v1.announcements;
 
 import com.dotcms.system.announcements.Announcement;
 import com.dotcms.system.announcements.AnnouncementsCache;
+import com.dotcms.system.announcements.AnnouncementsCacheImpl;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
@@ -23,7 +23,7 @@ public class AnnouncementsHelperImpl implements AnnouncementsHelper{
 
 
     public AnnouncementsHelperImpl() {
-        this(APILocator.getLanguageAPI(), new RemoteAnnouncementsLoaderImpl(), CacheLocator.getAnnouncementsCache());
+        this(APILocator.getLanguageAPI(), new RemoteAnnouncementsLoaderImpl(), new AnnouncementsCacheImpl());
     }
 
     /**
@@ -53,7 +53,7 @@ public class AnnouncementsHelperImpl implements AnnouncementsHelper{
                 language = languageAPI.getLanguage(languageIdOrCode);
             }
         } catch (Exception e) {
-            Logger.error(AnnouncementsHelperImpl.class, String.format(" failed to get lang [%s] with message: [%s] fallback to default language", languageIdOrCode, e.getMessage()));
+            Logger.debug(AnnouncementsHelperImpl.class, String.format(" failed to get lang [%s] with message: [%s] fallback to default language", languageIdOrCode, e.getMessage()));
             language = languageAPI.getDefaultLanguage();
         }
         return language;
@@ -82,9 +82,11 @@ public class AnnouncementsHelperImpl implements AnnouncementsHelper{
             }
         }
         final List<Announcement> announcements = loader.loadAnnouncements(language);
-        announcementsCache.put(language, announcements);
-        return getSubList(limitValue, announcements);
-
+        if(!announcements.isEmpty()){
+            announcementsCache.put(language, announcements);
+            return getSubList(limitValue, announcements);
+        }
+        return List.of();
     }
 
 

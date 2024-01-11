@@ -2,6 +2,7 @@ package com.dotcms.system.announcements;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.time.Instant;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
@@ -21,11 +22,14 @@ public interface AbstractAnnouncement {
 
     String title();
 
+    @Nullable
+    String description();
+
     String url();
 
-    Instant date();
+    Instant announcementDate();
 
-    String  dateAsISO8601();
+    String  announcementDateAsISO8601();
 
     Instant modDate();
 

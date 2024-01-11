@@ -1,55 +1,77 @@
 package com.dotcms.system.announcements;
 
+import static java.time.temporal.ChronoUnit.SECONDS;
+
+import com.dotcms.business.SystemCache;
+import com.dotcms.cache.Expirable;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Config;
+import io.vavr.Lazy;
+import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class AnnouncementsCacheImpl implements AnnouncementsCache {
 
-    static final String ANNOUNCEMENTS_CACHE = "AnnouncementsCache";
-    public static final String ANNOUNCEMENTS = "announcements::%s";
+    static final Lazy<Integer> ANNOUNCEMENTS_TTL =
+            Lazy.of(() -> Config.getIntProperty("ANNOUNCEMENTS_TTL", 3600 ));
 
-    private final DotCacheAdministrator cache;
+    static final String ANNOUNCEMENTS = "announcements::%s";
+    private final SystemCache systemCache;
 
     public AnnouncementsCacheImpl() {
         super();
-        cache = CacheLocator.getCacheAdministrator();
-    }
-
-    @Override
-    public String getPrimaryGroup() {
-        return ANNOUNCEMENTS_CACHE;
-    }
-
-    @Override
-    public String[] getGroups() {
-        return new String[]{ANNOUNCEMENTS_CACHE};
+        this.systemCache = CacheLocator.getSystemCache();
     }
 
     @Override
     public void clearCache() {
-        for (final String group : getGroups()) {
-            cache.flushGroup(group);
-        }
+        systemCache.clearCache();
+    }
+
+    private String hashKey(Language language) {
+        return String.format(ANNOUNCEMENTS, language.getIsoCode());
     }
 
     @Override
-    public void put(Language language, List<Announcement> announcements) {
-        cache.put(
-                String.format(ANNOUNCEMENTS, language.getIsoCode()),
-                announcements, ANNOUNCEMENTS_CACHE);
+    public void put(final Language language, final List<Announcement> announcements) {
+        systemCache.put(hashKey(language), new CacheEntryImpl(announcements));
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<Announcement> get(Language language) {
-         final Object object = cache.getNoThrow(
-                String.format(ANNOUNCEMENTS, language.getIsoCode()),
-                ANNOUNCEMENTS_CACHE);
-         if(object instanceof List){
-             return (List<Announcement>) object;
-         }
-         return List.of();
+    public List<Announcement> get(final Language language) {
+        final String key = String.format(ANNOUNCEMENTS, language.getIsoCode());
+        final Object object = systemCache.get(key);
+        if (object instanceof Expirable) {
+            final CacheEntryImpl entry = (CacheEntryImpl) object;
+            if (entry.isExpired()) {
+                systemCache.remove(key);
+                return List.of();
+            }
+            return entry.getAnnouncements();
+        }
+        return List.of();
+    }
+
+    private static class CacheEntryImpl implements Expirable, Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private final LocalDateTime since;
+        private final List<Announcement> announcements;
+
+        public CacheEntryImpl(List<Announcement> announcements) {
+            this.announcements = announcements;
+            this.since = LocalDateTime.now();
+        }
+
+        public List<Announcement> getAnnouncements() {
+            return  announcements == null ? List.of() : announcements;
+        }
+
+        public boolean isExpired() {
+            return LocalDateTime.now().isAfter(since.plus(ANNOUNCEMENTS_TTL.get(), SECONDS));
+        }
     }
 }

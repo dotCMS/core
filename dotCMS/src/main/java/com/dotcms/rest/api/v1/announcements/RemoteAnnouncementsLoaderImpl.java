@@ -33,14 +33,14 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
 
     //The CT varN/ame used to retrieve the Announcements
     static final Lazy<String>DOT_ANNOUNCEMENT_CT =
-            Lazy.of(()-> Config.getStringProperty("DOT_ANNOUNCEMENT_CT", "dotAnnouncement"));
+            Lazy.of(()-> Config.getStringProperty("DOT_ANNOUNCEMENT_CT", "Announcement"));
 
     //This is the url to the dotCMS instance set to provide and feed all consumers with announcements
     static final  Lazy<String> ANNOUNCEMENTS_BASE_URL =
             Lazy.of(() -> Config.getStringProperty("ANNOUNCEMENTS_BASE_URL", "https://www.dotcms.com"));
 
     //The query pattern to retrieve the Announcements
-    static final String ANNOUNCEMENTS_QUERY_PATTERN = "%s/api/content/render/false/query/+contentType:%s +languageId:%d +deleted:false +live:true/orderBy/%s.date desc";
+    static final String ANNOUNCEMENTS_QUERY_PATTERN = "%s/api/content/render/false/query/+contentType:%s +languageId:%d +deleted:false +live:true/orderBy/%s.announcementDate desc";
 
     /**
      * Load the announcements from the remote dotCMS instance
@@ -71,7 +71,7 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
                 final JsonParser parser = factory.createParser(jsonString);
                 return mapper.readTree(parser);
             } else {
-                Logger.error(AnnouncementsHelperImpl.class, String.format(" failed to get announcements from [%s] with status: [%d] and  entity: [%s] ", url, response.getStatus(), response.getEntity()));
+                Logger.debug(AnnouncementsHelperImpl.class, String.format(" failed to get announcements from [%s] with status: [%d] and  entity: [%s] ", url, response.getStatus(), response.getEntity()));
                 throw new DotRuntimeException(String.format(" failed to get announcements from [%s] with status: [%d]", url, response.getStatus()));
             }
 
@@ -137,11 +137,12 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
             final String identifier = Try.of(()->node.get("identifier").asText()).getOrElse("unk");
             final String inode = Try.of(()->node.get("inode").asText()).getOrElse("unk");
             final String title = Try.of(()->node.get("title").asText()).getOrElse("unk");
-            final String dateString = Try.of(()->node.get("date").asText()).getOrElse("1970-01-01 00:00:00.0");
-            final String type = Try.of(()->node.get("type1").asText()).getOrElse("unk");
+            final String dateString = Try.of(()->node.get("announcementDate").asText()).getOrElse("1970-01-01 00:00:00.0");
+            final String type = Try.of(()->node.get("type1").asText()).getOrElse("Announcement");
             final String url = Try.of(()->node.get("url").asText()).getOrElse("unk");
-            final String langId = Try.of(() -> node.get("languageId").asText()).getOrElse("unk");
+            final String langId = Try.of(() -> node.get("languageId").asText()).getOrElse("1");
             final String modDateString = Try.of(()->node.get("modDate").asText()).getOrElse("1970-01-01 00:00:00.0");
+            final String description = Try.of(()->node.get("description").asText()).getOrElse("unk");
 
             final LocalDateTime date = LocalDateTime.parse(dateString, formatter);
             final LocalDateTime modDate = LocalDateTime.parse(modDateString, formatter);
@@ -154,14 +155,15 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
                             .identifier(identifier)
                             .inode(inode)
                             .title(title)
-                            .date(date.toInstant(java.time.ZoneOffset.UTC))
-                            .dateAsISO8601(date.toString())
+                            .announcementDate(date.toInstant(java.time.ZoneOffset.UTC))
+                            .announcementDateAsISO8601(date.toString())
                             .type(type)
                             .url(url)
                             .languageId(language.getId())
                             .languageCode(language.getIsoCode())
                             .modDate(modDate.toInstant(java.time.ZoneOffset.UTC))
                             .modDateAsISO8601(modDate.toString())
+                            .description(description)
                             .build()
             );
         });

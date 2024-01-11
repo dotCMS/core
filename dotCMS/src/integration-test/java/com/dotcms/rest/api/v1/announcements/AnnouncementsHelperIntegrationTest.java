@@ -121,15 +121,17 @@ public class AnnouncementsHelperIntegrationTest {
 
         for (int i = 0; i < n; i++) {
             String title = "Title " + (i + 1);
+            String desc = "Desc " + (i + 1);
             String url = "https://example.com/contentlet" + (i + 1);
             String date = simpleDateFormat.format(new Date());
 
             ObjectNode contentletObject = objectMapper.createObjectNode();
-            contentletObject.put("date", date);
+            contentletObject.put("announcementDate", date);
             contentletObject.put("hostName", "System Host");
             contentletObject.put("modDate", date); // Using the same date for modDate and publishDate for simplicity
             contentletObject.put("publishDate", date);
             contentletObject.put("title", title);
+            contentletObject.put("description", desc);
             contentletObject.put("baseType", "CONTENT");
             contentletObject.put("inode", java.util.UUID.randomUUID().toString());
             contentletObject.put("archived", false);

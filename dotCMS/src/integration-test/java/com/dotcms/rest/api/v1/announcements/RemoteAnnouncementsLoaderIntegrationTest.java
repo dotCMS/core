@@ -37,7 +37,7 @@ public class RemoteAnnouncementsLoaderIntegrationTest {
      */
     @Test
     public void testAnnouncementRemoteURL() throws JsonProcessingException {
-        String expected = "https://www.dotcms.com/api/content/render/false/query/+contentType:dotAnnouncement +languageId:1 +deleted:false +live:true/orderBy/dotAnnouncement.date desc";
+        String expected = "https://www.dotcms.com/api/content/render/false/query/+contentType:Announcement +languageId:1 +deleted:false +live:true/orderBy/Announcement.announcementDate desc";
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         final String builtURL = loader.buildURL(defaultLanguage);
         Assert.assertEquals(expected, builtURL);
@@ -64,7 +64,7 @@ public class RemoteAnnouncementsLoaderIntegrationTest {
     String jsonString = "{\n"
             + "   \"contentlets\":[\n"
             + "      {\n"
-            + "         \"date\":\"2024-01-30 00:00:00.0\",\n"
+            + "         \"announcementDate\":\"2024-01-30 00:00:00.0\",\n"
             + "         \"hostName\":\"System Host\",\n"
             + "         \"modDate\":\"2024-01-08 14:23:12.916\",\n"
             + "         \"publishDate\":\"2024-01-08 14:23:12.949\",\n"
