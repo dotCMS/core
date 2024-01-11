@@ -544,7 +544,6 @@ browse from the page internal links
     }
 
     private subscribeIframeActions(): void {
-        console.log('subscribeIframeActions');
         this.dotEditContentHtmlService.iframeActions$
             .pipe(takeUntil(this.destroy$))
             .subscribe((contentletEvent: DotIframeEditEvent) => {
