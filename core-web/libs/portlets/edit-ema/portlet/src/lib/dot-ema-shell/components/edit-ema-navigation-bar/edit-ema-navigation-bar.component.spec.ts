@@ -4,6 +4,18 @@ import { byTestId, byText, createRoutingFactory, SpectatorRouting } from '@ngnea
 import { By } from '@angular/platform-browser';
 
 import { EditEmaNavigationBarComponent } from './edit-ema-navigation-bar.component';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
+const messages = {
+    'editema.editor.navbar.content': 'Content',
+    'editema.editor.navbar.layout': 'Layout',
+    'editema.editor.navbar.rules': 'Rules',
+    'editema.editor.navbar.experiments': 'Experiments',
+    Action: 'Action'
+};
+
+const messageServiceMock = new MockDotMessageService(messages);
 
 describe('EditEmaNavigationBarComponent', () => {
     let spectator: SpectatorRouting<EditEmaNavigationBarComponent>;
@@ -12,6 +24,7 @@ describe('EditEmaNavigationBarComponent', () => {
     const createComponent = createRoutingFactory({
         component: EditEmaNavigationBarComponent,
         stubsEnabled: false,
+        providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
         routes: [
             {
                 path: 'content',
@@ -38,23 +51,23 @@ describe('EditEmaNavigationBarComponent', () => {
                 items: [
                     {
                         icon: 'pi-file',
-                        label: 'Content',
+                        label: 'editema.editor.navbar.content',
                         href: 'content'
                     },
                     {
                         icon: 'pi-table',
-                        label: 'Layout',
+                        label: 'editema.editor.navbar.layout',
                         href: 'layout',
                         isDisabled: true
                     },
                     {
                         icon: 'pi-sliders-h',
-                        label: 'Rules',
+                        label: 'editema.editor.navbar.rules',
                         href: 'rules'
                     },
                     {
                         iconURL: 'assets/images/experiments.svg',
-                        label: 'Experiments',
+                        label: 'editema.editor.navbar.experiments',
                         href: 'experiments'
                     },
                     {
