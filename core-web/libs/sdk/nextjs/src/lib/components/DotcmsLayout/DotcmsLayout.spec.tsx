@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import { ReactNode } from 'react';
+import { ElementRef, ReactNode } from 'react';
 
+import { RowProps } from '@dotcms/react';
 import { mockPageContext } from '@dotcms/react/mocks';
 
 import { DotcmsLayout } from './DotcmsLayout';
@@ -22,9 +23,11 @@ jest.mock('next/navigation', () => {
 jest.mock('@dotcms/react', () => {
     const { forwardRef } = jest.requireActual('react');
 
-    const MockRow = forwardRef((props, ref) => (
-        <div ref={ref} data-testid="mockRow" {...props}></div>
-    ));
+    const MockRow = forwardRef(
+        (props: RowProps, ref: ElementRef<React.ExoticComponent<unknown>>) => (
+            <div ref={ref} data-testid="mockRow" {...props}></div>
+        )
+    );
 
     const MockPageProvider = ({ children }: { children: ReactNode }) => (
         <div data-testid="mockPageProvider">{children}</div>
@@ -32,7 +35,12 @@ jest.mock('@dotcms/react', () => {
 
     return {
         Row: MockRow,
-        usePageEditor: jest.fn().mockReturnValue({ current: [] }),
+        usePageEditor: jest.fn().mockReturnValue({
+            rowsRef: {
+                current: []
+            },
+            isInsideEditor: true
+        }),
         PageProvider: MockPageProvider
     };
 });

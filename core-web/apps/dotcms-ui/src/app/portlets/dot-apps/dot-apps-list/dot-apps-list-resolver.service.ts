@@ -7,14 +7,14 @@ import { map, mergeMap, take } from 'rxjs/operators';
 
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotLicenseService } from '@dotcms/data-access';
-import { DotApps, DotAppsListResolverData } from '@dotcms/dotcms-models';
+import { DotApp, DotAppsListResolverData } from '@dotcms/dotcms-models';
 
 /**
  * Returns apps list from the system
  *
  * @export
  * @class DotAppsListResolver
- * @implements {Resolve<DotApps[]>}
+ * @implements {Resolve<DotApp[]>}
  */
 @Injectable()
 export class DotAppsListResolver implements Resolve<DotAppsListResolverData> {
@@ -33,7 +33,7 @@ export class DotAppsListResolver implements Resolve<DotAppsListResolverData> {
                 if (enterpriseLicense) {
                     return this.dotAppsService.get().pipe(
                         take(1),
-                        map((apps: DotApps[]) => {
+                        map((apps: DotApp[]) => {
                             return {
                                 isEnterpriseLicense: enterpriseLicense,
                                 apps: apps

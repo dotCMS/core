@@ -1,6 +1,6 @@
 {
     "name": "@dotcms/nextjs",
-    "version": "0.0.1",
+    "version": "0.0.1-alpha.1",
     "peerDependencies": {
         "next": "14.0.4",
         "react": "^18",

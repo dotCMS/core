@@ -5,9 +5,8 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
-import { NotLicensedModule } from '@components/not-licensed/not-licensed.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe, DotNotLicenseComponent } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsCardModule } from './dot-apps-card/dot-apps-card.module';
@@ -24,7 +23,7 @@ import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialo
         DotAppsCardModule,
         DotPipesModule,
         DotAppsImportExportDialogModule,
-        NotLicensedModule,
+        DotNotLicenseComponent,
         DotIconModule,
         DotPortletBaseModule,
         DotMessagePipe

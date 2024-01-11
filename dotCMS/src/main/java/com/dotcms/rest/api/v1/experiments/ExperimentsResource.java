@@ -10,6 +10,7 @@ import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
+import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.jitsu.EventLogRunnable;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
@@ -538,9 +539,11 @@ public class ExperimentsResource {
 
         try {
             final EventLogRunnable eventLogRunnable = new EventLogRunnable(analyticsApp);
+            Optional<CircuitBreakerUrl.Response<String>> responseOptional  = eventLogRunnable.sendTestEvent();
 
-            return new ResponseEntityView<>(Map.of(HEALTH_KEY, eventLogRunnable.sendTestEvent()
-                    .isPresent()?Health.OK:Health.CONFIGURATION_ERROR));
+            return new ResponseEntityView<>(Map.of(HEALTH_KEY, responseOptional.isPresent()
+                    && UtilMethods.isSet(responseOptional.get().getResponse())
+                    ? Health.OK:Health.CONFIGURATION_ERROR));
         } catch (IllegalStateException e) {
             return new ResponseEntityView<>(Map.of(HEALTH_KEY, Health.CONFIGURATION_ERROR));
         }
