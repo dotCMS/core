@@ -17,6 +17,8 @@ public interface AbstractPushAnalysisResult<T> {
 
     Optional<T> serverContent();
 
+    Optional<T> localContent();
+
     Optional<File> localFile();
 
 }

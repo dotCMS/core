@@ -56,7 +56,8 @@ public interface AbstractCreateUpdateSiteRequest {
      Long languageId();
 
      @JsonProperty("default")
-     boolean isDefault();
+     @Nullable
+     Boolean isDefault();
 
      @Nullable
      Boolean forceExecution();

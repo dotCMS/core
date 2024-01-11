@@ -994,7 +994,7 @@ class SiteCommandIT extends CommandTest {
                 // ║  Pushing the changes  ║
                 // ╚═══════════════════════╝
                 int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
-                        result.path.toFile().getAbsolutePath(), "--fail-fast", "-e");
+                        workspace.sites().toAbsolutePath().toString(), "--fail-fast", "-e");
                 Assertions.assertEquals(ExitCode.OK, status);
 
                 // Validating the sites were created
@@ -1018,10 +1018,10 @@ class SiteCommandIT extends CommandTest {
                 Assertions.assertNotEquals(Boolean.TRUE, site1.isDefault());
 
                 var site2 = this.mapperService.map(
-                        result.path.toFile(),
+                        result1.path.toFile(),
                         SiteView.class
                 );
-                Assertions.assertEquals(result.siteName, site2.siteName());
+                Assertions.assertEquals(result1.siteName, site2.siteName());
                 Assertions.assertEquals(1, site2.languageId());
                 Assertions.assertNotNull(site2.identifier());
                 Assertions.assertFalse(site2.identifier().isBlank());
@@ -1038,7 +1038,7 @@ class SiteCommandIT extends CommandTest {
                 // ║  Pushing again  ║
                 // ╚═════════════════╝
                 status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
-                        result.path.toFile().getAbsolutePath(), "--fail-fast", "-e");
+                        workspace.sites().toAbsolutePath().toString(), "--fail-fast", "-e");
                 Assertions.assertEquals(ExitCode.OK, status);
 
                 // ╔════════════════════════════════════════════════════════════╗
@@ -1068,8 +1068,8 @@ class SiteCommandIT extends CommandTest {
             throws IOException {
 
         final String newSiteName = String.format(
-                "new.dotcms.site%d",
-                System.currentTimeMillis()
+                "new.dotcms.site.%s",
+                UUID.randomUUID()
         );
         String siteDescriptor = String.format("{\n"
                 + "  \"siteName\" : \"%s\",\n"

@@ -5,6 +5,7 @@ import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.push.ContentComparator;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.SiteView;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import javax.enterprise.context.Dependent;
@@ -70,6 +71,15 @@ public class SiteComparator implements ContentComparator<SiteView> {
         // Comparing the local and server content in order to determine if we need to update or
         // not the content
         return localSite.equals(byId.entity());
+    }
+
+    @Override
+    public Comparator<SiteView> getProcessingOrderComparator() {
+        return (site1, site2) ->
+                Boolean.compare(
+                        Boolean.TRUE.equals(site2.isDefault()),
+                        Boolean.TRUE.equals(site1.isDefault())
+                );
     }
 
     /**

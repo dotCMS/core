@@ -7,7 +7,6 @@ import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.push.PushHandler;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
-import com.dotcms.model.site.GetSiteByNameRequest;
 import com.dotcms.model.site.SiteView;
 import java.io.File;
 import java.util.Map;
@@ -50,18 +49,15 @@ public class SitePushHandler implements PushHandler<SiteView> {
     public SiteView add(File localFile, SiteView localSite, Map<String, Object> customOptions) {
 
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
+
+        // Creating the site
         var response = siteAPI.create(
                 toRequest(localSite, customOptions)
         );
 
         // Publishing the site
         if (Boolean.TRUE.equals(localSite.isLive())) {
-
-            final ResponseEntityView<SiteView> byName = siteAPI.findByName(
-                    GetSiteByNameRequest.builder().siteName(localSite.siteName()).build()
-            );
-
-            response = siteAPI.publish(byName.entity().identifier());
+            response = siteAPI.publish(response.entity().identifier());
         }
 
         return response.entity();
