@@ -27,6 +27,8 @@ import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheImpl;
 import com.dotcms.security.apps.AppsCache;
 import com.dotcms.security.apps.AppsCacheImpl;
 import com.dotcms.storage.Chainable404StorageCache;
+import com.dotcms.system.announcements.AnnouncementsCache;
+import com.dotcms.system.announcements.AnnouncementsCacheImpl;
 import com.dotcms.test.TestUtil;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
 import com.dotcms.vanityurl.cache.VanityUrlCacheImpl;
@@ -358,6 +360,10 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (ExperimentsCache) getInstance(CacheIndex.EXPERIMENTS_CACHE);
 	}
 
+	public static AnnouncementsCache getAnnouncementsCache() {
+		return (AnnouncementsCache) getInstance(CacheIndex.ANNOUNCEMENTS_CACHE);
+	}
+
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
@@ -468,7 +474,9 @@ enum CacheIndex
 	GraphQLCache("GraphQLCache"),
 	VariantCache("VariantCache"),
 	EXPERIMENTS_CACHE("ExperimentsCache"),
-	CHAINABLE_404_STORAGE_CACHE("Chainable404StorageCache");
+	CHAINABLE_404_STORAGE_CACHE("Chainable404StorageCache"),
+	ANNOUNCEMENTS_CACHE("AnnouncementsCache")
+	;
 
 	Cachable create() {
 		switch(this) {
