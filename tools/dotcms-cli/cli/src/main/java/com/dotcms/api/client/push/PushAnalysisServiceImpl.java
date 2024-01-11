@@ -126,7 +126,7 @@ public class PushAnalysisServiceImpl implements PushAnalysisService {
         //  This is useful because the order of the results is not guaranteed and only will be used
         //  if a custom comparator is provided.
         Comparator<T> orderComparator = comparator.getProcessingOrderComparator();
-        if (!(orderComparator instanceof ContentComparator.DefaultOrderComparator)) {
+        if (!(orderComparator instanceof ContentComparator.NullComparator)) {
             results.sort((result1, result2) -> orderComparator.compare(
                             result1.localContent().orElse(null),
                             result2.localContent().orElse(null)

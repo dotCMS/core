@@ -30,7 +30,6 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -1063,7 +1062,6 @@ class SiteCommandIT extends CommandTest {
      * @return The name of the created site and the path to the created site file.
      * @throws IOException If an I/O error occurs while creating the site file.
      */
-    @NotNull
     private static SiteCreationResult createSite(final Workspace workspace, final boolean isDefault)
             throws IOException {
 

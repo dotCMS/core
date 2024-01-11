@@ -57,7 +57,7 @@ public interface ContentComparator<T> {
      */
     default Comparator<T> getProcessingOrderComparator() {
         // By default, don't change the processing order
-        return new DefaultOrderComparator<>();
+        return new NullComparator<>();
     }
 
     /**
@@ -66,7 +66,7 @@ public interface ContentComparator<T> {
      *
      * @param <T> the type of content to be compared
      */
-    class DefaultOrderComparator<T> implements Comparator<T> {
+    class NullComparator<T> implements Comparator<T> {
 
         @Override
         public int compare(T t1, T t2) {

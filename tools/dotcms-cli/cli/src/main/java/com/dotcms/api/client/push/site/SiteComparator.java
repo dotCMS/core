@@ -73,6 +73,20 @@ public class SiteComparator implements ContentComparator<SiteView> {
         return localSite.equals(byId.entity());
     }
 
+    /**
+     * Returns a comparator for sorting SiteView objects based on their processing order.
+     * <p>
+     * The processing order is determined by whether the SiteView objects have the "default" flag
+     * set. SiteView objects with the "default" flag set to true will be placed before SiteView
+     * objects with the "default" flag set to false.
+     * <p>
+     * This processing order based on the "default" flag is necessary because changing the default
+     * site affects not only the site itself, but also the previous default site. Processing sites
+     * in the proper order allows us to update properly all the affected sites descriptors when the
+     * default site is changed.
+     *
+     * @return a comparator for sorting SiteView objects based on their processing order
+     */
     @Override
     public Comparator<SiteView> getProcessingOrderComparator() {
         return (site1, site2) ->
