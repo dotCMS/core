@@ -47,7 +47,8 @@ const EDITOR_CONFIG: MonacoEditorConstructionOptions = {
     lineNumbers: 'on',
     roundedSelection: false,
     automaticLayout: true,
-    language: 'text'
+    language: 'text',
+    fontSize: 14
 };
 
 @Component({

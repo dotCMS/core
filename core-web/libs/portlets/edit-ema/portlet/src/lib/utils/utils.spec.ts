@@ -12,7 +12,8 @@ describe('utils functions', () => {
                     identifier: 'test',
                     acceptTypes: 'test',
                     uuid: 'test',
-                    maxContentlets: 1
+                    maxContentlets: 1,
+                    contentletsId: ['test']
                 },
                 pageContainers: [
                     {

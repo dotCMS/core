@@ -24,7 +24,7 @@ A functional component that renders a layout for a DotCMS page using Next.js nav
 
 #### Props
 
-- **props**: `DotcmsPageProps` - The properties for the DotCMS page.
+-   **props**: `DotcmsPageProps` - The properties for the DotCMS page.
 
 #### Usage
 
@@ -37,37 +37,36 @@ import { DotcmsLayout } from '@dotcms/nextjs';
 import { Header, Footer, Navigation } from '../components';
 
 export function MyPage({ data, nav }) {
-  return (
-    <div className="flex flex-col min-h-screen gap-6">
-      {data.layout.header && (
-        <Header>
-          <Navigation items={nav} />
-        </Header>
-      )}
-      <main className="container flex flex-col gap-8 m-auto">
-        <DotcmsLayout
-          entity={{
-            components: {
-              webPageContent: WebPageContent,
-              Banner: Banner,
-              Activity: Activity,
-              Product: Product,
-              Image: ImageComponent
-            },
-            ...data,
-          }}
-        />
-      </main>
-      {data.layout.footer && <Footer />}
-    </div>
-  );
+    return (
+        <div className="flex flex-col min-h-screen gap-6">
+            {data.layout.header && (
+                <Header>
+                    <Navigation items={nav} />
+                </Header>
+            )}
+            <main className="container flex flex-col gap-8 m-auto">
+                <DotcmsLayout
+                    entity={{
+                        components: {
+                            webPageContent: WebPageContent,
+                            Banner: Banner,
+                            Activity: Activity,
+                            Product: Product,
+                            Image: ImageComponent
+                        },
+                        ...data
+                    }}
+                />
+            </main>
+            {data.layout.footer && <Footer />}
+        </div>
+    );
 }
 ```
 
 ## Contributing
 
 GitHub pull requests are the preferred method to contribute code to dotCMS. Before any pull requests can be accepted, an automated tool will ask you to agree to the [dotCMS Contributor's Agreement](https://gist.github.com/wezell/85ef45298c48494b90d92755b583acb3).
-
 
 ## Licensing
 

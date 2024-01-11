@@ -1,8 +1,7 @@
-<dot-portlet-base [boxed]="false">
-    <dot-not-licensed-component
-        *ngIf="!canAccessPortlet; else licensed"></dot-not-licensed-component>
-    <ng-template #licensed>
-        <div class="dot-apps__container">
+<dot-portlet-base>
+    <dot-not-license *ngIf="!canAccessPortlet; else licensed" />
+    <ng-template #licensed
+        ><div class="dot-apps__container">
             <div class="dot-apps__header">
                 <input
                     #searchInput

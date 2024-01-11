@@ -885,7 +885,10 @@
             <artifactId>json-path</artifactId>
         </dependency>
 
-
+        <dependency>
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
+        </dependency>
 
 
         <!-- Image Processing -->

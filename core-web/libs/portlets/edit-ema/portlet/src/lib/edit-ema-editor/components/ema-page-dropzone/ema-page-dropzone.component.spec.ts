@@ -1,6 +1,10 @@
 import { Spectator, createComponentFactory } from '@ngneat/spectator';
 
 import { CommonModule } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { EmaPageDropzoneComponent, Row } from './ema-page-dropzone.component';
 
@@ -10,8 +14,9 @@ const ACTION_MOCK: ActionPayload = {
     container: {
         acceptTypes: 'file',
         identifier: '789',
-        maxContentlets: 100,
-        uuid: '2'
+        maxContentlets: 2,
+        uuid: '2',
+        contentletsId: ['123', '455']
     },
     language_id: '1',
     pageContainers: [
@@ -24,50 +29,70 @@ const ACTION_MOCK: ActionPayload = {
     pageId: '123'
 };
 
-export const BOUNDS_MOCK: Row[] = [
-    {
-        x: 0,
-        y: 0,
-        width: 1000,
-        height: 200,
-        columns: [
-            {
-                x: 0,
-                y: 0,
-                width: 500,
-                height: 100,
-                containers: [
-                    {
-                        x: 10,
-                        y: 10,
-                        width: 980,
-                        height: 180,
-                        contentlets: [
-                            {
-                                x: 20,
-                                y: 20,
-                                width: 940,
-                                height: 140,
-                                payload: null
-                            }
-                        ],
-                        payload: null
-                    }
-                ]
-            }
-        ]
-    }
-];
+const getBoundsMock = (payload: ActionPayload): Row[] => {
+    return [
+        {
+            x: 0,
+            y: 0,
+            width: 1000,
+            height: 200,
+            columns: [
+                {
+                    x: 0,
+                    y: 0,
+                    width: 500,
+                    height: 100,
+                    containers: [
+                        {
+                            x: 10,
+                            y: 10,
+                            width: 980,
+                            height: 180,
+                            contentlets: [
+                                {
+                                    x: 20,
+                                    y: 20,
+                                    width: 940,
+                                    height: 140,
+                                    payload: null
+                                }
+                            ],
+                            payload
+                        }
+                    ]
+                }
+            ]
+        }
+    ];
+};
+
+export const BOUNDS_MOCK: Row[] = getBoundsMock(ACTION_MOCK);
+
+const messageServiceMock = new MockDotMessageService({
+    'edit.ema.page.dropzone.invalid.contentlet.type':
+        'The contentlet type {0} is not valid for this container',
+    'edit.ema.page.dropzone.max.contentlets': 'Container only accepts {0} contentlets',
+    'edit.ema.page.dropzone.one.max.contentlet': 'Container only accepts one contentlet'
+});
 
 describe('EmaPageDropzoneComponent', () => {
     let spectator: Spectator<EmaPageDropzoneComponent>;
+    let dotMessageService: DotMessageService;
+
     const createComponent = createComponentFactory({
         component: EmaPageDropzoneComponent,
-        imports: [CommonModule]
+        imports: [CommonModule, HttpClientTestingModule],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            }
+        ]
     });
 
     beforeEach(() => {
         spectator = createComponent();
+        dotMessageService = spectator.inject(DotMessageService, true);
     });
 
     it('should render rows, columns, containers, and contentlets based on input', () => {
@@ -137,6 +162,7 @@ describe('EmaPageDropzoneComponent', () => {
             jest.spyOn(spectator.component.place, 'emit');
 
             spectator.setInput('rows', BOUNDS_MOCK);
+            spectator.setInput('contentType', 'file');
             spectator.detectComponentChanges();
 
             spectator.triggerEventHandler('div[data-type="contentlet"]', 'drop', {
@@ -172,8 +198,132 @@ describe('EmaPageDropzoneComponent', () => {
             // Additional assertions as necessary
         });
 
+        it('should not emit place event when the contentType is not accepted in the container', () => {
+            const spyDotMessageSerivice = jest.spyOn(dotMessageService, 'get');
+            jest.spyOn(spectator.component.place, 'emit');
+
+            spectator.setInput('rows', BOUNDS_MOCK);
+            spectator.setInput('contentType', 'NOT_ACCEPTED_CONTENT_TYPE');
+            spectator.detectComponentChanges();
+
+            spectator.triggerEventHandler('div.drop-zone_error', 'drop', {
+                target: {}
+            });
+
+            spectator.detectChanges();
+
+            const errorZone = spectator.query('.drop-zone_error');
+            const errorZoneText = errorZone.querySelector('span').textContent;
+
+            // Check that the error message is displayed
+            expect(errorZone).toBeTruthy();
+            expect(errorZoneText.trim()).toBe(
+                'The contentlet type NOT_ACCEPTED_CONTENT_TYPE is not valid for this container'
+            );
+
+            expect(spectator.component.place.emit).not.toHaveBeenCalled();
+            expect(spyDotMessageSerivice).toHaveBeenCalledWith(
+                'edit.ema.page.dropzone.invalid.contentlet.type',
+                'NOT_ACCEPTED_CONTENT_TYPE'
+            );
+        });
+
+        it('should not emit place event when container is full', () => {
+            const spyDotMessageSerivice = jest.spyOn(dotMessageService, 'get');
+            jest.spyOn(spectator.component.place, 'emit');
+            spectator.setInput('rows', BOUNDS_MOCK);
+            spectator.setInput('contentType', 'file');
+            spectator.detectComponentChanges();
+
+            spectator.triggerEventHandler('div.drop-zone_error', 'drop', {
+                target: {}
+            });
+
+            spectator.detectChanges();
+
+            const errorZone = spectator.query('.drop-zone_error') as HTMLElement;
+            const errorZoneText = errorZone.querySelector('span').textContent;
+
+            const { left, top, width, height } = errorZone.style;
+            const errorZoneReact = {
+                left,
+                top,
+                width,
+                height
+            };
+
+            // Check that the error message is displayed
+            expect(errorZone).toBeTruthy();
+            expect(errorZoneText.trim()).toBe('Container only accepts 2 contentlets');
+            expect(errorZoneReact).toEqual({
+                left: '10px',
+                top: '10px',
+                width: '980px',
+                height: '180px'
+            });
+
+            // Check that the place event is not emitted
+            expect(spectator.component.place.emit).not.toHaveBeenCalled();
+            expect(spyDotMessageSerivice).toHaveBeenCalledWith(
+                'edit.ema.page.dropzone.max.contentlets',
+                2
+            );
+        });
+
+        it('should show"one maximum content error when container is full and only allow one', () => {
+            jest.spyOn(spectator.component.place, 'emit');
+
+            const spyDotMessageSerivice = jest.spyOn(dotMessageService, 'get');
+            const NEW_BOUNDS_MOCK = getBoundsMock({
+                ...ACTION_MOCK,
+                container: {
+                    ...ACTION_MOCK.container,
+                    maxContentlets: 1
+                }
+            });
+
+            spectator.setInput('rows', NEW_BOUNDS_MOCK);
+            spectator.setInput('contentType', 'file');
+            spectator.detectComponentChanges();
+
+            spectator.triggerEventHandler('div.drop-zone_error', 'drop', {
+                target: {}
+            });
+
+            spectator.detectChanges();
+
+            const errorZone = spectator.query('.drop-zone_error') as HTMLElement;
+            const errorZoneText = errorZone.querySelector('span').textContent;
+
+            const { left, top, width, height } = errorZone.style;
+            const errorZoneReact = {
+                left,
+                top,
+                width,
+                height
+            };
+
+            // Check that the error message is displayed
+            expect(errorZone).toBeTruthy();
+            expect(errorZoneText.trim()).toBe('Container only accepts one contentlet');
+            expect(errorZoneReact).toEqual({
+                left: '10px',
+                top: '10px',
+                width: '980px',
+                height: '180px'
+            });
+
+            // Check that the place event is not emitted
+            expect(spectator.component.place.emit).not.toHaveBeenCalled();
+            expect(spyDotMessageSerivice).toHaveBeenCalledWith(
+                'edit.ema.page.dropzone.one.max.contentlet',
+                1
+            );
+        });
+
         it('should set pointer on drag over', () => {
             spectator.setInput('rows', BOUNDS_MOCK);
+            spectator.setInput('contentType', 'file');
             spectator.detectComponentChanges();
 
             const stopPropagationSpy = jest.fn();
@@ -212,6 +362,4 @@ describe('EmaPageDropzoneComponent', () => {
             expect(preventDefaultSpy).toHaveBeenCalledTimes(1);
         });
     });
-
-    // Additional tests as necessary
 });

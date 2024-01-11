@@ -122,6 +122,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     rows: Row[] = [];
     contentlet!: ContentletArea;
+    dragItemType: string;
+
     // This should be in the store, but experienced an issue that triggers a reload in the whole store when the device is updated
     currentDevice: DotDevice & { icon?: string };
 
@@ -288,9 +290,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             item: string;
         };
 
+        const item = JSON.parse(dataset.item);
+        this.dragItemType = item?.contentType;
+
         this.draggedPayload = {
             type: dataset.type,
-            item: JSON.parse(dataset.item)
+            item
         };
 
         this.iframe.nativeElement.contentWindow?.postMessage(
