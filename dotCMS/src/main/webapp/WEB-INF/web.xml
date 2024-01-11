@@ -31,7 +31,7 @@
 	</filter>
     <filter>
         <filter-name>HttpHeaderSecurityFilter</filter-name>
-        <filter-class>org.apache.catalina.filters.HttpHeaderSecurityFilter</filter-class>
+        <filter-class>com.dotmarketing.filters.HttpHeaderSecurityFilterWrapper</filter-class>
         <async-supported>true</async-supported>
         <init-param>
             <param-name>hstsMaxAgeSeconds</param-name>
