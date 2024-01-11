@@ -238,3 +238,4 @@ This maintenance release includes the following code fixes:
 195. https://github.com/dotCMS/core/issues/22698 : Limited user without Search Portlet can't Edit Content From Edit Page Portlet #22698
 196. https://github.com/dotCMS/core/issues/22921 : Workflow API unable to archive contentlet #22921
 197. https://github.com/dotCMS/core/issues/26459 : Unable to copy a contentlet having Site/Folder Field #26459
+198. https://github.com/dotCMS/core/issues/27007 : Content export with Publish Date Parameter leads to 400 Bad Request error #27007
