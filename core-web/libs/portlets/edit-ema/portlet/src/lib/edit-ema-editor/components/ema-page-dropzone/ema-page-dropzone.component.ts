@@ -5,10 +5,13 @@ import {
     ElementRef,
     EventEmitter,
     Input,
-    Output
+    Output,
+    inject
 } from '@angular/core';
 
-import { ActionPayload } from '../../../shared/models';
+import { DotMessageService } from '@dotcms/data-access';
+
+import { ActionPayload, ContainerPayload } from '../../../shared/models';
 
 export interface ContentletArea {
     x: number;
@@ -24,7 +27,7 @@ interface Container {
     width: number;
     height: number;
     contentlets: ContentletArea[];
-    payload: ActionPayload;
+    payload: ActionPayload | string;
 }
 
 interface Column {
@@ -53,7 +56,10 @@ export interface Row {
 })
 export class EmaPageDropzoneComponent {
     @Input() rows: Row[] = [];
+    @Input() contentType: string;
     @Output() place = new EventEmitter<ActionPayload>();
+
+    private readonly dotMessageService: DotMessageService = inject(DotMessageService);
 
     pointerPosition: Record<string, string> = {
         left: '0',
@@ -114,25 +120,60 @@ export class EmaPageDropzoneComponent {
      * @memberof EmaPageDropzoneComponent
      */
     onDragover(event: DragEvent): void {
-        const target = event.target as HTMLDivElement;
-
-        if (target.dataset.type === 'contentlet') {
-            const parentReact = this.el.nativeElement.getBoundingClientRect();
-            const targetRect = target.getBoundingClientRect();
-            const isTop = this.isTop(event);
-
-            this.pointerPosition = {
-                left: `${targetRect.left - parentReact.left}px`,
-                width: `${targetRect.width}px`,
-                opacity: '1',
-                top: isTop
-                    ? `${targetRect.top - parentReact.top}px`
-                    : `${targetRect.top - parentReact.top + targetRect.height}px`
-            };
-        }
-
         event.stopPropagation();
         event.preventDefault();
+
+        const target = event.target as HTMLDivElement;
+        const { type = '' } = target.dataset;
+
+        if (type !== 'contentlet') {
+            return;
+        }
+
+        const parentReact = this.el.nativeElement.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+        const isTop = this.isTop(event);
+
+        this.pointerPosition = {
+            left: `${targetRect.left - parentReact.left}px`,
+            width: `${targetRect.width}px`,
+            opacity: '1',
+            top: isTop
+                ? `${targetRect.top - parentReact.top}px`
+                : `${targetRect.top - parentReact.top + targetRect.height}px`
+        };
+    }
+
+    /**
+     * Return error message if the contentlet can't be placed in the container
+     * or empty string if it can be placed
+     *
+     * @param {Container} { payload }
+     * @return {*}  {boolean}
+     * @memberof EmaPageDropzoneComponent
+     */
+    getErrorMessage(paylaod: ActionPayload | string): string {
+        const { container = {} } =
+            typeof paylaod === 'string' ? JSON.parse(paylaod) : paylaod || {};
+        const { acceptTypes = '', maxContentlets } = container;
+
+        if (!this.isValidContentType(acceptTypes)) {
+            return this.dotMessageService.get(
+                'edit.ema.page.dropzone.invalid.contentlet.type',
+                this.contentType
+            );
+        }
+
+        if (!this.contentCanFitInContainer(container)) {
+            const message =
+                maxContentlets === 1
+                    ? 'edit.ema.page.dropzone.one.max.contentlet'
+                    : 'edit.ema.page.dropzone.max.contentlets';
+
+            return this.dotMessageService.get(message, maxContentlets);
+        }
+
+        return '';
     }
 
     private isTop(event: DragEvent): boolean {
@@ -141,5 +182,17 @@ export class EmaPageDropzoneComponent {
         const mouseY = event.clientY;
 
         return mouseY < targetRect.top + targetRect.height / 2;
+    }
+
+    private isValidContentType(acceptTypes: string) {
+        const acceptTypesArr = acceptTypes.split(',');
+
+        return acceptTypesArr.includes(this.contentType);
+    }
+
+    private contentCanFitInContainer({ contentletsId, maxContentlets }: ContainerPayload): boolean {
+        const amountOfContentlets = contentletsId?.length || 0;
+
+        return amountOfContentlets < maxContentlets;
     }
 }

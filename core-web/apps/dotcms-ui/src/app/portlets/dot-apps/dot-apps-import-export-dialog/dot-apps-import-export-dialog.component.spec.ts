@@ -13,10 +13,10 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService } from '@dotcms/data-access';
 import {
-    DotApps,
+    DotApp,
     DotAppsExportConfiguration,
     DotAppsImportConfiguration,
-    DotAppsSites
+    DotAppsSite
 } from '@dotcms/dotcms-models';
 import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -47,8 +47,8 @@ export class DotAppsServiceMock {
 })
 class HostTestComponent {
     @Input() action?: string;
-    @Input() app?: DotApps;
-    @Input() site?: DotAppsSites;
+    @Input() app?: DotApp;
+    @Input() site?: DotAppsSite;
 
     resolveHandler(_$event) {
         return;

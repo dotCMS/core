@@ -4,36 +4,37 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { DotBinaryFieldPreviewComponent } from './dot-binary-field-preview.component';
 
-import { BinaryFile } from '../../interfaces';
+import { DotFilePreview } from '../../interfaces';
+import { fileMetaData } from '../../utils/mock';
 
-const fileImage: BinaryFile = {
-    mimeType: 'image/png',
-    name: 'test.png',
-    fileSize: 1234,
-    content: 'data:image/png;base64,iVBORw0KGg...',
-    url: 'http://example.com/test.png',
+const fileImage: DotFilePreview = {
+    ...fileMetaData,
+    id: '123',
     inode: '123',
-    titleImage: 'Test Image',
-    width: '100',
-    height: '100'
+    titleImage: 'Assets',
+    contentType: 'image/png',
+    name: 'test.png',
+    content: 'data:image/png;base64,iVBORw0KGg...'
 };
 
-const fileText: BinaryFile = {
-    mimeType: 'text/plain',
+const fileText: DotFilePreview = {
+    ...fileMetaData,
+    id: '123',
+    inode: '123',
+    titleImage: 'TITLE_IMAGE_NOT_FOUND',
+    contentType: 'text/plain',
     name: 'test.txt',
-    fileSize: 1234,
-    content: 'This is a text file',
-    url: 'http://example.com/test.txt',
-    inode: '123'
+    content: 'This is a text file'
 };
 
-const fileUnknown: BinaryFile = {
-    mimeType: 'unknown',
+const fileUnknown: DotFilePreview = {
+    ...fileMetaData,
+    id: '123',
+    inode: '123',
+    contentType: 'unknown',
+    titleImage: 'TITLE_IMAGE_NOT_FOUND',
     name: 'test.txt',
-    fileSize: 1234,
-    content: 'This is a text file but the mime type is unknown',
-    url: 'http://example.com/test.txt',
-    inode: '123'
+    content: 'This is a text file but the mime type is unknown'
 };
 
 describe('DotBinaryFieldPreviewComponent', () => {

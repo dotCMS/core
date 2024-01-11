@@ -11,10 +11,6 @@ export const HOST = 'http://localhost:3000';
 
 export const WINDOW = new InjectionToken<Window>('WindowToken');
 
-export const DEFAULT_LANGUAGE_ID = 1;
-
-export const DEFAULT_URL = 'index';
-
 export const DEFAULT_PERSONA: DotPersona = {
     hostFolder: 'SYSTEM_HOST',
     inode: '',
@@ -44,18 +40,3 @@ export const DEFAULT_PERSONA: DotPersona = {
     hasLiveVersion: false,
     modUser: 'system'
 };
-
-export const DEFAULT_QUERY_PARAMS = [
-    {
-        key: 'language_id',
-        value: DEFAULT_LANGUAGE_ID
-    },
-    {
-        key: 'url',
-        value: DEFAULT_URL
-    },
-    {
-        key: 'com.dotmarketing.persona.id',
-        value: DEFAULT_PERSONA.identifier
-    }
-];

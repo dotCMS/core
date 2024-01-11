@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { CUSTOMER_ACTIONS, postMessageToEditor } from '@dotcms/client';
 
@@ -47,36 +47,68 @@ interface PageEditorOptions {
  *
  * @category Hooks
  * @param {PageEditorOptions} props - The options for the page editor. Includes a `reloadFunction` and a `pathname`.
- * @returns {React.RefObject<HTMLDivElement>[]} - A reference to the rows of the page.
+ * @returns {{rowsRef: React.RefObject<HTMLDivElement>[], isInsideEditor: boolean}} - Returns a reference to the rows of the page and a boolean that indicates if the page is inside the editor.
  * @throws {Error} - Throws an error if the `pathname` is not provided.
  */
-export const usePageEditor = (props: PageEditorOptions) => {
+export const usePageEditor = (
+    props: PageEditorOptions
+): { rowsRef: React.MutableRefObject<HTMLDivElement[]>; isInsideEditor: boolean } => {
     const { reloadFunction = window.location.reload, pathname = null } = props;
 
     if (!pathname) {
         throw new Error('Dotcms page editor required the pathname of your webapp');
     }
 
-    usePostUrlToEditor(pathname);
-    useScrollEvent();
-    useReloadPage(reloadFunction);
-    const rowsRef = useRequestBounds();
+    const { rowsRef, isInsideEditor } = useEventMessageHandler({ reload: reloadFunction });
 
-    return rowsRef;
+    usePostUrlToEditor(pathname, isInsideEditor);
+    useScrollEvent(isInsideEditor);
+
+    return { rowsRef, isInsideEditor };
 };
 
-function useRequestBounds() {
+function useEventMessageHandler({ reload = window.location.reload }: { reload: () => void }) {
     const rows = useRef<HTMLDivElement[]>([]);
+
+    const [isInsideEditor, setIsInsideEditor] = useState(false);
+
+    useEffect(() => {
+        // If the page is not inside an iframe we do nothing.
+        if (window.parent === window) return;
+
+        postMessageToEditor({
+            action: CUSTOMER_ACTIONS.PING_EDITOR // This is to let the editor know that the page is ready
+        });
+    }, []);
 
     useEffect(() => {
         function eventMessageHandler(event: MessageEvent) {
-            if (event.data === 'ema-request-bounds') {
-                const positionData = getPageElementBound(rows.current);
+            if (!isInsideEditor) {
+                // Editor is telling us that we can set ourselves into edit mode
+                if (event.data === 'ema-editor-pong') {
+                    setIsInsideEditor(true);
+                }
 
-                postMessageToEditor({
-                    action: CUSTOMER_ACTIONS.SET_BOUNDS,
-                    payload: positionData
-                });
+                return;
+            }
+
+            switch (event.data) {
+                case 'ema-request-bounds': {
+                    const positionData = getPageElementBound(rows.current);
+
+                    postMessageToEditor({
+                        action: CUSTOMER_ACTIONS.SET_BOUNDS,
+                        payload: positionData
+                    });
+
+                    break;
+                }
+
+                case 'ema-reload-page': {
+                    reload();
+
+                    break;
+                }
             }
         }
 
@@ -85,13 +117,18 @@ function useRequestBounds() {
         return () => {
             window.removeEventListener('message', eventMessageHandler);
         };
-    }, [rows]);
+    }, [rows, reload, isInsideEditor]);
 
-    return rows;
+    return {
+        rowsRef: rows,
+        isInsideEditor
+    };
 }
 
-function useScrollEvent() {
+function useScrollEvent(isInsideEditor: boolean) {
     useEffect(() => {
+        if (!isInsideEditor) return;
+
         function eventScrollHandler() {
             postMessageToEditor({
                 action: CUSTOMER_ACTIONS.IFRAME_SCROLL
@@ -103,32 +140,18 @@ function useScrollEvent() {
         return () => {
             window.removeEventListener('scroll', eventScrollHandler);
         };
-    }, []);
+    }, [isInsideEditor]);
 }
 
-function useReloadPage(reload: () => void = window.location.reload) {
+function usePostUrlToEditor(pathname: string, isInsideEditor: boolean) {
     useEffect(() => {
-        function eventMessageHandler(event: MessageEvent) {
-            if (event.data === 'ema-reload-page') {
-                reload();
-            }
-        }
+        if (!isInsideEditor) return;
 
-        window.addEventListener('message', eventMessageHandler);
-
-        return () => {
-            window.removeEventListener('message', eventMessageHandler);
-        };
-    }, [reload]);
-}
-
-function usePostUrlToEditor(pathname: string) {
-    useEffect(() => {
         postMessageToEditor({
             action: CUSTOMER_ACTIONS.SET_URL,
             payload: {
                 url: pathname === '/' ? 'index' : pathname?.replace('/', '')
             }
         });
-    }, [pathname]);
+    }, [pathname, isInsideEditor]);
 }

@@ -113,6 +113,7 @@ describe('EditEmaLayoutComponent', () => {
         addMock = jest.spyOn(messageService, 'add');
 
         store.load({
+            clientHost: 'http://localhost:3000',
             language_id: '1',
             url: 'test',
             'com.dotmarketing.persona.id': 'SuperCoolDude'

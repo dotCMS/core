@@ -14,7 +14,7 @@ import {
     DotRouterService,
     PaginatorService
 } from '@dotcms/data-access';
-import { dialogAction, DotApps, DotAppsSites } from '@dotcms/dotcms-models';
+import { dialogAction, DotApp, DotAppsSite } from '@dotcms/dotcms-models';
 
 import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
 
@@ -26,8 +26,8 @@ import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-di
 export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
     @ViewChild('searchInput', { static: true }) searchInput: ElementRef;
     @ViewChild('importExportDialog') importExportDialog: DotAppsImportExportDialogComponent;
-    apps: DotApps;
-    siteSelected: DotAppsSites;
+    apps: DotApp;
+    siteSelected: DotAppsSite;
     importExportDialogAction = dialogAction.EXPORT;
     showDialog = false;
 
@@ -47,7 +47,7 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit() {
-        this.route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApps) => {
+        this.route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApp) => {
             this.apps = app;
             this.apps.sites = [];
         });
@@ -83,7 +83,7 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
         this.paginationService
             .getWithOffset((event && event.first) || 0)
             .pipe(take(1))
-            .subscribe((apps: DotApps[]) => {
+            .subscribe((apps: DotApp[]) => {
                 const app = [].concat(apps)[0];
                 this.apps.sites = event ? this.apps.sites.concat(app.sites) : app.sites;
                 this.apps.configurationsCount = app.configurationsCount;
@@ -98,7 +98,7 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
      * @param DotAppsSites site
      * @memberof DotAppsConfigurationComponent
      */
-    gotoConfiguration(site: DotAppsSites): void {
+    gotoConfiguration(site: DotAppsSite): void {
         this.dotRouterService.goToUpdateAppsConfiguration(this.apps.key, site);
     }
 
@@ -127,7 +127,7 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
      * @param DotAppsSites [site]
      * @memberof DotAppsConfigurationComponent
      */
-    confirmExport(site?: DotAppsSites): void {
+    confirmExport(site?: DotAppsSite): void {
         this.importExportDialog.show = true;
         this.siteSelected = site;
     }
@@ -138,7 +138,7 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
      * @param DotAppsSites site
      * @memberof DotAppsConfigurationComponent
      */
-    deleteConfiguration(site: DotAppsSites): void {
+    deleteConfiguration(site: DotAppsSite): void {
         this.dotAppsService
             .deleteConfiguration(this.apps.key, site.id)
             .pipe(take(1))
