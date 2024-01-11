@@ -123,10 +123,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     rows: Row[] = [];
     contentlet!: ContentletArea;
-    dragItem: EmaDragItem = {
-        baseType: '',
-        contentType: ''
-    };
+    dragItem: EmaDragItem;
 
     // This should be in the store, but experienced an issue that triggers a reload in the whole store when the device is updated
     currentDevice: DotDevice & { icon?: string };
