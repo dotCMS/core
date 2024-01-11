@@ -61,6 +61,19 @@ const messagesMock = {
     'dot.common.dialog.reject': 'Reject'
 };
 
+const dragEventMock = {
+    target: {
+        dataset: {
+            type: 'contentlet',
+            item: JSON.stringify({
+                identifier: '123',
+                title: 'hello world',
+                contentType: 'File'
+            })
+        }
+    }
+};
+
 const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
@@ -552,7 +565,8 @@ describe('EditEmaEditorComponent', () => {
                             identifier: '123',
                             uuid: '123',
                             acceptTypes: 'test',
-                            maxContentlets: 1
+                            maxContentlets: 1,
+                            contentletsId: ['123']
                         },
                         pageContainers: [
                             {
@@ -632,7 +646,8 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            maxContentlets: 1
+                            maxContentlets: 1,
+                            contentletsId: ['123']
                         },
                         pageId: 'test'
                     };
@@ -704,7 +719,8 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            maxContentlets: 1
+                            maxContentlets: 1,
+                            contentletsId: ['123']
                         },
                         contentlet: {
                             inode: '123',
@@ -819,7 +835,8 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'container-identifier-123',
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
-                            maxContentlets: 1
+                            maxContentlets: 1,
+                            contentletsId: ['123']
                         },
                         pageId: 'test'
                     };
@@ -903,7 +920,8 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'container-identifier-123',
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
-                            maxContentlets: 1
+                            maxContentlets: 1,
+                            contentletsId: ['123']
                         },
                         pageId: 'test'
                     };
@@ -1016,7 +1034,8 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            maxContentlets: 1
+                            maxContentlets: 1,
+                            contentletsId: ['123']
                         },
                         pageId: 'test'
                     };
@@ -1086,7 +1105,8 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            maxContentlets: 1
+                            maxContentlets: 1,
+                            contentletsId: ['123']
                         },
                         pageId: 'test'
                     };
@@ -1127,7 +1147,8 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            maxContentlets: 1
+                            maxContentlets: 1,
+                            contentletsId: ['123']
                         },
                         pageId: 'test'
                     };
@@ -1286,11 +1307,14 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
+                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', dragEventMock);
+
                 spectator.detectComponentChanges();
 
                 dropZone = spectator.query(EmaPageDropzoneComponent);
 
                 expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.contentType).toBe('File');
             });
 
             it('should hide drop zone on palette drop', () => {
@@ -1306,11 +1330,14 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
+                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', dragEventMock);
+
                 spectator.detectComponentChanges();
 
                 let dropZone = spectator.query(EmaPageDropzoneComponent);
 
                 expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.contentType).toBe('File');
 
                 spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragEnd', {});
                 spectator.detectComponentChanges();
