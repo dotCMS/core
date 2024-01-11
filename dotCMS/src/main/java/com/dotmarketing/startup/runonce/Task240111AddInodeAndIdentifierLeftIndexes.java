@@ -10,7 +10,7 @@ import com.dotmarketing.startup.StartupTask;
  * GREATLY speeds up queries that use `like 'param%'` clauses in their queries, where we only wildcard
  * on the right hand side.
  */
-public class Task231207AddInodeAndIdentifierLeftIndexes implements StartupTask {
+public class Task240111AddInodeAndIdentifierLeftIndexes implements StartupTask {
 
     @Override
     public boolean forceRun() {

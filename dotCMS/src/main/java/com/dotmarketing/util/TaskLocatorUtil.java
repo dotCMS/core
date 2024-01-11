@@ -239,7 +239,7 @@ import com.dotmarketing.startup.runonce.Task230707CreateSystemTable;
 import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSize;
 import com.dotmarketing.startup.runonce.Task231109AddPublishDateToContentletVersionInfo;
 import com.google.common.collect.ImmutableList;
-import com.dotmarketing.startup.runonce.Task231207AddInodeAndIdentifierLeftIndexes;
+import com.dotmarketing.startup.runonce.Task240111AddInodeAndIdentifierLeftIndexes;
 import com.dotmarketing.startup.runonce.Task231207AddMetadataColumnToWorkflowAction;
 import com.dotmarketing.startup.runonce.Task240102AlterVarcharLengthOfRelationType;
 
@@ -555,7 +555,7 @@ public class TaskLocatorUtil {
 		.add(Task231109AddPublishDateToContentletVersionInfo.class)
 		.add(Task231207AddMetadataColumnToWorkflowAction.class)
 		.add(Task240102AlterVarcharLengthOfRelationType.class)
-		.add(Task231207AddInodeAndIdentifierLeftIndexes.class)
+		.add(Task240111AddInodeAndIdentifierLeftIndexes.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
