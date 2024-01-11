@@ -297,7 +297,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static GraphQLCache getGraphQLCache() {
 		return (GraphQLCache) getInstance(CacheIndex.GraphQLCache);
 	}
-	
+
 	/**
 	 * Returns the current instance of the {@link Chainable404StorageCache} class.
 	 *
