@@ -45,10 +45,6 @@ $number-link-icon-size: 2.28rem;
         flex-grow: 1;
     }
 
-    .dot-starter-bottom-content {
-        padding: $spacing-1 0 $spacing-5 $spacing-3;
-    }
-
     .dot-starter-top-main__section {
         background-color: $white;
         counter-reset: css-counter 0;
@@ -196,8 +192,7 @@ $number-link-icon-size: 2.28rem;
 
     .dot-starter-bottom-content {
         flex-wrap: wrap;
-        margin-bottom: $spacing-5;
-        padding-top: $spacing-1;
+        padding: $spacing-1 0 $spacing-5 $spacing-5;
     }
 
     .dot-starter-bottom__block {
