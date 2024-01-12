@@ -266,7 +266,137 @@
 		},
 		{
 			"name": "TestBeLimitedUser",
-			"item": []
+			"item": [
+				{
+					"name": "CreateBELimitedUser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User FE creation sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"emailAddress\"]).to.eql(\"frontend2@dotcms.com\");",
+									"    pm.expect(jsonData[\"firstName\"]).to.eql(\"FrontEnd\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\":\"userid-fe1-12345678\",\n    \"active\":true,\n    \"firstName\":\"FrontEnd\",\n    \"middleName\":\"F\",\n    \"lastName\":\"FE\",\n    \"nickName\":\"FE\",\n    \"email\":\"frontend2@dotcms.com\",\n    \"male\":true,\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"],\n    \"roles\":[\"DOTCMS_FRONT_END_USER\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CallLogout",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/dotAdmin/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dotAdmin",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CheckEMAwithFEUserExpectedSuccess",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User FE has not access to EMA\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "backend@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "12345678",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/ema",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ema"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	]
 }
