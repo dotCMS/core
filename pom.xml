@@ -34,7 +34,7 @@
         <module>build-parent</module>
         <module>dotCMS</module>
         <module>tools/dotcms-cli</module>
-        <!--module>dotcms-postman</module-->
+        <module>dotcms-postman</module>
     </modules>
     <repositories>
         <repository>
