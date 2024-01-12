@@ -2,13 +2,14 @@ import { NgIf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    effect,
     EventEmitter,
     HostBinding,
     inject,
     Input,
+    OnChanges,
     Output,
-    signal
+    signal,
+    SimpleChanges
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -26,7 +27,7 @@ import { DotLanguage } from '@dotcms/dotcms-models';
     styleUrls: ['./dot-language-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotLanguageSelectorComponent {
+export class DotLanguageSelectorComponent implements OnChanges {
     @Input() value: DotLanguage;
     @Input() readonly: boolean;
     @Output() selected = new EventEmitter<DotLanguage>();
@@ -36,22 +37,6 @@ export class DotLanguageSelectorComponent {
 
     private dotLanguagesService = inject(DotLanguagesService);
 
-    constructor() {
-        // Todo: move all of this with Angular 17.1 to ue fromEffect and signal input
-        effect(
-            (onCleanup) => {
-                const sub = this.dotLanguagesService
-                    .getLanguagesUsedPage(this._pageId())
-                    .subscribe((languages: DotLanguage[]) => {
-                        this.languagesList.set(languages);
-                    });
-
-                onCleanup(() => sub.unsubscribe());
-            },
-            { allowSignalWrites: true }
-        );
-    }
-
     _pageId = signal<string | undefined>(undefined);
 
     @Input({ required: true }) set pageId(value: string) {
@@ -60,5 +45,16 @@ export class DotLanguageSelectorComponent {
 
     selectedItem(value: DotLanguage) {
         this.selected.emit(value);
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        const { value } = changes;
+        if (value && value.currentValue) {
+            this.dotLanguagesService
+                .getLanguagesUsedPage(this._pageId())
+                .subscribe((languages: DotLanguage[]) => {
+                    this.languagesList.set(languages);
+                });
+        }
     }
 }

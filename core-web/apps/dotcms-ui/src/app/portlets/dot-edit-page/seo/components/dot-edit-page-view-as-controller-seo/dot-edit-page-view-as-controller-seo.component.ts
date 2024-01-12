@@ -24,6 +24,7 @@ import {
     DotPersonalizeService
 } from '@dotcms/data-access';
 import {
+    CustomIframeDialogEvent,
     DotDevice,
     DotLanguage,
     DotPageMode,
@@ -67,6 +68,8 @@ export class DotEditPageViewAsControllerSeoComponent implements OnInit {
     @Input() variant: DotVariantData | null = null;
     private confirmationService = inject(ConfirmationService);
 
+    private readonly customEventsHandler;
+
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService,
@@ -74,7 +77,22 @@ export class DotEditPageViewAsControllerSeoComponent implements OnInit {
         private dotPageStateService: DotPageStateService,
         private dotPersonalizeService: DotPersonalizeService,
         private router: Router
-    ) {}
+    ) {
+        this.customEventsHandler = {
+            close: ({ detail: { data } }: CustomEvent) => {
+                this.showEditJSPDialog.set(false);
+                const queryparams = {
+                    url: data.redirectUrl,
+                    language_id: data.languageId
+                };
+
+                this.router.navigate(['/edit-page/content'], {
+                    queryParams: { ...queryparams },
+                    queryParamsHandling: 'merge'
+                });
+            }
+        };
+    }
 
     ngOnInit(): void {
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();
@@ -145,11 +163,24 @@ export class DotEditPageViewAsControllerSeoComponent implements OnInit {
 
     /**
      * Removes the edit JSP dialog.
+     * Close when press the close button in the iframe
      *
      * @return {void}
      */
     removeEditJSPDialog(): void {
         this.showEditJSPDialog.set(false);
+        this.router.navigate(['/edit-page/content'], { queryParamsHandling: 'preserve' });
+    }
+
+    /**
+     * Handle the different custom event sent by the iframe.
+     *
+     * @param {CustomIframeDialogEvent} $event - The custom iframe dialog event.
+     */
+    customIframeDialog($event: CustomIframeDialogEvent) {
+        if (this.customEventsHandler[$event.detail.name]) {
+            this.customEventsHandler[$event.detail.name]($event);
+        }
     }
 
     /**
@@ -193,16 +224,19 @@ export class DotEditPageViewAsControllerSeoComponent implements OnInit {
      * @private
      */
     private getUrlEditPageJSP(newLanguage: number): string {
+        const isLive = this.pageState.page.live;
         const pageLiveInode = this.pageState.page.liveInode;
+        const iNode = this.pageState.page.inode;
+        const stInode = this.pageState.page.stInode;
 
         const queryStringParts = [
             'p_p_id=content',
             'p_p_action=1',
             'p_p_state=maximized',
             'angularCurrentPortlet=pages',
-            `_content_sibbling=${pageLiveInode}`,
+            `_content_sibbling=${isLive ? pageLiveInode : iNode}`,
             '_content_cmd=edit',
-            `_content_sibblingStructure=${pageLiveInode}`,
+            `_content_sibblingStructure=${isLive ? pageLiveInode : stInode}`,
             '_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet',
             'inode=',
             `lang=${newLanguage}`,

@@ -6,7 +6,7 @@
         (selected)="changeLanguageHandler($event)"
         appendTo="body"
         tooltipPosition="bottom"
-        tooltipStyleClass="dot-language-selector__dialog"></dot-language-selector>
+        tooltipStyleClass="dot-language-selector__dialog" />
 
     <dot-persona-selector
         [disabled]="(dotPageStateService.haveContent$ | async) === false"
@@ -34,11 +34,12 @@
     [acceptIcon]="null"
     [rejectIcon]="null"
     [style]="{ width: '500px' }"
-    rejectButtonStyleClass="p-button-outlined"></p-confirmDialog>
+    rejectButtonStyleClass="p-button-outlined" />
 
 @if (showEditJSPDialog()){
 <dot-iframe-dialog
     [header]="pageState.page.title"
     [url]="urlEditPageIframeDialog()"
-    (shutdown)="removeEditJSPDialog()"></dot-iframe-dialog>
+    (custom)="customIframeDialog($event)"
+    (shutdown)="removeEditJSPDialog()" />
 }
