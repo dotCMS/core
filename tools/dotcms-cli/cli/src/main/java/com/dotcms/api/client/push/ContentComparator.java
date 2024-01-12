@@ -1,5 +1,6 @@
 package com.dotcms.api.client.push;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,5 +47,31 @@ public interface ContentComparator<T> {
      * @return true if the local content is equal to the server content, false otherwise
      */
     boolean contentEquals(T localContent, T serverContent);
+
+    /**
+     * Retrieves a comparator that can be used to sort a list of contents in the order they should
+     * be processed.
+     *
+     * @return a comparator that can be used to sort a list of contents in the order they should be
+     * processed
+     */
+    default Comparator<T> getProcessingOrderComparator() {
+        // By default, don't change the processing order
+        return new NullComparator<>();
+    }
+
+    /**
+     * Default implementation of the ContentComparator interface that does not change the processing
+     * order.
+     *
+     * @param <T> the type of content to be compared
+     */
+    class NullComparator<T> implements Comparator<T> {
+
+        @Override
+        public int compare(T t1, T t2) {
+            return 0;
+        }
+    }
     
 }

@@ -916,6 +916,12 @@ public class SiteResource implements Serializable {
             site.setProperty(EMBEDDED_DASHBOARD, siteForm.getEmbeddedDashboard());
         }
 
+        // Property needed to mark the site as default, only set it if the site is marked as default
+        //  to avoid changing the existing default behavior.
+        if (siteForm.isDefault()) {
+            site.setDefault(siteForm.isDefault());
+        }
+
         final long languageId = 0 == siteForm.getLanguageId()?
                 APILocator.getLanguageAPI().getDefaultLanguage().getId(): site.getLanguageId();
 
