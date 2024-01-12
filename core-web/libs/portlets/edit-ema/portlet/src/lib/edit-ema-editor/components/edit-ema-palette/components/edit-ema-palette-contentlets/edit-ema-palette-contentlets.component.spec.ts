@@ -87,7 +87,8 @@ describe('EditEmaPaletteContentletsComponent', () => {
         expect(spectator.query('[data-testId="contentlet-0"]')).toHaveAttribute('data-item');
         expect(data).toEqual({
             identifier: CONTENTLETS_MOCK[0].identifier,
-            contentType: CONTENTLETS_MOCK[0].contentType
+            contentType: CONTENTLETS_MOCK[0].contentType,
+            baseType: CONTENTLETS_MOCK[0].baseType
         });
     });
 
