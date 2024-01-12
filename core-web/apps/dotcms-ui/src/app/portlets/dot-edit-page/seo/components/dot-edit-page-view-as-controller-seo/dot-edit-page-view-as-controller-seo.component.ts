@@ -173,7 +173,7 @@ export class DotEditPageViewAsControllerSeoComponent implements OnInit {
             acceptIcon: 'hidden',
             accept: () => {
                 this.urlEditPageIframeDialog.set(this.getUrlEditPageJSP(language.id));
-                // TODO: el caso del editor nuevo
+                // TODO: Handle the new editor
                 this.showEditJSPDialog.set(true);
             },
             reject: () => {

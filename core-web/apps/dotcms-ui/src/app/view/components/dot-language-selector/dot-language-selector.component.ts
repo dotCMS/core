@@ -28,7 +28,7 @@ import { DotLanguage } from '@dotcms/dotcms-models';
 })
 export class DotLanguageSelectorComponent {
     @Input() value: DotLanguage;
-    @Input() readonly: boolean; // ?
+    @Input() readonly: boolean;
     @Output() selected = new EventEmitter<DotLanguage>();
     @HostBinding('class.disabled') disabled: boolean;
 
