@@ -32,6 +32,7 @@ import { DotBinaryFieldValidatorService } from './service/dot-binary-field-valid
 import { DotBinaryFieldStore } from './store/binary-field.store';
 import { getUiMessage } from './utils/binary-field-utils';
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK, FIELD, fileMetaData } from './utils/mock';
+
 import { BINARY_FIELD_CONTENTLET } from '../../utils/mocks';
 
 const TEMP_FILE_MOCK: DotCMSTempFile = {
