@@ -724,10 +724,7 @@ public class UserResource implements Serializable {
 			user.setMiddleName(createUserForm.getMiddleName());
 		}
 
-		if (createUserForm.getLanguageId() <= 0) {
-			user.setLanguageId(String.valueOf(createUserForm.getLanguageId() <= 0?
-					APILocator.getLanguageAPI().getDefaultLanguage().getId(): createUserForm.getLanguageId()));
-		}
+		this.setLanguage (user, createUserForm.getLanguage(), createUserForm.getLanguageId());
 
 		if (UtilMethods.isSet(createUserForm.getNickName())) {
 			user.setNickName(createUserForm.getNickName());
@@ -758,6 +755,22 @@ public class UserResource implements Serializable {
 		}
 
 		return user;
+	}
+
+	private void setLanguage(User user, String language, final long languageId) {
+
+		if (UtilMethods.isSet(language)) {
+
+			user.setLanguageId(language);
+		} else  {
+
+			final long langId = languageId <= 0?
+					APILocator.getLanguageAPI().getDefaultLanguage().getId(): languageId;
+
+			user.setLanguageId(String.valueOf(languageId <= 0?
+					APILocator.getLanguageAPI().getDefaultLanguage().getId(): createUserForm.getLanguageId()));
+
+		}
 	}
 
 

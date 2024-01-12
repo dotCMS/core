@@ -33,6 +33,8 @@ public final class CreateUserForm extends Validated  {
     private final boolean male;
     private final String  birthday;
     private final long    languageId;
+
+    private final String    language;
     private final String  timeZoneId;
     private final char[] password;
 
@@ -56,6 +58,7 @@ public final class CreateUserForm extends Validated  {
         this.additionalInfo = builder.additionalInfo;
         this.roles = UtilMethods.isSet(builder.roles)?builder.roles: Collections.emptyList();
         this.userId = builder.userId;
+        this.language = builder.language;
 
         checkValid();
         if (!UtilMethods.isSet(this.password)) {
@@ -103,6 +106,10 @@ public final class CreateUserForm extends Validated  {
         return languageId;
     }
 
+    public String getLanguage() {
+        return language;
+    }
+
     public String getTimeZoneId() {
         return timeZoneId;
     }
@@ -130,6 +137,8 @@ public final class CreateUserForm extends Validated  {
         @JsonProperty private boolean male;
         @JsonProperty private String  birthday;
         @JsonProperty private long    languageId = -1l;
+
+        @JsonProperty private String    language;
         @JsonProperty private String    timeZoneId;
         @JsonProperty private char[]    password;
         @JsonProperty private Map<String, Object>    additionalInfo;
@@ -138,6 +147,10 @@ public final class CreateUserForm extends Validated  {
         public Builder() {
         }
 
+        public Builder language(String language) {
+            this.language = language;
+            return this;
+        }
         public Builder userId(String userId) {
             this.userId = userId;
             return this;
