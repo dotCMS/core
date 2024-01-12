@@ -79,11 +79,11 @@ function useEventMessageHandler({ reload = window.location.reload }: { reload: (
                 if (mutation.type === 'childList') {
                     console.log('A child node has been added or removed.')
                     const contentletAdded = Array.from(mutation.addedNodes)
-                        .filter((node) => (node as HTMLDivElement).dataset.dot === 'contentlet')
+                        .filter((node) => (node as HTMLDivElement).dataset?.dot === 'contentlet')
 
 
                     const contentletRemoved = Array.from(mutation.removedNodes)
-                        .filter((node) => (node as HTMLDivElement).dataset.dot === 'contentlet')
+                        .filter((node) => (node as HTMLDivElement).dataset?.dot === 'contentlet')
 
                     if (contentletAdded.length || contentletRemoved.length) {
                         postMessageToEditor({
@@ -94,7 +94,7 @@ function useEventMessageHandler({ reload = window.location.reload }: { reload: (
             }
         });
 
-        observer.current.observe(document.querySelectorAll['[data-dot="container"]'], { attributes: false, childList: true, subtree: false });
+        observer.current?.observe(document, { childList: true, subtree: true });
 
         return () => {
             if (observer.current) observer.current.disconnect();
@@ -135,7 +135,6 @@ function useEventMessageHandler({ reload = window.location.reload }: { reload: (
 
                 case 'ema-reload-page': {
                     reload();
-                    console.log('reload');
 
                     break;
                 }
