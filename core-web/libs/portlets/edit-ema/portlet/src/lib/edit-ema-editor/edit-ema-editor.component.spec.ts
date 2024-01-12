@@ -356,6 +356,25 @@ describe('EditEmaEditorComponent', () => {
                     expect(spectator.query(byTestId(testId))).toBeNull();
                 });
             });
+
+            it('should show the components that need showed on preview mode', () => {
+                const componentsToShow = ['ema-back-to-edit', 'device-display']; // Test id of components that should show when entering preview modes
+
+                spectator.detectChanges();
+
+                const deviceSelector = spectator.debugElement.query(
+                    By.css('[data-testId="dot-device-selector"]')
+                );
+
+                const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
+
+                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
+                spectator.detectChanges();
+
+                componentsToShow.forEach((testId) => {
+                    expect(spectator.query(byTestId(testId))).not.toBeNull();
+                });
+            });
         });
 
         describe('persona selector', () => {
@@ -1382,7 +1401,7 @@ describe('EditEmaEditorComponent', () => {
 
         it('should render a "Dont have permission" message', () => {
             spectator.detectChanges();
-            expect(spectator.query(byTestId('cant-edit-message'))).toBeDefined();
+            expect(spectator.query(byTestId('editor-banner'))).toBeDefined();
         });
 
         it('should iframe wrapper to be expanded', () => {
