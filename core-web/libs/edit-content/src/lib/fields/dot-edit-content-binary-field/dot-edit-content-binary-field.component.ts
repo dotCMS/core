@@ -137,15 +137,20 @@ export class DotEditContentBinaryFieldComponent
     }
 
     ngOnInit() {
-        this.dotBinaryFieldStore.value$.pipe(skip(1)).subscribe((value) => {
-            this.tempId = value; // If the value changes, it means that a new file was uploaded
-            this.valueUpdated.emit(value);
+        this.dotBinaryFieldStore.value$
+            .pipe(
+                skip(1),
+                filter((value) => value !== this.contentlet?.inode)
+            )
+            .subscribe((value) => {
+                this.tempId = value; // If the value changes, it means that a new file was uploaded
+                this.valueUpdated.emit(value);
 
-            if (this.onChange) {
-                this.onChange(value);
-                this.onTouched();
-            }
-        });
+                if (this.onChange) {
+                    this.onChange(value);
+                    this.onTouched();
+                }
+            });
 
         this.dotBinaryFieldEditImageService
             .editedImage()

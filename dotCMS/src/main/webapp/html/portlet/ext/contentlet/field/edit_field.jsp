@@ -780,7 +780,13 @@
                         binaryField.imageEditor = true;
 
                         binaryField.addEventListener('valueUpdated', ({ detail }) => {
-                            field.value = detail;
+                            // If the value is different from the contentlet's inode, then we need to update the value
+                            // Binary field in JSP Expect the current value to be a path to the file.
+                            // Not the inode of the contentlet. Since we have the reference to the contentlet
+                            // We update the value is the inode is different from the contentlet's inode.
+                            if (detail !== contentlets[0].inode) {
+                                field.value = detail;
+                            }
                         });
 
                         binaryFieldContainer.innerHTML = '';

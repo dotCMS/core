@@ -32,6 +32,7 @@ import { DotBinaryFieldValidatorService } from './service/dot-binary-field-valid
 import { DotBinaryFieldStore } from './store/binary-field.store';
 import { getUiMessage } from './utils/binary-field-utils';
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK, FIELD, fileMetaData } from './utils/mock';
+import { BINARY_FIELD_CONTENTLET } from '../../utils/mocks';
 
 const TEMP_FILE_MOCK: DotCMSTempFile = {
     fileName: 'image.png',
@@ -124,6 +125,14 @@ describe('DotEditContentBinaryFieldComponent', () => {
         spectator.detectChanges();
         store.setTempFile(TEMP_FILE_MOCK);
         expect(spyEmit).toHaveBeenCalledWith(TEMP_FILE_MOCK.id);
+    });
+
+    it('should not emit new value is is equal to current inode', () => {
+        spectator.setInput('contentlet', BINARY_FIELD_CONTENTLET);
+        const spyEmit = jest.spyOn(spectator.component.valueUpdated, 'emit');
+        spectator.detectChanges();
+        store.setValue(BINARY_FIELD_CONTENTLET.inode);
+        expect(spyEmit).not.toHaveBeenCalled();
     });
 
     describe('Dropzone', () => {
