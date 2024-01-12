@@ -12,7 +12,8 @@ describe('getPageElementBound', () => {
                 top: 200,
                 left: 100,
                 right: 600,
-                bottom: 500
+                bottom: 500,
+                toJSON: jest.fn()
             };
         });
     });

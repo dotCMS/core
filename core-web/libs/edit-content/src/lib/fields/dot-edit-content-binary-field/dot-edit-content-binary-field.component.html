@@ -57,7 +57,7 @@
     <dot-binary-field-preview
         *ngIf="vm.status === BinaryFieldStatus.PREVIEW"
         [file]="vm.file"
-        [editableImage]="vm.isEnterprise"
+        [editableImage]="vm.isEnterprise && imageEditor"
         (removeFile)="removeFile()"
         (editFile)="onEditFile()"
         (editImage)="onEditImage()"

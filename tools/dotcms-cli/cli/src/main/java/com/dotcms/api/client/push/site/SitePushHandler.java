@@ -7,7 +7,6 @@ import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.push.PushHandler;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
-import com.dotcms.model.site.GetSiteByNameRequest;
 import com.dotcms.model.site.SiteView;
 import java.io.File;
 import java.util.Map;
@@ -50,18 +49,15 @@ public class SitePushHandler implements PushHandler<SiteView> {
     public SiteView add(File localFile, SiteView localSite, Map<String, Object> customOptions) {
 
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
+
+        // Creating the site
         var response = siteAPI.create(
                 toRequest(localSite, customOptions)
         );
 
         // Publishing the site
         if (Boolean.TRUE.equals(localSite.isLive())) {
-
-            final ResponseEntityView<SiteView> byName = siteAPI.findByName(
-                    GetSiteByNameRequest.builder().siteName(localSite.siteName()).build()
-            );
-
-            response = siteAPI.publish(byName.entity().identifier());
+            response = siteAPI.publish(response.entity().identifier());
         }
 
         return response.entity();
@@ -77,7 +73,7 @@ public class SitePushHandler implements PushHandler<SiteView> {
         ResponseEntityView<SiteView> response;
 
         // Unarchiving the site if necessary, this is necessary because the site API doesn't allow
-        // to update an archived site
+        //  updating an archived site
         if (Boolean.TRUE.equals(serverSite.isArchived())) {
             siteAPI.unarchive(localSite.identifier());
         }
@@ -141,6 +137,7 @@ public class SitePushHandler implements PushHandler<SiteView> {
                 .siteThumbnail(siteView.siteThumbnail())
                 .embeddedDashboard(siteView.embeddedDashboard())
                 .forceExecution(forceExecution)
+                .isDefault(Boolean.TRUE.equals(siteView.isDefault()))
                 .build();
     }
 

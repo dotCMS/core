@@ -38,6 +38,8 @@ import {
     BrowserUtil
 } from '@dotcms/dotcms-js';
 
+import { DotNotLicenseComponent } from '@dotcms/ui';
+
 import { DotAutocompleteTagsModule } from './components/dot-autocomplete-tags/dot-autocomplete-tags.module';
 import { AppRulesComponent } from './app.component';
 import { DotAutofocusModule } from './directives/dot-autofocus/dot-autofocus.module';
@@ -56,6 +58,7 @@ import { MessageModule } from 'primeng/message';
 import { MessagesModule } from 'primeng/messages';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { MenuModule } from 'primeng/menu';
+import { RouterModule } from '@angular/router';
 
 @NgModule({
     imports: [
@@ -77,7 +80,8 @@ import { MenuModule } from 'primeng/menu';
         DotAutofocusModule,
         DotUnlicenseModule,
         MenuModule,
-        TooltipModule
+        TooltipModule,
+        DotNotLicenseComponent
     ],
     declarations: [
         AddToBundleDialogComponent,
@@ -107,7 +111,6 @@ import { MenuModule } from 'primeng/menu';
         LoggerService,
         StringUtils,
         UserModel,
-
         ActionService,
         BundleService,
         ConditionGroupService,
@@ -115,7 +118,8 @@ import { MenuModule } from 'primeng/menu';
         GoogleMapService,
         I18nService,
         RuleService,
-        RuleViewService
+        RuleViewService,
+        RouterModule
     ],
     exports: [RuleEngineContainer, AppRulesComponent]
 })

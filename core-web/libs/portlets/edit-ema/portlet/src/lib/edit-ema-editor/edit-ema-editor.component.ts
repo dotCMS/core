@@ -37,12 +37,13 @@ import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/e
 import { EmaFormSelectorComponent } from './components/ema-form-selector/ema-form-selector.component';
 import {
     ContentletArea,
+    EmaDragItem,
     EmaPageDropzoneComponent,
     Row
 } from './components/ema-page-dropzone/ema-page-dropzone.component';
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
-import { DEFAULT_PERSONA, HOST, WINDOW } from '../shared/consts';
+import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { ActionPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
@@ -115,13 +116,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly editorState$ = this.store.editorState$;
     readonly destroy$ = new Subject<boolean>();
 
-    readonly host = HOST;
+    readonly host = '*';
 
     private savePayload: ActionPayload;
     private draggedPayload: DraggedPalettePayload;
 
     rows: Row[] = [];
     contentlet!: ContentletArea;
+    dragItem: EmaDragItem;
+
     // This should be in the store, but experienced an issue that triggers a reload in the whole store when the device is updated
     currentDevice: DotDevice & { icon?: string };
 
@@ -137,14 +140,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.destroy$.next(true);
         this.destroy$.complete();
     }
+
     /**
-     * Handle the iframe load event
+     * Handle the dialog iframe load event
      *
      * @param {CustomEvent} event
      * @memberof DotEmaComponent
      */
     onIframeLoad() {
         this.store.setDialogIframeLoading(false);
+
         // This event is destroyed when you close the dialog
         fromEvent(
             // The events are getting sended to the document
@@ -286,9 +291,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             item: string;
         };
 
+        const item = JSON.parse(dataset.item);
+        this.dragItem = {
+            baseType: item.baseType,
+            contentType: item.contentType
+        };
+
         this.draggedPayload = {
             type: dataset.type,
-            item: JSON.parse(dataset.item)
+            item
         };
 
         this.iframe.nativeElement.contentWindow?.postMessage(
@@ -305,6 +316,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     onDragEnd(_event: DragEvent) {
         this.rows = [];
+        this.dragItem = {
+            baseType: '',
+            contentType: ''
+        };
     }
 
     /**
@@ -474,12 +489,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     }
                 });
             },
-            [NG_CUSTOM_EVENTS.SAVE_CONTENTLET]: () => {
+            [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
                 if (this.savePayload) {
                     const pageContainers = insertContentletInContainer({
                         ...this.savePayload,
                         newContentletId: detail.payload.contentletIdentifier
-                    }); // This won't add anything if the contentlet is already on the container, so is safe to call it even when we just edited a contentlet
+                    });
 
                     // Save when created
                     this.store.savePage({
@@ -514,7 +529,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     private handlePostMessage({
-        origin = this.host,
+        origin: _origin = this.host,
         data
     }: {
         origin: string;
@@ -523,8 +538,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             payload: ActionPayload | SetUrlPayload | Row[] | ContentletArea;
         };
     }): () => void {
-        const action = origin !== this.host ? CUSTOMER_ACTIONS.NOOP : data.action;
-
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
             [CUSTOMER_ACTIONS.SET_URL]: () => {
                 const payload = <SetUrlPayload>data.payload;
@@ -546,10 +559,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.rows = [];
                 this.cd.detectChanges();
             },
+            [CUSTOMER_ACTIONS.PING_EDITOR]: () => {
+                this.iframe?.nativeElement?.contentWindow.postMessage(
+                    NOTIFY_CUSTOMER.EMA_EDITOR_PONG,
+                    this.host
+                );
+            },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }
-        })[action];
+        })[data.action];
     }
 
     /**
@@ -558,7 +577,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @private
      * @memberof DotEmaComponent
      */
-    private reloadIframe() {
+    reloadIframe() {
         this.iframe.nativeElement.contentWindow?.postMessage(
             NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
             this.host
@@ -574,6 +593,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     private updateQueryParams(params: Params) {
         this.router.navigate([], {
+            // replaceUrl: true,
+            // skipLocationChange: false,
             queryParams: params,
             queryParamsHandling: 'merge'
         });

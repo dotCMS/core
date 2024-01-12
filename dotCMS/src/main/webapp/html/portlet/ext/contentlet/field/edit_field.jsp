@@ -706,9 +706,11 @@
                     const metaData = <%=binaryMetadata%>;
                     const contentlet = metaData ? {
                         inode: "<%=binInode%>",
+                        titleImage: variable,
                         [variable]: `/dA/<%=contentlet.getIdentifier()%>/${variable}/${metaData.name}`,
                         [variable+"MetaData"]: {
                             ...metaData,
+                            fileSize: metaData.size,
                             contentType: "<%=mimeType%>"
                         }
                     } : null;
@@ -730,6 +732,7 @@
 
                     binaryField.field = fielData;
                     binaryField.contentlet = contentlet;
+                    binaryField.imageEditor = true;
 
                     binaryField.addEventListener('valueUpdated', ({ detail }) => {
                         field.value = detail;

@@ -1,3 +1,4 @@
+import { DotFileMetadata } from '@dotcms/dotcms-models';
 import { DropZoneErrorType } from '@dotcms/ui';
 
 export enum BinaryFieldMode {
@@ -12,16 +13,12 @@ export enum BinaryFieldStatus {
     PREVIEW = 'PREVIEW'
 }
 
-export interface BinaryFile {
-    mimeType: string;
-    name: string;
-    fileSize: number;
-    url?: string;
+export interface DotFilePreview extends DotFileMetadata {
+    id: string;
+    titleImage: string;
     inode?: string;
+    url?: string;
     content?: string;
-    width?: string;
-    height?: string;
-    titleImage?: string;
 }
 
 export enum UI_MESSAGE_KEYS {

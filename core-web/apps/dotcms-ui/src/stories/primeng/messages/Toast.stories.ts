@@ -1,5 +1,6 @@
-import { Meta, moduleMetadata } from '@storybook/angular';
+import { Meta, StoryFn, applicationConfig, moduleMetadata } from '@storybook/angular';
 
+import { importProvidersFrom } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { MessageService } from 'primeng/api';
@@ -10,6 +11,7 @@ import { ToastComponent } from './Toast.component';
 
 export default {
     title: 'PrimeNG/Messages/Toast',
+    component: ToastComponent,
     parameters: {
         docs: {
             description: {
@@ -20,13 +22,19 @@ export default {
     },
     decorators: [
         moduleMetadata({
-            imports: [ToastModule, ButtonModule, BrowserAnimationsModule],
+            imports: [ToastModule, ButtonModule],
             providers: [MessageService]
+        }),
+        // Apply application config to all stories
+        applicationConfig({
+            // List of providers and environment providers that should be available to the root component and all its children.
+            providers: [MessageService, importProvidersFrom(BrowserAnimationsModule)]
         })
     ]
 } as Meta;
 
-// inbox screen default state
-export const Default = () => ({
-    component: ToastComponent
+const Template = (): StoryFn => (args) => ({
+    props: args
 });
+
+export const Base = Template();
