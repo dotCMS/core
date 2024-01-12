@@ -106,18 +106,20 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
         }
     }
 
-    @Override
-    public Workspace getOrCreate() throws IOException {
-        return getOrCreate(Path.of("").toAbsolutePath());
+    public Workspace getOrCreate(final Path currentPath, final boolean findWorkspace) throws IOException {
+
+        if(!findWorkspace){
+            //This will force that use of the current path as the workspace. If no workspace info is found, it will create one.
+            return persist(
+                workspace(currentPath)
+            );
+        }
+
+        return getOrCreate(currentPath);
     }
 
     public Optional<Workspace> findWorkspace(Path currentPath) {
         final Optional<Path> projectRoot = findProjectRoot(currentPath);
-        return projectRoot.map(this::workspace);
-    }
-
-    public Optional<Workspace> findWorkspace() {
-        final Optional<Path> projectRoot = findProjectRoot(Path.of("").toAbsolutePath());
         return projectRoot.map(this::workspace);
     }
 
