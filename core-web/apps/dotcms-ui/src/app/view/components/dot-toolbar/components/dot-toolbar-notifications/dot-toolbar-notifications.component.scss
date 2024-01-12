@@ -7,6 +7,7 @@ $notification-padding: $spacing-3;
 
     .toolbar-notifications__container {
         position: relative;
+        margin-left: $spacing-1;
     }
 
     .badge {
@@ -24,6 +25,7 @@ $notification-padding: $spacing-3;
     .toolbar-notifications {
         padding: $notification-padding 0 $notification-padding $notification-padding;
         width: 350px;
+        margin: $spacing-1;
 
         &:before {
             background: $white;
@@ -39,15 +41,14 @@ $notification-padding: $spacing-3;
 
     .toolbar-notifications__heading {
         display: flex;
-        margin-bottom: $font-size-xs;
         justify-content: space-between;
         padding-right: $notification-padding;
     }
 
     .toolbar-notifications__title {
-        align-self: center;
-        font-size: $font-size-lg;
+        font-size: $font-size-xl;
         margin: 0;
+        padding-bottom: $spacing-0;
     }
 
     .toolbar-notifications__footer {
