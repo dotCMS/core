@@ -21,7 +21,7 @@
             [ngTemplateOutletContext]="{ item: item }">
         </ng-container>
         <span class="item__label" data-testId="nav-bar-item-label">
-            {{ item.label }}
+            {{ item.label | dm }}
         </span>
     </a>
 </ng-template>

@@ -24,7 +24,7 @@ import { DotStarterComponent } from './dot-starter.component';
 const messages = {
     'starter.title': 'Welcome!',
     'starter.description':
-        'You are logged in as <em>{0}</em>. To help you get started building with dotCMS we provided some quick links.',
+        'You are logged in as {0}. To help you get started building with dotCMS we provided some quick links.',
     'starter.dont.show': `Don't show this again`,
     'starter.main.link.data.model.title': 'Create data model',
     'starter.main.link.data.model.description': 'Create data model description',
