@@ -45,6 +45,10 @@ $number-link-icon-size: 2.28rem;
         flex-grow: 1;
     }
 
+    .dot-starter-bottom-content {
+        padding: $spacing-1 0 $spacing-5 $spacing-3;
+    }
+
     .dot-starter-top-main__section {
         background-color: $white;
         counter-reset: css-counter 0;
@@ -203,12 +207,11 @@ $number-link-icon-size: 2.28rem;
         display: flex;
         flex-grow: 1;
         height: 100%;
-        margin: $spacing-3 $spacing-1 0;
         overflow: hidden;
-        padding: $spacing-4 $spacing-3 0;
         transition: background-color $basic-speed ease-in;
         border-radius: $border-radius-md;
-        gap: $spacing-3;
+        gap: $spacing-1;
+        padding: $spacing-3;
 
         &:hover {
             background-color: $bg-hover;
@@ -216,7 +219,7 @@ $number-link-icon-size: 2.28rem;
     }
 
     .dot-starter-bottom__link-icon {
-        padding-top: 0.3rem;
+        padding-top: $spacing-0;
         span {
             color: $color-palette-primary;
             display: inline-flex;

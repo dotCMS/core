@@ -15,6 +15,10 @@
 .announcements__container {
     display: flex;
     justify-content: flex-end;
+
+    i {
+        color: $color-palette-primary-500;
+    }
 }
 
 .announcements__list-item {
