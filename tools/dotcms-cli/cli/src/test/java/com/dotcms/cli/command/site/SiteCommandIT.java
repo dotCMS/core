@@ -1,5 +1,4 @@
 package com.dotcms.cli.command.site;
-package com.dotcms.cli.command.site;
 
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
@@ -18,11 +17,8 @@ import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
