@@ -1,17 +1,24 @@
 import { Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
 
 import { takeUntil } from 'rxjs/operators';
 
 import { DotLicenseService, DotUnlicensedPortletData } from '@dotcms/data-access';
 
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
+
 @Component({
-    selector: 'dot-not-licensed-component',
-    styleUrls: ['./not-licensed.component.scss'],
-    templateUrl: 'not-licensed.component.html'
+    selector: 'dot-not-license',
+    standalone: true,
+    imports: [ButtonModule, DotMessagePipe],
+    templateUrl: './dot-not-license.component.html',
+    styleUrl: './dot-not-license.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class NotLicensedComponent implements OnInit, OnDestroy {
+export class DotNotLicenseComponent implements OnInit, OnDestroy {
     unlicenseData: DotUnlicensedPortletData;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();

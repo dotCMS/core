@@ -75,6 +75,7 @@ export interface PageProviderContext {
             keyTag: string;
         };
     };
+    isInsideEditor: boolean;
 }
 
 /**

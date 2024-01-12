@@ -35,13 +35,15 @@ export type DotcmsPageProps = {
 export function DotcmsLayout(props: DotcmsPageProps): JSX.Element {
     const { entity } = props;
 
-    const rowsRef = usePageEditor({});
+    const { rowsRef, isInsideEditor } = usePageEditor({});
 
     const addRowRef = (el: HTMLDivElement) => {
         if (el && !rowsRef.current.includes(el)) {
             rowsRef.current.push(el);
         }
     };
+
+    entity.isInsideEditor = isInsideEditor;
 
     return (
         <PageProvider entity={entity}>

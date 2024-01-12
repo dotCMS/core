@@ -22,7 +22,9 @@ const mockResponse: DotPageApiResponse = {
         url: 'test-url',
         title: 'Test Page',
         identifier: '123',
-        inode: '123-i'
+        inode: '123-i',
+        canEdit: true,
+        canRead: true
     },
     viewAs: {
         language: {
@@ -316,7 +318,8 @@ describe('EditEmaStore', () => {
                     identifier: 'container-identifier-123',
                     uuid: '123',
                     acceptTypes: 'test',
-                    maxContentlets: 1
+                    maxContentlets: 1,
+                    contentletsId: ['existing-contentlet-123']
                 },
                 pageContainers: [
                     {
