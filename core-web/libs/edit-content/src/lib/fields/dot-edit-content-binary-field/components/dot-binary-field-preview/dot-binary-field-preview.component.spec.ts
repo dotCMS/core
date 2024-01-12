@@ -82,6 +82,13 @@ describe('DotBinaryFieldPreviewComponent', () => {
                 spectator.click(editButton);
                 expect(spy).toHaveBeenCalled();
             });
+
+            it('should emit editFile event click on the code preview', () => {
+                const spy = jest.spyOn(spectator.component.editFile, 'emit');
+                const codePreview = spectator.query(byTestId('code-preview'));
+                spectator.click(codePreview);
+                expect(spy).toHaveBeenCalled();
+            });
         });
     });
 

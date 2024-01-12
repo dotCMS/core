@@ -210,6 +210,7 @@ describe('DotBinaryFieldStore', () => {
                     expect(state.contentlet).toEqual({
                         ...NEW_BINARY_FIELD_CONTENTLET,
                         mimeType: metaData.contentType,
+                        name: metaData.name,
                         content: 'DATA'
                     });
                     done();

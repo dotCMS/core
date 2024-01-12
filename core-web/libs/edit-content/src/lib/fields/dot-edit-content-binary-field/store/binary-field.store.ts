@@ -178,7 +178,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
                 switchMap((contentlet) => {
                     const { fileAsset, metaData, fieldVariable } = contentlet;
                     const metadata = metaData || contentlet[`${fieldVariable}MetaData`];
-                    const { contentType: mimeType, editableAsText } = metadata || {};
+                    const { contentType: mimeType, editableAsText, name } = metadata || {};
                     const contentURL = fileAsset || contentlet[fieldVariable];
                     const obs$ = editableAsText ? this.getFileContent(contentURL) : of('');
 
@@ -188,12 +188,14 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
                                 this.setContentlet({
                                     ...contentlet,
                                     mimeType,
+                                    name,
                                     content
                                 });
                             },
                             () => {
                                 this.setContentlet({
                                     ...contentlet,
+                                    name,
                                     mimeType
                                 });
                             }
