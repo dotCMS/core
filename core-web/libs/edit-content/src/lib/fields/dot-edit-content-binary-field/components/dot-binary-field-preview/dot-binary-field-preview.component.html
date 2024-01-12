@@ -9,12 +9,11 @@
 
     <ng-template #contentThumnail>
         <div class="preview-image__container">
-            <ng-container *ngIf="tempFile; else contentletThumbnail">
-                <dot-temp-file-thumbnail
-                    [tempFile]="tempFile"
-                    [iconSize]="'48px'"
-                    data-testId="temp-file-thumbnail"></dot-temp-file-thumbnail>
-            </ng-container>
+            <dot-temp-file-thumbnail
+                *ngIf="tempFile; else contentletThumbnail"
+                [tempFile]="tempFile"
+                [iconSize]="'48px'"
+                data-testId="temp-file-thumbnail"></dot-temp-file-thumbnail>
 
             <ng-template #contentletThumbnail>
                 <dot-contentlet-thumbnail
