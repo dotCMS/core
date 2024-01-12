@@ -745,7 +745,11 @@
                 (function autoexecute() {
                     const binaryFieldContainer = document.getElementById("container-binary-field-<%=field.getVelocityVarName()%>");
 
-                    // Getting the contentlet
+                    /**
+                     * Note: This is a temporary solution.
+                     * This is a workaround to get the contentlet from the API
+                     * because there is no way to get the same contentlet the AP retreive from the dwr call.
+                     */
                     fetch('/api/content/id/<%=contentlet.getIdentifier()%>', {
                         method: 'GET',
                         headers: {
