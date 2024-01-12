@@ -7,9 +7,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import javax.inject.Inject;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.wildfly.common.Assert;
 
 @QuarkusTest
 class WorkspaceManagerTest {
@@ -31,36 +31,43 @@ class WorkspaceManagerTest {
     void  Create_Verify_Then_Destroy_Workspace() throws IOException {
         final Path testDir = Files.createTempDirectory("tmpDirPrefix").toAbsolutePath();
         Files.createDirectories(testDir);
-        Assert.assertTrue(testDir.toFile().exists());
+        Assertions.assertTrue(testDir.toFile().exists());
         final Optional<Workspace> workspace = workspaceManager.findWorkspace(testDir);
-        Assert.assertFalse(workspace.isPresent());
+        Assertions.assertFalse(workspace.isPresent());
         final Workspace newWorkspace = workspaceManager.getOrCreate(testDir);
-        Assert.assertTrue(Files.exists(newWorkspace.root().resolve(".dot-workspace.yml" )));
-        Assert.assertTrue(Files.exists(newWorkspace.contentTypes()));
-        Assert.assertTrue(Files.exists(newWorkspace.languages()));
-        Assert.assertTrue(Files.exists(newWorkspace.files()));
-        Assert.assertTrue(Files.exists(newWorkspace.sites()));
+        Assertions.assertTrue(Files.exists(newWorkspace.root().resolve(".dot-workspace.yml" )));
+        Assertions.assertTrue(Files.exists(newWorkspace.contentTypes()));
+        Assertions.assertTrue(Files.exists(newWorkspace.languages()));
+        Assertions.assertTrue(Files.exists(newWorkspace.files()));
+        Assertions.assertTrue(Files.exists(newWorkspace.sites()));
         workspaceManager.destroy(newWorkspace);
-        Assert.assertFalse(Files.exists(newWorkspace.root().resolve(".dot-workspace.yml" )));
-        Assert.assertFalse(Files.exists(newWorkspace.contentTypes()));
-        Assert.assertFalse(Files.exists(newWorkspace.languages()));
-        Assert.assertFalse(Files.exists(newWorkspace.sites()));
+        Assertions.assertFalse(Files.exists(newWorkspace.root().resolve(".dot-workspace.yml" )));
+        Assertions.assertFalse(Files.exists(newWorkspace.contentTypes()));
+        Assertions.assertFalse(Files.exists(newWorkspace.languages()));
+        Assertions.assertFalse(Files.exists(newWorkspace.sites()));
     }
 
 
     @Test
-    void  Create_Nested_Workspaces_Then_Verify() throws IOException {
+    void  Create_Nested_Workspaces_Then_Verify_Path() throws IOException {
         //Let's make a workspace
         final Path testDir = Files.createTempDirectory("tmpDirPrefix").toAbsolutePath();
         Files.createDirectories(testDir);
-        Assert.assertTrue(testDir.toFile().exists());
+        Assertions.assertTrue(testDir.toFile().exists());
         final Workspace workspace = workspaceManager.getOrCreate(testDir);
         //Now lets make a nested workspace (which is not the recommended approach) but it serves as a test
         final Path testDir2 = workspace.root().resolve("testDir2");
         Files.createDirectories(testDir2);
-        Assert.assertTrue(testDir2.toFile().exists());
+        Assertions.assertTrue(testDir2.toFile().exists());
+        //Test the new method that will create a workspace without attempting to find a root parent
         final Workspace nested = workspaceManager.getOrCreate(testDir2, false);
-        
+        Assertions.assertTrue(Files.exists(nested.root().resolve(".dot-workspace.yml" )));
+        Assertions.assertEquals(nested.root(), testDir2);
+
+        final Path testDir3 = workspace.root().resolve("testDir3");
+        Files.createDirectories(testDir3);
+        Assertions.assertTrue(testDir3.toFile().exists());
+        final Workspace parent = workspaceManager.getOrCreate(testDir2, true);
 
     }
 

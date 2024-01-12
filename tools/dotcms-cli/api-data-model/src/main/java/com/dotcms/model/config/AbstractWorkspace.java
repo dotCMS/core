@@ -5,6 +5,7 @@ import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 @ValueType
@@ -38,5 +39,8 @@ public interface AbstractWorkspace {
     default Path files() {
         return Paths.get(root().toString(), FILES_NAMESPACE);
     }
+
+    @Nullable
+    String id();
 
 }

@@ -64,9 +64,12 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
                     String.format("Path [%s] must be a directory", path)
             );
         }
-        //All other fields are derived therefore we only need to set the root
-        return Workspace.builder().root(path)
-                .build();
+
+        return workspaceInfo(path)
+                //if the workspace info is present, we will use it to create the workspace extracting the id
+                .map(info -> Workspace.builder().id(info.id()).root(path).build())
+                //if the workspace info is not present, we will create a new empty workspace
+                .orElseGet(() -> Workspace.builder().root(path).build());
     }
 
     Optional<Path> findProjectRoot(Path currentPath) {
@@ -121,6 +124,28 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
     public Optional<Workspace> findWorkspace(Path currentPath) {
         final Optional<Path> projectRoot = findProjectRoot(currentPath);
         return projectRoot.map(this::workspace);
+    }
+
+    /**
+     * Reads the file
+     * @param path the path to the workspace
+     * @return the workspace info
+     */
+    Optional<WorkspaceInfo> workspaceInfo(final Path path) {
+        if (!Files.isDirectory(path)) {
+            throw new IllegalArgumentException(
+                    String.format("Path [%s] must be a directory", path)
+            );
+        }
+        final Path resolved = path.resolve(DOT_WORKSPACE_YML);
+        if (Files.exists(resolved)) {
+            try {
+                return Optional.of(mapper.readValue(resolved.toFile(), WorkspaceInfo.class));
+            } catch (IOException e) {
+                logger.error("Error reading workspace info", e);
+            }
+        }
+        return Optional.empty();
     }
 
     @Override
