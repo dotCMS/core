@@ -47,4 +47,21 @@ class WorkspaceManagerTest {
         Assert.assertFalse(Files.exists(newWorkspace.sites()));
     }
 
+
+    @Test
+    void  Create_Nested_Workspaces_Then_Verify() throws IOException {
+        //Let's make a workspace
+        final Path testDir = Files.createTempDirectory("tmpDirPrefix").toAbsolutePath();
+        Files.createDirectories(testDir);
+        Assert.assertTrue(testDir.toFile().exists());
+        final Workspace workspace = workspaceManager.getOrCreate(testDir);
+        //Now lets make a nested workspace (which is not the recommended approach) but it serves as a test
+        final Path testDir2 = workspace.root().resolve("testDir2");
+        Files.createDirectories(testDir2);
+        Assert.assertTrue(testDir2.toFile().exists());
+        final Workspace nested = workspaceManager.getOrCreate(testDir2, false);
+        
+
+    }
+
 }

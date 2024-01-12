@@ -51,7 +51,7 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
         final Path rootPath = workspace.root().resolve(DOT_WORKSPACE_YML);
         if (!Files.exists(rootPath)) {
             try (var outputStream = Files.newOutputStream(rootPath)) {
-                mapper.writeValue(outputStream, WorkspaceInfo.builder().name("default").build());
+                mapper.writeValue(outputStream, WorkspaceInfo.builder().build());
             }
         }
 
@@ -108,14 +108,14 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
 
     public Workspace getOrCreate(final Path currentPath, final boolean findWorkspace) throws IOException {
 
-        if(!findWorkspace){
-            //This will force that use of the current path as the workspace. If no workspace info is found, it will create one.
-            return persist(
-                workspace(currentPath)
-            );
+        if(findWorkspace){
+            return getOrCreate(currentPath);
         }
 
-        return getOrCreate(currentPath);
+        //This will force that use of the current path as the workspace. If no workspace info is found, it will create one.
+        return persist(
+                workspace(currentPath)
+        );
     }
 
     public Optional<Workspace> findWorkspace(Path currentPath) {
