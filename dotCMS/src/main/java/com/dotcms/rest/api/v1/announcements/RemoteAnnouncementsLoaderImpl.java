@@ -76,7 +76,7 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
             }
 
         } catch (Exception e) {
-            Logger.error(AnnouncementsHelperImpl.class, String.format(" failed to get announcements from [%s] with message: [%s]", url, e.getMessage()));
+            Logger.debug(AnnouncementsHelperImpl.class, String.format(" failed to get announcements from [%s] with message: [%s]", url, e.getMessage()));
             throw new DotRuntimeException(e);
         }
     }

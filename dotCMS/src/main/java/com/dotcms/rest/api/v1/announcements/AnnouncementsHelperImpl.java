@@ -71,7 +71,7 @@ public class AnnouncementsHelperImpl implements AnnouncementsHelper{
     @Override
     public List<Announcement> getAnnouncements( final String languageIdOrCode, final boolean refreshCache, final Integer limit, final User user) {
 
-        Logger.info(AnnouncementsHelperImpl.class,String.format("Getting announcements for language: %s refreshCache: %s limit: %d, user: %s ", languageIdOrCode, refreshCache, limit, user.getUserId()));
+        Logger.debug(AnnouncementsHelperImpl.class,String.format("Getting announcements for language: %s refreshCache: %s limit: %d, user: %s ", languageIdOrCode, refreshCache, limit, user.getUserId()));
         final Language language = getLanguage(languageIdOrCode);
         final int limitValue = getLimit(limit);
         if(!refreshCache) {
