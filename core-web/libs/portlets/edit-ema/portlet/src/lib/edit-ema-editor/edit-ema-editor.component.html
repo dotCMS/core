@@ -9,11 +9,20 @@
     <dot-edit-ema-toolbar>
         <ng-container left>
             <p-button
+                *ngIf="!currentDevice"
                 [label]="'editpage.toolbar.preview.page' | dm"
                 (onClick)="deviceSelector.openMenu($event)"
                 icon="pi pi-desktop"
                 styleClass="p-button-text p-button-sm"
                 data-testId="ema-preview" />
+            <p-button
+                *ngIf="currentDevice"
+                [label]="'editema.editor.preview.back-to-edit' | dm"
+                (onClick)="updateCurrentDevice()"
+                icon="pi pi-arrow-left"
+                styleClass="p-button-text p-button-sm"
+                data-testId="ema-back-to-edit" />
+
             <dot-ema-bookmarks [url]="es.favoritePageURL" />
             <p-button
                 [cdkCopyToClipboard]="es.iframeURL"
@@ -48,9 +57,18 @@
             <p-button class="p-button-sm" label="Save" />
         </ng-container>
     </dot-edit-ema-toolbar>
-    <div class="editor-message" *ngIf="!es.editor.page.canEdit" data-testId="cant-edit-message">
-        <i class="pi pi-exclamation-circle"></i>
-        {{ 'editema.dont.have.edit.permission' | dm }}
+    <div
+        class="editor-banner"
+        *ngIf="currentDevice || !es.editor.page.canEdit"
+        data-testId="editor-banner">
+        <dot-ema-device-display
+            *ngIf="!!currentDevice"
+            [currentDevice]="currentDevice"
+            data-testId="device-display" />
+        <div class="editor-banner--message" *ngIf="!es.editor.page.canEdit">
+            <i class="pi pi-exclamation-circle"></i>
+            {{ 'editema.dont.have.edit.permission' | dm }}
+        </div>
     </div>
     <div
         class="editor-content"
@@ -59,11 +77,6 @@
             'editor-content--expanded': !es.editor.page.canEdit
         }"
         data-testId="editor-content">
-        <dot-ema-device-display
-            *ngIf="!!currentDevice"
-            [currentDevice]="currentDevice"
-            (resetDevice)="updateCurrentDevice()"
-            data-testId="device-display" />
         <div
             class="iframe-wrapper"
             [ngClass]="{
@@ -93,9 +106,9 @@
                 (addContent)="addContentlet($event)"
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
-                *ngIf="!!rows.length && !!dragItemType && !currentDevice"
+                *ngIf="!!rows.length && !!dragItem && !currentDevice"
                 [rows]="rows"
-                [contentType]="dragItemType"
+                [item]="dragItem"
                 (place)="onPlaceItem($event)"
                 data-testId="dropzone" />
         </div>
