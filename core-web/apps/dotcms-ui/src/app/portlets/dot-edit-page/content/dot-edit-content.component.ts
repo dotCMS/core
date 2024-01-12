@@ -410,7 +410,6 @@ browse from the page internal links
                 .getActionUrl($event.data.contentType.variable)
                 .pipe(take(1))
                 .subscribe((url) => {
-                    //TODO: check if the getActionUrl can accept a lang as param.
                     url = this.setCurrentContentLang(url);
                     this.dotContentletEditorService.create({
                         data: { url },
@@ -678,14 +677,16 @@ browse from the page internal links
     }
 
     /**
-     * Replaces the value of "_content_lang" in the given string with a new value.
-     * @param {string} inputString - The original string containing the "_content_lang" parameter.
-     * @returns {string} - The updated string with the replaced "_content_lang" value.
+     * Sets the language parameter in the given URL and returns the concatenated pathname and search.
+     * the input URL doesn't include the host, origin is used as the base URL.
+     *
+     * @param {string} url - The input URL ( include pathname and search parameters).
+     * @returns {string} - The concatenated pathname and search parameters with the language parameter set.
      */
-    private setCurrentContentLang(inputString: string): string {
-        const regex = /(_content_lang=)(\d+)(?=&|$)/;
-        const replacement = `$1${this.pageLanguageId}`;
+    private setCurrentContentLang(url: string): string {
+        const newUrl = new URL(url, window.location.origin);
+        newUrl.searchParams.set('_content_lang', this.pageLanguageId);
 
-        return inputString.replace(regex, replacement);
+        return newUrl.pathname + newUrl.search;
     }
 }
