@@ -163,12 +163,13 @@ export class DotEditPageViewAsControllerSeoComponent implements OnInit {
 
     private askForCreateNewTranslation(language: DotLanguage): void {
         this.confirmationService.confirm({
-            message: this.dotMessageService.get(
-                'Populate-the-new-language-content-with-previous-language-content',
-                language.language,
-                this.pageState.viewAs.language.language
+            header: this.dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.header'
             ),
-            header: this.dotMessageService.get('Populate-Confirmation'),
+            message: this.dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.message',
+                language.language
+            ),
             rejectIcon: 'hidden',
             acceptIcon: 'hidden',
             accept: () => {
