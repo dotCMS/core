@@ -3,6 +3,7 @@
         class="searchable-dropdown__data-list-item"
         [class.selected]="item[labelPropertyName] === valueString"
         (click)="handleClick(item)"
+        data-testid="searchable-dropdown-data-list-item"
         ><i class="pi pi-check" *ngIf="item[labelPropertyName] === valueString"></i
         >{{ item.label }}</span
     >
