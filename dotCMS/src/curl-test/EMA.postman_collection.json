@@ -10,6 +10,75 @@
 			"name": "TestNoConfig",
 			"item": [
 				{
+					"name": "CallLogout0",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/dotAdmin/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dotAdmin",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DeleteAllEMAApps",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User FE has not access to EMA\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/dotema-config-v2/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"dotema-config-v2",
+								"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "NoConfig",
 					"event": [
 						{
@@ -57,9 +126,83 @@
 						}
 					},
 					"response": []
+				}
+			]
+		},
+		{
+			"name": "TestFrontEndAccess",
+			"item": [
+				{
+					"name": "CallLogout1",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/dotAdmin/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dotAdmin",
+								"logout"
+							]
+						}
+					},
+					"response": []
 				},
 				{
-					"name": "app-save Copy",
+					"name": "DeleteAllEMAApps",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User FE has not access to EMA\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/dotema-config-v2/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"dotema-config-v2",
+								"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "app-save1",
 					"event": [
 						{
 							"listen": "test",
@@ -127,12 +270,7 @@
 						"description": "This tests the endpoint that brings back one specific App/integration given the App-key followed by the site-id"
 					},
 					"response": []
-				}
-			]
-		},
-		{
-			"name": "TestFrontEndAccess",
-			"item": [
+				},
 				{
 					"name": "CreateFrontEndUsers",
 					"event": [
@@ -196,7 +334,7 @@
 					"response": []
 				},
 				{
-					"name": "CallLogout",
+					"name": "CallLogout2",
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -268,7 +406,7 @@
 			"name": "TestBeLimitedUser",
 			"item": [
 				{
-					"name": "CallLogout",
+					"name": "CallLogout1",
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -282,6 +420,127 @@
 								"logout"
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "DeleteAllEMAApps2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User FE has not access to EMA\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/dotema-config-v2/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"dotema-config-v2",
+								"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "app-save2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n\t  \"configuration\": {\n\t\t \"value\": \"{\\r\\n         \\\"config\\\":[\\r\\n                  {\\r\\n                  \\\"pattern\\\":\\\"\\/blogs\\/(.*)\\\",\\r\\n                  \\\"url\\\":\\\"https:\\/\\/myspa.blogs.com:3000\\\",\\r\\n                  \\\"options\\\":{\\r\\n                  \\\"authenticationToken\\\":\\\"123\\\",\\r\\n                  \\\"depth\\\":3,\\r\\n                  \\\"X-CONTENT-APP\\\":\\\"dotCMS\\\"\\r\\n                  }\\r\\n                  },\\r\\n                  {\\r\\n                  \\\"pattern\\\":\\\".*\\\",\\r\\n                  \\\"url\\\":\\\"https:\\/\\/myspa.com:3000\\\",\\r\\n                  \\\"options\\\":{\\r\\n                  \\\"authenticationToken\\\":\\\"456\\\",\\r\\n                  \\\"depth\\\":1,\\r\\n                  \\\"X-CONTENT-APP\\\":\\\"dotCMS\\\"\\r\\n                  }\\r\\n                  }\\r\\n        ]\\r\\n      }\"\n      }\n}\n"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/dotema-config-v2/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"dotema-config-v2",
+								"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+							]
+						},
+						"description": "This tests the endpoint that brings back one specific App/integration given the App-key followed by the site-id"
 					},
 					"response": []
 				},
@@ -348,6 +607,24 @@
 					"response": []
 				},
 				{
+					"name": "CallLogout2",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/dotAdmin/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dotAdmin",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "CheckEMAwithBEUserExpectedSuccess",
 					"event": [
 						{
@@ -397,7 +674,7 @@
 					"response": []
 				},
 				{
-					"name": "CallLogout Copy",
+					"name": "CallLogout3",
 					"request": {
 						"method": "GET",
 						"header": [],
