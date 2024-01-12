@@ -12,6 +12,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Dropdown } from 'primeng/dropdown';
 
 import { DotLanguagesService } from '@dotcms/data-access';
+import { DotLanguage } from '@dotcms/dotcms-models';
 import { mockLanguageArray } from '@dotcms/utils-testing';
 
 import { DotLanguageSelectorComponent } from './dot-language-selector.component';
@@ -41,7 +42,10 @@ describe('DotLanguageSelectorComponent', () => {
         expect(spectator.query(Dropdown)).toExist();
     });
 
-    it('should load languages in the dropdown', async () => {
+    it('should load languages in the dropdown with every change of value input', () => {
+        const DOT_LANG: DotLanguage = mockLanguageArray[0];
+        spectator.setInput('value', DOT_LANG);
+        spectator.detectComponentChanges();
         expect(dotLanguagesService.getLanguagesUsedPage).toHaveBeenCalledWith(PAGE_ID);
         expect(spectator.component.languagesList().length).toBe(mockLanguageArray.length);
 
