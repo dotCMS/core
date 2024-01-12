@@ -39,25 +39,28 @@ public class SiteForm {
 
     private final long   languageId;
 
+    private final boolean isDefault;
+
     private final boolean forceExecution;
 
     @JsonCreator
-    public SiteForm(@JsonProperty("aliases")    final String aliases,
-                    @JsonProperty("siteName")   final String siteName,
-                    @JsonProperty("tagStorage") final String tagStorage,
-                    @JsonProperty("siteThumbnail") final String siteThumbnail,
-                    @JsonProperty("runDashboard")  final boolean runDashboard,
-                    @JsonProperty("keywords")      final String keywords,
-                    @JsonProperty("description")   final String description,
-                    @JsonProperty("googleMap")     final String googleMap,
-                    @JsonProperty("googleAnalytics") final String googleAnalytics,
-                    @JsonProperty("addThis")         final String addThis,
-                    @JsonProperty("proxyUrlForEditMode") final String proxyUrlForEditMode,
-                    @JsonProperty("embeddedDashboard")   final String embeddedDashboard,
-                    @JsonProperty("languageId")          final long   languageId,
-                    @JsonProperty("identifier")          final String   identifier,
-                    @JsonProperty("inode")               final String   inode,
-                    @JsonProperty("forceExecution")  final boolean forceExecution) {
+    public SiteForm(@JsonProperty("aliases") final String aliases,
+            @JsonProperty("siteName") final String siteName,
+            @JsonProperty("tagStorage") final String tagStorage,
+            @JsonProperty("siteThumbnail") final String siteThumbnail,
+            @JsonProperty("runDashboard") final boolean runDashboard,
+            @JsonProperty("keywords") final String keywords,
+            @JsonProperty("description") final String description,
+            @JsonProperty("googleMap") final String googleMap,
+            @JsonProperty("googleAnalytics") final String googleAnalytics,
+            @JsonProperty("addThis") final String addThis,
+            @JsonProperty("proxyUrlForEditMode") final String proxyUrlForEditMode,
+            @JsonProperty("embeddedDashboard") final String embeddedDashboard,
+            @JsonProperty("languageId") final long languageId,
+            @JsonProperty("identifier") final String identifier,
+            @JsonProperty("inode") final String inode,
+            @JsonProperty("default") final boolean isDefault,
+            @JsonProperty("forceExecution") final boolean forceExecution) {
 
         this.aliases = aliases;
         this.siteName = siteName;
@@ -71,9 +74,10 @@ public class SiteForm {
         this.addThis = addThis;
         this.proxyUrlForEditMode = proxyUrlForEditMode;
         this.embeddedDashboard = embeddedDashboard;
-        this.languageId        = languageId;
-        this.identifier        = identifier;
-        this.inode             = inode;
+        this.languageId = languageId;
+        this.identifier = identifier;
+        this.inode = inode;
+        this.isDefault = isDefault;
         this.forceExecution = forceExecution;
     }
 
@@ -137,6 +141,10 @@ public class SiteForm {
         return embeddedDashboard;
     }
 
+    public boolean isDefault() {
+        return isDefault;
+    }
+
     public boolean isForceExecution() {
         return forceExecution;
     }
@@ -155,6 +163,7 @@ public class SiteForm {
                 ", googleAnalytics=" + googleAnalytics +
                 ", addThis=" + addThis +
                 ", proxyUrlForEditMode=" + proxyUrlForEditMode +
+                ", default='" + isDefault + '\'' +
                 ", embeddedDashboard='" + embeddedDashboard + '\'' +
                 '}';
     }
