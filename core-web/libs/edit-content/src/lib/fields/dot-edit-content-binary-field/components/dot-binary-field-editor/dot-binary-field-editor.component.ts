@@ -11,6 +11,7 @@ import {
     ChangeDetectorRef,
     Component,
     EventEmitter,
+    HostListener,
     Input,
     OnInit,
     Output,
@@ -101,6 +102,19 @@ export class DotBinaryFieldEditorComponent implements OnInit {
 
     get content(): FormControl {
         return this.form.get('content') as FormControl;
+    }
+
+    /**
+     * Close the editor when the user press ESC
+     * And prevent the default behavior of the edit conten iframe
+     *
+     * @param {*} event
+     * @memberof DotBinaryFieldEditorComponent
+     */
+    @HostListener('document:keydown.escape', ['$event']) onEscape(event) {
+        this.cancel.emit();
+        event.preventDefault();
+        event.stopPropagation();
     }
 
     ngOnInit(): void {

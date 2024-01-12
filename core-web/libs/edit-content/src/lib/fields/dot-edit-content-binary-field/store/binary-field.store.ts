@@ -133,7 +133,8 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
 
     readonly removeFile = this.updater((state) => ({
         ...state,
-        file: null,
+        contentlet: null,
+        tempFile: null,
         value: '',
         status: BinaryFieldStatus.INIT
     }));

@@ -230,7 +230,8 @@ describe('DotEditContentBinaryFieldComponent', () => {
                     ...state,
                     status: BinaryFieldStatus.INIT,
                     value: '',
-                    file: null
+                    contentlet: null,
+                    tempFile: null
                 });
             });
 
