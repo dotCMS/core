@@ -146,8 +146,8 @@
 									"    var jsonData = pm.response.json();",
 									"    console.log(jsonData);",
 									"",
-									"    pm.expect(jsonData[\"emailAddress\"]).to.eql(\"frontend2@dotcms.com\");",
-									"    pm.expect(jsonData[\"firstName\"]).to.eql(\"FrontEnd\");",
+									"    pm.expect(jsonData.entity.user[\"emailAddress\"]).to.eql(\"frontend2@dotcms.com\");",
+									"    pm.expect(jsonData.entity.user[\"firstName\"]).to.eql(\"FrontEnd\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -268,6 +268,24 @@
 			"name": "TestBeLimitedUser",
 			"item": [
 				{
+					"name": "CallLogout",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/dotAdmin/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dotAdmin",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "CreateBELimitedUser",
 					"event": [
 						{
@@ -280,8 +298,8 @@
 									"    var jsonData = pm.response.json();",
 									"    console.log(jsonData);",
 									"",
-									"    pm.expect(jsonData[\"emailAddress\"]).to.eql(\"frontend2@dotcms.com\");",
-									"    pm.expect(jsonData[\"firstName\"]).to.eql(\"FrontEnd\");",
+									"    pm.expect(jsonData.entity.user[\"emailAddress\"]).to.eql(\"backend@dotcms.com\");",
+									"    pm.expect(jsonData.entity.user[\"firstName\"]).to.eql(\"Backend\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -308,7 +326,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"userId\":\"userid-fe1-12345678\",\n    \"active\":true,\n    \"firstName\":\"FrontEnd\",\n    \"middleName\":\"F\",\n    \"lastName\":\"FE\",\n    \"nickName\":\"FE\",\n    \"email\":\"frontend2@dotcms.com\",\n    \"male\":true,\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"],\n    \"roles\":[\"DOTCMS_FRONT_END_USER\"]\n}",
+							"raw": "{\n    \"userId\":\"userid-be1-12345678\",\n    \"active\":true,\n    \"firstName\":\"Backend\",\n    \"middleName\":\"B\",\n    \"lastName\":\"BE\",\n    \"nickName\":\"BE\",\n    \"email\":\"backend@dotcms.com\",\n    \"male\":true,\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"],\n    \"roles\":[\"DOTCMS_BACK_END_USER\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -330,25 +348,7 @@
 					"response": []
 				},
 				{
-					"name": "CallLogout",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/dotAdmin/logout",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"dotAdmin",
-								"logout"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "CheckEMAwithFEUserExpectedSuccess",
+					"name": "CheckEMAwithBEUserExpectedSuccess",
 					"event": [
 						{
 							"listen": "test",
@@ -391,6 +391,24 @@
 								"api",
 								"v1",
 								"ema"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CallLogout Copy",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/dotAdmin/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dotAdmin",
+								"logout"
 							]
 						}
 					},
