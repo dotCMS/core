@@ -96,7 +96,6 @@ export class DotContentletThumbnail {
     }
 
     private shouldShowVideoThumbnail() {
-        console.log(this.contentlet);
         return this.contentlet?.mimeType?.includes('video') && this.showVideoThumbnail;
     }
 }
