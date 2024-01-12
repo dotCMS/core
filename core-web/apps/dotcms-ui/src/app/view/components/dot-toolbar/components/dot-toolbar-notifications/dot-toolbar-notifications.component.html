@@ -2,7 +2,8 @@
     <p-button
         (click)="op.toggle($event)"
         icon="pi pi-megaphone"
-        styleClass="p-button-rounded p-button-text"></p-button>
+        styleClass="p-button-rounded p-button-text">
+    </p-button>
 
     <p-overlayPanel #op styleClass="toolbar-announcements__container">
         <dot-toolbar-announcements (hideOverlayPanel)="op.hide()" />

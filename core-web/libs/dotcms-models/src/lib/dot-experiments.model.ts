@@ -21,7 +21,7 @@ export interface DotExperiment {
     trafficAllocation: number;
     scheduling: RangeOfDateAndTime | null;
     creationDate: Date;
-    modDate: Date;
+    modDate: number;
     goals: Goals | null;
 }
 
