@@ -87,7 +87,7 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer>, 
 
         // Make sure the path is within a workspace
         final WorkspaceParams params = this.getPullMixin().workspace();
-        final Workspace workspace = workspaceManager.getOrCreate(params.workspacePath(), params.userProvided());
+        final Workspace workspace = workspaceManager.getOrCreate(params.workspacePath(), !params.userProvided());
 
         File sitesFolder = workspace.sites().toFile();
         if (!sitesFolder.exists() || !sitesFolder.canRead()) {

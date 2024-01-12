@@ -84,7 +84,7 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
 
         // Make sure the path is within a workspace
         final WorkspaceParams params = this.getPullMixin().workspace();
-        final Workspace workspace = workspaceManager.getOrCreate(params.workspacePath(), params.userProvided());
+        final Workspace workspace = workspaceManager.getOrCreate(params.workspacePath(), !params.userProvided());
 
         File languagesFolder = workspace.languages().toFile();
         if (!languagesFolder.exists() || !languagesFolder.canRead()) {

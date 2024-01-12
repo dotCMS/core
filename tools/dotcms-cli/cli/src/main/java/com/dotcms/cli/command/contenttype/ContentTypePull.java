@@ -84,7 +84,7 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
 
         // Make sure the path is within a workspace
         final WorkspaceParams params = this.getPullMixin().workspace();
-        final Workspace workspace = workspaceManager.getOrCreate(params.workspacePath(), params.userProvided());
+        final Workspace workspace = workspaceManager.getOrCreate(params.workspacePath(), !params.userProvided());
 
         File contentTypesFolder = workspace.contentTypes().toFile();
         if (!contentTypesFolder.exists() || !contentTypesFolder.canRead()) {

@@ -93,7 +93,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
 
         // Make sure the path is within a workspace
         final WorkspaceParams params = this.getPullMixin().workspace();
-        final Workspace workspace = workspaceManager.getOrCreate(params.workspacePath(), params.userProvided());
+        final Workspace workspace = workspaceManager.getOrCreate(params.workspacePath(), !params.userProvided());
 
         File filesFolder = workspace.files().toFile();
         if (!filesFolder.exists() || !filesFolder.canRead()) {
