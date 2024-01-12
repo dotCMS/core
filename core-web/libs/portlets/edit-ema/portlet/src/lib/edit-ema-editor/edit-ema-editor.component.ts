@@ -107,6 +107,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     personaSelector!: EditEmaPersonaSelectorComponent;
 
     private readonly router = inject(Router);
+    private readonly activatedRouter = inject(ActivatedRoute);
     private readonly store = inject(EditEmaStore);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
@@ -549,12 +550,24 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.store.updateEditorState(EDITOR_STATE.LOADED);
             },
 
-            [CUSTOMER_ACTIONS.SET_URL]: () => {                
+            [CUSTOMER_ACTIONS.SET_URL]: () => {   
                 const payload = <SetUrlPayload>data.payload;
+
+                console.log(this.activatedRouter.snapshot.queryParams.url, payload.url)
+
+                if (this.activatedRouter.snapshot.queryParams.url === payload.url) {
+                    console.log('LOADED')
+                    this.store.updateEditorState(EDITOR_STATE.LOADED); // First time we receive a message from the iframe we can assume that is loaded
+                } else {
+                    console.log('LOADING')
+                    this.store.updateEditorState(EDITOR_STATE.LOADING); // First time we receive a message from the iframe we can assume that is loaded
+                }
+                
 
                 this.updateQueryParams({
                     url: payload.url
                 });
+                
             },
             [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
                 this.rows = <Row[]>data.payload;
@@ -575,7 +588,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.host
                 );
 
-                this.store.updateEditorState(EDITOR_STATE.LOADED); // First time we receive a message from the iframe we can assume that is loaded
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
@@ -604,12 +616,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     private updateQueryParams(params: Params) {
+        console.log('updateQueryParams', )
+
         this.router.navigate([], {
             // replaceUrl: true,
             // skipLocationChange: false,
             queryParams: params,
             queryParamsHandling: 'merge'
-        });
+        })
 
         // Reset this on queryParams update
         this.rows = [];

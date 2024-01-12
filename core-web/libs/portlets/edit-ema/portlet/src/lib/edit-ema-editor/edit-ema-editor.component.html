@@ -73,6 +73,8 @@
                 width: !!currentDevice ? currentDevice.cssWidth + 'px' : '100%',
                 height: !!currentDevice ? currentDevice.cssHeight + 'px' : '100%'
             }">
+
+            {{es.iframeURL}}
             <iframe
                 #iframe
                 [src]="es.iframeURL | safeUrl"

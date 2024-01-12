@@ -149,7 +149,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     dialogIframeLoading: false,
                                     isEnterpriseLicense: licenseData,
                                     dialogType: null,
-                                    editorState: EDITOR_STATE.LOADED
+                                    editorState: EDITOR_STATE.LOADING
                                 });
                             },
                             error: ({ status }: HttpErrorResponse) => {
@@ -409,7 +409,10 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }
 
     private createPageURL(params: DotPageApiParams): string {
-        const url = params.url.startsWith('/') ? params.url.slice(1) : params.url;
+        // const url = params;
+
+        let url = params.url.split('/').filter(i => i !== 'index').join('/');
+        url = url.startsWith('/') ? url.slice(1) : url
 
         return `${url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
     }
