@@ -69,6 +69,51 @@
     String fullScreenHeight=fullScreenField ? "height: 100%;": "";
 %>
 
+<style type="text/css" media="all">
+    .spinner-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 12.5rem;
+        min-width: 12.5rem;
+    }
+    .loader-spinner {
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: inline-block;
+        vertical-align: middle;
+        font-size: 10px;
+        position: relative;
+        text-indent: -9999em;
+        border: 4px solid rgba(107, 77, 226, 0.2);
+        border-left-color: #6b4de2;
+        transform: translateZ(0);
+        animation: load8 1.1s infinite linear;
+        overflow: hidden;
+    }
+    @-webkit-keyframes load8 {
+        0% {
+            -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+        }
+        100% {
+            -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+        }
+    }
+    @keyframes load8 {
+        0% {
+            -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+        }
+        100% {
+            -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
 <div class="fieldWrapper" >
     <div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
         <% if (hint != null) {%>
@@ -688,12 +733,17 @@
             
                 %>
 
-            <div id="container-binary-field-<%=field.getVelocityVarName()%>"></div>
+            <div id="container-binary-field-<%=field.getVelocityVarName()%>">
+                <div class="spinner-container">
+                    <div class="loader-spinner"></div>
+                </div>
+            </div>
             <input name="<%=field.getFieldContentlet()%>" id="binary-field-input-<%=field.getFieldContentlet()%>ValueField" type="hidden" />
 
             <script>
                 // Create a new scope so that variables defined here can have the same name without being overwritten.
                 (function autoexecute() {
+                    const binaryFieldContainer = document.getElementById("container-binary-field-<%=field.getVelocityVarName()%>");
 
                     // Getting the contentlet
                     fetch('/api/content/id/<%=contentlet.getIdentifier()%>', {
@@ -703,7 +753,6 @@
                         }
                     }).then(response => response.json())
                     .then(({ contentlets }) => {
-                        const binaryFieldContainer = document.getElementById("container-binary-field-<%=field.getVelocityVarName()%>");
                         const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
                         const variable = "<%=field.getVelocityVarName()%>";
                         const fielData = {
@@ -730,6 +779,7 @@
                             field.value = detail;
                         });
 
+                        binaryFieldContainer.innerHTML = '';
                         binaryFieldContainer.appendChild(binaryField);
 
                         document.addEventListener(`binaryField-open-image-editor-${variable}`,({ detail }) => {
@@ -748,7 +798,7 @@
                         });
                     })
                     .catch(() => {
-                        console.log("ERROR")
+                        binaryFieldContainer.innerHTMl = '<div class="callOutBox">Error loading the binary field</div>';
                     })
                 })();
 
