@@ -1,4 +1,4 @@
-import { NgModule, inject } from '@angular/core';
+import { inject, NgModule } from '@angular/core';
 import {
     ActivatedRouteSnapshot,
     Route,
@@ -220,7 +220,8 @@ const appRoutes: Routes = [
     imports: [
         RouterModule.forRoot(appRoutes, {
             useHash: true,
-            onSameUrlNavigation: 'reload'
+            onSameUrlNavigation: 'reload',
+            enableViewTransitions: true
         })
     ],
     providers: [{ provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService }]
