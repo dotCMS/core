@@ -20,7 +20,6 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { ProgressBarModule } from 'primeng/progressbar';
 
-
 import { takeUntil } from 'rxjs/operators';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
@@ -550,24 +549,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.store.updateEditorState(EDITOR_STATE.LOADED);
             },
 
-            [CUSTOMER_ACTIONS.SET_URL]: () => {   
+            [CUSTOMER_ACTIONS.SET_URL]: () => {
                 const payload = <SetUrlPayload>data.payload;
 
-                console.log(this.activatedRouter.snapshot.queryParams.url, payload.url)
-
                 if (this.activatedRouter.snapshot.queryParams.url === payload.url) {
-                    console.log('LOADED')
-                    this.store.updateEditorState(EDITOR_STATE.LOADED); // First time we receive a message from the iframe we can assume that is loaded
+                    this.store.updateEditorState(EDITOR_STATE.LOADED);
                 } else {
-                    console.log('LOADING')
-                    this.store.updateEditorState(EDITOR_STATE.LOADING); // First time we receive a message from the iframe we can assume that is loaded
+                    this.store.updateEditorState(EDITOR_STATE.LOADING);
                 }
-                
 
                 this.updateQueryParams({
                     url: payload.url
                 });
-                
             },
             [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
                 this.rows = <Row[]>data.payload;
@@ -587,7 +580,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     NOTIFY_CUSTOMER.EMA_EDITOR_PONG,
                     this.host
                 );
-
             },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
@@ -616,14 +608,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     private updateQueryParams(params: Params) {
-        console.log('updateQueryParams', )
-
         this.router.navigate([], {
             // replaceUrl: true,
             // skipLocationChange: false,
             queryParams: params,
             queryParamsHandling: 'merge'
-        })
+        });
 
         // Reset this on queryParams update
         this.rows = [];

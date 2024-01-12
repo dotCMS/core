@@ -25,7 +25,6 @@ export async function generateMetadata({ params, searchParams }) {
 }
 
 export default async function Home({ searchParams, params }) {
-    console.log(searchParams);
     const data = await client.page.get({
         path: params?.slug ? params.slug.join('/') : 'index',
         language_id: searchParams.language_id,

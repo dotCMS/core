@@ -73,8 +73,6 @@
                 width: !!currentDevice ? currentDevice.cssWidth + 'px' : '100%',
                 height: !!currentDevice ? currentDevice.cssHeight + 'px' : '100%'
             }">
-
-            {{es.iframeURL}}
             <iframe
                 #iframe
                 [src]="es.iframeURL | safeUrl"
@@ -108,11 +106,7 @@
                 (addContent)="addContentlet($event)"
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
-                *ngIf="
-                    !!rows.length &&
-                    !currentDevice &&
-                    es.state === editorState.LOADED
-                "
+                *ngIf="!!rows.length && !currentDevice && es.state === editorState.LOADED"
                 [rows]="rows"
                 [item]="dragItem"
                 (place)="onPlaceItem($event)"

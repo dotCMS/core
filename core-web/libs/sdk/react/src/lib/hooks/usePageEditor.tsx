@@ -75,17 +75,16 @@ function useEventMessageHandler({ reload = window.location.reload }: { reload: (
 
     useEffect(() => {
         observer.current = new MutationObserver((mutationsList) => {
-            for (const mutation of mutationsList) {
-                if (mutation.type === 'childList') {
-                    console.log('A child node has been added or removed.')
-                    const contentletAdded = Array.from(mutation.addedNodes)
-                        .filter((node) => (node as HTMLDivElement).dataset?.dot === 'contentlet')
+            for (const { addedNodes, removedNodes, type } of mutationsList) {
+                if (type === 'childList') {
+                    const didNodesChanged = [
+                        ...Array.from(addedNodes),
+                        ...Array.from(removedNodes)
+                    ].filter(
+                        (node) => (node as HTMLDivElement).dataset?.dot === 'contentlet'
+                    ).length;
 
-
-                    const contentletRemoved = Array.from(mutation.removedNodes)
-                        .filter((node) => (node as HTMLDivElement).dataset?.dot === 'contentlet')
-
-                    if (contentletAdded.length || contentletRemoved.length) {
+                    if (didNodesChanged) {
                         postMessageToEditor({
                             action: CUSTOMER_ACTIONS.CONTENT_CHANGE
                         });

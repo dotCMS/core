@@ -409,10 +409,13 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }
 
     private createPageURL(params: DotPageApiParams): string {
-        // const url = params;
-
-        let url = params.url.split('/').filter(i => i !== 'index').join('/');
-        url = url.startsWith('/') ? url.slice(1) : url
+        const url = params.url
+            .replace(/^\//g, '')
+            .split('/')
+            .filter((part, i) => {
+                return !i || part !== 'index'; // Filter the index from the url if it is at the last position
+            })
+            .join('/');
 
         return `${url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
     }
