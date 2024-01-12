@@ -217,6 +217,7 @@ import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTables
 import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSizeTest;
 import com.dotmarketing.startup.runonce.Task231109AddPublishDateToContentletVersionInfoTest;
 import com.dotmarketing.startup.runonce.Task240102AlterVarcharLengthOfRelationTypeTest;
+import com.dotmarketing.startup.runonce.Task240111AddInodeAndIdentifierLeftIndexesTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.ITConfigTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -667,6 +668,7 @@ import org.junit.runners.Suite.SuiteClasses;
         DotConnectTest.class,
         Task231109AddPublishDateToContentletVersionInfoTest.class,
         Task240102AlterVarcharLengthOfRelationTypeTest.class,
+        Task240111AddInodeAndIdentifierLeftIndexesTest.class,
         AnnouncementsHelperIntegrationTest.class,
         RemoteAnnouncementsLoaderIntegrationTest.class
 })

@@ -68,7 +68,8 @@ const dragEventMock = {
             item: JSON.stringify({
                 identifier: '123',
                 title: 'hello world',
-                contentType: 'File'
+                contentType: 'File',
+                baseType: 'CONTENT'
             })
         }
     }
@@ -353,6 +354,25 @@ describe('EditEmaEditorComponent', () => {
 
                 componentsToHide.forEach((testId) => {
                     expect(spectator.query(byTestId(testId))).toBeNull();
+                });
+            });
+
+            it('should show the components that need showed on preview mode', () => {
+                const componentsToShow = ['ema-back-to-edit', 'device-display']; // Test id of components that should show when entering preview modes
+
+                spectator.detectChanges();
+
+                const deviceSelector = spectator.debugElement.query(
+                    By.css('[data-testId="dot-device-selector"]')
+                );
+
+                const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
+
+                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
+                spectator.detectChanges();
+
+                componentsToShow.forEach((testId) => {
+                    expect(spectator.query(byTestId(testId))).not.toBeNull();
                 });
             });
         });
@@ -1314,7 +1334,10 @@ describe('EditEmaEditorComponent', () => {
                 dropZone = spectator.query(EmaPageDropzoneComponent);
 
                 expect(dropZone.rows).toBe(BOUNDS_MOCK);
-                expect(dropZone.contentType).toBe('File');
+                expect(dropZone.item).toEqual({
+                    contentType: 'File',
+                    baseType: 'CONTENT'
+                });
             });
 
             it('should hide drop zone on palette drop', () => {
@@ -1336,8 +1359,11 @@ describe('EditEmaEditorComponent', () => {
 
                 let dropZone = spectator.query(EmaPageDropzoneComponent);
 
+                expect(dropZone.item).toEqual({
+                    contentType: 'File',
+                    baseType: 'CONTENT'
+                });
                 expect(dropZone.rows).toBe(BOUNDS_MOCK);
-                expect(dropZone.contentType).toBe('File');
 
                 spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragEnd', {});
                 spectator.detectComponentChanges();
@@ -1375,7 +1401,7 @@ describe('EditEmaEditorComponent', () => {
 
         it('should render a "Dont have permission" message', () => {
             spectator.detectChanges();
-            expect(spectator.query(byTestId('cant-edit-message'))).toBeDefined();
+            expect(spectator.query(byTestId('editor-banner'))).toBeDefined();
         });
 
         it('should iframe wrapper to be expanded', () => {

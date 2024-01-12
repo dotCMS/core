@@ -7,7 +7,7 @@
     height: 100%;
 }
 
-:host:has(.editor-message) {
+:host:has(.editor-banner) {
     grid-template-rows: min-content min-content 1fr;
 }
 
@@ -24,16 +24,33 @@ dot-edit-ema-toolbar {
     grid-column: 1 / -1;
 }
 
-.editor-message {
-    background-color: $color-palette-primary-300;
+.editor-banner {
+    background-color: $color-palette-primary-200;
     color: $black;
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     justify-content: center;
     align-items: center;
     gap: $spacing-0;
     height: $spacing-5;
     grid-column: 1 / -1;
     font-size: $font-size-sm;
+    border: 1px solid $color-palette-primary-300;
+    border-left: 0;
+    border-right: 0;    
+    padding: 0 $spacing-3;
+}
+
+.editor-banner--message {
+    grid-column: 2 / 3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: $spacing-0;
+}
+
+dot-ema-device-display {
+    grid-column: 1 / 2;
 }
 
 i {

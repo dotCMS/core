@@ -1,15 +1,14 @@
 package com.dotcms.api.client.push;
 
 import com.dotcms.api.client.MapperService;
-import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.cli.common.HiddenFileFilter;
 import com.dotcms.model.push.PushAction;
 import com.dotcms.model.push.PushAnalysisResult;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.arc.DefaultBean;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.enterprise.context.Dependent;
@@ -108,6 +107,7 @@ public class PushAnalysisServiceImpl implements PushAnalysisService {
                         PushAnalysisResult.<T>builder().
                                 action(action).
                                 localFile(localFile).
+                                localContent(localContent).
                                 serverContent(matchingServerContent).
                                 build()
                 );
@@ -115,10 +115,23 @@ public class PushAnalysisServiceImpl implements PushAnalysisService {
                 results.add(
                         PushAnalysisResult.<T>builder().
                                 action(PushAction.ADD).
+                                localContent(localContent).
                                 localFile(localFile).
                                 build()
                 );
             }
+        }
+
+        // Sort the results by the order they should be processed.
+        //  This is useful because the order of the results is not guaranteed and only will be used
+        //  if a custom comparator is provided.
+        Comparator<T> orderComparator = comparator.getProcessingOrderComparator();
+        if (!(orderComparator instanceof ContentComparator.NullComparator)) {
+            results.sort((result1, result2) -> orderComparator.compare(
+                            result1.localContent().orElse(null),
+                            result2.localContent().orElse(null)
+                    )
+            );
         }
 
         return results;

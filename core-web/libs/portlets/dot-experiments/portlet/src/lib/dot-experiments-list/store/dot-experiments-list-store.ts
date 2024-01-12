@@ -130,6 +130,10 @@ export class DotExperimentsListStore
                                 });
                             }
                         });
+
+                    grouped.forEach((group) => {
+                        group.experiments.sort((a, b) => b.modDate - a.modDate);
+                    });
                 }
 
                 return grouped.filter((item) => !!item.experiments.length);

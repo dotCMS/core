@@ -228,29 +228,20 @@ class SiteCommandIT extends CommandTest {
         try {
             final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
 
-            final String newSiteName = String.format("new.dotcms.site%d",
-                    System.currentTimeMillis());
-            String siteDescriptor = String.format("{\n"
-                    + "  \"siteName\" : \"%s\",\n"
-                    + "  \"languageId\" : 1,\n"
-                    + "  \"modDate\" : \"2023-05-05T00:13:25.242+00:00\",\n"
-                    + "  \"modUser\" : \"dotcms.org.1\",\n"
-                    + "  \"live\" : true,\n"
-                    + "  \"working\" : true\n"
-                    + "}", newSiteName);
+            // Creating a test site
+            var result = createSite(workspace, false);
 
-            final var path = Path.of(workspace.sites().toString(), "test.json");
-            Files.write(path, siteDescriptor.getBytes());
             final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
                 commandLine.setOut(out);
                 commandLine.setErr(out);
                 int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
-                        path.toFile().getAbsolutePath(), "--fail-fast", "-e");
+                        result.path.toFile().getAbsolutePath(), "--fail-fast", "-e");
                 Assertions.assertEquals(ExitCode.OK, status);
 
-                status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name", siteName);
+                status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME,
+                        "--name", result.siteName);
                 Assertions.assertEquals(ExitCode.OK, status);
             }
         } finally {
@@ -884,24 +875,9 @@ class SiteCommandIT extends CommandTest {
         try {
             final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
 
-            final String newSiteName = String.format(
-                    "new.dotcms.site%d",
-                    System.currentTimeMillis()
-            );
-            String siteDescriptor = String.format("{\n"
-                    + "  \"siteName\" : \"%s\",\n"
-                    + "  \"languageId\" : 1,\n"
-                    + "  \"modDate\" : \"2023-05-05T00:13:25.242+00:00\",\n"
-                    + "  \"modUser\" : \"dotcms.org.1\",\n"
-                    + "  \"live\" : true,\n"
-                    + "  \"working\" : true\n"
-                    + "}", newSiteName);
+            // Creating a test site
+            var result = createSite(workspace, false);
 
-            final var path = Path.of(
-                    workspace.sites().toString(),
-                    String.format("%s.json", newSiteName)
-            );
-            Files.write(path, siteDescriptor.getBytes());
             final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
@@ -910,20 +886,21 @@ class SiteCommandIT extends CommandTest {
 
                 // Pushing the sites
                 int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
-                        path.toFile().getAbsolutePath(), "--fail-fast", "-e");
+                        result.path.toFile().getAbsolutePath(), "--fail-fast", "-e");
                 Assertions.assertEquals(ExitCode.OK, status);
 
                 // Validating the site was created
-                status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name", siteName);
+                status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME,
+                        "--name", result.siteName);
                 Assertions.assertEquals(ExitCode.OK, status);
 
                 // ---
                 // Now validating the auto update updated the site descriptor
                 var updatedSite = this.mapperService.map(
-                        path.toFile(),
+                        result.path.toFile(),
                         SiteView.class
                 );
-                Assertions.assertEquals(newSiteName, updatedSite.siteName());
+                Assertions.assertEquals(result.siteName, updatedSite.siteName());
                 Assertions.assertEquals(1, updatedSite.languageId());
                 Assertions.assertNotNull(updatedSite.identifier());
                 Assertions.assertFalse(updatedSite.identifier().isBlank());
@@ -947,24 +924,9 @@ class SiteCommandIT extends CommandTest {
         try {
             final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
 
-            final String newSiteName = String.format(
-                    "new.dotcms.site%d",
-                    System.currentTimeMillis()
-            );
-            String siteDescriptor = String.format("{\n"
-                    + "  \"siteName\" : \"%s\",\n"
-                    + "  \"languageId\" : 1,\n"
-                    + "  \"modDate\" : \"2023-05-05T00:13:25.242+00:00\",\n"
-                    + "  \"modUser\" : \"dotcms.org.1\",\n"
-                    + "  \"live\" : true,\n"
-                    + "  \"working\" : true\n"
-                    + "}", newSiteName);
+            // Creating a test site
+            var result = createSite(workspace, false);
 
-            final var path = Path.of(
-                    workspace.sites().toString(),
-                    String.format("%s.json", newSiteName)
-            );
-            Files.write(path, siteDescriptor.getBytes());
             final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();
             try (PrintWriter out = new PrintWriter(writer)) {
@@ -973,26 +935,170 @@ class SiteCommandIT extends CommandTest {
 
                 // Pushing the sites
                 int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
-                        path.toFile().getAbsolutePath(), "--fail-fast", "-e",
+                        result.path.toFile().getAbsolutePath(), "--fail-fast", "-e",
                         "--disable-auto-update");
                 Assertions.assertEquals(ExitCode.OK, status);
 
                 // Validating the site was created
-                status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name", siteName);
+                status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME,
+                        "--name", result.siteName);
                 Assertions.assertEquals(ExitCode.OK, status);
 
                 // ---
                 // Now validating the auto update did not update the site descriptor
                 var updatedSite = this.mapperService.map(
-                        path.toFile(),
+                        result.path.toFile(),
                         SiteView.class
                 );
-                Assertions.assertEquals(newSiteName, updatedSite.siteName());
+                Assertions.assertEquals(result.siteName, updatedSite.siteName());
                 Assertions.assertEquals(1, updatedSite.languageId());
                 Assertions.assertNull(updatedSite.identifier());
             }
         } finally {
             deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Given scenario: Create a couple of sites using files, one of them is marked as the default
+     * site. Then change the default site directly in the server and push the changes again without
+     * changing the site descriptors.
+     * <p>
+     * Expected Result: The default site should change according to what we have in the workspace
+     * sites folder.
+     */
+    @Test
+    @Order(17)
+    void Test_Default_Site_Change() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        try {
+            final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+            var result = createSite(workspace, false);
+            var result1 = createSite(workspace, true);
+
+            final CommandLine commandLine = createCommand();
+            final StringWriter writer = new StringWriter();
+            try (PrintWriter out = new PrintWriter(writer)) {
+                commandLine.setOut(out);
+                commandLine.setErr(out);
+
+                // ╔═══════════════════════╗
+                // ║  Pushing the changes  ║
+                // ╚═══════════════════════╝
+                int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                        workspace.sites().toAbsolutePath().toString(), "--fail-fast", "-e");
+                Assertions.assertEquals(ExitCode.OK, status);
+
+                // Validating the sites were created
+                status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME,
+                        "--name", result.siteName);
+                Assertions.assertEquals(ExitCode.OK, status);
+                status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME,
+                        "--name", result1.siteName);
+                Assertions.assertEquals(ExitCode.OK, status);
+
+                // ---
+                // Now validating the updated the site descriptors
+                var site1 = this.mapperService.map(
+                        result.path.toFile(),
+                        SiteView.class
+                );
+                Assertions.assertEquals(result.siteName, site1.siteName());
+                Assertions.assertEquals(1, site1.languageId());
+                Assertions.assertNotNull(site1.identifier());
+                Assertions.assertFalse(site1.identifier().isBlank());
+                Assertions.assertNotEquals(Boolean.TRUE, site1.isDefault());
+
+                var site2 = this.mapperService.map(
+                        result1.path.toFile(),
+                        SiteView.class
+                );
+                Assertions.assertEquals(result1.siteName, site2.siteName());
+                Assertions.assertEquals(1, site2.languageId());
+                Assertions.assertNotNull(site2.identifier());
+                Assertions.assertFalse(site2.identifier().isBlank());
+                Assertions.assertEquals(Boolean.TRUE, site2.isDefault());
+
+                // ╔═════════════════════════════╗
+                // ║  Changing the default site  ║
+                // ╚═════════════════════════════╝
+                final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
+                var changeResult = siteAPI.makeDefault(site1.identifier());
+                Assertions.assertTrue(changeResult.entity());
+
+                // ╔═════════════════╗
+                // ║  Pushing again  ║
+                // ╚═════════════════╝
+                status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                        workspace.sites().toAbsolutePath().toString(), "--fail-fast", "-e");
+                Assertions.assertEquals(ExitCode.OK, status);
+
+                // ╔════════════════════════════════════════════════════════════╗
+                // ║  Validating the default site is back to the initial state  ║
+                // ╚════════════════════════════════════════════════════════════╝
+                var defaultSiteResult = siteAPI.defaultSite();
+                Assertions.assertEquals(
+                        site2.identifier(),
+                        defaultSiteResult.entity().identifier()
+                );
+            }
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * Creates a new site JSON file in the given workspace.
+     *
+     * @param workspace The workspace where the site file will be created.
+     * @param isDefault Whether the site should be created as the default site.
+     * @return The name of the created site and the path to the created site file.
+     * @throws IOException If an I/O error occurs while creating the site file.
+     */
+    private static SiteCreationResult createSite(final Workspace workspace, final boolean isDefault)
+            throws IOException {
+
+        final String newSiteName = String.format(
+                "new.dotcms.site.%s",
+                UUID.randomUUID()
+        );
+        String siteDescriptor = String.format("{\n"
+                + "  \"siteName\" : \"%s\",\n"
+                + "  \"languageId\" : 1,\n"
+                + "  \"modDate\" : \"2023-05-05T00:13:25.242+00:00\",\n"
+                + "  \"modUser\" : \"dotcms.org.1\",\n"
+                + "  \"live\" : true,\n"
+                + "  \"working\" : true,\n"
+                + "  \"default\" : %b\n"
+                + "}", newSiteName, isDefault);
+
+        final var path = Path.of(
+                workspace.sites().toString(),
+                String.format("%s.json", newSiteName)
+        );
+        Files.write(path, siteDescriptor.getBytes());
+
+        return new SiteCreationResult(newSiteName, path);
+    }
+
+    /**
+     * Represents the result of site creation.
+     */
+    private static class SiteCreationResult {
+
+        public final String siteName;
+        public final Path path;
+
+        public SiteCreationResult(String siteName, Path path) {
+            this.siteName = siteName;
+            this.path = path;
         }
     }
 
