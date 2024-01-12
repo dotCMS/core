@@ -2,7 +2,7 @@
 
 :host {
     max-height: 100vh;
-    overflow: scroll;
+    overflow: auto;
     display: block;
     padding: $spacing-4;
 }
@@ -33,7 +33,7 @@
     margin: 0;
     padding-bottom: $spacing-1;
     border-bottom: 1px solid $color-palette-gray-300;
-    font-size: $font-size-xl;
+    font-size: $font-size-lg;
 }
 
 .announcements__content {

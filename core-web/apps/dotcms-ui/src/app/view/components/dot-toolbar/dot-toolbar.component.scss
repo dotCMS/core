@@ -38,10 +38,6 @@ p-toolbar::ng-deep {
         border: 0;
         border-bottom: solid 1px $color-palette-gray-300;
     }
-
-    .p-toolbar-group-right > * {
-        margin-left: $spacing-3;
-    }
 }
 
 dot-toolbar-user {
