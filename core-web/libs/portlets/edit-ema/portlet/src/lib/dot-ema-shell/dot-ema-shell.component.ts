@@ -125,36 +125,36 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             items: [
                 {
                     icon: 'pi-file',
-                    label: 'Content',
+                    label: 'editema.editor.navbar.content',
                     href: 'content'
                 },
                 {
                     icon: 'pi-table',
-                    label: 'Layout',
+                    label: 'editema.editor.navbar.layout',
                     href: 'layout',
                     isDisabled: !page.canEdit
                 },
                 {
                     icon: 'pi-sliders-h',
-                    label: 'Rules',
+                    label: 'editema.editor.navbar.rules',
                     href: `rules/${page.identifier}`,
                     isDisabled: !page.canEdit
                 },
                 {
                     iconURL: 'experiments',
-                    label: 'A/B',
+                    label: 'editema.editor.navbar.experiments',
                     href: 'experiments'
                 },
                 {
                     icon: 'pi-th-large',
-                    label: 'Page Tools',
+                    label: 'editema.editor.navbar.page-tools',
                     action: () => {
                         this.pageTools.toggleDialog();
                     }
                 },
                 {
                     icon: 'pi-ellipsis-v',
-                    label: 'Properties',
+                    label: 'editema.editor.navbar.properties',
                     action: () => {
                         this.store.initActionEdit({
                             inode: page.inode,
