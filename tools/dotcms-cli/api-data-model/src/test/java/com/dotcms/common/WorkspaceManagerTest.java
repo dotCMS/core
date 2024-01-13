@@ -48,6 +48,13 @@ class WorkspaceManagerTest {
     }
 
 
+    /**
+     * Given scenario: We want to create a workspace and then create a nested workspace inside of it
+     * then corroborate that if we use the getOrCreate method despite the value passed in the findWorkspace parameter we get the same proper workspace
+     * Expected result: when calling getOrCreate from the nested workspace we should get the same workspace despite
+     * the value passed in the findWorkspace parameter. This because the nested workspace is fully capable of finding no need to find a parent
+     * @throws IOException
+     */
     @Test
     void  Create_Nested_Workspaces_Then_Verify_Path() throws IOException {
         //Let's make a workspace
@@ -55,20 +62,21 @@ class WorkspaceManagerTest {
         Files.createDirectories(testDir);
         Assertions.assertTrue(testDir.toFile().exists());
         final Workspace workspace = workspaceManager.getOrCreate(testDir);
+        Assertions.assertNotNull(workspace.id());
         //Now lets make a nested workspace (which is not the recommended approach) but it serves as a test
-        final Path testDir2 = workspace.root().resolve("testDir2");
-        Files.createDirectories(testDir2);
-        Assertions.assertTrue(testDir2.toFile().exists());
+        final Path nestedDir2 = workspace.root().resolve("nestedDir2");
+        Files.createDirectories(nestedDir2);
+        Assertions.assertTrue(nestedDir2.toFile().exists());
         //Test the new method that will create a workspace without attempting to find a root parent
-        final Workspace nested = workspaceManager.getOrCreate(testDir2, false);
+        final Workspace nested = workspaceManager.getOrCreate(nestedDir2, false);
         Assertions.assertTrue(Files.exists(nested.root().resolve(".dot-workspace.yml" )));
-        Assertions.assertEquals(nested.root(), testDir2);
+        Assertions.assertEquals(nested.root(), nestedDir2);
 
-        final Path testDir3 = workspace.root().resolve("testDir3");
-        Files.createDirectories(testDir3);
-        Assertions.assertTrue(testDir3.toFile().exists());
-        final Workspace parent = workspaceManager.getOrCreate(testDir2, true);
-
+        //Now test the get or create method that will attempt to find a root parent
+        //Since we're giving it tha
+        final Workspace test = workspaceManager.getOrCreate(nestedDir2, true);
+        Assertions.assertEquals(test.root(), nested.root());
+        Assertions.assertEquals(test.id(), nested.id());
     }
 
 }

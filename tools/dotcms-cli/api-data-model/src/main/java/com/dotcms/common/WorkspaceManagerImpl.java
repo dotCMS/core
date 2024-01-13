@@ -3,6 +3,7 @@ package com.dotcms.common;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.model.config.Workspace;
 import com.dotcms.model.config.WorkspaceInfo;
+import com.dotcms.model.config.WorkspaceInfo.Builder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.arc.DefaultBean;
 import java.io.File;
@@ -49,13 +50,19 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
         }
 
         final Path rootPath = workspace.root().resolve(DOT_WORKSPACE_YML);
+
+        final Builder builder = WorkspaceInfo.builder();
+        if (null != workspace.id()) {
+            builder.id(workspace.id());
+        }
+        final WorkspaceInfo info = builder.build();
         if (!Files.exists(rootPath)) {
             try (var outputStream = Files.newOutputStream(rootPath)) {
-                mapper.writeValue(outputStream, WorkspaceInfo.builder().build());
+                mapper.writeValue(outputStream, info);
             }
         }
 
-        return workspace;
+        return Workspace.builder().from(workspace).id(info.id()).build();
     }
 
     Workspace workspace(final Path path) {
@@ -97,7 +104,7 @@ public class WorkspaceManagerImpl implements WorkspaceManager {
     public Workspace getOrCreate(Path currentPath) throws IOException {
         final Optional<Workspace> workspace = findWorkspace(currentPath);
         if (workspace.isPresent()) {
-            //calling persist to make sure all the directories were not removed
+            //calling persist to make sure all the directories are still there
             return persist(
                  workspace.get()
             );
