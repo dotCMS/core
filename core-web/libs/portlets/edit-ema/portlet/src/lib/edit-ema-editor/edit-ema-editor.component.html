@@ -9,11 +9,20 @@
     <dot-edit-ema-toolbar>
         <ng-container left>
             <p-button
+                *ngIf="!currentDevice"
                 [label]="'editpage.toolbar.preview.page' | dm"
                 (onClick)="deviceSelector.openMenu($event)"
                 icon="pi pi-desktop"
                 styleClass="p-button-text p-button-sm"
                 data-testId="ema-preview" />
+            <p-button
+                *ngIf="currentDevice"
+                [label]="'editema.editor.preview.back-to-edit' | dm"
+                (onClick)="updateCurrentDevice()"
+                icon="pi pi-arrow-left"
+                styleClass="p-button-text p-button-sm"
+                data-testId="ema-back-to-edit" />
+
             <dot-ema-bookmarks [url]="es.favoritePageURL" />
             <p-button
                 [cdkCopyToClipboard]="es.iframeURL"
@@ -49,19 +58,29 @@
         </ng-container>
     </dot-edit-ema-toolbar>
     <div
-        class="editor-content"
-        [ngClass]="{
-            'editor-content--device': !!currentDevice
-        }">
+        class="editor-banner"
+        *ngIf="currentDevice || !es.editor.page.canEdit"
+        data-testId="editor-banner">
         <dot-ema-device-display
             *ngIf="!!currentDevice"
             [currentDevice]="currentDevice"
-            (resetDevice)="updateCurrentDevice()"
             data-testId="device-display" />
+        <div class="editor-banner--message" *ngIf="!es.editor.page.canEdit">
+            <i class="pi pi-exclamation-circle"></i>
+            {{ 'editema.dont.have.edit.permission' | dm }}
+        </div>
+    </div>
+    <div
+        class="editor-content"
+        [ngClass]="{
+            'editor-content--device': !!currentDevice,
+            'editor-content--expanded': !es.editor.page.canEdit
+        }"
+        data-testId="editor-content">
         <div
             class="iframe-wrapper"
             [ngClass]="{
-                'iframe-wrapper--device': !!currentDevice
+                'iframe-wrapper--device': !!currentDevice,     
             }"
             [ngStyle]="{
                 width: !!currentDevice ? currentDevice.cssWidth + 'px' : '100%',
@@ -71,12 +90,14 @@
                 #iframe
                 [src]="es.iframeURL | safeUrl"
                 [title]="host"
+                [ngStyle]="{
+                    pointerEvents: this.rows.length ? 'none' : 'auto'
+                }"
                 data-testId="iframe"
-                style="border: none"
                 width="100%"
                 height="100%"></iframe>
             <dot-ema-contentlet-tools
-                *ngIf="!rows.length && !!contentlet && !currentDevice"
+                *ngIf="!rows.length && !!contentlet && !currentDevice && es.editor.page.canEdit"
                 [contentlet]="contentlet"
                 (edit)="editContentlet($event)"
                 (delete)="deleteContentlet($event)"
@@ -85,14 +106,16 @@
                 (addContent)="addContentlet($event)"
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
-                *ngIf="!!rows.length && !currentDevice"
+                *ngIf="!!rows.length && !!dragItem && !currentDevice"
                 [rows]="rows"
+                [item]="dragItem"
                 (place)="onPlaceItem($event)"
                 data-testId="dropzone" />
         </div>
     </div>
+
     <dot-edit-ema-palette
-        *ngIf="es.isEnterpriseLicense && !currentDevice"
+        *ngIf="es.isEnterpriseLicense && !currentDevice && es.editor.page.canEdit"
         [languageId]="es.editor.viewAs.language.id"
         [containers]="es.editor.containers"
         (dragStart)="onDragStart($event)"

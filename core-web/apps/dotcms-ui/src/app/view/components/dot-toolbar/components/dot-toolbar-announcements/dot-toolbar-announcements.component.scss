@@ -1,8 +1,8 @@
 @use "variables" as *;
 
 :host {
-    max-height: 37rem;
-    overflow: scroll;
+    max-height: 100vh;
+    overflow: auto;
     display: block;
     padding: $spacing-4;
 }
@@ -15,6 +15,10 @@
 .announcements__container {
     display: flex;
     justify-content: flex-end;
+
+    i {
+        color: $color-palette-primary-500;
+    }
 }
 
 .announcements__list-item {
@@ -33,7 +37,7 @@
     margin: 0;
     padding-bottom: $spacing-1;
     border-bottom: 1px solid $color-palette-gray-300;
-    font-size: $font-size-xl;
+    font-size: $font-size-lg;
 }
 
 .announcements__content {
@@ -70,7 +74,6 @@
     color: $color-palette-primary;
     padding: $spacing-1;
     border-radius: $border-radius-lg;
-    text-decoration: none;
     &:hover {
         background-color: $color-palette-primary-100;
     }

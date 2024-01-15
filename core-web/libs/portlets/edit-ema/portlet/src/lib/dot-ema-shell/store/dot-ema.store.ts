@@ -1,6 +1,7 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { EMPTY, Observable, forkJoin } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
@@ -10,29 +11,25 @@ import { DotContainerMap, DotLayout, DotPageContainerStructure } from '@dotcms/d
 
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
 import {
-    DotPageApiService,
     DotPageApiParams,
-    DotPageApiResponse
+    DotPageApiResponse,
+    DotPageApiService
 } from '../../services/dot-page-api.service';
-import {
-    DEFAULT_PERSONA,
-    HOST,
-    EDIT_CONTENTLET_URL,
-    ADD_CONTENTLET_URL
-} from '../../shared/consts';
+import { DEFAULT_PERSONA, EDIT_CONTENTLET_URL, ADD_CONTENTLET_URL } from '../../shared/consts';
 import { ActionPayload, SavePagePayload } from '../../shared/models';
 import { insertContentletInContainer } from '../../utils';
 
 type DialogType = 'content' | 'form' | 'widget' | 'shell' | null;
 
 export interface EditEmaState {
-    editor: DotPageApiResponse;
-    url: string;
-    dialogIframeURL: string;
+    clientHost: string;
     dialogHeader: string;
     dialogIframeLoading: boolean;
-    isEnterpriseLicense: boolean;
+    dialogIframeURL: string;
     dialogType: DialogType;
+    error?: number;
+    editor: DotPageApiResponse;
+    isEnterpriseLicense: boolean;
 }
 
 function getFormId(dotPageApiService) {
@@ -66,9 +63,13 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         super();
     }
 
+    /*******************
+     * Selectors
+     *******************/
+
     readonly editorState$ = this.select((state) => {
         const pageURL = this.createPageURL({
-            url: state.url,
+            url: state.editor.page.url,
             language_id: state.editor.viewAs.language.id.toString(),
             'com.dotmarketing.persona.id':
                 state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
@@ -76,14 +77,15 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
         const favoritePageURL = this.createFavoritePagesURL({
             languageId: state.editor.viewAs.language.id,
-            pageURI: state.url,
+            pageURI: state.editor.page.url,
             siteId: state.editor.site.identifier
         });
 
         return {
+            clientHost: state.clientHost,
             favoritePageURL,
             apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
-            iframeURL: `${HOST}/${pageURL}` + `&t=${Date.now()}`, // The iframe will only reload if the queryParams changes, so we add a timestamp to force a reload when no queryParams change
+            iframeURL: `${state.clientHost}/${pageURL}`,
             editor: {
                 ...state.editor,
                 viewAs: {
@@ -113,49 +115,56 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         page: state.editor.page,
         siteId: state.editor.site.identifier,
         languageId: state.editor.viewAs.language.id,
-        currentUrl: '/' + state.url,
-        host: HOST
+        currentUrl: '/' + state.editor.page,
+        host: state.clientHost,
+        error: state.error
     }));
 
     /**
-     * Load the page editor
+     * Concurrently loads page and license data to updat the state.
      *
-     * @memberof EditEmaStore
+     * @param {Observable<DotPageApiParams & { clientHost: string }>} params$ - Parameters for HTTP requests.
+     * @returns {Observable<any>} Response of the HTTP requests.
      */
-    readonly load = this.effect((params$: Observable<DotPageApiParams>) => {
-        return params$.pipe(
-            switchMap((params) =>
-                forkJoin({
-                    pageData: this.dotPageApiService.get(params),
-                    licenseData: this.dotLicenseService.isEnterprise().pipe(take(1), shareReplay())
-                }).pipe(
-                    tap({
-                        next: ({ pageData, licenseData }) => {
-                            this.setState({
-                                editor: pageData,
-                                url: params.url,
-                                dialogIframeURL: '',
-                                dialogHeader: '',
-                                dialogIframeLoading: false,
-                                isEnterpriseLicense: licenseData,
-                                dialogType: null
-                            });
-                        },
-                        error: (e) => {
-                            // eslint-disable-next-line no-console
-                            console.log(e);
-                        }
-                    }),
-                    catchError(() => EMPTY)
-                )
-            )
-        );
-    });
+    readonly load = this.effect(
+        (params$: Observable<DotPageApiParams & { clientHost: string }>) => {
+            return params$.pipe(
+                switchMap((params) => {
+                    return forkJoin({
+                        pageData: this.dotPageApiService.get(params),
+                        licenseData: this.dotLicenseService
+                            .isEnterprise()
+                            .pipe(take(1), shareReplay())
+                    }).pipe(
+                        tap({
+                            next: ({ pageData, licenseData }) => {
+                                this.setState({
+                                    clientHost: params.clientHost,
+                                    editor: pageData,
+                                    dialogIframeURL: '',
+                                    dialogHeader: '',
+                                    dialogIframeLoading: false,
+                                    isEnterpriseLicense: licenseData,
+                                    dialogType: null
+                                });
+                            },
+                            error: ({ status }: HttpErrorResponse) => {
+                                // eslint-disable-next-line no-console
+                                this.createEmptyState({ canEdit: false, canRead: false }, status);
+                            }
+                        }),
+                        catchError(() => EMPTY)
+                    );
+                })
+            );
+        }
+    );
 
     /**
-     * Save the page
+     * Saves data to a page.
+     * Calls `whenSaved` callback on success or error.
      *
-     * @memberof EditEmaStore
+     * @param {Observable<SavePagePayload>} payload$ - Page data to save.
      */
     readonly savePage = this.effect((payload$: Observable<SavePagePayload>) => {
         return payload$.pipe(
@@ -175,6 +184,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         );
     });
 
+    /**
+     * Saves data to a page but gets the new form identifier first.
+     * Calls `whenSaved` callback on success or error.
+     *
+     * @param {Observable<SavePagePayload>} payload$ - Page data to save.
+     */
     readonly saveFormToPage = this.effect(
         (
             payload$: Observable<{
@@ -236,6 +251,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
+    /*******************
+     * Updaters
+     *******************/
     readonly setDialogForCreateContent = this.updater(
         (state, { url, name }: { url: string; name: string }) => {
             return {
@@ -368,7 +386,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }
 
     private createPageURL(params: DotPageApiParams): string {
-        return `${params.url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
+        const url = params.url.startsWith('/') ? params.url.slice(1) : params.url;
+
+        return `${url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
     }
 
     /**
@@ -392,7 +412,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }): string {
         const { languageId, pageURI, siteId } = params;
 
-        return `/${pageURI}?` + (siteId ? `host_id=${siteId}` : '') + `&language_id=${languageId}`;
+        return (
+            `/${pageURI}?` +
+            (siteId ? `host_id=${siteId}` : '') +
+            `&language_id=${languageId}`
+        ).replace(/\/\//g, '/');
     }
 
     /**
@@ -409,5 +433,53 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
             return acc;
         }, {});
+    }
+
+    /**
+     *
+     *
+     * @private
+     * @param {{ canEdit: boolean; canRead: boolean }} permissions
+     * @param {number} [error]
+     * @memberof EditEmaStore
+     */
+    private createEmptyState(permissions: { canEdit: boolean; canRead: boolean }, error?: number) {
+        this.setState({
+            editor: {
+                page: {
+                    title: '',
+                    identifier: '',
+                    inode: '',
+                    ...permissions,
+                    url: ''
+                },
+                site: {
+                    hostname: '',
+                    type: '',
+                    identifier: '',
+                    archived: false
+                },
+                viewAs: {
+                    language: {
+                        id: 0,
+                        languageCode: '',
+                        countryCode: '',
+                        language: '',
+                        country: ''
+                    },
+                    persona: undefined
+                },
+                layout: null,
+                template: undefined,
+                containers: undefined
+            },
+            clientHost: '',
+            dialogIframeURL: '',
+            dialogHeader: '',
+            dialogIframeLoading: false,
+            isEnterpriseLicense: false,
+            dialogType: null,
+            error
+        });
     }
 }

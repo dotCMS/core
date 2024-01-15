@@ -18,10 +18,10 @@ export enum CONTENT_THUMBNAIL_TYPE {
 }
 
 export interface DotThumbnailOptions {
+    inode: string;
+    name: string;
+    contentType: string;
     tempUrl?: string;
-    inode?: string;
-    name?: string;
-    contentType?: string;
     iconSize?: string;
     titleImage?: string;
 }
@@ -36,37 +36,48 @@ export interface DotThumbnailOptions {
 })
 export class DotContentThumbnailComponent implements OnInit {
     src: string;
-    thumbnailIcon: string;
-    thumbnailType: CONTENT_THUMBNAIL_TYPE;
+    icon: string;
+    type: CONTENT_THUMBNAIL_TYPE;
 
-    @Input() dotThumbanilOptions: DotThumbnailOptions;
+    private NO_TITLE_IMAGE = 'TITLE_IMAGE_NOT_FOUND';
 
-    private _type: string;
-    private _tempUrl: string;
-    private _inode: string;
-    private _contentType: string;
-    private _titleImage: string;
-    private _name: string;
-    private _iconSize: string;
+    @Input() url: string;
+    @Input() inode: string;
+    @Input() titleImage: string;
+    @Input() isImage = false;
+    @Input() contentType = '';
+    @Input() name = '';
+    @Input() iconSize = '1rem';
+    @Input() objectFit = 'cover';
+
     readonly CONTENT_THUMBNAIL_TYPE = CONTENT_THUMBNAIL_TYPE;
-
     private readonly DEFAULT_ICON = 'pi-file';
-    private readonly thumbnailUrlMap = {
-        image: this.getImageThumbnailUrl.bind(this),
-        video: this.getVideoThumbnailUrl.bind(this),
-        pdf: this.getPdfThumbnailUrl.bind(this)
+    private readonly srcMap = {
+        image: () => this.getImageThumbnailUrl(),
+        video: () => this.getVideoThumbnailUrl(),
+        pdf: () => this.getPdfThumbnailUrl()
     };
 
-    get iconSize(): string {
-        return this._iconSize || '1rem';
+    get extension(): string {
+        return this.name.split('.').pop();
     }
 
-    get name(): string {
-        return this._name || '';
+    get fileType(): string {
+        return this.contentType?.split('/')[0];
+    }
+
+    get hasTitleImage(): boolean {
+        return this.titleImage && this.titleImage !== this.NO_TITLE_IMAGE;
+    }
+
+    get isVeticalImage(): boolean {
+        return this.type === CONTENT_THUMBNAIL_TYPE.image && this.isImage;
     }
 
     ngOnInit(): void {
-        this.buildThumbnail();
+        this.icon = ICON_MAP[this.extension] || this.DEFAULT_ICON;
+        this.type = this.getThumbnailType();
+        this.src = this.url || this.getURL?.();
     }
 
     /**
@@ -76,57 +87,15 @@ export class DotContentThumbnailComponent implements OnInit {
      * @memberof DotContentThumbnailComponent
      */
     handleError() {
-        this.thumbnailType = this.CONTENT_THUMBNAIL_TYPE.icon;
+        this.type = this.CONTENT_THUMBNAIL_TYPE.icon;
     }
 
-    private setProperties(): void {
-        const { tempUrl, inode, name, contentType, titleImage, iconSize } =
-            this.dotThumbanilOptions;
-        this._tempUrl = tempUrl;
-        this._inode = inode;
-        this._name = name;
-        this._contentType = contentType;
-        this._titleImage = titleImage;
-        this._iconSize = iconSize;
-        this._type = titleImage ? CONTENT_THUMBNAIL_TYPE.image : this._contentType.split('/')[0];
-    }
+    private getThumbnailType() {
+        if (this.isImage || this.hasTitleImage) {
+            return CONTENT_THUMBNAIL_TYPE.image;
+        }
 
-    private buildThumbnail(): void {
-        this.setProperties();
-        this.setSrc();
-        this.setThumbnailType();
-        this.setThumbnailIcon();
-    }
-
-    /**
-     * Set thumbnail type
-     *
-     * @private
-     * @memberof DotContentThumbnailComponent
-     */
-    private setThumbnailType(): void {
-        this.thumbnailType = CONTENT_THUMBNAIL_TYPE[this._type] || CONTENT_THUMBNAIL_TYPE.icon;
-    }
-
-    /**
-     * Set thumbnail src
-     *
-     * @private
-     * @memberof DotContentThumbnailComponent
-     */
-    private setSrc(): void {
-        this.src = this._tempUrl || this.thumbnailUrlMap[this._type]?.();
-    }
-
-    /**
-     * Set thumbnail icon
-     *
-     * @private
-     * @memberof DotContentThumbnailComponent
-     */
-    private setThumbnailIcon(): void {
-        const extension = this._name.split('.').pop();
-        this.thumbnailIcon = ICON_MAP[extension] || this.DEFAULT_ICON;
+        return CONTENT_THUMBNAIL_TYPE[this.fileType] || CONTENT_THUMBNAIL_TYPE.icon;
     }
 
     /**
@@ -137,7 +106,7 @@ export class DotContentThumbnailComponent implements OnInit {
      * @memberof DotContentThumbnailComponent
      */
     private getPdfThumbnailUrl(): string {
-        return `/contentAsset/image/${this._inode}/${this._titleImage}/pdf_page/1/resize_w/250/quality_q/45`;
+        return `/contentAsset/image/${this.inode}/${this.titleImage}/pdf_page/1/resize_w/250/quality_q/45`;
     }
 
     /**
@@ -148,7 +117,7 @@ export class DotContentThumbnailComponent implements OnInit {
      * @memberof DotContentThumbnailComponent
      */
     private getImageThumbnailUrl(): string {
-        return `/dA/${this._inode}/500w/50q`;
+        return `/dA/${this.inode}/500w/50q/${this.name}`;
     }
 
     /**
@@ -159,6 +128,23 @@ export class DotContentThumbnailComponent implements OnInit {
      * @memberof DotContentThumbnailComponent
      */
     private getVideoThumbnailUrl(): string {
-        return `/dA/${this._inode}`;
+        return `/dA/${this.inode}`;
+    }
+
+    private getURL(): string {
+        // If it's a pdf and has a title image, use the title image
+        if (this.extension === 'pdf' && this.hasTitleImage) {
+            return this.getPdfThumbnailUrl();
+        }
+
+        // If it's an image and has a title image, use the title image
+        if (this.isImage || this.hasTitleImage) {
+            return this.getImageThumbnailUrl();
+        }
+
+        // Else, check the srcMap for the file type or extension
+        const urlFn = this.srcMap[this.fileType] || this.srcMap[this.extension];
+
+        return urlFn?.();
     }
 }

@@ -61,12 +61,22 @@ const messagesMock = {
     'dot.common.dialog.reject': 'Reject'
 };
 
-describe('EditEmaEditorComponent', () => {
-    let spectator: SpectatorRouting<EditEmaEditorComponent>;
-    let store: EditEmaStore;
-    let confirmationService: ConfirmationService;
+const dragEventMock = {
+    target: {
+        dataset: {
+            type: 'contentlet',
+            item: JSON.stringify({
+                identifier: '123',
+                title: 'hello world',
+                contentType: 'File',
+                baseType: 'CONTENT'
+            })
+        }
+    }
+};
 
-    const createComponent = createRoutingFactory({
+const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
+    createRoutingFactory({
         component: EditEmaEditorComponent,
         imports: [RouterTestingModule, HttpClientTestingModule],
         detectChanges: false,
@@ -96,6 +106,21 @@ describe('EditEmaEditorComponent', () => {
                     }
                 }
             },
+
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService(messagesMock)
+            },
+            {
+                provide: WINDOW,
+                useValue: window
+            },
+            {
+                provide: DotPersonalizeService,
+                useValue: new DotPersonalizeServiceMock()
+            }
+        ],
+        providers: [
             {
                 provide: DotPageApiService,
                 useValue: {
@@ -104,7 +129,9 @@ describe('EditEmaEditorComponent', () => {
                             2: of({
                                 page: {
                                     title: 'hello world',
-                                    identifier: '123'
+                                    identifier: '123',
+                                    ...permissions,
+                                    url: 'page-one'
                                 },
                                 site: {
                                     identifier: '123'
@@ -123,7 +150,9 @@ describe('EditEmaEditorComponent', () => {
                             1: of({
                                 page: {
                                     title: 'hello world',
-                                    identifier: '123'
+                                    identifier: '123',
+                                    ...permissions,
+                                    url: 'page-one'
                                 },
                                 site: {
                                     identifier: '123'
@@ -183,17 +212,29 @@ describe('EditEmaEditorComponent', () => {
             mockProvider(DotContentTypeService)
         ]
     });
+describe('EditEmaEditorComponent', () => {
+    describe('with queryParams and permission', () => {
+        let spectator: SpectatorRouting<EditEmaEditorComponent>;
+        let store: EditEmaStore;
+        let confirmationService: ConfirmationService;
 
-    describe('with queryParams', () => {
+        const createComponent = createRouting({ canEdit: true, canRead: true });
+
         beforeEach(() => {
             spectator = createComponent({
-                queryParams: { language_id: 1, url: 'page-one' }
+                queryParams: { language_id: 1, url: 'page-one' },
+                data: {
+                    data: {
+                        url: 'http://localhost:3000'
+                    }
+                }
             });
 
             store = spectator.inject(EditEmaStore, true);
             confirmationService = spectator.inject(ConfirmationService, true);
 
             store.load({
+                clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -202,8 +243,6 @@ describe('EditEmaEditorComponent', () => {
 
         describe('toast', () => {
             it('should trigger messageService when clicking on ema-copy-url', () => {
-                spectator.detectChanges();
-
                 const messageService = spectator.inject(MessageService, true);
                 const messageServiceSpy = jest.spyOn(messageService, 'add');
                 spectator.detectChanges();
@@ -227,7 +266,7 @@ describe('EditEmaEditorComponent', () => {
                 const button = spectator.debugElement.query(By.css('[data-testId="ema-api-link"]'));
 
                 expect(button.nativeElement.href).toBe(
-                    'http://localhost/api/v1/page/json/index?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                    'http://localhost/api/v1/page/json/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
                 );
             });
 
@@ -315,6 +354,25 @@ describe('EditEmaEditorComponent', () => {
 
                 componentsToHide.forEach((testId) => {
                     expect(spectator.query(byTestId(testId))).toBeNull();
+                });
+            });
+
+            it('should show the components that need showed on preview mode', () => {
+                const componentsToShow = ['ema-back-to-edit', 'device-display']; // Test id of components that should show when entering preview modes
+
+                spectator.detectChanges();
+
+                const deviceSelector = spectator.debugElement.query(
+                    By.css('[data-testId="dot-device-selector"]')
+                );
+
+                const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
+
+                spectator.triggerEventHandler(deviceSelector, 'selected', iphone);
+                spectator.detectChanges();
+
+                componentsToShow.forEach((testId) => {
+                    expect(spectator.query(byTestId(testId))).not.toBeNull();
                 });
             });
         });
@@ -527,7 +585,8 @@ describe('EditEmaEditorComponent', () => {
                             identifier: '123',
                             uuid: '123',
                             acceptTypes: 'test',
-                            maxContentlets: 1
+                            maxContentlets: 1,
+                            contentletsId: ['123']
                         },
                         pageContainers: [
                             {
@@ -607,7 +666,8 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            maxContentlets: 1
+                            maxContentlets: 1,
+                            contentletsId: ['123']
                         },
                         pageId: 'test'
                     };
@@ -642,7 +702,7 @@ describe('EditEmaEditorComponent', () => {
                     dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                         new CustomEvent('ng-event', {
                             detail: {
-                                name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET
+                                name: NG_CUSTOM_EVENTS.SAVE_PAGE
                             }
                         })
                     );
@@ -679,7 +739,8 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            maxContentlets: 1
+                            maxContentlets: 1,
+                            contentletsId: ['123']
                         },
                         contentlet: {
                             inode: '123',
@@ -745,7 +806,7 @@ describe('EditEmaEditorComponent', () => {
                     dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                         new CustomEvent('ng-event', {
                             detail: {
-                                name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
+                                name: NG_CUSTOM_EVENTS.SAVE_PAGE,
                                 payload: {
                                     contentletIdentifier: 'new-contentlet-123'
                                 }
@@ -794,7 +855,8 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'container-identifier-123',
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
-                            maxContentlets: 1
+                            maxContentlets: 1,
+                            contentletsId: ['123']
                         },
                         pageId: 'test'
                     };
@@ -878,7 +940,8 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'container-identifier-123',
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
-                            maxContentlets: 1
+                            maxContentlets: 1,
+                            contentletsId: ['123']
                         },
                         pageId: 'test'
                     };
@@ -991,7 +1054,8 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            maxContentlets: 1
+                            maxContentlets: 1,
+                            contentletsId: ['123']
                         },
                         pageId: 'test'
                     };
@@ -1018,7 +1082,7 @@ describe('EditEmaEditorComponent', () => {
                     dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                         new CustomEvent('ng-event', {
                             detail: {
-                                name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
+                                name: NG_CUSTOM_EVENTS.SAVE_PAGE,
                                 data: {
                                     contentlet: {
                                         identifier: '123'
@@ -1061,7 +1125,8 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            maxContentlets: 1
+                            maxContentlets: 1,
+                            contentletsId: ['123']
                         },
                         pageId: 'test'
                     };
@@ -1102,7 +1167,8 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'test',
                             acceptTypes: 'test',
                             uuid: 'test',
-                            maxContentlets: 1
+                            maxContentlets: 1,
+                            contentletsId: ['123']
                         },
                         pageId: 'test'
                     };
@@ -1165,6 +1231,16 @@ describe('EditEmaEditorComponent', () => {
         });
 
         describe('DOM', () => {
+            it('iframe should have the correct src', () => {
+                spectator.detectChanges();
+
+                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+                expect(iframe.nativeElement.src).toBe(
+                    'http://localhost:3000/page-one?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                );
+            });
+
             it('should navigate to new url when postMessage SET_URL', () => {
                 const router = spectator.inject(Router);
                 jest.spyOn(router, 'navigate');
@@ -1231,10 +1307,7 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectComponentChanges();
 
-                expect(postMessageSpy).toHaveBeenCalledWith(
-                    'ema-request-bounds',
-                    'http://localhost:3000'
-                );
+                expect(postMessageSpy).toHaveBeenCalledWith('ema-request-bounds', '*');
             });
 
             it('should show drop zone on iframe message', () => {
@@ -1254,11 +1327,17 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
+                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', dragEventMock);
+
                 spectator.detectComponentChanges();
 
                 dropZone = spectator.query(EmaPageDropzoneComponent);
 
                 expect(dropZone.rows).toBe(BOUNDS_MOCK);
+                expect(dropZone.item).toEqual({
+                    contentType: 'File',
+                    baseType: 'CONTENT'
+                });
             });
 
             it('should hide drop zone on palette drop', () => {
@@ -1274,10 +1353,16 @@ describe('EditEmaEditorComponent', () => {
                     })
                 );
 
+                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', dragEventMock);
+
                 spectator.detectComponentChanges();
 
                 let dropZone = spectator.query(EmaPageDropzoneComponent);
 
+                expect(dropZone.item).toEqual({
+                    contentType: 'File',
+                    baseType: 'CONTENT'
+                });
                 expect(dropZone.rows).toBe(BOUNDS_MOCK);
 
                 spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragEnd', {});
@@ -1285,6 +1370,45 @@ describe('EditEmaEditorComponent', () => {
                 dropZone = spectator.query(EmaPageDropzoneComponent);
                 expect(dropZone).toBeNull();
             });
+        });
+    });
+
+    describe('without edit permission', () => {
+        let spectator: SpectatorRouting<EditEmaEditorComponent>;
+        let store: EditEmaStore;
+
+        const createComponent = createRouting({ canEdit: false, canRead: true });
+        beforeEach(() => {
+            spectator = createComponent({
+                queryParams: { language_id: 1, url: 'page-one' }
+            });
+
+            store = spectator.inject(EditEmaStore, true);
+
+            store.load({
+                url: 'index',
+                language_id: '1',
+                clientHost: '',
+                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+            });
+        });
+
+        it('should not render components', () => {
+            spectator.detectChanges();
+            expect(spectator.query(EmaContentletToolsComponent)).toBeNull();
+            expect(spectator.query(EditEmaPaletteComponent)).toBeNull();
+        });
+
+        it('should render a "Dont have permission" message', () => {
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('editor-banner'))).toBeDefined();
+        });
+
+        it('should iframe wrapper to be expanded', () => {
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('editor-content')).classList).toContain(
+                'editor-content--expanded'
+            );
         });
     });
 });

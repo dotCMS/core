@@ -3,7 +3,20 @@ import { byTestId, byText, createRoutingFactory, SpectatorRouting } from '@ngnea
 
 import { By } from '@angular/platform-browser';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import { EditEmaNavigationBarComponent } from './edit-ema-navigation-bar.component';
+
+const messages = {
+    'editema.editor.navbar.content': 'Content',
+    'editema.editor.navbar.layout': 'Layout',
+    'editema.editor.navbar.rules': 'Rules',
+    'editema.editor.navbar.experiments': 'Experiments',
+    Action: 'Action'
+};
+
+const messageServiceMock = new MockDotMessageService(messages);
 
 describe('EditEmaNavigationBarComponent', () => {
     let spectator: SpectatorRouting<EditEmaNavigationBarComponent>;
@@ -12,6 +25,7 @@ describe('EditEmaNavigationBarComponent', () => {
     const createComponent = createRoutingFactory({
         component: EditEmaNavigationBarComponent,
         stubsEnabled: false,
+        providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
         routes: [
             {
                 path: 'content',
@@ -38,22 +52,23 @@ describe('EditEmaNavigationBarComponent', () => {
                 items: [
                     {
                         icon: 'pi-file',
-                        label: 'Content',
+                        label: 'editema.editor.navbar.content',
                         href: 'content'
                     },
                     {
                         icon: 'pi-table',
-                        label: 'Layout',
-                        href: 'layout'
+                        label: 'editema.editor.navbar.layout',
+                        href: 'layout',
+                        isDisabled: true
                     },
                     {
                         icon: 'pi-sliders-h',
-                        label: 'Rules',
+                        label: 'editema.editor.navbar.rules',
                         href: 'rules'
                     },
                     {
                         iconURL: 'assets/images/experiments.svg',
-                        label: 'Experiments',
+                        label: 'editema.editor.navbar.experiments',
                         href: 'experiments'
                     },
                     {
@@ -79,7 +94,6 @@ describe('EditEmaNavigationBarComponent', () => {
                 expect(links[4].textContent.trim()).toBe('Action');
 
                 expect(links[0].getAttribute('ng-reflect-router-link')).toBe('content');
-                expect(links[1].getAttribute('ng-reflect-router-link')).toBe('layout');
                 expect(links[2].getAttribute('ng-reflect-router-link')).toBe('rules');
                 expect(links[3].getAttribute('ng-reflect-router-link')).toBe('experiments');
                 expect(links[4].getAttribute('ng-reflect-router-link')).toBeNull();
@@ -98,6 +112,14 @@ describe('EditEmaNavigationBarComponent', () => {
 
                 expect(mockedAction).toHaveBeenCalled();
             });
+
+            describe('NavBar with disabled', () => {
+                it('should render disabled item without router link', () => {
+                    const links = spectator.queryAll(byTestId('nav-bar-item'));
+                    expect(links[1].textContent.trim()).toBe('Layout');
+                    expect(links[1].getAttribute('ng-reflect-router-link')).toBeNull();
+                });
+            });
         });
 
         describe('item', () => {
@@ -109,6 +131,11 @@ describe('EditEmaNavigationBarComponent', () => {
                 expect(spectator.query(byTestId('nav-bar-item')).classList[1]).toBe(
                     'edit-ema-nav-bar__item--active'
                 );
+            });
+
+            it('should have Layout as disabled', () => {
+                const links = spectator.queryAll(byTestId('nav-bar-item'));
+                expect(links[1].classList).toContain('edit-ema-nav-bar__item--disabled');
             });
 
             it('should have an icon', () => {

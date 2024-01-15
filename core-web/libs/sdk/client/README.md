@@ -6,9 +6,9 @@ This client library provides a streamlined, promise-based interface to fetch pag
 
 ## Features
 
-- Easy-to-use methods to interact with the [DotCMS Page](https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas) and [Navigation APIs](https://www.dotcms.com/docs/latest/navigation-rest-api).
-- Support for custom actions to communicate with the DotCMS page editor.
-- Comprehensive TypeScript typings for better development experience.
+-   Easy-to-use methods to interact with the [DotCMS Page](https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas) and [Navigation APIs](https://www.dotcms.com/docs/latest/navigation-rest-api).
+-   Support for custom actions to communicate with the DotCMS page editor.
+-   Comprehensive TypeScript typings for better development experience.
 
 ## Installation
 
@@ -43,7 +43,7 @@ const client = dotcmsClient.init({
 Retrieve the elements of any page in your DotCMS system in JSON format.
 
 ```javascript
-const pageData = await client.getPage({
+const pageData = await client.page.get({
     path: '/your-page-path',
     language_id: 1,
     personaId: 'optional-persona-id'
@@ -57,7 +57,7 @@ console.log(pageData);
 Retrieve information about the DotCMS file and folder tree.
 
 ```javascript
-const navData = await client.getNav({
+const navData = await client.nav.get({
     path: '/',
     depth: 2,
     languageId: 1
@@ -74,19 +74,17 @@ Detailed documentation of the `@dotcms/client` methods, parameters, and types ca
 
 Initializes the DotCMS client with the specified configuration.
 
-### `DotCmsClient.getPage(options: PageApiOptions): Promise<unknown>`
+### `DotCmsClient.page.get(options: PageApiOptions): Promise<unknown>`
 
 Retrieves the specified page's elements from your DotCMS system in JSON format.
 
-### `DotCmsClient.getNav(options: NavApiOptions): Promise<unknown>`
+### `DotCmsClient.nav.get(options: NavApiOptions): Promise<unknown>`
 
 Retrieves information about the DotCMS file and folder tree.
-
 
 ## Contributing
 
 GitHub pull requests are the preferred method to contribute code to dotCMS. Before any pull requests can be accepted, an automated tool will ask you to agree to the [dotCMS Contributor's Agreement](https://gist.github.com/wezell/85ef45298c48494b90d92755b583acb3).
-
 
 ## Licensing
 
