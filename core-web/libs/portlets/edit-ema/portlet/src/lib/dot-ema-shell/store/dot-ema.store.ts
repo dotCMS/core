@@ -410,7 +410,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     private createPageURL(params: DotPageApiParams): string {
         const url = params.url
-            .replace(/^\//g, '')
+            .replace(/^\/|\/$/g, '') // Remove slashes from the beginning and end of the url
             .split('/')
             .filter((part, i) => {
                 return !i || part !== 'index'; // Filter the index from the url if it is at the last position
