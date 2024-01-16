@@ -68,7 +68,7 @@ const ExperimentMocks: Array<DotExperiment> = [
             variants: [{ id: DEFAULT_VARIANT_ID, name: DEFAULT_VARIANT_NAME, weight: 100 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03'),
+        modDate: new Date('2022-08-21 18:50:03').getTime(),
         goals: null
     },
     {
@@ -89,7 +89,7 @@ const ExperimentMocks: Array<DotExperiment> = [
             ]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03'),
+        modDate: new Date('2022-08-21 18:50:03').getTime(),
         goals: null
     },
     {
@@ -110,7 +110,7 @@ const ExperimentMocks: Array<DotExperiment> = [
             ]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03'),
+        modDate: new Date('2022-08-21 18:50:03').getTime(),
         goals: { ...GoalsMock }
     },
     {
@@ -131,7 +131,7 @@ const ExperimentMocks: Array<DotExperiment> = [
             ]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03'),
+        modDate: new Date('2022-08-21 18:50:03').getTime(),
         goals: { ...GoalsMock }
     },
     {
@@ -152,7 +152,7 @@ const ExperimentMocks: Array<DotExperiment> = [
             ]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03'),
+        modDate: new Date('2022-08-21 18:50:03').getTime(),
         goals: { ...GoalsMock }
     }
 ];
