@@ -130,7 +130,8 @@ jobs:
             exit 1
           else
             build_properties=$(eval find "$build_properties" -print)
-            echo 'Wildcard match: ${build_properties}'
+            echo 'Wildcard match:'
+            echo ${build_properties}
           fi
           
           echo 'Build properties:'
