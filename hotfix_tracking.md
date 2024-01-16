@@ -185,3 +185,5 @@ This maintenance release includes the following code fixes:
 152. https://github.com/dotCMS/core/issues/26890 : GraphQL Dates not using the right format #26890
 
 **Release-23.01.11**
+
+153. https://github.com/dotCMS/core/issues/24082 : Language Keys API throws 400 when a duplicate key exists #24082
