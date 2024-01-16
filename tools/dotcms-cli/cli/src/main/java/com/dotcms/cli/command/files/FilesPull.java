@@ -16,6 +16,7 @@ import com.dotcms.cli.command.DotPull;
 import com.dotcms.cli.common.ApplyCommandOrder;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PullMixin;
+import com.dotcms.cli.common.WorkspaceParams;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
 import com.dotcms.model.pull.PullOptions;
@@ -91,9 +92,8 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
         }
 
         // Make sure the path is within a workspace
-        final Workspace workspace = workspaceManager.getOrCreate(
-                this.getPullMixin().workspace()
-        );
+        final WorkspaceParams params = this.getPullMixin().workspace();
+        final Workspace workspace = workspaceManager.getOrCreate(params.workspacePath(), !params.userProvided());
 
         File filesFolder = workspace.files().toFile();
         if (!filesFolder.exists() || !filesFolder.canRead()) {
