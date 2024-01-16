@@ -1013,6 +1013,21 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('misc', () => {
+                it('should set the editorState to loaded when the iframe sends a postmessage of content changed', () => {
+                    const editorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: 'content-change'
+                            }
+                        })
+                    );
+
+                    expect(editorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
+                });
+
                 it('should not open a dialog when the iframe sends a postmessage with a different origin', () => {
                     spectator.detectChanges();
 
