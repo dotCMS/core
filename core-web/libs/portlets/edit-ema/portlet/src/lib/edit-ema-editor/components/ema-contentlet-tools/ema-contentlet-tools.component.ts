@@ -157,12 +157,12 @@ export class EmaContentletToolsComponent {
 
     /**
      *
-     *
+     * Checks if the container is empty, based on the identifier
      * @readonly
      * @type {boolean}
      * @memberof EmaContentletToolsComponent
      */
-    get isTempContentletEmpty(): boolean {
+    get isContainerEmpty(): boolean {
         return this.contentlet.payload.contentlet.identifier === 'TEMP_EMPTY_CONTENTLET';
     }
 }

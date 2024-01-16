@@ -14,10 +14,6 @@ const FAKE_CONTENLET = {
     widgetTitle: 'TEMP_EMPTY_CONTENTLET'
 };
 
-function getEmptyContent(contentType: string) {
-    return contentType === 'TEMP_EMPTY_CONTENTLET_TYPE' ? EmptyContainer : NoContent;
-}
-
 function EmptyContainer() {
     return (
         <div
@@ -104,8 +100,12 @@ export function Container({ containerRef }: ContainerProps) {
     }
 
     const renderContentlets = updatedContentlets.map((contentlet) => {
+        const ContentTypeComponent = components[contentlet.contentType] || NoContent;
+
         const Component =
-            components[contentlet.contentType] || getEmptyContent(contentlet.contentType);
+            contentlet.identifier === 'TEMP_EMPTY_CONTENTLET'
+                ? EmptyContainer
+                : ContentTypeComponent;
 
         const contentletPayload = {
             container,

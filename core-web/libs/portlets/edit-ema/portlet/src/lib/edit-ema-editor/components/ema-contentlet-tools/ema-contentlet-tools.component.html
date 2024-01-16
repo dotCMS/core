@@ -4,7 +4,7 @@
     data-testId="add-top-button"
     icon="pi pi-plus"></p-button>
 <p-button
-    *ngIf="!isTempContentletEmpty"
+    *ngIf="!isContainerEmpty"
     [ngStyle]="getBottomButtonPosition()"
     (click)="setPositionFlag('after'); menu.toggle($event)"
     data-testId="add-bottom-button"
@@ -13,7 +13,7 @@
 
 <div
     class="actions"
-    *ngIf="!isTempContentletEmpty"
+    *ngIf="!isContainerEmpty"
     [ngStyle]="getActionPosition()"
     data-testId="actions">
     <p-button

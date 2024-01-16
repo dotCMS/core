@@ -45,7 +45,21 @@ export const mockPageContext: PageProviderContext = {
                         title: 'Contentlet 1',
                         inode: 'inode-1'
                     }
-                ],
+                ]
+            }
+        },
+        'container-2': {
+            container: {
+                path: 'path/to/container',
+                identifier: 'container-2',
+                maxContentlets: 100
+            },
+            containerStructures: [
+                {
+                    contentTypeVar: 'content-type-2'
+                }
+            ],
+            contentlets: {
                 'uuid-2': []
             }
         }
