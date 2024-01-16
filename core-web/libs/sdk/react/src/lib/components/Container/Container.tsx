@@ -6,6 +6,32 @@ import { PageContext } from '../../contexts/PageContext';
 import { getContainersData } from '../../utils/utils';
 import { PageProviderContext } from '../PageProvider/PageProvider';
 
+const FAKE_CONTENLET = {
+    identifier: 'TEMP_EMPTY_CONTENTLET',
+    title: 'TEMP_EMPTY_CONTENTLET',
+    contentType: 'TEMP_EMPTY_CONTENTLET_TYPE',
+    inode: 'TEMPY_EMPTY_CONTENTLET_INODE',
+    widgetTitle: 'TEMP_EMPTY_CONTENTLET'
+};
+
+function EmptyContainer() {
+    return (
+        <div
+            data-testid="empty-container"
+            style={{
+                width: '100%',
+                backgroundColor: '#d1d4db',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                color: '#fff',
+                height: '10rem'
+            }}>
+            This container is empty.
+        </div>
+    );
+}
+
 function NoContent({ contentType }: { readonly contentType: string }) {
     return <div data-testid="no-component">No Component for {contentType}</div>;
 }
@@ -26,7 +52,9 @@ export function Container({ containerRef }: ContainerProps) {
         containerRef
     );
 
-    const contentletsId = contentlets.map((contentlet) => contentlet.identifier);
+    const updatedContentlets = contentlets.length > 0 ? contentlets : [FAKE_CONTENLET];
+
+    const contentletsId = updatedContentlets.map((contentlet) => contentlet.identifier);
 
     const container = {
         acceptTypes,
@@ -71,8 +99,13 @@ export function Container({ containerRef }: ContainerProps) {
         });
     }
 
-    const renderContentlets = contentlets.map((contentlet) => {
-        const Component = components[contentlet.contentType] || NoContent;
+    const renderContentlets = updatedContentlets.map((contentlet) => {
+        const ContentTypeComponent = components[contentlet.contentType] || NoContent;
+
+        const Component =
+            contentlet.identifier === 'TEMP_EMPTY_CONTENTLET'
+                ? EmptyContainer
+                : ContentTypeComponent;
 
         const contentletPayload = {
             container,
