@@ -16,6 +16,7 @@ import {
     DotPageApiService
 } from '../../services/dot-page-api.service';
 import { DEFAULT_PERSONA, EDIT_CONTENTLET_URL, ADD_CONTENTLET_URL } from '../../shared/consts';
+import { EDITOR_STATE } from '../../shared/enums';
 import { ActionPayload, SavePagePayload } from '../../shared/models';
 import { insertContentletInContainer } from '../../utils';
 
@@ -30,6 +31,7 @@ export interface EditEmaState {
     error?: number;
     editor: DotPageApiResponse;
     isEnterpriseLicense: boolean;
+    editorState: EDITOR_STATE;
 }
 
 function getFormId(dotPageApiService) {
@@ -93,7 +95,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     persona: state.editor.viewAs.persona ?? DEFAULT_PERSONA
                 }
             },
-            isEnterpriseLicense: state.isEnterpriseLicense
+            isEnterpriseLicense: state.isEnterpriseLicense,
+            state: state.editorState ?? EDITOR_STATE.LOADING
         };
     });
 
@@ -145,7 +148,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                     dialogHeader: '',
                                     dialogIframeLoading: false,
                                     isEnterpriseLicense: licenseData,
-                                    dialogType: null
+                                    dialogType: null,
+                                    editorState: EDITOR_STATE.LOADING
                                 });
                             },
                             error: ({ status }: HttpErrorResponse) => {
@@ -168,6 +172,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
      */
     readonly savePage = this.effect((payload$: Observable<SavePagePayload>) => {
         return payload$.pipe(
+            tap(() => {
+                this.updateEditorState(EDITOR_STATE.LOADING);
+            }),
             switchMap((payload) => {
                 return this.dotPageApiService.save(payload).pipe(
                     tapResponse(
@@ -177,6 +184,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                         (e) => {
                             console.error(e);
                             payload.whenSaved?.();
+                            this.updateEditorState(EDITOR_STATE.ERROR);
                         }
                     )
                 );
@@ -199,6 +207,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             }>
         ) => {
             return payload$.pipe(
+                tap(() => {
+                    this.updateEditorState(EDITOR_STATE.LOADING);
+                }),
                 getFormId(this.dotPageApiService),
                 switchMap(({ whenSaved, payload }) => {
                     const pageContainers = insertContentletInContainer(payload);
@@ -212,10 +223,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             tapResponse(
                                 () => {
                                     whenSaved?.();
+                                    this.updateEditorState(EDITOR_STATE.LOADED);
                                 },
                                 (e) => {
                                     console.error(e);
                                     whenSaved?.();
+                                    this.updateEditorState(EDITOR_STATE.ERROR);
                                 }
                             )
                         );
@@ -352,6 +365,16 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }));
 
     /**
+     * Update the editor state
+     *
+     * @memberof EditEmaStore
+     */
+    readonly updateEditorState = this.updater((state, editorState: EDITOR_STATE) => ({
+        ...state,
+        editorState
+    }));
+
+    /**
      * Create the url to edit a contentlet
      *
      * @private
@@ -386,7 +409,13 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }
 
     private createPageURL(params: DotPageApiParams): string {
-        const url = params.url.startsWith('/') ? params.url.slice(1) : params.url;
+        const url = params.url
+            .replace(/^\/|\/$/g, '') // Remove slashes from the beginning and end of the url
+            .split('/')
+            .filter((part, i) => {
+                return !i || part !== 'index'; // Filter the index from the url if it is at the last position
+            })
+            .join('/');
 
         return `${url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
     }
@@ -479,7 +508,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             dialogIframeLoading: false,
             isEnterpriseLicense: false,
             dialogType: null,
-            error
+            error,
+            editorState: EDITOR_STATE.LOADED
         });
     }
 }

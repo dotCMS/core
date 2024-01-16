@@ -13,11 +13,12 @@ import {
     inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Params, Router } from '@angular/router';
+import { ActivatedRoute, Params, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { ProgressBarModule } from 'primeng/progressbar';
 
 import { takeUntil } from 'rxjs/operators';
 
@@ -44,7 +45,7 @@ import {
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
-import { NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
+import { EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { ActionPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
 
@@ -94,7 +95,8 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
         EmaFormSelectorComponent,
         DotDeviceSelectorSeoComponent,
         DotEmaDeviceDisplayComponent,
-        DotEmaBookmarksComponent
+        DotEmaBookmarksComponent,
+        ProgressBarModule
     ]
 })
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
@@ -104,6 +106,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     personaSelector!: EditEmaPersonaSelectorComponent;
 
     private readonly router = inject(Router);
+    private readonly activatedRouter = inject(ActivatedRoute);
     private readonly store = inject(EditEmaStore);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
@@ -117,6 +120,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly destroy$ = new Subject<boolean>();
 
     readonly host = '*';
+    readonly editorState = EDITOR_STATE;
 
     private savePayload: ActionPayload;
     private draggedPayload: DraggedPalettePayload;
@@ -134,6 +138,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe((event: MessageEvent) => {
                 this.handlePostMessage(event)?.();
             });
+
+        this.store.updateEditorState(EDITOR_STATE.LOADING);
     }
 
     ngOnDestroy(): void {
@@ -539,8 +545,24 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         };
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
+            [CUSTOMER_ACTIONS.CONTENT_CHANGE]: () => {
+                // This event is sent when the mutation observer detects a change in the content
+
+                this.store.updateEditorState(EDITOR_STATE.LOADED);
+            },
+
             [CUSTOMER_ACTIONS.SET_URL]: () => {
                 const payload = <SetUrlPayload>data.payload;
+
+                // When we set the url, we trigger in the shell component a load to get the new state of the page
+                // This triggers a rerender that makes nextjs to send the set_url again
+                // But this time the params are the same so the shell component wont trigger a load and there we know that the page is loaded
+
+                if (this.activatedRouter.snapshot.queryParams.url === payload.url) {
+                    this.store.updateEditorState(EDITOR_STATE.LOADED);
+                } else {
+                    this.store.updateEditorState(EDITOR_STATE.LOADING);
+                }
 
                 this.updateQueryParams({
                     url: payload.url
@@ -598,5 +620,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             queryParams: params,
             queryParamsHandling: 'merge'
         });
+
+        // Reset this on queryParams update
+        this.rows = [];
+        this.contentlet = null;
     }
 }
