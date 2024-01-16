@@ -17,11 +17,8 @@ import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -111,8 +108,9 @@ class SiteCommandIT extends CommandTest {
     @Test
     @Order(3)
     void Test_Command_Site_Push_Publish_UnPublish_Then_Archive() throws IOException {
-
-        final Workspace workspace = workspaceManager.getOrCreate();
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
         final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -172,7 +170,9 @@ class SiteCommandIT extends CommandTest {
     @Test
     @Order(5)
     void Test_Command_Create_Then_Pull_Then_Push() throws IOException {
-        final Workspace workspace = workspaceManager.getOrCreate();
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
         final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
@@ -259,7 +259,9 @@ class SiteCommandIT extends CommandTest {
     @Test
     @Order(7)
     void Test_Pull_Same_Site_Multiple_Times() throws IOException {
-        final Workspace workspace = workspaceManager.getOrCreate();
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+        final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
@@ -1100,42 +1102,6 @@ class SiteCommandIT extends CommandTest {
             this.siteName = siteName;
             this.path = path;
         }
-    }
-
-    /**
-     * Creates a temporary folder with a random name.
-     *
-     * @return The path to the created temporary folder.
-     * @throws IOException If an I/O error occurs while creating the temporary folder.
-     */
-    private Path createTempFolder() throws IOException {
-
-        String randomFolderName = "folder-" + UUID.randomUUID();
-        return Files.createTempDirectory(randomFolderName);
-    }
-
-    /**
-     * Deletes a temporary directory and all its contents.
-     *
-     * @param folderPath The path to the temporary directory to be deleted.
-     * @throws IOException If an I/O error occurs while deleting the directory or its contents.
-     */
-    private void deleteTempDirectory(Path folderPath) throws IOException {
-        Files.walkFileTree(folderPath, new SimpleFileVisitor<>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                    throws IOException {
-                Files.delete(file); // Deletes the file
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc)
-                    throws IOException {
-                Files.delete(dir); // Deletes the directory after its content has been deleted
-                return FileVisitResult.CONTINUE;
-            }
-        });
     }
 
 }
