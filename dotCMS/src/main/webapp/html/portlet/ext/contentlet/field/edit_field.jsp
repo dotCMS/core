@@ -69,6 +69,51 @@
     String fullScreenHeight=fullScreenField ? "height: 100%;": "";
 %>
 
+<style type="text/css" media="all">
+    .spinner-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 12.5rem;
+        min-width: 12.5rem;
+    }
+    .loader-spinner {
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: inline-block;
+        vertical-align: middle;
+        font-size: 10px;
+        position: relative;
+        text-indent: -9999em;
+        border: 4px solid rgba(107, 77, 226, 0.2);
+        border-left-color: #6b4de2;
+        transform: translateZ(0);
+        animation: load8 1.1s infinite linear;
+        overflow: hidden;
+    }
+    @-webkit-keyframes load8 {
+        0% {
+            -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+        }
+        100% {
+            -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+        }
+    }
+    @keyframes load8 {
+        0% {
+            -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+        }
+        100% {
+            -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
 <div class="fieldWrapper" >
     <div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
         <% if (hint != null) {%>
@@ -654,11 +699,8 @@
                 String accept="";
                 String maxFileLength="0";
                 String helperText="";
-                String binaryMetadata = "''"; // Empty String by default
                 String jsonField = "{}";
                 String mimeType="";
-
-                Contentlet contentletObj = APILocator.getContentletAPI().find(inode, user, false);
 
                 try {
                     java.io.File fileValue = (java.io.File)value;
@@ -668,9 +710,6 @@
                 }
 
                 try{
-                    java.io.File binaryFile = contentletObj.getBinary(field.getVelocityVarName());
-                    com.dotcms.storage.model.Metadata metadata = contentletObj.getBinaryMetadata(field);
-                    binaryMetadata = mapper.writeValueAsString(metadata); // Metadata
                     jsonField = mapper.writeValueAsString(field); // Field
                 } catch(Exception e){
                     Logger.error(this.getClass(), e.getMessage());
@@ -694,66 +733,83 @@
             
                 %>
 
-            <div id="container-binary-field-<%=field.getVelocityVarName()%>"></div>
+            <div id="container-binary-field-<%=field.getVelocityVarName()%>">
+                <div class="spinner-container">
+                    <div class="loader-spinner"></div>
+                </div>
+            </div>
             <input name="<%=field.getFieldContentlet()%>" id="binary-field-input-<%=field.getFieldContentlet()%>ValueField" type="hidden" />
 
             <script>
                 // Create a new scope so that variables defined here can have the same name without being overwritten.
                 (function autoexecute() {
                     const binaryFieldContainer = document.getElementById("container-binary-field-<%=field.getVelocityVarName()%>");
-                    const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
-                    const variable = "<%=field.getVelocityVarName()%>";
-                    const metaData = <%=binaryMetadata%>;
-                    const contentlet = metaData ? {
-                        inode: "<%=binInode%>",
-                        titleImage: variable,
-                        [variable]: `/dA/<%=contentlet.getIdentifier()%>/${variable}/${metaData.name}`,
-                        [variable+"MetaData"]: {
-                            ...metaData,
-                            fileSize: metaData.size,
-                            contentType: "<%=mimeType%>"
+
+                    /**
+                     * Note: This is a temporary solution.
+                     * This is a workaround to get the contentlet from the API
+                     * because there is no way to get the same contentlet the AP retreive from the dwr call.
+                     */
+                    fetch('/api/content/id/<%=contentlet.getIdentifier()%>', {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
                         }
-                    } : null;
-                    const fielData = {
-                        hint: '<%=hint%>',
-                        ...(<%=jsonField%>),
-                        variable,
-                        fieldVariables: JSON.parse('<%=fieldVariablesContent%>')
-                    }
-
-                    // Setting the value of the field
-                    field.value = "<%=value%>"
-
-                    // Creating the binary field dynamically
-                    // Help us to set inputs before the ngInit is executed.
-                    const binaryField = document.createElement('dotcms-binary-field');
-                    binaryField.id = "binary-field-<%=field.getVelocityVarName()%>";
-                    binaryField.setAttribute("fieldName", "<%=field.getVelocityVarName()%>");
-
-                    binaryField.field = fielData;
-                    binaryField.contentlet = contentlet;
-                    binaryField.imageEditor = true;
-
-                    binaryField.addEventListener('valueUpdated', ({ detail }) => {
-                        field.value = detail;
-                    });
-
-                    binaryFieldContainer.appendChild(binaryField);
-
-                    document.addEventListener(`binaryField-open-image-editor-${variable}`,({ detail }) => {
-                        const { inode, variable = '', tempId } = detail;
-
-                        const imageEditor = new dotcms.dijit.image.ImageEditor({
-                            inode,
-                            tempId,
+                    }).then(response => response.json())
+                    .then(({ contentlets }) => {
+                        const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
+                        const variable = "<%=field.getVelocityVarName()%>";
+                        const fielData = {
+                            ...(<%=jsonField%>),
+                            hint: '<%=hint%>',
                             variable,
-                            fieldName: variable,
-                            binaryFieldId:  variable,
-                            focalPoint: "0.0,0.0",
+                            fieldVariables: JSON.parse('<%=fieldVariablesContent%>')
+                        }
+
+                        // Setting the value of the field
+                        field.value = "<%=value%>"
+
+                        // Creating the binary field dynamically
+                        // Help us to set inputs before the ngInit is executed.
+                        const binaryField = document.createElement('dotcms-binary-field');
+                        binaryField.id = "binary-field-<%=field.getVelocityVarName()%>";
+                        binaryField.setAttribute("fieldName", "<%=field.getVelocityVarName()%>");
+
+                        binaryField.field = fielData;
+                        binaryField.contentlet = contentlets[0];
+                        binaryField.imageEditor = true;
+
+                        binaryField.addEventListener('valueUpdated', ({ detail }) => {
+                            // If the value is different from the contentlet's inode, then we need to update the value
+                            // Binary field in JSP Expect the current value to be a path to the file.
+                            // Not the inode of the contentlet. Since we have the reference to the contentlet
+                            // We update the value is the inode is different from the contentlet's inode.
+                            if (detail !== contentlets[0].inode) {
+                                field.value = detail;
+                            }
                         });
 
-                        imageEditor.execute();
-                    });
+                        binaryFieldContainer.innerHTML = '';
+                        binaryFieldContainer.appendChild(binaryField);
+
+                        document.addEventListener(`binaryField-open-image-editor-${variable}`,({ detail }) => {
+                            const { inode, variable = '', tempId } = detail;
+
+                            const imageEditor = new dotcms.dijit.image.ImageEditor({
+                                inode,
+                                tempId,
+                                variable,
+                                fieldName: variable,
+                                binaryFieldId:  variable,
+                                focalPoint: "0.0,0.0",
+                            });
+
+                            imageEditor.execute();
+                        });
+                    })
+                    .catch(() => {
+                        binaryFieldContainer.innerHTMl = '<div class="callOutBox">Error loading the binary field</div>';
+                    })
                 })();
 
             </script>
