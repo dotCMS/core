@@ -339,8 +339,8 @@ describe('SearchableDropdownComponent', () => {
         expect(hostComp.placeholder).toEqual(comp.valueString);
     });
 
-    describe('star class', () => {
-        it('should add the star css class when item has default property set to true', () => {
+    describe('selected class', () => {
+        it('should add the selected css class when item has been clicked', () => {
             hostComp.data = [
                 {
                     id: 1,
@@ -355,13 +355,14 @@ describe('SearchableDropdownComponent', () => {
 
             hostFixture.detectChanges();
 
-            const item = de.query(
-                By.css('p-dataview .p-dataview-content .searchable-dropdown__data-list-item')
-            );
+            const item = de.query(By.css('[data-testid="searchable-dropdown-data-list-item"]'));
 
-            expect(item.classes['star']).toBeTruthy();
+            item.triggerEventHandler('click', null);
+            hostFixture.detectChanges();
+
+            expect(item.classes['selected']).toBeTruthy();
         });
-        it('should not add css star class when item default property is set to false', () => {
+        it('should not add selected star class when is not clicked', () => {
             hostComp.data = [
                 {
                     id: 1,
@@ -376,10 +377,7 @@ describe('SearchableDropdownComponent', () => {
 
             hostFixture.detectChanges();
 
-            const item = de.query(
-                By.css('p-dataview .p-dataview-content .searchable-dropdown__data-list-item')
-            );
-
+            const item = de.query(By.css('[data-testid="searchable-dropdown-data-list-item"]'));
             expect(item.classes['star']).toBeFalsy();
         });
     });
