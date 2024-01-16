@@ -50,7 +50,7 @@ import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW, HOST } from '../shared/consts';
-import { NG_CUSTOM_EVENTS } from '../shared/enums';
+import { EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload } from '../shared/models';
 
 const messagesMock = {
@@ -239,6 +239,10 @@ describe('EditEmaEditorComponent', () => {
                 language_id: '1',
                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
             });
+
+            spectator.detectChanges();
+
+            store.updateEditorState(EDITOR_STATE.LOADED);
         });
 
         describe('toast', () => {
@@ -1231,6 +1235,23 @@ describe('EditEmaEditorComponent', () => {
         });
 
         describe('DOM', () => {
+            it("should not show a loader when the editor state is not 'loading'", () => {
+                spectator.detectChanges();
+
+                const progressbar = spectator.query(byTestId('progress-bar'));
+
+                expect(progressbar).toBeNull();
+            });
+
+            it('should show a loader when the editor state is loading', () => {
+                store.updateEditorState(EDITOR_STATE.LOADING);
+
+                spectator.detectChanges();
+
+                const progressbar = spectator.query(byTestId('progress-bar'));
+
+                expect(progressbar).not.toBeNull();
+            });
             it('iframe should have the correct src', () => {
                 spectator.detectChanges();
 
