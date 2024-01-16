@@ -546,11 +546,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }): () => void {
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
             [CUSTOMER_ACTIONS.CONTENT_CHANGE]: () => {
+                // This event is sent when the mutation observer detects a change in the content
+
                 this.store.updateEditorState(EDITOR_STATE.LOADED);
             },
 
             [CUSTOMER_ACTIONS.SET_URL]: () => {
                 const payload = <SetUrlPayload>data.payload;
+
+                // When we set the url, we trigger in the shell component a load to get the new state of the page
+                // This triggers a rerender that makes nextjs to send the set_url again
+                // But this time the params are the same so the shell component wont trigger a load and there we know that the page is loaded
 
                 if (this.activatedRouter.snapshot.queryParams.url === payload.url) {
                     this.store.updateEditorState(EDITOR_STATE.LOADED);
