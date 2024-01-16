@@ -8,6 +8,7 @@ import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.cli.command.CommandTest;
 import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.common.WorkspaceManager;
+import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.Workspace;
 import com.dotcms.model.site.GetSiteByNameRequest;
 import com.dotcms.model.site.Site;
@@ -1050,6 +1051,128 @@ class SiteCommandIT extends CommandTest {
                         site2.identifier(),
                         defaultSiteResult.entity().identifier()
                 );
+            }
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
+     * This method tests the functionality of archiving a site. It creates a temporary folder for
+     * the workspace and performs the following steps: 1. Creates two sites in the workspace. 2.
+     * Pushes the changes to create the sites. 3. Validates that the sites were created
+     * successfully. 4. Validates the site descriptors for both sites. 5. Marks one of the sites as
+     * archived updating its site descriptor. 6. Pushes the changes to update the site. 7. Validates
+     * that the site descriptor reflects the archived status. 8. Requests the site from the server
+     * to ensure the data matches between the server and the local file.
+     *
+     * @throws IOException if there is an error creating the temporary folder or writing to files
+     */
+    @Test
+    @Order(18)
+    void Test_Archive_Site() throws IOException {
+
+        // Create a temporal folder for the workspace
+        var tempFolder = createTempFolder();
+
+        try {
+            final Workspace workspace = workspaceManager.getOrCreate(tempFolder);
+
+            // ╔══════════════════════╗
+            // ║  Preparing the data  ║
+            // ╚══════════════════════╝
+            var result = createSite(workspace, false);
+            var result1 = createSite(workspace, false);
+
+            final CommandLine commandLine = createCommand();
+            final StringWriter writer = new StringWriter();
+            try (PrintWriter out = new PrintWriter(writer)) {
+                commandLine.setOut(out);
+                commandLine.setErr(out);
+
+                // ╔═══════════════════════════════════════════════════╗
+                // ║  Pushing the changes in order to crete the sites  ║
+                // ╚═══════════════════════════════════════════════════╝
+                int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                        workspace.sites().toAbsolutePath().toString(), "--fail-fast", "-e");
+                Assertions.assertEquals(ExitCode.OK, status);
+
+                // Validating the sites were created
+                status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME,
+                        "--name", result.siteName);
+                Assertions.assertEquals(ExitCode.OK, status);
+                status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME,
+                        "--name", result1.siteName);
+                Assertions.assertEquals(ExitCode.OK, status);
+
+                // ---
+                // Now validating the updated the site descriptors
+                var site1 = this.mapperService.map(
+                        result.path.toFile(),
+                        SiteView.class
+                );
+                Assertions.assertEquals(result.siteName, site1.siteName());
+                Assertions.assertEquals(1, site1.languageId());
+                Assertions.assertNotNull(site1.identifier());
+                Assertions.assertFalse(site1.identifier().isBlank());
+                Assertions.assertEquals(Boolean.FALSE, site1.isArchived());
+
+                var site2 = this.mapperService.map(
+                        result1.path.toFile(),
+                        SiteView.class
+                );
+                Assertions.assertEquals(result1.siteName, site2.siteName());
+                Assertions.assertEquals(1, site2.languageId());
+                Assertions.assertNotNull(site2.identifier());
+                Assertions.assertFalse(site2.identifier().isBlank());
+                Assertions.assertEquals(Boolean.FALSE, site1.isArchived());
+
+                // ╔══════════════════════════════╗
+                // ║  Marking a site as archived  ║
+                // ╚══════════════════════════════╝
+                site2 = this.mapperService.map(
+                        result1.path.toFile(),
+                        SiteView.class
+                );
+                site2 = site2.withIsArchived(true);
+                var jsonContent = this.mapperService
+                        .objectMapper(result1.path.toFile())
+                        .writeValueAsString(site2);
+                Files.write(result1.path, jsonContent.getBytes());
+
+                // ╔═════════════════╗
+                // ║  Pushing again  ║
+                // ╚═════════════════╝
+                status = commandLine.execute(SiteCommand.NAME, SitePush.NAME,
+                        workspace.sites().toAbsolutePath().toString(), "--fail-fast", "-e");
+                Assertions.assertEquals(ExitCode.OK, status);
+
+                // ╔═════════════════════════════════════════════════════════════╗
+                // ║  Validating we have the proper data in the site descriptor  ║
+                // ╚═════════════════════════════════════════════════════════════╝
+                site2 = this.mapperService.map(
+                        result1.path.toFile(),
+                        SiteView.class
+                );
+                Assertions.assertEquals(result1.siteName, site2.siteName());
+                Assertions.assertEquals(1, site2.languageId());
+                Assertions.assertNotNull(site2.identifier());
+                Assertions.assertFalse(site2.identifier().isBlank());
+                Assertions.assertEquals(Boolean.TRUE, site2.isArchived());
+
+                // Requesting the site from the server to make sure the data matches between the
+                // server and the local file
+                final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
+                final ResponseEntityView<SiteView> serverSite = siteAPI.findById(
+                        site2.identifier()
+                );
+                Assertions.assertNotNull(serverSite);
+                Assertions.assertNotNull(serverSite.entity());
+                Assertions.assertNotNull(serverSite.entity().identifier());
+                Assertions.assertEquals(site2.siteName(), serverSite.entity().siteName());
+                Assertions.assertEquals(site2.identifier(), serverSite.entity().identifier());
+                Assertions.assertEquals(site2.modDate(), serverSite.entity().modDate());
+                Assertions.assertEquals(site2.isArchived(), serverSite.entity().isArchived());
             }
         } finally {
             deleteTempDirectory(tempFolder);
