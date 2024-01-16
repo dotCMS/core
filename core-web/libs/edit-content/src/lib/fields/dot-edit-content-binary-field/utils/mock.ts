@@ -1,3 +1,4 @@
+import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 const MESSAGES_MOCK = {
@@ -39,7 +40,7 @@ const MESSAGES_MOCK = {
 
 export const CONTENTTYPE_FIELDS_MESSAGE_MOCK = new MockDotMessageService(MESSAGES_MOCK);
 
-const TEMP_IMAGE_MOCK = {
+const TEMP_IMAGE_MOCK: DotCMSTempFile = {
     fileName: 'Image.jpg',
     folder: 'folder',
     id: 'tempFileId',
@@ -48,7 +49,21 @@ const TEMP_IMAGE_MOCK = {
     mimeType: 'image/jpeg',
     referenceUrl: '',
     thumbnailUrl:
-        'https://images.unsplash.com/photo-1575936123452-b67c3203c357?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aW1hZ2V8ZW58MHx8MHx8fDA%3D'
+        'https://images.unsplash.com/photo-1575936123452-b67c3203c357?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aW1hZ2V8ZW58MHx8MHx8fDA%3D',
+    metadata: {
+        contentType: 'image/jpeg',
+        fileSize: 12312,
+        length: 12312,
+        isImage: true,
+        modDate: 12312,
+        name: 'image.png',
+        sha256: '12345',
+        title: 'Asset',
+        version: 1,
+        height: 100,
+        width: 100,
+        editableAsText: false
+    }
 };
 
 const TEMP_VIDEO_MOCK = {

@@ -12,7 +12,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotLicenseService, DotMessageService, DotUploadService } from '@dotcms/data-access';
 import {
-    DotContentThumbnailComponent,
+    DotTempFileThumbnailComponent,
     DotDropZoneComponent,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
@@ -46,7 +46,7 @@ export default {
                 DotBinaryFieldUrlModeComponent,
                 DotBinaryFieldPreviewComponent,
                 DotFieldValidationMessageComponent,
-                DotContentThumbnailComponent
+                DotTempFileThumbnailComponent
             ],
             providers: [
                 DotBinaryFieldStore,

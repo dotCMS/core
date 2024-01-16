@@ -101,6 +101,20 @@ describe('DotBinaryFieldEditorComponent', () => {
         spectator.detectChanges();
     });
 
+    it('should emit cancel event on escape keydown', () => {
+        const event = new KeyboardEvent('keydown', { key: 'Escape' });
+
+        const cancelSpy = jest.spyOn(spectator.component.cancel, 'emit');
+        const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
+        const stopPropagationSpy = jest.spyOn(event, 'stopPropagation');
+
+        document.dispatchEvent(event);
+
+        expect(cancelSpy).toHaveBeenCalled();
+        expect(preventDefaultSpy).toHaveBeenCalled();
+        expect(stopPropagationSpy).toHaveBeenCalled();
+    });
+
     describe('label', () => {
         it('should set label and have css class required', () => {
             const label = spectator.query(byTestId('editor-label'));
