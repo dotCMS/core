@@ -154,4 +154,15 @@ export class EmaContentletToolsComponent {
             zIndex: '1'
         };
     }
+
+    /**
+     *
+     *
+     * @readonly
+     * @type {boolean}
+     * @memberof EmaContentletToolsComponent
+     */
+    get isTempContentletEmpty(): boolean {
+        return this.contentlet.payload.contentlet.identifier === 'TEMP_EMPTY_CONTENTLET';
+    }
 }

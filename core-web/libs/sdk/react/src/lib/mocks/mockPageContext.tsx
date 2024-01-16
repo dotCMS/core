@@ -45,7 +45,8 @@ export const mockPageContext: PageProviderContext = {
                         title: 'Contentlet 1',
                         inode: 'inode-1'
                     }
-                ]
+                ],
+                'uuid-2': []
             }
         }
     },

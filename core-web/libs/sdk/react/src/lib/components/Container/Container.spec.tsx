@@ -31,6 +31,8 @@ describe('Container', () => {
         expect(screen.getByTestId('no-component')).toHaveTextContent(
             'No Component for content-type-1'
         );
+
+        expect(screen.getByTestId('empty-container')).toHaveTextContent('This container is empty.');
     });
 
     // Add tests for pointer events, dynamic component rendering, and other scenarios...
