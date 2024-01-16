@@ -1286,6 +1286,52 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
+            it('set url to a different route should set the editor state to loading', () => {
+                const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                spectator.detectChanges();
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: 'set-url',
+                            payload: {
+                                url: '/some'
+                            }
+                        }
+                    })
+                );
+
+                expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
+            });
+
+            it('set url to the same route should set the editor state to loaded', () => {
+                const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                const url = "/ultra-cool-url-that-doesn't-exist";
+
+                spectator.detectChanges();
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: { url }
+                });
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: 'set-url',
+                            payload: {
+                                url
+                            }
+                        }
+                    })
+                );
+
+                expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
+            });
+
             it('should have a confirm dialog with acceptIcon and rejectIcon attribute', () => {
                 spectator.detectChanges();
 
