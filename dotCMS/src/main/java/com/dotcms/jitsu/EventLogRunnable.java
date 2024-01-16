@@ -61,7 +61,7 @@ public class EventLogRunnable implements Runnable {
 
         final String url = analyticsApp.getAnalyticsProperties().analyticsWriteUrl();
 
-        final CircuitBreakerUrlBuilder builder = getCircuitBreakerUrlBuilder(url);
+        final CircuitBreakerUrlBuilder builder = getCircuitBreakerUrlBuilderNoThrow(url);
 
         for (EventPayload payload : eventPayload.payloads()) {
 
@@ -81,7 +81,7 @@ public class EventLogRunnable implements Runnable {
 
     }
 
-    private CircuitBreakerUrlBuilder getCircuitBreakerUrlBuilder(String url) {
+    private CircuitBreakerUrlBuilder getCircuitBreakerUrlBuilderNoThrow(String url) {
         return  CircuitBreakerUrl.builder()
             .setMethod(Method.POST)
             .setUrl(url)
@@ -89,6 +89,15 @@ public class EventLogRunnable implements Runnable {
             .setTimeout(4000)
             .setHeaders(POSTING_HEADERS)
             .setThrowWhenNot2xx(false);
+    }
+
+    protected CircuitBreakerUrlBuilder getCircuitBreakerUrlBuilder(final String url) {
+        return CircuitBreakerUrl.builder()
+                .setMethod(CircuitBreakerUrl.Method.POST)
+                .setUrl(url)
+                .setParams(map("token", analyticsApp.getAnalyticsProperties().analyticsKey()))
+                .setTimeout(4000)
+                .setHeaders(POSTING_HEADERS);
     }
 
     public Optional<Response> sendEvent(final CircuitBreakerUrlBuilder builder, final EventPayload payload) {
