@@ -12,6 +12,7 @@ import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PullMixin;
+import com.dotcms.cli.common.WorkspaceParams;
 import com.dotcms.common.WorkspaceManager;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
@@ -160,7 +161,7 @@ class PullCommandIT extends CommandTest {
             when(parseResult.expandedArgs()).
                     thenReturn(new ArrayList<>());
 
-            when(pullMixin.workspace().workspacePath()).thenReturn(tempFolder.toAbsolutePath());
+            when(pullMixin.workspace()).thenReturn(WorkspaceParams.builder().workspacePath(tempFolder.toAbsolutePath()).build());
 
             pullCommand.call();
 
@@ -233,7 +234,7 @@ class PullCommandIT extends CommandTest {
 
             when(parseResult.expandedArgs()).thenReturn(new ArrayList<>());
 
-            when(pullMixin.workspace().workspacePath()).thenReturn(tempFolder.toAbsolutePath());
+            when(pullMixin.workspace()).thenReturn(WorkspaceParams.builder().workspacePath(tempFolder.toAbsolutePath()).build());
 
             pullCommand.call();
 

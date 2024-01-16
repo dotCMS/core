@@ -10,6 +10,7 @@ public interface AbstractWorkspaceParams {
 
     Path workspacePath();
 
-    boolean userProvided();
+    @Value.Default
+    default boolean userProvided() { return false; }
 
 }
