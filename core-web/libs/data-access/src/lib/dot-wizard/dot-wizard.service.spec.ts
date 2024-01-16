@@ -2,15 +2,17 @@
 
 import { TestBed } from '@angular/core/testing';
 
-import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
-import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
+import { DotWizardInput, DotWizardStep } from '@dotcms/dotcms-models';
 
 import { DotWizardService } from './dot-wizard.service';
 
 describe('DotWizardService', () => {
     let service: DotWizardService;
+    let data: DotWizardInput;
+    let outputData: { [key: string]: string };
+
     const mockOutput = { id: '11', name: 'DotCMS' };
-    const mockWizardSteps: DotWizardStep<any>[] = [{ component: 'test', data: { id: '12' } }];
+    const mockWizardSteps: DotWizardStep[] = [{ component: 'test', data: { id: '12' } }];
     const mockWizardInput: DotWizardInput = {
         steps: mockWizardSteps,
         title: 'Wizard'
@@ -21,7 +23,6 @@ describe('DotWizardService', () => {
     });
 
     it('should receive the steps', () => {
-        let data: DotWizardInput;
         service.showDialog$.subscribe((result) => {
             data = result;
         });
@@ -30,7 +31,6 @@ describe('DotWizardService', () => {
     });
 
     it('should receive output on open subscription', () => {
-        let outputData = null;
         service.open(mockWizardInput).subscribe((data) => {
             outputData = data;
         });

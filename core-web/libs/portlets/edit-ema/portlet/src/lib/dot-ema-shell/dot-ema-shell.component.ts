@@ -15,10 +15,15 @@ import { map, skip, take, takeUntil } from 'rxjs/operators';
 import {
     DotESContentService,
     DotFavoritePageService,
+    DotHttpErrorManagerService,
     DotLanguagesService,
+    DotMessageService,
     DotPageLayoutService,
     DotPageRenderService,
-    DotPersonalizeService
+    DotPersonalizeService,
+    DotWorkflowActionsFireService,
+    DotWorkflowsActionsService,
+    DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
@@ -51,6 +56,11 @@ import { NavigationBarItem } from '../shared/models';
         DotESContentService,
         DialogService,
         DotPageRenderService,
+        DotWorkflowEventHandlerService,
+        DotWorkflowActionsFireService,
+        DotWorkflowsActionsService,
+        DotMessageService,
+        DotHttpErrorManagerService,
         {
             provide: WINDOW,
             useValue: window

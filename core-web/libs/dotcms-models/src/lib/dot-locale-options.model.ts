@@ -1,3 +1,3 @@
 export interface DotLocaleOptions {
-    locale: unknown;
+    locale: Locale;
 }

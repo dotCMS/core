@@ -1,0 +1,3 @@
+@if (actions$ | async; as action ) {
+<dot-workflow-actions [actions]="action" (actionFired)="handleActionTrigger($event)" />
+}

@@ -27,6 +27,7 @@ import { DotCMSBaseTypesContentTypes, DotDevice, DotPersona } from '@dotcms/dotc
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
+import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaDeviceDisplayComponent } from './components/dot-ema-device-display/dot-ema-device-display.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
@@ -94,7 +95,8 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
         EmaFormSelectorComponent,
         DotDeviceSelectorSeoComponent,
         DotEmaDeviceDisplayComponent,
-        DotEmaBookmarksComponent
+        DotEmaBookmarksComponent,
+        DotEditEmaWorkflowActionsComponent
     ]
 })
 export class EditEmaEditorComponent implements OnInit, OnDestroy {

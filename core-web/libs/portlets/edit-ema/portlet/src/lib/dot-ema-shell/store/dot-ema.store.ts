@@ -149,7 +149,6 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                                 });
                             },
                             error: ({ status }: HttpErrorResponse) => {
-                                // eslint-disable-next-line no-console
                                 this.createEmptyState({ canEdit: false, canRead: false }, status);
                             }
                         }),
