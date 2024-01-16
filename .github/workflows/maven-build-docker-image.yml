@@ -123,10 +123,13 @@ jobs:
       - name: Set Common Vars
         id: set-common-vars
         run: |
-          build_properties=${DOCKER_BUILD_CONTEXT}/context/maven/dotserver/tomcat-9.0.84/webapps/ROOT/WEB-INF/classes/build.properties
-          if [[ ! -f ${build_properties} ]]; then
+          build_properties_path=${DOCKER_BUILD_CONTEXT}/context/maven/dotserver/tomcat-*/webapps/ROOT/WEB-INF/classes/build.properties
+          build_properties=''
+          if ! ls ${build_properties_path} 1> /dev/null 2>&1; then
             echo 'Could not find build.properties, aborting'
             exit 1
+          else
+            build_properties=$(eval find "$build_properties" -print)
           fi
           
           echo 'Build properties:'
