@@ -1331,6 +1331,32 @@ describe('EditEmaEditorComponent', () => {
                 expect(postMessageSpy).toHaveBeenCalledWith('ema-request-bounds', '*');
             });
 
+            it('should reset the contentlet when we update query params', () => {
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', {
+                    target: {
+                        dataset: {
+                            type: 'contentlet',
+                            item: JSON.stringify({
+                                identifier: '123',
+                                title: 'hello world'
+                            })
+                        }
+                    }
+                });
+
+                spectator.detectComponentChanges();
+
+                expect(spectator.component.contentlet).not.toBeNull();
+
+                spectator.component.onLanguageSelected(2); // triggers a query param change
+
+                spectator.detectComponentChanges();
+
+                expect(spectator.component.contentlet).toBeNull();
+            });
+
             it('should show drop zone on iframe message', () => {
                 spectator.detectChanges();
 
@@ -1390,6 +1416,30 @@ describe('EditEmaEditorComponent', () => {
                 spectator.detectComponentChanges();
                 dropZone = spectator.query(EmaPageDropzoneComponent);
                 expect(dropZone).toBeNull();
+            });
+
+            it('should reset the rowa when we update query params', () => {
+                spectator.detectChanges();
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: 'set-bounds',
+                            payload: BOUNDS_MOCK
+                        }
+                    })
+                );
+
+                spectator.detectComponentChanges();
+
+                expect(spectator.component.rows.length).toBe(BOUNDS_MOCK.length);
+
+                spectator.component.onLanguageSelected(2); // triggers a query param change
+
+                spectator.detectComponentChanges();
+
+                expect(spectator.component.rows.length).toBe(0);
             });
         });
     });
