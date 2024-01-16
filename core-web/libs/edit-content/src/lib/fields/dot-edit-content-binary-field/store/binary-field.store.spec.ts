@@ -18,7 +18,8 @@ import { getUiMessage } from '../utils/binary-field-utils';
 import { fileMetaData } from '../utils/mock';
 
 const INITIAL_STATE: BinaryFieldState = {
-    file: null,
+    contentlet: null,
+    tempFile: null,
     value: null,
     mode: BinaryFieldMode.DROPZONE,
     status: BinaryFieldStatus.INIT,
@@ -90,24 +91,26 @@ describe('DotBinaryFieldStore', () => {
     });
 
     describe('Updaters', () => {
-        it('should set File', (done) => {
-            const mockFile = {
-                ...TEMP_FILE_MOCK.metadata,
-                url: '',
-                id: '12345',
-                contentType: 'image/png',
-                name: 'image.png',
-                titleImage: 'Asset',
-                inode: '12345'
-            };
-            store.setFile(mockFile);
+        it('should set Contentlet', (done) => {
+            store.setContentlet(BINARY_FIELD_CONTENTLET);
 
             store.vm$.subscribe((state) => {
-                expect(state.file).toEqual(mockFile);
-                expect(state.value).toEqual(mockFile.id);
+                expect(state.contentlet).toEqual(BINARY_FIELD_CONTENTLET);
+                expect(state.value).toEqual(BINARY_FIELD_CONTENTLET.inode);
                 done();
             });
         });
+
+        it('should set TempFile', (done) => {
+            store.setTempFile(TEMP_FILE_MOCK);
+
+            store.vm$.subscribe((state) => {
+                expect(state.tempFile).toEqual(TEMP_FILE_MOCK);
+                expect(state.value).toEqual(TEMP_FILE_MOCK.id);
+                done();
+            });
+        });
+
         it('should set uiMessage', (done) => {
             const uiMessage = getUiMessage(DropZoneErrorType.FILE_TYPE_MISMATCH);
             store.setUiMessage(uiMessage);
@@ -117,6 +120,7 @@ describe('DotBinaryFieldStore', () => {
                 done();
             });
         });
+
         it('should set Mode', (done) => {
             store.setMode(BinaryFieldMode.EDITOR);
 
@@ -125,6 +129,7 @@ describe('DotBinaryFieldStore', () => {
                 done();
             });
         });
+
         it('should set Status', (done) => {
             store.setStatus(BinaryFieldStatus.PREVIEW);
 
@@ -184,29 +189,29 @@ describe('DotBinaryFieldStore', () => {
     describe('Effects', () => {
         describe('setFileFromContentlet', () => {
             it(`should get content if the file is editableAsText`, (done) => {
-                const { inode, name, contentType, titleImage } = BINARY_FIELD_CONTENTLET;
-                const meta = {
-                    ...fileMetaData,
+                const { BinaryMetaData } = BINARY_FIELD_CONTENTLET;
+                const metaData = {
+                    ...BinaryMetaData,
                     editableAsText: true
                 };
-                store.setFileFromContentlet({
+
+                const NEW_BINARY_FIELD_CONTENTLET = {
                     ...BINARY_FIELD_CONTENTLET,
                     fileAsset: '12345',
-                    metaData: meta
-                });
+                    metaData
+                };
+
+                store.setFileFromContentlet(NEW_BINARY_FIELD_CONTENTLET);
 
                 const req = httpMock.expectOne('12345', HttpMethod.GET); // Need to check here
                 req.flush('DATA'); // Need to flush here
 
                 store.state$.subscribe((state) => {
-                    expect(state.file).toEqual({
-                        id: inode,
-                        inode,
-                        name,
-                        contentType,
-                        titleImage,
-                        content: 'DATA',
-                        ...meta
+                    expect(state.contentlet).toEqual({
+                        ...NEW_BINARY_FIELD_CONTENTLET,
+                        mimeType: metaData.contentType,
+                        name: metaData.name,
+                        content: 'DATA'
                     });
                     done();
                 });
@@ -230,25 +235,22 @@ describe('DotBinaryFieldStore', () => {
 
         describe('setFileFromTemp', () => {
             it(`should get content if the file is editableAsText`, (done) => {
-                const meta = {
-                    ...fileMetaData,
-                    editableAsText: true
-                };
-                store.setFileFromTemp({
+                const NEW_TEMP_FILE_MOCK = {
                     ...TEMP_FILE_MOCK,
-                    metadata: meta
-                });
+                    metadata: {
+                        ...fileMetaData,
+                        editableAsText: true
+                    }
+                };
+                store.setFileFromTemp(NEW_TEMP_FILE_MOCK);
 
                 const req = httpMock.expectOne(TEMP_FILE_MOCK.referenceUrl, HttpMethod.GET); // Need to check here
                 req.flush('DATA'); // Need to flush here
 
                 store.state$.subscribe((state) => {
-                    expect(state.file).toEqual({
-                        id: TEMP_FILE_MOCK.id,
-                        url: TEMP_FILE_MOCK.thumbnailUrl,
-                        titleImage: '',
-                        content: 'DATA',
-                        ...meta
+                    expect(state.tempFile).toEqual({
+                        ...NEW_TEMP_FILE_MOCK,
+                        content: 'DATA'
                     });
                     done();
                 });
