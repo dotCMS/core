@@ -15,6 +15,7 @@ import { EditEmaStore } from './dot-ema.store';
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
 import { DotPageApiResponse, DotPageApiService } from '../../services/dot-page-api.service';
 import { DEFAULT_PERSONA, EDIT_CONTENTLET_URL } from '../../shared/consts';
+import { EDITOR_STATE } from '../../shared/enums';
 import { ActionPayload } from '../../shared/models';
 
 const mockResponse: DotPageApiResponse = {
@@ -85,7 +86,8 @@ describe('EditEmaStore', () => {
                     apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
                     iframeURL: `http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona`,
                     isEnterpriseLicense: true,
-                    favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1'
+                    favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                    state: EDITOR_STATE.LOADING
                 });
                 done();
             });
@@ -93,6 +95,22 @@ describe('EditEmaStore', () => {
     });
 
     describe('updaters', () => {
+        it('should update the editorState', () => {
+            spectator.service.updateEditorState(EDITOR_STATE.LOADED);
+
+            spectator.service.editorState$.subscribe((state) => {
+                expect(state).toEqual({
+                    clientHost: 'http://localhost:3000',
+                    editor: mockResponse,
+                    apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
+                    iframeURL: `http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona`,
+                    isEnterpriseLicense: true,
+                    favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                    state: EDITOR_STATE.LOADED
+                });
+            });
+        });
+
         it('should update editIframeLoading', (done) => {
             spectator.service.setDialogIframeLoading(true);
 
@@ -104,7 +122,8 @@ describe('EditEmaStore', () => {
                     dialogIframeLoading: true,
                     dialogHeader: '',
                     isEnterpriseLicense: true,
-                    dialogType: null
+                    dialogType: null,
+                    editorState: EDITOR_STATE.LOADING
                 });
                 done();
             });
@@ -123,7 +142,8 @@ describe('EditEmaStore', () => {
                     dialogIframeLoading: false,
                     dialogHeader: '',
                     isEnterpriseLicense: true,
-                    dialogType: null
+                    dialogType: null,
+                    editorState: EDITOR_STATE.LOADING
                 });
                 done();
             });
@@ -144,7 +164,8 @@ describe('EditEmaStore', () => {
                     dialogIframeLoading: true,
                     dialogHeader: 'test',
                     isEnterpriseLicense: true,
-                    dialogType: 'content'
+                    dialogType: 'content',
+                    editorState: EDITOR_STATE.LOADING
                 });
                 done();
             });
@@ -166,7 +187,8 @@ describe('EditEmaStore', () => {
                     dialogIframeLoading: true,
                     dialogHeader: 'Search Content',
                     dialogType: 'content',
-                    isEnterpriseLicense: true
+                    isEnterpriseLicense: true,
+                    editorState: EDITOR_STATE.LOADING
                 });
                 done();
             });
@@ -186,7 +208,8 @@ describe('EditEmaStore', () => {
                     dialogIframeLoading: true,
                     dialogHeader: 'test',
                     dialogType: 'content',
-                    isEnterpriseLicense: true
+                    isEnterpriseLicense: true,
+                    editorState: EDITOR_STATE.LOADING
                 });
                 done();
             });
@@ -278,7 +301,8 @@ describe('EditEmaStore', () => {
                     dialogIframeLoading: false,
                     dialogHeader: '',
                     dialogType: null,
-                    isEnterpriseLicense: true
+                    isEnterpriseLicense: true,
+                    editorState: EDITOR_STATE.LOADING
                 });
                 done();
             });
