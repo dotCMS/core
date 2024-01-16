@@ -34,7 +34,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"User FE has not access to EMA\", function () {",
+									"pm.test(\"Delete1 ok EMA\", function () {",
 									"    pm.response.to.have.status(200);",
 									"",
 									"    ",
@@ -157,7 +157,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"User FE has not access to EMA\", function () {",
+									"pm.test(\"Delete2 ok EMA\", function () {",
 									"    pm.response.to.have.status(200);",
 									"",
 									"    ",
@@ -430,7 +430,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"User FE has not access to EMA\", function () {",
+									"pm.test(\"Delete3 ok EMA\", function () {",
 									"    pm.response.to.have.status(200);",
 									"",
 									"    ",
@@ -631,7 +631,7 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"User FE has not access to EMA\", function () {",
+									"pm.test(\"User BE has not access to EMA\", function () {",
 									"    pm.response.to.have.status(200);",
 									"",
 									"    ",
