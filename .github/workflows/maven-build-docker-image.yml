@@ -129,7 +129,7 @@ jobs:
             echo 'Could not find build.properties, aborting'
             exit 1
           else
-            build_properties=$(eval find "$build_properties" -print)
+            build_properties=$(eval find "$build_properties" -name build.properties -print)
             echo 'Wildcard match:'
             echo ${build_properties}
           fi
