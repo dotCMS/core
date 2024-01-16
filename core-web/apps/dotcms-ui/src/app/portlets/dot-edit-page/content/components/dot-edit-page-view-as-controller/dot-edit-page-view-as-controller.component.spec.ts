@@ -51,8 +51,7 @@ import { DotPageStateService } from '../../services/dot-page-state/dot-page-stat
 @Component({
     selector: 'dot-test-host',
     template: ` <dot-edit-page-view-as-controller
-        [pageState]="pageState"
-    ></dot-edit-page-view-as-controller>`
+        [pageState]="pageState"></dot-edit-page-view-as-controller>`
 })
 class DotTestHostComponent {
     @Input()

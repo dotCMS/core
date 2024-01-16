@@ -352,6 +352,7 @@ export namespace Components {
         "cover": boolean;
         "height": string;
         "iconSize": string;
+        "playableVideo": boolean;
         "showVideoThumbnail": boolean;
         "width": string;
     }
@@ -1119,6 +1120,12 @@ export namespace Components {
           * @memberof DotVideoThumbnail
          */
         "cover": boolean;
+        /**
+          * If the video is playable or not.
+          * @type {boolean}
+          * @memberof DotVideoThumbnail
+         */
+        "playable": boolean;
     }
     interface KeyValueForm {
         /**
@@ -1996,6 +2003,7 @@ declare namespace LocalJSX {
         "cover"?: boolean;
         "height"?: string;
         "iconSize"?: string;
+        "playableVideo"?: boolean;
         "showVideoThumbnail"?: boolean;
         "width"?: string;
     }
@@ -2744,6 +2752,12 @@ declare namespace LocalJSX {
           * @memberof DotVideoThumbnail
          */
         "cover"?: boolean;
+        /**
+          * If the video is playable or not.
+          * @type {boolean}
+          * @memberof DotVideoThumbnail
+         */
+        "playable"?: boolean;
     }
     interface KeyValueForm {
         /**
