@@ -1,50 +1,27 @@
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock, mockDotLanguage } from '@dotcms/utils-testing';
-
-import { DotLanguagesService } from './dot-languages.service';
+import { DotLanguagesService } from '@dotcms/data-access';
 
 describe('DotLanguagesService', () => {
-    let injector: TestBed;
-    let dotLanguagesService: DotLanguagesService;
-    let httpMock: HttpTestingController;
+    let spectator: SpectatorHttp<DotLanguagesService>;
+    const createHttp = createHttpFactory(DotLanguagesService);
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotLanguagesService
-            ]
-        });
-        injector = getTestBed();
-        dotLanguagesService = injector.get(DotLanguagesService);
-        httpMock = injector.get(HttpTestingController);
-    });
+    beforeEach(() => (spectator = createHttp()));
 
     it('should get Languages', () => {
-        dotLanguagesService.get().subscribe((res) => {
-            expect(res).toEqual([mockDotLanguage]);
-        });
-
-        const req = httpMock.expectOne('v2/languages');
-        expect(req.request.method).toBe('GET');
-        req.flush({ entity: [mockDotLanguage] });
+        spectator.service.get().subscribe();
+        spectator.expectOne(`/api/v2/languages`, HttpMethod.GET);
     });
 
     it('should get Languages by content indode', () => {
-        dotLanguagesService.get('2').subscribe((res) => {
-            expect(res).toEqual([mockDotLanguage]);
-        });
-
-        const req = httpMock.expectOne('v2/languages?contentInode=2');
-        expect(req.request.method).toBe('GET');
-        req.flush({ entity: [mockDotLanguage] });
+        const contentInode = '2';
+        spectator.service.get(contentInode).subscribe();
+        spectator.expectOne(`/api/v2/languages?contentInode=${contentInode}`, HttpMethod.GET);
     });
 
-    afterEach(() => {
-        httpMock.verify();
+    it('should get Languages by pageId', () => {
+        const pageIdentifier = '0000-1111-2222-3333';
+        spectator.service.getLanguagesUsedPage(pageIdentifier).subscribe();
+        spectator.expectOne(`/api/v1/page/${pageIdentifier}/languages`, HttpMethod.GET);
     });
 });
