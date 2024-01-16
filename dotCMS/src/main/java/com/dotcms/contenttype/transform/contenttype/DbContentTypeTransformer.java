@@ -59,7 +59,7 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 		final BaseContentType base =  BaseContentType.getBaseContentType(DbConnectionFactory.getInt(map.get(ContentTypeFactory.STRUCTURE_TYPE_COLUMN).toString()));
 		final ContentType type = new ContentType() {
 
-			private final ObjectMapper JSON_MAPPER = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+			private final ObjectMapper jsonMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
 			private static final long serialVersionUID = 1L;
 
@@ -175,7 +175,7 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 			@Override
 			@SuppressWarnings("unchecked")
 			public Map<String, Object> metadata() {
-				return Try.of(() -> JSON_MAPPER.readValue(((PGobject) map.get(ContentTypeFactory.METADATA_COLUMN)).getValue(), Map.class)).getOrElse(new HashMap<>());
+				return Try.of(() -> jsonMapper.readValue(((PGobject) map.get(ContentTypeFactory.METADATA_COLUMN)).getValue(), Map.class)).getOrElse(new HashMap<>());
 			}
 
 			private Date convertSQLDate(final Date d){
