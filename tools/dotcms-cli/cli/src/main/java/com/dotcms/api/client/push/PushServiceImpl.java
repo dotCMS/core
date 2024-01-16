@@ -159,15 +159,15 @@ public class PushServiceImpl implements PushService {
 
         CompletableFuture<List<PushAnalysisResult<T>>>
                 pushAnalysisServiceFuture = CompletableFuture.supplyAsync(
-                () -> {
-                    // Analyzing what push operations need to be performed
-                    return pushAnalysisService.analyze(
-                            localFileOrFolder,
-                            options.allowRemove(),
-                            provider,
-                            comparator
-                    );
-                });
+                () ->
+                        // Analyzing what push operations need to be performed
+                        pushAnalysisService.analyze(
+                                localFileOrFolder,
+                                options.allowRemove(),
+                                provider,
+                                comparator
+                        )
+        );
 
         // ConsoleLoadingAnimation instance to handle the waiting "animation"
         ConsoleLoadingAnimation consoleLoadingAnimation = new ConsoleLoadingAnimation(
