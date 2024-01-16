@@ -37,6 +37,7 @@ import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/e
 import { EmaFormSelectorComponent } from './components/ema-form-selector/ema-form-selector.component';
 import {
     ContentletArea,
+    EmaDragItem,
     EmaPageDropzoneComponent,
     Row
 } from './components/ema-page-dropzone/ema-page-dropzone.component';
@@ -122,6 +123,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     rows: Row[] = [];
     contentlet!: ContentletArea;
+    dragItem: EmaDragItem;
+
     // This should be in the store, but experienced an issue that triggers a reload in the whole store when the device is updated
     currentDevice: DotDevice & { icon?: string };
 
@@ -288,9 +291,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             item: string;
         };
 
+        const item = JSON.parse(dataset.item);
+        this.dragItem = {
+            baseType: item.baseType,
+            contentType: item.contentType
+        };
+
         this.draggedPayload = {
             type: dataset.type,
-            item: JSON.parse(dataset.item)
+            item
         };
 
         this.iframe.nativeElement.contentWindow?.postMessage(
@@ -307,6 +316,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     onDragEnd(_event: DragEvent) {
         this.rows = [];
+        this.dragItem = {
+            baseType: '',
+            contentType: ''
+        };
     }
 
     /**

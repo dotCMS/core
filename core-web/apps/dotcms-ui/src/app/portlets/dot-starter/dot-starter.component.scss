@@ -33,7 +33,7 @@ $number-link-icon-size: 2.28rem;
     }
 
     .dot-starter-description {
-        color: $color-palette-gray-700;
+        color: $black;
         margin: 0 $spacing-3;
     }
 
@@ -52,7 +52,6 @@ $number-link-icon-size: 2.28rem;
         margin-left: 0;
         margin-bottom: $spacing-4;
         margin-right: $spacing-1;
-        overflow: hidden;
         display: flex;
     }
 
@@ -137,7 +136,11 @@ $number-link-icon-size: 2.28rem;
     }
     .dot-starter-top-secondary__block {
         display: flex;
-        padding: $spacing-3 0;
+        padding-bottom: $spacing-8;
+
+        &:last-child {
+            padding-bottom: 0;
+        }
     }
 
     .dot-starter-top-secondary__link-icon {
@@ -179,6 +182,7 @@ $number-link-icon-size: 2.28rem;
             font-size: $font-size-lg;
             font-weight: 500;
             margin: 0;
+            padding-bottom: $spacing-1;
         }
         p {
             color: $color-palette-gray-700;
@@ -188,8 +192,7 @@ $number-link-icon-size: 2.28rem;
 
     .dot-starter-bottom-content {
         flex-wrap: wrap;
-        margin-bottom: $spacing-5;
-        padding-top: $spacing-1;
+        padding: $spacing-1 0 $spacing-5 $spacing-5;
     }
 
     .dot-starter-bottom__block {
@@ -199,12 +202,11 @@ $number-link-icon-size: 2.28rem;
         display: flex;
         flex-grow: 1;
         height: 100%;
-        margin: $spacing-3 $spacing-1 0;
         overflow: hidden;
-        padding: $spacing-4 $spacing-3 0;
         transition: background-color $basic-speed ease-in;
         border-radius: $border-radius-md;
-        gap: $spacing-3;
+        gap: $spacing-1;
+        padding: $spacing-3;
 
         &:hover {
             background-color: $bg-hover;
@@ -212,6 +214,7 @@ $number-link-icon-size: 2.28rem;
     }
 
     .dot-starter-bottom__link-icon {
+        padding-top: $spacing-0;
         span {
             color: $color-palette-primary;
             display: inline-flex;

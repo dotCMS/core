@@ -238,7 +238,7 @@ describe('DotAppsListComponent', () => {
         });
 
         it('should display not licensed component', () => {
-            expect(fixture.debugElement.query(By.css('dot-not-licensed-component'))).toBeTruthy();
+            expect(fixture.debugElement.query(By.css('dot-not-license'))).toBeTruthy();
         });
     });
 });
