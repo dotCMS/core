@@ -72,8 +72,8 @@ class WorkspaceManagerTest {
         Assertions.assertTrue(Files.exists(nested.root().resolve(".dot-workspace.yml" )));
         Assertions.assertEquals(nested.root(), nestedDir2);
 
-        //Now test the get or create method that will attempt to find a root parent
-        //Since we're giving it tha
+        //Now test the "get or create" method won't attempt to find a root parent
+        //Since we're giving it a nested workspace it should return the same workspace
         final Workspace test = workspaceManager.getOrCreate(nestedDir2, true);
         Assertions.assertEquals(test.root(), nested.root());
         Assertions.assertEquals(test.id(), nested.id());
