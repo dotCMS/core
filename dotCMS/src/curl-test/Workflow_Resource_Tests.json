@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "214cded5-3144-4394-b9e4-15431e29b76e",
+		"_postman_id": "e5a39255-b6a9-4ab9-bde9-9e581b2c9fbc",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -16714,6 +16714,219 @@
 				}
 			],
 			"description": "Provides the current status of a given Contentlet within the current Step of the Worklow that it's going through. This is used by the Angular UI to show this data to the logged-in User."
+		},
+		{
+			"name": "issue-26861",
+			"item": [
+				{
+					"name": "CreateItalian",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.collectionVariables.set(\"italianLanguageId\", jsonData.entity.id);",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"languageCode\":\"it\",\n    \"countryCode\":\"it\",\n    \"language\":\"Italian\",\n    \"country\":\"Italy\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateEnglish",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.collectionVariables.set(\"englishidentifier\", jsonData.entity.identifier);",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check that the Contentlet's english languageId\", function () {",
+									"    pm.expect(jsonData.entity.languageId).to.eql(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"contentType\":\"webPageContent\",\n        \"title\":\"TestEnglishSpanish\",\n        \"contentHost\":\"default\",\n        \"body\":\"Body Test\",\n        \"languageId\":1\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR ",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR "
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateItalian",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var italianLanguageId = pm.collectionVariables.get(\"italianLanguageId\");",
+									"",
+									"pm.test(\"Check that the Contentlet's english languageId\", function () {",
+									"    pm.expect(jsonData.entity.languageId).to.eql(italianLanguageId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"identifier\":\"{{englishidentifier}}\",\n        \"languageId\":{{italianLanguageId}},\n        \"contentType\":\"webPageContent\",\n        \"title\":\"TestEnglishSpanish\",\n        \"contentHost\":\"default\",\n        \"body\":\"Corpo di prova\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR ",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR "
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [
@@ -16734,6 +16947,16 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "italianLanguageId",
+			"value": ""
+		},
+		{
+			"key": "englishidentifier",
+			"value": ""
 		}
 	]
 }
