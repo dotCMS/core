@@ -97,7 +97,8 @@ jobs:
           ref: ${{ needs.precheck.outputs.HEAD }}
           fetch-depth: 0
 
-      - name: 'Set up GraalVM for ${{ matrix.os }}'
+      - name: 'Set up GraalVM for (Linux/MacOS)'
+        if: ${{ matrix.os != 'windows-latest' }}
         run: |
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
             echo "GraalVM on Linux (AMD64)"
