@@ -115,6 +115,9 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
                 pageContainer.contentletsId.splice(offset, 0, newContentletId);
 
                 didInsert = true;
+            } else {
+                pageContainer.contentletsId.push(newContentletId);
+                didInsert = true;
             }
         }
 
