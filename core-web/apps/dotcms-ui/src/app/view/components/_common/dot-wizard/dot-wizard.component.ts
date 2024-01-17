@@ -22,7 +22,7 @@ import {
 } from '@components/dot-dialog/dot-dialog.component';
 import { DotContainerReferenceDirective } from '@directives/dot-container-reference/dot-container-reference.directive';
 import { DotMessageService, DotWizardService } from '@dotcms/data-access';
-import { DotWizardComponentType, DotWizardStep, DotWizardInput } from '@dotcms/dotcms-models';
+import { DotWizardStep, DotWizardInput, DotWizardComponentEnum } from '@dotcms/dotcms-models';
 import { DotFormModel } from '@models/dot-form/dot-form.model';
 
 import { DotCommentAndAssignFormComponent } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
@@ -34,10 +34,6 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
     styleUrls: ['./dot-wizard.component.scss']
 })
 export class DotWizardComponent implements OnInit, OnDestroy {
-    wizardComponents: { [key in DotWizardComponentType]: Type<unknown> } = {
-        commentAndAssign: DotCommentAndAssignFormComponent,
-        pushPublish: DotPushPublishFormComponent
-    };
     wizardData: { [key: string]: string };
     dialogActions: DotDialogActions;
     transform = '';
@@ -51,6 +47,10 @@ export class DotWizardComponent implements OnInit, OnDestroy {
     private componentsHost: DotContainerReferenceDirective[];
     private stepsValidation: boolean[];
     private destroy$: Subject<boolean> = new Subject<boolean>();
+    private wizardComponentMap: { [key in DotWizardComponentEnum]: Type<unknown> } = {
+        commentAndAssign: DotCommentAndAssignFormComponent,
+        pushPublish: DotPushPublishFormComponent
+    };
 
     constructor(
         private componentFactoryResolver: ComponentFactoryResolver,
@@ -118,11 +118,15 @@ export class DotWizardComponent implements OnInit, OnDestroy {
         }
     }
 
+    getWizardComponent(type: DotWizardComponentEnum | string): Type<unknown> {
+        return this.wizardComponentMap[type];
+    }
+
     private loadComponents(): void {
         this.componentsHost = this.formHosts.toArray();
         this.stepsValidation = [];
         this.data.steps.forEach((step: DotWizardStep, index: number) => {
-            const componentClass = this.wizardComponents[step.component];
+            const componentClass = this.getWizardComponent(step.component);
             const componentInstance =
                 this.componentFactoryResolver.resolveComponentFactory(componentClass);
             const viewContainerRef = this.componentsHost[index].viewContainerRef;

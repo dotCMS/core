@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { TestBed } from '@angular/core/testing';
+import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 
 import { DotWizardInput, DotWizardStep } from '@dotcms/dotcms-models';
 
 import { DotWizardService } from './dot-wizard.service';
 
 describe('DotWizardService', () => {
+    let spectator: SpectatorService<DotWizardService>;
     let service: DotWizardService;
     let data: DotWizardInput;
     let outputData: { [key: string]: string };
@@ -17,9 +16,12 @@ describe('DotWizardService', () => {
         steps: mockWizardSteps,
         title: 'Wizard'
     };
+
+    const createService = createServiceFactory(DotWizardService);
+
     beforeEach(() => {
-        TestBed.configureTestingModule({ providers: [DotWizardService] });
-        service = TestBed.get(DotWizardService);
+        spectator = createService();
+        service = spectator.service;
     });
 
     it('should receive the steps', () => {

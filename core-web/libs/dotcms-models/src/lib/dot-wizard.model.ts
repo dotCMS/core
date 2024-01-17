@@ -1,4 +1,7 @@
-export type DotWizardComponentType = 'commentAndAssign' | 'pushPublish';
+export enum DotWizardComponentEnum {
+    commentAndAssign = 'commentAndAssign',
+    pushPublish = 'pushPublish'
+}
 
 export interface DotWizardStep {
     component: string;

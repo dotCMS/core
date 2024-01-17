@@ -1,99 +1,105 @@
-// import { Injectable } from '@angular/core';
-// import { async, TestBed } from '@angular/core/testing';
+import { createServiceFactory, SpectatorService, mockProvider } from '@ngneat/spectator/jest';
 
-// import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-// import { DotRouterService } from '@dotcms/data-access';
-// import { CoreWebService } from '@dotcms/dotcms-js';
-// import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { Injectable } from '@angular/core';
 
-// import { DotIframeService } from './dot-iframe.service';
+import { DotRouterService } from '@dotcms/data-access';
+import { CoreWebService } from '@dotcms/dotcms-js';
 
-// @Injectable()
-// export class DotRouterServiceMock {
-//     isCustomPortlet(portletId: string): boolean {
-//         return portletId === 'c_testing';
-//     }
-// }
+import { DotIframeService } from './dot-iframe.service';
 
-// describe('DotIframeService', () => {
-//     let service: DotIframeService;
+@Injectable()
+export class DotRouterServiceMock {
+    isCustomPortlet(portletId: string): boolean {
+        return portletId === 'c_testing';
+    }
+}
 
-//     beforeEach(() => {
-//         TestBed.configureTestingModule({
-//             providers: [
-//                 DotIframeService,
-//                 DotUiColorsService,
-//                 { provide: DotRouterService, useClass: DotRouterServiceMock },
-//                 { provide: CoreWebService, useClass: CoreWebServiceMock }
-//             ]
-//         });
+describe('DotIframeService', () => {
+    let spectator: SpectatorService<DotIframeService>;
+    let service: DotIframeService;
 
-//         service = TestBed.get(DotIframeService);
-//     });
+    const createService = createServiceFactory({
+        service: DotIframeService,
+        providers: [
+            {
+                provide: DotRouterService,
+                useClass: DotRouterServiceMock
+            },
+            mockProvider(CoreWebService)
+        ]
+    });
 
-//     it('should trigger reload action', async(() => {
-//         service.reloaded().subscribe((res) => {
-//             expect(res).toEqual({ name: 'reload' });
-//         });
+    beforeEach(() => {
+        spectator = createService();
+        service = spectator.service;
+    });
 
-//         service.reload();
-//     }));
+    it('should trigger reload action', (done) => {
+        service.reloaded().subscribe((res) => {
+            expect(res).toEqual({ name: 'reload' });
+            done();
+        });
 
-//     it('should trigger reload colors action', async(() => {
-//         service.reloadedColors().subscribe((res) => {
-//             expect(res).toEqual({ name: 'colors' });
-//         });
+        service.reload();
+    });
 
-//         service.reloadColors();
-//     }));
+    it('should trigger reload colors action', (done) => {
+        service.reloadedColors().subscribe((res) => {
+            expect(res).toEqual({ name: 'colors' });
+            done();
+        });
 
-//     it('should trigger ran action', () => {
-//         service.ran().subscribe((res) => {
-//             expect(res).toEqual({ name: 'functionName' });
-//         });
+        service.reloadColors();
+    });
 
-//         service.run({ name: 'functionName' });
-//     });
+    it('should trigger ran action', (done) => {
+        service.ran().subscribe((res) => {
+            expect(res).toEqual({ name: 'functionName' });
+            done();
+        });
 
-//     describe('reload portlet data', () => {
-//         beforeEach(() => {
-//             spyOn(service, 'run');
-//         });
+        service.run({ name: 'functionName' });
+    });
 
-//         it('should reload data for content', () => {
-//             service.reloadData('content');
+    describe('reload portlet data', () => {
+        beforeEach(() => {
+            jest.spyOn(service, 'run');
+        });
 
-//             expect(service.run).toHaveBeenCalledWith({ name: 'doSearch' });
-//         });
+        it('should reload data for content', () => {
+            service.reloadData('content');
 
-//         it('should reload data for custom content portlet', () => {
-//             service.reloadData('c_testing');
+            expect(service.run).toHaveBeenCalledWith({ name: 'doSearch' });
+        });
 
-//             expect(service.run).toHaveBeenCalledWith({ name: 'doSearch' });
-//         });
+        it('should reload data for custom content portlet', () => {
+            service.reloadData('c_testing');
 
-//         it('should reload data for vanity-urls', () => {
-//             service.reloadData('vanity-urls');
+            expect(service.run).toHaveBeenCalledWith({ name: 'doSearch' });
+        });
 
-//             expect(service.run).toHaveBeenCalledWith({ name: 'doSearch' });
-//         });
+        it('should reload data for vanity-urls', () => {
+            service.reloadData('vanity-urls');
 
-//         it('should reload data for site-browser', () => {
-//             service.reloadData('site-browser');
+            expect(service.run).toHaveBeenCalledWith({ name: 'doSearch' });
+        });
 
-//             expect(service.run).toHaveBeenCalledWith({ name: 'reloadContent' });
-//         });
+        it('should reload data for site-browser', () => {
+            service.reloadData('site-browser');
 
-//         it('should reload data for sites', () => {
-//             service.reloadData('sites');
+            expect(service.run).toHaveBeenCalledWith({ name: 'reloadContent' });
+        });
 
-//             expect(service.run).toHaveBeenCalledWith({ name: 'refreshHostTable' });
-//         });
+        it('should reload data for sites', () => {
+            service.reloadData('sites');
 
-//         it('should reload data for worflow', () => {
-//             service.reloadData('workflow');
+            expect(service.run).toHaveBeenCalledWith({ name: 'refreshHostTable' });
+        });
 
-//             expect(service.run).toHaveBeenCalledWith({ name: 'doFilter' });
-//         });
-//     });
-// });
+        it('should reload data for workflow', () => {
+            service.reloadData('workflow');
+
+            expect(service.run).toHaveBeenCalledWith({ name: 'doFilter' });
+        });
+    });
+});

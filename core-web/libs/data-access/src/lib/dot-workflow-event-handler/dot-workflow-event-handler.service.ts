@@ -28,7 +28,8 @@ import {
     DotWizardInput,
     DotWizardStep,
     DotWorkflowPayload,
-    DotEnvironment
+    DotEnvironment,
+    DotWizardComponentEnum
 } from '@dotcms/dotcms-models';
 
 enum DotActionInputs {
@@ -46,7 +47,7 @@ interface DotAssignableData {
 const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';
 const VIEW_CONTENT_CALLBACK_FUNCTION = 'angularWorkflowEventCallback';
 
-export const WORKFLOW_STEP_MAP: Record<string, boolean> = {
+export const WORKFLOW_STEP_MAP: { [key in DotWizardComponentEnum]: boolean } = {
     commentAndAssign: true,
     pushPublish: true
 };
@@ -132,7 +133,8 @@ export class DotWorkflowEventHandlerService {
     setWizardInput(workflow: DotCMSWorkflowAction, title: string): DotWizardInput | null {
         const steps: DotWizardStep[] = [];
         this.mergeCommentAndAssign(workflow).forEach((input: DotCMSWorkflowInput) => {
-            if (WORKFLOW_STEP_MAP[input.id]) {
+            const formComponentId = input.id as DotWizardComponentEnum;
+            if (WORKFLOW_STEP_MAP[formComponentId]) {
                 steps.push({
                     component: input.id,
                     data: input.body
