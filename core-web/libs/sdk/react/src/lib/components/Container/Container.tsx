@@ -24,7 +24,7 @@ function EmptyContainer() {
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                color: '#fff',
+                color: 'rgb(77 77 77)',
                 height: '10rem'
             }}>
             This container is empty.
@@ -100,6 +100,10 @@ export function Container({ containerRef }: ContainerProps) {
     }
 
     const renderContentlets = updatedContentlets.map((contentlet) => {
+        if (contentlet.identifier === 'TEMP_EMPTY_CONTENTLET' && !isInsideEditor) {
+            return; // If is the temp empty contenlet and is not inside the editor, don't render anything
+        }
+
         const ContentTypeComponent = components[contentlet.contentType] || NoContent;
 
         const Component =
