@@ -4,9 +4,11 @@ import { EMPTY, Observable, forkJoin } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
+import { MessageService } from 'primeng/api';
+
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotLicenseService } from '@dotcms/data-access';
+import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import { DotContainerMap, DotLayout, DotPageContainerStructure } from '@dotcms/dotcms-models';
 
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
@@ -60,7 +62,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     constructor(
         private dotPageApiService: DotPageApiService,
         private dotActionUrl: DotActionUrlService,
-        private dotLicenseService: DotLicenseService
+        private dotLicenseService: DotLicenseService,
+        private messageService: MessageService,
+        private dotMessageService: DotMessageService
     ) {
         super();
     }
@@ -212,7 +216,24 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 }),
                 getFormId(this.dotPageApiService),
                 switchMap(({ whenSaved, payload }) => {
-                    const pageContainers = insertContentletInContainer(payload);
+                    const { pageContainers, didInsert } = insertContentletInContainer(payload);
+
+                    if (!didInsert) {
+                        this.messageService.add({
+                            severity: 'info',
+                            summary: this.dotMessageService.get(
+                                'editpage.content.add.already.title'
+                            ),
+                            detail: this.dotMessageService.get(
+                                'editpage.content.add.already.message'
+                            ),
+                            life: 1000
+                        });
+
+                        this.updateEditorState(EDITOR_STATE.LOADED);
+
+                        return EMPTY;
+                    }
 
                     return this.dotPageApiService
                         .save({

@@ -5,27 +5,41 @@ import { ActionPayload, ContainerPayload, PageContainer } from '../shared/models
  *
  * @export
  * @param {ActionPayload} action
- * @return {*}  {PageContainer[]}
+ * @return {*}  {{
+ *    pageContainers: PageContainer[];
+ *   didInsert: boolean;
+ * }}
  */
-export function insertContentletInContainer(action: ActionPayload): PageContainer[] {
+export function insertContentletInContainer(action: ActionPayload): {
+    pageContainers: PageContainer[];
+    didInsert: boolean;
+} {
     if (action.position) {
         return insertPositionedContentletInContainer(action);
     }
 
+    let didInsert = false;
+
     const { pageContainers, container, personaTag, newContentletId } = action;
 
-    return pageContainers.map((pageContainer) => {
+    const newPageContainers = pageContainers.map((pageContainer) => {
         if (
             areContainersEquals(pageContainer, container) &&
             !pageContainer.contentletsId.includes(newContentletId)
         ) {
             pageContainer.contentletsId.push(newContentletId);
+            didInsert = true;
         }
 
         pageContainer.personaTag = personaTag;
 
         return pageContainer;
     });
+
+    return {
+        pageContainers: newPageContainers,
+        didInsert
+    };
 }
 
 /**
@@ -75,21 +89,32 @@ function areContainersEquals(
  *
  * @export
  * @param {ActionPayload} payload
- * @return {*}  {PageContainer[]}
+ * @return {*}  {{
+ *    pageContainers: PageContainer[];
+ *   didInsert: boolean;
+ * }}
  */
-function insertPositionedContentletInContainer(payload: ActionPayload): PageContainer[] {
+function insertPositionedContentletInContainer(payload: ActionPayload): {
+    pageContainers: PageContainer[];
+    didInsert: boolean;
+} {
+    let didInsert = false;
+
     const { pageContainers, container, contentlet, personaTag, newContentletId, position } =
         payload;
 
-    return pageContainers.map((pageContainer) => {
-        if (areContainersEquals(pageContainer, container)) {
+    const newPageContainers = pageContainers.map((pageContainer) => {
+        if (
+            areContainersEquals(pageContainer, container) &&
+            !pageContainer.contentletsId.includes(newContentletId)
+        ) {
             const index = pageContainer.contentletsId.indexOf(contentlet.identifier);
 
             if (index !== -1) {
                 const offset = position === 'before' ? index : index + 1;
                 pageContainer.contentletsId.splice(offset, 0, newContentletId);
-            } else {
-                pageContainer.contentletsId.push(newContentletId);
+
+                didInsert = true;
             }
         }
 
@@ -97,4 +122,9 @@ function insertPositionedContentletInContainer(payload: ActionPayload): PageCont
 
         return pageContainer;
     });
+
+    return {
+        pageContainers: newPageContainers,
+        didInsert
+    };
 }
