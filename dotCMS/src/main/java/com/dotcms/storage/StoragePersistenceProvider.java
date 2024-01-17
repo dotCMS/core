@@ -203,7 +203,7 @@ public final class StoragePersistenceProvider {
      * {@code true}.
      */
     private boolean isValidLicense() {
-        if (!isLicenseInitialized) {
+        //if (!isLicenseInitialized) {
             final String serverId = APILocator.getServerAPI().readServerId();
             if (serverId == null) {
                 // We can continue, probably a first start
@@ -213,7 +213,7 @@ public final class StoragePersistenceProvider {
             //We can finally call directly the LicenseUtil.getLevel() method, the cluster_server
             // was finally created!
             isLicenseInitialized = true;
-        }
+        //}
         return LicenseUtil.getLevel() >= LicenseLevel.PROFESSIONAL.level;
     }
 

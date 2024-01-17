@@ -173,6 +173,7 @@ public final class LicenseManager {
         try (InputStream is = Files.newInputStream(f.toPath())){
             String licenseRaw = IOUtils.toString(is);
             DotLicense dl = new LicenseTransformer(licenseRaw).dotLicense;
+            Logger.info(this, "License Info: " + dl);
             try {
                 LicenseRepoDAO.upsertLicenseToRepo( dl.serial, licenseRaw);
             } catch (Exception e) {
