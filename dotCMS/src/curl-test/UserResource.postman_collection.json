@@ -84,9 +84,9 @@
 									"    var jsonData = pm.response.json();",
 									"    console.log(jsonData);",
 									"",
-									"    pm.expect(jsonData[\"emailAddress\"]).to.eql(\"french@dotcms.com\");",
-									"    pm.expect(jsonData[\"firstName\"]).to.eql(\"FrenchUser\");",
-									"    pm.expect(jsonData[\"languageId\"]).to.eql(\"fr_fr\");",
+									"    pm.expect(jsonData.entity.user[\"emailAddress\"]).to.eql(\"french@dotcms.com\");",
+									"    pm.expect(jsonData.entity.user[\"firstName\"]).to.eql(\"FrenchUser\");",
+									"    pm.expect(jsonData.entity.user[\"languageId\"]).to.eql(\"fr_FR\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -630,6 +630,10 @@
 	"variable": [
 		{
 			"key": "containsAttrAndValue",
+			"value": ""
+		},
+		{
+			"key": "frenchLanguageId",
 			"value": ""
 		}
 	]

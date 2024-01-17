@@ -44,6 +44,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
@@ -764,8 +765,9 @@ public class UserResource implements Serializable {
 				APILocator.getLanguageAPI().getDefaultLanguage():
 				APILocator.getLanguageAPI().getLanguage(createUserForm.getLanguageId());
 
-
-		user.setLanguageId(null != language? language.getIsoCode(): "en_US");
+		final Locale locale   = language.asLocale();
+		final String languageString = locale.getLanguage() + StringPool.UNDERLINE + locale.getCountry();
+		user.setLanguageId(languageString);
 	}
 
 
