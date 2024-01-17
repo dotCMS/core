@@ -47,9 +47,9 @@
                             </includes>
                         </fileset>
                         <fileset>
-                            <directory>node_modules/.cache/nx</directory>
+                            <directory>.nx/cache</directory>
                             <includes>
-                                <include>**/*</include>
+                                <include>*/**</include>
                             </includes>
                         </fileset>
                     </filesets>
