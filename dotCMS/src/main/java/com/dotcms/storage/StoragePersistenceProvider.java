@@ -124,6 +124,7 @@ public final class StoragePersistenceProvider {
             if (isValidLicense()) {
                 builder.add(this.getStorage(storageType));
             } else {
+                Logger.warn(this, String.format("Storage Type '%s' cannot be applied with the current License Level: %s", storageTypeName, LicenseUtil.getLevel()));
                 if (StorageType.FILE_SYSTEM.equals(storageType) || StorageType.DB.equals(storageType)) {
                     builder.add(this.getStorage(storageType));
                 }
