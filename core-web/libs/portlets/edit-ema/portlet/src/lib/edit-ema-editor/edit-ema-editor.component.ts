@@ -558,14 +558,19 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // This triggers a rerender that makes nextjs to send the set_url again
                 // But this time the params are the same so the shell component wont trigger a load and there we know that the page is loaded
 
-                if (this.activatedRouter.snapshot.queryParams.url === payload.url) {
+                const isSameUrl = this.activatedRouter.snapshot.queryParams.url === payload.url;
+
+                if (isSameUrl) {
                     this.store.updateEditorState(EDITOR_STATE.LOADED);
                 } else {
                     this.store.updateEditorState(EDITOR_STATE.LOADING);
                 }
 
                 this.updateQueryParams({
-                    url: payload.url
+                    url: payload.url,
+                    ...(isSameUrl
+                        ? {}
+                        : { 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier })
                 });
             },
             [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
