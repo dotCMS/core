@@ -119,23 +119,3 @@ jobs:
           if [[ $(basename "${{ github.ref }}") =~ ^master ]]; then
             npm publish --tag next
           fi
-      - name: Slack Notification Failure
-        if: failure()
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.UI_SLACK_WEBHOOK }}
-          SLACK_USERNAME: dotBot
-          SLACK_ICON: https://avatars.slack-edge.com/2020-09-21/1362682893351_5b474f175640cf5f5912_72.png
-          SLACK_COLOR: "#ff2400"
-          SLACK_TITLE: "dotcms-ui publish failed"
-          SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}
-      - name: Slack Notification Success
-        if: success()
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.UI_SLACK_WEBHOOK }}
-          SLACK_USERNAME: dotBot
-          SLACK_ICON: https://avatars.slack-edge.com/2020-09-21/1362682893351_5b474f175640cf5f5912_72.png
-          SLACK_COLOR: "#5E7D00"
-          SLACK_TITLE: "dotcms-ui publish success"
-          SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}
