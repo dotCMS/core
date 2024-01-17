@@ -21,6 +21,7 @@ import com.dotcms.rest.annotation.HeaderFilter;
 import com.dotcms.rest.annotation.RequestFilter;
 import com.dotcms.rest.api.CorsFilter;
 import com.dotcms.rest.api.MyObjectMapperProvider;
+import com.dotcms.rest.api.v1.announcements.AnnouncementsResource;
 import com.dotcms.rest.api.v1.apps.AppsResource;
 import com.dotcms.rest.api.v1.asset.WebAssetResource;
 import com.dotcms.rest.api.v1.authentication.ApiTokenResource;
@@ -256,6 +257,7 @@ public class DotRestApplication extends Application {
 			.add(SystemTableResource.class)
 			.add(StorageResource.class)
 			.add(com.dotcms.rest.api.v2.tags.TagResource.class)
+			.add(AnnouncementsResource.class)
 			.build();
 
 	private static final Set<Class<?>> PROVIDER_CLASSES = ImmutableSet.<Class<?>>builder()

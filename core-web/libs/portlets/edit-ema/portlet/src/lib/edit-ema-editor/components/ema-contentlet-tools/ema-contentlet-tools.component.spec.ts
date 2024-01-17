@@ -227,4 +227,35 @@ describe('EmaContentletToolsComponent', () => {
             });
         });
     });
+
+    describe('empty container', () => {
+        beforeEach(
+            () =>
+                (spectator = createComponent({
+                    props: {
+                        contentlet: {
+                            ...contentletAreaMock,
+                            width: 180,
+                            payload: {
+                                contentlet: {
+                                    identifier: 'TEMP_EMPTY_CONTENTLET',
+                                    inode: 'Fake inode',
+                                    title: 'Fake title'
+                                },
+                                container: undefined,
+                                language_id: '1',
+                                pageContainers: [],
+                                pageId: '1'
+                            }
+                        }
+                    }
+                }))
+        );
+
+        it('should render only add button', () => {
+            expect(spectator.query(byTestId('add-top-button'))).toBeDefined();
+            expect(spectator.query(byTestId('add-bottom-button'))).toBeNull();
+            expect(spectator.query(byTestId('actions'))).toBeNull();
+        });
+    });
 });

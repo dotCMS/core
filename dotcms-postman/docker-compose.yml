@@ -68,6 +68,7 @@ services:
             WAIT_FOR_DEPS: 30
             JVM_ENDPOINT_TEST_PASS: 'obfuscate_me'
             DOT_ENABLE_SCRIPTING: 'true'
+            DOT_ANNOUNCEMENTS_BASE_URL: 'http://localhost:8080'
         ports:
             - 8080:8080
             - 8443:8443

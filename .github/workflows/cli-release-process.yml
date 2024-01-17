@@ -74,7 +74,7 @@ jobs:
           ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$RELEASE_VERSION
 
           git commit --allow-empty -a -m "🏁 Releasing version $RELEASE_VERSION"
-          git push https://${{ env.GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotCMS/core.git
+          git push https://${{ env.GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}
 
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
           echo "NEXT_VERSION=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
@@ -87,7 +87,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ macos-13-xlarge, macOS-latest, ubuntu-latest ] #
+        os: [ macos-13-xlarge, macOS-latest, ubuntu-latest, windows-latest ] #
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -141,12 +141,33 @@ jobs:
           echo "PATH=$PATH" >> $GITHUB_ENV
           gu install native-image
 
-      - name: 'Checking GraalVM setup'
+      - name: 'Set up GraalVM for (Windows)'
+        if: ${{ matrix.os == 'windows-latest' }}
+        shell: pwsh
         run: |
-          echo "GRAALVM_HOME: $GRAALVM_HOME"
-          echo "JAVA_HOME: $JAVA_HOME"
-          java --version
-          native-image --version
+          $ARCH="amd64"
+          $DOWNLOAD_URL="https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${{ env.GRAALVM_VERSION }}/graalvm-ce-java11-windows-${ARCH}-${{ env.GRAALVM_VERSION }}.zip"
+          $OUTPUT_PATH="C:\graalvm-ce-java11-windows-${ARCH}-${{ env.GRAALVM_VERSION }}.zip"
+          $GRAALVM_INSTALLATION_PATH="C:\Program Files (x86)\Java"
+
+          Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile $OUTPUT_PATH
+
+          if (Test-Path -Path $GRAALVM_INSTALLATION_PATH -PathType Container) {
+            Write-Host "GRAALVM installation path exists."
+          } else {
+            Write-Host "Creating GRAALVM installation path."
+            New-Item -ItemType Directory -Path $GRAALVM_INSTALLATION_PATH
+          }
+
+          Expand-Archive -Path $OUTPUT_PATH -DestinationPath $GRAALVM_INSTALLATION_PATH
+
+          $env:JAVA_HOME="${GRAALVM_INSTALLATION_PATH}\graalvm-ce-java11-22.1.0"
+          $env:Path="${env:Path};${env:JAVA_HOME}\bin;C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build;C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\14.38.33130\bin\HostX86\x64"
+
+          echo "JAVA_HOME=${env:JAVA_HOME}" >> "$env:GITHUB_ENV"
+          echo "Path=${env:Path}" >> "$env:GITHUB_ENV"
+
+          gu.cmd install native-image          
 
       - name: 'Cache Maven packages'
         uses: actions/cache@v3
@@ -174,10 +195,18 @@ jobs:
         run: |
           ./mvnw package -Dquarkus.package.type=${{ env.PACKAGE_TYPE }} -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
 
-      - name: 'Build Native Image'
+      - name: 'Build Native Image (Linux/MacOS)'
+        if: ${{ matrix.os != 'windows-latest' }}
         working-directory: ${{ github.workspace }}
         run: |
           ./mvnw package -Pnative -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
+
+      - name: 'Build Native Image (Windows)'
+        if: ${{ matrix.os == 'windows-latest' }}
+        working-directory: ${{ github.workspace }}
+        shell: pwsh
+        run: |
+          cmd /c 'call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" && .\mvnw.cmd package -Dnative -DskipTests=true -pl :dotcms-cli'
 
       - name: 'Create distribution'
         working-directory: ${{ github.workspace }}
@@ -263,5 +292,4 @@ jobs:
           ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$NEXT_VERSION
 
           git commit --allow-empty -a -m "⬆️  Next version $NEXT_VERSION"
-          git push https://${{ env.GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/dotCMS/core.git
-#          git push origin "$HEAD"
+          git push https://${{ env.GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}
