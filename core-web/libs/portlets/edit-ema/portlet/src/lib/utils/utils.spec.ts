@@ -1,4 +1,4 @@
-import { deleteContentletFromContainer, insertContentletInContainer } from '.';
+import { deleteContentletFromContainer, insertContentletInContainer, sanitizeURL } from '.';
 
 describe('utils functions', () => {
     describe('delete contentlet from container', () => {
@@ -228,6 +228,38 @@ describe('utils functions', () => {
                     }
                 ]
             });
+        });
+    });
+
+    describe('url sanitize', () => {
+        it('should remove the slash from the start', () => {
+            expect(sanitizeURL('/cool')).toEqual('cool');
+        });
+
+        it("should remove the slash from the end if it's not the only character", () => {
+            expect(sanitizeURL('super-cool/')).toEqual('super-cool');
+        });
+
+        it('should remove the slash from the end and the beggining', () => {
+            expect(sanitizeURL('/hello-there/')).toEqual('hello-there');
+        });
+
+        it('should remove the index if a nested path', () => {
+            expect(sanitizeURL('i-have-the-high-ground/index')).toEqual('i-have-the-high-ground');
+        });
+
+        it('should remove the index if a nested path with slash', () => {
+            expect(sanitizeURL('no-index-please/index/')).toEqual('no-index-please');
+        });
+
+        it('should leave as it is for valid url', () => {
+            expect(sanitizeURL('this-is-where-the-fun-begins')).toEqual(
+                'this-is-where-the-fun-begins'
+            );
+        });
+
+        it('should leave as it is for a nested valid url', () => {
+            expect(sanitizeURL('hello-there/general-kenobi')).toEqual('hello-there/general-kenobi');
         });
     });
 });

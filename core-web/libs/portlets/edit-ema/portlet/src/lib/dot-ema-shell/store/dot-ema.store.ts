@@ -20,7 +20,7 @@ import {
 import { DEFAULT_PERSONA, EDIT_CONTENTLET_URL, ADD_CONTENTLET_URL } from '../../shared/consts';
 import { EDITOR_STATE } from '../../shared/enums';
 import { ActionPayload, SavePagePayload } from '../../shared/models';
-import { insertContentletInContainer } from '../../utils';
+import { insertContentletInContainer, sanitizeURL } from '../../utils';
 
 type DialogType = 'content' | 'form' | 'widget' | 'shell' | null;
 
@@ -36,7 +36,7 @@ export interface EditEmaState {
     editorState: EDITOR_STATE;
 }
 
-function getFormId(dotPageApiService) {
+function getFormId(dotPageApiService: DotPageApiService) {
     return (source: Observable<unknown>) =>
         source.pipe(
             switchMap(({ payload, formId, whenSaved }) => {
@@ -432,13 +432,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }
 
     private createPageURL(params: DotPageApiParams): string {
-        const url = params.url
-            .replace(/^\/|\/$/g, '') // Remove slashes from the beginning and end of the url
-            .split('/')
-            .filter((part, i) => {
-                return !i || part !== 'index'; // Filter the index from the url if it is at the last position
-            })
-            .join('/');
+        const url = sanitizeURL(params.url);
 
         return `${url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
     }
