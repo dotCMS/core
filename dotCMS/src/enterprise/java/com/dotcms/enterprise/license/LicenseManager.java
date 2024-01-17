@@ -173,7 +173,7 @@ public final class LicenseManager {
         try (InputStream is = Files.newInputStream(f.toPath())){
             String licenseRaw = IOUtils.toString(is);
             DotLicense dl = new LicenseTransformer(licenseRaw).dotLicense;
-            Logger.info(this, "License Info: " + dl);
+            Logger.warn(System.class, "License Info: " + dl);
             try {
                 LicenseRepoDAO.upsertLicenseToRepo( dl.serial, licenseRaw);
             } catch (Exception e) {
@@ -182,7 +182,7 @@ public final class LicenseManager {
             return dl;
         } catch (Throwable e) {
             // Eat Me
-            Logger.warn(System.class, "No Valid License Found : " + f.getAbsolutePath());
+            Logger.error(System.class, "No Valid License Found : " + f.getAbsolutePath() + " : " + e.getMessage(), e);
              
         }
         return setupDefaultLicense(false);

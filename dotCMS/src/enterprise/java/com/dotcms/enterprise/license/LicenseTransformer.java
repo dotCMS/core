@@ -60,6 +60,7 @@ import com.dotcms.enterprise.license.bouncycastle.crypto.digests.SHA1Digest;
 import com.dotcms.enterprise.license.bouncycastle.crypto.params.RSAKeyParameters;
 import com.dotcms.enterprise.license.bouncycastle.crypto.signers.RSADigestSigner;
 import com.dotcms.enterprise.license.bouncycastle.util.encoders.Base64;
+import com.dotmarketing.util.Logger;
 import org.apache.commons.io.IOUtils;
 import com.dotmarketing.business.DotStateException;
 
@@ -112,7 +113,8 @@ public class LicenseTransformer{
                    .serial((String) data.get("serial"))
                    .raw(raw);
 
-        } 
+        }
+        Logger.warn(this, "License data map is empty!!");
         return new DotLicense();
     }
     
