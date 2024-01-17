@@ -8,8 +8,7 @@ import { pluck, takeUntil, tap } from 'rxjs/operators';
 
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotSessionStorageService } from '@dotcms/data-access';
+import { DotRouterService, DotSessionStorageService } from '@dotcms/data-access';
 import { DotPageRenderState } from '@dotcms/dotcms-models';
 
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';

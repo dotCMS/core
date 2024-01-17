@@ -12,6 +12,7 @@ import com.dotcms.api.traversal.TreeNodePushInfo;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
 import com.dotcms.cli.command.PushContext;
+import com.dotcms.cli.common.ApplyCommandOrder;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PushMixin;
@@ -284,6 +285,11 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
     @Override
     public Optional<String> getCustomMixinName() {
         return Optional.of(FILES_PUSH_MIXIN);
+    }
+
+    @Override
+    public int getOrder() {
+        return ApplyCommandOrder.FILES.getOrder();
     }
 
 }

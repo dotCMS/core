@@ -4,13 +4,13 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
+import { IMG_NOT_FOUND_KEY } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotSeoMetaTagsUtilService } from './dot-seo-meta-tags-util.service';
 import { DotSeoMetaTagsService } from './dot-seo-meta-tags.service';
 
 import { seoOGTagsResultOgMock } from '../../../seo/components/dot-results-seo-tool/mocks';
-import { IMG_NOT_FOUND_KEY } from '../dot-edit-content-html/models/meta-tags-model';
 
 function createTestDocument(): XMLDocument {
     return document.implementation.createDocument('http://www.w3.org/1999/xhtml', 'html', null);
@@ -434,7 +434,7 @@ describe('DotSetMetaTagsService', () => {
         const metaDesc = doc.createElement('meta');
         metaDesc.name = 'description';
         metaDesc.content =
-            'DESCRIPTION ****TEST.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis ante metus, posuere quis posuere eu, varius nec ante. Aenean nec dictum purus';
+            'DESCRIPTION ****TEST.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis ante metus, posuere quis posuere eu, varius nec ante. Aenean nec';
         head.appendChild(metaDesc);
 
         service.getMetaTagsResults(doc).subscribe((value) => {

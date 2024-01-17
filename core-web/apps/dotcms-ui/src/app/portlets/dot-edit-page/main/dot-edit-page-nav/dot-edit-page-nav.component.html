@@ -13,8 +13,7 @@
                 [queryParams]="route.queryParams | async"
                 [routerLink]="!item.disabled && item.link ? ['./' + item.link] : null"
                 (click)="item.action ? item.action(pageState.page.inode) : ''"
-                pTooltip="{{ item.tooltip }}"
-            >
+                pTooltip="{{ item.tooltip }}">
                 <dot-icon [name]="item.icon" size="32"></dot-icon>
                 <span class="edit-page-nav__item-text" data-testId="menuListItemText"
                     >{{ item.label }}
@@ -25,8 +24,7 @@
             <span
                 class="edit-page-nav__item edit-page-nav__item--disabled"
                 [pTooltip]="'editpage.toolbar.nav.license.enterprise.only' | dm"
-                tooltipPosition="left"
-            >
+                tooltipPosition="left">
                 <dot-icon [name]="item.icon" size="32"></dot-icon>
                 <span class="edit-page-nav__item-text" data-testId="menuListItemText">{{
                     item.label
@@ -35,7 +33,4 @@
         </ng-template>
     </li>
 </ul>
-<dot-page-tools-seo
-    [visible]="togglePageTools"
-    [currentPageUrlParams]="currentUrlParams"
-></dot-page-tools-seo>
+<dot-page-tools-seo #pageTools [currentPageUrlParams]="currentUrlParams"></dot-page-tools-seo>

@@ -31,7 +31,9 @@ import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-
 import { DotBinaryFieldValidatorService } from './service/dot-binary-field-validator/dot-binary-field-validator.service';
 import { DotBinaryFieldStore } from './store/binary-field.store';
 import { getUiMessage } from './utils/binary-field-utils';
-import { CONTENTTYPE_FIELDS_MESSAGE_MOCK, FIELD } from './utils/mock';
+import { CONTENTTYPE_FIELDS_MESSAGE_MOCK, FIELD, fileMetaData } from './utils/mock';
+
+import { BINARY_FIELD_CONTENTLET } from '../../utils/mocks';
 
 const TEMP_FILE_MOCK: DotCMSTempFile = {
     fileName: 'image.png',
@@ -42,7 +44,8 @@ const TEMP_FILE_MOCK: DotCMSTempFile = {
     referenceUrl:
         'https://images.unsplash.com/photo-1575936123452-b67c3203c357?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aW1hZ2V8ZW58MHx8MHx8fDA%3D',
     thumbnailUrl: 'image.png',
-    mimeType: 'mimeType'
+    mimeType: 'mimeType',
+    metadata: fileMetaData
 };
 
 const file = new File([''], 'filename');
@@ -123,6 +126,14 @@ describe('DotEditContentBinaryFieldComponent', () => {
         spectator.detectChanges();
         store.setTempFile(TEMP_FILE_MOCK);
         expect(spyEmit).toHaveBeenCalledWith(TEMP_FILE_MOCK.id);
+    });
+
+    it('should not emit new value is is equal to current inode', () => {
+        spectator.setInput('contentlet', BINARY_FIELD_CONTENTLET);
+        const spyEmit = jest.spyOn(spectator.component.valueUpdated, 'emit');
+        spectator.detectChanges();
+        store.setValue(BINARY_FIELD_CONTENTLET.inode);
+        expect(spyEmit).not.toHaveBeenCalled();
     });
 
     describe('Dropzone', () => {
@@ -229,7 +240,8 @@ describe('DotEditContentBinaryFieldComponent', () => {
                     ...state,
                     status: BinaryFieldStatus.INIT,
                     value: '',
-                    file: null
+                    contentlet: null,
+                    tempFile: null
                 });
             });
 
@@ -257,7 +269,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 ngZone.run(
                     fakeAsync(() => {
                         const spy = jest.spyOn(dotBinaryFieldEditImageService, 'openImageEditor');
-                        const spyTempFile = jest.spyOn(store, 'setTempFile');
+                        const spyTempFile = jest.spyOn(store, 'setFileFromTemp');
                         const dotBinaryFieldPreviewComponent = spectator.fixture.debugElement.query(
                             By.css('dot-binary-field-preview')
                         );
@@ -300,7 +312,6 @@ describe('DotEditContentBinaryFieldComponent', () => {
         });
 
         it('should show preview when status is PREVIEW', async () => {
-            store.setStatus(BinaryFieldStatus.PREVIEW);
             store.setTempFile(TEMP_FILE_MOCK);
             spectator.detectChanges();
 
@@ -312,7 +323,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
 
     describe('Dialog', () => {
         beforeEach(async () => {
-            jest.spyOn(store, 'setFileAndContent').mockReturnValue(of(null).subscribe());
+            jest.spyOn(store, 'setFileFromContentlet').mockReturnValue(of(null).subscribe());
             spectator.detectChanges();
             await spectator.fixture.whenStable();
             spectator.detectChanges();
@@ -355,24 +366,20 @@ describe('DotEditContentBinaryFieldComponent', () => {
         describe('Contentlet - BaseTyp FILEASSET', () => {
             it('should set the correct file asset', () => {
                 const spy = jest
-                    .spyOn(store, 'setFileAndContent')
+                    .spyOn(store, 'setFileFromContentlet')
                     .mockReturnValue(of(null).subscribe());
                 const mockFileAsset = {
                     ...dotcmsContentletMock,
                     baseType: 'FILEASSET',
                     metaData: {
-                        mimeType: 'text/html'
+                        ...fileMetaData
                     }
                 };
-                const { inode, titleImage, contentType: mimeType } = mockFileAsset;
                 spectator.setInput('contentlet', mockFileAsset);
                 spectator.detectChanges();
                 expect(spy).toHaveBeenCalledWith({
-                    inode,
-                    titleImage,
-                    mimeType,
-                    url: mockFileAsset[FIELD.variable],
-                    ...mockFileAsset.metaData
+                    ...mockFileAsset,
+                    fieldVariable: FIELD.variable
                 });
             });
         });
@@ -380,25 +387,21 @@ describe('DotEditContentBinaryFieldComponent', () => {
         describe('Contentlet - BaseTyp CONTENT', () => {
             it('should set the correct file asset', () => {
                 const spy = jest
-                    .spyOn(store, 'setFileAndContent')
+                    .spyOn(store, 'setFileFromContentlet')
                     .mockReturnValue(of(null).subscribe());
                 const metaDataKey = `${FIELD.variable}MetaData`;
                 const mockFileAsset = {
                     ...dotcmsContentletMock,
                     baseType: 'CONTENT',
                     [metaDataKey]: {
-                        mimeType: 'text/html'
+                        ...fileMetaData
                     }
                 };
-                const { inode, titleImage, contentType: mimeType } = mockFileAsset;
                 spectator.setInput('contentlet', mockFileAsset);
                 spectator.detectChanges();
                 expect(spy).toHaveBeenCalledWith({
-                    inode,
-                    titleImage,
-                    mimeType,
-                    url: mockFileAsset[FIELD.variable],
-                    ...mockFileAsset[metaDataKey]
+                    ...mockFileAsset,
+                    fieldVariable: FIELD.variable
                 });
             });
         });

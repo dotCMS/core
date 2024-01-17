@@ -2,7 +2,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/data-access';
 
 @Pipe({ name: 'dotSafeUrl', standalone: true })
 export class DotSafeUrlPipe implements PipeTransform {

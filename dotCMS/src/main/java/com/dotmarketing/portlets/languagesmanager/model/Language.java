@@ -1,41 +1,38 @@
 package com.dotmarketing.portlets.languagesmanager.model;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
-import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
-import java.io.Serializable;
-import java.util.Locale;
-
+import com.dotmarketing.exception.DotRuntimeException;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
-import com.dotmarketing.exception.DotRuntimeException;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
+import java.io.Serializable;
+import java.util.Locale;
+import java.util.Map;
 
 /**
+ * This class represents a language in the system.
+ * <p>Languages must be created and configured in dotCMS before contributors may create and edit content in different
+ * languages on your site. Each dotCMS instance has a single Default Language, which both controls which language
+ * version of content is returned when a request is made without a specified language, and which affects how other
+ * language features operate, such as the Default Language Fallthrough Configuration.</p>
  *
  * @author  maria
+ * @since Mar 22nd, 2012
  */
 public class Language implements Serializable, ManifestItem {
     private static final long serialVersionUID = 1L;
 
-    /** identifier field */
     private long id;
 
-    /** identifier field */
     private String languageCode;
 
-    /** identifier field */
     private String countryCode;
 
-    /** identifier field */
     private String language;
 
-    /** nullable persistent field */
     private String country;
 
     private String isoCode;
@@ -98,8 +95,6 @@ public class Language implements Serializable, ManifestItem {
         return new Locale(this.languageCode, this.countryCode);
       }
     }
-    
-    
     
     /**
      * @param country The country to set.
@@ -201,6 +196,19 @@ public class Language implements Serializable, ManifestItem {
                 .build();
     }
 
-
+    /**
+     * Returns a map representation of the properties of this Language.
+     *
+     * @return a map representation of this object.
+     */
+    public Map<String, Object> toMap() {
+        return Map.of(
+                "id", this.id,
+                "languageCode", this.languageCode,
+                "countryCode", this.countryCode,
+                "language", this.language,
+                "country", this.country,
+                "isoCode", this.isoCode);
+    }
 
 }

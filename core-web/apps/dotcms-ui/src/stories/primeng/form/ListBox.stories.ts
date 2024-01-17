@@ -1,5 +1,4 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+import { Meta, moduleMetadata, Story } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -44,7 +43,7 @@ type City = {
 
 const ListBoxTemplate = `<p-listbox [options]="cities" [(ngModel)]="selectedCity"></p-listbox>`;
 
-const Template: Story<City[]> = (props: City[]) => {
+const Template: (props: City[]) => { template: string; props: City[] } = (props: City[]) => {
     const template = ListBoxTemplate;
 
     return {

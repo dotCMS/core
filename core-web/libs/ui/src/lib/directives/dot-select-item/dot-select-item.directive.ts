@@ -20,6 +20,7 @@ export class DotSelectItemDirective {
         const target: HTMLInputElement = event.target as unknown as HTMLInputElement;
 
         if (event.key === 'Enter' && !!target.value) {
+            // TODO: find a way to get the selected item from the autocomplete selectItem method was removed since v.16
             this.autoComplete.selectItem(target.value);
         }
     }

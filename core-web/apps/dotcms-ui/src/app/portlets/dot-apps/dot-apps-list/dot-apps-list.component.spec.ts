@@ -8,10 +8,9 @@ import { ActivatedRoute } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotApps } from '@dotcms/dotcms-models';
+import { DotApp } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
@@ -52,7 +51,7 @@ export const appsResponse = [
     template: ''
 })
 class MockDotAppsCardComponent {
-    @Input() app: DotApps;
+    @Input() app: DotApp;
     @Output() actionFired = new EventEmitter<string>();
 }
 
@@ -239,7 +238,7 @@ describe('DotAppsListComponent', () => {
         });
 
         it('should display not licensed component', () => {
-            expect(fixture.debugElement.query(By.css('dot-not-licensed-component'))).toBeTruthy();
+            expect(fixture.debugElement.query(By.css('dot-not-license'))).toBeTruthy();
         });
     });
 });

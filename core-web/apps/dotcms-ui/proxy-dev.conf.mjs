@@ -10,7 +10,9 @@ export default [
             '/DotAjaxDirector',
             '/contentAsset',
             '/application',
-            '/assets'
+            '/assets',
+            '/dotcms-block-editor',
+            '/dotcms-binary-field-builder'
         ],
         target: 'http://localhost:8080',
         secure: false,
