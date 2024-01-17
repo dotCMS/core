@@ -20,11 +20,11 @@ function EmptyContainer() {
             data-testid="empty-container"
             style={{
                 width: '100%',
-                backgroundColor: '#d1d4db',
+                backgroundColor: '#ECF0FD',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                color: '#fff',
+                color: '#030E32',
                 height: '10rem'
             }}>
             This container is empty.
