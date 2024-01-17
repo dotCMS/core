@@ -77,6 +77,45 @@ describe('EditEmaGuard', () => {
         });
     });
 
+    it('should navigate to "edit-ema" and sanitize url', (done) => {
+        jest.spyOn(emaAppConfigurationService, 'get').mockReturnValue(
+            of({
+                pattern: 'some-pattern',
+                url: 'https://example.com',
+                options: {
+                    authenticationToken: '12345',
+                    additionalOption1: 'value1',
+                    additionalOption2: 'value2'
+                }
+            })
+        );
+
+        const route: ActivatedRouteSnapshot = {
+            firstChild: {
+                url: [{ path: 'content' }]
+            },
+            queryParams: { url: '/some-url/with-index/index' }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
+
+        const result = TestBed.runInInjectionContext(
+            () => editEmaGuard(route, state) as Observable<boolean>
+        );
+
+        result.subscribe((canActivate) => {
+            expect(router.navigate).toHaveBeenCalledWith(['/edit-ema/content'], {
+                queryParams: {
+                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                    language_id: 1,
+                    url: 'some-url/with-index'
+                },
+                replaceUrl: true
+            });
+            expect(canActivate).toBe(true);
+            done();
+        });
+    });
+
     it('should not update the queryParams on navigate', (done) => {
         jest.spyOn(emaAppConfigurationService, 'get').mockReturnValue(
             of({
