@@ -194,6 +194,7 @@ export class DotEditPageViewAsControllerSeoComponent implements OnInit {
 
     private askForCreateNewTranslation(language: DotLanguage): void {
         this.confirmationService.confirm({
+            key: 'lang-confirm-dialog',
             header: this.dotMessageService.get(
                 'editpage.language-change-missing-lang-populate.confirm.header'
             ),
