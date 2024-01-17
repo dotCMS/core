@@ -50,7 +50,7 @@ import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW, HOST } from '../shared/consts';
-import { NG_CUSTOM_EVENTS } from '../shared/enums';
+import { EDITOR_STATE, NG_CUSTOM_EVENTS } from '../shared/enums';
 import { ActionPayload } from '../shared/models';
 
 const messagesMock = {
@@ -239,6 +239,10 @@ describe('EditEmaEditorComponent', () => {
                 language_id: '1',
                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
             });
+
+            spectator.detectChanges();
+
+            store.updateEditorState(EDITOR_STATE.LOADED);
         });
 
         describe('toast', () => {
@@ -1009,6 +1013,21 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('misc', () => {
+                it('should set the editorState to loaded when the iframe sends a postmessage of content changed', () => {
+                    const editorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: 'content-change'
+                            }
+                        })
+                    );
+
+                    expect(editorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
+                });
+
                 it('should not open a dialog when the iframe sends a postmessage with a different origin', () => {
                     spectator.detectChanges();
 
@@ -1231,6 +1250,23 @@ describe('EditEmaEditorComponent', () => {
         });
 
         describe('DOM', () => {
+            it("should not show a loader when the editor state is not 'loading'", () => {
+                spectator.detectChanges();
+
+                const progressbar = spectator.query(byTestId('progress-bar'));
+
+                expect(progressbar).toBeNull();
+            });
+
+            it('should show a loader when the editor state is loading', () => {
+                store.updateEditorState(EDITOR_STATE.LOADING);
+
+                spectator.detectChanges();
+
+                const progressbar = spectator.query(byTestId('progress-bar'));
+
+                expect(progressbar).not.toBeNull();
+            });
             it('iframe should have the correct src', () => {
                 spectator.detectChanges();
 
@@ -1263,6 +1299,52 @@ describe('EditEmaEditorComponent', () => {
                     queryParams: { url: '/some' },
                     queryParamsHandling: 'merge'
                 });
+            });
+
+            it('set url to a different route should set the editor state to loading', () => {
+                const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                spectator.detectChanges();
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: 'set-url',
+                            payload: {
+                                url: '/some'
+                            }
+                        }
+                    })
+                );
+
+                expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADING);
+            });
+
+            it('set url to the same route should set the editor state to loaded', () => {
+                const updateEditorStateSpy = jest.spyOn(store, 'updateEditorState');
+
+                const url = "/ultra-cool-url-that-doesn't-exist";
+
+                spectator.detectChanges();
+                spectator.triggerNavigation({
+                    url: [],
+                    queryParams: { url }
+                });
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: 'set-url',
+                            payload: {
+                                url
+                            }
+                        }
+                    })
+                );
+
+                expect(updateEditorStateSpy).toHaveBeenCalledWith(EDITOR_STATE.LOADED);
             });
 
             it('should have a confirm dialog with acceptIcon and rejectIcon attribute', () => {
@@ -1308,6 +1390,32 @@ describe('EditEmaEditorComponent', () => {
                 spectator.detectComponentChanges();
 
                 expect(postMessageSpy).toHaveBeenCalledWith('ema-request-bounds', '*');
+            });
+
+            it('should reset the contentlet when we update query params', () => {
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(EditEmaPaletteComponent, 'dragStart', {
+                    target: {
+                        dataset: {
+                            type: 'contentlet',
+                            item: JSON.stringify({
+                                identifier: '123',
+                                title: 'hello world'
+                            })
+                        }
+                    }
+                });
+
+                spectator.detectComponentChanges();
+
+                expect(spectator.component.contentlet).not.toBeNull();
+
+                spectator.component.onLanguageSelected(2); // triggers a query param change
+
+                spectator.detectComponentChanges();
+
+                expect(spectator.component.contentlet).toBeNull();
             });
 
             it('should show drop zone on iframe message', () => {
@@ -1369,6 +1477,30 @@ describe('EditEmaEditorComponent', () => {
                 spectator.detectComponentChanges();
                 dropZone = spectator.query(EmaPageDropzoneComponent);
                 expect(dropZone).toBeNull();
+            });
+
+            it('should reset the rowa when we update query params', () => {
+                spectator.detectChanges();
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: 'set-bounds',
+                            payload: BOUNDS_MOCK
+                        }
+                    })
+                );
+
+                spectator.detectComponentChanges();
+
+                expect(spectator.component.rows.length).toBe(BOUNDS_MOCK.length);
+
+                spectator.component.onLanguageSelected(2); // triggers a query param change
+
+                spectator.detectComponentChanges();
+
+                expect(spectator.component.rows.length).toBe(0);
             });
         });
     });

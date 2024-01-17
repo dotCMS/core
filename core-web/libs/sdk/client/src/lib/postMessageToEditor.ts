@@ -25,6 +25,9 @@ export enum CUSTOMER_ACTIONS {
      * Ping the editor to see if the page is inside the editor
      */
     PING_EDITOR = 'ping-editor',
+
+    CONTENT_CHANGE = 'content-change',
+
     NOOP = 'noop'
 }
 

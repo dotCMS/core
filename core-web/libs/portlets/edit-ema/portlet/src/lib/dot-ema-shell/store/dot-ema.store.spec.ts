@@ -15,6 +15,7 @@ import { EditEmaStore } from './dot-ema.store';
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
 import { DotPageApiResponse, DotPageApiService } from '../../services/dot-page-api.service';
 import { DEFAULT_PERSONA, EDIT_CONTENTLET_URL } from '../../shared/consts';
+import { EDITOR_STATE } from '../../shared/enums';
 import { ActionPayload } from '../../shared/models';
 
 const mockResponse: DotPageApiResponse = {
@@ -66,13 +67,135 @@ describe('EditEmaStore', () => {
         spectator = createService();
 
         dotPageApiService = spectator.inject(DotPageApiService);
-        dotPageApiService.get.andReturn(of(mockResponse));
+        dotPageApiService.get.mockImplementation(({ url }) => {
+            return of({
+                ...mockResponse,
+                page: {
+                    ...mockResponse.page,
+                    url
+                }
+            });
+        });
 
         spectator.service.load({
             clientHost: 'http://localhost:3000',
             language_id: '1',
             url: 'test-url',
             'com.dotmarketing.persona.id': '123'
+        });
+    });
+
+    describe('url sanitize', () => {
+        it('should remove the slash from the start', (done) => {
+            spectator.service.load({
+                clientHost: 'http://localhost:3000',
+                language_id: '1',
+                url: '/cool',
+                'com.dotmarketing.persona.id': '123'
+            });
+
+            spectator.service.editorState$.subscribe((state) => {
+                expect(state.apiURL).toEqual(
+                    'http://localhost/api/v1/page/json/cool?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                );
+                done();
+            });
+        });
+
+        it("should remove the slash from the end if it's not the only character", (done) => {
+            spectator.service.load({
+                clientHost: 'http://localhost:3000',
+                language_id: '1',
+                url: 'super-cool/',
+                'com.dotmarketing.persona.id': '123'
+            });
+
+            spectator.service.editorState$.subscribe((state) => {
+                expect(state.apiURL).toEqual(
+                    'http://localhost/api/v1/page/json/super-cool?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                );
+                done();
+            });
+        });
+
+        it('should remove the slash from the end and the beggining', (done) => {
+            spectator.service.load({
+                clientHost: 'http://localhost:3000',
+                language_id: '1',
+                url: '/hello-there/',
+                'com.dotmarketing.persona.id': '123'
+            });
+
+            spectator.service.editorState$.subscribe((state) => {
+                expect(state.apiURL).toEqual(
+                    'http://localhost/api/v1/page/json/hello-there?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                );
+                done();
+            });
+        });
+
+        it('should remove the index if a nested path', (done) => {
+            spectator.service.load({
+                clientHost: 'http://localhost:3000',
+                language_id: '1',
+                url: 'i-have-the-high-ground/index',
+                'com.dotmarketing.persona.id': '123'
+            });
+
+            spectator.service.editorState$.subscribe((state) => {
+                expect(state.apiURL).toEqual(
+                    'http://localhost/api/v1/page/json/i-have-the-high-ground?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                );
+                done();
+            });
+        });
+
+        it('should remove the index if a nested path with slash', (done) => {
+            spectator.service.load({
+                clientHost: 'http://localhost:3000',
+                language_id: '1',
+                url: 'no-index-please/index/',
+                'com.dotmarketing.persona.id': '123'
+            });
+
+            spectator.service.editorState$.subscribe((state) => {
+                expect(state.apiURL).toEqual(
+                    'http://localhost/api/v1/page/json/no-index-please?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                );
+                done();
+            });
+        });
+
+        it('should leave as it is for valid url', (done) => {
+            spectator.service.load({
+                clientHost: 'http://localhost:3000',
+                language_id: '1',
+                url: 'this-is-where-the-fun-begins',
+                'com.dotmarketing.persona.id': '123'
+            });
+
+            spectator.service.editorState$.subscribe((state) => {
+                expect(state.apiURL).toEqual(
+                    'http://localhost/api/v1/page/json/this-is-where-the-fun-begins?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                );
+                done();
+            });
+        });
+
+        it('should leave as it is for a nested valid url', (done) => {
+            spectator.service.load({
+                clientHost: 'http://localhost:3000',
+                language_id: '1',
+                url: 'hello-there/general-kenobi',
+                'com.dotmarketing.persona.id': '123'
+            });
+
+            spectator.service.editorState$.subscribe((state) => {
+                expect(state.apiURL).toEqual(
+                    'http://localhost/api/v1/page/json/hello-there/general-kenobi?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                );
+                done();
+            });
         });
     });
 
@@ -85,7 +208,8 @@ describe('EditEmaStore', () => {
                     apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
                     iframeURL: `http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona`,
                     isEnterpriseLicense: true,
-                    favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1'
+                    favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                    state: EDITOR_STATE.LOADING
                 });
                 done();
             });
@@ -93,6 +217,22 @@ describe('EditEmaStore', () => {
     });
 
     describe('updaters', () => {
+        it('should update the editorState', () => {
+            spectator.service.updateEditorState(EDITOR_STATE.LOADED);
+
+            spectator.service.editorState$.subscribe((state) => {
+                expect(state).toEqual({
+                    clientHost: 'http://localhost:3000',
+                    editor: mockResponse,
+                    apiURL: 'http://localhost/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona',
+                    iframeURL: `http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona`,
+                    isEnterpriseLicense: true,
+                    favoritePageURL: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                    state: EDITOR_STATE.LOADED
+                });
+            });
+        });
+
         it('should update editIframeLoading', (done) => {
             spectator.service.setDialogIframeLoading(true);
 
@@ -104,7 +244,8 @@ describe('EditEmaStore', () => {
                     dialogIframeLoading: true,
                     dialogHeader: '',
                     isEnterpriseLicense: true,
-                    dialogType: null
+                    dialogType: null,
+                    editorState: EDITOR_STATE.LOADING
                 });
                 done();
             });
@@ -123,7 +264,8 @@ describe('EditEmaStore', () => {
                     dialogIframeLoading: false,
                     dialogHeader: '',
                     isEnterpriseLicense: true,
-                    dialogType: null
+                    dialogType: null,
+                    editorState: EDITOR_STATE.LOADING
                 });
                 done();
             });
@@ -144,7 +286,8 @@ describe('EditEmaStore', () => {
                     dialogIframeLoading: true,
                     dialogHeader: 'test',
                     isEnterpriseLicense: true,
-                    dialogType: 'content'
+                    dialogType: 'content',
+                    editorState: EDITOR_STATE.LOADING
                 });
                 done();
             });
@@ -166,7 +309,8 @@ describe('EditEmaStore', () => {
                     dialogIframeLoading: true,
                     dialogHeader: 'Search Content',
                     dialogType: 'content',
-                    isEnterpriseLicense: true
+                    isEnterpriseLicense: true,
+                    editorState: EDITOR_STATE.LOADING
                 });
                 done();
             });
@@ -186,7 +330,8 @@ describe('EditEmaStore', () => {
                     dialogIframeLoading: true,
                     dialogHeader: 'test',
                     dialogType: 'content',
-                    isEnterpriseLicense: true
+                    isEnterpriseLicense: true,
+                    editorState: EDITOR_STATE.LOADING
                 });
                 done();
             });
@@ -278,7 +423,8 @@ describe('EditEmaStore', () => {
                     dialogIframeLoading: false,
                     dialogHeader: '',
                     dialogType: null,
-                    isEnterpriseLicense: true
+                    isEnterpriseLicense: true,
+                    editorState: EDITOR_STATE.LOADING
                 });
                 done();
             });
