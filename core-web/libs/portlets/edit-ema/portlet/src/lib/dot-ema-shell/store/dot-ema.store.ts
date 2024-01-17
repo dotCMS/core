@@ -218,6 +218,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                 switchMap(({ whenSaved, payload }) => {
                     const { pageContainers, didInsert } = insertContentletInContainer(payload);
 
+                    // This should not be called here but since here is where we get the form contentlet
+                    // we need to do it here, we need to refactor editor and will fix there.
                     if (!didInsert) {
                         this.messageService.add({
                             severity: 'info',
