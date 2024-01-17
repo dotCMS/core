@@ -9,6 +9,7 @@ import com.dotcms.cli.common.ApplyCommandOrder;
 import com.dotcms.cli.common.FullPullOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PullMixin;
+import com.dotcms.cli.common.WorkspaceParams;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.Workspace;
 import com.dotcms.model.pull.PullOptions;
@@ -85,9 +86,8 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer>, 
     private int pull() throws IOException {
 
         // Make sure the path is within a workspace
-        final Workspace workspace = workspaceManager.getOrCreate(
-                this.getPullMixin().workspace()
-        );
+        final WorkspaceParams params = this.getPullMixin().workspace();
+        final Workspace workspace = workspaceManager.getOrCreate(params.workspacePath(), !params.userProvided());
 
         File sitesFolder = workspace.sites().toFile();
         if (!sitesFolder.exists() || !sitesFolder.canRead()) {

@@ -87,13 +87,14 @@ public class SitePushHandler implements PushHandler<SiteView> {
                 Boolean.FALSE.equals(serverSite.isLive())) {
             // Publishing the site
             response = siteAPI.publish(localSite.identifier());
+        } else if (Boolean.TRUE.equals(localSite.isArchived()) &&
+                Boolean.FALSE.equals(serverSite.isArchived())) {
+            // Archiving the site
+            response = siteAPI.archive(localSite.identifier());
         } else if (Boolean.FALSE.equals(localSite.isLive()) &&
                 Boolean.TRUE.equals(serverSite.isLive())) {
             // Unpublishing the site
             response = siteAPI.unpublish(localSite.identifier());
-        } else if (Boolean.TRUE.equals(localSite.isArchived())) {
-            // Archiving the site
-            response = siteAPI.archive(localSite.identifier());
         }
 
         return response.entity();

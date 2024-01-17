@@ -76,9 +76,10 @@ i {
     overflow: hidden;
     flex-grow: 1;
     margin: 0 auto;
+    border: solid 1px $color-palette-gray-300;
 
     iframe {
-        border: solid 1px $color-palette-gray-300;
+        border: none;
     }
 }
 
