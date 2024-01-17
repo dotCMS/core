@@ -121,14 +121,17 @@ describe('utils functions', () => {
                 newContentletId: 'new-contentlet-id-123'
             });
 
-            expect(result).toEqual([
-                {
-                    identifier: 'container-identifier-123',
-                    uuid: 'container-uui-123',
-                    contentletsId: ['contentlet-mark-123', 'new-contentlet-id-123'],
-                    personaTag: undefined
-                }
-            ]);
+            expect(result).toEqual({
+                didInsert: true,
+                pageContainers: [
+                    {
+                        identifier: 'container-identifier-123',
+                        uuid: 'container-uui-123',
+                        contentletsId: ['contentlet-mark-123', 'new-contentlet-id-123'],
+                        personaTag: undefined
+                    }
+                ]
+            });
         });
 
         it('should insert in specific position', () => {
@@ -167,14 +170,17 @@ describe('utils functions', () => {
                 newContentletId: '000'
             });
 
-            expect(result).toEqual([
-                {
-                    identifier: 'test',
-                    uuid: 'test',
-                    contentletsId: ['test', 'test123', '000', 'test1234'],
-                    personaTag: undefined
-                }
-            ]);
+            expect(result).toEqual({
+                didInsert: true,
+                pageContainers: [
+                    {
+                        identifier: 'test',
+                        uuid: 'test',
+                        contentletsId: ['test', 'test123', '000', 'test1234'],
+                        personaTag: undefined
+                    }
+                ]
+            });
         });
 
         it('should not insert contentlet if already exist', () => {
@@ -207,17 +213,21 @@ describe('utils functions', () => {
                 pageContainers,
                 container,
                 contentlet,
+                newContentletId: 'test',
                 language_id: 'test',
                 pageId: 'test'
             });
 
-            expect(result).toEqual([
-                {
-                    identifier: 'test',
-                    uuid: 'test',
-                    contentletsId: ['test']
-                }
-            ]);
+            expect(result).toEqual({
+                didInsert: false,
+                pageContainers: [
+                    {
+                        identifier: 'test',
+                        uuid: 'test',
+                        contentletsId: ['test']
+                    }
+                ]
+            });
         });
     });
 });
