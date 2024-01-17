@@ -52,7 +52,8 @@ export function Container({ containerRef }: ContainerProps) {
         containerRef
     );
 
-    const updatedContentlets = contentlets.length > 0 ? contentlets : [FAKE_CONTENLET];
+    const updatedContentlets =
+        contentlets.length === 0 && isInsideEditor ? [FAKE_CONTENLET] : contentlets;
 
     const contentletsId = updatedContentlets.map((contentlet) => contentlet.identifier);
 
@@ -99,45 +100,39 @@ export function Container({ containerRef }: ContainerProps) {
         });
     }
 
-    const renderContentlets = updatedContentlets
-        .map((contentlet) => {
-            if (contentlet.identifier === 'TEMP_EMPTY_CONTENTLET' && !isInsideEditor) {
-                return null; // If is the temp empty contenlet and is not inside the editor, don't render anything
-            }
+    const renderContentlets = updatedContentlets.map((contentlet) => {
+        const ContentTypeComponent = components[contentlet.contentType] || NoContent;
 
-            const ContentTypeComponent = components[contentlet.contentType] || NoContent;
+        const Component =
+            contentlet.identifier === 'TEMP_EMPTY_CONTENTLET'
+                ? EmptyContainer
+                : ContentTypeComponent;
 
-            const Component =
-                contentlet.identifier === 'TEMP_EMPTY_CONTENTLET'
-                    ? EmptyContainer
-                    : ContentTypeComponent;
+        const contentletPayload = {
+            container,
+            contentlet: {
+                identifier: contentlet.identifier,
+                title: contentlet.widgetTitle || contentlet.title,
+                inode: contentlet.inode
+            },
+            language_id: viewAs.language.id,
+            pageContainers,
+            pageId: page.identifier,
+            personaTag: viewAs.persona?.keyTag
+        };
 
-            const contentletPayload = {
-                container,
-                contentlet: {
-                    identifier: contentlet.identifier,
-                    title: contentlet.widgetTitle || contentlet.title,
-                    inode: contentlet.inode
-                },
-                language_id: viewAs.language.id,
-                pageContainers,
-                pageId: page.identifier,
-                personaTag: viewAs.persona?.keyTag
-            };
-
-            return isInsideEditor ? (
-                <div
-                    onPointerEnter={onPointerEnterHandler}
-                    data-dot="contentlet"
-                    data-content={JSON.stringify(contentletPayload)}
-                    key={contentlet.identifier}>
-                    <Component {...contentlet} />
-                </div>
-            ) : (
-                <Component {...contentlet} key={contentlet.identifier} />
-            );
-        })
-        .filter(Boolean);
+        return isInsideEditor ? (
+            <div
+                onPointerEnter={onPointerEnterHandler}
+                data-dot="contentlet"
+                data-content={JSON.stringify(contentletPayload)}
+                key={contentlet.identifier}>
+                <Component {...contentlet} />
+            </div>
+        ) : (
+            <Component {...contentlet} key={contentlet.identifier} />
+        );
+    });
 
     return isInsideEditor ? (
         <div data-dot="container" data-content={JSON.stringify(containerPayload)}>
