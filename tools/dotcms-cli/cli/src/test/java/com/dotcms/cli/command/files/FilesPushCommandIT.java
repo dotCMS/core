@@ -13,13 +13,8 @@ import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collections;
-import java.util.UUID;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -89,7 +84,7 @@ class FilesPushCommandIT extends CommandTest {
     void testPushNoPath() throws IOException {
 
         // Create a workspace in the current directory
-        workspaceManager.getOrCreate();
+        workspaceManager.getOrCreate(Path.of("."));
 
         final CommandLine commandLine = createCommand();
 
@@ -114,7 +109,7 @@ class FilesPushCommandIT extends CommandTest {
 
         // Cleaning up old traces of a possible workspace created in the current directory
         // by other tests
-        var workspace = workspaceManager.findWorkspace();
+        var workspace = workspaceManager.findWorkspace(Path.of("."));
         if (workspace.isPresent()) {
             workspaceManager.destroy(workspace.get());
         }
@@ -368,27 +363,4 @@ class FilesPushCommandIT extends CommandTest {
             deleteTempDirectory(tempFolder);
         }
     }
-
-    private Path createTempFolder() throws IOException {
-
-        String randomFolderName = "folder-" + UUID.randomUUID();
-        return Files.createTempDirectory(randomFolderName);
-    }
-
-    private void deleteTempDirectory(Path folderPath) throws IOException {
-        Files.walkFileTree(folderPath, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                Files.delete(file); // Deletes the file
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                Files.delete(dir); // Deletes the directory after its content has been deleted
-                return FileVisitResult.CONTINUE;
-            }
-        });
-    }
-
 }
