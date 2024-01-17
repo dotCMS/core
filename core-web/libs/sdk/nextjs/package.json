@@ -1,12 +1,12 @@
 {
     "name": "@dotcms/nextjs",
-    "version": "0.0.1-alpha.3",
+    "version": "0.0.1-alpha.4",
     "peerDependencies": {
         "next": "14.0.4",
         "react": "^18",
         "react-dom": "^18",
-        "@dotcms/react": "0.0.1-alpha.3",
-        "@dotcms/client": "0.0.1-alpha.3"
+        "@dotcms/react": "0.0.1-alpha.4",
+        "@dotcms/client": "0.0.1-alpha.4"
     },
     "description": "Official NextJS library to render a dotCMS page.",
     "repository": {
