@@ -1608,8 +1608,8 @@ describe('EditEmaEditorComponent', () => {
 
                 const confirmDialog = spectator.query(byTestId('confirm-dialog'));
 
-                expect(confirmDialog.getAttribute('acceptIcon')).toBeNull();
-                expect(confirmDialog.getAttribute('rejectIcon')).toBeNull();
+                expect(confirmDialog.getAttribute('acceptIcon')).toBe('hidden');
+                expect(confirmDialog.getAttribute('rejectIcon')).toBe('hidden');
             });
         });
 
