@@ -938,7 +938,7 @@ describe('EditEmaEditorComponent', () => {
                         severity: 'info',
                         summary: 'Content already added',
                         detail: 'This content is already added to this container',
-                        life: 1000
+                        life: 2000
                     });
                 });
 
@@ -1093,7 +1093,7 @@ describe('EditEmaEditorComponent', () => {
                         severity: 'info',
                         summary: 'Content already added',
                         detail: 'This content is already added to this container',
-                        life: 1000
+                        life: 2000
                     });
                 });
 
@@ -1263,7 +1263,7 @@ describe('EditEmaEditorComponent', () => {
                         severity: 'info',
                         summary: 'Content already added',
                         detail: 'This content is already added to this container',
-                        life: 1000
+                        life: 2000
                     });
                 });
             });

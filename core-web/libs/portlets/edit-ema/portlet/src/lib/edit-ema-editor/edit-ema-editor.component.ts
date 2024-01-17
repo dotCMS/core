@@ -649,7 +649,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             severity: 'info',
             summary: this.dotMessageService.get('editpage.content.add.already.title'),
             detail: this.dotMessageService.get('editpage.content.add.already.message'),
-            life: 1000
+            life: 2000
         });
 
         this.store.updateEditorState(EDITOR_STATE.LOADED);

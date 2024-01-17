@@ -227,7 +227,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             detail: this.dotMessageService.get(
                                 'editpage.content.add.already.message'
                             ),
-                            life: 1000
+                            life: 2000
                         });
 
                         this.updateEditorState(EDITOR_STATE.LOADED);

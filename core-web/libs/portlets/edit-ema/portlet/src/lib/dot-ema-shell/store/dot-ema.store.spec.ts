@@ -571,7 +571,7 @@ describe('EditEmaStore', () => {
                 severity: 'info',
                 summary: 'editpage.content.add.already.title',
                 detail: 'editpage.content.add.already.message',
-                life: 1000
+                life: 2000
             });
         });
     });
