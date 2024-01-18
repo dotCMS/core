@@ -75,7 +75,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         ...state,
         contentlet,
         status: BinaryFieldStatus.PREVIEW,
-        value: contentlet.inode
+        value: contentlet?.value || ''
     }));
 
     readonly setTempFile = this.updater<DotCMSTempFile>((state, tempFile) => ({
