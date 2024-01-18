@@ -1,3 +1,8 @@
-@if (actions$ | async; as action ) {
-<dot-workflow-actions [actions]="action" (actionFired)="handleActionTrigger($event)" />
+@if (actions()) {
+<dot-workflow-actions
+    [loading]="loading()"
+    [actions]="actions()"
+    (actionFired)="handleActionTrigger($event)" />
+} @else {
+<p-button [loading]="true" [label]="'Loading' | dm" />
 }

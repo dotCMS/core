@@ -17,7 +17,6 @@ import {
     DotFavoritePageService,
     DotHttpErrorManagerService,
     DotLanguagesService,
-    DotMessageService,
     DotPageLayoutService,
     DotPageRenderService,
     DotPersonalizeService,
@@ -59,7 +58,6 @@ import { NavigationBarItem } from '../shared/models';
         DotWorkflowEventHandlerService,
         DotWorkflowActionsFireService,
         DotWorkflowsActionsService,
-        DotMessageService,
         DotHttpErrorManagerService,
         {
             provide: WINDOW,

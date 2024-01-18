@@ -25,14 +25,26 @@ import { DotCMSActionSubtype, DotCMSWorkflowAction } from '@dotcms/dotcms-models
 })
 export class DotWorkflowActionsComponent implements OnChanges {
     @Input({ required: true }) actions: DotCMSWorkflowAction[];
+    @Input() loading: boolean = false;
+    @Input() groupAction: boolean = false;
     @Output() actionFired = new EventEmitter<DotCMSWorkflowAction>();
 
     protected groupedActions = signal<MenuItem[][]>([]);
 
     ngOnChanges(): void {
-        this.groupedActions.set(this.groupActions(this.actions));
+        this.groupedActions.set(
+            this.groupAction ? this.groupActions(this.actions) : this.formatActions(this.actions)
+        );
     }
 
+    /**
+     * Group actions by separator
+     *
+     * @private
+     * @param {DotCMSWorkflowAction[]} [actions=[]]
+     * @return {*}  {MenuItem[][]}
+     * @memberof DotWorkflowActionsComponent
+     */
     private groupActions(actions: DotCMSWorkflowAction[] = []): MenuItem[][] {
         return actions
             ?.reduce(
@@ -51,5 +63,25 @@ export class DotWorkflowActionsComponent implements OnChanges {
                 [[]]
             )
             .filter((group) => group.length);
+    }
+
+    /**
+     * Remove the separator from the actions and return the actions grouped
+     * in a single group.
+     *
+     * @private
+     * @param {DotCMSWorkflowAction[]} [actions=[]]
+     * @return {*}  {MenuItem[][]}
+     * @memberof DotWorkflowActionsComponent
+     */
+    private formatActions(actions: DotCMSWorkflowAction[] = []): MenuItem[][] {
+        const formatedActions = actions
+            .filter((action) => action?.metadata?.subtype !== DotCMSActionSubtype.SEPARATOR)
+            .map((action) => ({
+                label: action.name,
+                command: () => this.actionFired.emit(action)
+            }));
+
+        return [formatedActions];
     }
 }

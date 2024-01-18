@@ -635,6 +635,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         );
     }
 
+    /**
+     * Handle a new page event. This event is triggered when the page changes for a Workflow Action
+     * Update the query params if the url or the language id changed
+     *
+     * @param {DotCMSContentlet} page
+     * @memberof EditEmaEditorComponent
+     */
     handleNewPage(page: DotCMSContentlet): void {
         const { url, languageId } = page;
         const params = { ...this.updateQueryParams, url, languageId };
@@ -653,8 +660,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     private updateQueryParams(params: Params) {
         this.router.navigate([], {
-            // replaceUrl: true,
-            // skipLocationChange: false,
             queryParams: params,
             queryParamsHandling: 'merge'
         });
@@ -675,6 +680,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.store.updateEditorState(EDITOR_STATE.LOADED);
     }
 
+    /**
+     * Check if the url or the language id changed
+     *
+     * @private
+     * @param {Params} params
+     * @return {*}  {boolean}
+     * @memberof EditEmaEditorComponent
+     */
     private shouldReload(params: Params): boolean {
         const { url: newUrl, languageId } = params;
         const { url, language_id } = this.queryParams;
