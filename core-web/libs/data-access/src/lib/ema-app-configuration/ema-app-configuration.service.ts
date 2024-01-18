@@ -42,7 +42,7 @@ export class EmaAppConfigurationService {
                             return secret;
                         }
                     } catch (error) {
-                        throw new Error('Error parsing JSON');
+                        throw new Error('Error on match URL pattern');
                     }
                 }
 
