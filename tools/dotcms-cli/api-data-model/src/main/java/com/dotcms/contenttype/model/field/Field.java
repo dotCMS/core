@@ -180,7 +180,7 @@ public abstract class Field {
         return Collections.emptyList();
     }
 
-    static class ClassNameAliasResolver extends ClassNameIdResolver {
+    public static class ClassNameAliasResolver extends ClassNameIdResolver {
 
         static final String IMMUTABLE = "Immutable";
 

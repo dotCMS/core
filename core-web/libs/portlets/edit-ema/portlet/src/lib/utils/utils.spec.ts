@@ -1,4 +1,4 @@
-import { deleteContentletFromContainer, insertContentletInContainer } from '.';
+import { deleteContentletFromContainer, insertContentletInContainer, sanitizeURL } from '.';
 
 describe('utils functions', () => {
     describe('delete contentlet from container', () => {
@@ -121,14 +121,17 @@ describe('utils functions', () => {
                 newContentletId: 'new-contentlet-id-123'
             });
 
-            expect(result).toEqual([
-                {
-                    identifier: 'container-identifier-123',
-                    uuid: 'container-uui-123',
-                    contentletsId: ['contentlet-mark-123', 'new-contentlet-id-123'],
-                    personaTag: undefined
-                }
-            ]);
+            expect(result).toEqual({
+                didInsert: true,
+                pageContainers: [
+                    {
+                        identifier: 'container-identifier-123',
+                        uuid: 'container-uui-123',
+                        contentletsId: ['contentlet-mark-123', 'new-contentlet-id-123'],
+                        personaTag: undefined
+                    }
+                ]
+            });
         });
 
         it('should insert in specific position', () => {
@@ -167,14 +170,17 @@ describe('utils functions', () => {
                 newContentletId: '000'
             });
 
-            expect(result).toEqual([
-                {
-                    identifier: 'test',
-                    uuid: 'test',
-                    contentletsId: ['test', 'test123', '000', 'test1234'],
-                    personaTag: undefined
-                }
-            ]);
+            expect(result).toEqual({
+                didInsert: true,
+                pageContainers: [
+                    {
+                        identifier: 'test',
+                        uuid: 'test',
+                        contentletsId: ['test', 'test123', '000', 'test1234'],
+                        personaTag: undefined
+                    }
+                ]
+            });
         });
 
         it('should not insert contentlet if already exist', () => {
@@ -207,17 +213,53 @@ describe('utils functions', () => {
                 pageContainers,
                 container,
                 contentlet,
+                newContentletId: 'test',
                 language_id: 'test',
                 pageId: 'test'
             });
 
-            expect(result).toEqual([
-                {
-                    identifier: 'test',
-                    uuid: 'test',
-                    contentletsId: ['test']
-                }
-            ]);
+            expect(result).toEqual({
+                didInsert: false,
+                pageContainers: [
+                    {
+                        identifier: 'test',
+                        uuid: 'test',
+                        contentletsId: ['test']
+                    }
+                ]
+            });
+        });
+    });
+
+    describe('url sanitize', () => {
+        it('should remove the slash from the start', () => {
+            expect(sanitizeURL('/cool')).toEqual('cool');
+        });
+
+        it("should remove the slash from the end if it's not the only character", () => {
+            expect(sanitizeURL('super-cool/')).toEqual('super-cool');
+        });
+
+        it('should remove the slash from the end and the beggining', () => {
+            expect(sanitizeURL('/hello-there/')).toEqual('hello-there');
+        });
+
+        it('should remove the index if a nested path', () => {
+            expect(sanitizeURL('i-have-the-high-ground/index')).toEqual('i-have-the-high-ground');
+        });
+
+        it('should remove the index if a nested path with slash', () => {
+            expect(sanitizeURL('no-index-please/index/')).toEqual('no-index-please');
+        });
+
+        it('should leave as it is for valid url', () => {
+            expect(sanitizeURL('this-is-where-the-fun-begins')).toEqual(
+                'this-is-where-the-fun-begins'
+            );
+        });
+
+        it('should leave as it is for a nested valid url', () => {
+            expect(sanitizeURL('hello-there/general-kenobi')).toEqual('hello-there/general-kenobi');
         });
     });
 });

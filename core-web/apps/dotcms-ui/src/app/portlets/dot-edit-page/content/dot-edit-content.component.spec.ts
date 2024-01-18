@@ -1275,11 +1275,13 @@ describe('DotEditContentComponent', () => {
                         });
 
                         spyOn(dotContentletEditorService, 'getActionUrl').and.returnValue(
-                            of('/url/')
+                            of('/url/test?_content_lang=23&test=random')
                         );
+
                         spyOn(dotContentletEditorService, 'create').and.callFake((param) => {
+                            //checking the replace of lang.
                             expect(param.data).toEqual({
-                                url: '/url/'
+                                url: '/url/test?_content_lang=1&test=random'
                             });
 
                             const event: any = {

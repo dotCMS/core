@@ -60,6 +60,13 @@ const DROP_ZONE_FILE_EVENT: DropZoneFileEvent = {
     validity
 };
 
+const MOCK_DOTCMS_FILE = {
+    ...dotcmsContentletMock,
+    binaryField: '12345',
+    baseType: 'CONTENT',
+    binaryFieldMetaData: fileMetaData
+};
+
 describe('DotEditContentBinaryFieldComponent', () => {
     let spectator: Spectator<DotEditContentBinaryFieldComponent>;
     let store: DotBinaryFieldStore;
@@ -122,12 +129,16 @@ describe('DotEditContentBinaryFieldComponent', () => {
     it('should emit temp file', () => {
         const spyEmit = jest.spyOn(spectator.component.valueUpdated, 'emit');
         spectator.detectChanges();
-        store.setFile({
-            id: TEMP_FILE_MOCK.id,
-            titleImage: '',
-            ...TEMP_FILE_MOCK.metadata
-        });
+        store.setTempFile(TEMP_FILE_MOCK);
         expect(spyEmit).toHaveBeenCalledWith(TEMP_FILE_MOCK.id);
+    });
+
+    it('should not emit new value is is equal to current value', () => {
+        spectator.setInput('contentlet', MOCK_DOTCMS_FILE);
+        const spyEmit = jest.spyOn(spectator.component.valueUpdated, 'emit');
+        spectator.detectChanges();
+        store.setValue(MOCK_DOTCMS_FILE.binaryField);
+        expect(spyEmit).not.toHaveBeenCalled();
     });
 
     describe('Dropzone', () => {
@@ -216,11 +227,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
     describe('Preview', () => {
         beforeEach(async () => {
             store.setStatus(BinaryFieldStatus.PREVIEW);
-            store.setFile({
-                id: TEMP_FILE_MOCK.id,
-                titleImage: '',
-                ...TEMP_FILE_MOCK.metadata
-            });
+            store.setTempFile(TEMP_FILE_MOCK);
             spectator.detectChanges();
             await spectator.fixture.whenStable();
         });
@@ -238,7 +245,8 @@ describe('DotEditContentBinaryFieldComponent', () => {
                     ...state,
                     status: BinaryFieldStatus.INIT,
                     value: '',
-                    file: null
+                    contentlet: null,
+                    tempFile: null
                 });
             });
 
@@ -309,11 +317,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
         });
 
         it('should show preview when status is PREVIEW', async () => {
-            store.setFile({
-                id: TEMP_FILE_MOCK.id,
-                titleImage: '',
-                ...TEMP_FILE_MOCK.metadata
-            });
+            store.setTempFile(TEMP_FILE_MOCK);
             spectator.detectChanges();
 
             await spectator.fixture.whenStable();
@@ -369,18 +373,17 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 const spy = jest
                     .spyOn(store, 'setFileFromContentlet')
                     .mockReturnValue(of(null).subscribe());
-                const mockFileAsset = {
-                    ...dotcmsContentletMock,
+                const mock = {
+                    ...MOCK_DOTCMS_FILE,
                     baseType: 'FILEASSET',
-                    metaData: {
-                        ...fileMetaData
-                    }
+                    metaData: fileMetaData
                 };
-                spectator.setInput('contentlet', mockFileAsset);
+                spectator.setInput('contentlet', mock);
                 spectator.detectChanges();
                 expect(spy).toHaveBeenCalledWith({
-                    ...mockFileAsset,
-                    variable: FIELD.variable
+                    ...mock,
+                    fieldVariable: FIELD.variable,
+                    value: mock[FIELD.variable]
                 });
             });
         });
@@ -390,19 +393,13 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 const spy = jest
                     .spyOn(store, 'setFileFromContentlet')
                     .mockReturnValue(of(null).subscribe());
-                const metaDataKey = `${FIELD.variable}MetaData`;
-                const mockFileAsset = {
-                    ...dotcmsContentletMock,
-                    baseType: 'CONTENT',
-                    [metaDataKey]: {
-                        ...fileMetaData
-                    }
-                };
-                spectator.setInput('contentlet', mockFileAsset);
+                const variable = FIELD.variable;
+                spectator.setInput('contentlet', MOCK_DOTCMS_FILE);
                 spectator.detectChanges();
                 expect(spy).toHaveBeenCalledWith({
-                    ...mockFileAsset,
-                    variable: FIELD.variable
+                    ...MOCK_DOTCMS_FILE,
+                    fieldVariable: variable,
+                    value: MOCK_DOTCMS_FILE[variable]
                 });
             });
         });

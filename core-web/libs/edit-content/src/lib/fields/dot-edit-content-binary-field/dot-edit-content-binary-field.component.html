@@ -56,7 +56,8 @@
 
     <dot-binary-field-preview
         *ngIf="vm.status === BinaryFieldStatus.PREVIEW"
-        [file]="vm.file"
+        [contentlet]="vm.contentlet"
+        [tempFile]="vm.tempFile"
         [editableImage]="vm.isEnterprise && imageEditor"
         (removeFile)="removeFile()"
         (editFile)="onEditFile()"
@@ -82,8 +83,8 @@
                 data-testId="url-mode"></dot-dot-binary-field-url-mode>
             <dot-dot-binary-field-editor
                 *ngSwitchCase="BinaryFieldMode.EDITOR"
-                [fileName]="vm.file?.name"
-                [fileContent]="vm.file?.content"
+                [fileName]="vm.tempFile?.fileName || vm.contentlet?.name"
+                [fileContent]="vm.tempFile?.content || vm.contentlet?.content"
                 (tempFileUploaded)="setTempFile($event)"
                 (cancel)="closeDialog()"
                 data-testId="editor-mode"></dot-dot-binary-field-editor>
