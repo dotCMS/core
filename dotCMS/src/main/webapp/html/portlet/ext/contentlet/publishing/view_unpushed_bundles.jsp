@@ -90,15 +90,16 @@
 						<th width="100%" onclick="goToEditBundle('<%=bundle.getId()%>')" style="cursor:pointer">
 							<b><%=StringEscapeUtils.unescapeJava(bundle.getName())%></b> 
                             (<span> <%=bundle.getId() %> </span>)
+							<span> ( <%=APILocator.getUserAPI().loadUserById(bundle.getOwner()).getFullName()%> ) </span>
                             <%if(bundle.bundleTgzExists()){%>
-                                - <%=LanguageUtil.get(pageContext, "Already Generated") %> / Filter:  
-                                <%if(bundle.getOperation()==null || bundle.getOperation()==0){%> 
+                                - <%=LanguageUtil.get(pageContext, "Already Generated") %> / Filter:
+                                <%if(bundle.getOperation()==null || bundle.getOperation()==0){%>
                                     <%=(bundle.getFilterKey()!=null) ?bundle.getFilterKey().replace(".yml", "")  :""%>
                                  <%}else{ %>
                                     Unpublish
                                  <%}%>
-                                 
-                  
+
+
                             <%} %>
 
 						</th>
