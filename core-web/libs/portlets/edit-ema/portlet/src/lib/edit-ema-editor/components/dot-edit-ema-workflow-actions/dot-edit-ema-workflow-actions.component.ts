@@ -48,7 +48,6 @@ export class DotEditEmaWorkflowActionsComponent implements OnChanges {
         const isPushPublish = this.dotWorkflowEventHandlerService.containsPushPublish(actionInputs);
 
         if (!actionInputs.length) {
-            // Need to pass the current page
             this.fireWorkflowAction(workflow);
 
             return;
@@ -115,10 +114,11 @@ export class DotEditEmaWorkflowActionsComponent implements OnChanges {
                 })
             )
             .subscribe((contentlet: DotCMSContentlet) => {
-                // Update the current page
-                const newInode = contentlet.inode || this.inodeOrIdentifier;
+                const inode = contentlet?.inode;
                 this.fired.emit(contentlet);
-                this.actions$ = this.getWorkflowActions(newInode);
+                if (inode !== this.inodeOrIdentifier) {
+                    this.actions$ = this.getWorkflowActions(inode);
+                }
             });
     }
 }

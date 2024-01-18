@@ -24,7 +24,12 @@ import { takeUntil } from 'rxjs/operators';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes, DotDevice, DotPersona } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotDevice,
+    DotPersona
+} from '@dotcms/dotcms-models';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
@@ -133,6 +138,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     // This should be in the store, but experienced an issue that triggers a reload in the whole store when the device is updated
     currentDevice: DotDevice & { icon?: string };
+
+    get queryParams(): Params {
+        return this.activatedRouter.snapshot.queryParams;
+    }
 
     ngOnInit(): void {
         fromEvent(this.window, 'message')
@@ -560,7 +569,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // This triggers a rerender that makes nextjs to send the set_url again
                 // But this time the params are the same so the shell component wont trigger a load and there we know that the page is loaded
 
-                if (this.activatedRouter.snapshot.queryParams.url === payload.url) {
+                if (this.queryParams.url === payload.url) {
                     this.store.updateEditorState(EDITOR_STATE.LOADED);
                 } else {
                     this.store.updateEditorState(EDITOR_STATE.LOADING);
@@ -608,6 +617,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         );
     }
 
+    handleNewPage(page: DotCMSContentlet): void {
+        const { url, languageId } = page;
+        const params = { ...this.updateQueryParams, url, languageId };
+
+        if (this.shouldReload(params)) {
+            this.updateQueryParams(params);
+        }
+    }
+
     /**
      * Update the query params
      *
@@ -626,5 +644,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         // Reset this on queryParams update
         this.rows = [];
         this.contentlet = null;
+    }
+
+    private shouldReload(params: Params): boolean {
+        const { url: newUrl, languageId } = params;
+        const { url, language_id } = this.queryParams;
+
+        return newUrl != url || languageId != language_id;
     }
 }

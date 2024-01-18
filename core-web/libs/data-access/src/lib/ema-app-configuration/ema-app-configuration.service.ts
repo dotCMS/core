@@ -38,7 +38,7 @@ export class EmaAppConfigurationService {
      */
     get(url: string): Observable<EmaAppSecretValue | null> {
         // Remove trailing and leading slashes
-        url = url.replace(/^\/+|\/+$/g, '');
+        url = url?.replace(/^\/+|\/+$/g, '');
 
         return this.licenseService
             .isEnterprise()
