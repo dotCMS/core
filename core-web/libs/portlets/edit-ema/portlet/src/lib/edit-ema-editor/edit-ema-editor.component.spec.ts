@@ -133,7 +133,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                     title: 'hello world',
                                     identifier: '123',
                                     ...permissions,
-                                    url: 'page-one'
+                                    pageURI: 'page-one'
                                 },
                                 site: {
                                     identifier: '123'
@@ -154,7 +154,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                     title: 'hello world',
                                     identifier: '123',
                                     ...permissions,
-                                    url: 'page-one'
+                                    pageURI: 'page-one'
                                 },
                                 site: {
                                     identifier: '123'
