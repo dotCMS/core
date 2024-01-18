@@ -1,15 +1,12 @@
 import { NgClass, NgForOf, CommonModule } from '@angular/common';
-import { Component, EventEmitter, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Output, Signal, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { AnnouncementsService } from '@dotcms/app/api/services/dot-announcements.ts/dot-announcements.service';
+import {
+    Announcement,
+    AnnouncementsService
+} from '@dotcms/app/api/services/dot-announcements.ts/dot-announcements.service';
 import { DotMessagePipe } from '@dotcms/ui';
-
-export type Announcement = {
-    title: string;
-    type: string;
-    announcementDateAsISO8601: string;
-};
 
 @Component({
     selector: 'dot-toolbar-announcements',
@@ -24,7 +21,7 @@ export class DotToolbarAnnouncementsComponent {
 
     annoucementsService = inject(AnnouncementsService);
 
-    announcements = this.annoucementsService.announcements;
+    announcements: Signal<Announcement[]> = this.annoucementsService.announcements;
 
     knowledgeCenterLinks = [
         {
