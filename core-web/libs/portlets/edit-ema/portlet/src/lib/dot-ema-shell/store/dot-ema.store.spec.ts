@@ -23,7 +23,7 @@ import { ActionPayload } from '../../shared/models';
 
 const mockResponse: DotPageApiResponse = {
     page: {
-        url: 'test-url',
+        pageURI: 'test-url',
         title: 'Test Page',
         identifier: '123',
         inode: '123-i',
