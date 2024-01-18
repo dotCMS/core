@@ -154,10 +154,10 @@ public class Structure extends Inode implements Permissionable, Treeable,Content
     public void delete(final boolean recursive) throws DotDataException {
         if(recursive)
         {
-            List<Field> list = FieldFactory.getFieldsByStructure(inode);
+            final List<Field> list = FieldFactory.getFieldsByStructure(inode);
             for(int i = 0;i < list.size();i++)
             {
-                Field field = list.get(i);
+                final Field field = list.get(i);
                 field.delete();
             }
         }
