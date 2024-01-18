@@ -17,6 +17,8 @@ $toast-bottom-border: 8px solid;
         align-items: flex-start;
         gap: $spacing-1;
         border-radius: $border-radius-md;
+        border-bottom-width: 8px;
+        border-bottom-style: solid;
 
         .p-toast-message-icon {
             height: 1.375rem;
@@ -90,7 +92,7 @@ $toast-bottom-border: 8px solid;
     }
 
     &.p-toast-message-success .p-toast-message-content {
-        border-bottom: $toast-bottom-border $color-alert-green;
+        border-bottom-color: $color-alert-green;
 
         .p-toast-message-icon {
             color: $color-alert-green;
@@ -98,7 +100,7 @@ $toast-bottom-border: 8px solid;
     }
 
     &.p-toast-message-error .p-toast-message-content {
-        border-bottom: $toast-bottom-border $color-alert-red;
+        border-bottom-color: $color-alert-red;
 
         .p-toast-message-icon {
             color: $color-alert-red;
@@ -106,14 +108,14 @@ $toast-bottom-border: 8px solid;
     }
 
     &.p-toast-message-info .p-toast-message-content {
-        border-bottom: $toast-bottom-border $color-palette-primary-500;
+        border-bottom-color: $color-palette-primary-500;
 
         .p-toast-message-icon {
             color: $color-palette-primary-500;
         }
     }
     &.p-toast-message-warn .p-toast-message-content {
-        border-bottom: $toast-bottom-border $color-alert-yellow;
+        border-bottom-color: $color-alert-yellow;
 
         .p-toast-message-icon {
             color: $color-alert-yellow;
