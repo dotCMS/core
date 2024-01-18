@@ -337,10 +337,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     onPlaceItem(event: ActionPayload): void {
         if (this.draggedPayload.type === 'contentlet') {
-            const pageContainers = insertContentletInContainer({
+            const { pageContainers, didInsert } = insertContentletInContainer({
                 ...event,
                 newContentletId: this.draggedPayload.item.identifier
             });
+
+            if (!didInsert) {
+                this.handleDuplicatedContentlet();
+
+                return;
+            }
 
             this.store.savePage({
                 pageContainers,
@@ -478,10 +484,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 /* */
             },
             [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
-                const pageContainers = insertContentletInContainer({
+                const { pageContainers, didInsert } = insertContentletInContainer({
                     ...this.savePayload,
                     newContentletId: detail.data.identifier
                 });
+
+                if (!didInsert) {
+                    this.handleDuplicatedContentlet();
+
+                    return;
+                }
 
                 // Save when selected
                 this.store.savePage({
@@ -497,10 +509,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
                 if (this.savePayload) {
-                    const pageContainers = insertContentletInContainer({
+                    const { pageContainers, didInsert } = insertContentletInContainer({
                         ...this.savePayload,
                         newContentletId: detail.payload.contentletIdentifier
                     });
+
+                    if (!didInsert) {
+                        this.handleDuplicatedContentlet();
+
+                        return;
+                    }
 
                     // Save when created
                     this.store.savePage({
@@ -624,5 +642,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         // Reset this on queryParams update
         this.rows = [];
         this.contentlet = null;
+    }
+
+    private handleDuplicatedContentlet() {
+        this.messageService.add({
+            severity: 'info',
+            summary: this.dotMessageService.get('editpage.content.add.already.title'),
+            detail: this.dotMessageService.get('editpage.content.add.already.message'),
+            life: 2000
+        });
+
+        this.store.updateEditorState(EDITOR_STATE.LOADED);
     }
 }

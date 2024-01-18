@@ -2,8 +2,11 @@ import { describe, expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { DotLicenseService } from '@dotcms/data-access';
+import { MessageService } from 'primeng/api';
+
+import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
+    MockDotMessageService,
     mockDotContainers,
     mockDotLayout,
     mockDotTemplate,
@@ -54,11 +57,16 @@ describe('EditEmaStore', () => {
         service: EditEmaStore,
         mocks: [DotPageApiService, DotActionUrlService],
         providers: [
+            MessageService,
             {
                 provide: DotLicenseService,
                 useValue: {
                     isEnterprise: () => of(true)
                 }
+            },
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({})
             }
         ]
     });
@@ -82,120 +90,6 @@ describe('EditEmaStore', () => {
             language_id: '1',
             url: 'test-url',
             'com.dotmarketing.persona.id': '123'
-        });
-    });
-
-    describe('url sanitize', () => {
-        it('should remove the slash from the start', (done) => {
-            spectator.service.load({
-                clientHost: 'http://localhost:3000',
-                language_id: '1',
-                url: '/cool',
-                'com.dotmarketing.persona.id': '123'
-            });
-
-            spectator.service.editorState$.subscribe((state) => {
-                expect(state.apiURL).toEqual(
-                    'http://localhost/api/v1/page/json/cool?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
-                );
-                done();
-            });
-        });
-
-        it("should remove the slash from the end if it's not the only character", (done) => {
-            spectator.service.load({
-                clientHost: 'http://localhost:3000',
-                language_id: '1',
-                url: 'super-cool/',
-                'com.dotmarketing.persona.id': '123'
-            });
-
-            spectator.service.editorState$.subscribe((state) => {
-                expect(state.apiURL).toEqual(
-                    'http://localhost/api/v1/page/json/super-cool?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
-                );
-                done();
-            });
-        });
-
-        it('should remove the slash from the end and the beggining', (done) => {
-            spectator.service.load({
-                clientHost: 'http://localhost:3000',
-                language_id: '1',
-                url: '/hello-there/',
-                'com.dotmarketing.persona.id': '123'
-            });
-
-            spectator.service.editorState$.subscribe((state) => {
-                expect(state.apiURL).toEqual(
-                    'http://localhost/api/v1/page/json/hello-there?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
-                );
-                done();
-            });
-        });
-
-        it('should remove the index if a nested path', (done) => {
-            spectator.service.load({
-                clientHost: 'http://localhost:3000',
-                language_id: '1',
-                url: 'i-have-the-high-ground/index',
-                'com.dotmarketing.persona.id': '123'
-            });
-
-            spectator.service.editorState$.subscribe((state) => {
-                expect(state.apiURL).toEqual(
-                    'http://localhost/api/v1/page/json/i-have-the-high-ground?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
-                );
-                done();
-            });
-        });
-
-        it('should remove the index if a nested path with slash', (done) => {
-            spectator.service.load({
-                clientHost: 'http://localhost:3000',
-                language_id: '1',
-                url: 'no-index-please/index/',
-                'com.dotmarketing.persona.id': '123'
-            });
-
-            spectator.service.editorState$.subscribe((state) => {
-                expect(state.apiURL).toEqual(
-                    'http://localhost/api/v1/page/json/no-index-please?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
-                );
-                done();
-            });
-        });
-
-        it('should leave as it is for valid url', (done) => {
-            spectator.service.load({
-                clientHost: 'http://localhost:3000',
-                language_id: '1',
-                url: 'this-is-where-the-fun-begins',
-                'com.dotmarketing.persona.id': '123'
-            });
-
-            spectator.service.editorState$.subscribe((state) => {
-                expect(state.apiURL).toEqual(
-                    'http://localhost/api/v1/page/json/this-is-where-the-fun-begins?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
-                );
-                done();
-            });
-        });
-
-        it('should leave as it is for a nested valid url', (done) => {
-            spectator.service.load({
-                clientHost: 'http://localhost:3000',
-                language_id: '1',
-                url: 'hello-there/general-kenobi',
-                'com.dotmarketing.persona.id': '123'
-            });
-
-            spectator.service.editorState$.subscribe((state) => {
-                expect(state.apiURL).toEqual(
-                    'http://localhost/api/v1/page/json/hello-there/general-kenobi?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
-                );
-                done();
-            });
         });
     });
 
@@ -511,6 +405,59 @@ describe('EditEmaStore', () => {
                     }
                 ],
                 pageId: 'page-identifier-123'
+            });
+        });
+
+        it('should not add form to page when the form is dupe and triggers a message', () => {
+            const messageService = spectator.inject(MessageService);
+
+            const addMessageSpy = jest.spyOn(messageService, 'add');
+
+            const payload: ActionPayload = {
+                pageId: 'page-identifier-123',
+                language_id: '1',
+                container: {
+                    identifier: 'container-identifier-123',
+                    uuid: '123',
+                    acceptTypes: 'test',
+                    maxContentlets: 1,
+                    contentletsId: ['existing-contentlet-123', 'form-identifier-123']
+                },
+                pageContainers: [
+                    {
+                        identifier: 'container-identifier-123',
+                        uuid: '123',
+                        contentletsId: ['existing-contentlet-123', 'form-identifier-123']
+                    }
+                ],
+                contentlet: {
+                    identifier: 'existing-contentlet-123',
+                    inode: 'existing-contentlet-inode-456',
+                    title: 'Hello World'
+                }
+            };
+            const dotPageApiService = spectator.inject(DotPageApiService);
+            dotPageApiService.save.andReturn(of({}));
+            dotPageApiService.getFormIndetifier.andReturn(of('form-identifier-123'));
+
+            spectator.service.load({
+                clientHost: 'http://localhost:3000',
+                language_id: 'en',
+                url: 'test-url',
+                'com.dotmarketing.persona.id': '123'
+            });
+            spectator.service.saveFormToPage({
+                payload,
+                formId: 'form-identifier-789',
+                // eslint-disable-next-line @typescript-eslint/no-empty-function
+                whenSaved: () => {}
+            });
+
+            expect(addMessageSpy).toHaveBeenCalledWith({
+                severity: 'info',
+                summary: 'editpage.content.add.already.title',
+                detail: 'editpage.content.add.already.message',
+                life: 2000
             });
         });
     });

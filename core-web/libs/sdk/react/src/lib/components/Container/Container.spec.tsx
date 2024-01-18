@@ -40,7 +40,7 @@ describe('Container', () => {
                 uuid: '2',
                 containers: []
             };
-            it('renders EmptyContainer component', () => {
+            it('renders EmptyContainer component in editor mode', () => {
                 const updatedContext = {
                     ...mockPageContext,
                     components: {},
@@ -55,6 +55,21 @@ describe('Container', () => {
                 expect(screen.getByTestId('empty-container')).toHaveTextContent(
                     'This container is empty.'
                 );
+            });
+
+            it('dont render EmptyContainer component outside editor mode', () => {
+                const updatedContext = {
+                    ...mockPageContext,
+                    components: {},
+                    isInsideEditor: false
+                };
+                render(
+                    <MockContextRender mockContext={updatedContext}>
+                        <Container containerRef={mockContainerRef} />
+                    </MockContextRender>
+                );
+
+                expect(screen.queryByTestId('empty-container')).toBeNull();
             });
         });
     });
