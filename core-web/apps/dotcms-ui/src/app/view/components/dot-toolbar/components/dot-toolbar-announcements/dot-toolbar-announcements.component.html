@@ -1,10 +1,12 @@
 <h5 class="announcements__title">{{ 'announcements' | dm }}</h5>
 <ul class="announcements__list">
-    <li class="announcements__list-item" *ngFor="let announcement of announcementsData">
-        <span class="announcements__image pi" [ngClass]="announcement.iconClass"></span>
+    <li class="announcements__list-item" *ngFor="let announcement of announcements()">
+        <span class="announcements__image pi" [ngClass]="typesIcons[announcement.type]"></span>
         <div class="announcements__content">
-            <span class="announcements__label">{{ announcement.label }}</span>
-            <span class="announcements__date">{{ announcement.date }}</span>
+            <span class="announcements__label">{{ announcement.title }}</span>
+            <span class="announcements__date">{{
+                announcement.announcementDateAsISO8601 | date
+            }}</span>
         </div>
     </li>
 </ul>

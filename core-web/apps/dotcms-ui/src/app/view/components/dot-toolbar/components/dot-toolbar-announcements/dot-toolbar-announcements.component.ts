@@ -1,42 +1,30 @@
-import { NgClass, NgForOf } from '@angular/common';
-import { Component, EventEmitter, Output } from '@angular/core';
+import { NgClass, NgForOf, CommonModule } from '@angular/common';
+import { Component, EventEmitter, Output, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { AnnouncementsService } from '@dotcms/app/api/services/dot-announcements.ts/dot-announcements.service';
 import { DotMessagePipe } from '@dotcms/ui';
+
+export type Announcement = {
+    title: string;
+    type: string;
+    announcementDateAsISO8601: string;
+};
 
 @Component({
     selector: 'dot-toolbar-announcements',
     templateUrl: './dot-toolbar-announcements.component.html',
     styleUrls: ['./dot-toolbar-announcements.component.scss'],
     standalone: true,
-    imports: [NgForOf, NgClass, DotMessagePipe, RouterLink]
+    imports: [NgForOf, NgClass, DotMessagePipe, RouterLink, CommonModule],
+    providers: [AnnouncementsService]
 })
 export class DotToolbarAnnouncementsComponent {
     @Output() hideOverlayPanel = new EventEmitter<string>();
 
-    announcementsData = [
-        {
-            iconClass: 'pi pi-comment',
-            label: 'Get more out of the Block Editor',
-            date: '20 Jul 2023'
-        },
-        {
-            iconClass: 'pi pi-book',
-            label: '12 Reasons You Should Migrate to dotCMS Cloud.',
-            date: '27 Jul 2023'
-        },
-        {
-            iconClass: 'pi pi-megaphone',
-            label: 'Release 22.03 Designated as LTS Release',
-            date: '17 Jul 2023'
-        },
-        {
-            iconClass: 'pi pi-comment',
-            label: 'Which page rendering strategy is right for you?',
-            date: '10 Feb 2023'
-        },
-        { iconClass: 'pi pi-megaphone', label: 'New in Release 22.01', date: '07 Jan 2023' }
-    ];
+    annoucementsService = inject(AnnouncementsService);
+
+    announcements = this.annoucementsService.announcements;
 
     knowledgeCenterLinks = [
         {
@@ -60,6 +48,13 @@ export class DotToolbarAnnouncementsComponent {
             url: 'https://www.dotcms.com/services/professional-services/?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu'
         }
     ];
+
+    typesIcons = {
+        comment: 'pi pi-comment',
+        release: 'pi pi-book',
+        announcement: 'pi pi-megaphone'
+    };
+
     protected linkToAddDevice = '/c/starter';
 
     close(): void {
