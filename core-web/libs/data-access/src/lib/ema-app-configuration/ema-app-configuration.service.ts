@@ -96,7 +96,7 @@ function getSecretByUrlMatch(url: string): (site: DotAppsSite) => EmaAppSecretVa
 
         for (const secret of secrets) {
             try {
-                const parsedSecrets: EmaAppSecretValue[] = JSON.parse(secret.value);
+                const parsedSecrets: EmaAppSecretValue[] = JSON.parse(secret.value).config;
 
                 for (const parsedSecret of parsedSecrets) {
                     if (doesPathMatch(parsedSecret.pattern, url)) {
