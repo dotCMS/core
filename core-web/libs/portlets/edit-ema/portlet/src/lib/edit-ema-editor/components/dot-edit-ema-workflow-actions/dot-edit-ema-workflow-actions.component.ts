@@ -10,6 +10,7 @@ import {
     signal
 } from '@angular/core';
 
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
 import { catchError, map, take } from 'rxjs/operators';
@@ -45,6 +46,21 @@ export class DotEditEmaWorkflowActionsComponent implements OnChanges {
     private readonly httpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly dotWizardService = inject(DotWizardService);
     private readonly dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
+    private readonly messageService = inject(MessageService);
+
+    private readonly successMessage = {
+        severity: 'info',
+        summary: this.dotMessageService.get('Workflow-Action'),
+        detail: this.dotMessageService.get('edit.content.fire.action.success'),
+        life: 2000
+    };
+
+    private readonly errorMessage = {
+        severity: 'error',
+        summary: this.dotMessageService.get('Workflow-Action'),
+        detail: this.dotMessageService.get('edit.ema.page.error.executing.workflow.action'),
+        life: 2000
+    };
 
     ngOnChanges(changes: SimpleChanges) {
         if (changes.inodeOrIdentifier) {
@@ -118,22 +134,40 @@ export class DotEditEmaWorkflowActionsComponent implements OnChanges {
         data?: T
     ): void {
         this.loading.set(true);
+        this.messageService.add({
+            ...this.successMessage,
+            detail: this.dotMessageService.get('edit.ema.page.executing.workflow.action'),
+            life: 1000
+        });
+
         this.dotWorkflowActionsFireService
             .fireTo({
                 inode: this.inodeOrIdentifier,
                 actionId: workflow.id,
                 data
             })
-            .pipe(catchError((error) => this.httpErrorManagerService.handle(error)))
+            .pipe(
+                catchError((error) => {
+                    this.messageService.add(this.errorMessage);
+
+                    return this.httpErrorManagerService.handle(error).pipe(
+                        take(1),
+                        map(() => null)
+                    );
+                })
+            )
             .subscribe((contentlet: DotCMSContentlet) => {
-                const inode = contentlet?.inode;
-                this.newPage.emit(contentlet);
-                if (inode !== this.inodeOrIdentifier) {
-                    this.inodeOrIdentifier = inode;
-                    this.loadWorkflowActions(inode);
-                } else {
-                    this.loading.set(false);
+                this.loading.set(false);
+
+                if (!contentlet) {
+                    return;
                 }
+
+                const { inode } = contentlet;
+                this.newPage.emit(contentlet);
+                this.inodeOrIdentifier = inode;
+                this.loadWorkflowActions(inode);
+                this.messageService.add(this.successMessage);
             });
     }
 }
