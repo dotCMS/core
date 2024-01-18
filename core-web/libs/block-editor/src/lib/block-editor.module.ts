@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { HTTP_INTERCEPTORS } from '@angular/common/http';
-import { APP_INITIALIZER, ErrorHandler, NgModule } from '@angular/core';
+import { APP_INITIALIZER, NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
+import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -30,9 +30,7 @@ import {
 import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 import { ContentletBlockComponent } from './nodes';
 import { DotAiService, DotUploadFileService, EditorDirective } from './shared';
-import { HttpErrorInterceptor } from './shared/interceptors/http-error-interceptor';
 import { PrimengModule } from './shared/primeng.module';
-import { BlockEditorErrorHandlerService } from './shared/services/block-editor-error-handler/block-editor-error-handler.service';
 import { SharedModule } from './shared/shared.module';
 
 const initTranslations = (dotMessageService: DotMessageService) => {
@@ -74,20 +72,11 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         LoggerService,
         StringUtils,
         DotAiService,
-        BlockEditorErrorHandlerService,
+        ConfirmationService,
         {
             provide: APP_INITIALIZER,
             useFactory: initTranslations,
             deps: [DotMessageService],
-            multi: true
-        },
-        {
-            provide: ErrorHandler,
-            useClass: BlockEditorErrorHandlerService
-        },
-        {
-            provide: HTTP_INTERCEPTORS,
-            useClass: HttpErrorInterceptor,
             multi: true
         }
     ],

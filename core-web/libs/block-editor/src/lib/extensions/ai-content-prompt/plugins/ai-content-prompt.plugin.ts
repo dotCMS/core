@@ -6,10 +6,13 @@ import tippy, { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
 
+import { ConfirmationService } from 'primeng/api';
+
 import { filter, skip, takeUntil, tap } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { findNodeByType, replaceNodeWithContent } from '../../../shared';
@@ -137,12 +140,19 @@ export class AIContentPromptView {
         /**
          * Subscription to "exit" the tippy since that can happen on escape listener that is in the html
          */
-        this.componentStore.hasError$
+        this.componentStore.errorMsg$
             .pipe(
-                filter((hasError) => hasError === true),
+                filter((hasError) => !!hasError),
                 takeUntil(this.destroy$)
             )
-            .subscribe(() => {
+            .subscribe((error) => {
+                this.component.injector.get(ConfirmationService).confirm({
+                    key: 'ai-text-prompt-msg',
+                    message: this.component.injector.get(DotMessageService).get(error),
+                    header: 'Error',
+                    rejectVisible: false,
+                    acceptVisible: false
+                });
                 this.tippy?.hide();
             });
 

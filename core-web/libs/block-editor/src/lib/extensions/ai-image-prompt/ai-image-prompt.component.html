@@ -29,3 +29,12 @@
         </div>
     </p-dialog>
 </ng-container>
+
+<p-confirmDialog
+    [acceptIcon]="null"
+    [rejectIcon]="null"
+    [style]="{ width: '500px' }"
+    (onHide)="onHideConfirm()"
+    appendTo="body"
+    dismissableMask="true"
+    key="ai-image-prompt-msg" />

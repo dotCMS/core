@@ -34,15 +34,27 @@ export class DotAiService {
     generateContent(prompt: string): Observable<string> {
         return this.http
             .post<AiPluginResponse>(`${API_ENDPOINT}/text/generate`, JSON.stringify({ prompt }), {
-                headers
+                headers,
+                observe: 'response'
             })
             .pipe(
-                catchError(() => {
-                    return throwError('Error fetching AI content');
-                }),
-                map(({ choices }) => {
-                    // We only will use the first choice
+                map((response) => {
+                    if (response.body.error) {
+                        throw new Error(response.body.error.message);
+                    }
+
+                    const choices = response.body.choices;
+                    if (!choices || choices.length === 0) {
+                        throw new Error(
+                            'block-editor.extension.ai-image.api-error.no-choice-returned'
+                        );
+                    }
+
+                    // We only use the first choice
                     return choices[0].message.content;
+                }),
+                catchError((errorMsg: string) => {
+                    return throwError(errorMsg);
                 })
             );
     }
@@ -67,7 +79,9 @@ export class DotAiService {
                 }
             )
             .pipe(
-                catchError(() => throwError('Error fetching AI content')),
+                catchError(() =>
+                    throwError('block-editor.extension.ai-image.api-error.missing-token')
+                ),
                 switchMap((response: DotAIImageResponse) => {
                     return this.createAndPublishContentlet(response);
                 })
@@ -110,7 +124,11 @@ export class DotAiService {
             })
             .pipe(
                 pluck('entity', 'results'),
-                catchError((error) => throwError(error))
+                catchError(() =>
+                    throwError(
+                        'block-editor.extension.ai-image.api-error.error-publishing-ai-image'
+                    )
+                )
             ) as Observable<DotCMSContentlet[]>;
     }
 }
