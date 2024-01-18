@@ -1295,12 +1295,10 @@ dojo.declare(
                         this.searchCounter + asset.inode
                     );
                     if (selectButton.onclick == undefined) {
-                        selectButton.onclick = dojo.hitch(
-                            this,
-                            selected,
-                            this,
-                            asset
-                        );
+                        selectButton.onclick = dojo.hitch(this, function (event) {
+                            event.stopPropagation();
+                            selected(this, asset);
+                        });
                     }
                 }
             }

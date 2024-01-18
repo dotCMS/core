@@ -182,11 +182,11 @@ export const FIELD = {
     indexed: false,
     listed: false,
     modDate: 1698153564000,
-    name: 'Binary Field2',
+    name: 'Binary Field',
     readOnly: false,
     required: false,
     searchable: false,
     sortOrder: 2,
     unique: false,
-    variable: 'binaryField2'
+    variable: 'binaryField'
 };
