@@ -3,13 +3,17 @@ import { dotcmsClient } from '@dotcms/client';
 const client = dotcmsClient.init({
     dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
     authToken: process.env.DOTCMS_AUTH_TOKEN,
-    siteId: '59bb8831-6706-4589-9ca0-ff74016e02b2'
+    siteId: '59bb8831-6706-4589-9ca0-ff74016e02b2',
+    requestOptions: {
+        // In production you might want to deal with this differently
+        cache: 'no-cache'
+    }
 });
 
 import { MyPage } from '@/components/my-page';
 
 export async function generateMetadata({ params, searchParams }) {
-    const data = await client.getPage({
+    const data = await client.page.get({
         path: params?.slug ? params.slug.join('/') : 'index',
         language_id: searchParams.language_id,
         'com.dotmarketing.persona.id': searchParams['com.dotmarketing.persona.id'] || ''
@@ -21,13 +25,13 @@ export async function generateMetadata({ params, searchParams }) {
 }
 
 export default async function Home({ searchParams, params }) {
-    const data = await client.getPage({
+    const data = await client.page.get({
         path: params?.slug ? params.slug.join('/') : 'index',
         language_id: searchParams.language_id,
         personaId: searchParams['com.dotmarketing.persona.id'] || ''
     });
 
-    const nav = await client.getNav({
+    const nav = await client.nav.get({
         path: '/',
         depth: 2,
         languageId: searchParams.language_id

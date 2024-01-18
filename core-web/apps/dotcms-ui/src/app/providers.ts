@@ -19,13 +19,15 @@ import {
     DotRouterService,
     DotSessionStorageService,
     DotWorkflowActionsFireService,
-    PaginatorService
+    PaginatorService,
+    EmaAppConfigurationService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { DotFormatDateService } from '@dotcms/ui';
 import { DotTitleStrategy } from '@shared/services/dot-title-strategy.service';
 
 import { DotAccountService } from './api/services/dot-account-service';
+import { DotAppsService } from './api/services/dot-apps/dot-apps.service';
 import { DotUiColorsService } from './api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotWorkflowEventHandlerService } from './api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
@@ -46,6 +48,7 @@ export const LOCATION_TOKEN = new InjectionToken<Location>('Window location obje
 
 const PROVIDERS: Provider[] = [
     { provide: LOCATION_TOKEN, useValue: window.location },
+    EmaAppConfigurationService,
     DotAccountService,
     AuthGuardService,
     ColorUtil,
@@ -81,6 +84,7 @@ const PROVIDERS: Provider[] = [
     DotGlobalMessageService,
     CanDeactivateGuardService,
     DotSessionStorageService,
+    DotAppsService,
     {
         provide: TitleStrategy,
         useClass: DotTitleStrategy

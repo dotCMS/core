@@ -15,7 +15,7 @@ import {
     DotRouterService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-import { DotApps, DotAppsImportConfiguration, DotAppsSaveData } from '@dotcms/dotcms-models';
+import { DotApp, DotAppsImportConfiguration, DotAppsSaveData } from '@dotcms/dotcms-models';
 import { DotFormatDateService } from '@dotcms/ui';
 import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 import {
@@ -89,7 +89,7 @@ describe('DotAppsService', () => {
     it('should get apps', () => {
         const url = 'v1/apps';
 
-        dotAppsService.get().subscribe((apps: DotApps[]) => {
+        dotAppsService.get().subscribe((apps: DotApp[]) => {
             expect(apps).toEqual(mockDotApps);
         });
 
@@ -104,7 +104,7 @@ describe('DotAppsService', () => {
         const filter = 'asana';
         const url = `v1/apps?filter=${filter}`;
 
-        dotAppsService.get(filter).subscribe((apps: DotApps[]) => {
+        dotAppsService.get(filter).subscribe((apps: DotApp[]) => {
             expect(apps).toEqual([mockDotApps[1]]);
         });
 
@@ -128,7 +128,7 @@ describe('DotAppsService', () => {
         const appKey = '1';
         const url = `v1/apps/${appKey}`;
 
-        dotAppsService.getConfigurationList(appKey).subscribe((apps: DotApps) => {
+        dotAppsService.getConfigurationList(appKey).subscribe((apps: DotApp) => {
             expect(apps).toEqual(mockDotApps[1]);
         });
 
