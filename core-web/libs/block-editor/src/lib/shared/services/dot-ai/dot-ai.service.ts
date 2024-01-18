@@ -39,6 +39,7 @@ export class DotAiService {
             })
             .pipe(
                 map((response) => {
+                    // If the response is 200 and the body come with an error, we throw an error
                     if (response.body.error) {
                         throw new Error(response.body.error.message);
                     }

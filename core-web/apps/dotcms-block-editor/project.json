@@ -31,7 +31,6 @@
                     "libs/dotcms-scss/angular/_mixins.scss",
                     "libs/dotcms-scss/angular/dotcms-theme/theme.scss",
                     "libs/dotcms-scss/angular/_prime-icons.scss",
-                    "libs/dotcms-scss/angular/_prime-icons.scss",
                     "apps/dotcms-block-editor/src/styles.scss"
                 ],
                 "stylePreprocessorOptions": {
