@@ -14,6 +14,9 @@
 <%@page import="com.dotmarketing.business.DotStateException"%>
 <%@ page import="com.dotcms.publishing.BundlerUtil" %>
 <%@ page import="com.dotcms.publishing.manifest.ManifestUtil" %>
+<%@ page import="com.dotmarketing.exception.DotDataException" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.ArrayList" %>
 
 <%
     String bundleId = request.getParameter("bundle");
@@ -23,6 +26,15 @@
     String assetType=null;
 
     Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
+
+    List<String> endpointsProtocols = new ArrayList<>();
+    try {
+        for (Environment e: APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(bundleId)) {
+            pepAPI.findSendingEndPointsByEnvironment(e.getId()).forEach(endpoint -> {
+                endpointsProtocols.add(endpoint.getProtocol().toLowerCase());
+            });
+        }
+    } catch (DotDataException e) {}
 
     PublishAuditStatus.Status status = null;
     int statusCode = 0;
@@ -75,7 +87,9 @@
 <div style="white-space: nowrap;padding:10px;">
 
 
-    <button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/<%=bundleId%>';" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "download") %></button>
+    <%if (endpointsProtocols.size() > 0 && !endpointsProtocols.contains("static")){%>
+        <button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/<%=bundleId%>';" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "download") %></button>
+    <%}%>
 
     <%if (ManifestUtil.manifestExists(bundleId)){%>
         <button dojoType="dijit.form.Button" onClick="window.location='/api/bundle/<%=bundleId%>/manifest'" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "manifest") %></button>
