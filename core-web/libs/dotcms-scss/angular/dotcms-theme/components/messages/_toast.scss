@@ -6,7 +6,7 @@ $toast-bottom-border: 8px solid;
 .p-component.p-toast p-toastitem .p-toast-message {
     box-shadow: $shadow-m;
     background-color: $white;
-    width: 376px;
+    width: 23.5rem;
     height: fit-content;
     border-radius: $border-radius-md;
 
@@ -19,8 +19,8 @@ $toast-bottom-border: 8px solid;
         border-radius: $border-radius-md;
 
         .p-toast-message-icon {
-            height: 22px;
-            width: 18px;
+            height: 1.375rem;
+            width: $icon-lg;
 
             .p-icon-wrapper {
                 width: inherit;
@@ -29,8 +29,8 @@ $toast-bottom-border: 8px solid;
                 align-items: center;
                 justify-content: center;
                 .p-icon {
-                    width: 18px;
-                    height: 18px;
+                    width: $icon-lg;
+                    height: $icon-lg;
                 }
             }
         }
@@ -49,7 +49,7 @@ $toast-bottom-border: 8px solid;
             }
 
             .p-toast-summary {
-                height: 22px;
+                height: 1.375rem;
                 font-weight: 700;
             }
 
