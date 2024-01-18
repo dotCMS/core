@@ -433,6 +433,7 @@ public class VersionableAPIImpl implements VersionableAPI {
         }
         final ContentletVersionInfo newInfo = Sneaky.sneak(()-> (ContentletVersionInfo) BeanUtils.cloneBean(contentletVersionInfo.get())) ;
         newInfo.setLiveInode( null );
+        newInfo.setPublishDate(null);
         versionableFactory.saveContentletVersionInfo( newInfo, true );
     }
 
@@ -496,6 +497,7 @@ public class VersionableAPIImpl implements VersionableAPI {
             }
             final ContentletVersionInfo newInfo = Sneaky.sneak(()-> (ContentletVersionInfo) BeanUtils.cloneBean(info.get())) ;
             newInfo.setLiveInode(versionable.getInode());
+            newInfo.setPublishDate(new Date());
             versionableFactory.saveContentletVersionInfo( newInfo, true );
         } else {
 
@@ -725,6 +727,13 @@ public class VersionableAPIImpl implements VersionableAPI {
                 .findContentletVersionInfoInDB(contentletVersionInfo.getIdentifier(), contentletVersionInfo.getLang());
 
 		if(!contentletVersionInfoInDB.isPresent()) {
+            if (UtilMethods.isSet(contentletVersionInfo.getLiveInode())
+                    && !UtilMethods.isSet(contentletVersionInfo.getPublishDate())) {
+                contentletVersionInfo.setPublishDate(
+                        UtilMethods.isSet(contentletVersionInfo.getVersionTs()) ?
+                                contentletVersionInfo.getVersionTs() :
+                                new Date());
+            }
 			versionableFactory.saveContentletVersionInfo(contentletVersionInfo, true);
 		} else {
 		    final ContentletVersionInfo info = contentletVersionInfoInDB.get();
@@ -733,6 +742,7 @@ public class VersionableAPIImpl implements VersionableAPI {
             info.setLockedBy(contentletVersionInfo.getLockedBy());
             info.setLockedOn(contentletVersionInfo.getLockedOn());
             info.setWorkingInode(contentletVersionInfo.getWorkingInode());
+            info.setPublishDate(contentletVersionInfo.getPublishDate());
 			versionableFactory.saveContentletVersionInfo(info, true);
 		}
 	}

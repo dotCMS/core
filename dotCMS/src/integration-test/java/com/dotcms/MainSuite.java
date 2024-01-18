@@ -580,7 +580,8 @@ import org.junit.runners.Suite.SuiteClasses;
         PopulateContentletAsJSONJobTest.class,
         Task230426AlterVarcharLengthOfLockedByColTest.class,
         Task230713IncreaseDisabledWysiwygColumnSizeTest.class,
-        Task230701AddHashIndicesToWorkflowTablesTest.class
+        Task230701AddHashIndicesToWorkflowTablesTest.class,
+        Task231109AddPublishDateToContentletVersionInfo.class
 
 })
 public class MainSuite {
