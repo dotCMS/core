@@ -2,7 +2,7 @@ import { Observable, forkJoin, of } from 'rxjs';
 
 import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -16,6 +16,7 @@ import {
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentStore } from './store/edit-content.store';
@@ -36,6 +37,7 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
         DotMessagePipe,
         ButtonModule,
         ToastModule,
+        RouterLink,
         DotEditContentFormComponent,
         DotEditContentAsideComponent,
         DotEditContentToolbarComponent
@@ -65,6 +67,7 @@ export class EditContentLayoutComponent implements OnInit {
     private formValue: Record<string, string>;
 
     vm$: Observable<EditContentPayload> = this.store.vm$;
+    featuredFlagContentKEY = FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED;
 
     ngOnInit(): void {
         const obs$ = !this.initialInode
