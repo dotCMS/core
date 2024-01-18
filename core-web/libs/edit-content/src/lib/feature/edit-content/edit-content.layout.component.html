@@ -1,4 +1,14 @@
 <ng-container *ngIf="vm$ | async as vm; else noContent">
+    <div class="topBar" *ngIf="vm?.contentType?.metadata?.[featuredFlagContentKEY]">
+        Explore the <b>Edit Content Beta</b> which provides new editing functionalities. Your
+        experience matters to us, and you can easily
+        <a
+            [routerLink]="'/content-types-angular/edit/' + vm.contentlet.contentType"
+            data-testId="content-type"
+            >switch back</a
+        >
+        if needed. <a>Send us feedback</a>
+    </div>
     <dot-edit-content-toolbar
         class="header"
         [actions]="vm.actions"
@@ -6,12 +16,14 @@
             fireWorkflowAction({
                 actionId: $event.id,
                 inode: vm.contentlet?.inode,
-                contentType: vm.contentType
+                contentType: vm.contentlet.contentType
             })
         "></dot-edit-content-toolbar>
     <dot-edit-content-form class="body" [formData]="vm" (changeValue)="setFormValue($event)" />
     <aside class="sidebar">
-        <dot-edit-content-aside [contentLet]="vm.contentlet" [contentType]="vm.contentType" />
+        <dot-edit-content-aside
+            [contentLet]="vm.contentlet"
+            [contentType]="vm.contentlet.contentType" />
     </aside>
 </ng-container>
 

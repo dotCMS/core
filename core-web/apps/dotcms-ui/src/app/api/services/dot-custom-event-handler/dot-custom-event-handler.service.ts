@@ -140,9 +140,9 @@ export class DotCustomEventHandlerService {
     }
 
     private editContentlet($event: CustomEvent): void {
-        if (this.shouldRedirectToOldContentEditor($event.detail.data.contentType)) {
-            return this.editContentletLegacy($event);
-        }
+        // if (this.shouldRedirectToOldContentEditor($event.detail.data.contentType)) {
+        //     return this.editContentletLegacy($event);
+        // }
 
         this.router.navigate([`content/${$event.detail.data.inode}`]);
     }
