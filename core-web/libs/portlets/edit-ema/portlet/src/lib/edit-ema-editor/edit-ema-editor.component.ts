@@ -20,7 +20,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { ProgressBarModule } from 'primeng/progressbar';
 
-import { distinctUntilChanged, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
@@ -162,13 +162,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             this.dialogIframe.nativeElement.contentWindow.document,
             'ng-event'
         )
-            .pipe(
-                takeUntil(this.destroy$),
-                distinctUntilChanged(
-                    (prev: CustomEvent, current: CustomEvent) =>
-                        prev.detail.name === current.detail.name
-                )
-            )
+            .pipe(takeUntil(this.destroy$))
             .subscribe((event: CustomEvent) => {
                 this.handleNgEvent(event)?.();
             });
