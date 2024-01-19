@@ -17,7 +17,8 @@ export default {
         summary: 'Success Message',
         detail: 'The action "Publish" was executed succesfully',
         position: 'top-right',
-        life: 2000
+        life: 2000,
+        icon: 'pi-check-circle'
     },
     argTypes: {
         severity: {
@@ -49,6 +50,11 @@ export default {
         life: {
             control: { type: 'number' },
             description: 'Delay in milliseconds to close the message'
+        },
+        icon: {
+            control: { type: 'text' },
+            description:
+                'Icon of the message check https://primeng.org/icons for icons. You can hide it by setting it to "hidden"'
         }
     },
     parameters: {

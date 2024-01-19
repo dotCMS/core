@@ -50,8 +50,12 @@ $toast-bottom-border: 8px solid;
                 line-height: 140%;
             }
 
+            .p-toast-summary:empty,
+            .p-toast-detail:empty {
+                display: none;
+            }
+
             .p-toast-summary {
-                height: 1.375rem;
                 font-weight: 700;
             }
 

@@ -23,6 +23,7 @@ export class ToastComponent {
     @Input() detail: string = 'The action "Publish" was executed succesfully';
     @Input() position: string = 'top-right';
     @Input() life: number = 2000;
+    @Input() icon: string = 'pi-check-circle';
 
     constructor(private messageService: MessageService) {}
 
@@ -32,7 +33,8 @@ export class ToastComponent {
             severity: this.severity,
             summary: this.summary,
             detail: this.detail,
-            life: this.life
+            life: this.life,
+            icon: 'pi ' + this.icon
         });
     }
 }
