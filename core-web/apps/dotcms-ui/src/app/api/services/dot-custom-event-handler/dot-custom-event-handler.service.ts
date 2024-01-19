@@ -1,11 +1,14 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { take } from 'rxjs/operators';
+
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotContentCompareEvent } from '@components/dot-content-compare/dot-content-compare.component';
 import { DotCMSEditPageEvent } from '@components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {
+    DotContentTypeService,
     DotEventsService,
     DotGenerateSecurePasswordService,
     DotLicenseService,
@@ -13,7 +16,7 @@ import {
     DotRouterService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, DotUiColors } from '@dotcms/dotcms-js';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
@@ -48,7 +51,8 @@ export class DotCustomEventHandlerService {
         private dotEventsService: DotEventsService,
         private dotLicenseService: DotLicenseService,
         private router: Router,
-        private dotPropertiesService: DotPropertiesService
+        private dotPropertiesService: DotPropertiesService,
+        private dotContentTypeService: DotContentTypeService
     ) {
         this.dotPropertiesService
             .getKeys([
@@ -60,7 +64,6 @@ export class DotCustomEventHandlerService {
                     response[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === 'true';
                 const contentTypeFeatureFlag =
                     response[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE];
-
                 this.contentTypesFeatureFlag = contentTypeFeatureFlag
                     .split(',')
                     .map((item) => item.trim());
@@ -119,11 +122,16 @@ export class DotCustomEventHandlerService {
     }
 
     private createContentlet($event: CustomEvent): void {
-        if (this.shouldRedirectToOldContentEditor($event.detail.data.contentType)) {
-            return this.createContentletLegacy($event);
-        }
+        this.dotContentTypeService
+            .getContentType($event.detail.data.contentType)
+            .pipe(take(1))
+            .subscribe((contentType) => {
+                if (this.shouldRedirectToOldContentEditor(contentType)) {
+                    return this.createContentletLegacy($event);
+                }
 
-        this.router.navigate([`content/new/${$event.detail.data.contentType}`]);
+                this.router.navigate([`content/new/${$event.detail.data.contentType}`]);
+            });
     }
 
     private goToEditPage($event: CustomEvent<DotCMSEditPageEvent>): void {
@@ -140,11 +148,16 @@ export class DotCustomEventHandlerService {
     }
 
     private editContentlet($event: CustomEvent): void {
-        // if (this.shouldRedirectToOldContentEditor($event.detail.data.contentType)) {
-        //     return this.editContentletLegacy($event);
-        // }
+        this.dotContentTypeService
+            .getContentType($event.detail.data.contentType)
+            .pipe(take(1))
+            .subscribe((contentType) => {
+                if (this.shouldRedirectToOldContentEditor(contentType)) {
+                    return this.editContentletLegacy($event);
+                }
 
-        this.router.navigate([`content/${$event.detail.data.inode}`]);
+                this.router.navigate([`content/${$event.detail.data.inode}`]);
+            });
     }
 
     private editTaskLegacy($event: CustomEvent): void {
@@ -152,11 +165,16 @@ export class DotCustomEventHandlerService {
     }
 
     private editTask($event: CustomEvent): void {
-        if (this.shouldRedirectToOldContentEditor($event.detail.data.contentType)) {
-            return this.editTaskLegacy($event);
-        }
+        this.dotContentTypeService
+            .getContentType($event.detail.data.contentType)
+            .pipe(take(1))
+            .subscribe((contentType) => {
+                if (this.shouldRedirectToOldContentEditor(contentType)) {
+                    return this.editTaskLegacy($event);
+                }
 
-        this.router.navigate([`content/${$event.detail.data.inode}`]);
+                this.router.navigate([`content/${$event.detail.data.inode}`]);
+            });
     }
 
     private setPersonalization($event: CustomEvent): void {
@@ -199,17 +217,14 @@ export class DotCustomEventHandlerService {
     }
 
     /**
-     * Check if the content type is in the feature flag list
+     * Check if the content type have the feature flag in the metadata.
      *
      * @private
-     * @param {string} contentType
+     * @param {DotCMSContentType} contentType
      * @return {*}  {boolean}
      * @memberof DotCustomEventHandlerService
      */
-    private shouldRedirectToOldContentEditor(contentType: string): boolean {
-        return (
-            !this.contentTypesFeatureFlag.includes('*') &&
-            this.contentTypesFeatureFlag.indexOf(contentType) === -1
-        );
+    private shouldRedirectToOldContentEditor(contentType: DotCMSContentType): boolean {
+        return !contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
     }
 }
