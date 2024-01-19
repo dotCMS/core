@@ -52,7 +52,8 @@ export function Container({ containerRef }: ContainerProps) {
         containerRef
     );
 
-    const updatedContentlets = contentlets.length > 0 ? contentlets : [FAKE_CONTENLET];
+    const updatedContentlets =
+        contentlets.length === 0 && isInsideEditor ? [FAKE_CONTENLET] : contentlets;
 
     const contentletsId = updatedContentlets.map((contentlet) => contentlet.identifier);
 
