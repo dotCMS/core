@@ -562,6 +562,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 if (isSameUrl) {
                     this.store.updateEditorState(EDITOR_STATE.LOADED);
+                    this.personaSelector.fetchPersonas(); // We need to fetch the personas again because the page is loaded
                 } else {
                     this.store.updateEditorState(EDITOR_STATE.LOADING);
                 }
