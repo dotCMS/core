@@ -133,7 +133,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                     title: 'hello world',
                                     identifier: '123',
                                     ...permissions,
-                                    url: 'page-one'
+                                    pageURI: 'page-one'
                                 },
                                 site: {
                                     identifier: '123'
@@ -154,7 +154,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                                     title: 'hello world',
                                     identifier: '123',
                                     ...permissions,
-                                    url: 'page-one'
+                                    pageURI: 'page-one'
                                 },
                                 site: {
                                     identifier: '123'
@@ -1533,7 +1533,7 @@ describe('EditEmaEditorComponent', () => {
                 );
             });
 
-            it('should navigate to new url when postMessage SET_URL', () => {
+            it('should navigate to new url and change persona when postMessage SET_URL', () => {
                 const router = spectator.inject(Router);
                 jest.spyOn(router, 'navigate');
 
@@ -1552,7 +1552,36 @@ describe('EditEmaEditorComponent', () => {
                 );
 
                 expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: { url: '/some' },
+                    queryParams: {
+                        url: '/some',
+                        'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+                    },
+                    queryParamsHandling: 'merge'
+                });
+            });
+
+            it('should not change persona on load same url', () => {
+                const router = spectator.inject(Router);
+                jest.spyOn(router, 'navigate');
+
+                spectator.detectChanges();
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        origin: HOST,
+                        data: {
+                            action: 'set-url',
+                            payload: {
+                                url: 'page-one'
+                            }
+                        }
+                    })
+                );
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: {
+                        url: 'page-one' //Same page as init
+                    },
                     queryParamsHandling: 'merge'
                 });
             });
