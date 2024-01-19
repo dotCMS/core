@@ -5,6 +5,7 @@ import {
     byTestId,
     mockProvider
 } from '@ngneat/spectator/jest';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -16,26 +17,17 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
-    DotAlertConfirmService,
     DotContentTypeService,
     DotCurrentUserService,
     DotDevicesService,
     DotESContentService,
     DotFavoritePageService,
-    DotFormatDateService,
-    DotGlobalMessageService,
-    DotHttpErrorManagerService,
-    DotIframeService,
     DotLanguagesService,
     DotLicenseService,
-    DotMessageDisplayService,
     DotMessageService,
-    DotPersonalizeService,
-    DotRouterService,
-    DotWorkflowActionsFireService,
-    PushPublishService
+    DotPersonalizeService
 } from '@dotcms/data-access';
-import { ApiRoot, CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
+import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
 import {
     DotLanguagesServiceMock,
     MockDotMessageService,
@@ -95,6 +87,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
         imports: [RouterTestingModule, HttpClientTestingModule],
+        declarations: [MockComponent(DotEditEmaWorkflowActionsComponent)],
         detectChanges: false,
         componentProviders: [
             MessageService,
@@ -227,17 +220,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                 provide: DotPersonalizeService,
                 useValue: new DotPersonalizeServiceMock()
             },
-            mockProvider(DotAlertConfirmService),
-            mockProvider(DotContentTypeService),
-            mockProvider(DotWorkflowActionsFireService),
-            mockProvider(DotMessageDisplayService),
-            mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotRouterService),
-            mockProvider(PushPublishService),
-            mockProvider(ApiRoot),
-            mockProvider(DotFormatDateService),
-            mockProvider(DotIframeService),
-            mockProvider(DotGlobalMessageService)
+            mockProvider(DotContentTypeService)
         ]
     });
 describe('EditEmaEditorComponent', () => {
