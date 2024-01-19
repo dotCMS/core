@@ -1,13 +1,15 @@
 <ng-container *ngIf="vm$ | async as vm; else noContent">
-    <div class="topBar" *ngIf="vm?.contentType?.metadata?.[featuredFlagContentKEY]">
-        Explore the <b>Edit Content Beta</b> which provides new editing functionalities. Your
-        experience matters to us, and you can easily
+    <div
+        class="topBar"
+        *ngIf="vm?.contentType?.metadata?.[featuredFlagContentKEY]"
+        data-testId="topBar">
+        {{ 'edit.content.layout.beta.message' | dm }}
         <a
-            [routerLink]="'/content-types-angular/edit/' + vm.contentlet.contentType"
+            [routerLink]="'/content-types-angular/edit/' + vm.contentType.variable"
             data-testId="content-type"
-            >switch back</a
+            >{{ 'edit.content.layout.beta.message.switch' | dm }}</a
         >
-        if needed. <a>Send us feedback</a>
+        {{ 'edit.content.layout.beta.message.needed' | dm }}
     </div>
     <dot-edit-content-toolbar
         class="header"
@@ -16,17 +18,17 @@
             fireWorkflowAction({
                 actionId: $event.id,
                 inode: vm.contentlet?.inode,
-                contentType: vm.contentlet.contentType
+                contentType: vm.contentType.variable
             })
         "></dot-edit-content-toolbar>
     <dot-edit-content-form class="body" [formData]="vm" (changeValue)="setFormValue($event)" />
     <aside class="sidebar">
         <dot-edit-content-aside
             [contentLet]="vm.contentlet"
-            [contentType]="vm.contentlet.contentType" />
+            [contentType]="vm.contentType.variable" />
     </aside>
 </ng-container>
 
-<ng-template #noContent>No content to show</ng-template>
+<ng-template #noContent>{{ 'edit.content.layout.no.content.to.show ' | dm }}</ng-template>
 
 <p-toast></p-toast>

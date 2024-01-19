@@ -19,6 +19,7 @@ import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-u
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
+    DotContentTypeService,
     DotCurrentUserService,
     DotEventsService,
     DotGenerateSecurePasswordService,
@@ -189,7 +190,8 @@ describe('DotEditPageMainComponent', () => {
                 LoginService,
                 DotLicenseService,
                 Title,
-                mockProvider(DotSessionStorageService)
+                mockProvider(DotSessionStorageService),
+                mockProvider(DotContentTypeService)
             ]
         });
     }));

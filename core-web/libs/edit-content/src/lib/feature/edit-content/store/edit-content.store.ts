@@ -46,7 +46,7 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
     readonly vm$ = this.select(({ actions, contentType, contentlet }) => ({
         actions,
         contentType,
-        contentlet: { ...contentlet, contentType: contentlet?.contentType || contentType.variable }
+        contentlet
     }));
 
     /**

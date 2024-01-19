@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { mockProvider } from '@ngneat/spectator';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement, Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -19,6 +21,7 @@ import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-u
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
+    DotContentTypeService,
     DotCurrentUserService,
     DotEventsService,
     DotGenerateSecurePasswordService,
@@ -136,7 +139,8 @@ describe('DotWorkflowTaskComponent', () => {
                 DotWorkflowActionsFireService,
                 DotGlobalMessageService,
                 DotGenerateSecurePasswordService,
-                DotEventsService
+                DotEventsService,
+                mockProvider(DotContentTypeService)
             ]
         });
 
