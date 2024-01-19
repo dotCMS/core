@@ -4,5 +4,5 @@
     [actions]="actions()"
     (actionFired)="handleActionTrigger($event)" />
 } @else {
-<p-button [loading]="true" [label]="'Loading' | dm" />
+<p-button [loading]="true" [label]="'Loading' | dm" data-testId="loading-button" />
 }

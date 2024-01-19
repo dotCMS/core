@@ -13,6 +13,7 @@ export class SplitButtonMockComponent {
     @Input() styleClass!: string;
     @Input() model!: [];
     @Input() label!: string;
+    @Input() disabled!: boolean;
 }
 
 @NgModule({
