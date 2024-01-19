@@ -8,6 +8,7 @@ import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
 
 import {
     DotLanguagesService,
@@ -16,12 +17,15 @@ import {
     DotPersonalizeService
 } from '@dotcms/data-access';
 import { SiteService, mockSites } from '@dotcms/dotcms-js';
+import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotNotLicenseComponent } from '@dotcms/ui';
 import {
     DotLanguagesServiceMock,
     DotPersonalizeServiceMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
+import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { DotEmaShellComponent } from './dot-ema-shell.component';
 import { EditEmaStore } from './store/dot-ema.store';
 
@@ -59,7 +63,9 @@ describe('DotEmaShellComponent', () => {
                             page: {
                                 title: 'hello world',
                                 identifier: '123',
-                                inode: '123'
+                                inode: '123',
+                                canEdit: true,
+                                canRead: true
                             },
                             viewAs: {
                                 language: {
@@ -89,7 +95,6 @@ describe('DotEmaShellComponent', () => {
                     }
                 }
             },
-
             {
                 provide: WINDOW,
                 useValue: window
@@ -97,19 +102,23 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: DotPersonalizeService,
                 useValue: new DotPersonalizeServiceMock()
-            },
-            {
-                provide: DotLicenseService,
-                useValue: {
-                    isEnterprise: () => of(true)
-                }
             }
         ]
     });
 
     describe('with queryParams', () => {
         beforeEach(() => {
-            spectator = createComponent();
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: DotLicenseService,
+                        useValue: {
+                            isEnterprise: () => of(true),
+                            canAccessEnterprisePortlet: () => of(true)
+                        }
+                    }
+                ]
+            });
             siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
             store = spectator.inject(EditEmaStore, true);
             router = spectator.inject(Router);
@@ -121,6 +130,11 @@ describe('DotEmaShellComponent', () => {
                     language_id: 1,
                     url: 'index',
                     'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+                },
+                data: {
+                    data: {
+                        url: 'http://localhost:3000'
+                    }
                 }
             });
         });
@@ -137,6 +151,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
 
                 expect(store.load).toHaveBeenCalledWith({
+                    clientHost: 'http://localhost:3000',
                     language_id: 1,
                     url: 'index',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -155,6 +170,7 @@ describe('DotEmaShellComponent', () => {
 
                 spectator.detectChanges();
                 expect(store.load).toHaveBeenCalledWith({
+                    clientHost: 'http://localhost:3000',
                     language_id: 2,
                     url: 'my-awesome-page',
                     'com.dotmarketing.persona.id': 'SomeCoolDude'
@@ -209,7 +225,7 @@ describe('DotEmaShellComponent', () => {
                 dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                     new CustomEvent('ng-event', {
                         detail: {
-                            name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
+                            name: NG_CUSTOM_EVENTS.SAVE_PAGE,
                             payload: {
                                 htmlPageReferer: '/my-awesome-page'
                             }
@@ -246,7 +262,7 @@ describe('DotEmaShellComponent', () => {
                 dialogIframe.nativeElement.contentWindow.document.dispatchEvent(
                     new CustomEvent('ng-event', {
                         detail: {
-                            name: NG_CUSTOM_EVENTS.SAVE_CONTENTLET,
+                            name: NG_CUSTOM_EVENTS.SAVE_PAGE,
                             payload: {
                                 htmlPageReferer: '/index'
                             }
@@ -256,6 +272,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
 
                 expect(loadMock).toHaveBeenCalledWith({
+                    clientHost: 'http://localhost:3000',
                     language_id: 1,
                     url: 'index',
                     'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
@@ -264,45 +281,141 @@ describe('DotEmaShellComponent', () => {
         });
     });
 
-    describe('without queryParams', () => {
+    describe('without read permission', () => {
         beforeEach(() => {
-            spectator = createComponent();
-            siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
-            store = spectator.inject(EditEmaStore, true);
-            router = spectator.inject(Router);
-            jest.spyOn(store, 'load');
-        });
-
-        it("should trigger a navigate to set the queryParams if there's no queryParams", async () => {
-            spectator.detectChanges();
-            const navigate = jest.spyOn(router, 'navigate');
-
-            spectator.detectChanges();
-
-            expect(navigate).toHaveBeenCalledWith([], {
-                queryParams: {
-                    language_id: 1,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                },
-                queryParamsHandling: 'merge'
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: DotPageApiService,
+                        useValue: {
+                            get() {
+                                return of({
+                                    page: {
+                                        title: 'hello world',
+                                        identifier: '123',
+                                        inode: '123',
+                                        canEdit: false,
+                                        canRead: false
+                                    },
+                                    viewAs: {
+                                        language: {
+                                            id: 1,
+                                            language: 'English',
+                                            countryCode: 'US',
+                                            languageCode: 'EN',
+                                            country: 'United States'
+                                        },
+                                        persona: DEFAULT_PERSONA
+                                    },
+                                    site: mockSites[0]
+                                });
+                            },
+                            save() {
+                                return of({});
+                            },
+                            getPersonas() {
+                                return of({
+                                    entity: [DEFAULT_PERSONA],
+                                    pagination: {
+                                        totalEntries: 1,
+                                        perPage: 10,
+                                        page: 1
+                                    }
+                                });
+                            }
+                        }
+                    },
+                    {
+                        provide: DotLicenseService,
+                        useValue: {
+                            isEnterprise: () => of(true),
+                            canAccessEnterprisePortlet: () => of(true)
+                        }
+                    }
+                ]
             });
 
-            // We need to trigger the navigation manually because we are not using the router
             spectator.triggerNavigation({
                 url: [],
                 queryParams: {
                     language_id: 1,
                     url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+                },
+                data: {
+                    data: {
+                        url: 'http://localhost:3000'
+                    }
                 }
             });
+        });
 
-            expect(store.load).toHaveBeenCalledWith({
-                language_id: 1,
-                url: 'index',
-                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+        it('should not render components', () => {
+            spectator.detectChanges();
+            expect(spectator.query(EditEmaNavigationBarComponent)).toBeNull();
+            expect(spectator.query(ToastModule)).toBeNull();
+            expect(spectator.query(DotPageToolsSeoComponent)).toBeNull();
+        });
+    });
+
+    describe('without license ', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: DotPageApiService,
+                        useValue: {
+                            get() {
+                                return of({
+                                    page: {
+                                        title: 'hello world',
+                                        identifier: '123',
+                                        inode: '123',
+                                        canEdit: false,
+                                        canRead: false
+                                    },
+                                    viewAs: {
+                                        language: {
+                                            id: 1,
+                                            language: 'English',
+                                            countryCode: 'US',
+                                            languageCode: 'EN',
+                                            country: 'United States'
+                                        },
+                                        persona: DEFAULT_PERSONA
+                                    },
+                                    site: mockSites[0]
+                                });
+                            },
+                            save() {
+                                return of({});
+                            },
+                            getPersonas() {
+                                return of({
+                                    entity: [DEFAULT_PERSONA],
+                                    pagination: {
+                                        totalEntries: 1,
+                                        perPage: 10,
+                                        page: 1
+                                    }
+                                });
+                            }
+                        }
+                    },
+                    {
+                        provide: DotLicenseService,
+                        useValue: {
+                            isEnterprise: () => of(false),
+                            canAccessEnterprisePortlet: () => of(false)
+                        }
+                    }
+                ]
             });
+        });
+
+        it('should render not-license component', () => {
+            spectator.detectChanges();
+            expect(spectator.query(DotNotLicenseComponent)).toBeDefined();
         });
     });
 });

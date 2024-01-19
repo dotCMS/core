@@ -79,6 +79,10 @@ export class DotEditContentFormComponent implements OnInit {
     initilizeForm() {
         this.form = this.fb.group({});
 
+        this.form.valueChanges.subscribe((value) => {
+            this.onFormChange(value);
+        });
+
         this.formData.fields.forEach((field) => {
             if (Object.values(FILTERED_TYPES).includes(field.fieldType as FILTERED_TYPES)) {
                 return;
@@ -86,10 +90,6 @@ export class DotEditContentFormComponent implements OnInit {
 
             const fieldControl = this.initializeFormControl(field);
             this.form.addControl(field.variable, fieldControl);
-        });
-
-        this.form.valueChanges.subscribe((value) => {
-            this.onFormChange(value);
         });
     }
 

@@ -6,6 +6,32 @@ import { PageContext } from '../../contexts/PageContext';
 import { getContainersData } from '../../utils/utils';
 import { PageProviderContext } from '../PageProvider/PageProvider';
 
+const FAKE_CONTENLET = {
+    identifier: 'TEMP_EMPTY_CONTENTLET',
+    title: 'TEMP_EMPTY_CONTENTLET',
+    contentType: 'TEMP_EMPTY_CONTENTLET_TYPE',
+    inode: 'TEMPY_EMPTY_CONTENTLET_INODE',
+    widgetTitle: 'TEMP_EMPTY_CONTENTLET'
+};
+
+function EmptyContainer() {
+    return (
+        <div
+            data-testid="empty-container"
+            style={{
+                width: '100%',
+                backgroundColor: '#ECF0FD',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                color: '#030E32',
+                height: '10rem'
+            }}>
+            This container is empty.
+        </div>
+    );
+}
+
 function NoContent({ contentType }: { readonly contentType: string }) {
     return <div data-testid="no-component">No Component for {contentType}</div>;
 }
@@ -18,16 +44,18 @@ export function Container({ containerRef }: ContainerProps) {
     const { identifier, uuid } = containerRef;
 
     // Get the containers from the global context
-    const { containers, page, viewAs, components } = useContext<PageProviderContext | null>(
-        PageContext
-    ) as PageProviderContext;
+    const { containers, page, viewAs, components, isInsideEditor } =
+        useContext<PageProviderContext | null>(PageContext) as PageProviderContext;
 
     const { acceptTypes, contentlets, maxContentlets, pageContainers, path } = getContainersData(
         containers,
         containerRef
     );
 
-    const contentletsId = contentlets.map((contentlet) => contentlet.identifier);
+    const updatedContentlets =
+        contentlets.length === 0 && isInsideEditor ? [FAKE_CONTENLET] : contentlets;
+
+    const contentletsId = updatedContentlets.map((contentlet) => contentlet.identifier);
 
     const container = {
         acceptTypes,
@@ -72,34 +100,46 @@ export function Container({ containerRef }: ContainerProps) {
         });
     }
 
-    return (
+    const renderContentlets = updatedContentlets.map((contentlet) => {
+        const ContentTypeComponent = components[contentlet.contentType] || NoContent;
+
+        const Component =
+            contentlet.identifier === 'TEMP_EMPTY_CONTENTLET'
+                ? EmptyContainer
+                : ContentTypeComponent;
+
+        const contentletPayload = {
+            container,
+            contentlet: {
+                identifier: contentlet.identifier,
+                title: contentlet.widgetTitle || contentlet.title,
+                inode: contentlet.inode
+            },
+            language_id: viewAs.language.id,
+            pageContainers,
+            pageId: page.identifier,
+            personaTag: viewAs.persona?.keyTag
+        };
+
+        return isInsideEditor ? (
+            <div
+                onPointerEnter={onPointerEnterHandler}
+                data-dot="contentlet"
+                data-content={JSON.stringify(contentletPayload)}
+                key={contentlet.identifier}>
+                <Component {...contentlet} />
+            </div>
+        ) : (
+            <Component {...contentlet} key={contentlet.identifier} />
+        );
+    });
+
+    return isInsideEditor ? (
         <div data-dot="container" data-content={JSON.stringify(containerPayload)}>
-            {contentlets.map((contentlet) => {
-                const Component = components[contentlet.contentType] || NoContent;
-
-                const contentletPayload = {
-                    container,
-                    contentlet: {
-                        identifier: contentlet.identifier,
-                        title: contentlet.widgetTitle || contentlet.title,
-                        inode: contentlet.inode
-                    },
-                    language_id: viewAs.language.id,
-                    pageContainers,
-                    pageId: page.identifier,
-                    personaTag: viewAs.persona?.keyTag
-                };
-
-                return (
-                    <div
-                        onPointerEnter={onPointerEnterHandler}
-                        data-dot="contentlet"
-                        data-content={JSON.stringify(contentletPayload)}
-                        key={contentlet.identifier}>
-                        <Component {...contentlet} />
-                    </div>
-                );
-            })}
+            {renderContentlets}
         </div>
+    ) : (
+        // eslint-disable-next-line react/jsx-no-useless-fragment
+        <>{renderContentlets}</>
     );
 }

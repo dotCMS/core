@@ -12,12 +12,14 @@ export const CONTENT_TYPE_MOCK = [
     {
         name: 'Test Content Type',
         variable: 'Test1',
-        icon: 'icon'
+        icon: 'icon',
+        baseType: 'CONTENT'
     },
     {
         name: 'Test Content Type 2',
         variable: 'Test2',
-        icon: 'icon'
+        icon: 'icon',
+        baseType: 'CONTENT'
     }
 ];
 
@@ -53,9 +55,16 @@ describe('EditEmaPaletteContentTypeComponent', () => {
 
         spectator.triggerEventHandler('[data-testId="content-type-0"]', 'dragstart', {
             variable: 'test',
-            name: 'Test'
+            name: 'Test',
+            contentType: 'test',
+            baseType: 'CONTENT'
         });
-        expect(dragSpy).toHaveBeenCalledWith({ variable: 'test', name: 'Test' });
+        expect(dragSpy).toHaveBeenCalledWith({
+            variable: 'test',
+            name: 'Test',
+            contentType: 'test',
+            baseType: 'CONTENT'
+        });
     });
 
     it('should emit dragEnd event on drag end', () => {
@@ -63,9 +72,16 @@ describe('EditEmaPaletteContentTypeComponent', () => {
 
         spectator.triggerEventHandler('[data-testId="content-type-0"]', 'dragend', {
             variable: 'test',
-            name: 'Test'
+            name: 'Test',
+            contentType: 'test',
+            baseType: 'CONTENT'
         });
-        expect(dragSpy).toHaveBeenCalledWith({ variable: 'test', name: 'Test' });
+        expect(dragSpy).toHaveBeenCalledWith({
+            variable: 'test',
+            name: 'Test',
+            contentType: 'test',
+            baseType: 'CONTENT'
+        });
     });
 
     it('should emit showContentlets event with contentTypeName', () => {
@@ -75,8 +91,18 @@ describe('EditEmaPaletteContentTypeComponent', () => {
     });
 
     it('should render the content type list with data-item attribute', () => {
+        const dataItem = spectator
+            .query('[data-testId="content-type-0"]')
+            .getAttribute('data-item');
+        const data = JSON.parse(dataItem);
         expect(spectator.query('[data-testId="content-type-0"]')).not.toBeNull();
         expect(spectator.query('[data-testId="content-type-0"]')).toHaveAttribute('data-item');
+        expect(data).toEqual({
+            variable: 'Test1',
+            name: 'Test Content Type',
+            contentType: 'Test1',
+            baseType: 'CONTENT'
+        });
     });
 
     it('should emit search event on search', fakeAsync(() => {

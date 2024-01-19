@@ -22,6 +22,7 @@ import com.dotcms.rest.annotation.HeaderFilter;
 import com.dotcms.rest.annotation.RequestFilter;
 import com.dotcms.rest.api.CorsFilter;
 import com.dotcms.rest.api.MyObjectMapperProvider;
+import com.dotcms.rest.api.v1.announcements.AnnouncementsResource;
 import com.dotcms.rest.api.v1.apps.AppsResource;
 import com.dotcms.rest.api.v1.asset.WebAssetResource;
 import com.dotcms.rest.api.v1.authentication.ApiTokenResource;
@@ -42,6 +43,7 @@ import com.dotcms.rest.api.v1.content.ResourceLinkResource;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.rest.api.v1.contenttype.FieldResource;
 import com.dotcms.rest.api.v1.contenttype.FieldVariableResource;
+import com.dotcms.rest.api.v1.ema.EMAResource;
 import com.dotcms.rest.api.v1.event.EventsResource;
 import com.dotcms.rest.api.v1.experiments.ExperimentsResource;
 import com.dotcms.rest.api.v1.fileasset.FileAssetsResource;
@@ -235,6 +237,7 @@ public class DotRestApplication extends Application {
 			.add(TempFileResource.class)
 			.add(UpgradeTaskResource.class)
 			.add(AppsResource.class)
+			.add(EMAResource.class)
 			.add(BrowserResource.class)
 			.add(ResourceLinkResource.class)
 			.add(PushPublishFilterResource.class)
@@ -258,6 +261,7 @@ public class DotRestApplication extends Application {
 			.add(SystemTableResource.class)
 			.add(StorageResource.class)
 			.add(com.dotcms.rest.api.v2.tags.TagResource.class)
+			.add(AnnouncementsResource.class)
 			.build();
 
 	private static final Set<Class<?>> PROVIDER_CLASSES = ImmutableSet.<Class<?>>builder()

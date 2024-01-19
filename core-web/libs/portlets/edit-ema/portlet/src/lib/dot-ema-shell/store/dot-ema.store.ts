@@ -1,41 +1,42 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { EMPTY, Observable, forkJoin } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+
+import { MessageService } from 'primeng/api';
 
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotLicenseService } from '@dotcms/data-access';
+import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import { DotContainerMap, DotLayout, DotPageContainerStructure } from '@dotcms/dotcms-models';
 
 import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
 import {
-    DotPageApiService,
     DotPageApiParams,
-    DotPageApiResponse
+    DotPageApiResponse,
+    DotPageApiService
 } from '../../services/dot-page-api.service';
-import {
-    DEFAULT_PERSONA,
-    HOST,
-    EDIT_CONTENTLET_URL,
-    ADD_CONTENTLET_URL
-} from '../../shared/consts';
+import { DEFAULT_PERSONA, EDIT_CONTENTLET_URL, ADD_CONTENTLET_URL } from '../../shared/consts';
+import { EDITOR_STATE } from '../../shared/enums';
 import { ActionPayload, SavePagePayload } from '../../shared/models';
-import { insertContentletInContainer } from '../../utils';
+import { insertContentletInContainer, sanitizeURL } from '../../utils';
 
 type DialogType = 'content' | 'form' | 'widget' | 'shell' | null;
 
 export interface EditEmaState {
-    editor: DotPageApiResponse;
-    url: string;
-    dialogIframeURL: string;
+    clientHost: string;
     dialogHeader: string;
     dialogIframeLoading: boolean;
-    isEnterpriseLicense: boolean;
+    dialogIframeURL: string;
     dialogType: DialogType;
+    error?: number;
+    editor: DotPageApiResponse;
+    isEnterpriseLicense: boolean;
+    editorState: EDITOR_STATE;
 }
 
-function getFormId(dotPageApiService) {
+function getFormId(dotPageApiService: DotPageApiService) {
     return (source: Observable<unknown>) =>
         source.pipe(
             switchMap(({ payload, formId, whenSaved }) => {
@@ -61,14 +62,20 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     constructor(
         private dotPageApiService: DotPageApiService,
         private dotActionUrl: DotActionUrlService,
-        private dotLicenseService: DotLicenseService
+        private dotLicenseService: DotLicenseService,
+        private messageService: MessageService,
+        private dotMessageService: DotMessageService
     ) {
         super();
     }
 
+    /*******************
+     * Selectors
+     *******************/
+
     readonly editorState$ = this.select((state) => {
         const pageURL = this.createPageURL({
-            url: state.url,
+            url: state.editor.page.url,
             language_id: state.editor.viewAs.language.id.toString(),
             'com.dotmarketing.persona.id':
                 state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
@@ -76,14 +83,15 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
         const favoritePageURL = this.createFavoritePagesURL({
             languageId: state.editor.viewAs.language.id,
-            pageURI: state.url,
+            pageURI: state.editor.page.url,
             siteId: state.editor.site.identifier
         });
 
         return {
+            clientHost: state.clientHost,
             favoritePageURL,
             apiURL: `${window.location.origin}/api/v1/page/json/${pageURL}`,
-            iframeURL: `${HOST}/${pageURL}` + `&t=${Date.now()}`, // The iframe will only reload if the queryParams changes, so we add a timestamp to force a reload when no queryParams change
+            iframeURL: `${state.clientHost}/${pageURL}`,
             editor: {
                 ...state.editor,
                 viewAs: {
@@ -91,7 +99,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     persona: state.editor.viewAs.persona ?? DEFAULT_PERSONA
                 }
             },
-            isEnterpriseLicense: state.isEnterpriseLicense
+            isEnterpriseLicense: state.isEnterpriseLicense,
+            state: state.editorState ?? EDITOR_STATE.LOADING
         };
     });
 
@@ -113,52 +122,63 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         page: state.editor.page,
         siteId: state.editor.site.identifier,
         languageId: state.editor.viewAs.language.id,
-        currentUrl: '/' + state.url,
-        host: HOST
+        currentUrl: '/' + state.editor.page,
+        host: state.clientHost,
+        error: state.error
     }));
 
     /**
-     * Load the page editor
+     * Concurrently loads page and license data to updat the state.
      *
-     * @memberof EditEmaStore
+     * @param {Observable<DotPageApiParams & { clientHost: string }>} params$ - Parameters for HTTP requests.
+     * @returns {Observable<any>} Response of the HTTP requests.
      */
-    readonly load = this.effect((params$: Observable<DotPageApiParams>) => {
-        return params$.pipe(
-            switchMap((params) =>
-                forkJoin({
-                    pageData: this.dotPageApiService.get(params),
-                    licenseData: this.dotLicenseService.isEnterprise().pipe(take(1), shareReplay())
-                }).pipe(
-                    tap({
-                        next: ({ pageData, licenseData }) => {
-                            this.setState({
-                                editor: pageData,
-                                url: params.url,
-                                dialogIframeURL: '',
-                                dialogHeader: '',
-                                dialogIframeLoading: false,
-                                isEnterpriseLicense: licenseData,
-                                dialogType: null
-                            });
-                        },
-                        error: (e) => {
-                            // eslint-disable-next-line no-console
-                            console.log(e);
-                        }
-                    }),
-                    catchError(() => EMPTY)
-                )
-            )
-        );
-    });
+    readonly load = this.effect(
+        (params$: Observable<DotPageApiParams & { clientHost: string }>) => {
+            return params$.pipe(
+                switchMap((params) => {
+                    return forkJoin({
+                        pageData: this.dotPageApiService.get(params),
+                        licenseData: this.dotLicenseService
+                            .isEnterprise()
+                            .pipe(take(1), shareReplay())
+                    }).pipe(
+                        tap({
+                            next: ({ pageData, licenseData }) => {
+                                this.setState({
+                                    clientHost: params.clientHost,
+                                    editor: pageData,
+                                    dialogIframeURL: '',
+                                    dialogHeader: '',
+                                    dialogIframeLoading: false,
+                                    isEnterpriseLicense: licenseData,
+                                    dialogType: null,
+                                    editorState: EDITOR_STATE.LOADING
+                                });
+                            },
+                            error: ({ status }: HttpErrorResponse) => {
+                                // eslint-disable-next-line no-console
+                                this.createEmptyState({ canEdit: false, canRead: false }, status);
+                            }
+                        }),
+                        catchError(() => EMPTY)
+                    );
+                })
+            );
+        }
+    );
 
     /**
-     * Save the page
+     * Saves data to a page.
+     * Calls `whenSaved` callback on success or error.
      *
-     * @memberof EditEmaStore
+     * @param {Observable<SavePagePayload>} payload$ - Page data to save.
      */
     readonly savePage = this.effect((payload$: Observable<SavePagePayload>) => {
         return payload$.pipe(
+            tap(() => {
+                this.updateEditorState(EDITOR_STATE.LOADING);
+            }),
             switchMap((payload) => {
                 return this.dotPageApiService.save(payload).pipe(
                     tapResponse(
@@ -168,6 +188,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                         (e) => {
                             console.error(e);
                             payload.whenSaved?.();
+                            this.updateEditorState(EDITOR_STATE.ERROR);
                         }
                     )
                 );
@@ -175,6 +196,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         );
     });
 
+    /**
+     * Saves data to a page but gets the new form identifier first.
+     * Calls `whenSaved` callback on success or error.
+     *
+     * @param {Observable<SavePagePayload>} payload$ - Page data to save.
+     */
     readonly saveFormToPage = this.effect(
         (
             payload$: Observable<{
@@ -184,9 +211,31 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
             }>
         ) => {
             return payload$.pipe(
+                tap(() => {
+                    this.updateEditorState(EDITOR_STATE.LOADING);
+                }),
                 getFormId(this.dotPageApiService),
                 switchMap(({ whenSaved, payload }) => {
-                    const pageContainers = insertContentletInContainer(payload);
+                    const { pageContainers, didInsert } = insertContentletInContainer(payload);
+
+                    // This should not be called here but since here is where we get the form contentlet
+                    // we need to do it here, we need to refactor editor and will fix there.
+                    if (!didInsert) {
+                        this.messageService.add({
+                            severity: 'info',
+                            summary: this.dotMessageService.get(
+                                'editpage.content.add.already.title'
+                            ),
+                            detail: this.dotMessageService.get(
+                                'editpage.content.add.already.message'
+                            ),
+                            life: 2000
+                        });
+
+                        this.updateEditorState(EDITOR_STATE.LOADED);
+
+                        return EMPTY;
+                    }
 
                     return this.dotPageApiService
                         .save({
@@ -197,10 +246,12 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                             tapResponse(
                                 () => {
                                     whenSaved?.();
+                                    this.updateEditorState(EDITOR_STATE.LOADED);
                                 },
                                 (e) => {
                                     console.error(e);
                                     whenSaved?.();
+                                    this.updateEditorState(EDITOR_STATE.ERROR);
                                 }
                             )
                         );
@@ -236,6 +287,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
         }
     );
 
+    /*******************
+     * Updaters
+     *******************/
     readonly setDialogForCreateContent = this.updater(
         (state, { url, name }: { url: string; name: string }) => {
             return {
@@ -334,6 +388,16 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }));
 
     /**
+     * Update the editor state
+     *
+     * @memberof EditEmaStore
+     */
+    readonly updateEditorState = this.updater((state, editorState: EDITOR_STATE) => ({
+        ...state,
+        editorState
+    }));
+
+    /**
      * Create the url to edit a contentlet
      *
      * @private
@@ -368,7 +432,9 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }
 
     private createPageURL(params: DotPageApiParams): string {
-        return `${params.url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
+        const url = sanitizeURL(params.url);
+
+        return `${url}?language_id=${params.language_id}&com.dotmarketing.persona.id=${params['com.dotmarketing.persona.id']}`;
     }
 
     /**
@@ -392,7 +458,11 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
     }): string {
         const { languageId, pageURI, siteId } = params;
 
-        return `/${pageURI}?` + (siteId ? `host_id=${siteId}` : '') + `&language_id=${languageId}`;
+        return (
+            `/${pageURI}?` +
+            (siteId ? `host_id=${siteId}` : '') +
+            `&language_id=${languageId}`
+        ).replace(/\/\//g, '/');
     }
 
     /**
@@ -409,5 +479,54 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
             return acc;
         }, {});
+    }
+
+    /**
+     *
+     *
+     * @private
+     * @param {{ canEdit: boolean; canRead: boolean }} permissions
+     * @param {number} [error]
+     * @memberof EditEmaStore
+     */
+    private createEmptyState(permissions: { canEdit: boolean; canRead: boolean }, error?: number) {
+        this.setState({
+            editor: {
+                page: {
+                    title: '',
+                    identifier: '',
+                    inode: '',
+                    ...permissions,
+                    url: ''
+                },
+                site: {
+                    hostname: '',
+                    type: '',
+                    identifier: '',
+                    archived: false
+                },
+                viewAs: {
+                    language: {
+                        id: 0,
+                        languageCode: '',
+                        countryCode: '',
+                        language: '',
+                        country: ''
+                    },
+                    persona: undefined
+                },
+                layout: null,
+                template: undefined,
+                containers: undefined
+            },
+            clientHost: '',
+            dialogIframeURL: '',
+            dialogHeader: '',
+            dialogIframeLoading: false,
+            isEnterpriseLicense: false,
+            dialogType: null,
+            error,
+            editorState: EDITOR_STATE.LOADED
+        });
     }
 }

@@ -13,11 +13,12 @@ import {
     inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Params, Router } from '@angular/router';
+import { ActivatedRoute, Params, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { ProgressBarModule } from 'primeng/progressbar';
 
 import { takeUntil } from 'rxjs/operators';
 
@@ -37,13 +38,14 @@ import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/e
 import { EmaFormSelectorComponent } from './components/ema-form-selector/ema-form-selector.component';
 import {
     ContentletArea,
+    EmaDragItem,
     EmaPageDropzoneComponent,
     Row
 } from './components/ema-page-dropzone/ema-page-dropzone.component';
 
 import { EditEmaStore } from '../dot-ema-shell/store/dot-ema.store';
-import { DEFAULT_PERSONA, HOST, WINDOW } from '../shared/consts';
-import { NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
+import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
+import { EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { ActionPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
 
@@ -93,7 +95,8 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
         EmaFormSelectorComponent,
         DotDeviceSelectorSeoComponent,
         DotEmaDeviceDisplayComponent,
-        DotEmaBookmarksComponent
+        DotEmaBookmarksComponent,
+        ProgressBarModule
     ]
 })
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
@@ -103,6 +106,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     personaSelector!: EditEmaPersonaSelectorComponent;
 
     private readonly router = inject(Router);
+    private readonly activatedRouter = inject(ActivatedRoute);
     private readonly store = inject(EditEmaStore);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
@@ -115,13 +119,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly editorState$ = this.store.editorState$;
     readonly destroy$ = new Subject<boolean>();
 
-    readonly host = HOST;
+    readonly host = '*';
+    readonly editorState = EDITOR_STATE;
 
     private savePayload: ActionPayload;
     private draggedPayload: DraggedPalettePayload;
 
     rows: Row[] = [];
     contentlet!: ContentletArea;
+    dragItem: EmaDragItem;
+
     // This should be in the store, but experienced an issue that triggers a reload in the whole store when the device is updated
     currentDevice: DotDevice & { icon?: string };
 
@@ -131,20 +138,24 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             .subscribe((event: MessageEvent) => {
                 this.handlePostMessage(event)?.();
             });
+
+        this.store.updateEditorState(EDITOR_STATE.LOADING);
     }
 
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
     }
+
     /**
-     * Handle the iframe load event
+     * Handle the dialog iframe load event
      *
      * @param {CustomEvent} event
      * @memberof DotEmaComponent
      */
     onIframeLoad() {
         this.store.setDialogIframeLoading(false);
+
         // This event is destroyed when you close the dialog
         fromEvent(
             // The events are getting sended to the document
@@ -286,9 +297,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             item: string;
         };
 
+        const item = JSON.parse(dataset.item);
+        this.dragItem = {
+            baseType: item.baseType,
+            contentType: item.contentType
+        };
+
         this.draggedPayload = {
             type: dataset.type,
-            item: JSON.parse(dataset.item)
+            item
         };
 
         this.iframe.nativeElement.contentWindow?.postMessage(
@@ -305,6 +322,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     onDragEnd(_event: DragEvent) {
         this.rows = [];
+        this.dragItem = {
+            baseType: '',
+            contentType: ''
+        };
     }
 
     /**
@@ -316,10 +337,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     onPlaceItem(event: ActionPayload): void {
         if (this.draggedPayload.type === 'contentlet') {
-            const pageContainers = insertContentletInContainer({
+            const { pageContainers, didInsert } = insertContentletInContainer({
                 ...event,
                 newContentletId: this.draggedPayload.item.identifier
             });
+
+            if (!didInsert) {
+                this.handleDuplicatedContentlet();
+
+                return;
+            }
 
             this.store.savePage({
                 pageContainers,
@@ -457,10 +484,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 /* */
             },
             [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
-                const pageContainers = insertContentletInContainer({
+                const { pageContainers, didInsert } = insertContentletInContainer({
                     ...this.savePayload,
                     newContentletId: detail.data.identifier
                 });
+
+                if (!didInsert) {
+                    this.handleDuplicatedContentlet();
+
+                    return;
+                }
 
                 // Save when selected
                 this.store.savePage({
@@ -474,12 +507,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     }
                 });
             },
-            [NG_CUSTOM_EVENTS.SAVE_CONTENTLET]: () => {
+            [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
                 if (this.savePayload) {
-                    const pageContainers = insertContentletInContainer({
+                    const { pageContainers, didInsert } = insertContentletInContainer({
                         ...this.savePayload,
                         newContentletId: detail.payload.contentletIdentifier
-                    }); // This won't add anything if the contentlet is already on the container, so is safe to call it even when we just edited a contentlet
+                    });
+
+                    if (!didInsert) {
+                        this.handleDuplicatedContentlet();
+
+                        return;
+                    }
 
                     // Save when created
                     this.store.savePage({
@@ -514,7 +553,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     private handlePostMessage({
-        origin = this.host,
+        origin: _origin = this.host,
         data
     }: {
         origin: string;
@@ -523,11 +562,25 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             payload: ActionPayload | SetUrlPayload | Row[] | ContentletArea;
         };
     }): () => void {
-        const action = origin !== this.host ? CUSTOMER_ACTIONS.NOOP : data.action;
-
         return (<Record<CUSTOMER_ACTIONS, () => void>>{
+            [CUSTOMER_ACTIONS.CONTENT_CHANGE]: () => {
+                // This event is sent when the mutation observer detects a change in the content
+
+                this.store.updateEditorState(EDITOR_STATE.LOADED);
+            },
+
             [CUSTOMER_ACTIONS.SET_URL]: () => {
                 const payload = <SetUrlPayload>data.payload;
+
+                // When we set the url, we trigger in the shell component a load to get the new state of the page
+                // This triggers a rerender that makes nextjs to send the set_url again
+                // But this time the params are the same so the shell component wont trigger a load and there we know that the page is loaded
+
+                if (this.activatedRouter.snapshot.queryParams.url === payload.url) {
+                    this.store.updateEditorState(EDITOR_STATE.LOADED);
+                } else {
+                    this.store.updateEditorState(EDITOR_STATE.LOADING);
+                }
 
                 this.updateQueryParams({
                     url: payload.url
@@ -546,10 +599,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.rows = [];
                 this.cd.detectChanges();
             },
+            [CUSTOMER_ACTIONS.PING_EDITOR]: () => {
+                this.iframe?.nativeElement?.contentWindow.postMessage(
+                    NOTIFY_CUSTOMER.EMA_EDITOR_PONG,
+                    this.host
+                );
+            },
             [CUSTOMER_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }
-        })[action];
+        })[data.action];
     }
 
     /**
@@ -558,7 +617,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @private
      * @memberof DotEmaComponent
      */
-    private reloadIframe() {
+    reloadIframe() {
         this.iframe.nativeElement.contentWindow?.postMessage(
             NOTIFY_CUSTOMER.EMA_RELOAD_PAGE,
             this.host
@@ -574,8 +633,25 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     private updateQueryParams(params: Params) {
         this.router.navigate([], {
+            // replaceUrl: true,
+            // skipLocationChange: false,
             queryParams: params,
             queryParamsHandling: 'merge'
         });
+
+        // Reset this on queryParams update
+        this.rows = [];
+        this.contentlet = null;
+    }
+
+    private handleDuplicatedContentlet() {
+        this.messageService.add({
+            severity: 'info',
+            summary: this.dotMessageService.get('editpage.content.add.already.title'),
+            detail: this.dotMessageService.get('editpage.content.add.already.message'),
+            life: 2000
+        });
+
+        this.store.updateEditorState(EDITOR_STATE.LOADED);
     }
 }

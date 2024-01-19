@@ -21,6 +21,13 @@ export enum CUSTOMER_ACTIONS {
      * Tell the editor that the page is being scrolled
      */
     IFRAME_SCROLL = 'scroll',
+    /**
+     * Ping the editor to see if the page is inside the editor
+     */
+    PING_EDITOR = 'ping-editor',
+
+    CONTENT_CHANGE = 'content-change',
+
     NOOP = 'noop'
 }
 
