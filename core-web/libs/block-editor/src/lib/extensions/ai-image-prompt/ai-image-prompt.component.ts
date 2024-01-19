@@ -32,11 +32,11 @@ import { AiImagePromptInputComponent } from './components/ai-image-prompt-input/
         NgIf,
         DialogModule,
         AiImagePromptInputComponent,
-        AiImagePromptInputComponent,
         AsyncPipe,
         DotMessagePipe,
         ConfirmDialogModule
     ],
+
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AIImagePromptComponent {
