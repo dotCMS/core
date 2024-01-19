@@ -1,4 +1,9 @@
-import { createServiceFactory, mockProvider, SpectatorService, SpyObject } from '@ngneat/spectator';
+import {
+    createServiceFactory,
+    mockProvider,
+    SpectatorService,
+    SpyObject
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
