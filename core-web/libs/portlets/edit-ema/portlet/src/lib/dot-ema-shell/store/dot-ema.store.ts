@@ -75,7 +75,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
     readonly editorState$ = this.select((state) => {
         const pageURL = this.createPageURL({
-            url: state.editor.page.url,
+            url: state.editor.page.pageURI,
             language_id: state.editor.viewAs.language.id.toString(),
             'com.dotmarketing.persona.id':
                 state.editor.viewAs.persona?.identifier ?? DEFAULT_PERSONA.identifier
@@ -83,7 +83,7 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
 
         const favoritePageURL = this.createFavoritePagesURL({
             languageId: state.editor.viewAs.language.id,
-            pageURI: state.editor.page.url,
+            pageURI: state.editor.page.pageURI,
             siteId: state.editor.site.identifier
         });
 
@@ -496,8 +496,8 @@ export class EditEmaStore extends ComponentStore<EditEmaState> {
                     title: '',
                     identifier: '',
                     inode: '',
-                    ...permissions,
-                    url: ''
+                    pageURI: '',
+                    ...permissions
                 },
                 site: {
                     hostname: '',
