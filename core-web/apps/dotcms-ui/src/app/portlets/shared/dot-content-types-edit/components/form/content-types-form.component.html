@@ -4,13 +4,13 @@
     [formGroup]="form"
     [class.content-type__form-banner]="newContentEditorEnabled"
     novalidate>
-    <div class="content-type__new-content-banner" *ngIf="newContentEditorEnabled">
+    <div
+        class="content-type__new-content-banner"
+        *ngIf="newContentEditorEnabled"
+        data-test-id="content-type__new-content-banner">
         <p-checkbox class="p-checkbox-sm" formControlName="newEditContent" binary="true">
         </p-checkbox>
-        <span
-            >Enable <b>Edit Content Beta</b> for a fresh editing experience (roll back anytime).
-            <a>Learn More</a></span
-        >
+        <span>{{ 'content.type.form.banner.message' | dm }}</span>
     </div>
     <div class="field form__group--validation">
         <label dotFieldRequired for="content-type-form-name">{{ nameFieldLabel }}</label>

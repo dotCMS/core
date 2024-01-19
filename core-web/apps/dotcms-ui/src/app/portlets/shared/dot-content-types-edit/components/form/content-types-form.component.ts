@@ -86,7 +86,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         this.nameFieldLabel = this.setNameFieldLabel();
         this.name.nativeElement.focus();
         this.newContentEditorEnabled =
-            this.route.snapshot.data?.featuredFlags[
+            this.route.snapshot?.data?.featuredFlags[
                 FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
             ];
     }

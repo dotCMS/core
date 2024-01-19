@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { mockProvider } from '@ngneat/spectator';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement, Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -21,6 +23,7 @@ import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-wor
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import {
     DotAlertConfirmService,
+    DotContentTypeService,
     DotCurrentUserService,
     DotEventsService,
     DotGenerateSecurePasswordService,
@@ -119,7 +122,8 @@ describe('DotContentletsComponent', () => {
                 DotIframeService,
                 LoginService,
                 DotGenerateSecurePasswordService,
-                DotDownloadBundleDialogService
+                DotDownloadBundleDialogService,
+                mockProvider(DotContentTypeService)
             ]
         });
 
