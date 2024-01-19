@@ -20,10 +20,14 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { ProgressBarModule } from 'primeng/progressbar';
 
-import { takeUntil } from 'rxjs/operators';
+import { take, takeUntil } from 'rxjs/operators';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
-import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotPersonalizeService,
+    DotMessageService,
+    EmaAppConfigurationService
+} from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotDevice, DotPersona } from '@dotcms/dotcms-models';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
@@ -114,16 +118,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly messageService = inject(MessageService);
     private readonly window = inject(WINDOW);
     private readonly cd = inject(ChangeDetectorRef);
+    private readonly secrets$ = inject(EmaAppConfigurationService)
+        .get(this.activatedRouter.snapshot.queryParams.url)
+        .pipe(take(1));
 
     readonly dialogState$ = this.store.dialogState$;
     readonly editorState$ = this.store.editorState$;
     readonly destroy$ = new Subject<boolean>();
 
-    readonly host = '*';
     readonly editorState = EDITOR_STATE;
 
     private savePayload: ActionPayload;
     private draggedPayload: DraggedPalettePayload;
+
+    host: string;
 
     rows: Row[] = [];
     contentlet!: ContentletArea;
@@ -133,6 +141,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     currentDevice: DotDevice & { icon?: string };
 
     ngOnInit(): void {
+        // Temporal solution to see if it works
+        this.secrets$.subscribe((secrets) => {
+            this.host = secrets.url;
+        });
+
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
             .subscribe((event: MessageEvent) => {

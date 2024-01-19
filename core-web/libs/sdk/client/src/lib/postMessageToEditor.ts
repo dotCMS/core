@@ -51,5 +51,5 @@ type PostMessageProps<T> = {
  * @param {PostMessageProps<T>} message
  */
 export function postMessageToEditor<T = unknown>(message: PostMessageProps<T>) {
-    window.parent.postMessage(message, '*');
+    window.parent.postMessage(message, 'https://localhost:8080');
 }
