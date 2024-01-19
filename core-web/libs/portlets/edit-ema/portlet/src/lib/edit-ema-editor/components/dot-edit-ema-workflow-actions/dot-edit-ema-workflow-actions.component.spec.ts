@@ -74,35 +74,3 @@ describe('DotEditEmaWorkflowActionsComponent', () => {
         expect(spectator.component).toBeTruthy();
     });
 });
-
-// describe('DotEditEmaWorkflowActionsComponent', () => {
-//     let spectator: Spectator<DotEditEmaWorkflowActionsComponent>;
-
-//     const createComponent = createComponentFactory({
-//         component: DotEditEmaWorkflowActionsComponent,
-//         // providers: [
-//         //     DotWorkflowActionsFireService,
-//         //     DotWorkflowsActionsService,
-//         //     DotHttpErrorManagerService,
-//         //     DotWizardService,
-//         //     DotWorkflowEventHandlerService,
-//         //     MessageService,
-//         //     { provide: DotMessageService, useClass: messageServiceMock }
-//         // ],
-//         detectChanges: false
-//     });
-
-//     beforeEach(() => {
-//         spectator = createComponent({
-//             props: {
-//                 inode: '1234',
-//             }
-//         });
-
-//         spectator.detectChanges();
-//     });
-
-//     it('should create', () => {
-//         expect(spectator.component).toBeTruthy();
-//     });
-// });
