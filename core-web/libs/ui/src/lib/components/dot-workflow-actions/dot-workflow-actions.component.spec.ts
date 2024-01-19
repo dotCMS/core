@@ -1,5 +1,6 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator';
 
+import { Button } from 'primeng/button';
 import { SplitButton, SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -61,7 +62,8 @@ describe('DotWorkflowActionsComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                actions: WORKFLOW_ACTIONS_MOCK
+                actions: WORKFLOW_ACTIONS_MOCK,
+                groupAction: true
             }
         });
         spectator.detectComponentChanges();
@@ -86,5 +88,50 @@ describe('DotWorkflowActionsComponent', () => {
 
         const button = spectator.query('.p-button');
         expect(button).not.toBeNull();
+    });
+
+    describe('not group action', () => {
+        beforeEach(() => {
+            spectator.setInput('groupAction', false);
+            spectator.detectComponentChanges();
+        });
+
+        it('should render one split button and remove the `SEPARATOR` Action', () => {
+            const splitButtons = spectator.queryAll(SplitButton);
+            const amountOfItems = WORKFLOW_ACTIONS_MOCK.length - 2; // Less the `SEPARATOR` Action and the First actions which is the default one
+            expect(splitButtons.length).toBe(1);
+            expect(splitButtons[0].model.length).toBe(amountOfItems);
+        });
+
+        it('should render a normal button and remove the `SEPARATOR` Action', () => {
+            const action = WORKFLOW_ACTIONS_MOCK[0];
+
+            spectator.setInput('actions', [action, WORKFLOW_ACTIONS_SEPARATOR_MOCK]);
+            spectator.detectChanges();
+
+            const buttons = spectator.queryAll(Button);
+            expect(buttons.length).toBe(1);
+            expect(buttons[0].label.trim()).toBe(action.name.trim());
+        });
+    });
+
+    describe('loading', () => {
+        beforeEach(() => {
+            spectator.setInput('loading', true);
+            spectator.setInput('actions', [
+                ...WORKFLOW_ACTIONS_MOCK,
+                WORKFLOW_ACTIONS_SEPARATOR_MOCK,
+                WORKFLOW_ACTIONS_MOCK[0]
+            ]);
+            spectator.detectComponentChanges();
+        });
+
+        it('should disabled split buttons and set normal buttons loading', () => {
+            const button = spectator.query(Button);
+            const splitButton = spectator.query(SplitButton);
+
+            expect(button.loading).toBeTruthy();
+            expect(splitButton.disabled).toBeTruthy();
+        });
     });
 });

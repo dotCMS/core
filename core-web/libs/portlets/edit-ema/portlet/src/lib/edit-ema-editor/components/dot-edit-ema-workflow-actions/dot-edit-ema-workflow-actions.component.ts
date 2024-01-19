@@ -30,11 +30,17 @@ import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
     selector: 'dot-edit-ema-workflow-actions',
     standalone: true,
     imports: [AsyncPipe, DotWorkflowActionsComponent, ButtonModule, DotMessagePipe],
+    providers: [
+        DotWorkflowActionsFireService,
+        DotWorkflowEventHandlerService,
+        DotWorkflowsActionsService,
+        DotHttpErrorManagerService
+    ],
     templateUrl: './dot-edit-ema-workflow-actions.component.html',
     styleUrl: './dot-edit-ema-workflow-actions.component.css'
 })
 export class DotEditEmaWorkflowActionsComponent implements OnChanges {
-    @Input({ required: true }) inodeOrIdentifier: string;
+    @Input({ required: true }) inode: string;
     @Output() newPage: EventEmitter<DotCMSContentlet> = new EventEmitter();
 
     protected actions = signal<DotCMSWorkflowAction[]>(null);
@@ -63,8 +69,8 @@ export class DotEditEmaWorkflowActionsComponent implements OnChanges {
     };
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes.inodeOrIdentifier) {
-            this.loadWorkflowActions(this.inodeOrIdentifier);
+        if (changes.inode) {
+            this.loadWorkflowActions(this.inode);
         }
     }
 
@@ -142,7 +148,7 @@ export class DotEditEmaWorkflowActionsComponent implements OnChanges {
 
         this.dotWorkflowActionsFireService
             .fireTo({
-                inode: this.inodeOrIdentifier,
+                inode: this.inode,
                 actionId: workflow.id,
                 data
             })
@@ -165,7 +171,7 @@ export class DotEditEmaWorkflowActionsComponent implements OnChanges {
 
                 const { inode } = contentlet;
                 this.newPage.emit(contentlet);
-                this.inodeOrIdentifier = inode;
+                this.inode = inode;
                 this.loadWorkflowActions(inode);
                 this.messageService.add(this.successMessage);
             });

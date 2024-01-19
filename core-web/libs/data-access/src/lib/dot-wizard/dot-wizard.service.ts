@@ -4,7 +4,9 @@ import { Injectable } from '@angular/core';
 
 import { DotWizardInput } from '@dotcms/dotcms-models';
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotWizardService {
     private input: Subject<DotWizardInput> = new Subject<DotWizardInput>();
     private output: Subject<{ [key: string]: string | string[] }> = new Subject<{

@@ -5,18 +5,6 @@ import { Injectable } from '@angular/core';
 import { catchError, map, take } from 'rxjs/operators';
 
 import {
-    DotHttpErrorManagerService,
-    DotMessageDisplayService,
-    DotMessageService,
-    DotWorkflowActionsFireService,
-    DotWizardService,
-    DotGlobalMessageService,
-    DotFormatDateService,
-    PushPublishService,
-    DotIframeService,
-    DotHttpErrorHandled
-} from '@dotcms/data-access';
-import {
     DotActionBulkRequestOptions,
     DotActionBulkResult,
     DotCMSWorkflowAction,
@@ -31,6 +19,19 @@ import {
     DotEnvironment,
     DotWizardComponentEnum
 } from '@dotcms/dotcms-models';
+
+import { DotFormatDateService } from '../dot-format-date/dot-format-date.service';
+import { DotGlobalMessageService } from '../dot-global-message/dot-global-message.service';
+import {
+    DotHttpErrorManagerService,
+    DotHttpErrorHandled
+} from '../dot-http-error-manager/dot-http-error-manager.service';
+import { DotIframeService } from '../dot-iframe/dot-iframe.service';
+import { DotMessageDisplayService } from '../dot-message-display/dot-message-display.service';
+import { DotMessageService } from '../dot-messages/dot-messages.service';
+import { DotWizardService } from '../dot-wizard/dot-wizard.service';
+import { DotWorkflowActionsFireService } from '../dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { PushPublishService } from '../push-publish/push-publish.service';
 
 enum DotActionInputs {
     ASSIGNABLE = 'assignable',

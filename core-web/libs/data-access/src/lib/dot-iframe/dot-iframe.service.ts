@@ -4,8 +4,9 @@ import { Injectable } from '@angular/core';
 
 import { filter } from 'rxjs/operators';
 
-import { DotRouterService } from '@dotcms/data-access';
 import { DotFunctionInfo } from '@dotcms/dotcms-models';
+
+import { DotRouterService } from '../dot-router/dot-router.service';
 
 @Injectable()
 export class DotIframeService {

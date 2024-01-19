@@ -9,24 +9,33 @@ import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
+    DotAlertConfirmService,
     DotContentTypeService,
     DotCurrentUserService,
     DotDevicesService,
     DotESContentService,
     DotFavoritePageService,
+    DotFormatDateService,
+    DotGlobalMessageService,
+    DotHttpErrorManagerService,
+    DotIframeService,
     DotLanguagesService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotMessageService,
-    DotPersonalizeService
+    DotPersonalizeService,
+    DotRouterService,
+    DotWorkflowActionsFireService,
+    PushPublishService
 } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
+import { ApiRoot, CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
 import {
     DotLanguagesServiceMock,
     MockDotMessageService,
@@ -34,9 +43,11 @@ import {
     DotDevicesServiceMock,
     mockDotDevices,
     LoginServiceMock,
-    DotCurrentUserServiceMock
+    DotCurrentUserServiceMock,
+    dotcmsContentletMock
 } from '@dotcms/utils-testing';
 
+import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
@@ -77,6 +88,9 @@ const dragEventMock = {
     }
 };
 
+const PAGE_INODE_MOCK = '1234';
+const QUERY_PARAMS_MOCK = { language_id: 1, url: 'page-one' };
+
 const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
@@ -108,7 +122,6 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                     }
                 }
             },
-
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService(messagesMock)
@@ -123,6 +136,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
             }
         ],
         providers: [
+            { provide: ActivatedRoute, useValue: { snapshot: { queryParams: QUERY_PARAMS_MOCK } } },
             {
                 provide: DotPageApiService,
                 useValue: {
@@ -131,6 +145,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                             2: of({
                                 page: {
                                     title: 'hello world',
+                                    inode: PAGE_INODE_MOCK,
                                     identifier: '123',
                                     ...permissions,
                                     url: 'page-one'
@@ -152,6 +167,7 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                             1: of({
                                 page: {
                                     title: 'hello world',
+                                    inode: PAGE_INODE_MOCK,
                                     identifier: '123',
                                     ...permissions,
                                     url: 'page-one'
@@ -211,7 +227,17 @@ const createRouting = (permissions: { canEdit: boolean; canRead: boolean }) =>
                 provide: DotPersonalizeService,
                 useValue: new DotPersonalizeServiceMock()
             },
-            mockProvider(DotContentTypeService)
+            mockProvider(DotAlertConfirmService),
+            mockProvider(DotContentTypeService),
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotMessageDisplayService),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotRouterService),
+            mockProvider(PushPublishService),
+            mockProvider(ApiRoot),
+            mockProvider(DotFormatDateService),
+            mockProvider(DotIframeService),
+            mockProvider(DotGlobalMessageService)
         ]
     });
 describe('EditEmaEditorComponent', () => {
@@ -1757,6 +1783,72 @@ describe('EditEmaEditorComponent', () => {
                 spectator.detectComponentChanges();
 
                 expect(spectator.component.rows.length).toBe(0);
+            });
+        });
+
+        describe('Workflow actions', () => {
+            it('should set the inputs correctly', () => {
+                const component = spectator.query(DotEditEmaWorkflowActionsComponent);
+
+                expect(component.inode).toBe(PAGE_INODE_MOCK);
+            });
+
+            it('should update reload if the page url changes', () => {
+                const routerSpy = jest.spyOn(spectator.inject(Router), 'navigate');
+                const component = spectator.query(DotEditEmaWorkflowActionsComponent);
+
+                component.newPage.emit({
+                    ...dotcmsContentletMock,
+                    url: 'new-page'
+                });
+
+                spectator.detectChanges();
+
+                expect(routerSpy).toHaveBeenCalledWith([], {
+                    queryParams: {
+                        ...QUERY_PARAMS_MOCK,
+                        url: 'new-page',
+                        language_id: '1'
+                    },
+                    queryParamsHandling: 'merge'
+                });
+            });
+
+            it('should update reload if the language changes', () => {
+                const routerSpy = jest.spyOn(spectator.inject(Router), 'navigate');
+                const component = spectator.query(DotEditEmaWorkflowActionsComponent);
+
+                component.newPage.emit({
+                    ...dotcmsContentletMock,
+                    url: 'index',
+                    languageId: 2
+                });
+
+                spectator.detectChanges();
+
+                expect(routerSpy).toHaveBeenCalledWith([], {
+                    queryParams: {
+                        ...QUERY_PARAMS_MOCK,
+                        url: 'index',
+                        language_id: '2'
+                    },
+                    queryParamsHandling: 'merge'
+                });
+            });
+
+            it('should not reload if neither the url or language changes ', () => {
+                const routerSpy = jest.spyOn(spectator.inject(Router), 'navigate');
+                const component = spectator.query(DotEditEmaWorkflowActionsComponent);
+
+                component.newPage.emit({
+                    ...dotcmsContentletMock,
+                    url: QUERY_PARAMS_MOCK.url,
+                    languageId: QUERY_PARAMS_MOCK.language_id
+                });
+
+                spectator.detectChanges();
+
+                expect(routerSpy).not.toHaveBeenCalled();
             });
         });
     });

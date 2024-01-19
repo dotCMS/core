@@ -31,6 +31,7 @@ describe('DotEditContentToolbarComponent', () => {
         const component = spectator.query(DotWorkflowActionsComponent);
         expect(component).toBeTruthy();
         expect(component.actions).toEqual(WORKFLOW_ACTIONS_MOCK);
+        expect(component.groupAction).toBeTruthy();
     });
 
     it('should emit the action dot-workflow-actions emits the fired action', () => {

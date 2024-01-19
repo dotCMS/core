@@ -643,8 +643,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     handleNewPage(page: DotCMSContentlet): void {
-        const { url, languageId } = page;
-        const params = { ...this.updateQueryParams, url, languageId };
+        const { pageURI, url, languageId } = page;
+        const params = {
+            ...this.updateQueryParams,
+            url: pageURI ?? url,
+            language_id: languageId?.toString()
+        };
 
         if (this.shouldReload(params)) {
             this.updateQueryParams(params);
@@ -689,9 +693,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     private shouldReload(params: Params): boolean {
-        const { url: newUrl, languageId } = params;
+        const { url: newUrl, language_id: newLanguageId } = params;
         const { url, language_id } = this.queryParams;
 
-        return newUrl != url || languageId != language_id;
+        return newUrl != url || newLanguageId != language_id;
     }
 }
