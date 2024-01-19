@@ -26,12 +26,16 @@
     display: flex;
     flex-direction: row;
     gap: $spacing-3;
-    padding: $spacing-3 $spacing-1;
-
+    padding: $spacing-2 $spacing-1;
+    margin-bottom: $spacing-1;
+    border-radius: $border-radius-md;
     &:hover {
-        border-radius: $spacing-0;
         background-color: $color-palette-primary-100;
     }
+}
+
+.announcements__list-item--active {
+    background-color: $color-palette-secondary-100;
 }
 
 .announcements__title {
@@ -78,6 +82,18 @@
     &:hover {
         background-color: $color-palette-primary-100;
     }
+}
+
+.badge {
+    background-color: $color-accessible-text-fuchsia;
+    border-radius: 50%;
+    color: $white;
+    font-size: $font-size-sm;
+    line-height: $font-size-sm;
+    padding: $spacing-0;
+    position: absolute;
+    left: 25px;
+    top: 0;
 }
 
 ::ng-deep {

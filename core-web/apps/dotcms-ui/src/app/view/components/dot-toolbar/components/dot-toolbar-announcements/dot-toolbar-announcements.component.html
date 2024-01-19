@@ -1,7 +1,8 @@
 <h5 class="announcements__title">{{ 'announcements' | dm }}</h5>
 <ul class="announcements__list">
     @for (item of announcements(); track item.identifier;) {
-    <li class="announcements__list-item">
+    <li class="announcements__list-item announcements__list-item--active">
+        <span class="badge" id="dot-toolbar-notifications-badge"></span>
         <span class="announcements__image pi" [ngClass]="typesIcons[item.type]"></span>
         <div class="announcements__content">
             <span class="announcements__label">{{ item.title }}</span>
