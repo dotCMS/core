@@ -1,11 +1,10 @@
 import { describe, it } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { Subject, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { MessageService } from 'primeng/api';
-import { Button } from 'primeng/button';
 
 import {
     DotAlertConfirmService,
@@ -134,14 +133,10 @@ describe('DotEditEmaWorkflowActionsComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should show an p-button loading', () => {
-            const loadingButton = spectator.query(Button);
-            const loadingButtonHTML = spectator.query(byTestId('loading-button'));
-
-            expect(loadingButton).toBeTruthy();
-            expect(loadingButtonHTML).toBeTruthy();
-            expect(loadingButton.loading).toBeTruthy();
-            expect(loadingButton.label).toBe('loading');
+        it('should set action as an empty array and loading to true', () => {
+            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+            expect(dotWorkflowActionsComponent.actions).toEqual([]);
+            expect(dotWorkflowActionsComponent.loading).toEqual(true);
         });
     });
 

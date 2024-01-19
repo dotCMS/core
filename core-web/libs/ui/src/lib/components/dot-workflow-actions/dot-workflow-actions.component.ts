@@ -15,10 +15,12 @@ import { SplitButtonModule } from 'primeng/splitbutton';
 
 import { DotCMSActionSubtype, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
+
 @Component({
     selector: 'dot-workflow-actions',
     standalone: true,
-    imports: [CommonModule, ButtonModule, SplitButtonModule],
+    imports: [CommonModule, ButtonModule, SplitButtonModule, DotMessagePipe],
     templateUrl: './dot-workflow-actions.component.html',
     styleUrl: './dot-workflow-actions.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -75,13 +77,17 @@ export class DotWorkflowActionsComponent implements OnChanges {
      * @memberof DotWorkflowActionsComponent
      */
     private formatActions(actions: DotCMSWorkflowAction[] = []): MenuItem[][] {
-        const formatedActions = actions
-            .filter((action) => action?.metadata?.subtype !== DotCMSActionSubtype.SEPARATOR)
-            .map((action) => ({
-                label: action.name,
-                command: () => this.actionFired.emit(action)
-            }));
+        const formatedActions = actions?.reduce((acc, action) => {
+            if (action?.metadata?.subtype !== DotCMSActionSubtype.SEPARATOR) {
+                acc.push({
+                    label: action.name,
+                    command: () => this.actionFired.emit(action)
+                });
+            }
 
-        return [formatedActions];
+            return acc;
+        }, []);
+
+        return [formatedActions].filter((group) => group.length);
     }
 }

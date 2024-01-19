@@ -43,8 +43,8 @@ export class DotEditEmaWorkflowActionsComponent implements OnChanges {
     @Input({ required: true }) inode: string;
     @Output() newPage: EventEmitter<DotCMSContentlet> = new EventEmitter();
 
-    protected actions = signal<DotCMSWorkflowAction[]>(null);
-    protected loading = signal<boolean>(false);
+    protected actions = signal<DotCMSWorkflowAction[]>([]);
+    protected loading = signal<boolean>(true);
 
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly dotWorkflowsActionsService = inject(DotWorkflowsActionsService);

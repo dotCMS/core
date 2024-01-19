@@ -4,10 +4,13 @@ import { Button } from 'primeng/button';
 import { SplitButton, SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
-import { mockWorkflowsActions } from '@dotcms/utils-testing';
+import { MockDotMessageService, mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { DotWorkflowActionsComponent } from './dot-workflow-actions.component';
+
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 const WORKFLOW_ACTIONS_SEPARATOR_MOCK: DotCMSWorkflowAction = {
     assignable: true,
@@ -50,12 +53,23 @@ const WORKFLOW_ACTIONS_MOCK = [
     ...mockWorkflowsActions
 ];
 
+const messageServiceMock = new MockDotMessageService({
+    'edit.ema.page.no.workflow.action': 'no workflow action',
+    Loading: 'loading'
+});
+
 describe('DotWorkflowActionsComponent', () => {
     let spectator: Spectator<DotWorkflowActionsComponent>;
 
     const createComponent = createComponentFactory({
         component: DotWorkflowActionsComponent,
-        imports: [ToolbarModule, SplitButtonModule],
+        imports: [ToolbarModule, SplitButtonModule, DotMessagePipe],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            }
+        ],
         detectChanges: false
     });
 
@@ -69,25 +83,57 @@ describe('DotWorkflowActionsComponent', () => {
         spectator.detectComponentChanges();
     });
 
-    it('should render an extra split button for each `SEPARATOR` Action', () => {
-        const splitButtons = spectator.queryAll(SplitButton);
-        expect(splitButtons.length).toBe(2);
+    describe('without actions', () => {
+        beforeEach(() => {
+            spectator.setInput('actions', []);
+            spectator.detectChanges();
+        });
+
+        it('should render the empty button with loading', () => {
+            spectator.setInput('loading', true);
+
+            spectator.detectChanges();
+            const button = spectator.query(Button);
+
+            expect(button.loading).toBeTruthy();
+            expect(button.disabled).toBeFalsy();
+            expect(button.label).toBe('loading');
+        });
+
+        it('should render the empty button with disabled', () => {
+            spectator.setInput('loading', false);
+
+            const button = spectator.query(Button);
+
+            spectator.detectChanges();
+
+            expect(button.disabled).toBeTruthy();
+            expect(button.loading).toBeFalsy();
+            expect(button.label).toBe('no workflow action');
+        });
     });
 
-    it('should emit the action when click on a split button', () => {
-        const spy = spyOn(spectator.component.actionFired, 'emit');
-        const splitButton = spectator.query('.p-splitbutton > button');
-        splitButton.dispatchEvent(new Event('click'));
+    describe('group action', () => {
+        it('should render an extra split button for each `SEPARATOR` Action', () => {
+            const splitButtons = spectator.queryAll(SplitButton);
+            expect(splitButtons.length).toBe(2);
+        });
 
-        expect(spy).toHaveBeenCalledWith(WORKFLOW_ACTIONS_MOCK[0]);
-    });
+        it('should emit the action when click on a split button', () => {
+            const spy = spyOn(spectator.component.actionFired, 'emit');
+            const splitButton = spectator.query('.p-splitbutton > button');
+            splitButton.dispatchEvent(new Event('click'));
 
-    it('should render a normal button is a group has only one action', () => {
-        spectator.setInput('actions', [WORKFLOW_ACTIONS_MOCK[0]]);
-        spectator.detectChanges();
+            expect(spy).toHaveBeenCalledWith(WORKFLOW_ACTIONS_MOCK[0]);
+        });
 
-        const button = spectator.query('.p-button');
-        expect(button).not.toBeNull();
+        it('should render a normal button is a group has only one action', () => {
+            spectator.setInput('actions', [WORKFLOW_ACTIONS_MOCK[0]]);
+            spectator.detectChanges();
+
+            const button = spectator.query('.p-button');
+            expect(button).not.toBeNull();
+        });
     });
 
     describe('not group action', () => {
