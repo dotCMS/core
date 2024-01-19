@@ -42,6 +42,7 @@ import com.dotcms.rest.api.v1.content.ResourceLinkResource;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.rest.api.v1.contenttype.FieldResource;
 import com.dotcms.rest.api.v1.contenttype.FieldVariableResource;
+import com.dotcms.rest.api.v1.ema.EMAResource;
 import com.dotcms.rest.api.v1.event.EventsResource;
 import com.dotcms.rest.api.v1.experiments.ExperimentsResource;
 import com.dotcms.rest.api.v1.fileasset.FileAssetsResource;
@@ -234,6 +235,7 @@ public class DotRestApplication extends Application {
 			.add(TempFileResource.class)
 			.add(UpgradeTaskResource.class)
 			.add(AppsResource.class)
+			.add(EMAResource.class)
 			.add(BrowserResource.class)
 			.add(ResourceLinkResource.class)
 			.add(PushPublishFilterResource.class)

@@ -4,12 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { pluck, switchMap, map, defaultIfEmpty, catchError } from 'rxjs/operators';
-
-import { SiteService } from '@dotcms/dotcms-js';
-import { DotAppsSite, DotApp } from '@dotcms/dotcms-models';
-
-import { DotLicenseService } from '../dot-license/dot-license.service';
+import { pluck, map, defaultIfEmpty, catchError } from 'rxjs/operators';
 
 interface EmaAppSecretValue {
     pattern: string;
@@ -26,8 +21,6 @@ interface EmaAppOptions {
 export class EmaAppConfigurationService {
     http = inject(HttpClient);
     router = inject(Router);
-    licenseService = inject(DotLicenseService);
-    siteService = inject(SiteService);
 
     /**
      * Get the EMA app configuration for the current site.
@@ -40,78 +33,27 @@ export class EmaAppConfigurationService {
         // Remove trailing and leading slashes
         url = url.replace(/^\/+|\/+$/g, '');
 
-        return this.licenseService
-            .isEnterprise()
-            .pipe(
-                map((isEnterprise) => {
-                    if (!isEnterprise) {
-                        throw new Error('Not enterprise');
-                    }
-
-                    return isEnterprise;
-                })
-            )
-            .pipe(
-                switchMap(() => this.getCurrentSiteIdentifier()),
-                switchMap((currentSiteId: string) => {
-                    return this.getEmaAppConfiguration(currentSiteId).pipe(
-                        map(getConfigurationForCurrentSite(currentSiteId))
-                    );
-                }),
-                map(getSecretByUrlMatch(url)),
-                catchError(() => {
-                    return EMPTY;
-                }),
-                defaultIfEmpty<EmaAppSecretValue | null>(null)
-            );
-    }
-
-    private getCurrentSiteIdentifier(): Observable<string> {
-        return this.siteService.getCurrentSite().pipe(pluck('identifier'));
-    }
-
-    private getEmaAppConfiguration(id: string): Observable<DotApp> {
-        return this.http
-            .get<{ entity: DotApp }>(`/api/v1/apps/dotema-config-v2/${id}`)
-            .pipe(pluck('entity'));
-    }
-}
-
-function getConfigurationForCurrentSite(currentSiteId: string): (app: DotApp) => DotAppsSite {
-    return (app) => {
-        const site =
-            app?.sites?.find((site) => site.id === currentSiteId && site.configured) || null;
-
-        if (!site) {
-            throw new Error('No site configuration found');
-        }
-
-        return site;
-    };
-}
-
-function getSecretByUrlMatch(url: string): (site: DotAppsSite) => EmaAppSecretValue | null {
-    return (site: DotAppsSite) => {
-        const secrets = site.secrets || [];
-
-        for (const secret of secrets) {
-            try {
-                const parsedSecrets: EmaAppSecretValue[] = JSON.parse(secret.value);
-
-                for (const parsedSecret of parsedSecrets) {
-                    if (doesPathMatch(parsedSecret.pattern, url)) {
-                        return parsedSecret;
+        return this.http.get<{ entity: { config: EmaAppSecretValue[] } }>(`/api/v1/ema`).pipe(
+            pluck('entity', 'config'),
+            map((config) => {
+                for (const secret of config) {
+                    try {
+                        if (doesPathMatch(secret.pattern, url)) {
+                            return secret;
+                        }
+                    } catch (error) {
+                        throw new Error('Error on match URL pattern');
                     }
                 }
-            } catch (error) {
-                console.error(error);
 
-                throw new Error('Error parsing JSON');
-            }
-        }
-
-        throw new Error('Current URL did not match any pattern');
-    };
+                throw new Error('Current URL did not match any pattern');
+            }),
+            catchError(() => {
+                return EMPTY;
+            }),
+            defaultIfEmpty<EmaAppSecretValue | null>(null)
+        );
+    }
 }
 
 function doesPathMatch(pattern: string, path: string): boolean {

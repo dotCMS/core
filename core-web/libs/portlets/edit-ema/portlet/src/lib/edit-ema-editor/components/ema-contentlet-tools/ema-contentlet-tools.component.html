@@ -4,13 +4,18 @@
     data-testId="add-top-button"
     icon="pi pi-plus"></p-button>
 <p-button
+    *ngIf="!isContainerEmpty"
     [ngStyle]="getBottomButtonPosition()"
     (click)="setPositionFlag('after'); menu.toggle($event)"
     data-testId="add-bottom-button"
     icon="pi pi-plus"></p-button>
 <p-menu #menu [model]="items" [popup]="true" appendTo="body"></p-menu>
 
-<div class="actions" [ngStyle]="getActionPosition()" data-testId="actions">
+<div
+    class="actions"
+    *ngIf="!isContainerEmpty"
+    [ngStyle]="getActionPosition()"
+    data-testId="actions">
     <p-button
         (click)="delete.emit(contentlet.payload)"
         data-testId="delete-button"

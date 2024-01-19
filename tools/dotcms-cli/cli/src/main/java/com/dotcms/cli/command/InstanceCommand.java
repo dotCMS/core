@@ -32,7 +32,7 @@ import static org.apache.commons.lang3.BooleanUtils.toStringYesNo;
                 " The info includes API URL, active user and the current profile.",
                 " This list of available servers comes from the file [dot-service.yml]",
                 " Located in a folder named dotCMS under the user's home directory.",
-                " Use to activate/switch dotCMS instance. @|yellow -a  --activate|@",
+                " Use to activate/switch dotCMS instance. @|yellow -act  --activate|@",
                 " followed by the instance name.",
                 "" // empty line left here on purpose to make room at the end
         }

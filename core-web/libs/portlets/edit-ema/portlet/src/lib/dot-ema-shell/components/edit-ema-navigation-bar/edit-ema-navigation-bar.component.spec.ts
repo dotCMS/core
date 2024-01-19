@@ -13,7 +13,7 @@ const messages = {
     'editema.editor.navbar.layout': 'Layout',
     'editema.editor.navbar.rules': 'Rules',
     'editema.editor.navbar.experiments': 'Experiments',
-    Action: 'Action'
+    'editema.editor.navbar.action': 'Action'
 };
 
 const messageServiceMock = new MockDotMessageService(messages);
@@ -73,7 +73,7 @@ describe('EditEmaNavigationBarComponent', () => {
                     },
                     {
                         icon: 'pi-sliders-h',
-                        label: 'Action',
+                        label: 'editema.editor.navbar.action',
                         action: mockedAction
                     }
                 ]
