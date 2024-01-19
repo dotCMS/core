@@ -21,8 +21,16 @@ $toast-bottom-border: 8px solid;
         border-bottom-style: solid;
 
         .p-toast-message-icon {
-            height: 1.375rem;
+            height: 1.4rem;
             width: $icon-lg;
+
+            &::before {
+                width: $icon-lg;
+                height: $icon-lg;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
 
             .p-icon-wrapper {
                 width: inherit;
