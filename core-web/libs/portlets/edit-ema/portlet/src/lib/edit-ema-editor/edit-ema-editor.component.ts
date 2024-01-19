@@ -337,10 +337,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     onPlaceItem(event: ActionPayload): void {
         if (this.draggedPayload.type === 'contentlet') {
-            const pageContainers = insertContentletInContainer({
+            const { pageContainers, didInsert } = insertContentletInContainer({
                 ...event,
                 newContentletId: this.draggedPayload.item.identifier
             });
+
+            if (!didInsert) {
+                this.handleDuplicatedContentlet();
+
+                return;
+            }
 
             this.store.savePage({
                 pageContainers,
@@ -478,10 +484,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 /* */
             },
             [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
-                const pageContainers = insertContentletInContainer({
+                const { pageContainers, didInsert } = insertContentletInContainer({
                     ...this.savePayload,
                     newContentletId: detail.data.identifier
                 });
+
+                if (!didInsert) {
+                    this.handleDuplicatedContentlet();
+
+                    return;
+                }
 
                 // Save when selected
                 this.store.savePage({
@@ -497,10 +509,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
                 if (this.savePayload) {
-                    const pageContainers = insertContentletInContainer({
+                    const { pageContainers, didInsert } = insertContentletInContainer({
                         ...this.savePayload,
                         newContentletId: detail.payload.contentletIdentifier
                     });
+
+                    if (!didInsert) {
+                        this.handleDuplicatedContentlet();
+
+                        return;
+                    }
 
                     // Save when created
                     this.store.savePage({
@@ -558,14 +576,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // This triggers a rerender that makes nextjs to send the set_url again
                 // But this time the params are the same so the shell component wont trigger a load and there we know that the page is loaded
 
-                if (this.activatedRouter.snapshot.queryParams.url === payload.url) {
+                const isSameUrl = this.activatedRouter.snapshot.queryParams.url === payload.url;
+
+                if (isSameUrl) {
                     this.store.updateEditorState(EDITOR_STATE.LOADED);
+                    this.personaSelector.fetchPersonas(); // We need to fetch the personas again because the page is loaded
                 } else {
                     this.store.updateEditorState(EDITOR_STATE.LOADING);
                 }
 
                 this.updateQueryParams({
-                    url: payload.url
+                    url: payload.url,
+                    ...(isSameUrl
+                        ? {}
+                        : { 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier })
                 });
             },
             [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
@@ -624,5 +648,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         // Reset this on queryParams update
         this.rows = [];
         this.contentlet = null;
+    }
+
+    private handleDuplicatedContentlet() {
+        this.messageService.add({
+            severity: 'info',
+            summary: this.dotMessageService.get('editpage.content.add.already.title'),
+            detail: this.dotMessageService.get('editpage.content.add.already.message'),
+            life: 2000
+        });
+
+        this.store.updateEditorState(EDITOR_STATE.LOADED);
     }
 }
