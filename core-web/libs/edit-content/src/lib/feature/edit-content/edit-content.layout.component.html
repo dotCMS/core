@@ -3,7 +3,7 @@
         class="topBar"
         *ngIf="vm?.contentType?.metadata?.[featuredFlagContentKEY]"
         data-testId="topBar">
-        {{ 'edit.content.layout.beta.message' | dm }}
+        <span [innerHTML]="('edit.content.layout.beta.message' | dm) + ' '"></span>
         <a
             [routerLink]="'/content-types-angular/edit/' + vm.contentType.variable"
             data-testId="content-type"
