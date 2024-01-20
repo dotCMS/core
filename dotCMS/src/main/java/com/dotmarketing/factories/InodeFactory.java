@@ -58,6 +58,9 @@ public class InodeFactory {
 		if(c.equals(Category.class)){
 			throw new DotStateException("Category mapping was deleted from hibernate files");
 		}
+		if(c.equals(Folder.class)){
+			throw new DotStateException("Folder mapping was deleted from hibernate files");
+		}
 
 		try {
 			final String tableName = c.newInstance().getType();
@@ -139,9 +142,11 @@ public class InodeFactory {
 			throw new DotStateException("Relationship mapping was deleted from hibernate files");
 		}
 		if(c.equals(Template.class)){
-			throw new DotStateException("Relationship mapping was deleted from hibernate files");
+			throw new DotStateException("Template mapping was deleted from hibernate files");
 		}
-		
+		if(c.equals(Folder.class)) {
+			throw new DotStateException("Folder mapping was deleted from hibernate files");
+		}
 		
 		
 		Inode inode = null;

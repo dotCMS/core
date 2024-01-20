@@ -190,3 +190,4 @@ This maintenance release includes the following code fixes:
 154. https://github.com/dotCMS/core/issues/26439 : Relationship fields not respecting the order identifiers are sent via the workflow API #26439
 155. https://github.com/dotCMS/core/issues/25233 : sysPublishDate no longer appears to be part of the ElasticSearch object we create for indexing #25233
 156. https://github.com/dotCMS/core/issues/26706 : Change Default PUBSUB Provider #26706
+157. https://github.com/dotCMS/core/issues/26693 : Edit Permissions Individually stuck when editing folder with legacy ID #26693
