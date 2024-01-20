@@ -10,7 +10,7 @@
         data-test-id="content-type__new-content-banner">
         <p-checkbox class="p-checkbox-sm" formControlName="newEditContent" binary="true">
         </p-checkbox>
-        <span>{{ 'content.type.form.banner.message' | dm }}</span>
+        <span [innerHTML]="'content.type.form.banner.message' | dm"></span>
     </div>
     <div class="field form__group--validation">
         <label dotFieldRequired for="content-type-form-name">{{ nameFieldLabel }}</label>
