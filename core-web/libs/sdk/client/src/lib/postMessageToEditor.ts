@@ -26,9 +26,10 @@ export enum CUSTOMER_ACTIONS {
      */
     PING_EDITOR = 'ping-editor',
 
-    CONTENT_CHANGE = 'content-change',
-
-    NOOP = 'noop'
+    /**
+     * Tell the editor that the page content changed
+     */
+    CONTENT_CHANGE = 'content-change'
 }
 
 /**
@@ -51,5 +52,5 @@ type PostMessageProps<T> = {
  * @param {PostMessageProps<T>} message
  */
 export function postMessageToEditor<T = unknown>(message: PostMessageProps<T>) {
-    window.parent.postMessage(message, 'https://localhost:8080');
+    window.parent.postMessage(message, 'http://localhost:8080');
 }

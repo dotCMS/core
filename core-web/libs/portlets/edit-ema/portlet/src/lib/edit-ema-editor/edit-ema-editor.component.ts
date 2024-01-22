@@ -20,7 +20,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { ProgressBarModule } from 'primeng/progressbar';
 
-import { take, takeUntil } from 'rxjs/operators';
+import { filter, take, takeUntil } from 'rxjs/operators';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import {
@@ -147,7 +147,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         });
 
         fromEvent(this.window, 'message')
-            .pipe(takeUntil(this.destroy$))
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((event: MessageEvent) => event.origin === this.host)
+            )
             .subscribe((event: MessageEvent) => {
                 this.handlePostMessage(event)?.();
             });
@@ -566,10 +569,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaComponent
      */
     private handlePostMessage({
-        origin: _origin = this.host,
         data
     }: {
-        origin: string;
         data: {
             action: CUSTOMER_ACTIONS;
             payload: ActionPayload | SetUrlPayload | Row[] | ContentletArea;
@@ -623,9 +624,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     NOTIFY_CUSTOMER.EMA_EDITOR_PONG,
                     this.host
                 );
-            },
-            [CUSTOMER_ACTIONS.NOOP]: () => {
-                /* Do Nothing because is not the origin we are expecting */
             }
         })[data.action];
     }
