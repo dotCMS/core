@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, Signal, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
-import { catchError, pluck } from 'rxjs/operators';
+import { catchError, pluck, tap } from 'rxjs/operators';
 
 export type Announcement = {
     title: string;
@@ -25,6 +25,14 @@ export class AnnouncementsService {
 
     private announcementsData$ = this.http.get<Announcement[]>(this.announcementsUrl).pipe(
         pluck('entity'),
+        tap((announcements: Announcement[]) => {
+            announcements.map((announcement) => {
+                announcement.url = `${announcement.url}?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu`;
+            });
+
+            return announcements;
+        }),
+
         catchError(() => [])
     );
 
@@ -48,8 +56,10 @@ export class AnnouncementsService {
             (id) => !storedAnnouncementIds.includes(id)
         );
 
-        localStorage.setItem('announcementsData', JSON.stringify(newAnnouncements));
-
         return isNewAnnouncement;
+    });
+
+    saveAnnouncementsData: Signal<void> = computed(() => {
+        localStorage.setItem('announcementsData', JSON.stringify(this.announcements()));
     });
 }

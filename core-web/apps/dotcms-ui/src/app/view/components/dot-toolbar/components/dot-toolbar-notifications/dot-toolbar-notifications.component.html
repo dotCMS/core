@@ -8,7 +8,7 @@
     <span
         class="badge"
         id="dot-toolbar-notifications-badge"
-        *ngIf="!annocumentsMarkedAsRead"></span>
+        *ngIf="announcementsService.unreadAnnouncements()"></span>
 
     <p-overlayPanel
         #toolbarAnnouncements

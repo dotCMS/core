@@ -1,5 +1,5 @@
 import { NgClass, NgForOf, CommonModule } from '@angular/common';
-import { Component, OnInit, Signal, inject, signal } from '@angular/core';
+import { Component, Signal, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import {
@@ -17,16 +17,12 @@ import { DotMessagePipe } from '@dotcms/ui';
     imports: [NgForOf, NgClass, DotMessagePipe, RouterLink, CommonModule],
     providers: [AnnouncementsService]
 })
-export class DotToolbarAnnouncementsComponent implements OnInit {
+export class DotToolbarAnnouncementsComponent {
     announcementsService = inject(AnnouncementsService);
 
     announcements: Signal<Announcement[]> = this.announcementsService.announcements;
 
-    unreadAnnouncements: Signal<boolean> = signal(false);
-
-    ngOnInit(): void {
-        this.unreadAnnouncements = this.announcementsService.unreadAnnouncements;
-    }
+    unreadAnnouncements: Signal<boolean> = this.announcementsService.unreadAnnouncements;
 
     knowledgeCenterLinks = [
         {

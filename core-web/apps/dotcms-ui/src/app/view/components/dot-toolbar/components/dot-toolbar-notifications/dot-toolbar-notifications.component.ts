@@ -135,7 +135,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
     }
 
     markAnnocumentsAsRead(): void {
-        this.annocumentsMarkedAsRead = this.announcementsService.unreadAnnouncements();
         this.activeAnnouncements = false;
+        this.announcementsService.saveAnnouncementsData();
     }
 }
