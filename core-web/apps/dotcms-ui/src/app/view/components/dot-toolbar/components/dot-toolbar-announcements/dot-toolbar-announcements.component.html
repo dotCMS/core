@@ -1,8 +1,13 @@
 <h5 class="announcements__title">{{ 'announcements' | dm }}</h5>
 <ul class="announcements__list">
     @for (item of announcements(); track item.identifier;) {
-    <li class="announcements__list-item announcements__list-item--active">
-        <span class="badge" id="dot-toolbar-notifications-badge"></span>
+    <li
+        class="announcements__list-item"
+        [class.announcements__list-item--active]="unreadAnnouncements()">
+        <span
+            class="badge"
+            id="dot-toolbar-notifications-badge"
+            *ngIf="unreadAnnouncements()"></span>
         <span class="announcements__image pi" [ngClass]="typesIcons[item.type]"></span>
         <a
             class="announcements__url"
@@ -20,14 +25,11 @@
 </ul>
 
 <div class="announcements__container">
+    <script type="module" src=""></script>
     <i class="pi pi-external-link"></i>
-    <a
-        class="announcements__link"
-        [routerLink]="linkToAddDevice"
-        (click)="close()"
-        data-testId="announcement_link"
-        >{{ 'announcements_show_all' | dm }}</a
-    >
+    <a class="announcements__link" [href]="linkToDotCms" data-testId="announcement_link">{{
+        'announcements_show_all' | dm
+    }}</a>
 </div>
 
 <h5 class="announcements__title">{{ 'announcements_knowledge_center' | dm }}</h5>

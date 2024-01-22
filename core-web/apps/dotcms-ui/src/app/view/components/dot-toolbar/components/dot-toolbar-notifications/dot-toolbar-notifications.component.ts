@@ -1,6 +1,9 @@
 import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 
+import { OverlayPanel } from 'primeng/overlaypanel';
+
 import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
+import { AnnouncementsService } from '@dotcms/app/api/services/dot-announcements.ts/dot-announcements.service';
 import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
 import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
@@ -16,10 +19,14 @@ import { IframeOverlayService } from '../../../_common/iframe/service/iframe-ove
 })
 export class DotToolbarNotificationsComponent implements OnInit {
     @ViewChild(DotDropdownComponent, { static: true }) dropdown: DotDropdownComponent;
+
+    @ViewChild('toolbarAnnouncements', { static: true }) toolbarAnnouncements: OverlayPanel;
     existsMoreToLoad = false;
     notifications: INotification[] = [];
     notificationsUnreadCount = 0;
     featureFlagAnnouncements = FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS;
+    annocumentsMarkedAsRead = false;
+    activeAnnouncements = false;
 
     private isNotificationsMarkedAsRead = false;
     private showNotifications = false;
@@ -28,7 +35,8 @@ export class DotToolbarNotificationsComponent implements OnInit {
         public iframeOverlayService: IframeOverlayService,
         private dotcmsEventsService: DotcmsEventsService,
         private loginService: LoginService,
-        private notificationService: NotificationsService
+        private notificationService: NotificationsService,
+        private announcementsService: AnnouncementsService
     ) {}
 
     ngOnInit(): void {
@@ -120,5 +128,14 @@ export class DotToolbarNotificationsComponent implements OnInit {
                 this.notificationsUnreadCount++;
                 this.isNotificationsMarkedAsRead = false;
             });
+    }
+
+    onActiveAnnouncements(): void {
+        this.activeAnnouncements = true;
+    }
+
+    markAnnocumentsAsRead(): void {
+        this.annocumentsMarkedAsRead = this.announcementsService.unreadAnnouncements();
+        this.activeAnnouncements = false;
     }
 }

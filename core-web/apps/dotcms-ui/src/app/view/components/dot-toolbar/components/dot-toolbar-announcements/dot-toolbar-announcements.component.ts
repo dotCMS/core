@@ -1,9 +1,10 @@
 import { NgClass, NgForOf, CommonModule } from '@angular/common';
-import { Component, EventEmitter, Output, Signal, inject } from '@angular/core';
+import { Component, Signal, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import {
     Announcement,
+    TypesIcons,
     AnnouncementsService
 } from '@dotcms/app/api/services/dot-announcements.ts/dot-announcements.service';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -17,11 +18,11 @@ import { DotMessagePipe } from '@dotcms/ui';
     providers: [AnnouncementsService]
 })
 export class DotToolbarAnnouncementsComponent {
-    @Output() hideOverlayPanel = new EventEmitter<string>();
-
     annoucementsService = inject(AnnouncementsService);
 
     announcements: Signal<Announcement[]> = this.annoucementsService.announcements;
+
+    unreadAnnouncements: Signal<boolean> = this.annoucementsService.unreadAnnouncements;
 
     knowledgeCenterLinks = [
         {
@@ -47,14 +48,11 @@ export class DotToolbarAnnouncementsComponent {
     ];
 
     typesIcons = {
-        comment: 'pi pi-comment',
-        release: 'pi pi-book',
-        announcement: 'pi pi-megaphone'
+        comment: TypesIcons.Comment,
+        release: TypesIcons.Release,
+        announcement: TypesIcons.Announcement
     };
 
-    protected linkToAddDevice = '/c/starter';
-
-    close(): void {
-        this.hideOverlayPanel.emit();
-    }
+    protected linkToDotCms =
+        'https://dotcms.com/?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu';
 }
