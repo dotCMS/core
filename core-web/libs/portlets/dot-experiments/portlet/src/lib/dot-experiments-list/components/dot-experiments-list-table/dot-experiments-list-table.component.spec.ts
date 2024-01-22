@@ -7,14 +7,10 @@ import { ConfirmPopup } from 'primeng/confirmpopup';
 import { Menu, MenuItemContent } from 'primeng/menu';
 import { Table } from 'primeng/table';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotFormatDateService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotExperimentStatus, GroupedExperimentByStatus } from '@dotcms/dotcms-models';
-import {
-    DotEmptyContainerComponent,
-    DotFormatDateService,
-    DotTimestampToDatePipe
-} from '@dotcms/ui';
+import { DotEmptyContainerComponent, DotTimestampToDatePipe } from '@dotcms/ui';
 import {
     DotFormatDateServiceMock,
     getExperimentMock,

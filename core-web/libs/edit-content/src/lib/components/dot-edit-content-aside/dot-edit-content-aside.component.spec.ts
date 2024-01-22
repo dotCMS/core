@@ -5,8 +5,7 @@ import { of } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotMessageService, DotWorkflowService } from '@dotcms/data-access';
-import { DotFormatDateService } from '@dotcms/ui';
+import { DotMessageService, DotWorkflowService, DotFormatDateService } from '@dotcms/data-access';
 
 import { DotEditContentAsideComponent } from './dot-edit-content-aside.component';
 

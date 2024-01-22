@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 
-import { DotEventsService, DotMessageService } from '@dotcms/data-access';
-import { DotGlobalMessage } from '@models/dot-global-message/dot-global-message.model';
+import { DotGlobalMessage } from '@dotcms/dotcms-models';
+
+import { DotEventsService } from '../dot-events/dot-events.service';
+import { DotMessageService } from '../dot-messages/dot-messages.service';
 
 /**
  * Service to provide configurations for Global Messages.

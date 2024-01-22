@@ -9,18 +9,18 @@ export interface DotActionBulkRequestOptions {
     query?: string;
     additionalParams: {
         assignComment: {
-            comment: string;
-            assign: string;
+            comment?: string;
+            assign?: string;
         };
         pushPublish: {
-            whereToSend: string;
-            iWantTo: string;
-            expireDate: string;
-            expireTime: string;
-            publishDate: string;
-            publishTime: string;
-            filterKey: string;
-            timezoneId: string;
+            whereToSend?: string;
+            iWantTo?: string;
+            expireDate?: string;
+            expireTime?: string;
+            publishDate?: string;
+            publishTime?: string;
+            filterKey?: string;
+            timezoneId?: string;
         };
         additionalParamsMap: { _path_to_move: string };
     };
