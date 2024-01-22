@@ -3,6 +3,7 @@ import { APP_INITIALIZER, NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
+import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -71,6 +72,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         LoggerService,
         StringUtils,
         DotAiService,
+        ConfirmationService,
         {
             provide: APP_INITIALIZER,
             useFactory: initTranslations,
