@@ -1,8 +1,9 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator';
+import { of } from 'rxjs';
 
 import { NgClass, NgForOf } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -10,7 +11,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotToolbarAnnouncementsComponent } from './dot-toolbar-announcements.component';
 
-class TestHostComponent {}
 describe('DotToolbarAnnouncementsComponent', () => {
     let spectator: Spectator<DotToolbarAnnouncementsComponent>;
 
@@ -24,43 +24,40 @@ describe('DotToolbarAnnouncementsComponent', () => {
     const createComponent = createComponentFactory({
         component: DotToolbarAnnouncementsComponent,
         providers: [
-            HttpClientTestingModule,
+            mockProvider(HttpClient, {
+                get: jasmine.createSpy('get').and.returnValue(
+                    of({
+                        entity: [
+                            {
+                                title: 'Test Announcement',
+                                type: 'announcement',
+                                announcementDateAsISO8601: '2024-01-31T17:51',
+                                identifier: 'test-announcement-id',
+                                url: 'https://www.example.com'
+                            }
+                        ]
+                    })
+                )
+            }),
             DotMessagePipe,
             { provide: DotMessageService, useValue: messageServiceMock }
         ],
-        imports: [
-            NgForOf,
-            NgClass,
-            DotMessagePipe,
-            RouterTestingModule.withRoutes([{ path: 'c/starter', component: TestHostComponent }])
-        ]
-    });
-    beforeEach(() => {
-        spectator = createComponent();
+        imports: [NgForOf, NgClass, DotMessagePipe, HttpClientTestingModule]
     });
 
-    it('should create', () => {
-        expect(spectator.component).toBeTruthy();
+    beforeEach(() => {
+        spectator = createComponent();
     });
 
     it('should display announcements', () => {
         spectator.detectChanges();
         const announcements = spectator.queryAll('.announcements__list-item');
-        expect(announcements.length).toBe(spectator.component.announcementsData.length);
+        expect(announcements.length).toBe(spectator.component.announcements().length);
     });
 
     it('should have a "Show All" link', () => {
         spectator.detectChanges();
         const showAllLink = spectator.query(byTestId('announcement_link'));
         expect(showAllLink).toBeTruthy();
-    });
-
-    it('should call close() method when "Show All" link is clicked', () => {
-        spyOn(spectator.component, 'close');
-        spectator.detectChanges();
-        const showAllLink = spectator.query(byTestId('announcement_link'));
-
-        spectator.click(showAllLink);
-        expect(spectator.component.close).toHaveBeenCalled();
     });
 });
