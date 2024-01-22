@@ -19,9 +19,8 @@ import { catchError, take, takeUntil, tap } from 'rxjs/operators';
 // Services
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { getEditorBlockOptions } from '@dotcms/block-editor';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 

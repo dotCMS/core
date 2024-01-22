@@ -5,7 +5,7 @@ import { Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/
 
 import { take, takeUntil } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 

@@ -17,7 +17,7 @@ module.exports = {
         '../../../libs/ui/**/*.stories.@(js|jsx|ts|tsx|mdx)',
         '../../../libs/portlets/**/*.stories.@(js|jsx|ts|tsx|mdx)'
     ],
-    addons: ['storybook-design-token', '@storybook/addon-essentials', ...rootMain.addons],
+    addons: ['@storybook/addon-essentials', ...rootMain.addons],
     features: {
         previewMdx2: true
     },

@@ -4,36 +4,23 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { DotBinaryFieldPreviewComponent } from './dot-binary-field-preview.component';
 
-import { BinaryFile } from '../../interfaces';
+import { BINARY_FIELD_CONTENTLET } from '../../../../utils/mocks';
+import { TEMP_FILES_MOCK } from '../../utils/mock';
 
-const fileImage: BinaryFile = {
-    mimeType: 'image/png',
-    name: 'test.png',
-    fileSize: 1234,
-    content: 'data:image/png;base64,iVBORw0KGg...',
-    url: 'http://example.com/test.png',
-    inode: '123',
-    titleImage: 'Test Image',
-    width: '100',
-    height: '100'
+const CONTENTLET_MOCK = {
+    ...BINARY_FIELD_CONTENTLET,
+    fieldVariable: 'Binary'
 };
 
-const fileText: BinaryFile = {
-    mimeType: 'text/plain',
-    name: 'test.txt',
-    fileSize: 1234,
-    content: 'This is a text file',
-    url: 'http://example.com/test.txt',
-    inode: '123'
-};
-
-const fileUnknown: BinaryFile = {
-    mimeType: 'unknown',
-    name: 'test.txt',
-    fileSize: 1234,
-    content: 'This is a text file but the mime type is unknown',
-    url: 'http://example.com/test.txt',
-    inode: '123'
+const CONTENTLET_TEXT_MOCK = {
+    ...BINARY_FIELD_CONTENTLET,
+    BinaryMetaData: {
+        ...BINARY_FIELD_CONTENTLET.binaryMetaData,
+        editableAsText: true,
+        contentType: 'text/plain'
+    },
+    fieldVariable: 'Binary',
+    content: 'Data'
 };
 
 describe('DotBinaryFieldPreviewComponent', () => {
@@ -46,14 +33,24 @@ describe('DotBinaryFieldPreviewComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                file: fileImage,
+                contentlet: CONTENTLET_MOCK,
+                tempFile: null,
                 editableImage: true
             }
         });
     });
 
-    it('should set isEditable to true for image files', () => {
-        expect(spectator.component.isEditable).toBe(true);
+    it('should show contentlet thumbnail', () => {
+        spectator.detectChanges();
+        expect(spectator.query(byTestId('contentlet-thumbnail'))).toBeTruthy();
+    });
+
+    it('should show temp file thumbnail', () => {
+        spectator.setInput('tempFile', TEMP_FILES_MOCK[0]);
+        spectator.setInput('contentlet', null);
+
+        spectator.detectChanges();
+        expect(spectator.query(byTestId('temp-file-thumbnail'))).toBeTruthy();
     });
 
     it('should emit removeFile event when remove button is clicked', () => {
@@ -73,23 +70,9 @@ describe('DotBinaryFieldPreviewComponent', () => {
             });
         });
 
-        describe('when file is a text file', () => {
+        describe('when contentelt is a text file', () => {
             beforeEach(() => {
-                spectator.setInput('file', fileText);
-                spectator.detectChanges();
-            });
-
-            it('should emit editFile event when edit button is clicked', () => {
-                const spy = jest.spyOn(spectator.component.editFile, 'emit');
-                const editButton = spectator.query(byTestId('edit-button'));
-                spectator.click(editButton);
-                expect(spy).toHaveBeenCalled();
-            });
-        });
-
-        describe('when file is a unknown file', () => {
-            beforeEach(() => {
-                spectator.setInput('file', fileUnknown);
+                spectator.setInput('contentlet', CONTENTLET_TEXT_MOCK);
                 spectator.detectChanges();
             });
 
@@ -100,19 +83,11 @@ describe('DotBinaryFieldPreviewComponent', () => {
                 expect(spy).toHaveBeenCalled();
             });
 
-            it('should have edit button if it has content', () => {
-                const editButton = spectator.query(byTestId('edit-button'));
-                expect(editButton).toBeTruthy();
-            });
-
-            it('should not have edit button if it does not have content', () => {
-                spectator.setInput('file', {
-                    ...fileUnknown,
-                    content: ''
-                });
-                spectator.detectChanges();
-                const editButton = spectator.query(byTestId('edit-button'));
-                expect(editButton).not.toBeTruthy();
+            it('should emit editFile event click on the code preview', () => {
+                const spy = jest.spyOn(spectator.component.editFile, 'emit');
+                const codePreview = spectator.query(byTestId('code-preview'));
+                spectator.click(codePreview);
+                expect(spy).toHaveBeenCalled();
             });
         });
     });
@@ -148,6 +123,10 @@ describe('DotBinaryFieldPreviewComponent', () => {
         });
 
         describe('onEdit', () => {
+            it('should set isEditable to true for image files', () => {
+                expect(spectator.component.isEditable).toBe(true);
+            });
+
             describe('when file is an image', () => {
                 it('should emit editImage event', () => {
                     const spy = jest.spyOn(spectator.component.editImage, 'emit');
@@ -157,9 +136,9 @@ describe('DotBinaryFieldPreviewComponent', () => {
                 });
             });
 
-            describe('when file is a text file', () => {
+            describe('when the contentlet is a text file', () => {
                 beforeEach(() => {
-                    spectator.setInput('file', fileText);
+                    spectator.setInput('contentlet', CONTENTLET_TEXT_MOCK);
                     spectator.detectChanges();
                 });
 

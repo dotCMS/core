@@ -258,6 +258,7 @@ export class CoreWebService {
 
         const method = <'GET' | 'HEAD' | 'JSONP' | 'OPTIONS'>options.method;
 
+        // @ts-ignore
         return new HttpRequest<T>(method, url, {
             headers,
             params

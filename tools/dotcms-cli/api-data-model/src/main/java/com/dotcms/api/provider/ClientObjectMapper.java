@@ -54,6 +54,8 @@ import javax.ws.rs.ext.ContextResolver;
 
 public class ClientObjectMapper implements ContextResolver<ObjectMapper> {
 
+    public ClientObjectMapper() {
+    }
     /**
      * according to: <a href="https://lankydan.dev/providing-your-own-jackson-objectmapper-in-quarkus">...</a>
      * this is how we customize the object mapper here we need to register GuavaModule as we use

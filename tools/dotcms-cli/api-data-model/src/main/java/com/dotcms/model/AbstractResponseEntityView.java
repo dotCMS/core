@@ -3,11 +3,13 @@ package com.dotcms.model;
 import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import io.vertx.codegen.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.smallrye.common.constraint.Nullable;
 import org.immutables.value.Value;
 
 @ValueType

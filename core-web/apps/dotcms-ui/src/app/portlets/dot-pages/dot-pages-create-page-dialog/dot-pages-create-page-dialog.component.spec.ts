@@ -8,6 +8,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
+import { DotRouterService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import {
@@ -15,7 +16,6 @@ import {
     CoreWebServiceMock,
     MockDotRouterService
 } from '@dotcms/utils-testing';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialog.component';
 

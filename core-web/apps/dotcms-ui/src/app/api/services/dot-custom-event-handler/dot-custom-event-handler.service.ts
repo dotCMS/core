@@ -9,14 +9,14 @@ import {
     DotEventsService,
     DotGenerateSecurePasswordService,
     DotLicenseService,
-    DotPropertiesService
+    DotPropertiesService,
+    DotRouterService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, DotUiColors } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 
