@@ -17,21 +17,26 @@
 <%@ page import="com.dotmarketing.exception.DotDataException" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher" %>
 
 <%
     String bundleId = request.getParameter("bundle");
-    PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
+    PublishingEndPointAPI publishingEndPointAPI = APILocator.getPublisherEndPointAPI();
     PublishAuditHistory currentEndpointHistory = null;
     String assetTitle = null;
     String assetType=null;
 
     Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
 
-    List<String> endpointsProtocols = new ArrayList<>();
+    //Contains the list of protocols collected from the endpoints of the environments
+    List<String> collectedProtocols = new ArrayList<>();
     try {
+        //We iterate over the environments of the bundle
         for (Environment e: APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(bundleId)) {
-            pepAPI.findSendingEndPointsByEnvironment(e.getId()).forEach(endpoint -> {
-                endpointsProtocols.add(endpoint.getProtocol().toLowerCase());
+            //We iterate over the endpoints of each environment
+            publishingEndPointAPI.findSendingEndPointsByEnvironment(e.getId()).forEach(endpoint -> {
+                //we add the protocol name of each endpoint to the list
+                collectedProtocols.add(endpoint.getProtocol().toLowerCase());
             });
         }
     } catch (DotDataException e) {}
@@ -87,7 +92,9 @@
 <div style="white-space: nowrap;padding:10px;">
 
 
-    <%if (endpointsProtocols.size() > 0 && !endpointsProtocols.contains("static")){%>
+    <%if (collectedProtocols.size() > 0 &&
+            !collectedProtocols.contains("static") &&
+            !collectedProtocols.contains(AWSS3Publisher.PROTOCOL_AWS_S3)) {%>
         <button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/<%=bundleId%>';" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "download") %></button>
     <%}%>
 
@@ -202,7 +209,7 @@
 	                    EndpointDetail ed =  groupMap.get(key);
 	                    String serverName = key;
 	                    try{
-	                        serverName = pepAPI.findEndPointById(key).getServerName().toString();
+	                        serverName = publishingEndPointAPI.findEndPointById(key).getServerName().toString();
 	                    }
 	                    catch(Exception e){
 
