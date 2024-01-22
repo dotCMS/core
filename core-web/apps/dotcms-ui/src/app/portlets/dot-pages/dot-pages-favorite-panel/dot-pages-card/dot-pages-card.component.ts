@@ -1,11 +1,15 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Observable } from 'rxjs';
+
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+
+import { EmaAppConfigurationService, EmaAppSecretValue } from '@dotcms/data-access';
 
 @Component({
     selector: 'dot-pages-card',
     templateUrl: './dot-pages-card.component.html',
     styleUrls: ['./dot-pages-card.component.scss']
 })
-export class DotPagesCardComponent {
+export class DotPagesCardComponent implements OnInit {
     @Input() actionButtonId: string;
     @Input() imageUri: string;
     @Input() title: string;
@@ -14,4 +18,12 @@ export class DotPagesCardComponent {
     @Output() edit = new EventEmitter<boolean>();
     @Output() goTo = new EventEmitter<boolean>();
     @Output() showActionMenu = new EventEmitter<MouseEvent>();
+
+    private emaAppConfigurationService = inject(EmaAppConfigurationService);
+
+    emaConfig$: Observable<EmaAppSecretValue | null>;
+
+    ngOnInit(): void {
+        this.emaConfig$ = this.emaAppConfigurationService.get(this.url);
+    }
 }

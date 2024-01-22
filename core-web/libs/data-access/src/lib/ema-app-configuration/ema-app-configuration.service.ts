@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 
 import { pluck, map, defaultIfEmpty, catchError } from 'rxjs/operators';
 
-interface EmaAppSecretValue {
+export interface EmaAppSecretValue {
     pattern: string;
     url: string;
     options: EmaAppOptions;

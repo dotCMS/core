@@ -1,5 +1,17 @@
 @use "variables" as *;
 
+iframe {
+    border: none;
+    width: 100vw;
+    height: 100vh;
+    transform: scale(0.2);
+    transform-origin: left top;
+    position: absolute;
+    opacity: 1;
+    pointer-events: none;
+    transition: height 150ms ease 0s, opacity 200ms ease 0s;
+}
+
 :host {
     &:hover {
         box-shadow: $shadow-m;
@@ -9,6 +21,8 @@
     ::ng-deep {
         .p-card .p-card-header {
             padding: 0;
+            position: relative;
+            height: 181px;
         }
 
         .p-card-content {

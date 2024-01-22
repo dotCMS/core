@@ -5,7 +5,8 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotPagesFavoritePageEmptySkeletonComponent } from '@dotcms/ui';
+import { EmaAppConfigurationService } from '@dotcms/data-access';
+import { DotPagesFavoritePageEmptySkeletonComponent, SafeUrlPipe } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPagesCardComponent } from './dot-pages-card.component';
@@ -17,9 +18,11 @@ import { DotPagesCardComponent } from './dot-pages-card.component';
         DotPagesFavoritePageEmptySkeletonComponent,
         ButtonModule,
         TooltipModule,
-        DotPipesModule
+        DotPipesModule,
+        SafeUrlPipe
     ],
     declarations: [DotPagesCardComponent],
-    exports: [DotPagesCardComponent]
+    exports: [DotPagesCardComponent],
+    providers: [EmaAppConfigurationService]
 })
 export class DotPagesCardModule {}
