@@ -23,7 +23,7 @@ export interface DotPageApiResponse {
         inode: string;
         canEdit: boolean;
         canRead: boolean;
-        url: string;
+        pageURI: string;
     };
     site: Site;
     viewAs: {

@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotContentCompareEvent } from '@components/dot-content-compare/dot-content-compare.component';
 import { DotCMSEditPageEvent } from '@components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
@@ -10,7 +9,9 @@ import {
     DotGenerateSecurePasswordService,
     DotLicenseService,
     DotPropertiesService,
-    DotRouterService
+    DotRouterService,
+    DotIframeService,
+    DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, DotUiColors } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
@@ -18,7 +19,6 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 
 export const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
 

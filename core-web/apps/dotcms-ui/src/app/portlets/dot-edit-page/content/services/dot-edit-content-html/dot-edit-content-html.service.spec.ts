@@ -9,7 +9,6 @@ import { TestBed, waitForAsync } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotGlobalMessageService } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.service';
 import {
     DotAlertConfirmService,
     DotEditPageService,
@@ -17,7 +16,8 @@ import {
     DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    DotGlobalMessageService
 } from '@dotcms/data-access';
 import { CoreWebService, HttpCode, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {

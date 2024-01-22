@@ -7,7 +7,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
@@ -16,7 +15,9 @@ import {
     DotEventsService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
-    DotRouterService
+    DotRouterService,
+    DotIframeService,
+    DotFormatDateService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -30,7 +31,6 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { DotFormatDateService } from '@dotcms/ui';
 import {
     cleanUpDialog,
     CoreWebServiceMock,

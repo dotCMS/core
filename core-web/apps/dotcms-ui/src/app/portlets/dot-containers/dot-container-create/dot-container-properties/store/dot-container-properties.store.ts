@@ -8,12 +8,12 @@ import { ActivatedRoute } from '@angular/router';
 
 import { catchError, filter, pluck, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import {
     DotContentTypeService,
     DotHttpErrorManagerService,
     DotMessageService,
-    DotRouterService
+    DotRouterService,
+    DotGlobalMessageService
 } from '@dotcms/data-access';
 import {
     DotCMSContentType,
