@@ -750,14 +750,14 @@
                      * This is a workaround to get the contentlet from the API
                      * because there is no way to get the same contentlet the AP retreive from the dwr call.
                      */
-                    fetch('/api/content/id/<%=contentlet.getIdentifier()%>', {
+                    fetch('/api/v1/content/<%=contentlet.getInode()%>', {
                         method: 'GET',
                         headers: {
                             'Content-Type': 'application/json'
                         }
-                    }).then(response => response.json())
-                    .then(({ contentlets }) => {
-                        const contentlet = contentlets[0];
+                    })
+                    .then(response => response.json())
+                    .then(({ entity: contentlet }) => {
                         const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
                         const variable = "<%=field.getVelocityVarName()%>";
                         const fielData = {
@@ -803,6 +803,7 @@
                         });
                     })
                     .catch(() => {
+                        console.log("catch");
                         binaryFieldContainer.innerHTMl = '<div class="callOutBox">Error loading the binary field</div>';
                     })
                 })();
