@@ -779,7 +779,6 @@
                         binaryField.field = fieldData;
                         binaryField.contentlet = contentlet;
                         binaryField.imageEditor = true;
-                        console.log({fieldData,contentlet, field})
 
                         const contentBaseType = <%= contentlet.getContentType().baseType().getType() %>;
 
