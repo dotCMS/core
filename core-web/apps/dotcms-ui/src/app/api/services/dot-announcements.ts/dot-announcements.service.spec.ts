@@ -64,7 +64,7 @@ describe('AnnouncementsService', () => {
 
         const isNewAnnouncement = spectator.service.unreadAnnouncements();
 
-        expect(isNewAnnouncement).toBeTruthy();
+        expect(isNewAnnouncement).toBe(true);
     });
 
     it('should not mark announcements as unread when there are no new announcements', () => {
@@ -82,6 +82,6 @@ describe('AnnouncementsService', () => {
 
         const isNewAnnouncement = spectator.service.unreadAnnouncements();
 
-        expect(isNewAnnouncement).toBeFalsy();
+        expect(isNewAnnouncement).toBe(false);
     });
 });
