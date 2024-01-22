@@ -159,7 +159,10 @@ describe('DotBinaryFieldStore', () => {
 
                 // Skip initial state
                 store.value$.pipe(skip(1)).subscribe((value) => {
-                    expect(value).toBe(TEMP_FILE_MOCK.id);
+                    expect(value).toEqual({
+                        value: TEMP_FILE_MOCK.id,
+                        fileName: TEMP_FILE_MOCK.fileName
+                    });
                     done();
                 });
 
