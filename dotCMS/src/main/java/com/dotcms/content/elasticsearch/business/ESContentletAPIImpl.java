@@ -3226,7 +3226,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if (contentlets.size() > 0) {
-            XStream _xstream = XStreamHandler.newXStreamInstance();
+            XStream xStreamInstance = XStreamHandler.newXStreamInstance();
             Date date = new Date();
             SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
             String lastmoddate = sdf.format(date);
@@ -3252,7 +3252,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     Logger.error(this, e.getMessage());
                 }
             }
-            _xstream.toXML(contentlets, _bout);
+            xStreamInstance.toXML(contentlets, _bout);
         }
         deleteBinaryFiles(contentletsVersion, null);
 

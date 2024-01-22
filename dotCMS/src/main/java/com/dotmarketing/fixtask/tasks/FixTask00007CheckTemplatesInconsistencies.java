@@ -155,7 +155,7 @@ public class FixTask00007CheckTemplatesInconsistencies  implements FixTask {
 	public List <Map<String, String>> getModifiedData()  {
 		
 		if (modifiedData.size() > 0) {
-			XStream _xstream = XStreamHandler.newXStreamInstance();
+			XStream xStreamInstance = XStreamHandler.newXStreamInstance();
 			Date date = new Date();
 			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
 			String lastmoddate = sdf.format(date);
@@ -168,7 +168,7 @@ public class FixTask00007CheckTemplatesInconsistencies  implements FixTask {
 					+ "FixTask00007CheckTemplatesInconsistencies" + ".xml");
 
 			try (BufferedOutputStream _bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()))){
-				_xstream.toXML(modifiedData, _bout);
+				xStreamInstance.toXML(modifiedData, _bout);
 			} catch (IOException e) {
 				Logger.error(this, "Error trying to get modified data from XML.", e);
 			}
