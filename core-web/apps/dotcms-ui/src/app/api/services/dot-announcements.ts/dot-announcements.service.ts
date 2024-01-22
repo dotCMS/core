@@ -9,6 +9,7 @@ export type Announcement = {
     type: string;
     announcementDateAsISO8601: string;
     identifier: string;
+    url: string;
 };
 
 @Injectable()

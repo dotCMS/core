@@ -24,6 +24,7 @@
 
 .announcements__list-item {
     display: flex;
+    position: relative;
     flex-direction: row;
     gap: $spacing-3;
     padding: $spacing-2 $spacing-1;
@@ -84,6 +85,10 @@
     }
 }
 
+.announcements__url {
+    text-decoration: none;
+}
+
 .badge {
     background-color: $color-accessible-text-fuchsia;
     border-radius: 50%;
@@ -92,8 +97,8 @@
     line-height: $font-size-sm;
     padding: $spacing-0;
     position: absolute;
-    left: 25px;
-    top: 0;
+    left: 35px;
+    top: 12px;
 }
 
 ::ng-deep {

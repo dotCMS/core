@@ -4,10 +4,17 @@
     <li class="announcements__list-item announcements__list-item--active">
         <span class="badge" id="dot-toolbar-notifications-badge"></span>
         <span class="announcements__image pi" [ngClass]="typesIcons[item.type]"></span>
-        <div class="announcements__content">
-            <span class="announcements__label">{{ item.title }}</span>
-            <span class="announcements__date">{{ item.announcementDateAsISO8601 | date }}</span>
-        </div>
+        <a
+            class="announcements__url"
+            [href]="item.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-labelledby="announcement-label date-label">
+            <div class="announcements__content">
+                <span class="announcements__label">{{ item.title }}</span>
+                <span class="announcements__date">{{ item.announcementDateAsISO8601 | date }}</span>
+            </div>
+        </a>
     </li>
     }
 </ul>
