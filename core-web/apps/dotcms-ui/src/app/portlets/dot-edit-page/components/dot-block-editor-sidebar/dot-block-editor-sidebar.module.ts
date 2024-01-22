@@ -3,6 +3,7 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { SidebarModule } from 'primeng/sidebar';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
@@ -18,7 +19,8 @@ import { DotBlockEditorSidebarComponent } from '@portlets/dot-edit-page/componen
         CommonModule,
         SidebarModule,
         DotMessagePipe,
-        ButtonModule
+        ButtonModule,
+        ConfirmDialogModule
     ]
 })
 export class DotBlockEditorSidebarModule {}
