@@ -4,10 +4,7 @@
     <li
         class="announcements__list-item"
         [class.announcements__list-item--active]="unreadAnnouncements()">
-        <span
-            class="badge"
-            id="dot-toolbar-notifications-badge"
-            *ngIf="unreadAnnouncements()"></span>
+        <span class="announcements__badge" *ngIf="unreadAnnouncements()"></span>
         <span class="announcements__image pi" [ngClass]="typesIcons[item.type]"></span>
         <a
             class="announcements__url"
