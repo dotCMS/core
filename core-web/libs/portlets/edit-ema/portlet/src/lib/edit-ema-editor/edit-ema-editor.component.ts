@@ -23,14 +23,17 @@ import { ProgressBarModule } from 'primeng/progressbar';
 import { filter, take, takeUntil } from 'rxjs/operators';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
-import { DotPersonalizeService, DotMessageService, EmaAppConfigurationService } from '@dotcms/data-access';
+import {
+    DotPersonalizeService,
+    DotMessageService,
+    EmaAppConfigurationService
+} from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotDevice,
     DotPersona
 } from '@dotcms/dotcms-models';
-
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
