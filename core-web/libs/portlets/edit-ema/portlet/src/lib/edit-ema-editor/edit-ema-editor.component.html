@@ -54,7 +54,9 @@
                 (selected)="onPersonaSelected($event)"
                 (despersonalize)="onDespersonalize($event)"
                 data-testId="persona-selector" />
-            <p-button class="p-button-sm" label="Save" />
+            <dot-edit-ema-workflow-actions
+                [inode]="es.editor.page.inode"
+                (newPage)="handleNewPage($event)" />
         </ng-container>
     </dot-edit-ema-toolbar>
     <div
@@ -80,7 +82,7 @@
         <div
             class="iframe-wrapper"
             [ngClass]="{
-                'iframe-wrapper--device': !!currentDevice,     
+                'iframe-wrapper--device': !!currentDevice,
             }"
             [ngStyle]="{
                 width: !!currentDevice ? currentDevice.cssWidth + 'px' : '100%',
@@ -91,13 +93,27 @@
                 [src]="es.iframeURL | safeUrl"
                 [title]="host"
                 [ngStyle]="{
-                    pointerEvents: this.rows.length ? 'none' : 'auto'
+                    pointerEvents: this.rows.length ? 'none' : 'auto',
+                    opacity: es.state === editorState.LOADING ? '0.5' : '1'
                 }"
                 data-testId="iframe"
                 width="100%"
                 height="100%"></iframe>
+            <p-progressBar
+                *ngIf="es.state === editorState.LOADING"
+                [ngStyle]="{ position: 'absolute', top: '0', left: '0', width: '100%' }"
+                [style]="{ height: '6px' }"
+                data-testId="progress-bar"
+                mode="indeterminate"></p-progressBar>
+
             <dot-ema-contentlet-tools
-                *ngIf="!rows.length && !!contentlet && !currentDevice && es.editor.page.canEdit"
+                *ngIf="
+                    !rows.length &&
+                    !!contentlet &&
+                    !currentDevice &&
+                    es.editor.page.canEdit &&
+                    es.state === editorState.LOADED
+                "
                 [contentlet]="contentlet"
                 (edit)="editContentlet($event)"
                 (delete)="deleteContentlet($event)"
@@ -106,7 +122,9 @@
                 (addContent)="addContentlet($event)"
                 data-testId="contentlet-tools" />
             <dot-ema-page-dropzone
-                *ngIf="!!rows.length && !!dragItem && !currentDevice"
+                *ngIf="
+                    !!rows.length && !!dragItem && !currentDevice && es.state === editorState.LOADED
+                "
                 [rows]="rows"
                 [item]="dragItem"
                 (place)="onPlaceItem($event)"
@@ -163,7 +181,7 @@
     [style]="{
         width: '400px'
     }"
-    [rejectIcon]="null"
-    [acceptIcon]="null"
+    rejectIcon="hidden"
+    acceptIcon="hidden"
     rejectButtonStyleClass="p-button-outlined"
     data-testId="confirm-dialog"></p-confirmDialog>

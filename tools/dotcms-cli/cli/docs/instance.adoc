@@ -30,7 +30,7 @@ instance - *Prints a list of available dotCMS instances.*
  The info includes API URL, active user and the current profile.
  This list of available servers comes from the file [dot-service.yml]
  Located in a folder named dotCMS under the user's home directory.
- Use to activate/switch dotCMS instance. -a  --activate
+ Use to activate/switch dotCMS instance. -act  --activate
  followed by the instance name.
 
 

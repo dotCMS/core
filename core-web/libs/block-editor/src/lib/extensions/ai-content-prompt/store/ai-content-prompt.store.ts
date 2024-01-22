@@ -1,9 +1,9 @@
-import { ComponentStore } from '@ngrx/component-store';
+import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { Observable, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
+import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
@@ -15,35 +15,24 @@ export interface AiContentPromptState {
     acceptContent: boolean;
     deleteContent: boolean;
     status: ComponentStatus;
+    error: string;
 }
 
 @Injectable({
     providedIn: 'root'
 })
 export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
-    constructor(private dotAiService: DotAiService) {
-        super({
-            prompt: '',
-            content: '',
-            acceptContent: false,
-            deleteContent: false,
-            status: ComponentStatus.INIT
-        });
-    }
-
     //Selectors
-    readonly prompt$ = this.select((state) => state.prompt);
+    readonly errorMsg$ = this.select(this.state$, ({ error }) => error);
     readonly content$ = this.select((state) => state.content);
     readonly deleteContent$ = this.select((state) => state.deleteContent);
     readonly status$ = this.select((state) => state.status);
     readonly vm$ = this.select((state) => state);
-
     //Updaters
     readonly setStatus = this.updater((state, status: ComponentStatus) => ({
         ...state,
         status
     }));
-
     readonly setAcceptContent = this.updater((state, acceptContent: boolean) => ({
         ...state,
         acceptContent
@@ -52,7 +41,6 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
         ...state,
         deleteContent
     }));
-
     // Effects
     readonly generateContent = this.effect((prompt$: Observable<string>) => {
         return prompt$.pipe(
@@ -60,18 +48,22 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
                 this.patchState({ status: ComponentStatus.LOADING, prompt });
 
                 return this.dotAiService.generateContent(prompt).pipe(
-                    tap((content) => this.patchState({ status: ComponentStatus.LOADED, content })),
-                    catchError(() => {
-                        //TODO: Notify to handle error in the UI.
-                        this.patchState({ status: ComponentStatus.LOADED, content: '' });
-
-                        return of(null);
-                    })
+                    tapResponse(
+                        (content) => {
+                            this.patchState({ status: ComponentStatus.LOADED, content, error: '' });
+                        },
+                        (error: string) => {
+                            this.patchState({
+                                status: ComponentStatus.LOADED,
+                                content: '',
+                                error: error
+                            });
+                        }
+                    )
                 );
             })
         );
     });
-
     /**
      * When this effect is triggered, it uses the latest prompt value from the store's state
      * to generate content using the `generateContent` effect.
@@ -86,4 +78,19 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
             tap(([_, { prompt }]) => this.generateContent(of(prompt)))
         );
     });
+    readonly cleanError = this.updater((state) => ({
+        ...state,
+        error: ''
+    }));
+
+    constructor(private dotAiService: DotAiService) {
+        super({
+            prompt: '',
+            content: '',
+            acceptContent: false,
+            deleteContent: false,
+            status: ComponentStatus.INIT,
+            error: ''
+        });
+    }
 }

@@ -1,29 +1,40 @@
-<div class="preview-container" [ngClass]="{ 'preview-container--fade': file.content }">
-    <div class="preview-code_container" *ngIf="file.content; else contentThumnail">
-        <code>{{ file.content }}</code>
+<div class="preview-container" [ngClass]="{ 'preview-container--fade': content }">
+    <div
+        class="preview-code_container"
+        *ngIf="content; else contentThumnail"
+        (click)="this.editFile.emit()"
+        data-testId="code-preview">
+        <code>{{ content }}</code>
     </div>
 
     <ng-template #contentThumnail>
         <div class="preview-image__container">
-            <dot-content-thumbnail
-                [url]="file.url"
-                [inode]="file.inode"
-                [name]="file.name"
-                [contentType]="file.contentType"
-                [titleImage]="file.titleImage"
-                [objectFit]="objectFit"
-                [iconSize]="'48px'"></dot-content-thumbnail>
+            <dot-temp-file-thumbnail
+                *ngIf="tempFile; else contentletThumbnail"
+                [tempFile]="tempFile"
+                [iconSize]="'48px'"
+                data-testId="temp-file-thumbnail"></dot-temp-file-thumbnail>
+
+            <ng-template #contentletThumbnail>
+                <dot-contentlet-thumbnail
+                    [iconSize]="'48px'"
+                    [cover]="false"
+                    [contentlet]="contentlet"
+                    [playableVideo]="true"
+                    data-testId="contentlet-thumbnail">
+                </dot-contentlet-thumbnail>
+            </ng-template>
         </div>
 
         <div class="preview-metadata__container">
-            <span class="preview-metadata_header">{{ file.name }}</span>
-            <div class="preview-metadata" *ngIf="file.width && file.height">
+            <span class="preview-metadata_header">{{ metadata.name }}</span>
+            <div class="preview-metadata" *ngIf="metadata.width && metadata.height">
                 <i class="pi pi-arrows-alt"></i>
-                <span>{{ file.width }} x {{ file.height }}</span>
+                <span>{{ metadata.width }} x {{ metadata.height }}</span>
             </div>
-            <div class="preview-metadata" *ngIf="file.fileSize">
+            <div class="preview-metadata" *ngIf="metadata.fileSize">
                 <i class="pi pi-file"></i>
-                <span>{{ file.fileSize | dotFileSizeFormat }}</span>
+                <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
             </div>
         </div>
     </ng-template>
@@ -67,14 +78,14 @@
 
 <p-overlayPanel #op>
     <div class="preview-metadata__responsive">
-        <span class="preview-metadata_header">{{ file.name }}</span>
-        <div *ngIf="file.width && file.height">
+        <span class="preview-metadata_header">{{ metadata.name }}</span>
+        <div *ngIf="metadata.width && metadata.height">
             {{ 'dot.binary.field.file.dimension' | dm }}:
-            <span>{{ file.width }}px, {{ file.height }}px</span>
+            <span>{{ metadata.width }}px, {{ metadata.height }}px</span>
         </div>
-        <div *ngIf="file.fileSize">
+        <div *ngIf="metadata.fileSize">
             {{ 'dot.binary.field.file.size' | dm }}:
-            <span>{{ file.fileSize }} Bytes</span>
+            <span>{{ metadata.fileSize }} Bytes</span>
         </div>
     </div>
 </p-overlayPanel>

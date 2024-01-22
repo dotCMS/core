@@ -37,7 +37,17 @@ public class LoginCommand implements Callable<Integer>, DotCommand {
     @CommandLine.Option(names = {"-u", "--user"}, arity = "1", description = "User name", required = true )
     String user;
 
-    @CommandLine.Option(names = {"-p", "--password"}, arity = "0..1", description = "Passphrase", required = true, interactive = true, echo = false )
+    @CommandLine.Option(names = {"-p", "--password"}, arity = "0..1", description = {
+        "Passphrase",
+        "The following is the recommended way to use this param ",
+        "as the password will be promoted securely",
+        "@|yellow login -u=admin@dotCMS.com -p |@",
+        "Both options, user and password are mandatory",
+        "and they can also be provided inline as follows:",
+        "@|yellow login -u=admin@dotCMS.com -p=admin |@",
+        "However, this opens a possibility for @|cyan password theft|@",
+        "as the password will be visible in the command history."
+    }, required = true, interactive = true, echo = false )
     char[] password;
 
     @Inject

@@ -11,7 +11,6 @@ import { MenuModule } from 'primeng/menu';
 
 import { of } from 'rxjs/internal/observable/of';
 
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
@@ -22,7 +21,9 @@ import {
     DotMessageDisplayService,
     DotPageRenderService,
     DotRouterService,
-    DotSessionStorageService
+    DotSessionStorageService,
+    DotIframeService,
+    DotFormatDateService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -36,7 +37,6 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { ComponentStatus, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
-import { DotFormatDateService } from '@dotcms/ui';
 import {
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,

@@ -29,7 +29,8 @@ import {
     DotMessageService,
     DotRouterService,
     DotSiteBrowserService,
-    PaginatorService
+    PaginatorService,
+    DotFormatDateService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -46,7 +47,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE, DotActionBulkResult, DotContainer } from '@dotcms/dotcms-models';
-import { DotFormatDateService, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import {
     DotcmsConfigServiceMock,
     DotFormatDateServiceMock,

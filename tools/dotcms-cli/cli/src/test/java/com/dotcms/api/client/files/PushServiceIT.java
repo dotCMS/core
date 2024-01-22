@@ -241,6 +241,16 @@ class PushServiceIT extends FilesTestHelper {
 
             Assertions.assertNotNull(traverseResults);
             Assertions.assertEquals(2, traverseResults.size());// Live and working folders
+            // Validating the processing order
+            Assertions.assertEquals(
+                    "live",
+                    traverseResults.get(0).localPaths().status()
+            );
+            Assertions.assertEquals(
+                    "working",
+                    traverseResults.get(1).localPaths().status()
+            );
+            // Validating no errors were found
             Assertions.assertTrue(traverseResults.get(0).exceptions().isEmpty());// No errors should be found
             Assertions.assertTrue(traverseResults.get(1).exceptions().isEmpty());// No errors should be found
 

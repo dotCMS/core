@@ -118,6 +118,10 @@ export class DotEditContentBinaryFieldComponent
         return isFileAsset ? 'metaData' : this.variable + 'MetaData';
     }
 
+    get value(): string {
+        return this.contentlet?.[this.variable] ?? this.field.defaultValue;
+    }
+
     get maxFileSize(): number {
         return this.DotBinaryFieldValidatorService.maxFileSize;
     }
@@ -137,15 +141,20 @@ export class DotEditContentBinaryFieldComponent
     }
 
     ngOnInit() {
-        this.dotBinaryFieldStore.value$.pipe(skip(1)).subscribe((value) => {
-            this.tempId = value; // If the value changes, it means that a new file was uploaded
-            this.valueUpdated.emit(value);
+        this.dotBinaryFieldStore.value$
+            .pipe(
+                skip(1),
+                filter((value) => value !== this.value)
+            )
+            .subscribe((value) => {
+                this.tempId = value; // If the value changes, it means that a new file was uploaded
+                this.valueUpdated.emit(value);
 
-            if (this.onChange) {
-                this.onChange(value);
-                this.onTouched();
-            }
-        });
+                if (this.onChange) {
+                    this.onChange(value);
+                    this.onTouched();
+                }
+            });
 
         this.dotBinaryFieldEditImageService
             .editedImage()
@@ -161,20 +170,19 @@ export class DotEditContentBinaryFieldComponent
 
     ngAfterViewInit() {
         this.setFieldVariables();
-        if (this.existFileMetadata()) {
+        if (this.value) {
             this.dotBinaryFieldStore.setFileFromContentlet({
                 ...this.contentlet,
-                variable: this.variable
+                value: this.value,
+                fieldVariable: this.variable
             });
         }
 
         this.cd.detectChanges();
     }
 
-    writeValue(): void {
-        /*
-            We can set a value here but we use the fields and contentlet to set the value
-        */
+    writeValue(value: string): void {
+        this.dotBinaryFieldStore.setValue(value);
     }
 
     registerOnChange(fn: (value: string) => void) {
@@ -345,16 +353,5 @@ export class DotEditContentBinaryFieldComponent
         const uiMessage = getUiMessage(errorType, messageArgs[errorType]);
 
         this.dotBinaryFieldStore.invalidFile(uiMessage);
-    }
-
-    /**
-     * Check if file metadata exist
-     *
-     * @private
-     * @return {*}  {boolean}
-     * @memberof DotEditContentBinaryFieldComponent
-     */
-    private existFileMetadata(): boolean {
-        return !!this.contentlet && !!this.contentlet[this.metaDataKey];
     }
 }

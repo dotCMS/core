@@ -1,6 +1,5 @@
 package com.dotcms.cli.common;
 
-import java.nio.file.Path;
 import picocli.CommandLine;
 
 /**
@@ -35,8 +34,8 @@ public class PullMixin {
             defaultValue = "false")
     public boolean noValidateUnmatchedArguments;
 
-    public Path workspace() {
-        return workspaceMixin.workspace();
+    public WorkspaceParams workspace() {
+        return workspaceMixin.workspaceParams();
     }
 
     public ShortOutputOptionMixin shortOutputOption() {

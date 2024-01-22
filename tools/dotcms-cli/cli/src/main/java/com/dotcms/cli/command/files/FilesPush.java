@@ -108,13 +108,6 @@ public class FilesPush extends AbstractFilesCommand implements Callable<Integer>
             return CommandLine.ExitCode.SOFTWARE;
         }
 
-        // Let's try to print these tree with some order
-        result.sort((o1, o2) -> {
-            var left = o1.localPaths();
-            var right = o2.localPaths();
-            return left.filePath().compareTo(right.filePath());
-        });
-
         var count = 0;
 
         if (!result.isEmpty()) {

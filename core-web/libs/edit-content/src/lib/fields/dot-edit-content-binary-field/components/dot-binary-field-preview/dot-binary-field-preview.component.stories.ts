@@ -7,7 +7,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotContentThumbnailComponent, DotSpinnerModule } from '@dotcms/ui';
+import { DotTempFileThumbnailComponent, DotSpinnerModule } from '@dotcms/ui';
 
 import { DotBinaryFieldPreviewComponent } from './dot-binary-field-preview.component';
 
@@ -68,7 +68,7 @@ export default {
                 BrowserAnimationsModule,
                 CommonModule,
                 ButtonModule,
-                DotContentThumbnailComponent,
+                DotTempFileThumbnailComponent,
                 DotSpinnerModule,
                 HttpClientModule
             ],

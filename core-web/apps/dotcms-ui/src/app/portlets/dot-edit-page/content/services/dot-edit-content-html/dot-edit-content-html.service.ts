@@ -6,7 +6,6 @@ import { ElementRef, Inject, Injectable, NgZone } from '@angular/core';
 
 import { catchError, filter, finalize, map, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { INLINE_TINYMCE_SCRIPTS } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/inline-edit-mode.js';
 import {
     DotAlertConfirmService,
@@ -15,7 +14,8 @@ import {
     DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    DotGlobalMessageService
 } from '@dotcms/data-access';
 import {
     DotTreeNode,

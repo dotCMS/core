@@ -1,6 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
-import { DotFormatDateService } from '../../services/dot-format-date-service';
+import { DotFormatDateService } from '@dotcms/data-access';
 
 /*
  * Custom Pipe that returns the relative date.
