@@ -803,7 +803,6 @@
                         });
                     })
                     .catch(() => {
-                        console.log("catch");
                         binaryFieldContainer.innerHTMl = '<div class="callOutBox">Error loading the binary field</div>';
                     })
                 })();
