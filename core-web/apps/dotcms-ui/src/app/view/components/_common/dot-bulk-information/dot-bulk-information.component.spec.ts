@@ -10,9 +10,9 @@ import {
     DynamicDialogRef
 } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotFormatDateService } from '@dotcms/data-access';
 import { DotActionBulkResult } from '@dotcms/dotcms-models';
-import { DotFormatDateService, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotBulkInformationComponent } from './dot-bulk-information.component';

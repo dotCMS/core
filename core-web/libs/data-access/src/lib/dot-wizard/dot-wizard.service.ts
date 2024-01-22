@@ -2,12 +2,16 @@ import { Observable, Subject } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
+import { DotWizardInput } from '@dotcms/dotcms-models';
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotWizardService {
     private input: Subject<DotWizardInput> = new Subject<DotWizardInput>();
-    private output: Subject<Record<string, unknown>> = new Subject<{ [key: string]: string }>();
+    private output: Subject<{ [key: string]: string | string[] }> = new Subject<{
+        [key: string]: string | string[];
+    }>();
 
     get showDialog$(): Observable<DotWizardInput> {
         return this.input.asObservable();

@@ -5,8 +5,8 @@ import { Resolve } from '@angular/router';
 
 import { map } from 'rxjs/operators';
 
+import { PushPublishService } from '@dotcms/data-access';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
-import { PushPublishService } from '@services/push-publish/push-publish.service';
 
 /**
  * Resolver to get push publish environments

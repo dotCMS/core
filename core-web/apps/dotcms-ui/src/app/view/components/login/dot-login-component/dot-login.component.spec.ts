@@ -18,10 +18,10 @@ import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { DotLoginComponent } from '@components/login/dot-login-component/dot-login.component';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { DotMessageService, DotRouterService } from '@dotcms/data-access';
+import { DotMessageService, DotRouterService, DotFormatDateService } from '@dotcms/data-access';
 import { CoreWebService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
-import { DotFieldValidationMessageComponent, DotFormatDateService } from '@dotcms/ui';
+import { DotFieldValidationMessageComponent } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     CoreWebServiceMock,

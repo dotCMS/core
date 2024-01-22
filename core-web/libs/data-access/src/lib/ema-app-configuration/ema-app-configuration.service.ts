@@ -31,7 +31,7 @@ export class EmaAppConfigurationService {
      */
     get(url: string): Observable<EmaAppSecretValue | null> {
         // Remove trailing and leading slashes
-        url = url.replace(/^\/+|\/+$/g, '');
+        url = url?.replace(/^\/+|\/+$/g, '');
 
         return this.http.get<{ entity: { config: EmaAppSecretValue[] } }>(`/api/v1/ema`).pipe(
             pluck('entity', 'config'),

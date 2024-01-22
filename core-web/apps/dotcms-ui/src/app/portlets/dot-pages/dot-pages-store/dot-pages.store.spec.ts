@@ -7,12 +7,7 @@ import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { PushPublishServiceMock } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
-import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import {
     DotCurrentUserService,
     DotESContentService,
@@ -30,7 +25,12 @@ import {
     DotRouterService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
-    ESOrderDirection
+    ESOrderDirection,
+    DotGlobalMessageService,
+    DotWizardService,
+    DotIframeService,
+    DotWorkflowEventHandlerService,
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     CoreWebService,

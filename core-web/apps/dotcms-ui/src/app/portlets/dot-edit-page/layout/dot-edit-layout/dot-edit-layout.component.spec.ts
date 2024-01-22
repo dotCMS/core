@@ -7,7 +7,6 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { EMPTY_TEMPLATE_DESIGN } from '@dotcms/app/portlets/dot-templates/dot-template-create-edit/store/dot-template.store';
@@ -18,7 +17,8 @@ import {
     DotPageLayoutService,
     DotPropertiesService,
     DotRouterService,
-    DotSessionStorageService
+    DotSessionStorageService,
+    DotGlobalMessageService
 } from '@dotcms/data-access';
 import { DotCMSResponse, HttpCode, ResponseView } from '@dotcms/dotcms-js';
 import { DotLayout, DotPageRender, DotTemplateDesigner } from '@dotcms/dotcms-models';

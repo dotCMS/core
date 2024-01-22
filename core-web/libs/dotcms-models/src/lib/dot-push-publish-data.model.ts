@@ -5,9 +5,9 @@
  */
 export interface DotPushPublishData {
     pushActionSelected: string;
-    publishDate: string;
-    expireDate: string;
+    publishDate?: string;
+    expireDate?: string;
     environment: string[];
-    filterKey: string;
+    filterKey?: string;
     timezoneId: string;
 }

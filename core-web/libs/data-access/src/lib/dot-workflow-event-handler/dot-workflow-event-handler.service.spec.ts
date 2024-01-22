@@ -1,40 +1,21 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
+import { createServiceFactory, SpectatorService, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { Injectable } from '@angular/core';
 
-import { ConfirmationService } from 'primeng/api';
-
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotCommentAndAssignFormComponent } from '@components/_common/forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
-import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
-import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
-import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
-    DotAlertConfirmService,
-    DotEventsService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
-    DotRouterService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    DotFormatDateService,
+    PushPublishService,
+    DotGlobalMessageService,
+    DotIframeService,
+    DotWizardService,
+    DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { CoreWebService, DotEventsSocketURL, LoginService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkRequestOptions,
     DotActionBulkResult,
@@ -43,20 +24,42 @@ import {
     DotMessageSeverity,
     DotMessageType,
     DotProcessedWorkflowPayload,
-    DotWorkflowPayload
+    DotWorkflowPayload,
+    DotWizardStep,
+    DotWizardInput
 } from '@dotcms/dotcms-models';
-import { DotFormatDateService } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
     DotMessageDisplayServiceMock,
     LoginServiceMock,
     MockDotMessageService,
+    dotcmsContentletMock,
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
-import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
-import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
-import { MockPushPublishService } from '@portlets/shared/dot-content-types-listing/dot-content-types.component.spec';
+
+const dotEventSocketURLFactory = () => {
+    return new DotEventsSocketURL(
+        `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
+        window.location.protocol === 'https:'
+    );
+};
+
+@Injectable()
+export class MockPushPublishService {
+    getEnvironments() {
+        return of([
+            {
+                id: '123',
+                name: 'Environment 1'
+            },
+            {
+                id: '456',
+                name: 'Environment 2'
+            }
+        ]);
+    }
+}
 
 const mockWAEvent: DotCMSWorkflowActionEvent = {
     workflow: mockWorkflowsActions[0],
@@ -65,9 +68,9 @@ const mockWAEvent: DotCMSWorkflowActionEvent = {
     selectedInodes: []
 };
 
-const mockWizardSteps: DotWizardStep<any>[] = [
+const mockWizardSteps: DotWizardStep[] = [
     {
-        component: DotCommentAndAssignFormComponent,
+        component: 'commentAndAssign',
         data: {
             assignable: true,
             commentable: true,
@@ -77,7 +80,7 @@ const mockWizardSteps: DotWizardStep<any>[] = [
         }
     },
     {
-        component: DotPushPublishFormComponent,
+        component: 'pushPublish',
         data: {}
     }
 ];
@@ -114,83 +117,113 @@ const mockWizardOutputTransformedData: DotProcessedWorkflowPayload = {
     contentlet: {}
 };
 
+const messageServiceMock = new MockDotMessageService({
+    'editpage.actions.fire.confirmation': 'The action "{0}" was executed correctly',
+    'editpage.actions.fire.error.add.environment': 'place holder text',
+    'Workflow-Action': 'Workflow Action'
+});
+
 describe('DotWorkflowEventHandlerService', () => {
-    let dotWorkflowEventHandlerService: DotWorkflowEventHandlerService;
+    let spectator: SpectatorService<DotWorkflowEventHandlerService>;
+    let dotIframeService: DotIframeService;
     let dotWizardService: DotWizardService;
     let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
     let dotGlobalMessageService: DotGlobalMessageService;
-    let dotIframeService: DotIframeService;
     let pushPublishService: PushPublishService;
     let dotMessageDisplayService: DotMessageDisplayService;
 
-    const messageServiceMock = new MockDotMessageService({
-        'editpage.actions.fire.confirmation': 'The action "{0}" was executed correctly',
-        'editpage.actions.fire.error.add.environment': 'place holder text',
-        'Workflow-Action': 'Workflow Action'
+    const createService = createServiceFactory({
+        service: DotWorkflowEventHandlerService,
+        providers: [
+            DotWizardService,
+            mockProvider(DotIframeService),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotGlobalMessageService),
+            {
+                provide: DotMessageDisplayService,
+                useClass: DotMessageDisplayServiceMock
+            },
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            },
+            {
+                provide: PushPublishService,
+                useClass: MockPushPublishService
+            },
+            {
+                provide: LoginService,
+                useClass: LoginServiceMock
+            },
+            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+            { provide: CoreWebService, useClass: CoreWebServiceMock },
+            { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
+        ]
     });
 
     beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [RouterTestingModule, HttpClientTestingModule],
-            providers: [
-                DotWorkflowEventHandlerService,
-                {
-                    provide: DotMessageDisplayService,
-                    useClass: DotMessageDisplayServiceMock
-                },
-                DotWizardService,
-                DotIframeService,
-                DotHttpErrorManagerService,
-                DotWorkflowActionsFireService,
-                DotGlobalMessageService,
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                },
-                {
-                    provide: PushPublishService,
-                    useClass: MockPushPublishService
-                },
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                DotcmsEventsService,
-                DotEventsSocket,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-                DotcmsConfigService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                LoggerService,
-                StringUtils,
-                { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
-                DotRouterService,
-                DotAlertConfirmService,
-                ConfirmationService,
-                DotEventsService
-            ]
-        });
+        spectator = createService();
+        dotIframeService = spectator.inject(DotIframeService);
+        dotWizardService = spectator.inject(DotWizardService);
+        dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
+        dotGlobalMessageService = spectator.inject(DotGlobalMessageService);
+        pushPublishService = spectator.inject(PushPublishService);
+        dotMessageDisplayService = spectator.inject(DotMessageDisplayService);
+    });
 
-        dotWorkflowEventHandlerService = TestBed.get(DotWorkflowEventHandlerService);
-        dotWizardService = TestBed.get(DotWizardService);
-        dotWorkflowActionsFireService = TestBed.get(DotWorkflowActionsFireService);
-        dotGlobalMessageService = TestBed.get(DotGlobalMessageService);
-        dotIframeService = TestBed.get(DotIframeService);
-        pushPublishService = TestBed.get(PushPublishService);
-        dotMessageDisplayService = TestBed.get(DotMessageDisplayService);
+    it('should set wizard input', () => {
+        const input: DotWizardInput = spectator.service.setWizardInput(
+            mockWorkflowsActions[0],
+            mockWizardInput.title
+        ) as DotWizardInput;
+
+        expect(input).toEqual(mockWizardInput);
+    });
+
+    it('should return only valid Components ', () => {
+        const mockWorkflowActions: DotCMSWorkflowAction = {
+            ...mockWorkflowsActions[0]
+        };
+        mockWorkflowActions.actionInputs = [
+            {
+                body: {},
+                id: 'invalidID'
+            },
+            {
+                body: {},
+                id: 'invalidID2'
+            }
+        ];
+        const wizardInput = spectator.service.setWizardInput(mockWorkflowActions, 'Title Test');
+        expect(wizardInput).toEqual(null);
+    });
+
+    it('should process workflow payload', () => {
+        const data = spectator.service.processWorkflowPayload(
+            { ...mockWizardOutputData },
+            mockWorkflowsActions[0].actionInputs
+        );
+
+        expect(data).toEqual(mockWizardOutputTransformedData);
     });
 
     describe('wizard', () => {
         it('should open with the correct data', () => {
-            spyOn(dotWizardService, 'open').and.callThrough();
-            dotWorkflowEventHandlerService.open({ ...mockWAEvent });
+            jest.spyOn(dotWizardService, 'open');
+            spectator.service.open({ ...mockWAEvent });
             expect(dotWizardService.open).toHaveBeenCalledWith(mockWizardInput);
         });
-        it('should fire the workflow action with the correct data, execute the callback and send a message on output', () => {
-            spyOn<any>(dotWorkflowActionsFireService, 'fireTo').and.returnValue(of({}));
 
-            spyOn(dotGlobalMessageService, 'display');
-            spyOn(dotIframeService, 'run');
-            dotWorkflowEventHandlerService.open({ ...mockWAEvent });
+        it('should fire the workflow action with the correct data, execute the callback and send a message on output', () => {
+            jest.spyOn(dotWorkflowActionsFireService, 'fireTo').mockReturnValue(
+                of(dotcmsContentletMock)
+            );
+
+            jest.spyOn(dotGlobalMessageService, 'display');
+            jest.spyOn(dotIframeService, 'run');
+
+            spectator.service.open({ ...mockWAEvent });
             dotWizardService.output$({ ...mockWizardOutputData });
 
             expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith({
@@ -208,8 +241,8 @@ describe('DotWorkflowEventHandlerService', () => {
         });
 
         it('should run iframe function for legacy call', () => {
-            spyOn(dotIframeService, 'run');
-            dotWorkflowEventHandlerService.open({
+            jest.spyOn(dotIframeService, 'run');
+            spectator.service.open({
                 ...mockWAEvent,
                 callback: 'saveAssignCallBackAngular'
             });
@@ -225,7 +258,7 @@ describe('DotWorkflowEventHandlerService', () => {
             const mockBulkResponse: DotActionBulkResult = {
                 skippedCount: 1,
                 successCount: 2,
-                fails: null
+                fails: []
             };
 
             const mockBulkRequest: DotActionBulkRequestOptions = {
@@ -252,11 +285,13 @@ describe('DotWorkflowEventHandlerService', () => {
                 query: 'query'
             };
 
-            spyOn(dotWorkflowActionsFireService, 'bulkFire').and.returnValue(of(mockBulkResponse));
+            jest.spyOn(dotWorkflowActionsFireService, 'bulkFire').mockReturnValue(
+                of(mockBulkResponse)
+            );
 
-            spyOn(dotGlobalMessageService, 'display');
-            spyOn(dotIframeService, 'run');
-            dotWorkflowEventHandlerService.open({
+            jest.spyOn(dotGlobalMessageService, 'display');
+            jest.spyOn(dotIframeService, 'run');
+            spectator.service.open({
                 ...mockWAEvent,
                 selectedInodes: 'query'
             });
@@ -277,15 +312,15 @@ describe('DotWorkflowEventHandlerService', () => {
 
     describe('checkPublishEnvironments', () => {
         it('should return true if there are environments', () => {
-            dotWorkflowEventHandlerService.checkPublishEnvironments().subscribe((flag: boolean) => {
+            spectator.service.checkPublishEnvironments().subscribe((flag: boolean) => {
                 expect(flag).toEqual(true);
             });
         });
         it('should return false and display a notification is there are no environments ', () => {
-            spyOn(pushPublishService, 'getEnvironments').and.returnValue(of([]));
-            spyOn(dotMessageDisplayService, 'push');
+            jest.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
+            jest.spyOn(dotMessageDisplayService, 'push');
 
-            dotWorkflowEventHandlerService.checkPublishEnvironments().subscribe((flag: boolean) => {
+            spectator.service.checkPublishEnvironments().subscribe((flag: boolean) => {
                 expect(flag).toEqual(false);
             });
 
@@ -301,14 +336,12 @@ describe('DotWorkflowEventHandlerService', () => {
     describe('containsPushPublish', () => {
         it('should return true if there are Push Publish inputs', () => {
             expect(
-                dotWorkflowEventHandlerService.containsPushPublish(
-                    mockWorkflowsActions[0].actionInputs
-                )
+                spectator.service.containsPushPublish(mockWorkflowsActions[0].actionInputs)
             ).toEqual(true);
         });
         it('should return false if there are no Push Publish inputs', () => {
             expect(
-                dotWorkflowEventHandlerService.containsPushPublish([
+                spectator.service.containsPushPublish([
                     {
                         body: {},
                         id: 'assignable'
@@ -316,44 +349,5 @@ describe('DotWorkflowEventHandlerService', () => {
                 ])
             ).toEqual(false);
         });
-    });
-
-    it('should set wizard input', () => {
-        const input: DotWizardInput = dotWorkflowEventHandlerService.setWizardInput(
-            mockWorkflowsActions[0],
-            mockWizardInput.title
-        );
-
-        expect(input).toEqual(mockWizardInput);
-    });
-
-    it('should return only valid Components ', () => {
-        const mockWorkflowActions: DotCMSWorkflowAction = {
-            ...mockWorkflowsActions[0]
-        };
-        mockWorkflowActions.actionInputs = [
-            {
-                body: {},
-                id: 'invalidID'
-            },
-            {
-                body: {},
-                id: 'invalidID2'
-            }
-        ];
-        const wizardInput: DotWizardInput = dotWorkflowEventHandlerService.setWizardInput(
-            mockWorkflowActions,
-            'Title Test'
-        );
-        expect(wizardInput).toEqual(null);
-    });
-
-    it('should process workflow payload', () => {
-        const data = dotWorkflowEventHandlerService.processWorkflowPayload(
-            { ...mockWizardOutputData },
-            mockWorkflowsActions[0].actionInputs
-        );
-
-        expect(data).toEqual(mockWizardOutputTransformedData);
     });
 });

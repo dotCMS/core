@@ -1,6 +1,6 @@
 import { createPipeFactory, mockProvider, SpectatorPipe } from '@ngneat/spectator';
 
-import { DotFormatDateService } from '@dotcms/ui';
+import { DotFormatDateService } from '@dotcms/data-access';
 
 import { DotTimestampToDatePipe } from './dot-timestamp-to-date.pipe';
 

@@ -14,10 +14,11 @@ import {
     DotMessageService,
     DotRenderMode,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotFormatDateService
 } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotFormatDateService, DotMessagePipe } from '@dotcms/ui';
 import { mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { EditContentLayoutComponent } from './edit-content.layout.component';
