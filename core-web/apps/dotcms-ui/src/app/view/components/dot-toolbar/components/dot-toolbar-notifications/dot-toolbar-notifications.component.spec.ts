@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Observable, of as observableOf, Subject } from 'rxjs';
+import { mockProvider } from '@ngneat/spectator';
+import { Observable, of as observableOf, of, Subject } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -10,6 +12,7 @@ import { By } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
 
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { AnnouncementsService } from '@dotcms/app/api/services/dot-announcements.ts/dot-announcements.service';
 import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
@@ -99,7 +102,25 @@ describe('DotToolbarNotificationsComponent', () => {
                 { provide: IframeOverlayService, useClass: MockIframeOverlayService },
                 { provide: DotcmsEventsService, useClass: MockDotcmsEventsService },
                 { provide: LoginService, useClass: MockLoginService },
-                { provide: NotificationsService, useClass: MockNotificationsService }
+                { provide: NotificationsService, useClass: MockNotificationsService },
+                {
+                    provide: AnnouncementsService,
+                    useValue: mockProvider(HttpClient, {
+                        get: jasmine.createSpy('get').and.returnValue(
+                            of({
+                                entity: [
+                                    {
+                                        title: 'Test Announcement',
+                                        type: 'announcement',
+                                        announcementDateAsISO8601: '2024-01-31T17:51',
+                                        identifier: 'test-announcement-id',
+                                        url: 'https://www.example.com'
+                                    }
+                                ]
+                            })
+                        )
+                    })
+                }
             ]
         }).compileComponents();
 

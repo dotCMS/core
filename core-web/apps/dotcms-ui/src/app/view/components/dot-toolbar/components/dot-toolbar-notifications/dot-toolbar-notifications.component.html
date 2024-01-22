@@ -5,7 +5,10 @@
         icon="pi pi-megaphone"
         styleClass="p-button-rounded p-button-text">
     </p-button>
-    <span class="badge" id="dot-toolbar-notifications-badge" *ngIf="annocumentsMarkedAsRead"></span>
+    <span
+        class="badge"
+        id="dot-toolbar-notifications-badge"
+        *ngIf="!annocumentsMarkedAsRead"></span>
 
     <p-overlayPanel
         #toolbarAnnouncements
