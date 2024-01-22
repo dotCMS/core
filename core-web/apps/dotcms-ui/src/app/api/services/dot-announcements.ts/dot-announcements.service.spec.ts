@@ -42,7 +42,7 @@ describe('AnnouncementsService', () => {
                 type: 'announcement',
                 announcementDateAsISO8601: '2024-01-31T17:51',
                 identifier: 'test-announcement-id',
-                url: 'https://www.example.com'
+                url: 'https://www.example.com?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu'
             }
         ];
 
