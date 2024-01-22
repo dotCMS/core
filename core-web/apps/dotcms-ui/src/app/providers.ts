@@ -3,7 +3,6 @@ import { TitleStrategy } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
@@ -20,16 +19,18 @@ import {
     DotSessionStorageService,
     DotWorkflowActionsFireService,
     PaginatorService,
-    EmaAppConfigurationService
+    EmaAppConfigurationService,
+    DotGlobalMessageService,
+    DotFormatDateService,
+    DotIframeService,
+    DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
-import { DotFormatDateService } from '@dotcms/ui';
 import { DotTitleStrategy } from '@shared/services/dot-title-strategy.service';
 
 import { DotAccountService } from './api/services/dot-account-service';
 import { DotAppsService } from './api/services/dot-apps/dot-apps.service';
 import { DotUiColorsService } from './api/services/dot-ui-colors/dot-ui-colors.service';
-import { DotWorkflowEventHandlerService } from './api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
 import { DefaultGuardService } from './api/services/guards/default-guard.service';
@@ -41,7 +42,6 @@ import { ColorUtil } from './api/util/ColorUtil';
 import { StringPixels } from './api/util/string-pixels-util';
 import { StringFormat } from './api/util/stringFormat';
 import { DotSaveOnDeactivateService } from './shared/dot-save-on-deactivate-service/dot-save-on-deactivate.service';
-import { DotIframeService } from './view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { IframeOverlayService } from './view/components/_common/iframe/service/iframe-overlay.service';
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');

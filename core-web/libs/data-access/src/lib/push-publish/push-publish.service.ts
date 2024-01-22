@@ -4,12 +4,14 @@ import { Injectable } from '@angular/core';
 
 import { filter, map, mergeMap, pluck, toArray } from 'rxjs/operators';
 
-import { DotCurrentUserService } from '@dotcms/data-access';
-import { ApiRoot, CoreWebService } from '@dotcms/dotcms-js';
-import { DotAjaxActionResponseView, DotCurrentUser } from '@dotcms/dotcms-models';
-import { DotFormatDateService } from '@dotcms/ui';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
-import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
+import { DotCurrentUserService, DotFormatDateService } from '@dotcms/data-access';
+import { ApiRoot, CoreWebService, ResponseView } from '@dotcms/dotcms-js';
+import {
+    DotAjaxActionResponseView,
+    DotCurrentUser,
+    DotEnvironment,
+    DotPushPublishData
+} from '@dotcms/dotcms-models';
 
 /**
  * Provide method to push publish to content types
@@ -33,7 +35,7 @@ export class PushPublishService {
         private dotFormatDateService: DotFormatDateService
     ) {}
 
-    private _lastEnvironmentPushed: string[];
+    private _lastEnvironmentPushed!: string[];
 
     get lastEnvironmentPushed(): string[] {
         return this._lastEnvironmentPushed;
@@ -47,11 +49,11 @@ export class PushPublishService {
     getEnvironments(): Observable<DotEnvironment[]> {
         return this.currentUser.getCurrentUser().pipe(
             mergeMap((user: DotCurrentUser) => {
-                return this.coreWebService.requestView({
+                return this.coreWebService.requestView<DotEnvironment[]>({
                     url: `${this.pushEnvironementsUrl}/${user.roleId}`
                 });
             }),
-            pluck('bodyJsonObject'),
+            pluck<ResponseView<DotEnvironment[]>, DotEnvironment[]>('bodyJsonObject'),
             mergeMap((environments: DotEnvironment[]) => environments),
             filter((environment: DotEnvironment) => environment.name !== ''),
             toArray()
@@ -81,7 +83,7 @@ export class PushPublishService {
                 method: 'POST',
                 url: isBundle ? this.publishBundleURL : this.publishUrl
             })
-            .pipe(map((res: DotAjaxActionResponseView) => res));
+            .pipe(map((res) => res as DotAjaxActionResponseView));
     }
 
     private getPublishEnvironmentData(

@@ -54,7 +54,9 @@
                 (selected)="onPersonaSelected($event)"
                 (despersonalize)="onDespersonalize($event)"
                 data-testId="persona-selector" />
-            <p-button class="p-button-sm" label="Save" />
+            <dot-edit-ema-workflow-actions
+                [inode]="es.editor.page.inode"
+                (newPage)="handleNewPage($event)" />
         </ng-container>
     </dot-edit-ema-toolbar>
     <div

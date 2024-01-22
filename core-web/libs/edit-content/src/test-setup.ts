@@ -1,6 +1,6 @@
 import 'jest-preset-angular/setup-jest';
 
-import { SplitButtonMockComponent, SplitButtonMockModule } from './lib/utils/mocks';
+import { SplitButtonMockComponent, SplitButtonMockModule } from '@dotcms/utils-testing';
 
 /*
  * This is a workaround for the following PrimeNg issue: https://github.com/primefaces/primeng/issues/12945

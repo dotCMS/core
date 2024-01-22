@@ -16,7 +16,6 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { MenuModule } from 'primeng/menu';
 import { PasswordModule } from 'primeng/password';
 
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
@@ -26,7 +25,12 @@ import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
-import { DotEventsService, DotRouterService } from '@dotcms/data-access';
+import {
+    DotEventsService,
+    DotRouterService,
+    DotIframeService,
+    DotFormatDateService
+} from '@dotcms/data-access';
 import {
     CoreWebService,
     DotcmsConfigService,
@@ -38,7 +42,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { DotFormatDateService, DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { CoreWebServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 

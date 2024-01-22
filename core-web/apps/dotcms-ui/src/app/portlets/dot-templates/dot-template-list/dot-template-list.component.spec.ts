@@ -32,7 +32,8 @@ import {
     DotMessageDisplayService,
     DotMessageService,
     DotRouterService,
-    DotSiteBrowserService
+    DotSiteBrowserService,
+    DotFormatDateService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -52,7 +53,7 @@ import {
     DotMessageType,
     DotTemplate
 } from '@dotcms/dotcms-models';
-import { DotFormatDateService, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,

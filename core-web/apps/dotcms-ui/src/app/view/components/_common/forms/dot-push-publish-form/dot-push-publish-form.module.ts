@@ -11,7 +11,7 @@ import { PushPublishEnvSelectorModule } from '@components/_common/dot-push-publi
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
+import { PushPublishService } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import {
     DotFieldRequiredDirective,

@@ -9,12 +9,10 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, PushPublishService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
-import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
+import { DotPushPublishDialogData, DotPushPublishData } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
 
 import { DotPushPublishDialogComponent } from './dot-push-publish-dialog.component';
 
