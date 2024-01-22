@@ -30,7 +30,8 @@
                     "libs/dotcms-scss/angular/_forms.scss",
                     "libs/dotcms-scss/angular/_mixins.scss",
                     "libs/dotcms-scss/angular/dotcms-theme/theme.scss",
-                    "libs/dotcms-scss/angular/_prime-icons.scss"
+                    "libs/dotcms-scss/angular/_prime-icons.scss",
+                    "apps/dotcms-block-editor/src/styles.scss"
                 ],
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
@@ -44,6 +45,11 @@
                 "namedChunks": true
             },
             "configurations": {
+                "localhost": {
+                    "sourceMap": true,
+                    "optimization": false,
+                    "watch": true
+                },
                 "tomcat": {
                     "outputPath": "../../tomcat9/webapps/ROOT/dotcms-block-editor",
                     "sourceMap": true,
@@ -88,6 +94,9 @@
             "configurations": {
                 "production": {
                     "buildTarget": "dotcms-block-editor:build:production"
+                },
+                "development": {
+                    "buildTarget": "dotcms-block-editor:build:development"
                 }
             }
         },
