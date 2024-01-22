@@ -81,6 +81,7 @@
 					pepAPI.deleteEndPointById(id);
 				}
 				List<PublishingEndPoint> endpoints = pepAPI.findSendingEndPointsByEnvironment(bundle.getId());
+				User bundleOwner = APILocator.getUserAPI().loadUserById(bundle.getOwner());
 
 				PublisherAPI publisherAPI = PublisherAPI.getInstance();
 				List<PublishQueueElement> assets = publisherAPI.getQueueElementsByBundleId(bundle.getId());%>
@@ -90,15 +91,20 @@
 						<th width="100%" onclick="goToEditBundle('<%=bundle.getId()%>')" style="cursor:pointer">
 							<b><%=StringEscapeUtils.unescapeJava(bundle.getName())%></b> 
                             (<span> <%=bundle.getId() %> </span>)
+
+							<%if(bundle.getOwner() != null && bundleOwner != null ){%>
+								(<%=bundleOwner.getFullName()%>)
+							<%}%>
+
                             <%if(bundle.bundleTgzExists()){%>
-                                - <%=LanguageUtil.get(pageContext, "Already Generated") %> / Filter:  
-                                <%if(bundle.getOperation()==null || bundle.getOperation()==0){%> 
+                                - <%=LanguageUtil.get(pageContext, "Already Generated") %> / Filter:
+                                <%if(bundle.getOperation()==null || bundle.getOperation()==0){%>
                                     <%=(bundle.getFilterKey()!=null) ?bundle.getFilterKey().replace(".yml", "")  :""%>
                                  <%}else{ %>
                                     Unpublish
                                  <%}%>
-                                 
-                  
+
+
                             <%} %>
 
 						</th>
