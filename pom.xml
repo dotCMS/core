@@ -26,7 +26,6 @@
         parent pom is built first. -->
         <module>parent</module>
         <module>independent-projects</module>
-        <module>maven-plugins</module>
         <module>bom</module>
         <module>core-web</module>
         <module>osgi-base</module>
