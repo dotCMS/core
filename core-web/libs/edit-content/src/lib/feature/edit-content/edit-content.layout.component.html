@@ -1,8 +1,8 @@
 <ng-container *ngIf="vm$ | async as vm; else noContent">
     <div
-        class="topBar"
+        class="feature-banner"
         *ngIf="vm?.contentType?.metadata?.[featuredFlagContentKEY]"
-        data-testId="topBar">
+        data-testId="feature-banner">
         <span [innerHTML]="('edit.content.layout.beta.message' | dm) + ' '"></span>
         <a
             [routerLink]="'/content-types-angular/edit/' + vm.contentType.variable"

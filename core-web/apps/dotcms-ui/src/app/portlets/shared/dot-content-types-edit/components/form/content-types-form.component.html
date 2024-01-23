@@ -8,8 +8,7 @@
         class="content-type__new-content-banner"
         *ngIf="newContentEditorEnabled"
         data-test-id="content-type__new-content-banner">
-        <p-checkbox class="p-checkbox-sm" formControlName="newEditContent" binary="true">
-        </p-checkbox>
+        <p-checkbox formControlName="newEditContent" binary="true"> </p-checkbox>
         <span [innerHTML]="'content.type.form.banner.message' | dm"></span>
     </div>
     <div class="field form__group--validation">

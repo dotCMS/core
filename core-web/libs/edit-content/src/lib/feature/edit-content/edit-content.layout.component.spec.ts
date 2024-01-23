@@ -142,22 +142,22 @@ describe('EditContentLayoutComponent', () => {
             });
         });
 
-        it('should hide the beta topBar if metadata is not present', () => {
+        it('should hide the beta feature-banner if metadata is not present', () => {
             spectator.detectChanges();
 
-            const betaTopbar = spectator.query(byTestId('topBar'));
-            expect(betaTopbar).toBeNull();
+            const featureBanner = spectator.query(byTestId('feature-banner'));
+            expect(featureBanner).toBeNull();
         });
 
-        it('should show the beta topBar when the metadata is present', () => {
+        it('should show the beta feature-banner when the metadata is present', () => {
             spectator.detectChanges();
             const metadata = {};
             metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = true;
 
             dotEditContentStore.patchState({ contentType: { ...CONTENT_TYPE_MOCK, metadata } });
             spectator.detectChanges();
-            const betaTopbar = spectator.query(byTestId('topBar'));
-            expect(betaTopbar).not.toBeNull();
+            const featureBanner = spectator.query(byTestId('feature-banner'));
+            expect(featureBanner).not.toBeNull();
         });
     });
 

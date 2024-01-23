@@ -57,16 +57,4 @@
     a {
         color: $color-palette-primary-900;
     }
-
-    /* Adjust the size of the checkbox */
-    ::ng-deep .ui-chkbox-box {
-        width: 10px;
-        height: 10px;
-    }
-
-    /* Adjust the size of the check icon inside the checkbox */
-    ::ng-deep .ui-chkbox-icon {
-        width: 10px;
-        height: 10px;
-    }
 }
