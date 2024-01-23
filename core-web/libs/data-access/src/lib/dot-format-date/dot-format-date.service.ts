@@ -29,7 +29,7 @@ export class DotFormatDateService {
         hour12: true
     };
 
-    private _systemTimeZone: DotTimeZone;
+    private _systemTimeZone!: DotTimeZone;
 
     constructor(dotcmsConfigService: DotcmsConfigService) {
         dotcmsConfigService
@@ -37,7 +37,7 @@ export class DotFormatDateService {
             .subscribe((timezone) => (this._systemTimeZone = timezone));
     }
 
-    private _localeOptions: DotLocaleOptions;
+    private _localeOptions!: DotLocaleOptions;
 
     get localeOptions(): DotLocaleOptions {
         return this._localeOptions;

@@ -13,11 +13,6 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Menu, MenuModule } from 'primeng/menu';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
-import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
@@ -28,7 +23,13 @@ import {
     DotRouterService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
-    DotWorkflowService
+    DotWorkflowService,
+    DotGlobalMessageService,
+    DotIframeService,
+    DotWizardService,
+    DotWorkflowEventHandlerService,
+    PushPublishService,
+    DotFormatDateService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -41,7 +42,6 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotMessageSeverity, DotMessageType, DotPage } from '@dotcms/dotcms-models';
-import { DotFormatDateService } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,

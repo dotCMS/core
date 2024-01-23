@@ -24,10 +24,16 @@ import { takeUntil } from 'rxjs/operators';
 
 import { CUSTOMER_ACTIONS } from '@dotcms/client';
 import { DotPersonalizeService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes, DotDevice, DotPersona } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotDevice,
+    DotPersona
+} from '@dotcms/dotcms-models';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { SafeUrlPipe, DotSpinnerModule, DotMessagePipe } from '@dotcms/ui';
 
+import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaDeviceDisplayComponent } from './components/dot-ema-device-display/dot-ema-device-display.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
@@ -96,6 +102,7 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
         DotDeviceSelectorSeoComponent,
         DotEmaDeviceDisplayComponent,
         DotEmaBookmarksComponent,
+        DotEditEmaWorkflowActionsComponent,
         ProgressBarModule
     ]
 })
@@ -131,6 +138,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     // This should be in the store, but experienced an issue that triggers a reload in the whole store when the device is updated
     currentDevice: DotDevice & { icon?: string };
+
+    get queryParams(): Params {
+        return this.activatedRouter.snapshot.queryParams;
+    }
 
     ngOnInit(): void {
         fromEvent(this.window, 'message')
@@ -575,8 +586,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // When we set the url, we trigger in the shell component a load to get the new state of the page
                 // This triggers a rerender that makes nextjs to send the set_url again
                 // But this time the params are the same so the shell component wont trigger a load and there we know that the page is loaded
-
-                const isSameUrl = this.activatedRouter.snapshot.queryParams.url === payload.url;
+                const isSameUrl = this.queryParams.url === payload.url;
 
                 if (isSameUrl) {
                     this.store.updateEditorState(EDITOR_STATE.LOADED);
@@ -631,6 +641,26 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Handle a new page event. This event is triggered when the page changes for a Workflow Action
+     * Update the query params if the url or the language id changed
+     *
+     * @param {DotCMSContentlet} page
+     * @memberof EditEmaEditorComponent
+     */
+    handleNewPage(page: DotCMSContentlet): void {
+        const { pageURI, url, languageId } = page;
+        const params = {
+            ...this.updateQueryParams,
+            url: pageURI ?? url,
+            language_id: languageId?.toString()
+        };
+
+        if (this.shouldReload(params)) {
+            this.updateQueryParams(params);
+        }
+    }
+
+    /**
      * Update the query params
      *
      * @private
@@ -639,8 +669,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     private updateQueryParams(params: Params) {
         this.router.navigate([], {
-            // replaceUrl: true,
-            // skipLocationChange: false,
             queryParams: params,
             queryParamsHandling: 'merge'
         });
@@ -659,5 +687,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         });
 
         this.store.updateEditorState(EDITOR_STATE.LOADED);
+    }
+
+    /**
+     * Check if the url or the language id changed
+     *
+     * @private
+     * @param {Params} params
+     * @return {*}  {boolean}
+     * @memberof EditEmaEditorComponent
+     */
+    private shouldReload(params: Params): boolean {
+        const { url: newUrl, language_id: newLanguageId } = params;
+        const { url, language_id } = this.queryParams;
+
+        return newUrl != url || newLanguageId != language_id;
     }
 }

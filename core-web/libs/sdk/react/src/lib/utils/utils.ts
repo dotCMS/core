@@ -1,21 +1,22 @@
 import { ContainerData, PageProviderContext } from '../components/PageProvider/PageProvider';
 
-const widthClassMap: Record<number, string> = {
-    1: 'col-span-1',
-    2: 'col-span-2',
-    3: 'col-span-3',
-    4: 'col-span-4',
-    5: 'col-span-5',
-    6: 'col-span-6',
-    7: 'col-span-7',
-    8: 'col-span-8',
-    9: 'col-span-9',
-    10: 'col-span-10',
-    11: 'col-span-11',
-    12: 'col-span-12'
+const endClassMap: Record<number, string> = {
+    1: 'col-end-1',
+    2: 'col-end-2',
+    3: 'col-end-3',
+    4: 'col-end-4',
+    5: 'col-end-5',
+    6: 'col-end-6',
+    7: 'col-end-7',
+    8: 'col-end-8',
+    9: 'col-end-9',
+    10: 'col-end-10',
+    11: 'col-end-11',
+    12: 'col-end-12',
+    13: 'col-end-13'
 };
 
-const statrClassMap: Record<number, string> = {
+const startClassMap: Record<number, string> = {
     1: 'col-start-1',
     2: 'col-start-2',
     3: 'col-start-3',
@@ -145,12 +146,12 @@ export const getContainersData = (
 
 export const combineClasses = (classes: string[]) => classes.filter(Boolean).join(' ');
 
-export const getPositionStyleClasses = (width: number, leftOffset: number) => {
-    const widthClass = widthClassMap[width];
-    const startClass = statrClassMap[leftOffset];
+export const getPositionStyleClasses = (start: number, end: number) => {
+    const startClass = startClassMap[start];
+    const endClass = endClassMap[end];
 
     return {
-        widthClass,
-        startClass
+        startClass,
+        endClass
     };
 };

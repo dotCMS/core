@@ -24,9 +24,8 @@ import {
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
-import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
+import { DotPushPublishDialogData, DotPushPublishData } from '@dotcms/dotcms-models';
 import { DotFormModel } from '@models/dot-form/dot-form.model';
-import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
 
 @Component({
     selector: 'dot-push-publish-form',

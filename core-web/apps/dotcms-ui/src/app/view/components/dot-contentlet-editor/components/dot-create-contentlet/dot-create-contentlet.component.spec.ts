@@ -11,10 +11,14 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotAlertConfirmService, DotEventsService, DotRouterService } from '@dotcms/data-access';
+import {
+    DotAlertConfirmService,
+    DotEventsService,
+    DotRouterService,
+    DotIframeService,
+    DotFormatDateService
+} from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-import { DotFormatDateService } from '@dotcms/ui';
 import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotCreateContentletComponent } from './dot-create-contentlet.component';
