@@ -53,7 +53,10 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         isLoading: state.status === BinaryFieldStatus.UPLOADING
     }));
 
-    readonly value$ = this.select((state) => state.value);
+    readonly value$ = this.select((state) => ({
+        value: state.value,
+        fileName: state.tempFile?.fileName
+    }));
 
     constructor(
         private readonly dotUploadService: DotUploadService,
