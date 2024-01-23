@@ -1,15 +1,19 @@
 @use "variables" as *;
 
+$iframe-width: 1440px;
+$iframe-height: 900px;
+$container-width: 248px;
+$container-height: 186.62px;
+$sx: $container-width / $iframe-width;
+$sy: $container-height / $iframe-height;
+
 iframe {
     border: none;
-    width: 100vw;
-    height: 100vh;
-    transform: scale(0.2);
+    width: $iframe-width;
+    height: $iframe-height;
+    transform: scale($sx, $sy);
     transform-origin: left top;
     position: absolute;
-    opacity: 1;
-    pointer-events: none;
-    transition: height 150ms ease 0s, opacity 200ms ease 0s;
 }
 
 :host {
@@ -22,7 +26,22 @@ iframe {
         .p-card .p-card-header {
             padding: 0;
             position: relative;
-            height: 181px;
+            display: inline-block;
+            overflow: hidden;
+            height: $container-height;
+            width: $container-width;
+
+            // This prevents the iframe from being clickable and hoverable
+            &::after {
+                content: "";
+                display: block;
+                top: 0;
+                left: 0;
+                position: absolute;
+                overflow: hidden;
+                height: 100%;
+                width: 100%;
+            }
         }
 
         .p-card-content {
