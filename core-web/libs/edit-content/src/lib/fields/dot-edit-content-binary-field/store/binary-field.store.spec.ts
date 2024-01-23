@@ -200,7 +200,7 @@ describe('DotBinaryFieldStore', () => {
 
                 const NEW_BINARY_FIELD_CONTENTLET = {
                     ...BINARY_FIELD_CONTENTLET,
-                    fileAsset: '12345',
+                    fileAssetVersion: '12345',
                     metaData
                 };
 
