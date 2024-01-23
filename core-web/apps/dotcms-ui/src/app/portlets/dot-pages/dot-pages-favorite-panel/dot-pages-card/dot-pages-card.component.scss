@@ -1,11 +1,12 @@
+@use "sass:math";
 @use "variables" as *;
 
-$iframe-width: 1440px;
+$iframe-width: 1188px; // 900 * 1.3 because is the aspect ratio of the container
 $iframe-height: 900px;
-$container-width: 248px;
+$container-width: 248px; // 186.62 * 1.3. This values are fixed because it's the styles of the card and the width of the grid
 $container-height: 186.62px;
-$sx: $container-width / $iframe-width;
-$sy: $container-height / $iframe-height;
+$sx: math.div($container-width, $iframe-width);
+$sy: math.div($container-height, $iframe-height);
 
 iframe {
     border: none;

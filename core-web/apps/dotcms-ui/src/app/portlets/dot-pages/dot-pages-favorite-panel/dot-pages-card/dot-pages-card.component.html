@@ -1,7 +1,10 @@
 <p-card (click)="goTo.emit(true)" data-testid="pageCard">
     <ng-template pTemplate="header">
-        <ng-container *ngIf="emaConfig$ | async as emaConfig; else oldEditPage">
-            <iframe [src]="emaConfig.url + url | safeUrl" scrolling="no"></iframe>
+        <ng-container *ngIf="emaConfig$ | async as emaConfig">
+            <iframe
+                *ngIf="emaConfig; else oldEditPage"
+                [src]="emaConfig.url + url | safeUrl"
+                scrolling="no"></iframe>
         </ng-container>
 
         <ng-template #oldEditPage>
