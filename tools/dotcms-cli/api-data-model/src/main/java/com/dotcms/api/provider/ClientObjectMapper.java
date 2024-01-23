@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.field.ImmutableFileField;
 import com.dotcms.contenttype.model.field.ImmutableHiddenField;
 import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
 import com.dotcms.contenttype.model.field.ImmutableImageField;
+import com.dotcms.contenttype.model.field.ImmutableJSONField;
 import com.dotcms.contenttype.model.field.ImmutableKeyValueField;
 import com.dotcms.contenttype.model.field.ImmutableLineDividerField;
 import com.dotcms.contenttype.model.field.ImmutableMultiSelectField;
@@ -53,6 +54,8 @@ import javax.ws.rs.ext.ContextResolver;
 
 public class ClientObjectMapper implements ContextResolver<ObjectMapper> {
 
+    public ClientObjectMapper() {
+    }
     /**
      * according to: <a href="https://lankydan.dev/providing-your-own-jackson-objectmapper-in-quarkus">...</a>
      * this is how we customize the object mapper here we need to register GuavaModule as we use
@@ -130,6 +133,7 @@ public class ClientObjectMapper implements ContextResolver<ObjectMapper> {
                 .allowIfSubType(ImmutableTextField.class)
                 .allowIfSubType(ImmutableTimeField.class)
                 .allowIfSubType(ImmutableWysiwygField.class)
+                .allowIfSubType(ImmutableJSONField.class)
 
                 .allowIfSubType(Map.class)
                 .allowIfSubType(List.class)

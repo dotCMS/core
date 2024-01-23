@@ -25,6 +25,14 @@ module.exports = function expressMiddleware(router) {
             })
         );
 
+        router.use(
+            '/api/v1/ai/image/test',
+            createProxyMiddleware({
+                target: 'http://localhost:8080',
+                changeOrigin: true
+            })
+        );
+
         // Publish the image_temp generated
         router.use(
             '/api/v1/workflow/actions/default/fire/PUBLISH',

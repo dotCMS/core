@@ -13,7 +13,7 @@ dot-whats-changed,
 .dot-edit__iframe {
     background: $white;
     border-radius: $border-radius-xs;
-    box-shadow: $md-shadow-4;
+    box-shadow: $shadow-m;
     flex-grow: 1;
     overflow: hidden;
 }
@@ -57,7 +57,7 @@ dot-whats-changed,
     .dot-edit__page-wrapper--deviced & {
         flex-grow: 0;
         border-radius: 10px;
-        box-shadow: $md-shadow-6;
+        box-shadow: $shadow-l;
         background: $white;
         background: linear-gradient(135deg, $white 0%, rgba(240, 240, 240, 1) 100%);
         filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);

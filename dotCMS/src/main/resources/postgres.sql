@@ -2137,9 +2137,10 @@ create table workflow_action(
 	commentable boolean default false,
 	requires_checkout boolean default false,
 	icon varchar(255) default 'defaultWfIcon',
-  show_on varchar(255) default 'LOCKED,UNLOCKED',
+    show_on varchar(255) default 'LOCKED,UNLOCKED',
 	use_role_hierarchy_assign bool default false,
-  scheme_id VARCHAR(36) NOT NULL
+    scheme_id VARCHAR(36) NOT NULL,
+    metadata JSONB NULL
 );
 
 CREATE TABLE workflow_action_step (action_id VARCHAR(36) NOT NULL, step_id VARCHAR(36) NOT NULL, action_order INT default 0);
@@ -2514,3 +2515,8 @@ create table system_table (
      key varchar(511) primary key,
      value text not null
 );
+
+
+-- Set up "like 'param%'" indexes for inode and identifier
+CREATE INDEX if not exists inode_inode_leading_idx ON inode(inode  COLLATE "C");
+CREATE INDEX if not exists identifier_id_leading_idx ON identifier(id  COLLATE "C");

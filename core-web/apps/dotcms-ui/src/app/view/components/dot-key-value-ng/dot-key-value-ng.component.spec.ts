@@ -5,9 +5,8 @@ import { By } from '@angular/platform-browser';
 import { TableModule } from 'primeng/table';
 
 import { DotKeyValueTableRowModule } from '@components/dot-key-value-ng/dot-key-value-table-row/dot-key-value-table-row.module';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
@@ -175,6 +174,9 @@ describe('DotKeyValueComponent', () => {
         tableRow = de.query(By.css('dot-key-value-table-input-row')).componentInstance;
         tableRow.save.emit(mockKeyValue[1]);
         expect(component.save.emit).toHaveBeenCalledWith(mockKeyValue[1]);
-        expect(component.variables[1]).toEqual({ ...mockKeyValue[1], value: '123456' });
+        expect(component.variables[1]).toEqual({
+            ...mockKeyValue[1],
+            value: '123456'
+        });
     });
 });

@@ -25,6 +25,16 @@ public interface AbstractLocalPathStructure {
     @Default
     default boolean languageExists() {return false;}
 
+    /**
+     * Determines if the language of the path structure is the default language.
+     *
+     * @return true if the language of the path structure is the default language, false otherwise
+     */
+    @Default
+    default boolean isDefaultLanguage() {
+        return false;
+    }
+
     @Derived
     default String folderName() {
 

@@ -1,5 +1,5 @@
 import { describe } from '@jest/globals';
-import { byTestId, createComponentFactory, Spectator, mockProvider } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -7,6 +7,8 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { FactoryProvider, Type } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { ConfirmationService } from 'primeng/api';
 
 import { DotBlockEditorComponent } from '@dotcms/block-editor';
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
@@ -66,7 +68,10 @@ const FIELD_TYPES_COMPONENTS: Record<
     [FIELD_TYPES.DATE]: DotEditContentCalendarFieldComponent,
     [FIELD_TYPES.DATE_AND_TIME]: DotEditContentCalendarFieldComponent,
     [FIELD_TYPES.TIME]: DotEditContentCalendarFieldComponent,
-    [FIELD_TYPES.TAG]: DotEditContentTagFieldComponent,
+    [FIELD_TYPES.TAG]: {
+        component: DotEditContentTagFieldComponent,
+        providers: [mockProvider(DotEditContentService)]
+    },
     [FIELD_TYPES.CHECKBOX]: DotEditContentCheckboxFieldComponent,
     [FIELD_TYPES.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent,
     [FIELD_TYPES.BLOCK_EDITOR]: DotBlockEditorComponent,
@@ -122,7 +127,8 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
                 {
                     provide: DotMessageService,
                     useValue: dotMessageServiceMock
-                }
+                },
+                mockProvider(ConfirmationService)
             ]
         });
     });

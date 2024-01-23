@@ -16,9 +16,9 @@ import { skip } from 'rxjs/operators';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { LoginService } from '@dotcms/dotcms-js';
+import { DotMenu } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
 import { LoginServiceMock } from '@dotcms/utils-testing';
-import { DotMenu } from '@models/navigation';
 import { DotRandomIconPipeModule } from '@pipes/dot-radom-icon/dot-random-icon.pipe.module';
 
 import { DotNavIconModule } from './components/dot-nav-icon/dot-nav-icon.module';

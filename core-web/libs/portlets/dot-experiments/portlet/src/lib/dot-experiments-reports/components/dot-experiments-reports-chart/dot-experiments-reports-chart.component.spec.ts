@@ -21,7 +21,7 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 // spyOn an exported function with Jest
-jest.spyOn(Utilities, 'getRandomUUID').mockReturnValue('1234');
+jest.spyOn(Utilities, 'getRandomUUID').mockReturnValue('1-2-3-4-5');
 
 describe('DotExperimentsReportsChartComponent', () => {
     let spectator: Spectator<DotExperimentsReportsChartComponent>;

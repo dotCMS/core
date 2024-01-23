@@ -22,11 +22,15 @@ import { DotGlobalMessageComponent } from '@components/_common/dot-global-messag
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
-import { DotEventsService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
+import {
+    DotEventsService,
+    DotMessageService,
+    DotPropertiesService,
+    DotRouterService
+} from '@dotcms/data-access';
 import { DotLayout, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import {
     AUTOSAVE_DEBOUNCE_TIME,
@@ -351,17 +355,21 @@ describe('DotTemplateBuilderComponent', () => {
         });
 
         it('should set iframe permissions url', () => {
-            const permissions = de.query(By.css('[data-testId="permissionsIframe"]'));
-            expect(permissions.componentInstance.src).toBe(
-                '/html/templates/permissions.jsp?templateId=123&popup=true'
-            );
+            fixture.whenStable().then(() => {
+                const permissions = de.query(By.css('[data-testId="permissionsIframe"]'));
+                expect(permissions.componentInstance.src).toBe(
+                    '/html/templates/permissions.jsp?templateId=123&popup=true'
+                );
+            });
         });
 
         it('should set iframe history url', () => {
-            const historyIframe = de.query(By.css('[data-testId="historyIframe"]'));
-            expect(historyIframe.componentInstance.src).toBe(
-                '/html/templates/push_history.jsp?templateId=123&popup=true'
-            );
+            fixture.whenStable().then(() => {
+                const historyIframe = de.query(By.css('[data-testId="historyIframe"]'));
+                expect(historyIframe.componentInstance.src).toBe(
+                    '/html/templates/push_history.jsp?templateId=123&popup=true'
+                );
+            });
         });
 
         it('should reload iframe when changes in the template happens', () => {
@@ -402,19 +410,22 @@ describe('DotTemplateBuilderComponent', () => {
 
         it('should handle custom event', () => {
             spyOn(component.custom, 'emit');
-            const permissions: IframeMockComponent = de.query(
-                By.css('[data-testId="historyIframe"]')
-            ).componentInstance;
-            const customEvent = document.createEvent('CustomEvent');
-            customEvent.initCustomEvent('ng-event', false, false, {
-                name: 'edit-template',
-                data: {
-                    id: 'id',
-                    inode: 'inode'
-                }
+
+            fixture.whenStable().then(() => {
+                const permissions: IframeMockComponent = de.query(
+                    By.css('[data-testId="historyIframe"]')
+                ).componentInstance;
+                const customEvent = document.createEvent('CustomEvent');
+                customEvent.initCustomEvent('ng-event', false, false, {
+                    name: 'edit-template',
+                    data: {
+                        id: 'id',
+                        inode: 'inode'
+                    }
+                });
+                permissions.custom.emit(customEvent);
+                expect(component.custom.emit).toHaveBeenCalledWith(customEvent);
             });
-            permissions.custom.emit(customEvent);
-            expect(component.custom.emit).toHaveBeenCalledWith(customEvent);
         });
     });
 });

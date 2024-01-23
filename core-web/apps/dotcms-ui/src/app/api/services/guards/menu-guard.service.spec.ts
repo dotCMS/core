@@ -7,12 +7,11 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { DotSessionStorageService } from '@dotcms/data-access';
+import { DotRouterService, DotSessionStorageService } from '@dotcms/data-access';
 
 import { MenuGuardService } from './menu-guard.service';
 
 import { DotMenuService } from '../dot-menu.service';
-import { DotRouterService } from '../dot-router/dot-router.service';
 
 @Injectable()
 class MockDotMenuService {

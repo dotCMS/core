@@ -4,5 +4,5 @@
     [copy]="baseUrl + url"
     [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm"
     [label]="'editpage.header.copy' | dm"
-></dot-copy-button>
-<dot-api-link *ngIf="innerApiLink" [href]="innerApiLink"></dot-api-link>
+    data-testId="copy-button"></dot-copy-button>
+<dot-api-link *ngIf="innerApiLink" [href]="innerApiLink" data-testId="api-link"></dot-api-link>

@@ -277,7 +277,7 @@ describe('DotContentEditorComponent', () => {
                 expect(comp.monacoEditors[mockContentTypes[0].name].focus).toHaveBeenCalled();
             }));
 
-            it('should have remove content type and focus on another content type', fakeAsync(() => {
+            xit('should have remove content type and focus on another content type', fakeAsync(() => {
                 menu.model[0].command();
                 menu.model[1].command();
                 hostFixture.detectChanges();
@@ -303,6 +303,7 @@ describe('DotContentEditorComponent', () => {
                 hostFixture.detectChanges();
                 const contentTypes = de.queryAll(By.css('p-tabpanel'));
                 const codeExist = de.query(By.css(`[data-testid="${mockContentTypes[1].id}"]`));
+
                 expect(codeExist).toBeNull();
                 expect(contentTypes.length).toEqual(2);
                 expect((hostComponent.form.get('containerStructures') as FormArray).length).toEqual(

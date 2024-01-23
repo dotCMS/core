@@ -26,6 +26,7 @@
 
 <%
     String containerIdentifier = request.getParameter("container_id");
+    String language_id = request.getParameter("language_id");
     User user = PortalUtil.getUser(request);
     Container container = null;
     if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerIdentifier)) {
@@ -128,7 +129,7 @@
             name: "create-contentlet-from-edit-page",
             data: {
                 url,
-				contentType
+				contentType,
             }
         });
 
@@ -181,6 +182,7 @@
 
         function getCurrentUrlLanguageId () {
             var obj = window.location.href;
+
             const filter = "language_id=";
             const filteredUrl = obj.substring(obj.indexOf(filter));
             return filteredUrl.replace(filter, "");
@@ -244,6 +246,7 @@
 <body>
 <div jsId="contentSelector"
      containerStructures='<%=containerStructures%>'
+     languageId="<%=language_id%>"
      onContentSelected="contentSelected"
      selectButtonLabel='<%= LanguageUtil.get(pageContext, "content.search.select") %>'
      dojoType="dotcms.dijit.form.ContentSelector">

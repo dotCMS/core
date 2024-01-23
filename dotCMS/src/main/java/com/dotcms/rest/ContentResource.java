@@ -9,6 +9,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.util.xstream.XStreamHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import com.dotcms.util.JsonUtil;
@@ -60,9 +61,7 @@ import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.vavr.control.Try;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -781,7 +780,7 @@ public class ContentResource {
             final boolean allCategoriesInfo){
 
         final StringBuilder sb = new StringBuilder();
-        final XStream xstream = new XStream(new DomDriver());
+        final XStream xstream = XStreamHandler.newXStreamInstance();
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
         sb.append("<?xml version=\"1.0\" encoding='UTF-8'?>");
@@ -1024,7 +1023,7 @@ public class ContentResource {
 
 
     private String getXMLContentIds(Contentlet con) {
-        XStream xstream = new XStream(new DomDriver());
+        XStream xstream = XStreamHandler.newXStreamInstance();
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
         StringBuilder sb = new StringBuilder();
@@ -2146,7 +2145,7 @@ public class ContentResource {
                 .startsWith("<?XML")) {
             throw new DotSecurityException("Invalid XML");
         }
-        XStream xstream = new XStream(new DomDriver());
+        XStream xstream = XStreamHandler.newXStreamInstance();
         xstream.alias("content", Map.class);
         xstream.registerConverter(new MapEntryConverter());
         Map<String, Object> root = (Map<String, Object>) xstream.fromXML(input);

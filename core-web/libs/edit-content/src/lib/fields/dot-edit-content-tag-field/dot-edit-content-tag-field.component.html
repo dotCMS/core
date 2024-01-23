@@ -4,8 +4,9 @@
     [id]="'tag-id-' + field.variable"
     [inputId]="field.variable"
     [attr.data-testId]="field.variable"
-    [suggestions]="[]"
+    [suggestions]="options$ | async"
     [multiple]="true"
     [unique]="true"
     [showClear]="true"
-    dotSelectItem></p-autoComplete>
+    (completeMethod)="getTags($event)"
+    dotSelectItem />

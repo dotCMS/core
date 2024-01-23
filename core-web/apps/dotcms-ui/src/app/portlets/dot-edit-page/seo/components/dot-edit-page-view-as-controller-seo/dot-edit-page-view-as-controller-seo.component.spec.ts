@@ -8,14 +8,13 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
-import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotPersonaSelectorComponent } from '@components/dot-persona-selector/dot-persona-selector.component';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotDevicesService,
     DotLanguagesService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotMessageService,
     DotPersonalizeService,
     DotPersonasService,
@@ -26,6 +25,7 @@ import { DotDevice, DotLanguage, DotPageRenderState, DotPersona } from '@dotcms/
 import {
     DotDevicesServiceMock,
     DotLanguagesServiceMock,
+    DotMessageDisplayServiceMock,
     DotPageStateServiceMock,
     DotPersonalizeServiceMock,
     DotPersonasServiceMock,
@@ -153,7 +153,10 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
                     provide: DotPersonalizeService,
                     useClass: DotPersonalizeServiceMock
                 },
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock }
+                {
+                    provide: DotMessageDisplayService,
+                    useClass: DotMessageDisplayServiceMock
+                }
             ]
         });
     }));
