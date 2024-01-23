@@ -49,8 +49,8 @@ public class RedisCache extends CacheProvider {
 
     private static final Long ZERO = 0L;
 
-    private final String REDIS_GROUP_KEY;
-    private final String REDIS_PREFIX_KEY;
+    protected final String REDIS_GROUP_KEY;
+    protected final String REDIS_PREFIX_KEY;
     private final Lazy<RedisClient<String, Object>> client;
 
     private final int keyBatchingSize = Config.getIntProperty("REDIS_SERVER_KEY_BATCH_SIZE", 1000);
