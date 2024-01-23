@@ -7,6 +7,7 @@ import com.amazonaws.services.s3.transfer.Transfer;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.services.s3.transfer.model.UploadResult;
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Configuration;
 import com.dotcms.enterprise.publishing.storage.AWSS3Storage;
 import com.dotcms.enterprise.publishing.storage.Storage;
@@ -15,6 +16,7 @@ import com.dotcms.storage.repository.FileRepositoryManager;
 import com.dotcms.storage.repository.HashedLocalFileRepositoryManager;
 import com.dotcms.storage.repository.LocalFileRepositoryManager;
 import com.dotcms.storage.repository.TempFileRepositoryManager;
+import com.dotcms.util.EnterpriseFeature;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -47,11 +49,11 @@ import static com.liferay.util.StringPool.BLANK;
 import static com.liferay.util.StringPool.FORWARD_SLASH;
 
 /**
- * Provides a Metadata Provider implementation that uses AWS S3 to persist the metadata files. It's
- * very important to take into consideration that any request to check for the existence of a bucket
- * or a file might take a considerable time to complete. Any sort of local caching mechanism is
- * crucial to keep the performance of this provider implementation. This provider can only be used
- * with an Enterprise License.
+ * Provides a Metadata Provider implementation that uses AWS S3 to persist the metadata files.
+ * <p>It's very important to take into consideration that any request to check for the existence of
+ * a bucket or a file might take a considerable time to complete. Any sort of local caching
+ * mechanism is crucial to keep the performance of this provider implementation.<p/>
+ * <p>This provider can ONLY be used with an Enterprise License.</p>
  *
  * @author jsanca
  */
@@ -60,7 +62,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     /**
      * Defines the different ways that can be used to store metadata files in the AWS S3 bucket. By
      * default, folder paths are hashed via SHA-256, but can be persisted using the same folder
-     * pattern used in the dotCMS assets folder.
+     * pattern used in the dotCMS assets folder, i.e., {@code "assets/1/2/1234-1234"}.
      */
     enum PathEncryptionMode {
         NONE, SHA256
@@ -73,6 +75,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     private String bucketName;
     private PathEncryptionMode pathEncryptionMode;
+    private static final String INVALID_LICENSE = "The Redis Metadata Provider is an Enterprise only feature";
     public static final String AWS_S3_BUCKET_NAME_PROP = "storage.file-metadata.s3.bucket-name";
     public static final String AWS_S3_REGION_PROP = "storage.file-metadata.s3.bucket-region";
     public static final String AWS_S3_ACCESS_KEY_PROP = "storage.file-metadata.s3.access-key";
@@ -114,11 +117,13 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
                 new AWSS3Storage(new AWSS3Configuration.Builder().accessKey(accessKey).secretKey(secretAccessKey).endPoint(null).region(region).build());
     }
 
+    @SuppressWarnings("unused")
     public AmazonS3StoragePersistenceAPIImpl(final Storage storage) {
         this.storage = storage;
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean existsGroup(final String groupName) throws DotDataException {
         if (this.groups.contains(groupName)) {
             return true;
@@ -138,6 +143,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean existsObject(final String groupName, final String objectPath) throws DotDataException {
         final String correctedPath = transformReadPath(groupName, objectPath);
         final boolean exists = this.storage.existsBucket(this.bucketName) && !this.storage.listObjects(this.bucketName,
@@ -147,6 +153,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean createGroup(final String groupName) throws DotDataException {
         if (!this.existsGroup(groupName)) {
             Logger.debug(this, String.format("Creating group with name '%s'", groupName));
@@ -157,34 +164,40 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean createGroup(final String groupName, final Map<String, Object> extraOptions) throws DotDataException {
         // Extra options Map is not being used for now
         return createGroup(groupName);
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public int deleteGroup(final String groupName) throws DotDataException {
         this.storage.deleteFolder(this.bucketName, groupName);
         return 0;
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean deleteObjectAndReferences(final String groupName, final String path) throws DotDataException {
         this.storage.deleteFile(groupName, path);
         return true;
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean deleteObjectReference(final String groupName, final String path) throws DotDataException {
         return this.deleteObjectAndReferences(groupName, path);
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public List<String> listGroups() {
         return this.storage.listBuckets().stream().map(Bucket::getName).collect(Collectors.toList());
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Object pushFile(final String groupName, final String path, final File file, final Map<String, Serializable> extraMeta) throws DotDataException {
         final String pathForS3 = transformWritePath(groupName, path, file.getName());
         final Upload upload = this.storage.uploadFile(this.bucketName, pathForS3, file);
@@ -195,6 +208,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Object pushObject(final String groupName, final String path, final ObjectWriterDelegate writerDelegate,
                              final Serializable object, final Map<String, Serializable> extraMeta) throws DotDataException {
         final File file = new File(ConfigUtils.getAssetPath() + path);
@@ -202,6 +216,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Future<Object> pushFileAsync(final String groupName, final String path, final File file, final Map<String, Serializable> extraMeta) {
         final String pathForS3 = transformWritePath(groupName, path, file.getName());
         Logger.debug(this, String.format("Async pushing file '%s' to group '%s' with path '%s' [ %s ]", file.getName(), groupName, pathForS3, path));
@@ -210,6 +225,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Future<Object> pushObjectAsync(final String bucketName, final String path, final ObjectWriterDelegate writerDelegate,
                                           final Serializable object, final Map<String, Serializable> extraMeta) {
         final File file = new File(ConfigUtils.getAssetPath() + path);
@@ -217,6 +233,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public File pullFile(final String groupName, final String path) throws DotDataException {
         final File file = fileRepositoryManager.getOrCreateFile(path);
         final String pathForS3 = transformReadPath(groupName, path);
@@ -228,6 +245,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Object pullObject(final String groupName, final String path, final ObjectReaderDelegate readerDelegate) throws DotDataException {
         Object object = null;
         final File file = pullFile(groupName, path);
@@ -244,6 +262,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Future<File> pullFileAsync(final String groupName, final String path) {
         final File file = fileRepositoryManager.getOrCreateFile(path);
         final String pathForS3 = transformReadPath(groupName, path);
@@ -253,6 +272,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Future<Object> pullObjectAsync(final String groupName, final String path, final ObjectReaderDelegate readerDelegate) {
         final File file = fileRepositoryManager.getOrCreateFile(path);
         final Download download = this.storage.downloadFile(groupName, path, file);
