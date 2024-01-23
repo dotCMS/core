@@ -4,9 +4,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
-import com.dotcms.security.apps.SecretsStore;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.thoughtworks.xstream.XStream;
 import java.io.File;
@@ -34,7 +34,7 @@ public class ContentHandlerTest {
      */
     @Test
     public void Test_XStream_Deserializer() throws IOException {
-        final XStream xStream = ContentHandler.newXStreamInstance();
+        final XStream xStream = XStreamHandler.newXStreamInstance();
 
         final File file = FileTestUtil.getFileInResources(INPUT_FILE_PATH);
         ContentWrapper wrapper;
