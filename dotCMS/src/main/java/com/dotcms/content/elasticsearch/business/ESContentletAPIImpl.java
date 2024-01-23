@@ -49,6 +49,7 @@ import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FunctionUtils;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.ThreadContextUtil;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -170,7 +171,6 @@ import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -2891,7 +2891,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         if (contentlets.size() > 0) {
 
-            final XStream xstream = new XStream(new DomDriver());
+            final XStream xstream = XStreamHandler.newXStreamInstance();
             final File backupFolder = new File(backupPath);
             if (!backupFolder.exists()) {
 
@@ -3226,7 +3226,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if (contentlets.size() > 0) {
-            XStream _xstream = new XStream(new DomDriver());
+            XStream xStreamInstance = XStreamHandler.newXStreamInstance();
             Date date = new Date();
             SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
             String lastmoddate = sdf.format(date);
@@ -3252,7 +3252,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     Logger.error(this, e.getMessage());
                 }
             }
-            _xstream.toXML(contentlets, _bout);
+            xStreamInstance.toXML(contentlets, _bout);
         }
         deleteBinaryFiles(contentletsVersion, null);
 
