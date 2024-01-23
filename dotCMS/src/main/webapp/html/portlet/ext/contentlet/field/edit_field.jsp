@@ -760,7 +760,7 @@
                     .then(({ entity: contentlet }) => {
                         const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
                         const variable = "<%=field.getVelocityVarName()%>";
-                        const fielData = {
+                        const fieldData = {
                             ...(<%=jsonField%>),
                             hint: '<%=hint%>',
                             variable,
@@ -776,12 +776,21 @@
                         binaryField.id = "binary-field-<%=field.getVelocityVarName()%>";
                         binaryField.setAttribute("fieldName", "<%=field.getVelocityVarName()%>");
 
-                        binaryField.field = fielData;
+                        binaryField.field = fieldData;
                         binaryField.contentlet = contentlet;
                         binaryField.imageEditor = true;
 
+                        const contentBaseType = <%= contentlet.getContentType().baseType().getType() %>;
+
                         binaryField.addEventListener('valueUpdated', ({ detail }) => {
-                            field.value = detail;
+                            const { id, fileName } = detail;
+                            field.value = id;
+                            if(contentBaseType === 4){ // FileAsset
+                                let titleField = dijit.byId("title");
+                                let fileNameField = dijit.byId("fileName");
+                                titleField?.setValue(fileName);
+                                fileNameField?.setValue(fileName);
+                            }
                         });
 
                         binaryFieldContainer.innerHTML = '';
@@ -992,6 +1001,7 @@
 
         String bnFlag = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
         Boolean newBinaryOn = bnFlag != null && bnFlag.equalsIgnoreCase("true");
+
         Boolean isBinaryField = field.getFieldType().equals(Field.FieldType.BINARY.toString());
         Boolean shouldShowEditFileOnBn = isBinaryField && !newBinaryOn; // If the new binary field is on, we don't show the edit field
 
