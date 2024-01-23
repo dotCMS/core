@@ -56,6 +56,7 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
@@ -75,7 +76,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import io.vavr.control.Try;
 
 import java.io.File;
@@ -150,7 +150,7 @@ public class ContainerHandler implements IHandler {
     final User systemUser = userAPI.getSystemUser();
     File workingOn = null;
     try {
-      XStream xstream = new XStream(new DomDriver());
+      XStream xstream = XStreamHandler.newXStreamInstance();
       // Handle folders
       for (final File containerFile : containers) {
         workingOn = containerFile;
