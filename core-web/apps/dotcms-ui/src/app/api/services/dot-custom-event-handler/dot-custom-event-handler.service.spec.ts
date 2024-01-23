@@ -9,8 +9,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
@@ -23,7 +21,13 @@ import {
     DotMessageDisplayService,
     DotPropertiesService,
     DotRouterService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    DotIframeService,
+    DotGlobalMessageService,
+    DotFormatDateService,
+    DotWizardService,
+    DotWorkflowEventHandlerService,
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -39,7 +43,6 @@ import {
     UserModel
 } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotFormatDateService } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     CoreWebServiceMock,
@@ -51,9 +54,6 @@ import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotMenuService } from '@services/dot-menu.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
-import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { PushPublishService } from '@services/push-publish/push-publish.service';
 
 describe('DotCustomEventHandlerService', () => {
     let service: DotCustomEventHandlerService;

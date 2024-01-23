@@ -4,8 +4,9 @@ import { Injectable } from '@angular/core';
 
 import { filter } from 'rxjs/operators';
 
-import { DotRouterService } from '@dotcms/data-access';
-import { DotFunctionInfo } from '@models/dot-function-info/dot-function-info.model';
+import { DotFunctionInfo } from '@dotcms/dotcms-models';
+
+import { DotRouterService } from '../dot-router/dot-router.service';
 
 @Injectable()
 export class DotIframeService {
@@ -94,7 +95,7 @@ export class DotIframeService {
     }
 
     private getFunctionToRefreshIframe(portlet: string): DotFunctionInfo {
-        const mapOfFunctions = {
+        const mapOfFunctions: Record<string, string> = {
             content: 'doSearch',
             'site-browser': 'reloadContent',
             'vanity-urls': 'doSearch',

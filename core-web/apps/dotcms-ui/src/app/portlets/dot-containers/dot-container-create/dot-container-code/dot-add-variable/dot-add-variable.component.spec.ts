@@ -19,7 +19,6 @@ import { ButtonModule } from 'primeng/button';
 import { DataViewModule } from 'primeng/dataview';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
@@ -29,7 +28,8 @@ import {
     DotMessageDisplayService,
     DotMessageService,
     DotRouterService,
-    DotSiteBrowserService
+    DotSiteBrowserService,
+    DotGlobalMessageService
 } from '@dotcms/data-access';
 import {
     CoreWebService,

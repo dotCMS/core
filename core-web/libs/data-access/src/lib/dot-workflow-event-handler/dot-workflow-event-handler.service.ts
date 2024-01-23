@@ -4,17 +4,6 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, take } from 'rxjs/operators';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotCommentAndAssignFormComponent } from '@components/_common/forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
-import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
-import {
-    DotHttpErrorManagerService,
-    DotMessageDisplayService,
-    DotMessageService,
-    DotWorkflowActionsFireService
-} from '@dotcms/data-access';
 import {
     DotActionBulkRequestOptions,
     DotActionBulkResult,
@@ -24,14 +13,25 @@ import {
     DotMessageSeverity,
     DotMessageType,
     DotProcessedWorkflowPayload,
-    DotWorkflowPayload
+    DotWizardInput,
+    DotWizardStep,
+    DotWorkflowPayload,
+    DotEnvironment,
+    DotWizardComponentEnum
 } from '@dotcms/dotcms-models';
-import { DotFormatDateService } from '@dotcms/ui';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
-import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
-import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
 
+import { DotFormatDateService } from '../dot-format-date/dot-format-date.service';
+import { DotGlobalMessageService } from '../dot-global-message/dot-global-message.service';
+import {
+    DotHttpErrorManagerService,
+    DotHttpErrorHandled
+} from '../dot-http-error-manager/dot-http-error-manager.service';
+import { DotIframeService } from '../dot-iframe/dot-iframe.service';
+import { DotMessageDisplayService } from '../dot-message-display/dot-message-display.service';
+import { DotMessageService } from '../dot-messages/dot-messages.service';
 import { DotWizardService } from '../dot-wizard/dot-wizard.service';
+import { DotWorkflowActionsFireService } from '../dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { PushPublishService } from '../push-publish/push-publish.service';
 
 enum DotActionInputs {
     ASSIGNABLE = 'assignable',
@@ -48,13 +48,13 @@ interface DotAssignableData {
 const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';
 const VIEW_CONTENT_CALLBACK_FUNCTION = 'angularWorkflowEventCallback';
 
+export const WORKFLOW_STEP_MAP: { [key in DotWizardComponentEnum]: boolean } = {
+    commentAndAssign: true,
+    pushPublish: true
+};
+
 @Injectable()
 export class DotWorkflowEventHandlerService {
-    private workflowStepMap = {
-        commentAndAssign: DotCommentAndAssignFormComponent,
-        pushPublish: DotPushPublishFormComponent
-    };
-
     constructor(
         private pushPublishService: PushPublishService,
         private dotMessageDisplayService: DotMessageDisplayService,
@@ -131,14 +131,13 @@ export class DotWorkflowEventHandlerService {
      * @returns DotWizardInput
      * @memberof DotWorkflowEventHandlerService
      */
-    setWizardInput(workflow: DotCMSWorkflowAction, title: string): DotWizardInput {
-        const steps: DotWizardStep<
-            DotCommentAndAssignFormComponent | DotPushPublishFormComponent
-        >[] = [];
+    setWizardInput(workflow: DotCMSWorkflowAction, title: string): DotWizardInput | null {
+        const steps: DotWizardStep[] = [];
         this.mergeCommentAndAssign(workflow).forEach((input: DotCMSWorkflowInput) => {
-            if (this.workflowStepMap[input.id]) {
+            const formComponentId = input.id as DotWizardComponentEnum;
+            if (WORKFLOW_STEP_MAP[formComponentId]) {
                 steps.push({
-                    component: this.workflowStepMap[input.id],
+                    component: input.id,
                     data: input.body
                 });
             }
@@ -163,7 +162,7 @@ export class DotWorkflowEventHandlerService {
         data: DotWorkflowPayload,
         inputs: DotCMSWorkflowInput[]
     ): DotProcessedWorkflowPayload {
-        const processedData = { ...data };
+        const processedData: DotProcessedWorkflowPayload = { ...data };
         if (this.containsPushPublish(inputs)) {
             processedData['whereToSend'] = data.environment.join();
             processedData['iWantTo'] = data.pushActionSelected;
@@ -193,7 +192,7 @@ export class DotWorkflowEventHandlerService {
     }
 
     private mergeCommentAndAssign(workflow: DotCMSWorkflowAction): DotCMSWorkflowInput[] {
-        const body = {};
+        const body: Record<string, boolean> = {};
         let workflows: DotCMSWorkflowInput[];
         workflow.actionInputs.forEach((input) => {
             if (this.isValidActionInput(input.id)) {
@@ -214,14 +213,18 @@ export class DotWorkflowEventHandlerService {
     }
 
     private openWizard(event: DotCMSWorkflowActionEvent): void {
-        this.dotWizardService
-            .open<DotWorkflowPayload>(
-                this.setWizardInput(event.workflow, this.dotMessageService.get('Workflow-Action'))
-            )
-            .pipe(take(1))
-            .subscribe((data: DotWorkflowPayload) => {
-                this.fireWorkflowAction(event, data);
-            });
+        const wizardInput = this.setWizardInput(
+            event.workflow,
+            this.dotMessageService.get('Workflow-Action')
+        );
+        if (wizardInput) {
+            this.dotWizardService
+                .open<DotWorkflowPayload>(wizardInput)
+                .pipe(take(1))
+                .subscribe((data: DotWorkflowPayload) => {
+                    this.fireWorkflowAction(event, data);
+                });
+        }
     }
 
     private fireWorkflowAction(event: DotCMSWorkflowActionEvent, data?: DotWorkflowPayload): void {
@@ -235,7 +238,7 @@ export class DotWorkflowEventHandlerService {
                         return this.httpErrorManagerService.handle(error);
                     })
                 )
-                .subscribe((response: DotActionBulkResult) => {
+                .subscribe((response: DotActionBulkResult | DotHttpErrorHandled) => {
                     this.displayNotification(event.workflow.name);
                     this.dotIframeService.run({ name: event.callback, args: [response] });
                 });
@@ -246,7 +249,10 @@ export class DotWorkflowEventHandlerService {
                     name: event.callback,
                     args: [
                         event.workflow.id,
-                        this.processWorkflowPayload(data, event.workflow.actionInputs)
+                        this.processWorkflowPayload(
+                            data as DotWorkflowPayload,
+                            event.workflow.actionInputs
+                        )
                     ]
                 });
             } else {
@@ -254,7 +260,10 @@ export class DotWorkflowEventHandlerService {
                     .fireTo({
                         inode: event.inode,
                         actionId: event.workflow.id,
-                        data: this.processWorkflowPayload(data, event.workflow.actionInputs)
+                        data: this.processWorkflowPayload(
+                            data as DotWorkflowPayload,
+                            event.workflow.actionInputs
+                        )
                     })
                     .pipe(
                         catchError((error) => {
@@ -301,7 +310,10 @@ export class DotWorkflowEventHandlerService {
         event: DotCMSWorkflowActionEvent,
         data?: DotWorkflowPayload
     ): DotActionBulkRequestOptions {
-        const processedData = this.processWorkflowPayload(data, event.workflow.actionInputs);
+        const processedData = this.processWorkflowPayload(
+            data as DotWorkflowPayload,
+            event.workflow.actionInputs
+        );
         const requestOptions: DotActionBulkRequestOptions = {
             workflowActionId: event.workflow.id,
             additionalParams: {
