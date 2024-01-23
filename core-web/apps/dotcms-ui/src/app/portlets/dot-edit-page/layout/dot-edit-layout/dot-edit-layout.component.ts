@@ -6,7 +6,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { debounceTime, filter, finalize, pluck, switchMap, take, takeUntil } from 'rxjs/operators';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import {
@@ -14,7 +13,8 @@ import {
     DotMessageService,
     DotPageLayoutService,
     DotRouterService,
-    DotSessionStorageService
+    DotSessionStorageService,
+    DotGlobalMessageService
 } from '@dotcms/data-access';
 import { ResponseView } from '@dotcms/dotcms-js';
 import {

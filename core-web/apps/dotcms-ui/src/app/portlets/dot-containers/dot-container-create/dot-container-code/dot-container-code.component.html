@@ -7,8 +7,8 @@
     <p-tabView
         [@contentCodeAnimation]
         [(activeIndex)]="activeTabIndex"
-        [scrollable]="true"
         [controlClose]="true"
+        [scrollable]="true"
         (onChange)="handleTabClick($event, $event.index)"
         (onClose)="removeItem($event.index)">
         <p-tabPanel headerStyleClass="tab-panel-btn">
@@ -17,13 +17,14 @@
                     class="pi pi-plus add-tab-icon"
                     *ngIf="contentTypes.length > 0; else contentTypesLoader"
                     (click)="handleTabClick($event); actionsMenu.toggle($event)"></i>
+
                 <ng-template #contentTypesLoader>
-                    <p-skeleton borderRadius="0px" width="4rem" height="3.9rem"></p-skeleton>
+                    <p-skeleton borderRadius="0px" height="3.9rem" width="4rem"></p-skeleton>
                 </ng-template>
                 <p-menu
                     #actionsMenu
-                    [popup]="true"
                     [model]="menuItems"
+                    [popup]="true"
                     [style]="{
                         'max-height': '300px',
                         overflow: 'auto'
@@ -44,9 +45,9 @@
                             {{ 'message.containers.empty.content_type_need_help' | dm }}?
                         </span>
                         <a
+                            data-testId="empty-content-link"
                             href="https://www.dotcms.com/docs/latest/containers"
-                            target="_blank"
-                            data-testId="empty-content-link">
+                            target="_blank">
                             {{ 'message.containers.empty.content_type_go_to_documentation' | dm }}
                         </a>
                     </div>
@@ -64,17 +65,17 @@
             <div [formGroupName]="i">
                 <button
                     class="p-button-outlined dot-container-code__variable-btn ml-3 mb-2 mt-2 p-button-sm"
-                    [label]="'add-variable' | dm"
                     [disabled]="contentTypes.length === 0"
+                    [label]="'add-variable' | dm"
                     (click)="handleAddVariable(containerContent.value)"
                     pButton></button>
                 <dot-textarea-content
                     #body
                     [attr.data-testid]="containerContent.value.structureId"
-                    [value]="containerContent.value.code"
+                    [customStyles]="{ border: 'none', height: '500px' }"
                     [editorName]="containerContent.value.structureId"
                     [show]="['code']"
-                    [customStyles]="{ border: 'none', height: '500px' }"
+                    [value]="containerContent.value.code"
                     (monacoInit)="monacoInit($event)"
                     formControlName="code"
                     language="html"></dot-textarea-content>

@@ -9,10 +9,10 @@ import {
     DotAlertConfirmService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
-    DotRouterService
+    DotRouterService,
+    DotFormatDateService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-import { DotFormatDateService } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,

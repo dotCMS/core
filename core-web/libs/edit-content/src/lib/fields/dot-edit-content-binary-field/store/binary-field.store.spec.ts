@@ -96,7 +96,7 @@ describe('DotBinaryFieldStore', () => {
 
             store.vm$.subscribe((state) => {
                 expect(state.contentlet).toEqual(BINARY_FIELD_CONTENTLET);
-                expect(state.value).toEqual(BINARY_FIELD_CONTENTLET.inode);
+                expect(state.value).toEqual(BINARY_FIELD_CONTENTLET.value);
                 done();
             });
         });

@@ -5,9 +5,14 @@ import { of } from 'rxjs';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import { DotMessageService, DotThemesService, PaginatorService } from '@dotcms/data-access';
+import {
+    DotMessageService,
+    DotThemesService,
+    PaginatorService,
+    DotFormatDateService
+} from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotFormatDateService, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';

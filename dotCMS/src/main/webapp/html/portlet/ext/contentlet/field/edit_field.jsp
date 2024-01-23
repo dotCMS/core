@@ -750,13 +750,14 @@
                      * This is a workaround to get the contentlet from the API
                      * because there is no way to get the same contentlet the AP retreive from the dwr call.
                      */
-                    fetch('/api/content/id/<%=contentlet.getIdentifier()%>', {
+                    fetch('/api/v1/content/<%=contentlet.getInode()%>', {
                         method: 'GET',
                         headers: {
                             'Content-Type': 'application/json'
                         }
-                    }).then(response => response.json())
-                    .then(({ contentlets }) => {
+                    })
+                    .then(response => response.json())
+                    .then(({ entity: contentlet }) => {
                         const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
                         const variable = "<%=field.getVelocityVarName()%>";
                         const fielData = {
@@ -776,17 +777,11 @@
                         binaryField.setAttribute("fieldName", "<%=field.getVelocityVarName()%>");
 
                         binaryField.field = fielData;
-                        binaryField.contentlet = contentlets[0];
+                        binaryField.contentlet = contentlet;
                         binaryField.imageEditor = true;
 
                         binaryField.addEventListener('valueUpdated', ({ detail }) => {
-                            // If the value is different from the contentlet's inode, then we need to update the value
-                            // Binary field in JSP Expect the current value to be a path to the file.
-                            // Not the inode of the contentlet. Since we have the reference to the contentlet
-                            // We update the value is the inode is different from the contentlet's inode.
-                            if (detail !== contentlets[0].inode) {
-                                field.value = detail;
-                            }
+                            field.value = detail;
                         });
 
                         binaryFieldContainer.innerHTML = '';

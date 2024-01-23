@@ -6,8 +6,11 @@ import { Injectable } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotHttpErrorManagerService,
+    DotGlobalMessageService
+} from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DotFieldContent, FilteredFieldTypes } from '../dot-add-variable.models';

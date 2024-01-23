@@ -1,8 +1,14 @@
-import { createServiceFactory, mockProvider, SpectatorService, SpyObject } from '@ngneat/spectator';
+import {
+    createServiceFactory,
+    mockProvider,
+    SpectatorService,
+    SpyObject
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
-import { DotFormatDateService } from '@dotcms/ui';
+
+import { DotFormatDateService } from './dot-format-date.service';
 
 const INVALID_DATE_MSG = 'Invalid date';
 const VALID_TIMESTAMP = 1701189800000;

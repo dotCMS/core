@@ -2,8 +2,8 @@ import { Meta, moduleMetadata, Story } from '@storybook/angular';
 
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotFormatDateService, DotMessagePipe } from '@dotcms/ui';
+import { DotMessageService, DotFormatDateService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotBulkInformationComponent } from './dot-bulk-information.component';
