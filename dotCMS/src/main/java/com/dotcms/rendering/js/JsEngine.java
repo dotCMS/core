@@ -281,18 +281,24 @@ public class JsEngine implements ScriptEngine {
         final String absoluteWebInfPath  = Config.CONTEXT.getRealPath(File.separator + WEB_INF);
         final String relativeModulesPath = File.separator + WEB_INF + File.separator + "javascript" + File.separator + "modules" + File.separator;
         final String absoluteModulesPath = Config.CONTEXT.getRealPath(relativeModulesPath);
-        FileUtil.walk(absoluteModulesPath,
-                path -> path.getFileName().toString().endsWith(".mjs"), path -> {
+        final File modulesPath = new File(absoluteModulesPath);
+        if (modulesPath.exists() && modulesPath.canRead()) {
+            FileUtil.walk(absoluteModulesPath,
+                    path -> path.getFileName().toString().endsWith(".mjs"), path -> {
 
-                    final String absolutePath = path.toString();
-                    Logger.debug(this, "Loading: " + absolutePath);
-                    final Source source = toModuleSource(absolutePath,
-                            StringUtils.remove(absolutePath, absoluteWebInfPath), path.toFile());
-                    if (Objects.nonNull(source)) {
-                        sources.add(source);
-                        Logger.debug(this, "Loaded: " + absolutePath);
-                    }
-                });
+                        final String absolutePath = path.toString();
+                        Logger.debug(this, "Loading: " + absolutePath);
+                        final Source source = toModuleSource(absolutePath,
+                                StringUtils.remove(absolutePath, absoluteWebInfPath), path.toFile());
+                        if (Objects.nonNull(source)) {
+                            sources.add(source);
+                            Logger.debug(this, "Loaded: " + absolutePath);
+                        }
+                    });
+        } else {
+
+            Logger.warn(this, "The modules path: " + absoluteModulesPath + " does not exist or is not readable");
+        }
     }
 
     private void addFunctions(final List<Source> sources) throws IOException {
@@ -302,17 +308,23 @@ public class JsEngine implements ScriptEngine {
             return;
         }
         final String absoluteFunctionsPath = Config.CONTEXT.getRealPath(relativeFunctionsPath);
-        FileUtil.walk(absoluteFunctionsPath,
-                path -> path.getFileName().toString().endsWith(".js"), path -> {
+        final File functionsPath = new File(absoluteFunctionsPath);
+        if (functionsPath.exists() && functionsPath.canRead()) { 
 
-                    final String absolutePath = path.toString();
-                    Logger.info(this, "Loading: " + absolutePath);
-                    final Source source = toSource(absolutePath, path.toFile());
-                    if (Objects.nonNull(source)) {
-                        sources.add(source);
-                        Logger.info(this, "Loaded: " + absolutePath);
-                    }
-                });
+            FileUtil.walk(absoluteFunctionsPath,
+                    path -> path.getFileName().toString().endsWith(".js"), path -> {
+
+                        final String absolutePath = path.toString();
+                        Logger.info(this, "Loading: " + absolutePath);
+                        final Source source = toSource(absolutePath, path.toFile());
+                        if (Objects.nonNull(source)) {
+                            sources.add(source);
+                            Logger.info(this, "Loaded: " + absolutePath);
+                        }
+                    });
+        } else {
+            Logger.warn(this, "The functions path: " + absoluteFunctionsPath + " does not exist or is not readable");
+        }
     }
 
     /**
