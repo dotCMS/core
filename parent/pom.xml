@@ -89,10 +89,13 @@
         <starter.version>empty_20230525</starter.version>
         <!--<starter.version>empty_20230509</starter.version>-->
 
+        <sonar.projectKey>core-maven:${project.groupId}:${project.artifactId}</sonar.projectKey>
+        <sonar.projectName>core-maven</sonar.projectName>
+        <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
         <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/jacoco-results/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-        <sonar.language>java</sonar.language>
+        <sonar.coverage.jacoco.xmlReportPaths>${basedir}/reports/target/site/jacoco-aggregate</sonar.coverage.jacoco.xmlReportPaths>
 
         <surefireArgline/>
         <integrationTestCoverageAgent/>
