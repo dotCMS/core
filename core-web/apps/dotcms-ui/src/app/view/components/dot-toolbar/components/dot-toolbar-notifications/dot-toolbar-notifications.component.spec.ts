@@ -12,7 +12,7 @@ import { By } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
 
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { AnnouncementsService } from '@dotcms/app/api/services/dot-announcements.ts/dot-announcements.service';
+import { AnnouncementsStore } from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
 import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
@@ -104,7 +104,7 @@ describe('DotToolbarNotificationsComponent', () => {
                 { provide: LoginService, useClass: MockLoginService },
                 { provide: NotificationsService, useClass: MockNotificationsService },
                 {
-                    provide: AnnouncementsService,
+                    provide: AnnouncementsStore,
                     useValue: mockProvider(HttpClient, {
                         get: jasmine.createSpy('get').and.returnValue(
                             of({

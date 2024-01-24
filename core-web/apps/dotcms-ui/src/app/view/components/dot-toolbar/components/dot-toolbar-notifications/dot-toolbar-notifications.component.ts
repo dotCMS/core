@@ -3,7 +3,7 @@ import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { OverlayPanel } from 'primeng/overlaypanel';
 
 import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
-import { AnnouncementsService } from '@dotcms/app/api/services/dot-announcements.ts/dot-announcements.service';
+import { AnnouncementsStore } from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
 import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
 import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
@@ -31,12 +31,14 @@ export class DotToolbarNotificationsComponent implements OnInit {
     private isNotificationsMarkedAsRead = false;
     private showNotifications = false;
 
+    readAnnouncements = false;
+
     constructor(
         public iframeOverlayService: IframeOverlayService,
         private dotcmsEventsService: DotcmsEventsService,
         private loginService: LoginService,
         private notificationService: NotificationsService,
-        private announcementsService: AnnouncementsService
+        private announcementsStore: AnnouncementsStore
     ) {}
 
     ngOnInit(): void {
@@ -44,6 +46,11 @@ export class DotToolbarNotificationsComponent implements OnInit {
         this.subscribeToNotifications();
 
         this.loginService.watchUser(this.getNotifications.bind(this));
+
+        this.announcementsStore.loadAnnouncements();
+        this.announcementsStore.state$.subscribe((state) => {
+            this.readAnnouncements = state.readAnnouncements;
+        });
     }
 
     dismissAllNotifications(): void {
@@ -136,6 +143,8 @@ export class DotToolbarNotificationsComponent implements OnInit {
 
     markAnnocumentsAsRead(): void {
         this.activeAnnouncements = false;
-        this.announcementsService.saveAnnouncementsData();
+        this.readAnnouncements = this.announcementsStore.readAnnouncements();
+        this.announcementsStore.saveAnnouncements(this.announcementsStore.announcementsSignal());
+        this.announcementsStore.unreadAnnouncements();
     }
 }

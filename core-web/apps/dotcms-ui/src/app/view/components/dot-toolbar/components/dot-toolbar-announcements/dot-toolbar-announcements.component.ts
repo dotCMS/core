@@ -1,12 +1,12 @@
 import { NgClass, NgForOf, CommonModule } from '@angular/common';
-import { Component, Signal, inject } from '@angular/core';
+import { Component, Input, Signal, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import {
     Announcement,
     TypesIcons,
-    AnnouncementsService
-} from '@dotcms/app/api/services/dot-announcements.ts/dot-announcements.service';
+    AnnouncementsStore
+} from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
@@ -15,14 +15,13 @@ import { DotMessagePipe } from '@dotcms/ui';
     styleUrls: ['./dot-toolbar-announcements.component.scss'],
     standalone: true,
     imports: [NgForOf, NgClass, DotMessagePipe, RouterLink, CommonModule],
-    providers: [AnnouncementsService]
+    providers: [AnnouncementsStore]
 })
 export class DotToolbarAnnouncementsComponent {
-    announcementsService = inject(AnnouncementsService);
+    announcementsStore = inject(AnnouncementsStore);
 
-    announcements: Signal<Announcement[]> = this.announcementsService.announcements;
-
-    unreadAnnouncements: Signal<boolean> = this.announcementsService.unreadAnnouncements;
+    @Input() readAnnouncements: boolean;
+    announcements: Signal<Announcement[]> = this.announcementsStore.announcementsSignal;
 
     knowledgeCenterLinks = [
         {

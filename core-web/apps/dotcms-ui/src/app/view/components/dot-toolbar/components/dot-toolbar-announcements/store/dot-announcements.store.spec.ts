@@ -4,13 +4,13 @@ import { of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
-import { AnnouncementsService, Announcement } from './dot-announcements.service';
+import { Announcement, AnnouncementsStore } from './dot-announcements.store';
 
-describe('AnnouncementsService', () => {
-    let spectator: SpectatorService<AnnouncementsService>;
+describe('AnnouncementsStore', () => {
+    let spectator: SpectatorService<AnnouncementsStore>;
 
     const createService = createServiceFactory({
-        service: AnnouncementsService,
+        service: AnnouncementsStore,
         imports: [HttpClientTestingModule],
         providers: [
             mockProvider(HttpClient, {
@@ -22,6 +22,7 @@ describe('AnnouncementsService', () => {
                                 type: 'announcement',
                                 announcementDateAsISO8601: '2024-01-31T17:51',
                                 identifier: 'test-announcement-id',
+                                inode: '123',
                                 url: 'https://www.example.com'
                             }
                         ]
@@ -35,53 +36,54 @@ describe('AnnouncementsService', () => {
         spectator = createService();
     });
 
-    it('should fetch announcements', () => {
+    it('should fetch announcements', (done) => {
         const mockAnnouncements: Announcement[] = [
             {
                 title: 'Test Announcement',
                 type: 'announcement',
                 announcementDateAsISO8601: '2024-01-31T17:51',
                 identifier: 'test-announcement-id',
+                inode: '123',
                 url: 'https://www.example.com?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu'
             }
         ];
-
-        expect(spectator.service.announcements()).toEqual(mockAnnouncements);
+        spectator.service.loadAnnouncements();
+        spectator.service.state$.subscribe((state) => {
+            expect(state.announcements).toEqual(mockAnnouncements);
+            done();
+        });
     });
 
-    it('should mark announcements as unread', () => {
-        const storedAnnouncements: Announcement[] = [
-            {
-                title: 'Stored Announcement',
-                type: 'announcement',
-                announcementDateAsISO8601: '2024-01-30T14:30',
-                identifier: 'stored-announcement-id',
-                url: 'https://www.example.com'
-            }
-        ];
-
-        localStorage.setItem('announcementsData', JSON.stringify(storedAnnouncements));
-
-        const isNewAnnouncement = spectator.service.unreadAnnouncements();
-
-        expect(isNewAnnouncement).toBe(true);
-    });
-
-    it('should not mark announcements as unread when there are no new announcements', () => {
+    it('should not mark announcements as unread when there are no new announcements', (done) => {
         const storedAnnouncements: Announcement[] = [
             {
                 title: 'Stored Announcement',
                 type: 'announcement',
                 announcementDateAsISO8601: '2024-01-31T14:30',
                 identifier: 'test-announcement-id',
-                url: 'https://www.example.com'
+                url: 'https://www.example.com',
+                inode: '123'
             }
         ];
+        localStorage.removeItem('announcementsData');
 
-        localStorage.setItem('announcementsData', JSON.stringify(storedAnnouncements));
+        spectator.service.saveAnnouncements(storedAnnouncements);
+        spectator.service.loadAnnouncements();
 
-        const isNewAnnouncement = spectator.service.unreadAnnouncements();
+        spectator.service.state$.subscribe((state) => {
+            expect(state.readAnnouncements).toBe(true);
+            done();
+        });
+    });
 
-        expect(isNewAnnouncement).toBe(false);
+    it('should mark announcements as unread', (done) => {
+        localStorage.removeItem('announcementsData');
+
+        spectator.service.loadAnnouncements();
+
+        spectator.service.state$.subscribe((state) => {
+            expect(state.readAnnouncements).toBe(false);
+            done();
+        });
     });
 });
