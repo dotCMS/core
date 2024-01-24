@@ -105,7 +105,7 @@ export class DotLoginComponent implements OnInit, OnDestroy {
      */
     onLanguageChange(lang: string): void {
         this.loginPageStateService.update(lang);
-        this.dotMessageService.init({ language: lang });
+        // this.dotMessageService.init({ language: lang });
     }
 
     private setInitialFormValues(loginInfo: DotLoginInformation): void {

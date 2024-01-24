@@ -11,7 +11,6 @@ import { ToastModule } from 'primeng/toast';
 import { switchMap } from 'rxjs/operators';
 
 import {
-    DotMessageService,
     DotRenderMode,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService
@@ -47,7 +46,6 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
         DotWorkflowsActionsService,
         DotWorkflowActionsFireService,
         DotEditContentService,
-        DotMessageService,
         MessageService,
         DotEditContentStore
     ]
