@@ -1,5 +1,7 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator';
 
+import { input, signal } from '@angular/core';
+
 import { Button } from 'primeng/button';
 import { SplitButton, SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -76,8 +78,10 @@ describe('DotWorkflowActionsComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                actions: WORKFLOW_ACTIONS_MOCK,
-                groupAction: true
+                actions: input([]),
+                groupAction: input(false),
+                loading: input(false),
+                size: input('normal')
             }
         });
         spectator.detectComponentChanges();
@@ -85,19 +89,20 @@ describe('DotWorkflowActionsComponent', () => {
 
     describe('without actions', () => {
         beforeEach(() => {
-            spectator.setInput('actions', []);
+            spectator.setInput('actions', input([]));
             spectator.detectChanges();
         });
 
         it('should render the empty button with loading', () => {
-            spectator.setInput('loading', true);
+            spectator.setInput('loading', input(true));
 
+            spectator.detectComponentChanges();
             spectator.detectChanges();
             const button = spectator.query(Button);
 
-            expect(button.loading).toBeTruthy();
-            expect(button.disabled).toBeFalsy();
-            expect(button.label).toBe('loading');
+            expect(button).toBeTruthy();
+            expect(button?.disabled).toBeFalsy();
+            expect(button?.label).toBe('loading');
         });
 
         it('should render the empty button with disabled', () => {
@@ -138,7 +143,7 @@ describe('DotWorkflowActionsComponent', () => {
 
     describe('not group action', () => {
         beforeEach(() => {
-            spectator.setInput('groupAction', false);
+            spectator.setInput('groupAction', signal(false));
             spectator.detectComponentChanges();
         });
 

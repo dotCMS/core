@@ -3,10 +3,9 @@ import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
-    Input,
-    OnChanges,
     Output,
-    signal
+    computed,
+    input
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
@@ -17,6 +16,14 @@ import { DotCMSActionSubtype, DotCMSWorkflowAction } from '@dotcms/dotcms-models
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
+type ButtonSize = 'normal' | 'small' | 'large';
+
+const InplaceButtonSizePrimeNg: Record<ButtonSize, string> = {
+    normal: '', // default
+    small: 'p-button-sm',
+    large: 'p-button-lg'
+};
+
 @Component({
     selector: 'dot-workflow-actions',
     standalone: true,
@@ -25,18 +32,23 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
     styleUrl: './dot-workflow-actions.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotWorkflowActionsComponent implements OnChanges {
-    @Input({ required: true }) actions: DotCMSWorkflowAction[];
-    @Input() loading: boolean = false;
-    @Input() groupAction: boolean = false;
+export class DotWorkflowActionsComponent {
     @Output() actionFired = new EventEmitter<DotCMSWorkflowAction>();
 
-    protected groupedActions = signal<MenuItem[][]>([]);
+    actions = input.required<DotCMSWorkflowAction[]>();
+    loading = input<boolean>(false);
+    groupAction = input<boolean>(false);
+    size = input<ButtonSize>('normal');
 
-    ngOnChanges(): void {
-        this.groupedActions.set(
-            this.groupAction ? this.groupActions(this.actions) : this.formatActions(this.actions)
-        );
+    protected sizeClass = computed<string>(() => InplaceButtonSizePrimeNg[this.size()]);
+    protected groupedActions = computed<MenuItem[][]>(() => {
+        return this.groupAction
+            ? this.groupActions(this.actions())
+            : this.formatActions(this.actions());
+    });
+
+    styleClass(outline: boolean = false): string {
+        return `${this.sizeClass()} ${outline ? 'p-button-outlined' : ''}`;
     }
 
     /**
