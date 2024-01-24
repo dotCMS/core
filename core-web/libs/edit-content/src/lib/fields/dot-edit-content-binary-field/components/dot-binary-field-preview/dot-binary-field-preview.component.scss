@@ -6,6 +6,12 @@
     height: 100%;
 }
 
+dot-contentlet-thumbnail::ng-deep {
+    img {
+        object-fit: cover;
+    }
+}
+
 .preview-container {
     display: flex;
     gap: $spacing-1;
@@ -29,9 +35,11 @@
     height: 100%;
     width: 100%;
     user-select: none;
+    cursor: pointer;
 }
 
-.preview-image__container {
+.preview-image__container,
+dot-contentlet-thumbnail {
     height: 100%;
     width: 100%;
     display: flex;
@@ -49,6 +57,7 @@
     bottom: 0;
     left: 0;
     border-radius: $border-radius-md;
+    pointer-events: none;
 }
 
 .preview-metadata__container,
@@ -98,7 +107,6 @@
     justify-content: flex-end;
     align-items: center;
     gap: $spacing-1;
-    width: 100%;
     z-index: 100;
 }
 
@@ -118,6 +126,7 @@ code {
     width: 100%;
     white-space: pre-wrap;
     overflow: hidden;
+    line-height: normal;
 }
 
 @container preview (min-width: 376px) {

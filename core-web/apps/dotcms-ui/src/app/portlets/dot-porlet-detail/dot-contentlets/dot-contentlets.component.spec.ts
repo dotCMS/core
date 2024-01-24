@@ -9,16 +9,11 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
-import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import {
     DotAlertConfirmService,
     DotCurrentUserService,
@@ -28,7 +23,13 @@ import {
     DotLicenseService,
     DotMessageDisplayService,
     DotRouterService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    DotGlobalMessageService,
+    DotIframeService,
+    DotWizardService,
+    DotWorkflowEventHandlerService,
+    PushPublishService,
+    DotFormatDateService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -42,7 +43,6 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { DotFormatDateService } from '@dotcms/ui';
 import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotContentletsComponent } from './dot-contentlets.component';

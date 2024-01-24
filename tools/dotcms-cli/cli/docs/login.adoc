@@ -43,6 +43,22 @@ login - *Use this command to login to a dotCMS instance.*
 
 *-p*, *--password*[=_<password>_]::
   Passphrase
++
+The following is the recommended way to use this param 
++
+as the password will be promoted securely
++
+login -u=admin@dotCMS.com -p 
++
+Both options, user and password are mandatory
++
+and they can also be provided inline as follows:
++
+login -u=admin@dotCMS.com -p=admin 
++
+However, this opens a possibility for password theft
++
+as the password will be visible in the command history.
 
 *-u*, *--user*=_<user>_::
   User name

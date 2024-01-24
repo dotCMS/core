@@ -6,7 +6,6 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {
     DotAlertConfirmService,
@@ -14,7 +13,10 @@ import {
     DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageService,
-    DotRouterService
+    DotRouterService,
+    DotGlobalMessageService,
+    DotFormatDateService,
+    DotIframeService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -30,10 +32,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { DotFormatDateService } from '@dotcms/ui';
 import { MockDotRouterService } from '@dotcms/utils-testing';
-
-import { DotIframeService } from './../view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
 
 import { DotCustomEventHandlerService } from '../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';

@@ -1,21 +1,47 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { MockProvider } from 'ng-mocks';
+import { of } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
-import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, Input, Output, EventEmitter } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextareaModule } from 'primeng/inputtextarea';
 
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotContainerReferenceModule } from '@directives/dot-container-reference/dot-container-reference.module';
-import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
-import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
+import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
+import {
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotPushPublishFiltersService,
+    DotRolesService,
+    DotWizardService,
+    PushPublishService
+} from '@dotcms/data-access';
+import {
+    CoreWebService,
+    CoreWebServiceMock,
+    DotcmsConfigService,
+    DotcmsEventsService,
+    LoggerService,
+    LoginService,
+    StringUtils
+} from '@dotcms/dotcms-js';
+import { DotPushPublishDialogData, DotWizardInput, DotWizardStep } from '@dotcms/dotcms-models';
+import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotWizardComponent } from './dot-wizard.component';
+
+import { PushPublishServiceMock } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
+import { DotCommentAndAssignFormComponent } from '../forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
+import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
 
 const messageServiceMock = new MockDotMessageService({
     send: 'Send',
@@ -23,6 +49,16 @@ const messageServiceMock = new MockDotMessageService({
     previous: 'Previous',
     cancel: 'cancel'
 });
+
+const mockSteps: DotWizardStep[] = [
+    { component: 'commentAndAssign', data: { id: 'numberOne' } },
+    { component: 'pushPublish', data: { id: 'numberTwo' } }
+];
+
+const wizardInput: DotWizardInput = {
+    title: 'Test Title',
+    steps: mockSteps
+};
 
 @Component({
     selector: 'dot-form-one',
@@ -45,20 +81,15 @@ class FormTwoComponent {
     @Output() valid = new EventEmitter<boolean>();
 }
 
-const mockSteps: DotWizardStep<any>[] = [
-    { component: FormOneComponent, data: { id: 'numberOne' } },
-    { component: FormTwoComponent, data: { id: 'numberTwo' } }
-];
-
-const wizardInput: DotWizardInput = {
-    title: 'Test Title',
-    steps: mockSteps
-};
-
 const stopImmediatePropagation = jasmine.createSpy('');
 
 const enterEvent = {
     stopImmediatePropagation: stopImmediatePropagation
+};
+
+const MOCK_WIZARD_COMPONENT_MAP = {
+    commentAndAssign: FormOneComponent,
+    pushPublish: FormTwoComponent
 };
 
 describe('DotWizardComponent', () => {
@@ -76,10 +107,52 @@ describe('DotWizardComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotWizardComponent, FormOneComponent, FormTwoComponent],
-            imports: [DotDialogModule, CommonModule, DotContainerReferenceModule],
+            declarations: [
+                DotWizardComponent,
+                DotCommentAndAssignFormComponent,
+                DotPushPublishFormComponent,
+                FormOneComponent,
+                FormTwoComponent
+            ],
+            imports: [
+                DotDialogModule,
+                CommonModule,
+                DotContainerReferenceModule,
+                HttpClientTestingModule,
+                FormsModule,
+                ReactiveFormsModule,
+                InputTextareaModule,
+                DropdownModule
+            ],
             providers: [
+                LoggerService,
+                StringUtils,
+                MockProvider(DotHttpErrorManagerService),
                 { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: PushPublishService, useClass: PushPublishServiceMock },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                {
+                    provide: DotRolesService,
+                    useValue: {
+                        get: () =>
+                            of([
+                                {
+                                    id: '1',
+                                    name: 'Administrator',
+                                    user: 'admin',
+                                    roleKey: '1'
+                                }
+                            ])
+                    }
+                },
+                DotPushPublishFiltersService,
+                DotParseHtmlService,
+                DotcmsConfigService,
+                DotcmsEventsService,
                 DotWizardService
             ]
         }).compileComponents();
@@ -91,6 +164,9 @@ describe('DotWizardComponent', () => {
         beforeEach(fakeAsync(() => {
             fixture = TestBed.createComponent(DotWizardComponent);
             component = fixture.componentInstance;
+            spyOn(component, 'getWizardComponent').and.callFake((type: string) => {
+                return MOCK_WIZARD_COMPONENT_MAP[type];
+            });
             fixture.detectChanges();
             dotWizardService = fixture.debugElement.injector.get(DotWizardService);
             dotWizardService.open(wizardInput);
@@ -175,16 +251,30 @@ describe('DotWizardComponent', () => {
         it('should consolidate forms values and send them on send ', () => {
             spyOn(dotWizardService, 'output$');
 
-            const formValue1 = { id: '123' };
-            const formValue2 = { name: 'Jose' };
+            const commentAndAssignFormValue = {
+                assign: 'Jose',
+                comments: 'This is a comment',
+                pathToMove: '123'
+            };
+            const pushPublishFormValue = {
+                pushActionSelected: 'string',
+                publishDate: 'string',
+                expireDate: 'string',
+                environment: ['string'],
+                filterKey: 'string',
+                timezoneId: 'string'
+            };
             form1.valid.emit(true);
             form2.valid.emit(true);
-            form1.value.emit(formValue1);
-            form2.value.emit(formValue2);
+            form1.value.emit(commentAndAssignFormValue);
+            form2.value.emit(pushPublishFormValue);
             acceptButton.triggerEventHandler('click', {});
             acceptButton.triggerEventHandler('click', {});
 
-            expect(dotWizardService.output$).toHaveBeenCalledWith({ ...formValue1, ...formValue2 });
+            expect(dotWizardService.output$).toHaveBeenCalledWith({
+                ...commentAndAssignFormValue,
+                ...pushPublishFormValue
+            });
         });
 
         it('should change step on enter if form is valid', () => {
@@ -225,12 +315,13 @@ describe('DotWizardComponent', () => {
         beforeEach(fakeAsync(() => {
             fixture = TestBed.createComponent(DotWizardComponent);
             component = fixture.componentInstance;
+            spyOn(component, 'getWizardComponent').and.returnValue(FormOneComponent);
             fixture.detectChanges();
             dotWizardService = fixture.debugElement.injector.get(DotWizardService);
             dotWizardService.open({ steps: [wizardInput.steps[0]], title: '' });
             fixture.detectChanges();
             stepContainers = fixture.debugElement.queryAll(By.css('.dot-wizard__step'));
-            tick(201); // interval time to focus first element.
+            tick(1000); // interval time to focus first element.
             fixture.detectChanges();
             closeButton = fixture.debugElement.query(By.css('.dialog__button-cancel'));
         }));

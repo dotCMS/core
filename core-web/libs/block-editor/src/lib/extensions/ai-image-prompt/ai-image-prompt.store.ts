@@ -20,7 +20,7 @@ export interface DotAiImagePromptComponentState {
     editorContent: string | null;
     contentlets: DotCMSContentlet[] | [];
     status: ComponentStatus;
-    error: string | null;
+    error: string;
 }
 
 export interface VmAiImagePrompt {
@@ -36,7 +36,7 @@ const initialState: DotAiImagePromptComponentState = {
     contentlets: [],
     prompt: null,
     editorContent: null,
-    error: null
+    error: ''
 };
 
 @Injectable({ providedIn: 'root' })
@@ -47,6 +47,7 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         this.state$,
         ({ status }) => status === ComponentStatus.LOADING
     );
+    readonly errorMsg$ = this.select(this.state$, ({ error }) => error);
     readonly getContentlets$ = this.select(this.state$, ({ contentlets }) => contentlets);
 
     //Updaters
@@ -60,6 +61,11 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         showDialog: true,
         selectedPromptType: DEFAULT_INPUT_PROMPT,
         editorContent
+    }));
+
+    readonly cleanError = this.updater((state) => ({
+        ...state,
+        error: ''
     }));
 
     readonly hideDialog = this.updater((state) => ({
@@ -96,7 +102,11 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                         ? `${cleanPrompt} to illustrate the following content: ${editorContent}`
                         : cleanPrompt;
 
-                this.patchState({ status: ComponentStatus.LOADING, prompt: finalPrompt });
+                this.patchState({
+                    status: ComponentStatus.LOADING,
+                    prompt: finalPrompt,
+                    error: ''
+                });
 
                 return this.dotAiService.generateAndPublishImage(finalPrompt).pipe(
                     tapResponse(
@@ -106,10 +116,9 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                                 contentlets: contentLets
                             });
                         },
-                        () => {
-                            this.patchState({ status: ComponentStatus.IDLE });
+                        (error: string) => {
+                            this.patchState({ status: ComponentStatus.IDLE, error });
 
-                            //TODO: Notify to handle error in the UI.
                             return of(null);
                         }
                     )

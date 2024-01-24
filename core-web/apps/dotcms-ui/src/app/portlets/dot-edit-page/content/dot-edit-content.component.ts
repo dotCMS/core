@@ -8,7 +8,6 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { filter, map, pluck, skip, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
@@ -23,7 +22,8 @@ import {
     DotMessageService,
     DotPropertiesService,
     DotRouterService,
-    DotSessionStorageService
+    DotSessionStorageService,
+    DotGlobalMessageService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import {
@@ -410,6 +410,7 @@ browse from the page internal links
                 .getActionUrl($event.data.contentType.variable)
                 .pipe(take(1))
                 .subscribe((url) => {
+                    url = this.setCurrentContentLang(url);
                     this.dotContentletEditorService.create({
                         data: { url },
                         events: {
@@ -673,5 +674,19 @@ browse from the page internal links
         this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
             this.pageLanguageId = params['language_id'];
         });
+    }
+
+    /**
+     * Sets the language parameter in the given URL and returns the concatenated pathname and search.
+     * the input URL doesn't include the host, origin is used as the base URL.
+     *
+     * @param {string} url - The input URL ( include pathname and search parameters).
+     * @returns {string} - The concatenated pathname and search parameters with the language parameter set.
+     */
+    private setCurrentContentLang(url: string): string {
+        const newUrl = new URL(url, window.location.origin);
+        newUrl.searchParams.set('_content_lang', this.pageLanguageId);
+
+        return newUrl.pathname + newUrl.search;
     }
 }

@@ -15,11 +15,9 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
@@ -46,7 +44,9 @@ import {
     DotRouterService,
     DotSessionStorageService,
     DotWorkflowActionsFireService,
-    DotWorkflowService
+    DotWorkflowService,
+    DotGlobalMessageService,
+    DotIframeService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -1275,11 +1275,13 @@ describe('DotEditContentComponent', () => {
                         });
 
                         spyOn(dotContentletEditorService, 'getActionUrl').and.returnValue(
-                            of('/url/')
+                            of('/url/test?_content_lang=23&test=random')
                         );
+
                         spyOn(dotContentletEditorService, 'create').and.callFake((param) => {
+                            //checking the replace of lang.
                             expect(param.data).toEqual({
-                                url: '/url/'
+                                url: '/url/test?_content_lang=1&test=random'
                             });
 
                             const event: any = {

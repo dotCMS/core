@@ -13,14 +13,9 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ConfirmationService } from 'primeng/api';
 
 import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
-import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
@@ -33,7 +28,13 @@ import {
     DotMessageService,
     DotRouterService,
     DotSessionStorageService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    DotGlobalMessageService,
+    DotIframeService,
+    DotWizardService,
+    DotWorkflowEventHandlerService,
+    PushPublishService,
+    DotFormatDateService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -49,7 +50,6 @@ import {
     UserModel
 } from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
-import { DotFormatDateService } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     MockDotMessageService,

@@ -5,8 +5,7 @@ import { ChangeDetectorRef, Component, HostBinding, OnDestroy, OnInit } from '@a
 import { filter, takeUntil } from 'rxjs/operators';
 
 import { DotEventsService } from '@dotcms/data-access';
-import { DotEvent } from '@dotcms/dotcms-models';
-import { DotGlobalMessage } from '@models/dot-global-message/dot-global-message.model';
+import { DotEvent, DotGlobalMessage } from '@dotcms/dotcms-models';
 
 /**
  * Set a listener to display Global Messages in the main top toolbar

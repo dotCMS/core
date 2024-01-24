@@ -7,11 +7,14 @@ import { Event, NavigationEnd, Router } from '@angular/router';
 import { filter, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotEventsService, DotLocalstorageService, DotRouterService } from '@dotcms/data-access';
+import {
+    DotEventsService,
+    DotLocalstorageService,
+    DotRouterService,
+    DotIframeService
+} from '@dotcms/data-access';
 import { Auth, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
-
-import { DotIframeService } from '../../_common/iframe/service/dot-iframe/dot-iframe.service';
 
 export const replaceSectionsMap = {
     'edit-page': 'site-browser'

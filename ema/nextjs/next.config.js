@@ -8,6 +8,13 @@ const nextConfig = {
                 port: '8080'
             }
         ]
+        // remotePatterns: [
+        //     {
+        //         protocol: 'https',
+        //         hostname: '*.dotcms.site',
+        //         port: ''
+        //     }
+        // ]
     }
 };
 

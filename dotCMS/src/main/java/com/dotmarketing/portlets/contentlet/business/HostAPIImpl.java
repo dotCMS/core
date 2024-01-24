@@ -629,7 +629,6 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
         siteAsContentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
         APILocator.getContentletAPI().archive(siteAsContentlet, user, respectFrontendRoles);
-        site.setModDate(new Date ());
         this.flushAllCaches(site);
 
         HibernateUtil.addCommitListener(() -> this.sendArchiveSiteSystemEvent(siteAsContentlet), 1000);
@@ -654,7 +653,6 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         final Contentlet siteAsContentlet = APILocator.getContentletAPI()
                 .find(site.getInode(), user, respectFrontendRoles);
         APILocator.getContentletAPI().unarchive(siteAsContentlet, user, respectFrontendRoles);
-        site.setModDate(new Date ());
         this.flushAllCaches(site);
         HibernateUtil.addCommitListener(() -> this.sendUnArchiveSiteSystemEvent(siteAsContentlet), 1000);
     }

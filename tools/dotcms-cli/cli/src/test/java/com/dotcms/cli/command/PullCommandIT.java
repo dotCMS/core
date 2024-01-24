@@ -12,19 +12,14 @@ import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.PullMixin;
+import com.dotcms.cli.common.WorkspaceParams;
 import com.dotcms.common.WorkspaceManager;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.UUID;
 import java.util.stream.Stream;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
@@ -166,7 +161,7 @@ class PullCommandIT extends CommandTest {
             when(parseResult.expandedArgs()).
                     thenReturn(new ArrayList<>());
 
-            when(pullMixin.workspace()).thenReturn(tempFolder.toAbsolutePath());
+            when(pullMixin.workspace()).thenReturn(WorkspaceParams.builder().workspacePath(tempFolder.toAbsolutePath()).build());
 
             pullCommand.call();
 
@@ -239,7 +234,7 @@ class PullCommandIT extends CommandTest {
 
             when(parseResult.expandedArgs()).thenReturn(new ArrayList<>());
 
-            when(pullMixin.workspace()).thenReturn(tempFolder.toAbsolutePath());
+            when(pullMixin.workspace()).thenReturn(WorkspaceParams.builder().workspacePath(tempFolder.toAbsolutePath()).build());
 
             pullCommand.call();
 
@@ -261,42 +256,6 @@ class PullCommandIT extends CommandTest {
         } finally {
             deleteTempDirectory(tempFolder);
         }
-    }
-
-    /**
-     * This helper method is used to create a temporary folder for the test.
-     *
-     * @return a {@link Path} object representing a temporary directory for the test.
-     * @throws IOException if there's a problem in creating the temporary directory.
-     */
-    private Path createTempFolder() throws IOException {
-
-        String randomFolderName = "folder-" + UUID.randomUUID();
-        return Files.createTempDirectory(randomFolderName);
-    }
-
-    /**
-     * This helper method is used to delete a directory and all its contents.
-     *
-     * @param folderPath the {@link Path} object of the directory to delete.
-     * @throws IOException if there's a problem in deleting the directory or its contents.
-     */
-    private void deleteTempDirectory(Path folderPath) throws IOException {
-        Files.walkFileTree(folderPath, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                    throws IOException {
-                Files.delete(file); // Deletes the file
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc)
-                    throws IOException {
-                Files.delete(dir); // Deletes the directory after its content has been deleted
-                return FileVisitResult.CONTINUE;
-            }
-        });
     }
 
 }

@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 
 import { ActionPayload, ContainerPayload } from '../../../shared/models';
 
@@ -38,6 +39,11 @@ interface Column {
     containers: Container[];
 }
 
+export interface EmaDragItem {
+    baseType: string;
+    contentType: string;
+}
+
 export interface Row {
     x: number;
     y: number;
@@ -56,7 +62,7 @@ export interface Row {
 })
 export class EmaPageDropzoneComponent {
     @Input() rows: Row[] = [];
-    @Input() contentType: string;
+    @Input() item: EmaDragItem;
     @Output() place = new EventEmitter<ActionPayload>();
 
     private readonly dotMessageService: DotMessageService = inject(DotMessageService);
@@ -160,7 +166,7 @@ export class EmaPageDropzoneComponent {
         if (!this.isValidContentType(acceptTypes)) {
             return this.dotMessageService.get(
                 'edit.ema.page.dropzone.invalid.contentlet.type',
-                this.contentType
+                this.item.contentType
             );
         }
 
@@ -185,9 +191,13 @@ export class EmaPageDropzoneComponent {
     }
 
     private isValidContentType(acceptTypes: string) {
+        if (this.item.baseType === DotCMSBaseTypesContentTypes.WIDGET) {
+            return true;
+        }
+
         const acceptTypesArr = acceptTypes.split(',');
 
-        return acceptTypesArr.includes(this.contentType);
+        return acceptTypesArr.includes(this.item.contentType);
     }
 
     private contentCanFitInContainer({ contentletsId, maxContentlets }: ContainerPayload): boolean {
