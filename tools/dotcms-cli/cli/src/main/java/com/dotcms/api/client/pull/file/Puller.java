@@ -1,8 +1,8 @@
 package com.dotcms.api.client.pull.file;
 
 import com.dotcms.api.LanguageAPI;
-import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.files.traversal.LocalTraversalService;
+import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodeInfo;
 import com.dotcms.cli.common.ConsoleProgressBar;
@@ -64,13 +64,13 @@ public class Puller implements Serializable {
         Collections.sort(sortedWorkingLanguages);
 
         // Process the live tree
-        var errors = processTreeByStatus(true, sortedLiveLanguages, tree,
+        var errors = processTreeByStatus(true, sortedLiveLanguages, tree, treeNodeInfo,
                 destination.getAbsolutePath(),
                 overwrite, generateEmptyFolders, failFast, progressBar);
         var foundErrors = new ArrayList<>(errors);
 
         // Process the working tree
-        errors = processTreeByStatus(false, sortedWorkingLanguages, tree,
+        errors = processTreeByStatus(false, sortedWorkingLanguages, tree, treeNodeInfo,
                 destination.getAbsolutePath(),
                 overwrite, generateEmptyFolders, failFast, progressBar);
         foundErrors.addAll(errors);
@@ -84,6 +84,7 @@ public class Puller implements Serializable {
      * @param isLive               true if processing live tree, false for working tree
      * @param languages            the list of languages
      * @param rootNode             the root node of the file tree
+     * @param treeNodeInfo         the collected information about the tree
      * @param destination          the destination path to save the pulled files
      * @param overwrite            true to overwrite existing files, false otherwise
      * @param generateEmptyFolders true to generate empty folders, false otherwise
@@ -91,9 +92,8 @@ public class Puller implements Serializable {
      * @param progressBar          the progress bar for tracking the pull progress
      */
     private List<Exception> processTreeByStatus(boolean isLive, List<String> languages,
-            TreeNode rootNode,
-            final String destination, final boolean overwrite,
-            final boolean generateEmptyFolders, final boolean failFast,
+            TreeNode rootNode, final TreeNodeInfo treeNodeInfo, final String destination,
+            final boolean overwrite, final boolean generateEmptyFolders, final boolean failFast,
             final ConsoleProgressBar progressBar) {
 
         var foundErrors = new ArrayList<Exception>();
@@ -103,6 +103,24 @@ public class Puller implements Serializable {
         }
 
         for (String lang : languages) {
+
+            // If we don't generate empty folders, we need to check if there are assets to process
+            // in the tree node for the current language, if not, we skip the pull process for this
+            // language and status avoiding the creation of site folders with no content.
+            if (!generateEmptyFolders) {
+
+                var assetsCount = 0;
+                if (isLive) {
+                    assetsCount = treeNodeInfo.liveAssetsCountByLanguage(lang);
+                } else {
+                    assetsCount = treeNodeInfo.workingAssetsCountByLanguage(lang);
+                }
+
+                if (assetsCount == 0) {
+                    continue;
+                }
+            }
+
             var errors = traversalService.pullTreeNode(rootNode, destination, isLive, lang,
                     overwrite,
                     generateEmptyFolders, failFast, progressBar);
