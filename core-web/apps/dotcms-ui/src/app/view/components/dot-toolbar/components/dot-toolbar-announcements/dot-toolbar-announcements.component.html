@@ -3,8 +3,8 @@
     @for (item of announcements(); track item.identifier;) {
     <li
         class="announcements__list-item"
-        [class.announcements__list-item--active]="readAnnouncements">
-        <span class="announcements__badge" *ngIf="readAnnouncements"></span>
+        [class.announcements__list-item--active]="showUnreadAnnouncement">
+        <span class="announcements__badge" *ngIf="showUnreadAnnouncement"></span>
         <span class="announcements__image pi" [ngClass]="typesIcons[item.type]"></span>
         <a
             class="announcements__url"

@@ -31,7 +31,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
     private isNotificationsMarkedAsRead = false;
     private showNotifications = false;
 
-    readAnnouncements = false;
+    showUnreadAnnouncement = this.announcementsStore.showUnreadAnnouncement;
 
     constructor(
         public iframeOverlayService: IframeOverlayService,
@@ -46,11 +46,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
         this.subscribeToNotifications();
 
         this.loginService.watchUser(this.getNotifications.bind(this));
-
         this.announcementsStore.loadAnnouncements();
-        this.announcementsStore.state$.subscribe((state) => {
-            this.readAnnouncements = state.readAnnouncements;
-        });
     }
 
     dismissAllNotifications(): void {
@@ -143,8 +139,6 @@ export class DotToolbarNotificationsComponent implements OnInit {
 
     markAnnocumentsAsRead(): void {
         this.activeAnnouncements = false;
-        this.readAnnouncements = this.announcementsStore.readAnnouncements();
-        this.announcementsStore.saveAnnouncements(this.announcementsStore.announcementsSignal());
-        this.announcementsStore.unreadAnnouncements();
+        this.announcementsStore.markAnnouncementsAsRead();
     }
 }

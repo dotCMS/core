@@ -55,23 +55,13 @@ describe('AnnouncementsStore', () => {
     });
 
     it('should not mark announcements as unread when there are no new announcements', (done) => {
-        const storedAnnouncements: Announcement[] = [
-            {
-                title: 'Stored Announcement',
-                type: 'announcement',
-                announcementDateAsISO8601: '2024-01-31T14:30',
-                identifier: 'test-announcement-id',
-                url: 'https://www.example.com',
-                inode: '123'
-            }
-        ];
         localStorage.removeItem('announcementsData');
 
-        spectator.service.saveAnnouncements(storedAnnouncements);
+        spectator.service.markAnnouncementsAsRead();
         spectator.service.loadAnnouncements();
 
         spectator.service.state$.subscribe((state) => {
-            expect(state.readAnnouncements).toBe(true);
+            expect(state.showUnreadAnnouncement).toBe(false);
             done();
         });
     });
@@ -82,7 +72,7 @@ describe('AnnouncementsStore', () => {
         spectator.service.loadAnnouncements();
 
         spectator.service.state$.subscribe((state) => {
-            expect(state.readAnnouncements).toBe(false);
+            expect(state.showUnreadAnnouncement).toBe(true);
             done();
         });
     });

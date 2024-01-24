@@ -20,7 +20,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 export class DotToolbarAnnouncementsComponent {
     announcementsStore = inject(AnnouncementsStore);
 
-    @Input() readAnnouncements: boolean;
+    @Input() showUnreadAnnouncement: boolean;
     announcements: Signal<Announcement[]> = this.announcementsStore.announcementsSignal;
 
     knowledgeCenterLinks = [

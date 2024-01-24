@@ -6,6 +6,8 @@ import { Injectable, Signal, inject } from '@angular/core';
 
 import { catchError, pluck, tap } from 'rxjs/operators';
 
+import { LocalStoreService } from '@dotcms/dotcms-js';
+
 export type Announcement = {
     title: string;
     type: string;
@@ -17,7 +19,7 @@ export type Announcement = {
 
 export interface DotAnnouncementsState {
     announcements: Announcement[];
-    readAnnouncements: boolean;
+    showUnreadAnnouncement: boolean;
 }
 
 export enum TypesIcons {
@@ -29,12 +31,13 @@ export enum TypesIcons {
 @Injectable()
 export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
     private http = inject(HttpClient);
+    private localStoreService = inject(LocalStoreService);
     private announcementsUrl = '/api/v1/announcements';
 
     constructor() {
         super({
             announcements: [],
-            readAnnouncements: false
+            showUnreadAnnouncement: false
         });
     }
 
@@ -51,10 +54,8 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
 
                 this.setState({
                     announcements: modifiedAnnouncements,
-                    readAnnouncements: this.hasUnreadAnnouncements(announcements)
+                    showUnreadAnnouncement: this.hasUnreadAnnouncements(announcements)
                 });
-
-                return announcements;
             }),
             catchError(() => EMPTY)
         );
@@ -64,19 +65,24 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
         (state) => state.announcements
     );
 
-    readonly readAnnouncements: Signal<boolean> = this.selectSignal(
-        (state) => state.readAnnouncements
+    readonly showUnreadAnnouncement: Signal<boolean> = this.selectSignal(
+        (state) => state.showUnreadAnnouncement
     );
 
-    unreadAnnouncements = this.updater((state) => {
+    readonly markAnnouncementsAsRead = this.updater((state) => {
+        this.localStoreService.storeValue(
+            'dotAnnouncementsData',
+            JSON.stringify(state.announcements)
+        );
+
         return {
             ...state,
-            readAnnouncements: this.hasUnreadAnnouncements(state.announcements)
+            showUnreadAnnouncement: this.hasUnreadAnnouncements(state.announcements)
         };
     });
 
     private hasUnreadAnnouncements(announcements: Announcement[]): boolean {
-        const storedAnnouncementsJson = localStorage.getItem('announcementsData');
+        const storedAnnouncementsJson = this.localStoreService.getValue('dotAnnouncementsData');
         const storedAnnouncements: Announcement[] = storedAnnouncementsJson
             ? JSON.parse(storedAnnouncementsJson)
             : [];
@@ -90,9 +96,5 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
         );
 
         return isNewAnnouncement;
-    }
-
-    saveAnnouncements(announcements: Announcement[]): void {
-        localStorage.setItem('announcementsData', JSON.stringify(announcements));
     }
 }

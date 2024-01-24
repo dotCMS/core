@@ -4,7 +4,7 @@
 import { Observable, of as observableOf, Subject } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component, DebugElement, Injectable, Input } from '@angular/core';
+import { Component, DebugElement, Injectable, Input, signal } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
@@ -113,7 +113,7 @@ describe('DotToolbarNotificationsComponent', () => {
     }));
 
     it(`should has a badge`, () => {
-        fixture.componentInstance.readAnnouncements = true;
+        fixture.componentInstance.showUnreadAnnouncement = signal(true);
         fixture.detectChanges();
         const badge: DebugElement = fixture.debugElement.query(
             By.css('#dot-toolbar-notifications-badge')

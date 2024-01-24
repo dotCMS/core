@@ -5,14 +5,16 @@
         icon="pi pi-megaphone"
         styleClass="p-button-rounded p-button-text">
     </p-button>
-    <span class="badge" id="dot-toolbar-notifications-badge" *ngIf="readAnnouncements"></span>
+    <span class="badge" id="dot-toolbar-notifications-badge" *ngIf="showUnreadAnnouncement()">
+        {{ showUnreadAnnouncement() }}
+    </span>
 
     <p-overlayPanel
         #toolbarAnnouncements
         (onHide)="markAnnocumentsAsRead()"
         (onShow)="onActiveAnnouncements()"
         styleClass="toolbar-announcements__container">
-        <dot-toolbar-announcements [readAnnouncements]="readAnnouncements" />
+        <dot-toolbar-announcements [showUnreadAnnouncement]="showUnreadAnnouncement()" />
     </p-overlayPanel>
 </ng-container>
 <div class="toolbar-notifications__container">
