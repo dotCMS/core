@@ -51,8 +51,6 @@
         <felix.base.dir>/Users/stevebolton/felix_test/felix</felix.base.dir>
         <felix.system.base.dir>/Users/stevebolton/felix_test/felix_system</felix.system.base.dir>
 -->
-        <!-- <testSourceDirectory>${basedir}/../dotCMS/src/integration-test/java2</testSourceDirectory>-->
-
         <webapp.extract.dir>${project.build.directory}/core-war</webapp.extract.dir>
         <test.webapp.root>${webapp.extract.dir}</test.webapp.root>
         <it.test.forkcount>4</it.test.forkcount>
@@ -286,43 +284,6 @@
                                         <exclude>**/*.class</exclude>
                                     </excludes>
                                 </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <executions>
-                  <execution>
-                        <id>add-test-source</id>
-                        <goals>
-                            <goal>add-test-source</goal>
-                        </goals>
-                        <phase>generate-test-sources</phase>
-                        <configuration>
-                            <sources>
-                                <source>${basedir}/../dotCMS/src/integration-test/java</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-
-                    <execution>
-                        <id>add-it-test-resource</id>
-                        <goals>
-                            <goal>add-test-resource</goal>
-                        </goals>
-                        <phase>generate-test-resources</phase>
-                        <configuration>
-                            <resources>
-
-
-                                <resource>
-                                    <!-- This is the old directory where the integration tests are located.  These will be moved to this project-->
-                                    <directory>${maven.multiModuleProjectDirectory}/dotCMS/src/integration-test/resources</directory>
-                                </resource>
-
                             </resources>
                         </configuration>
                     </execution>

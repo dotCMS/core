@@ -246,7 +246,7 @@ jobs:
         shell: bash
       - name: Restore Maven Repository
         id: cache-maven
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         with:
           path: ~/.m2/repository
           key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
@@ -306,7 +306,7 @@ jobs:
         shell: bash
       - name: Restore Maven Repository
         id: cache-maven
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         with:
           path: ~/.m2/repository
           key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
@@ -377,7 +377,7 @@ jobs:
         shell: bash
       - name: Restore Maven Repository
         id: cache-maven
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         with:
           path: ~/.m2/repository
           key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
@@ -496,14 +496,14 @@ jobs:
         shell: bash
       - name: Restore Maven Repository
         id: cache-maven
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         with:
           path: ~/.m2/repository
           key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
       - name: Build
         env:
           DOT_DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
-        run: eval ./mvnw -Dit-tests -Dprod $JVM_TEST_MAVEN_OPTS verify -pl :dotcms-integration ${{ matrix.suites.maven_args}} ${{ matrix.java.maven_args}}
+        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS verify -pl :dotcms-integration ${{ matrix.suites.maven_args}} ${{ matrix.java.maven_args}}
       - name: Prepare reports archive (if maven failed)
         if: failure()
         shell: bash
@@ -591,7 +591,48 @@ jobs:
             target/build-report.json
             LICENSE
           retention-days: 2
-
+  sonarqube:
+    name: SonarQube Scan
+    runs-on: ubuntu-latest
+    needs: [build-jdk11]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: apt clean
+        shell: bash
+        run: sudo apt-get clean
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: 11
+          distribution: 'temurin'
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
+        shell: bash
+      - name: Restore Maven Repository
+        id: cache-maven
+        uses: actions/cache/restore@v3
+        with:
+          path: ~/.m2/repository
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
+      - name: Cache SonarQube packages
+        uses: actions/cache@v1
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Maven Build No Test
+        shell: bash
+        run: |
+          ./mvnw $JVM_TEST_MAVEN_OPTS compile sonar:sonar -Dsonar.projectKey=dotCMS_core_AYSbIemxK43eThAXTlt- -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
+        env:
+          MAVEN_OPTS: "-Xmx2048m"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
   clean-up:
     name: Clean up
     runs-on: ubuntu-latest
@@ -615,7 +656,7 @@ jobs:
   prepare-report-data:
     name: Prepare Report Data
     runs-on: ubuntu-20.04
-    needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests,linux-cli-tests,linux-postman-tests ]
+    needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests,linux-cli-tests,linux-postman-tests,sonarqube ]
     if: always()
     outputs:
       aggregate_status: ${{ steps.prepare-workflow-data.outputs.aggregate_status }}
