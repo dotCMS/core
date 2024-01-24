@@ -21,7 +21,7 @@
                 top: 0;
                 transform: translateY(0);
                 transition: opacity $basic-speed ease, transform $basic-speed ease;
-                z-index: 2;
+                z-index: 9999;
             }
         }
 
