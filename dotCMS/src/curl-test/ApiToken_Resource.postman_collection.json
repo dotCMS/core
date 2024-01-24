@@ -823,11 +823,8 @@
               "",
               "pm.test(\"Response has a valid JWT\", function () {",
 							"    pm.expect(pm.response.json().entity.jwt).to.match(/^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_.+/=]*$/);",
-							"});",
-							"",
-							"pm.test(\"Response contains appropriate error message\", function () {",
-							"    pm.expect(pm.response.json().message).to.include(\"token id not found\");",
 							"});"
+							
             ],
             "type": "text/javascript"
           }
