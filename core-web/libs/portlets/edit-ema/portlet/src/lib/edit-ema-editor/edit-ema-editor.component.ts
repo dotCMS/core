@@ -3,6 +3,7 @@ import { Subject, fromEvent } from 'rxjs';
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import {
+    AfterViewInit,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
@@ -54,6 +55,7 @@ import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, NOTIFY_CUSTOMER } from '../shared/enums';
 import { ActionPayload, SetUrlPayload } from '../shared/models';
 import { deleteContentletFromContainer, insertContentletInContainer } from '../utils';
+import { PAGE_RENDER } from '../utils/fake-page';
 
 interface BasePayload {
     type: 'contentlet' | 'content-type';
@@ -106,7 +108,7 @@ type DraggedPalettePayload = ContentletPayload | ContentTypePayload;
         ProgressBarModule
     ]
 })
-export class EditEmaEditorComponent implements OnInit, OnDestroy {
+export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     @ViewChild('dialogIframe') dialogIframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('personaSelector')
@@ -151,6 +153,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             });
 
         this.store.updateEditorState(EDITOR_STATE.LOADING);
+    }
+
+    ngAfterViewInit(): void {
+        const doc = this.iframe.nativeElement.contentWindow?.document;
+        doc.open();
+        doc.write(PAGE_RENDER);
+        doc.close();
     }
 
     ngOnDestroy(): void {
@@ -607,7 +616,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.cd.detectChanges();
             },
             [CUSTOMER_ACTIONS.SET_CONTENTLET]: () => {
+                console.log('CUSTOMER_ACTIONS.SET_CONTENTLET');
+
                 this.contentlet = <ContentletArea>data.payload;
+                console.log(this.contentlet);
+
                 this.cd.detectChanges();
             },
             [CUSTOMER_ACTIONS.IFRAME_SCROLL]: () => {
