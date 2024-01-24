@@ -750,7 +750,7 @@
                      * This is a workaround to get the contentlet from the API
                      * because there is no way to get the same contentlet the AP retreive from the dwr call.
                      */
-                    fetch('/api/v1/content/<%=contentlet.getInode()%>', {
+                    fetch('/api/v1/content/<%=inode%>', {
                         method: 'GET',
                         headers: {
                             'Content-Type': 'application/json'
@@ -783,13 +783,18 @@
                         const contentBaseType = <%= contentlet.getContentType().baseType().getType() %>;
 
                         binaryField.addEventListener('valueUpdated', ({ detail }) => {
-                            const { id, fileName } = detail;
-                            field.value = id;
+                            const { value, fileName } = detail;
+                            field.value = value;
                             if(contentBaseType === 4){ // FileAsset
                                 let titleField = dijit.byId("title");
                                 let fileNameField = dijit.byId("fileName");
-                                titleField?.setValue(fileName);
-                                fileNameField?.setValue(fileName);
+                                if(!titleField.value ){
+                                    titleField?.setValue(fileName);
+                                }
+
+                                if(!fileNameField.value){
+                                    fileNameField?.setValue(fileName);
+                                }
                             }
                         });
 
