@@ -38,6 +38,20 @@
             <directoryMode>0755</directoryMode>
         </fileSet>
         <fileSet>
+            <directory>${assembly-directory}/conf</directory>
+            <outputDirectory>temp</outputDirectory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${assembly-directory}/conf</directory>
+            <outputDirectory>/logs</outputDirectory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
             <directory>${assembly-directory}</directory>
             <outputDirectory></outputDirectory>
             <excludes>
@@ -47,7 +61,6 @@
                 <exclude>**/felix-cache/**</exclude>
                 <exclude>**/webapps/cargorpc/**</exclude>
                 <exclude>**/work/**</exclude>
-                <exclude>**/temp/**</exclude>
                 <exclude>**/logs/**</exclude>
                 <exclude>**/lib/**</exclude>
                 <exclude>**/shared/**</exclude>

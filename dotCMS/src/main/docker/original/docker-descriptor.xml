@@ -4,6 +4,21 @@
     <includeBaseDirectory>false</includeBaseDirectory>
 
     <fileSets>
+        <!-- hack to make sure these empty directories get included-->
+        <fileSet>
+            <directory>${assembly-directory}/dotserver/tomcat-${tomcat.version}/config</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}/temp</outputDirectory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${assembly-directory}/dotserver/tomcat-${tomcat.version}/config</directory>
+            <outputDirectory>dotserver/tomcat-${tomcat.version}/logs</outputDirectory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
+        </fileSet>
 
         <fileSet>
             <directory>${assembly-directory}/dotserver/tomcat-${tomcat.version}</directory>
@@ -15,7 +30,6 @@
                 <exclude>**/felix-cache/**</exclude>
                 <exclude>**/webapps/cargorpc/**</exclude>
                 <exclude>**/work/**</exclude>
-                <exclude>**/temp/**</exclude>
                 <exclude>**/logs/**</exclude>
             </excludes>
         </fileSet>
