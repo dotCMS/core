@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { mockProvider } from '@ngneat/spectator';
-import { Observable, of as observableOf, of, Subject } from 'rxjs';
+import { Observable, of as observableOf, Subject } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -96,7 +95,7 @@ describe('DotToolbarNotificationsComponent', () => {
                 MockDotDropDownComponent,
                 MockDotNotificationsListComponent
             ],
-            imports: [DotPipesModule, DotMessagePipe, ButtonModule],
+            imports: [DotPipesModule, DotMessagePipe, ButtonModule, HttpClientTestingModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: IframeOverlayService, useClass: MockIframeOverlayService },
@@ -105,21 +104,7 @@ describe('DotToolbarNotificationsComponent', () => {
                 { provide: NotificationsService, useClass: MockNotificationsService },
                 {
                     provide: AnnouncementsStore,
-                    useValue: mockProvider(HttpClient, {
-                        get: jasmine.createSpy('get').and.returnValue(
-                            of({
-                                entity: [
-                                    {
-                                        title: 'Test Announcement',
-                                        type: 'announcement',
-                                        announcementDateAsISO8601: '2024-01-31T17:51',
-                                        identifier: 'test-announcement-id',
-                                        url: 'https://www.example.com'
-                                    }
-                                ]
-                            })
-                        )
-                    })
+                    useClass: AnnouncementsStore
                 }
             ]
         }).compileComponents();
@@ -128,10 +113,12 @@ describe('DotToolbarNotificationsComponent', () => {
     }));
 
     it(`should has a badge`, () => {
+        fixture.componentInstance.readAnnouncements = true;
         fixture.detectChanges();
         const badge: DebugElement = fixture.debugElement.query(
             By.css('#dot-toolbar-notifications-badge')
         );
+
         expect(badge).not.toBeNull();
     });
 });
