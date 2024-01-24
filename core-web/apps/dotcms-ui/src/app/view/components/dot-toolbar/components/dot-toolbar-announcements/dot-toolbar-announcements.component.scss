@@ -5,6 +5,7 @@
     overflow: auto;
     display: block;
     padding: $spacing-4;
+    width: 26rem;
 }
 
 .announcements__list {
@@ -23,14 +24,19 @@
 
 .announcements__list-item {
     display: flex;
+    position: relative;
     flex-direction: row;
     gap: $spacing-3;
-    padding: $spacing-3 $spacing-1;
-
+    padding: $spacing-2 $spacing-1;
+    margin-bottom: $spacing-1;
+    border-radius: $border-radius-md;
     &:hover {
-        border-radius: $spacing-0;
         background-color: $color-palette-primary-100;
     }
+}
+
+.announcements__list-item--active {
+    background-color: $color-palette-secondary-100;
 }
 
 .announcements__title {
@@ -77,6 +83,23 @@
     &:hover {
         background-color: $color-palette-primary-100;
     }
+}
+
+.announcements__url {
+    text-decoration: none;
+    color: $black;
+}
+
+.announcements__badge {
+    background-color: $color-accessible-text-fuchsia;
+    border-radius: 50%;
+    color: $white;
+    font-size: $font-size-sm;
+    line-height: $font-size-sm;
+    padding: $spacing-0;
+    position: absolute;
+    left: 35px;
+    top: 12px;
 }
 
 ::ng-deep {
