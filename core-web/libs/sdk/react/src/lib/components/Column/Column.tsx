@@ -15,10 +15,13 @@ export function Column({ column }: ColumnProps) {
     const { isInsideEditor } = useContext<PageProviderContext | null>(
         PageContext
     ) as PageProviderContext;
-    const { widthClass, startClass } = getPositionStyleClasses(column.width, column.leftOffset);
+    const { startClass, endClass } = getPositionStyleClasses(
+        column.leftOffset,
+        column.width + column.leftOffset
+    );
 
     const combinedClasses = combineClasses([
-        styles[widthClass],
+        styles[endClass],
         styles[startClass],
         column.styleClass
     ]);

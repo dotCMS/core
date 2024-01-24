@@ -1,10 +1,9 @@
-import { Injectable } from '@angular/core';
-import { async, TestBed } from '@angular/core/testing';
+import { createServiceFactory, SpectatorService, mockProvider } from '@ngneat/spectator/jest';
 
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
+import { Injectable } from '@angular/core';
+
 import { DotRouterService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotIframeService } from './dot-iframe.service';
 
@@ -16,40 +15,47 @@ export class DotRouterServiceMock {
 }
 
 describe('DotIframeService', () => {
+    let spectator: SpectatorService<DotIframeService>;
     let service: DotIframeService;
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            providers: [
-                DotIframeService,
-                DotUiColorsService,
-                { provide: DotRouterService, useClass: DotRouterServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock }
-            ]
-        });
-
-        service = TestBed.get(DotIframeService);
+    const createService = createServiceFactory({
+        service: DotIframeService,
+        providers: [
+            {
+                provide: DotRouterService,
+                useClass: DotRouterServiceMock
+            },
+            mockProvider(CoreWebService)
+        ]
     });
 
-    it('should trigger reload action', async(() => {
+    beforeEach(() => {
+        spectator = createService();
+        service = spectator.service;
+    });
+
+    it('should trigger reload action', (done) => {
         service.reloaded().subscribe((res) => {
             expect(res).toEqual({ name: 'reload' });
+            done();
         });
 
         service.reload();
-    }));
+    });
 
-    it('should trigger reload colors action', async(() => {
+    it('should trigger reload colors action', (done) => {
         service.reloadedColors().subscribe((res) => {
             expect(res).toEqual({ name: 'colors' });
+            done();
         });
 
         service.reloadColors();
-    }));
+    });
 
-    it('should trigger ran action', () => {
+    it('should trigger ran action', (done) => {
         service.ran().subscribe((res) => {
             expect(res).toEqual({ name: 'functionName' });
+            done();
         });
 
         service.run({ name: 'functionName' });
@@ -57,7 +63,7 @@ describe('DotIframeService', () => {
 
     describe('reload portlet data', () => {
         beforeEach(() => {
-            spyOn(service, 'run');
+            jest.spyOn(service, 'run');
         });
 
         it('should reload data for content', () => {
@@ -90,7 +96,7 @@ describe('DotIframeService', () => {
             expect(service.run).toHaveBeenCalledWith({ name: 'refreshHostTable' });
         });
 
-        it('should reload data for worflow', () => {
+        it('should reload data for workflow', () => {
             service.reloadData('workflow');
 
             expect(service.run).toHaveBeenCalledWith({ name: 'doFilter' });

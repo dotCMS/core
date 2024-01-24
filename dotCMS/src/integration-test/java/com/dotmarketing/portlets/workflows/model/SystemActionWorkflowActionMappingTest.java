@@ -5,6 +5,8 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.publisher.pusher.wrapper.ContentTypeWrapper;
 import com.dotcms.publisher.pusher.wrapper.WorkflowWrapper;
 import com.dotcms.publishing.DotPrettyPrintWriter;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -15,16 +17,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class SystemActionWorkflowActionMappingTest {
+
+    @BeforeClass
+    public static void prepare() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+    }
 
     /**
      * The idea behind this method is test how XStream performs over the SystemActionWorkflowActionMapping since it is an immutable object
@@ -37,7 +46,7 @@ public class SystemActionWorkflowActionMappingTest {
 
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
         final User    systemUser      = APILocator.systemUser();
-        final XStream xstreamWriter   = new XStream(new DomDriver("UTF-8"));
+        final XStream xstreamWriter   = XStreamHandler.newXStreamInstance(StandardCharsets.UTF_8.name());
         final StringWriter writer     = new StringWriter();
         final HierarchicalStreamWriter xmlWriter = new DotPrettyPrintWriter(writer);
         final WorkflowScheme workflowScheme      = workflowAPI.findScheme(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID);
@@ -46,9 +55,8 @@ public class SystemActionWorkflowActionMappingTest {
         Assert.assertTrue("The System Workflow must have system actions",systemActionMappingsDB.size()>0);
         xstreamWriter.marshal(systemActionMappingsDB, xmlWriter);
 
-        final XStream xstreamReader = new XStream(new DomDriver());
         final List<SystemActionWorkflowActionMapping> systemActionMappingsRecovery =
-                (List<SystemActionWorkflowActionMapping>) xstreamReader.fromXML(writer.toString());
+                (List<SystemActionWorkflowActionMapping>) XStreamHandler.newXStreamInstance().fromXML(writer.toString());
 
         Assert.assertNotNull(systemActionMappingsRecovery);
         Assert.assertTrue("The System Workflow must have system actions",systemActionMappingsRecovery.size()>0);
@@ -80,7 +88,7 @@ public class SystemActionWorkflowActionMappingTest {
 
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
         final User    systemUser      = APILocator.systemUser();
-        final XStream xstreamWriter   = new XStream(new DomDriver("UTF-8"));
+        final XStream xstreamWriter   = XStreamHandler.newXStreamInstance(StandardCharsets.UTF_8.name());
         final StringWriter writer     = new StringWriter();
 
         final HierarchicalStreamWriter xmlWriter = new DotPrettyPrintWriter(writer);
@@ -94,9 +102,8 @@ public class SystemActionWorkflowActionMappingTest {
         workflowWrapper.setSystemActionMappings(systemActionMappingsDB);
         xstreamWriter.marshal(workflowWrapper, xmlWriter);
 
-        final XStream xstreamReader = new XStream(new DomDriver());
         final WorkflowWrapper workflowWrapperRecovery =
-                (WorkflowWrapper) xstreamReader.fromXML(writer.toString());
+                (WorkflowWrapper) XStreamHandler.newXStreamInstance().fromXML(writer.toString());
 
         Assert.assertNotNull(workflowWrapperRecovery);
         Assert.assertNotNull(workflowWrapperRecovery.getScheme());

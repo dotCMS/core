@@ -70,10 +70,13 @@ public class LocalTraversalServiceImpl implements LocalTraversalService {
             logger.debug(String.format("Local site [%s] doesn't exist on remote server.", localPath.site()));
         }
 
-        // Checking if the language exist
+        // Checking if the language exists
         try {
-            retriever.retrieveLanguage(localPath.language());
-            localPath = LocalPathStructure.builder().from(localPath).languageExists(true).build();
+            final var languageResponse = retriever.retrieveLanguage(localPath.language());
+            localPath = LocalPathStructure.builder().from(localPath).
+                    languageExists(true).
+                    isDefaultLanguage(languageResponse.defaultLanguage().orElse(false)).
+                    build();
         } catch (NotFoundException e) {
             localPath = LocalPathStructure.builder().from(localPath).languageExists(false).build();
 

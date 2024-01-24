@@ -4,9 +4,10 @@ import { Injectable } from '@angular/core';
 
 import { filter, takeUntil } from 'rxjs/operators';
 
-import { DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotMessage, DotMessageSeverity } from '@dotcms/dotcms-models';
+
+import { DotRouterService } from '../dot-router/dot-router.service';
 
 /**
  * Handle message send by the Backend, this message are sended as Event through the {@link DotcmsEventsService}

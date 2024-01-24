@@ -33,7 +33,8 @@ import {
     DotEventsService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
-    DotMessageService
+    DotMessageService,
+    DotFormatDateService
 } from '@dotcms/data-access';
 import { CoreWebService, DotEventsSocket, LoginService } from '@dotcms/dotcms-js';
 import {
@@ -42,12 +43,7 @@ import {
     DotCMSContentTypeLayoutRow,
     DotFieldVariable
 } from '@dotcms/dotcms-models';
-import {
-    DotFieldValidationMessageComponent,
-    DotFormatDateService,
-    DotIconModule,
-    DotMessagePipe
-} from '@dotcms/ui';
+import { DotFieldValidationMessageComponent, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     cleanUpDialog,

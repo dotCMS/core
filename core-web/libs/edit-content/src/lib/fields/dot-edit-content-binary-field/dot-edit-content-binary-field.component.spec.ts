@@ -130,7 +130,10 @@ describe('DotEditContentBinaryFieldComponent', () => {
         const spyEmit = jest.spyOn(spectator.component.valueUpdated, 'emit');
         spectator.detectChanges();
         store.setTempFile(TEMP_FILE_MOCK);
-        expect(spyEmit).toHaveBeenCalledWith(TEMP_FILE_MOCK.id);
+        expect(spyEmit).toHaveBeenCalledWith({
+            value: TEMP_FILE_MOCK.id,
+            fileName: TEMP_FILE_MOCK.fileName
+        });
     });
 
     it('should not emit new value is is equal to current value', () => {
