@@ -4,7 +4,7 @@ import { from, Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { switchMap, tap, map, catchError } from 'rxjs/operators';
+import { switchMap, tap, map, catchError, distinctUntilChanged } from 'rxjs/operators';
 
 import { DotLicenseService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
@@ -53,7 +53,10 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
         isLoading: state.status === BinaryFieldStatus.UPLOADING
     }));
 
-    readonly value$ = this.select((state) => state.value);
+    readonly value$ = this.select(({ value, tempFile }) => ({
+        value,
+        fileName: tempFile?.fileName
+    })).pipe(distinctUntilChanged((previous, current) => previous.value === current.value));
 
     constructor(
         private readonly dotUploadService: DotUploadService,
@@ -177,10 +180,10 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
             return contentlet$.pipe(
                 tap(() => this.setUploading()),
                 switchMap((contentlet) => {
-                    const { fileAsset, metaData, fieldVariable } = contentlet;
+                    const { fileAssetVersion, metaData, fieldVariable } = contentlet;
                     const metadata = metaData || contentlet[`${fieldVariable}MetaData`];
                     const { contentType: mimeType, editableAsText, name } = metadata || {};
-                    const contentURL = fileAsset || contentlet[fieldVariable];
+                    const contentURL = fileAssetVersion || contentlet[`${fieldVariable}Version`];
                     const obs$ = editableAsText ? this.getFileContent(contentURL) : of('');
 
                     return obs$.pipe(
