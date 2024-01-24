@@ -62,6 +62,10 @@ export class DotBinaryFieldPreviewComponent implements OnChanges {
         return this.tempFile?.metadata || this.contentletMetadata;
     }
 
+    get title(): string {
+        return this.contentlet?.fileName || this.metadata.name;
+    }
+
     get contentletMetadata(): DotFileMetadata {
         const { metaData = '', fieldVariable = '' } = this.contentlet;
 
