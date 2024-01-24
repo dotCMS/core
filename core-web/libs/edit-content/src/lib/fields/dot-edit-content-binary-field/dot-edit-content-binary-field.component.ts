@@ -25,12 +25,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { delay, filter, skip, tap } from 'rxjs/operators';
 
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
-import {
-    DotCMSBaseTypesContentTypes,
-    DotCMSContentTypeField,
-    DotCMSContentlet,
-    DotCMSTempFile
-} from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 import {
     DotDropZoneComponent,
     DotMessagePipe,
@@ -109,13 +104,6 @@ export class DotEditContentBinaryFieldComponent
 
     private get variable(): string {
         return this.field.variable;
-    }
-
-    private get metaDataKey(): string {
-        const { baseType } = this.contentlet;
-        const isFileAsset = baseType === DotCMSBaseTypesContentTypes.FILEASSET;
-
-        return isFileAsset ? 'metaData' : this.variable + 'MetaData';
     }
 
     get value(): string {
