@@ -32,3 +32,4 @@ This maintenance release includes the following code fixes:
 26. https://github.com/dotCMS/core/issues/27324 : Sort List Experiments by most recent modification #27324
 27. https://github.com/dotCMS/core/issues/27193 : Experiments: Handling Empty Analytics Key in App Configuration in dotCMS #27193
 28. https://github.com/dotCMS/core/issues/24082 : Language Keys API throws 400 when a duplicate key exists #24082
+29. https://github.com/dotCMS/core/issues/25233 : sysPublishDate no longer appears to be part of the ElasticSearch object we create for indexing #25233

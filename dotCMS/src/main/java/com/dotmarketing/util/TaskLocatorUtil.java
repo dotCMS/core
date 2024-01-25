@@ -379,6 +379,7 @@ public class TaskLocatorUtil {
 	public static List<Class<?>> getBackportedUpgradeTaskClasses() {
 		final List<Class<?>> ret = new ArrayList<>();
 		ret.add(Task231207AddInodeAndIdentifierLeftIndexes.class);
+		ret.add(Task231109AddPublishDateToContentletVersionInfo.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
