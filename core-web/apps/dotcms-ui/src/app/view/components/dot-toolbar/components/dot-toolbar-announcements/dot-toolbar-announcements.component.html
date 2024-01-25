@@ -1,23 +1,31 @@
 <h5 class="announcements__title">{{ 'announcements' | dm }}</h5>
 <ul class="announcements__list">
-    <li class="announcements__list-item" *ngFor="let announcement of announcementsData">
-        <span class="announcements__image pi" [ngClass]="announcement.iconClass"></span>
-        <div class="announcements__content">
-            <span class="announcements__label">{{ announcement.label }}</span>
-            <span class="announcements__date">{{ announcement.date }}</span>
-        </div>
+    @for (item of announcements(); track item.identifier;) {
+    <li
+        class="announcements__list-item"
+        [class.announcements__list-item--active]="showUnreadAnnouncement">
+        <span class="announcements__badge" *ngIf="showUnreadAnnouncement"></span>
+        <span class="announcements__image pi" [ngClass]="typesIcons[item.type]"></span>
+        <a
+            class="announcements__url"
+            [href]="item.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-labelledby="announcement-label date-label">
+            <div class="announcements__content">
+                <span class="announcements__label">{{ item.title }}</span>
+                <span class="announcements__date">{{ item.announcementDateAsISO8601 | date }}</span>
+            </div>
+        </a>
     </li>
+    }
 </ul>
 
 <div class="announcements__container">
     <i class="pi pi-external-link"></i>
-    <a
-        class="announcements__link"
-        [routerLink]="linkToAddDevice"
-        (click)="close()"
-        data-testId="announcement_link"
-        >{{ 'announcements_show_all' | dm }}</a
-    >
+    <a class="announcements__link" [href]="linkToDotCms" data-testId="announcement_link">{{
+        'announcements_show_all' | dm
+    }}</a>
 </div>
 
 <h5 class="announcements__title">{{ 'announcements_knowledge_center' | dm }}</h5>

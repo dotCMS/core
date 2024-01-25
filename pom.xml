@@ -13,20 +13,12 @@
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <description>DotCMS</description>
-    <properties>
-        <sonar.host.url>http://localhost:9000/</sonar.host.url>
-        <sonar.login>admin</sonar.login>
-        <sonar.password>admin2</sonar.password>
-        <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
-        <sonar.coverage.jacoco.xmlReportPaths>${basedir}/reports/target/site/jacoco-aggregate</sonar.coverage.jacoco.xmlReportPaths>
-    </properties>
     <modules>
         <!-- This is an aggregator pom, we make it separate than the parent pom
         as the aggregate will always build last and we want to make sure the
         parent pom is built first. -->
         <module>parent</module>
         <module>independent-projects</module>
-        <module>maven-plugins</module>
         <module>bom</module>
         <module>core-web</module>
         <module>osgi-base</module>
@@ -34,6 +26,7 @@
         <module>build-parent</module>
         <module>dotCMS</module>
         <module>tools/dotcms-cli</module>
+        <module>dotcms-integration</module>
         <module>dotcms-postman</module>
     </modules>
     <repositories>
@@ -118,19 +111,5 @@
         </extensions>
     </build>
 
-    <profiles>
-        <profile>
-            <id>it-tests</id>
-            <activation>
-                <property>
-                    <name>it-tests</name>
-                </property>
-            </activation>
-            <modules>
-                <module>dotcms-integration</module>
-                <module>reports</module>
-            </modules>
-        </profile>
-    </profiles>
 
 </project>
