@@ -43,10 +43,6 @@ export class DotWorkflowActionsComponent implements OnChanges {
     protected groupedActions = signal<MenuItem[][]>([]);
     protected sizeClass: string;
 
-    styleClass(outline: boolean = false): string {
-        return `${this.sizeClass} ${outline ? 'p-button-outlined' : ''}`;
-    }
-
     ngOnChanges(): void {
         this.groupedActions.set(
             this.groupAction ? this.groupActions(this.actions) : this.formatActions(this.actions)
