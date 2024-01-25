@@ -1,6 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator';
-
-import { input, signal } from '@angular/core';
+import { createHostFactory, SpectatorHost } from '@ngneat/spectator';
 
 import { Button } from 'primeng/button';
 import { SplitButton, SplitButtonModule } from 'primeng/splitbutton';
@@ -11,8 +9,6 @@ import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 import { MockDotMessageService, mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { DotWorkflowActionsComponent } from './dot-workflow-actions.component';
-
-import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 const WORKFLOW_ACTIONS_SEPARATOR_MOCK: DotCMSWorkflowAction = {
     assignable: true,
@@ -61,11 +57,11 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 describe('DotWorkflowActionsComponent', () => {
-    let spectator: Spectator<DotWorkflowActionsComponent>;
+    let spectator: SpectatorHost<DotWorkflowActionsComponent>;
 
-    const createComponent = createComponentFactory({
+    const createHost = createHostFactory({
         component: DotWorkflowActionsComponent,
-        imports: [ToolbarModule, SplitButtonModule, DotMessagePipe],
+        imports: [ToolbarModule, SplitButtonModule],
         providers: [
             {
                 provide: DotMessageService,
@@ -76,41 +72,50 @@ describe('DotWorkflowActionsComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                actions: input([]),
-                groupAction: input(false),
-                loading: input(false),
-                size: input('normal')
+        spectator = createHost(
+            `
+        <dot-workflow-actions
+          [actions]="actions"
+          [groupAction]="groupAction"
+          [loading]="loading"
+          [size]="size"
+        ></dot-workflow-actions>
+      `,
+            {
+                hostProps: {
+                    actions: WORKFLOW_ACTIONS_MOCK,
+                    groupAction: true,
+                    loading: false,
+                    size: 'normal'
+                }
             }
-        });
-        spectator.detectComponentChanges();
+        );
+        spectator.detectChanges();
     });
 
     describe('without actions', () => {
         beforeEach(() => {
-            spectator.setInput('actions', input([]));
+            spectator.setHostInput({
+                actions: [],
+                loading: true
+            });
             spectator.detectChanges();
         });
 
         it('should render the empty button with loading', () => {
-            spectator.setInput('loading', input(true));
-
-            spectator.detectComponentChanges();
-            spectator.detectChanges();
             const button = spectator.query(Button);
-
             expect(button).toBeTruthy();
             expect(button?.disabled).toBeFalsy();
             expect(button?.label).toBe('loading');
         });
 
         it('should render the empty button with disabled', () => {
-            spectator.setInput('loading', false);
+            spectator.setHostInput({
+                loading: false
+            });
+            spectator.detectChanges();
 
             const button = spectator.query(Button);
-
-            spectator.detectChanges();
 
             expect(button.disabled).toBeTruthy();
             expect(button.loading).toBeFalsy();
@@ -119,8 +124,19 @@ describe('DotWorkflowActionsComponent', () => {
     });
 
     describe('group action', () => {
+        beforeEach(() => {
+            spectator.setHostInput({
+                actions: WORKFLOW_ACTIONS_MOCK,
+                groupAction: true,
+                loading: false,
+                size: 'normal'
+            });
+            spectator.detectChanges();
+        });
+
         it('should render an extra split button for each `SEPARATOR` Action', () => {
             const splitButtons = spectator.queryAll(SplitButton);
+
             expect(splitButtons.length).toBe(2);
         });
 
@@ -133,17 +149,19 @@ describe('DotWorkflowActionsComponent', () => {
         });
 
         it('should render a normal button is a group has only one action', () => {
-            spectator.setInput('actions', [WORKFLOW_ACTIONS_MOCK[0]]);
+            spectator.setHostInput({
+                actions: [WORKFLOW_ACTIONS_MOCK[0]]
+            });
             spectator.detectChanges();
 
-            const button = spectator.query('.p-button');
+            const button = spectator.query(Button);
             expect(button).not.toBeNull();
         });
     });
 
     describe('not group action', () => {
         beforeEach(() => {
-            spectator.setInput('groupAction', signal(false));
+            spectator.setHostInput({ groupAction: false });
             spectator.detectComponentChanges();
         });
 
@@ -157,7 +175,9 @@ describe('DotWorkflowActionsComponent', () => {
         it('should render a normal button and remove the `SEPARATOR` Action', () => {
             const action = WORKFLOW_ACTIONS_MOCK[0];
 
-            spectator.setInput('actions', [action, WORKFLOW_ACTIONS_SEPARATOR_MOCK]);
+            spectator.setHostInput({
+                actions: [action, WORKFLOW_ACTIONS_SEPARATOR_MOCK]
+            });
             spectator.detectChanges();
 
             const buttons = spectator.queryAll(Button);
@@ -168,13 +188,15 @@ describe('DotWorkflowActionsComponent', () => {
 
     describe('loading', () => {
         beforeEach(() => {
-            spectator.setInput('loading', true);
-            spectator.setInput('actions', [
-                ...WORKFLOW_ACTIONS_MOCK,
-                WORKFLOW_ACTIONS_SEPARATOR_MOCK,
-                WORKFLOW_ACTIONS_MOCK[0]
-            ]);
-            spectator.detectComponentChanges();
+            spectator.setHostInput({
+                actions: [
+                    ...WORKFLOW_ACTIONS_MOCK,
+                    WORKFLOW_ACTIONS_SEPARATOR_MOCK,
+                    WORKFLOW_ACTIONS_MOCK[0]
+                ],
+                loading: true
+            });
+            spectator.detectChanges();
         });
 
         it('should disabled split buttons and set normal buttons loading', () => {
@@ -183,6 +205,53 @@ describe('DotWorkflowActionsComponent', () => {
 
             expect(button.loading).toBeTruthy();
             expect(splitButton.disabled).toBeTruthy();
+        });
+    });
+
+    describe('size', () => {
+        beforeEach(async () => {
+            spectator.setHostInput({
+                actions: [
+                    mockWorkflowsActions[0],
+                    WORKFLOW_ACTIONS_SEPARATOR_MOCK,
+                    ...mockWorkflowsActions
+                ],
+                groupAction: true,
+                loading: false,
+                size: 'small'
+            });
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+        });
+
+        it('should set style class p-button-sm', () => {
+            const button = spectator.query(Button);
+            const splitButton = spectator.query(SplitButton);
+
+            expect(button.styleClass.trim()).toBe('p-button-sm');
+            expect(splitButton.styleClass.trim()).toBe('p-button-sm p-button-outlined');
+        });
+
+        it('should set style class p-button-lg', () => {
+            spectator.setHostInput({ size: 'large' });
+            spectator.detectChanges();
+
+            const button = spectator.query(Button);
+            const splitButton = spectator.query(SplitButton);
+
+            expect(button.styleClass.trim()).toBe('p-button-lg');
+            expect(splitButton.styleClass.trim()).toBe('p-button-lg p-button-outlined');
+        });
+
+        it('should have default size', () => {
+            spectator.setHostInput({ size: 'normal' });
+            spectator.detectChanges();
+
+            const button = spectator.query(Button);
+            const splitButton = spectator.query(SplitButton);
+
+            expect(button.styleClass.trim()).toBe('');
+            expect(splitButton.styleClass.trim()).toBe('p-button-outlined');
         });
     });
 });

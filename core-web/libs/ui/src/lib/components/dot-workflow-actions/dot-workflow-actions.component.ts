@@ -35,20 +35,24 @@ const InplaceButtonSizePrimeNg: Record<ButtonSize, string> = {
 export class DotWorkflowActionsComponent {
     @Output() actionFired = new EventEmitter<DotCMSWorkflowAction>();
 
-    actions = input.required<DotCMSWorkflowAction[]>();
+    actions = input<DotCMSWorkflowAction[]>([]);
     loading = input<boolean>(false);
     groupAction = input<boolean>(false);
     size = input<ButtonSize>('normal');
 
     protected sizeClass = computed<string>(() => InplaceButtonSizePrimeNg[this.size()]);
     protected groupedActions = computed<MenuItem[][]>(() => {
-        return this.groupAction
+        return this.groupAction()
             ? this.groupActions(this.actions())
             : this.formatActions(this.actions());
     });
 
     styleClass(outline: boolean = false): string {
-        return `${this.sizeClass()} ${outline ? 'p-button-outlined' : ''}`;
+        if (outline) {
+            return `${this.sizeClass()} p-button-outlined`;
+        }
+
+        return this.sizeClass();
     }
 
     /**
