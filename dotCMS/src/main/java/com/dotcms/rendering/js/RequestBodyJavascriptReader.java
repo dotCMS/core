@@ -25,9 +25,9 @@ public class RequestBodyJavascriptReader implements JavascriptReader {
     public Reader getJavaScriptReader(final ScriptingReaderParams params) throws DotSecurityException, DotDataException {
 
         final RoleAPI roleAPI = APILocator.getRoleAPI();
-        final boolean canRenderVelocity = APILocator.getRoleAPI()
+        final boolean canRenderJs = APILocator.getRoleAPI()
                 .doesUserHaveRole(params.getUser(), roleAPI.loadRoleByKey(SCRIPTING_USER_ROLE_KEY));
-        if(!canRenderVelocity) {
+        if(!canRenderJs) {
             Logger.warn(this, "User does not have the required role. User: " + params.getUser());
             throw new DotSecurityException("User does not have the required role");
         }

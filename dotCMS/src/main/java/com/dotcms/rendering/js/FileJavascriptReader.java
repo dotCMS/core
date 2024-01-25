@@ -46,7 +46,10 @@ public class FileJavascriptReader implements JavascriptReader {
         final Host site = APILocator.getHostAPI().resolveHostName(params.getRequest().getServerName(), APILocator.systemUser(), false);
         final String jsFilePath = JsResource.JS_PATH + StringPool.SLASH + params.getFolderName() + StringPool.SLASH
                 + params.getHttpMethod().fileName() + FILE_EXTENSION;
-        return getJavascriptReaderFromPath(jsFilePath, site, currentLanguage, pageMode, params.getUser());
+        return getJavascriptReaderFromPath(jsFilePath,
+                null != site? site: APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false),
+                null != currentLanguage? currentLanguage: APILocator.getLanguageAPI().getDefaultLanguage(),
+                pageMode, params.getUser());
     }
 
     /**
