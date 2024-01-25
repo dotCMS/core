@@ -25,12 +25,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { delay, filter, skip, tap } from 'rxjs/operators';
 
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
-import {
-    DotCMSBaseTypesContentTypes,
-    DotCMSContentTypeField,
-    DotCMSContentlet,
-    DotCMSTempFile
-} from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 import {
     DotDropZoneComponent,
     DotMessagePipe,
@@ -90,7 +85,7 @@ export class DotEditContentBinaryFieldComponent
     @Input() contentlet: DotCMSContentlet;
     @Input() imageEditor = false;
 
-    @Output() valueUpdated = new EventEmitter<string>();
+    @Output() valueUpdated = new EventEmitter<{ value: string; fileName: string }>();
     @ViewChild('inputFile') inputFile: ElementRef;
 
     private onChange: (value: string) => void;
@@ -109,13 +104,6 @@ export class DotEditContentBinaryFieldComponent
 
     private get variable(): string {
         return this.field.variable;
-    }
-
-    private get metaDataKey(): string {
-        const { baseType } = this.contentlet;
-        const isFileAsset = baseType === DotCMSBaseTypesContentTypes.FILEASSET;
-
-        return isFileAsset ? 'metaData' : this.variable + 'MetaData';
     }
 
     get value(): string {
@@ -144,11 +132,11 @@ export class DotEditContentBinaryFieldComponent
         this.dotBinaryFieldStore.value$
             .pipe(
                 skip(1),
-                filter((value) => value !== this.value)
+                filter(({ value }) => value !== this.value)
             )
-            .subscribe((value) => {
+            .subscribe(({ value, fileName }) => {
                 this.tempId = value; // If the value changes, it means that a new file was uploaded
-                this.valueUpdated.emit(value);
+                this.valueUpdated.emit({ value, fileName });
 
                 if (this.onChange) {
                     this.onChange(value);

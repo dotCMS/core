@@ -23,7 +23,7 @@ import { ActionPayload } from '../../shared/models';
 
 const mockResponse: DotPageApiResponse = {
     page: {
-        url: 'test-url',
+        pageURI: 'test-url',
         title: 'Test Page',
         identifier: '123',
         inode: '123-i',
@@ -80,7 +80,7 @@ describe('EditEmaStore', () => {
                 ...mockResponse,
                 page: {
                     ...mockResponse.page,
-                    url
+                    pageURI: url
                 }
             });
         });
@@ -257,7 +257,7 @@ describe('EditEmaStore', () => {
                     page: {
                         title: 'Test Page',
                         identifier: '123',
-                        url: 'page-url'
+                        pageURI: 'page-url'
                     },
                     viewAs: {
                         language: {
@@ -339,6 +339,7 @@ describe('EditEmaStore', () => {
                 url: 'test-url',
                 'com.dotmarketing.persona.id': '123'
             });
+
             spectator.service.savePage({
                 pageContainers: [],
                 pageId: '789'

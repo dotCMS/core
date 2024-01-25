@@ -5,8 +5,7 @@ import { Validators } from '@angular/forms';
 
 import { TabView } from 'primeng/tabview';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotFormatDateService } from '@dotcms/ui';
+import { DotMessageService, DotFormatDateService } from '@dotcms/data-access';
 import { DotFormatDateServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';

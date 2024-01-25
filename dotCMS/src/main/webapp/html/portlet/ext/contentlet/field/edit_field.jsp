@@ -750,17 +750,17 @@
                      * This is a workaround to get the contentlet from the API
                      * because there is no way to get the same contentlet the AP retreive from the dwr call.
                      */
-                    fetch('/api/content/id/<%=contentlet.getIdentifier()%>', {
+                    fetch('/api/v1/content/<%=inode%>', {
                         method: 'GET',
                         headers: {
                             'Content-Type': 'application/json'
                         }
-                    }).then(response => response.json())
-                    .then(({ contentlets }) => {
-                        const contentlet = contentlets[0];
+                    })
+                    .then(response => response.json())
+                    .then(({ entity: contentlet }) => {
                         const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
                         const variable = "<%=field.getVelocityVarName()%>";
-                        const fielData = {
+                        const fieldData = {
                             ...(<%=jsonField%>),
                             hint: '<%=hint%>',
                             variable,
@@ -776,12 +776,26 @@
                         binaryField.id = "binary-field-<%=field.getVelocityVarName()%>";
                         binaryField.setAttribute("fieldName", "<%=field.getVelocityVarName()%>");
 
-                        binaryField.field = fielData;
+                        binaryField.field = fieldData;
                         binaryField.contentlet = contentlet;
                         binaryField.imageEditor = true;
 
+                        const contentBaseType = <%= contentlet.getContentType().baseType().getType() %>;
+
                         binaryField.addEventListener('valueUpdated', ({ detail }) => {
-                            field.value = detail;
+                            const { value, fileName } = detail;
+                            field.value = value;
+                            if(contentBaseType === 4){ // FileAsset
+                                let titleField = dijit.byId("title");
+                                let fileNameField = dijit.byId("fileName");
+                                if(!titleField.value ){
+                                    titleField?.setValue(fileName);
+                                }
+
+                                if(!fileNameField.value){
+                                    fileNameField?.setValue(fileName);
+                                }
+                            }
                         });
 
                         binaryFieldContainer.innerHTML = '';
@@ -992,6 +1006,7 @@
 
         String bnFlag = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
         Boolean newBinaryOn = bnFlag != null && bnFlag.equalsIgnoreCase("true");
+
         Boolean isBinaryField = field.getFieldType().equals(Field.FieldType.BINARY.toString());
         Boolean shouldShowEditFileOnBn = isBinaryField && !newBinaryOn; // If the new binary field is on, we don't show the edit field
 
