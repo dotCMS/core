@@ -16,6 +16,7 @@ export * from './lib/components/dot-not-license/dot-not-license.component';
 export * from './lib/components/dot-info-page/dot-info-page.component';
 export * from './lib/components/dot-form-dialog/dot-form-dialog.component';
 export * from './lib/components/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
+export * from './lib/components/dot-workflow-actions/dot-workflow-actions.component';
 
 // Directives
 export * from './lib/dot-field-required/dot-field-required.directive';
@@ -26,8 +27,8 @@ export * from './lib/directives/dot-trim-input/dot-trim-input.directive';
 export * from './lib/dot-container-options/dot-container-options.directive';
 export * from './lib/directives/dot-select-item/dot-select-item.directive';
 export * from './lib/directives/dot-avatar/dot-avatar.directive';
+
 // Services
-export * from './lib/services/dot-format-date-service';
 export * from './lib/services/clipboard/ClipboardUtil';
 
 // Pipes

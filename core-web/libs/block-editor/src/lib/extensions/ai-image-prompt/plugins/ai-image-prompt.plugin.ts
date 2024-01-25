@@ -6,9 +6,13 @@ import { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
 
+import { ConfirmationService } from 'primeng/api';
+
 import { filter, skip, takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
+
+import { DotMessageService } from '@dotcms/data-access';
 
 import { findNodeByType, getAIPlaceholderImage } from '../../../shared';
 import { NodeTypes } from '../../bubble-menu/models';
@@ -67,8 +71,6 @@ export class AIImagePromptView {
 
         this.store = this.component.injector.get(DotAiImagePromptStore);
 
-        // TODO: handle the error
-
         /**
          * Subscription fired by the store when the dialog change of the state
          * Handle the manual close of the dialog (esc, click outside, x button)
@@ -110,6 +112,31 @@ export class AIImagePromptView {
                     this.store.hideDialog();
                     this.editor.chain().insertLoaderNode().closeImagePrompt().run();
                 }
+            });
+
+        /**
+         * Subscription fired by an error and remove the loader node
+         */
+        this.store.errorMsg$
+            .pipe(
+                filter((hasError) => !!hasError),
+                takeUntil(this.destroy$)
+            )
+            .subscribe((error) => {
+                const loaderNodes = findNodeByType(this.editor, NodeTypes.LOADER);
+                this.editor.commands.deleteRange({
+                    from: loaderNodes[0].from,
+                    to: loaderNodes[0].to
+                });
+                // call the confirmation service
+
+                this.component.injector.get(ConfirmationService).confirm({
+                    key: 'ai-image-prompt-msg',
+                    message: this.component.injector.get(DotMessageService).get(error),
+                    header: 'Error',
+                    rejectVisible: false,
+                    acceptVisible: false
+                });
             });
 
         /**

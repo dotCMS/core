@@ -1,6 +1,6 @@
 import { inject, Pipe, PipeTransform } from '@angular/core';
 
-import { DotFormatDateService } from '@dotcms/ui';
+import { DotFormatDateService } from '@dotcms/data-access';
 
 /**
  * Transforms a timestamp into a formatted date string based on the user's selected language at login

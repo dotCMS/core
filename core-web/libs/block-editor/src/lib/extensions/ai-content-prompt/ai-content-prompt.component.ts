@@ -4,14 +4,18 @@ import {
     ChangeDetectionStrategy,
     Component,
     ElementRef,
+    inject,
     OnDestroy,
     OnInit,
     ViewChild
 } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 
+import { ConfirmationService } from 'primeng/api';
+
 import { filter, takeUntil } from 'rxjs/operators';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { AiContentPromptState, AiContentPromptStore } from './store/ai-content-prompt.store';
@@ -29,13 +33,13 @@ interface AIContentForm {
 export class AIContentPromptComponent implements OnInit, OnDestroy {
     vm$: Observable<AiContentPromptState> = this.aiContentPromptStore.vm$;
     readonly ComponentStatus = ComponentStatus;
-    private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    @ViewChild('input') private input: ElementRef;
-
     form: FormGroup<AIContentForm> = new FormGroup<AIContentForm>({
         textPrompt: new FormControl('', Validators.required)
     });
+    confirmationService = inject(ConfirmationService);
+    dotMessageService = inject(DotMessageService);
+    private destroy$: Subject<boolean> = new Subject<boolean>();
+    @ViewChild('input') private input: ElementRef;
 
     constructor(private readonly aiContentPromptStore: AiContentPromptStore) {}
 
@@ -76,5 +80,14 @@ export class AIContentPromptComponent implements OnInit, OnDestroy {
     handleScape(event: KeyboardEvent): void {
         this.aiContentPromptStore.setStatus(ComponentStatus.INIT);
         event.stopPropagation();
+    }
+
+    /**
+     * Clears the error at the store on hiding the confirmation dialog.
+     *
+     * @return {void}
+     */
+    onHideConfirm(): void {
+        this.aiContentPromptStore.cleanError();
     }
 }
