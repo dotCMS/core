@@ -1045,7 +1045,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             return new TryToAddResult(TryToAddResult.Result.EXCLUDE, ManifestReason.EXCLUDE_SYSTEM_OBJECT);
         }
 
-        if (!isTemplateLayout(asset) && isExcludeByFilter(pusheableAsset)) {
+        if (isExcludeByFilter(pusheableAsset)) {
             config.exclude(asset, pusheableAsset, ManifestReason.EXCLUDE_BY_FILTER.getMessage());
             return new TryToAddResult(TryToAddResult.Result.EXCLUDE, ManifestReason.EXCLUDE_BY_FILTER);
         }
@@ -1071,17 +1071,6 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                     ManifestReason.EXCLUDE_BY_MOD_DATE.getMessage(asset.getClass()));
             return new TryToAddResult(TryToAddResult.Result.EXCLUDE, ManifestReason.EXCLUDE_BY_MOD_DATE);
         }
-    }
-
-    /**
-    * Determines if the asset is a template layout based on the provided one.
-    * Every template layout has a title that starts with Template.ANONYMOUS_PREFIX
-     * @param asset The asset to check
-     * @return If the Asset is a {@link Template} object and the title
-     * contains {@code Template.ANONYMOUS_PREFIX}, return {@code true}.
-    */
-    private boolean isTemplateLayout(final Object asset){
-        return asset instanceof Template && ((Template) asset).getTitle().contains(Template.ANONYMOUS_PREFIX);
     }
 
     private <T> boolean isExcludeByFilter(final PusheableAsset pusheableAsset) {
