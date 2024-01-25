@@ -77,7 +77,9 @@ describe('DotWorkflowActionsComponent', () => {
         spectator = createComponent({
             props: {
                 actions: WORKFLOW_ACTIONS_MOCK,
-                groupAction: true
+                groupAction: true,
+                loading: false,
+                size: 'normal'
             }
         });
         spectator.detectComponentChanges();
@@ -178,6 +180,47 @@ describe('DotWorkflowActionsComponent', () => {
 
             expect(button.loading).toBeTruthy();
             expect(splitButton.disabled).toBeTruthy();
+        });
+    });
+
+    describe('size', () => {
+        beforeEach(() => {
+            spectator.setInput('actions', [
+                mockWorkflowsActions[0],
+                WORKFLOW_ACTIONS_SEPARATOR_MOCK,
+                ...mockWorkflowsActions
+            ]);
+            spectator.detectChanges();
+        });
+
+        it('should have default size', () => {
+            const button = spectator.query(Button);
+            const splitButton = spectator.query(SplitButton);
+
+            expect(button.styleClass.trim()).toBe('');
+            expect(splitButton.styleClass.trim()).toBe('p-button-outlined');
+        });
+
+        it('should set style class p-button-sm', () => {
+            spectator.setInput('size', 'small');
+            spectator.detectChanges();
+
+            const button = spectator.query(Button);
+            const splitButton = spectator.query(SplitButton);
+
+            expect(button.styleClass.trim()).toBe('p-button-sm');
+            expect(splitButton.styleClass.trim()).toBe('p-button-sm p-button-outlined');
+        });
+
+        it('should set style class p-button-lg', () => {
+            spectator.setInput('size', 'large');
+            spectator.detectChanges();
+
+            const button = spectator.query(Button);
+            const splitButton = spectator.query(SplitButton);
+
+            expect(button.styleClass.trim()).toBe('p-button-lg');
+            expect(splitButton.styleClass.trim()).toBe('p-button-lg p-button-outlined');
         });
     });
 });

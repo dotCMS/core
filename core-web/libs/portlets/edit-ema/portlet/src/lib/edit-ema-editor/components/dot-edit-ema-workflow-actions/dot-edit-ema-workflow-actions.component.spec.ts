@@ -136,7 +136,8 @@ describe('DotEditEmaWorkflowActionsComponent', () => {
         it('should set action as an empty array and loading to true', () => {
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
             expect(dotWorkflowActionsComponent.actions).toEqual([]);
-            expect(dotWorkflowActionsComponent.loading).toEqual(true);
+            expect(dotWorkflowActionsComponent.loading).toBeTruthy();
+            expect(dotWorkflowActionsComponent.size).toBe('small');
         });
     });
 
