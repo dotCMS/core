@@ -55,7 +55,7 @@ describe('AnnouncementsStore', () => {
     });
 
     it('should not mark announcements as unread when there are no new announcements', (done) => {
-        localStorage.removeItem('announcementsData');
+        localStorage.removeItem('dotAnnouncementsData');
 
         spectator.service.markAnnouncementsAsRead();
         spectator.service.loadAnnouncements();
@@ -67,7 +67,7 @@ describe('AnnouncementsStore', () => {
     });
 
     it('should mark announcements as unread', (done) => {
-        localStorage.removeItem('announcementsData');
+        localStorage.removeItem('dotAnnouncementsData');
 
         spectator.service.loadAnnouncements();
 
