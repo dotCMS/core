@@ -36,6 +36,7 @@ export class EmaContentletToolsComponent {
     @Output() addWidget = new EventEmitter<ActionPayload>();
     @Output() edit = new EventEmitter<ActionPayload>();
     @Output() delete = new EventEmitter<ActionPayload>();
+    @Output() move = new EventEmitter<ActionPayload>();
 
     items: MenuItem[] = [
         {
@@ -66,6 +67,11 @@ export class EmaContentletToolsComponent {
             }
         }
     ];
+
+    startDrag(event: ActionPayload): void {
+        console.log('startDrag', event);
+        this.move.emit(event);
+    }
 
     /**
      * Set the position flag to add the contentlet before or after the current one
@@ -141,7 +147,7 @@ export class EmaContentletToolsComponent {
      * @memberof EmaContentletToolsComponent
      */
     getActionPosition(): Record<string, string> {
-        const width = 84;
+        const width = 128;
         const height = 40;
         const contentletCenterX = this.contentlet.x + this.contentlet.width;
         const left = contentletCenterX - width - 8;

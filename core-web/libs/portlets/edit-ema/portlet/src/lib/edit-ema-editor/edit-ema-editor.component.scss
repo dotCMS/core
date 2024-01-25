@@ -62,8 +62,8 @@ i {
     padding: $spacing-4 $spacing-3;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    justify-content: flex-start;
+    align-items: flex-start;
     gap: $spacing-1;
     overflow: auto;
 }
@@ -74,12 +74,18 @@ i {
 .iframe-wrapper {
     position: relative;
     overflow: hidden;
-    flex-grow: 1;
     margin: 0 auto;
     border: solid 1px $color-palette-gray-300;
+    transform-origin: left top;
+    transition: scale 0.3s ease-in-out;
 
     iframe {
         border: none;
+        transition: transform 0.3s ease-in-out;
+        transform-origin: left top;
+        position: absolute;
+        top: 0;
+        left: 0;
     }
 }
 

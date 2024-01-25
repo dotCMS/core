@@ -72,6 +72,17 @@
             {{ 'editema.dont.have.edit.permission' | dm }}
         </div>
     </div>
+    <p style="position: absolute">
+        <input
+            id="zoomControl"
+            [value]="100"
+            (input)="zoomChange($event)"
+            type="number"
+            min="10"
+            max="100"
+            step="10" />
+    </p>
+
     <div
         class="editor-content"
         [ngClass]="{
@@ -85,20 +96,23 @@
                 'iframe-wrapper--device': !!currentDevice,
             }"
             [ngStyle]="{
-                width: !!currentDevice ? currentDevice.cssWidth + 'px' : '100%',
-                height: !!currentDevice ? currentDevice.cssHeight + 'px' : '100%'
+                width: '100%',
+                height: '100%',
+                position: 'relative',
             }">
             <iframe
                 #iframe
                 [src]="es.iframeURL | safeUrl"
                 [title]="host"
                 [ngStyle]="{
+                    height: iframeZoomStyles.height,
+                    transform: iframeZoomStyles.transform,
                     pointerEvents: this.rows.length ? 'none' : 'auto',
                     opacity: es.state === editorState.LOADING ? '0.5' : '1'
                 }"
                 data-testId="iframe"
                 width="100%"
-                height="100%"></iframe>
+                height="800"></iframe>
             <p-progressBar
                 *ngIf="es.state === editorState.LOADING"
                 [ngStyle]="{ position: 'absolute', top: '0', left: '0', width: '100%' }"
@@ -107,24 +121,30 @@
                 mode="indeterminate"></p-progressBar>
 
             <dot-ema-contentlet-tools
-                *ngIf="
-                    !rows.length &&
-                    !!contentlet &&
-                    !currentDevice &&
-                    es.editor.page.canEdit &&
-                    es.state === editorState.LOADED
-                "
+                *ngIf="!rows.length && !!contentlet && !currentDevice && es.editor.page.canEdit"
+                [ngStyle]="{
+                    transform: iframeZoomStyles.transform,
+                    top: '0',
+                    left: '0',
+                    transformOrigin: 'top left'
+                }"
                 [contentlet]="contentlet"
                 (edit)="editContentlet($event)"
                 (delete)="deleteContentlet($event)"
                 (addWidget)="addWidget($event)"
                 (addForm)="addForm($event)"
                 (addContent)="addContentlet($event)"
+                (move)="onDragToMoveContentlet($event)"
                 data-testId="contentlet-tools" />
+
             <dot-ema-page-dropzone
-                *ngIf="
-                    !!rows.length && !!dragItem && !currentDevice && es.state === editorState.LOADED
-                "
+                *ngIf="!!rows.length"
+                [ngStyle]="{
+                    transform: iframeZoomStyles.transform,
+                    top: '0',
+                    left: '0',
+                    transformOrigin: 'top left'
+                }"
                 [rows]="rows"
                 [item]="dragItem"
                 (place)="onPlaceItem($event)"

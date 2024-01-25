@@ -136,6 +136,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     contentlet!: ContentletArea;
     dragItem: EmaDragItem;
 
+    iframeZoomStyles = {
+        transform: 'scale(1)',
+        height: '800px'
+    };
+
     // This should be in the store, but experienced an issue that triggers a reload in the whole store when the device is updated
     currentDevice: DotDevice & { icon?: string };
 
@@ -156,6 +161,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    zoomChange(event) {
+        const value = event.target.value;
+        const scale = value / 100;
+
+        this.iframeZoomStyles = {
+            transform: `scale(${scale})`,
+            height: `${800 / scale}px`
+        };
     }
 
     /**
@@ -294,6 +309,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         });
     }
 
+    onDragToMoveContentlet(item: ActionPayload) {
+        console.log('onDragToMoveContentlet', item);
+
+        this.draggedPayload = {
+            type: 'contentlet',
+            item: {
+                identifier: item.contentlet.identifier
+            }
+        };
+
+        this.iframe.nativeElement.contentWindow?.postMessage(
+            NOTIFY_CUSTOMER.EMA_REQUEST_BOUNDS,
+            this.host
+        );
+    }
+
     /**
      * Handle palette start drag event
      *
@@ -332,7 +363,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onDragEnd(_event: DragEvent) {
-        this.rows = [];
+        // this.rows = [];
         this.dragItem = {
             baseType: '',
             contentType: ''
@@ -603,6 +634,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 });
             },
             [CUSTOMER_ACTIONS.SET_BOUNDS]: () => {
+                console.log('CUSTOMER_ACTIONS.SET_BOUNDS', data.payload);
+
                 this.rows = <Row[]>data.payload;
                 this.cd.detectChanges();
             },
