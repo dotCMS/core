@@ -72,6 +72,7 @@ describe('DotWorkflowActionsComponent', () => {
     });
 
     beforeEach(() => {
+        // CREATE HOST COMPONENT TO LET ANGULAR UPDATE SIGNAL COMPONENTS UNDER THE HOOD
         spectator = createHost(
             `
         <dot-workflow-actions
@@ -95,6 +96,7 @@ describe('DotWorkflowActionsComponent', () => {
 
     describe('without actions', () => {
         beforeEach(() => {
+            // THIS TRIGGER THE SIGNAL INPUT UPDATE
             spectator.setHostInput({
                 actions: [],
                 loading: true
