@@ -4,21 +4,27 @@ $notification-padding: $spacing-3;
 
 :host {
     display: flex;
+    position: relative;
 
     .toolbar-notifications__container {
         position: relative;
         margin-left: $spacing-1;
     }
 
+    .dot-toolbar-notifications__button-active {
+        background-color: $color-palette-primary-op-20;
+        border-radius: 50%;
+    }
+
     .badge {
-        background-color: $color-palette-primary;
-        border-radius: 2px;
+        background-color: $color-accessible-text-fuchsia;
+        border-radius: 50%;
         color: $white;
         font-size: $font-size-sm;
         line-height: $font-size-sm;
-        padding: 2px 5px;
+        padding: $spacing-0;
         position: absolute;
-        left: 20px;
+        left: 25px;
         top: 0;
     }
 
@@ -46,7 +52,7 @@ $notification-padding: $spacing-3;
     }
 
     .toolbar-notifications__title {
-        font-size: $font-size-xl;
+        font-size: $font-size-lg;
         margin: 0;
         padding-bottom: $spacing-0;
     }
