@@ -58,6 +58,13 @@ const messageServiceMock = new MockDotMessageService({
     Loading: 'loading'
 });
 
+const getComponents = (spectator: Spectator<DotWorkflowActionsComponent>) => {
+    return {
+        button: spectator.query(Button),
+        splitButton: spectator.query(SplitButton)
+    };
+};
+
 describe('DotWorkflowActionsComponent', () => {
     let spectator: Spectator<DotWorkflowActionsComponent>;
 
@@ -194,9 +201,7 @@ describe('DotWorkflowActionsComponent', () => {
         });
 
         it('should have default size', () => {
-            const button = spectator.query(Button);
-            const splitButton = spectator.query(SplitButton);
-
+            const { button, splitButton } = getComponents(spectator);
             expect(button.styleClass.trim()).toBe('');
             expect(splitButton.styleClass.trim()).toBe('p-button-outlined');
         });
@@ -205,19 +210,17 @@ describe('DotWorkflowActionsComponent', () => {
             spectator.setInput('size', 'small');
             spectator.detectChanges();
 
-            const button = spectator.query(Button);
-            const splitButton = spectator.query(SplitButton);
+            const { button, splitButton } = getComponents(spectator);
 
-            expect(button.styleClass.trim()).toBe('p-button-sm');
             expect(splitButton.styleClass.trim()).toBe('p-button-sm p-button-outlined');
+            expect(button.styleClass.trim()).toBe('p-button-sm');
         });
 
         it('should set style class p-button-lg', () => {
             spectator.setInput('size', 'large');
             spectator.detectChanges();
 
-            const button = spectator.query(Button);
-            const splitButton = spectator.query(SplitButton);
+            const { button, splitButton } = getComponents(spectator);
 
             expect(button.styleClass.trim()).toBe('p-button-lg');
             expect(splitButton.styleClass.trim()).toBe('p-button-lg p-button-outlined');
