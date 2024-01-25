@@ -1,7 +1,12 @@
-import { NgClass, NgForOf } from '@angular/common';
-import { Component, EventEmitter, Output } from '@angular/core';
+import { NgClass, NgForOf, CommonModule } from '@angular/common';
+import { Component, Input, Signal, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import {
+    Announcement,
+    TypesIcons,
+    AnnouncementsStore
+} from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
@@ -9,34 +14,14 @@ import { DotMessagePipe } from '@dotcms/ui';
     templateUrl: './dot-toolbar-announcements.component.html',
     styleUrls: ['./dot-toolbar-announcements.component.scss'],
     standalone: true,
-    imports: [NgForOf, NgClass, DotMessagePipe, RouterLink]
+    imports: [NgForOf, NgClass, DotMessagePipe, RouterLink, CommonModule],
+    providers: [AnnouncementsStore]
 })
 export class DotToolbarAnnouncementsComponent {
-    @Output() hideOverlayPanel = new EventEmitter<string>();
+    announcementsStore = inject(AnnouncementsStore);
 
-    announcementsData = [
-        {
-            iconClass: 'pi pi-comment',
-            label: 'Get more out of the Block Editor',
-            date: '20 Jul 2023'
-        },
-        {
-            iconClass: 'pi pi-book',
-            label: '12 Reasons You Should Migrate to dotCMS Cloud.',
-            date: '27 Jul 2023'
-        },
-        {
-            iconClass: 'pi pi-megaphone',
-            label: 'Release 22.03 Designated as LTS Release',
-            date: '17 Jul 2023'
-        },
-        {
-            iconClass: 'pi pi-comment',
-            label: 'Which page rendering strategy is right for you?',
-            date: '10 Feb 2023'
-        },
-        { iconClass: 'pi pi-megaphone', label: 'New in Release 22.01', date: '07 Jan 2023' }
-    ];
+    @Input() showUnreadAnnouncement: boolean;
+    announcements: Signal<Announcement[]> = this.announcementsStore.announcementsSignal;
 
     knowledgeCenterLinks = [
         {
@@ -60,9 +45,13 @@ export class DotToolbarAnnouncementsComponent {
             url: 'https://www.dotcms.com/services/professional-services/?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu'
         }
     ];
-    protected linkToAddDevice = '/c/starter';
 
-    close(): void {
-        this.hideOverlayPanel.emit();
-    }
+    typesIcons = {
+        comment: TypesIcons.Comment,
+        release: TypesIcons.Release,
+        announcement: TypesIcons.Announcement
+    };
+
+    protected linkToDotCms =
+        'https://dotcms.com/?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu';
 }
