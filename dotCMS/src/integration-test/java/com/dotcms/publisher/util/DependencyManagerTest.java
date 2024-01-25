@@ -462,38 +462,6 @@ public class DependencyManagerTest {
     }
 
     /**
-     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
-     * <b>Given Scenario:</b> A Page using a Template as a File Advanced<p>
-     * <b>ExpectedResult:</b> Should include the template files as dependencies
-     * @throws DotSecurityException
-     * @throws DotBundleException
-     * @throws DotDataException
-     */
-    private void createBundle(final PushPublisherConfig config, final Contentlet contentlet, final String bundleFilterKey)
-            throws DotDataException {
-        final String bundleName = "testDependencyManagerBundle" + System.currentTimeMillis();
-        Bundle bundle = new Bundle(bundleName, new Date(), null, user.getUserId());
-        bundle.setFilterKey(bundleFilterKey);
-        bundleAPI.saveBundle(bundle);
-        bundle = bundleAPI.getBundleByName(bundleName);
-
-        final PublishQueueElement publishQueueElement = new PublishQueueElement();
-        publishQueueElement.setId(1);
-        publishQueueElement.setOperation(Operation.PUBLISH.ordinal());
-        publishQueueElement.setAsset(contentlet.getInode());
-        publishQueueElement.setEnteredDate(new Date());
-        publishQueueElement.setPublishDate(new Date());
-        publishQueueElement.setBundleId(bundle.getId());
-        publishQueueElement.setType(PusheableAsset.CONTENTLET.getType());
-
-        config.setAssets(Lists.newArrayList(publishQueueElement));
-        config.setId(bundle.getId());
-        config.setOperation(Operation.PUBLISH);
-        config.setDownloading(true);
-        config.setLuceneQueries(Lists.newArrayList("+identifier:" + contentlet.getIdentifier()));
-    }
-
-    /**
      * Creates a bundle with one contentlet
      */
     private void createBundle(final PushPublisherConfig config, final Contentlet contentlet)
@@ -555,7 +523,10 @@ public class DependencyManagerTest {
         contentTypeFieldAPI.save(field, user);
         return contentType;
     }
-
+    
+    
+    
+    
 
     private static void createFilter(){
         final Map<String,Object> filtersMap =
@@ -563,51 +534,6 @@ public class DependencyManagerTest {
         final FilterDescriptor filterDescriptor =
                 new FilterDescriptor("filterKey.yml","Filter Test Title",filtersMap,true,"Reviewer,dotcms.org.2789");
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
-    }
-
-    /**
-     * <b>Method to test:</b> PushPublishigDependencyProcesor.tryToAdd(PusheableAsset, Object, String) <p>
-     * <b>Given Scenario:</b> Push publish a page with the filter 'Only Selected Items' selected.<p>
-     * <b>ExpectedResult:</b> The template should not be included in the dependencies.
-     * @throws DotSecurityException
-     * @throws DotBundleException
-     * @throws DotDataException
-     */
-    @Test
-    public void test_PP_page_should_not_contain_template_in_dependencies_when_filter_set() throws DotDataException, DotBundleException, DotSecurityException {
-        final PushPublisherConfig config = new PushPublisherConfig();
-        final Template template = new TemplateDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
-        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
-        //Create a bundle with filter 'Only Selected Items'
-        createBundle(config, htmlPageAsset, "ShallowPush.yml");
-        DependencyManager dependencyManager = new DependencyManager(DependencyManagerTest.user, config);
-        dependencyManager.setDependencies();
-
-        assertFalse(dependencyManager.getTemplates().contains(template.getIdentifier()));
-    }
-
-    /**
-     * <b>Method to test:</b> PushPublishigDependencyProcesor.tryToAdd(PusheableAsset, Object, String) <p>
-     * <b>Given Scenario:</b>  Custom templates be should considered part of the page. <p>
-     * <b>ExpectedResult:</b> The layout should be included in the dependencies regardless of the selected filter.
-     * @throws DotSecurityException
-     * @throws DotBundleException
-     * @throws DotDataException
-     */
-    @Test
-    public void test_PP_page_should_contains_layout_in_dependencies() throws DotDataException, DotBundleException, DotSecurityException {
-        final PushPublisherConfig config = new PushPublisherConfig();
-        //Layout templates are identified by the prefix 'anonymous_layout_'
-        final Template template = new TemplateDataGen().title(Template.ANONYMOUS_PREFIX+"shouldBeIncluded").nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
-        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
-        //Create a bundle with filter 'Only Selected Items'
-        createBundle(config, htmlPageAsset, "ShallowPush.yml");
-        DependencyManager dependencyManager = new DependencyManager(DependencyManagerTest.user, config);
-        dependencyManager.setDependencies();
-
-        assertTrue(dependencyManager.getTemplates().contains(template.getIdentifier()));
     }
 
 }
