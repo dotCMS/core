@@ -183,20 +183,20 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
                 )
             )
             .subscribe((value: DotFieldVariable[]) => {
-                this.save.emit(value);
                 this.form.markAsPristine();
+                this.save.emit(value);
             });
     }
 
     private dialogActions() {
         return {
-            accept: {
-                action: () => this.saveSettings(),
-                label: this.dotMessageService.get('contenttypes.dropzone.action.save'),
-                disabled: this.form.invalid || this.form.pristine
-            },
             cancel: {
                 label: this.dotMessageService.get('contenttypes.dropzone.action.cancel')
+            },
+            accept: {
+                action: () => this.saveSettings(),
+                disabled: this.form.invalid || this.form.pristine,
+                label: this.dotMessageService.get('contenttypes.dropzone.action.save')
             }
         };
     }
