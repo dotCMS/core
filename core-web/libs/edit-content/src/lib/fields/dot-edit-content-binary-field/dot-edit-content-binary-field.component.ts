@@ -307,6 +307,7 @@ export class DotEditContentBinaryFieldComponent
      */
     private setFieldVariables() {
         const { accept, maxFileSize = 0, systemOptions = '{}' } = this.getFieldVariables();
+
         this.DotBinaryFieldValidatorService.setAccept(accept ? accept.split(',') : []);
         this.DotBinaryFieldValidatorService.setMaxFileSize(Number(maxFileSize));
 
