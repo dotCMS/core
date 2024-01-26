@@ -179,7 +179,7 @@ public class ContentJsViewTool implements JsViewTool, JsViewContextAware, JsHttp
      */
     protected PaginatedArrayList<ContentMap> pullPaginatedInternal(final String query, final int limit,
                                                                    final int offset, final String sort) {
-        return contentTool.pullPagenated(query, offset, limit, sort);
+        return contentTool.pullPagenated(query, limit, offset, sort);
     }
 
     @HostAccess.Export

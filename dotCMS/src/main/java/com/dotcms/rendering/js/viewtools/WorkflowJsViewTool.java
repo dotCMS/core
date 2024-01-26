@@ -48,6 +48,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
     public static final String CONTENT_TYPE = "contentType";
     public static final String IDENTIFIER = "identifier";
     public static final String INODE = "inode";
+    public static final String CONTENT_TYPE_ATTRIBUTE_IS_REQUIRED_ON_THE_CONTENT_MAP_ERROR_DETAIL = "ContentType attribute is required on the contentMap";
     private final ContentHelper contentHelper = ContentHelper.getInstance();
     private final WorkflowAPI  workflowAPI    = APILocator.getWorkflowAPI();
 
@@ -88,7 +89,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(CONTENT_TYPE)) {
 
-            throw new IllegalArgumentException("ContentType attribute is required on the contentMap");
+            throw new IllegalArgumentException(CONTENT_TYPE_ATTRIBUTE_IS_REQUIRED_ON_THE_CONTENT_MAP_ERROR_DETAIL);
         }
 
         final WorkflowAPI.SystemAction systemAction = WorkflowAPI.SystemAction.NEW;
@@ -125,7 +126,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         if (!contentletMap.containsKey(CONTENT_TYPE)) {
 
-            throw new IllegalArgumentException("ContentType attribute is required on the contentMap");
+            throw new IllegalArgumentException(CONTENT_TYPE_ATTRIBUTE_IS_REQUIRED_ON_THE_CONTENT_MAP_ERROR_DETAIL);
         }
 
         final WorkflowAPI.SystemAction systemAction = WorkflowAPI.SystemAction.EDIT;
@@ -164,7 +165,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         if (!contentletMap.containsKey(CONTENT_TYPE)) {
 
-            throw new IllegalArgumentException("ContentType attribute is required on the contentMap");
+            throw new IllegalArgumentException(CONTENT_TYPE_ATTRIBUTE_IS_REQUIRED_ON_THE_CONTENT_MAP_ERROR_DETAIL);
         }
 
         final WorkflowAPI.SystemAction systemAction = WorkflowAPI.SystemAction.PUBLISH;
@@ -203,7 +204,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         if (!contentletMap.containsKey(CONTENT_TYPE)) {
 
-            throw new IllegalArgumentException("ContentType attribute is required on the contentMap");
+            throw new IllegalArgumentException(CONTENT_TYPE_ATTRIBUTE_IS_REQUIRED_ON_THE_CONTENT_MAP_ERROR_DETAIL);
         }
 
         final WorkflowAPI.SystemAction systemAction = WorkflowAPI.SystemAction.UNPUBLISH;
@@ -282,7 +283,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         if (!contentletMap.containsKey(CONTENT_TYPE)) {
 
-            throw new IllegalArgumentException("ContentType attribute is required on the contentMap");
+            throw new IllegalArgumentException(CONTENT_TYPE_ATTRIBUTE_IS_REQUIRED_ON_THE_CONTENT_MAP_ERROR_DETAIL);
         }
 
         final WorkflowAPI.SystemAction systemAction = WorkflowAPI.SystemAction.UNARCHIVE;
@@ -364,7 +365,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         if (!contentletMap.containsKey(CONTENT_TYPE)) {
 
-            throw new IllegalArgumentException("ContentType attribute is required on the contentMap");
+            throw new IllegalArgumentException(CONTENT_TYPE_ATTRIBUTE_IS_REQUIRED_ON_THE_CONTENT_MAP_ERROR_DETAIL);
         }
 
         final WorkflowAPI.SystemAction systemAction = WorkflowAPI.SystemAction.DESTROY;

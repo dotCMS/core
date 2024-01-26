@@ -45,14 +45,6 @@ public class FetchJsViewTool implements JsViewTool {
                 .setUrl(resource)
                 .setTimeout(getTimeout(options));
 
-        // most of these values may be handled by headers
-        // todo: mode do not supported
-        // todo: credentials do not supported
-        // todo: cache do not supported
-        // todo: referrer  and referrerPolicy do not supported
-        // todo: the keep alive is not supported
-
-
         this.tryBody (builder, options);
         this.tryAllowRedirects (builder, options);
         this.tryParams (builder, options);

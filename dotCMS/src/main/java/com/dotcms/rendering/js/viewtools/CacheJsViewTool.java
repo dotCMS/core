@@ -77,7 +77,7 @@ public class CacheJsViewTool implements JsViewTool{
      * @param ttl   The Time-To-Live for this entry.
      */
     public void put(final String key, final Object value, final int ttl) {
-        this.dotCacheTool.put(key, (Serializable) JsProxyFactory.unwrap(value), ttl);
+        this.dotCacheTool.put(key, JsProxyFactory.unwrap(value), ttl);
     }
 
     @HostAccess.Export
@@ -88,7 +88,7 @@ public class CacheJsViewTool implements JsViewTool{
      * @param ttl
      */
     public void putDebounce(final String key, final Object value, final int ttl) {
-        this.dotCacheTool.putDebounce(key, (Serializable) JsProxyFactory.unwrap(value), ttl);
+        this.dotCacheTool.putDebounce(key, JsProxyFactory.unwrap(value), ttl);
     }
 
     @HostAccess.Export

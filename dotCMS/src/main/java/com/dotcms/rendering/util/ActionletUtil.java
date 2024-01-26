@@ -17,6 +17,8 @@ import javax.servlet.http.HttpServletResponse;
 
 public class ActionletUtil {
 
+    private ActionletUtil () {}
+    
     /**
      * Returns the current request (if exist) or a mock request
      * @param currentUser {@link User}

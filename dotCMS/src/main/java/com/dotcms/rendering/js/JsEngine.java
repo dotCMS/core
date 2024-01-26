@@ -33,11 +33,13 @@ import com.oracle.truffle.js.runtime.GraalJSException;
 import com.oracle.truffle.js.runtime.builtins.JSErrorObject;
 import com.oracle.truffle.js.runtime.builtins.JSPromise;
 import com.oracle.truffle.js.runtime.builtins.JSPromiseObject;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.tools.view.context.ChainedContext;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
 
@@ -56,6 +58,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.dotmarketing.util.VelocityUtil.getBasicContext;
+
 /**
  * Js script engine implementation
  * @author jsanca
@@ -69,6 +73,8 @@ public class JsEngine implements ScriptEngine {
     private final JsDotLogger jsDotLogger = new JsDotLogger();
     private final Map<String, Class> jsRequestViewToolMap = new ConcurrentHashMap<>();
     private final Map<String, JsViewTool> jsAplicationViewToolMap = new ConcurrentHashMap<>();
+
+    private final Lazy<Boolean> allowAllHostAccess = Lazy.of(()-> Config.getBooleanProperty("ALLOW_ALL_HOST_ACCESS", false));
 
     public JsEngine () {
         try {
@@ -126,17 +132,21 @@ public class JsEngine implements ScriptEngine {
 
     private Context buildContext () {
 
-        return Context.newBuilder(ENGINE_JS)
+        final Context.Builder builder =
+                 Context.newBuilder(ENGINE_JS)
                 .allowIO(true)
                 .allowExperimentalOptions(true)
                 .option("js.esm-eval-returns-exports", "true")
                 .out(new ConsumerOutputStream(msg->Logger.debug(JsEngine.class, msg)))
                 .err(new ConsumerOutputStream(msg->Logger.debug(JsEngine.class, msg)))
-                .fileSystem(jsFileSystem)
-                //.allowHostAccess(HostAccess.ALL) // todo: ask if we want all access to the classpath
+                .fileSystem(jsFileSystem);
+
+                if (allowAllHostAccess.get()) {
+                    builder.allowHostAccess(HostAccess.ALL);
+                }
                 //allows access to all Java classes
                 //.allowHostClassLookup(className -> true)
-                .build();
+        return builder.build();
     }
 
     @Override
@@ -459,7 +469,7 @@ public class JsEngine implements ScriptEngine {
         if (instance instanceof JsViewContextAware) {
 
             final ViewContext velocityContext = new ChainedContext(
-                    VelocityUtil.getBasicContext(), null, request, response);
+                    getBasicContext(), null, request, response);
             JsViewContextAware.class.cast(instance).setViewContext(velocityContext);
         }
     }

@@ -120,7 +120,7 @@ public class JsRole implements Serializable, Comparable<JsRole>, JsProxyObject<R
 	@Override
 	public boolean equals(final Object other) {
 
-		if (null == other || !(other instanceof JsRole)) {
+		if (!(other instanceof JsRole)) {
 
 			return false;
 		}

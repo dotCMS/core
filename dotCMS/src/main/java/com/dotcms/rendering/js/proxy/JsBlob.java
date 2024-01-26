@@ -28,7 +28,7 @@ public class JsBlob implements Serializable, JsProxyObject<Part> {
     }
 
     protected InputStream getArrayBufferInternal() {
-        return Try.of(() -> this.part.getInputStream()).getOrNull();
+        return Try.of(this.part::getInputStream).getOrNull();
     }
 
     @HostAccess.Export // todo: test if this works

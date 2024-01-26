@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Encapsulates the context of the Javascript execution.
@@ -40,6 +41,20 @@ public class JsContext extends HashMap implements Serializable {
 
     public JsDotLogger getLogger() {
         return logger;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        JsContext jsContext = (JsContext) o;
+        return Objects.equals(request, jsContext.request) && Objects.equals(response, jsContext.response) && Objects.equals(logger, jsContext.logger);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), request, response, logger);
     }
 
     public static final class Builder {

@@ -44,6 +44,8 @@ import java.util.stream.Collectors;
  */
 public class JsProxyFactory {
 
+    private JsProxyFactory () {}
+
     private static final Map<String, JsProxyMapperStrategy> proxyMapperMap = new ConcurrentHashMap<>();
 
     static {
