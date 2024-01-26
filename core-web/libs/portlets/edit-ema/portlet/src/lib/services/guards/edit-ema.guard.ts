@@ -8,6 +8,8 @@ import { map } from 'rxjs/operators';
 
 import { EmaAppConfigurationService } from '@dotcms/data-access';
 
+import { sanitizeURL } from '../../utils';
+
 type EmaQueryParams = {
     url: string;
     language_id: number;
@@ -56,6 +58,13 @@ function confirmQueryParams(queryParams: Params): {
         (acc, curr) => {
             if (!queryParams[curr.key]) {
                 acc[curr.key] = curr.value;
+                acc.missing = true;
+            } else if (
+                curr.key === 'url' &&
+                queryParams[curr.key] !== 'index' &&
+                /index$/g.test(queryParams[curr.key])
+            ) {
+                acc[curr.key] = sanitizeURL(queryParams[curr.key]);
                 acc.missing = true;
             }
 

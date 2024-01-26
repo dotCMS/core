@@ -69,8 +69,36 @@ export const usePageEditor = (
 
 function useEventMessageHandler({ reload = window.location.reload }: { reload: () => void }) {
     const rows = useRef<HTMLDivElement[]>([]);
+    const observer = useRef<MutationObserver | null>(null);
 
     const [isInsideEditor, setIsInsideEditor] = useState(false);
+
+    useEffect(() => {
+        observer.current = new MutationObserver((mutationsList) => {
+            for (const { addedNodes, removedNodes, type } of mutationsList) {
+                if (type === 'childList') {
+                    const didNodesChanged = [
+                        ...Array.from(addedNodes),
+                        ...Array.from(removedNodes)
+                    ].filter(
+                        (node) => (node as HTMLDivElement).dataset?.dot === 'contentlet'
+                    ).length;
+
+                    if (didNodesChanged) {
+                        postMessageToEditor({
+                            action: CUSTOMER_ACTIONS.CONTENT_CHANGE
+                        });
+                    }
+                }
+            }
+        });
+
+        observer.current?.observe(document, { childList: true, subtree: true });
+
+        return () => {
+            if (observer.current) observer.current.disconnect();
+        };
+    }, []);
 
     useEffect(() => {
         // If the page is not inside an iframe we do nothing.

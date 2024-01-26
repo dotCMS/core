@@ -154,4 +154,15 @@ export class EmaContentletToolsComponent {
             zIndex: '1'
         };
     }
+
+    /**
+     *
+     * Checks if the container is empty, based on the identifier
+     * @readonly
+     * @type {boolean}
+     * @memberof EmaContentletToolsComponent
+     */
+    get isContainerEmpty(): boolean {
+        return this.contentlet.payload.contentlet.identifier === 'TEMP_EMPTY_CONTENTLET';
+    }
 }

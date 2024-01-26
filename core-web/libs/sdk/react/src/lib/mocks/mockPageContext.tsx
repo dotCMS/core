@@ -47,6 +47,21 @@ export const mockPageContext: PageProviderContext = {
                     }
                 ]
             }
+        },
+        'container-2': {
+            container: {
+                path: 'path/to/container',
+                identifier: 'container-2',
+                maxContentlets: 100
+            },
+            containerStructures: [
+                {
+                    contentTypeVar: 'content-type-2'
+                }
+            ],
+            contentlets: {
+                'uuid-2': []
+            }
         }
     },
     page: { identifier: 'page-1', title: 'Hello Page' },

@@ -2,6 +2,7 @@ package com.dotcms.api.client.files.traversal.task;
 
 import static com.dotcms.common.AssetsUtils.isMarkedForDelete;
 import static com.dotcms.common.AssetsUtils.isMarkedForPush;
+import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
 
 import com.dotcms.api.client.files.traversal.PushTraverseParams;
 import com.dotcms.api.client.files.traversal.data.Pusher;
@@ -253,8 +254,8 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
      */
     private void doPushAsset(FolderView folder, AssetView asset, PushContext pushContext) {
         try {
-            final String pushAssetKey = String.format("%s/%s/%s/%s/%s", params.localPaths().status(),
-                    params.localPaths().language(), folder.host(), folder.path(), asset.name());
+
+            final String pushAssetKey = generatePushAssetKey(folder, asset);
             final Optional<AssetView> optional = pushContext.execPush(
                     pushAssetKey,
                     () -> {
@@ -335,6 +336,29 @@ public class PushTreeNodeTask extends RecursiveTask<List<Exception>> {
             // Asset processed, updating the progress bar
             this.progressBar.incrementStep();
         }
+    }
+
+    /**
+     * Generates a push asset key based on the provided folder and asset.
+     *
+     * @param folder the folder associated with the asset
+     * @param asset  the asset for which the key needs to be generated
+     * @return the generated push asset key
+     */
+    private String generatePushAssetKey(FolderView folder, AssetView asset) {
+
+        var assetHash = (String) asset.metadata().get(SHA256_META_KEY.key());
+
+        // We don't include the status in the key as this logic expects to always run in the same
+        //  order, live first, working second.
+        //  If already pushed and the order is respected, we don't need to push the same file again.
+        return String.format("%s/%s/%s/%s/%s",
+                params.localPaths().language(),
+                folder.host(),
+                folder.path(),
+                asset.name(),
+                assetHash
+        );
     }
 
     /**

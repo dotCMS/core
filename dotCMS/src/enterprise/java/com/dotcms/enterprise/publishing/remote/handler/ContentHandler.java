@@ -65,6 +65,7 @@ import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -116,8 +117,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
-import com.thoughtworks.xstream.mapper.MapperWrapper;
 import io.vavr.Lazy;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -265,7 +264,7 @@ public class ContentHandler implements IHandler {
         Contentlet content = null;
 		ContentWrapper wrapper = null;
     	try{
-	        final XStream xstream = newXStreamInstance();
+	        final XStream xstream = XStreamHandler.newXStreamInstance();
 			final Set<Pair<String,Long>> pushedIdsToIgnore = new HashSet<>();
             for (final File contentFile : contents) {
                 workingOn=contentFile;
@@ -1329,31 +1328,6 @@ public class ContentHandler implements IHandler {
         if(null != binariesMetadata){
            fileMetadataAPI.setMetadata(contentlet, binariesMetadata);
         }
-    }
-
-	/**
-	 * Custom unmapped properties safe XStream instance factory method
-	 * @return
-	 */
-	public static XStream newXStreamInstance(){
-		final XStream xstream = new XStream(new DomDriver()){
-			//This is here to prevent unmapped properties from old versions from breaking thr conversion
-			//https://stackoverflow.com/questions/5377380/how-to-make-xstream-skip-unmapped-tags-when-parsing-xml
-			@Override
-			protected MapperWrapper wrapMapper(final MapperWrapper next) {
-				return new MapperWrapper(next) {
-					@Override
-					public boolean shouldSerializeMember(final Class definedIn, final String fieldName) {
-						if (definedIn == Object.class) {
-						    Logger.warn(ContentHandler.class,String.format("unmapped property `%s` found ignored while importing bundle. ",fieldName));
-							return false;
-						}
-						return super.shouldSerializeMember(definedIn, fieldName);
-					}
-				};
-			}
-		};
-		return xstream;
     }
 
 }

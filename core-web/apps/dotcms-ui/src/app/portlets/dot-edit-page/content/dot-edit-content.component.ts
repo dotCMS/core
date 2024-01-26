@@ -8,7 +8,6 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { filter, map, pluck, skip, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
@@ -23,7 +22,8 @@ import {
     DotMessageService,
     DotPropertiesService,
     DotRouterService,
-    DotSessionStorageService
+    DotSessionStorageService,
+    DotGlobalMessageService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import {

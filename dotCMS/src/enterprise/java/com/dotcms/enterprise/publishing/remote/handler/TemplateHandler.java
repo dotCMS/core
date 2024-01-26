@@ -55,6 +55,7 @@ import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
+import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
@@ -74,7 +75,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -127,7 +127,7 @@ public class TemplateHandler implements IHandler {
 	    File workingOn = null;
         Template template = null;
         try{
-	        XStream xstream=new XStream(new DomDriver());
+	        XStream xstream = XStreamHandler.newXStreamInstance();
 	        //Handle folders
 	        for(File templateFile: templates) {
 	            workingOn = templateFile;
