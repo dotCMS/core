@@ -9,13 +9,6 @@ function Header({ children }) {
                 </h2>
             </div>
             {children}
-            <div className="flex items-center">
-                <select className="px-2 py-1 border border-gray-300 rounded">
-                    <option value="en">English</option>
-                    <option value="es">Español</option>
-                    <option value="fr">Français</option>
-                </select>
-            </div>
         </header>
     );
 }
