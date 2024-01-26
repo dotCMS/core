@@ -58,7 +58,6 @@ public class VelocityServlet extends HttpServlet {
     /*
     * Returns the page mode based on the login mode or the FE/BE roles
      */
-    @VisibleForTesting
     public static PageMode processPageMode (final User user, final HttpServletRequest request) {
 
         final LoginMode loginMode = LoginMode.get(request);

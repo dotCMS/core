@@ -404,7 +404,7 @@ public class CircuitBreakerUrl {
         private final int statusCode;
 
         // this is not serializable, so we need to make it transient or figured out how to do serialization
-        private transient final Header[] responseHeaders;
+        private final transient Header[] responseHeaders;
 
 
         private Response(final T response, final int statusCode, final Header[] responseHeaders) {

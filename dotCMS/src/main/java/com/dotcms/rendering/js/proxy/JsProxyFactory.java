@@ -101,7 +101,7 @@ public class JsProxyFactory {
      */
     public static Object createProxy(final Object obj) {
 
-        Object proxy = obj; // todo: we have to decided if we return by configuration the object if has not mapper for the type
+        Object proxy = obj; // we have to decided if we return by configuration the object if has not mapper for the type
         // or we throw an exception or throw an undefined javascript value
         if (null != obj) {
 

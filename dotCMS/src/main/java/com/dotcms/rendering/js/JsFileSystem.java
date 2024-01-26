@@ -140,7 +140,7 @@ public class JsFileSystem implements FileSystem {
             return applicationFolderToRealPath(path);
         }
 
-        Path root = Paths.get("/").toAbsolutePath().getRoot();  // todo: analyze this
+        Path root = Paths.get("/").toAbsolutePath().getRoot();  // analyze this
         Path real = root;
         for (int i = 0; i < path.getNameCount(); i++) {
             Path name = path.getName(i);

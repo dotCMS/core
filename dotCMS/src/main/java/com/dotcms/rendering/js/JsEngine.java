@@ -25,7 +25,6 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.VelocityUtil;
 import com.liferay.util.FileUtil;
 import com.oracle.truffle.api.object.JsDynamicObjectUtils;
 import com.oracle.truffle.js.lang.JavaScriptLanguage;

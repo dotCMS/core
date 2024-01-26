@@ -308,7 +308,7 @@ public class JsJSONObject implements Serializable, JsProxyObject<JSONObject> {
      *
      * @param key   A key string.
      * @return      A JSONArray which is the value.
-     */ // todo: proxy this
+     */ // proxy this
     public JSONArray optJSONArray(final String key) {
         return this.jsonObject.optJSONArray(key);
     }
@@ -392,7 +392,7 @@ public class JsJSONObject implements Serializable, JsProxyObject<JSONObject> {
      *
      * @return An iterator of the keys.
      */
-    public Iterator sortedKeys() { // todo; proxy this
+    public Iterator sortedKeys() { //  proxy this
       return this.jsonObject.sortedKeys();
     }
 
@@ -405,7 +405,7 @@ public class JsJSONObject implements Serializable, JsProxyObject<JSONObject> {
      * @return A JSONArray of values.
      * @throws JSONException If any of the values are non-finite numbers.
      */
-    public JSONArray toJSONArray(final JSONArray names)  { // todo: proxy this
+    public JSONArray toJSONArray(final JSONArray names)  { //  proxy this
         return this.jsonObject.toJSONArray(names);
     }
 
@@ -452,13 +452,13 @@ public class JsJSONObject implements Serializable, JsProxyObject<JSONObject> {
     }
 
     @HostAccess.Export
-    public boolean containsKey(final Object key) { // todo:unwrap it
+    public boolean containsKey(final Object key) { // unwrap it
 
         return this.jsonObject.containsKey(key);
     }
 
     @HostAccess.Export
-    public boolean containsValue(final Object value) {// todo:unwrap it
+    public boolean containsValue(final Object value) {// unwrap it
         return this.jsonObject.containsValue(value);
     }
 
@@ -469,19 +469,19 @@ public class JsJSONObject implements Serializable, JsProxyObject<JSONObject> {
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     @HostAccess.Export
-    public Set keySet() { // todo: proxy it
+    public Set keySet() { // proxy it
         return this.jsonObject.keySet();
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     @HostAccess.Export
-    public Collection values() { // todo: proxy it
+    public Collection values() { //  proxy it
         return this.jsonObject.values();
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     @HostAccess.Export
-    public Set entrySet() { // todo: proxy it
+    public Set entrySet() { // proxy it
         return this.jsonObject.entrySet();
     }
 

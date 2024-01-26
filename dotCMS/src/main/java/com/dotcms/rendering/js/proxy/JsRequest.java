@@ -24,8 +24,8 @@ public class JsRequest implements Serializable, JsProxyObject<HttpServletRequest
     private boolean bodyUsed = false;
 
     private final transient HttpServletRequest request;
-    // todo: may be this one has to be moved as a hashmap to make it serializable
-    private final Map<String, Object> contextParams;
+    //  may be this one has to be moved as a hashmap to make it serializable
+    private final transient Map<String, Object> contextParams;
     public JsRequest(final HttpServletRequest request, final Map<String, Object> contextParams) {
 
         this.request = request;
@@ -101,15 +101,13 @@ public class JsRequest implements Serializable, JsProxyObject<HttpServletRequest
     @HostAccess.Export
     public String getReferer() {
 
-        final String referrer = this.request.getHeader("referer");
-        return referrer;
+        return this.request.getHeader("referer");
     }
 
     @HostAccess.Export
     public String getUrl() {
 
-        final String url = this.request.getRequestURL().toString();
-        return url;
+        return  this.request.getRequestURL().toString();;
     }
 
     @HostAccess.Export
