@@ -25,6 +25,10 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
         'com.dotcms.contenttype.model.field.ImmutableStoryBlockField': {
             allowedBlocks: true
             // contentAssets: true
+        },
+        'com.dotcms.contenttype.model.field.ImmutableBinaryField': {
+            accept: true,
+            systemOptions: true
         }
     };
 
