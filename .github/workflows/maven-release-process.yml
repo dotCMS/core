@@ -384,7 +384,7 @@ jobs:
           git pull origin ${release_branch}
           git push https://${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${GITHUB_REPOSITORY_OWNER}/plugin-seeds.git
 
-  build_push_image:
+  build-push-image:
     name: Build/Push Image
     needs: prepare-release
     uses: ./.github/workflows/maven-build-docker-image.yml
@@ -399,7 +399,7 @@ jobs:
   finish-release:
     name: Finish Release
     runs-on: ubuntu-latest
-    needs: [prepare-release, release-process, build_push_image]
+    needs: [prepare-release, release-process, build-push-image]
     if: success()
     env:
       NEXT_VERSION: '1.0.0-SNAPSHOT'
@@ -438,32 +438,32 @@ jobs:
           git pull origin ${{ needs.prepare-release.outputs.release_branch }}
           git push https://${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${GITHUB_REPOSITORY}
 
-      - name: Fetch `Next Release` issues
-        id: fetch-next-release-issues
-        uses: ./.github/actions/issue-fetcher
-        with:
-          fetch_operation: 'WITH_LABELS'
-          fetch_value: ${{ env.FETCH_VALUE }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-        if: github.event.inputs.update_github_labels == 'true'
-
-      - name: Clear next release issues
-        uses: ./.github/actions/issue-labeler
-        with:
-          issues_json: ${{ steps.fetch-next-release-issues.outputs.issues }}
-          labels: ${{ env.FETCH_VALUE }}
-          operation: 'REMOVE'
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-        if: github.event.inputs.update_github_labels == 'true'
-
-      - name: Label current release issues
-        uses: ./.github/actions/issue-labeler
-        with:
-          issues_json: ${{ steps.fetch-next-release-issues.outputs.issues }}
-          labels: 'Release ${{ needs.prepare-release.outputs.release_version }}'
-          operation: 'ADD'
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-        if: github.event.inputs.update_github_labels == 'true'
+#      - name: Fetch `Next Release` issues
+#        id: fetch-next-release-issues
+#        uses: ./.github/actions/issue-fetcher
+#        with:
+#          fetch_operation: 'WITH_LABELS'
+#          fetch_value: ${{ env.FETCH_VALUE }}
+#          github_token: ${{ secrets.GITHUB_TOKEN }}
+#        if: github.event.inputs.update_github_labels == 'true'
+#
+#      - name: Clear next release issues
+#        uses: ./.github/actions/issue-labeler
+#        with:
+#          issues_json: ${{ steps.fetch-next-release-issues.outputs.issues }}
+#          labels: ${{ env.FETCH_VALUE }}
+#          operation: 'REMOVE'
+#          github_token: ${{ secrets.GITHUB_TOKEN }}
+#        if: github.event.inputs.update_github_labels == 'true'
+#
+#      - name: Label current release issues
+#        uses: ./.github/actions/issue-labeler
+#        with:
+#          issues_json: ${{ steps.fetch-next-release-issues.outputs.issues }}
+#          labels: 'Release ${{ needs.prepare-release.outputs.release_version }}'
+#          operation: 'ADD'
+#          github_token: ${{ secrets.GITHUB_TOKEN }}
+#        if: github.event.inputs.update_github_labels == 'true'
 
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
