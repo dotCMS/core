@@ -49,6 +49,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
     public static final String IDENTIFIER = "identifier";
     public static final String INODE = "inode";
     public static final String CONTENT_TYPE_ATTRIBUTE_IS_REQUIRED_ON_THE_CONTENT_MAP_ERROR_DETAIL = "ContentType attribute is required on the contentMap";
+    public static final String CONTENTLET_MAP_IS_REQUIRED_OR_IDENTIFIER = "Contentlet map is required or identifier";
     private final ContentHelper contentHelper = ContentHelper.getInstance();
     private final WorkflowAPI  workflowAPI    = APILocator.getWorkflowAPI();
 
@@ -121,7 +122,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(IDENTIFIER)) {
 
-            throw new IllegalArgumentException("Contentlet map is required or identifier");
+            throw new IllegalArgumentException(CONTENTLET_MAP_IS_REQUIRED_OR_IDENTIFIER);
         }
 
         if (!contentletMap.containsKey(CONTENT_TYPE)) {
@@ -160,7 +161,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(IDENTIFIER)) {
 
-            throw new IllegalArgumentException("Contentlet map is required or identifier");
+            throw new IllegalArgumentException(CONTENTLET_MAP_IS_REQUIRED_OR_IDENTIFIER);
         }
 
         if (!contentletMap.containsKey(CONTENT_TYPE)) {
@@ -199,7 +200,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(IDENTIFIER)) {
 
-            throw new IllegalArgumentException("Contentlet map is required or identifier");
+            throw new IllegalArgumentException(CONTENTLET_MAP_IS_REQUIRED_OR_IDENTIFIER);
         }
 
         if (!contentletMap.containsKey(CONTENT_TYPE)) {
@@ -238,7 +239,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(IDENTIFIER)) {
 
-            throw new IllegalArgumentException("Contentlet map is required or identifier");
+            throw new IllegalArgumentException(CONTENTLET_MAP_IS_REQUIRED_OR_IDENTIFIER);
         }
 
         if (!contentletMap.containsKey(CONTENT_TYPE)) {
@@ -278,7 +279,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(IDENTIFIER)) {
 
-            throw new IllegalArgumentException("Contentlet map is required or identifier");
+            throw new IllegalArgumentException(CONTENTLET_MAP_IS_REQUIRED_OR_IDENTIFIER);
         }
 
         if (!contentletMap.containsKey(CONTENT_TYPE)) {
@@ -318,7 +319,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(IDENTIFIER)) {
 
-            throw new IllegalArgumentException("Contentlet map is required or identifier");
+            throw new IllegalArgumentException(CONTENTLET_MAP_IS_REQUIRED_OR_IDENTIFIER);
         }
 
         if (!contentletMap.containsKey(CONTENT_TYPE)) {
@@ -341,7 +342,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
                 throw new IllegalArgumentException("Could not find a DELETE system action for the Contentlet with type: "
                         + contentTypeVarName);
             }
-            // todo; this do not work when the contentlet is archive (which is probably the case)
+            // this do not work when the contentlet is archive (which is probably the case)
             final Versionable versionable = APILocator.getVersionableAPI().findWorkingVersion(identifier, user, false);
             final Contentlet existingContentlet = APILocator.getContentletAPI().find(versionable.getInode(), user, false);
             final String inode = (String)contentletMap.getOrDefault(INODE, existingContentlet.getInode());
@@ -360,7 +361,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
         if (null == contentletMap || contentletMap.isEmpty() || !contentletMap.containsKey(IDENTIFIER)) {
 
-            throw new IllegalArgumentException("Contentlet map is required or identifier");
+            throw new IllegalArgumentException(CONTENTLET_MAP_IS_REQUIRED_OR_IDENTIFIER);
         }
 
         if (!contentletMap.containsKey(CONTENT_TYPE)) {
@@ -383,7 +384,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
                 throw new IllegalArgumentException("Could not find a DESTROY system action for the Contentlet with type: "
                         + contentTypeVarName);
             }
-            // todo; this do not work when the contentlet is archive (which is probably the case)
+            //  this do not work when the contentlet is archive (which is probably the case)
             final Versionable versionable = APILocator.getVersionableAPI().findWorkingVersion(identifier, user, false);
             final Contentlet existingContentlet = APILocator.getContentletAPI().find(versionable.getInode(), user, false);
             final String inode = (String)contentletMap.getOrDefault(INODE, existingContentlet.getInode());
@@ -434,7 +435,11 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
                 Try.of(()->APILocator.getContentletAPI().findContentletByIdentifierOrFallback
                         (identifier, mode.showLive, languageId, user, mode.respectAnonPerms)).getOrElse(Optional.empty());
 
-        DotPreconditions.isTrue(currentContentlet.isPresent(), ()-> "contentlet-was-not-found", DoesNotExistException.class);
+        if (currentContentlet.isEmpty()) {
+
+            Logger.debug(this, ()-> "Fire Action, looking for content by identifier: " + identifier + " not found");
+            throw new DoesNotExistException("contentlet-was-not-found");
+        }
 
         return currentContentlet.get();
     }
@@ -466,7 +471,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
                     processWorkflowOptions(workflowOptions, formBuilder);
 
-                    // todo; implement this thing
+                    // implement this thing
                     //this.processPermissions(fireActionForm, formBuilder);
                 }
 

@@ -82,7 +82,7 @@ public class LanguageJsViewTool implements JsViewTool, JsViewContextAware {
      * @param cc
      * @return
      */
-    // todo: this should be proxied to work
+    // this should be proxied to work
     public boolean canApplyToAllLanguages(final Contentlet cc) {
         return LanguageViewtool.canApplyToAllLanguages(cc);
     }

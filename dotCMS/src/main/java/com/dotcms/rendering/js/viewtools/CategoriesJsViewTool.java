@@ -53,7 +53,7 @@ public class CategoriesJsViewTool implements JsViewTool, JsViewContextAware {
 
     @HostAccess.Export
     @SuppressWarnings("unchecked")
-    // todo: proxy the inode
+    // proxy the inode
     public List<JsCategory> getChildrenCategories(final Inode inode) {
         return this.categoriesWebAPI.getChildrenCategories(inode)
                 .stream().map(JsCategory::new).collect(Collectors.toList());

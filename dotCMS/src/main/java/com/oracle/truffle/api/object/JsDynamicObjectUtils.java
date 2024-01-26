@@ -5,6 +5,8 @@ package com.oracle.truffle.api.object;
  * @author jsanca
  */
 public class JsDynamicObjectUtils {
+    private JsDynamicObjectUtils() {
+    }
 
     public static final Object[] getObjectArray(final DynamicObject object) {
         return object.getObjectStore();
