@@ -1081,7 +1081,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
      * contains {@code Template.ANONYMOUS_PREFIX}, return {@code true}.
      */
     private boolean isTemplateLayout(final Object asset){
-        return asset instanceof Template && ((Template) asset).getTitle().contains(Template.ANONYMOUS_PREFIX);
+        return asset instanceof Template && Template.class.cast(asset).getTitle().contains(Template.ANONYMOUS_PREFIX);
     }
 
     private <T> boolean isExcludeByFilter(final PusheableAsset pusheableAsset) {
