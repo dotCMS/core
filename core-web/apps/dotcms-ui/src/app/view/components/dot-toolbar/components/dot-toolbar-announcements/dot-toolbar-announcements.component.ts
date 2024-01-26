@@ -7,7 +7,8 @@ import { skip } from 'rxjs/operators';
 import {
     Announcement,
     TypesIcons,
-    AnnouncementsStore
+    AnnouncementsStore,
+    AnnouncementLink
 } from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
@@ -28,46 +29,25 @@ export class DotToolbarAnnouncementsComponent implements OnInit {
 
     @Input() showUnreadAnnouncement: boolean;
     announcements: Signal<Announcement[]> = this.announcementsStore.announcementsSignal;
-    utm_parameters = `utm_source=platform&utm_medium=${this.siteService.currentSite.hostname}&utm_campaign=announcement`;
+    contactLinks: Signal<AnnouncementLink[]> = this.announcementsStore.selectContactLinks;
+    knowledgeCenterLinks: Signal<AnnouncementLink[]> =
+        this.announcementsStore.selectKnowledgeCenterLinks;
+    linkToDotCms: Signal<string> = this.announcementsStore.selectLinkToDotCms;
 
     ngOnInit(): void {
+        this.announcementsStore.load();
+
         this.siteService.switchSite$.pipe(skip(1)).subscribe(() => {
+            this.announcementsStore.refreshUtmParameters();
             this.announcementsStore.load();
-            this.utm_parameters = `utm_source=platform&utm_medium=${this.siteService.currentSite.hostname}&utm_campaign=announcement`;
         });
     }
 
-    knowledgeCenterLinks = [
-        {
-            label: this.dotMessageService.get('announcements.knowledge.center.documentation'),
-            url: `https://www.dotcms.com/docs/latest/table-of-contents?${this.utm_parameters}`
-        },
-        {
-            label: this.dotMessageService.get('announcements.knowledge.center.blog'),
-            url: `https://www.dotcms.com/blog/?${this.utm_parameters}`
-        },
-        {
-            label: this.dotMessageService.get('announcements.knowledge.center.knowledge.forum'),
-            url: 'https://groups.google.com/g/dotcms'
-        }
-    ];
-
-    contactLinks = [
-        {
-            label: this.dotMessageService.get('announcements.contact.customer.support'),
-            url: `https://www.dotcms.com/services/support/?${this.utm_parameters}`
-        },
-        {
-            label: this.dotMessageService.get('announcements.contact.professional.services'),
-            url: `https://www.dotcms.com/services/professional-services/?${this.utm_parameters}`
-        }
-    ];
-
     typesIcons = {
-        comment: TypesIcons.Comment,
+        tip: TypesIcons.Tip,
         release: TypesIcons.Release,
-        announcement: TypesIcons.Announcement
+        announcement: TypesIcons.Announcement,
+        article: TypesIcons.Article,
+        important: TypesIcons.Important
     };
-
-    protected linkToDotCms = `https://dotcms.com/?${this.utm_parameters}`;
 }

@@ -12,6 +12,7 @@
         #toolbarAnnouncements
         (onHide)="markAnnocumentsAsRead()"
         (onShow)="onActiveAnnouncements()"
+        appendTo="body"
         styleClass="toolbar-announcements__container">
         <dot-toolbar-announcements [showUnreadAnnouncement]="showUnreadAnnouncement()" />
     </p-overlayPanel>
