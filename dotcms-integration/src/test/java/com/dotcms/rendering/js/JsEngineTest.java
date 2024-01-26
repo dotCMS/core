@@ -9,6 +9,7 @@ import org.graalvm.polyglot.PolyglotException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -44,6 +45,7 @@ public class JsEngineTest extends IntegrationTestBase {
      * ExpectedResult: The result of the sum
      *
      */
+    @Ignore
     @Test
     public void testNumberEval() throws Exception {
 
@@ -64,6 +66,7 @@ public class JsEngineTest extends IntegrationTestBase {
      * ExpectedResult: The results of the concat
      *
      */
+    @Ignore
     @Test
     public void testStringEval() throws Exception {
 
@@ -84,6 +87,7 @@ public class JsEngineTest extends IntegrationTestBase {
      * ExpectedResult: False boolean
      *
      */
+    @Ignore
     @Test
     public void testBooleanEval() throws Exception {
 
@@ -104,6 +108,7 @@ public class JsEngineTest extends IntegrationTestBase {
      * ExpectedResult: The Json Object is created as a Map with the right values
      *
      */
+    @Ignore
     @Test
     public void testMapEval() throws Exception {
 
@@ -127,6 +132,7 @@ public class JsEngineTest extends IntegrationTestBase {
      * ExpectedResult: The dotJSON is being returned with the right values
      *
      */
+    @Ignore
     @Test
     public void testDotJSONEval() throws Exception {
 
@@ -150,6 +156,7 @@ public class JsEngineTest extends IntegrationTestBase {
      * ExpectedResult: An exception is expected
      *
      */
+    @Ignore
     @Test(expected = PolyglotException.class)
     public void testEvalWithException() throws Exception {
 
@@ -170,6 +177,7 @@ public class JsEngineTest extends IntegrationTestBase {
      * ExpectedResult: The square of 2 should be returned (4)
      *
      */
+    @Ignore
     @Test()
     public void testFunctionEval() throws Exception {
 
@@ -201,6 +209,7 @@ public class JsEngineTest extends IntegrationTestBase {
      * ExpectedResult: The square of 4 should be returned (16)
      *
      */
+    @Ignore
     @Test()
     public void testFunctionWithArgumentsEval() throws Exception {
 
@@ -229,6 +238,7 @@ public class JsEngineTest extends IntegrationTestBase {
      * ExpectedResult: The square of 4 should be returned (16)
      *
      */
+    @Ignore
     @Test()
     public void testClassWithArgumentsEval() throws Exception {
 

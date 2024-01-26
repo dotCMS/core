@@ -107,7 +107,7 @@ public class JsRequest implements Serializable, JsProxyObject<HttpServletRequest
     @HostAccess.Export
     public String getUrl() {
 
-        return  this.request.getRequestURL().toString();;
+        return  this.request.getRequestURL().toString();
     }
 
     @HostAccess.Export
