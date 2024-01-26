@@ -1,4 +1,3 @@
-import { expect, it } from '@jest/globals';
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import {
     byTestId,
@@ -6,26 +5,27 @@ import {
     createHostFactory,
     Spectator,
     SpectatorHost
-} from '@ngneat/spectator';
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, NgZone } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
-import { DotLicenseService, DotMessageService, DotUploadService } from '@dotcms/data-access';
-import { DotCMSTempFile } from '@dotcms/dotcms-models';
+import {
+    DotCMSTempFile,
+    DotLicenseService,
+    DotMessageService,
+    DotUploadService
+} from '@dotcms/data-access';
+import { DotEditContentBinaryFieldComponent } from '@dotcms/edit-content';
 import { DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
 import { dotcmsContentletMock } from '@dotcms/utils-testing';
 
-import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
-import { DotEditContentBinaryFieldComponent } from './dot-edit-content-binary-field.component';
 import { BinaryFieldMode, BinaryFieldStatus } from './interfaces';
 import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
 import { DotBinaryFieldValidatorService } from './service/dot-binary-field-validator/dot-binary-field-validator.service';
@@ -76,14 +76,6 @@ describe('DotEditContentBinaryFieldComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotEditContentBinaryFieldComponent,
-        imports: [
-            NoopAnimationsModule,
-            ButtonModule,
-            DialogModule,
-            MonacoEditorModule,
-            DotBinaryFieldUiMessageComponent,
-            HttpClientTestingModule
-        ],
         componentProviders: [DotBinaryFieldStore],
         providers: [
             DotBinaryFieldEditImageService,

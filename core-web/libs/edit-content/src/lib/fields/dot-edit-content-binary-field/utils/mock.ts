@@ -1,3 +1,4 @@
+import { FileMetaData } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -137,7 +138,7 @@ export const CONTENTLET = {
     variant: 'DEFAULT'
 };
 
-export const fileMetaData = {
+export const fileMetaData: FileMetaData = {
     contentType: 'image/png',
     fileSize: 12312,
     length: 12312,

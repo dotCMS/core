@@ -41,6 +41,11 @@
                 ]
             },
             "configurations": {
+                "localhost": {
+                    "sourceMap": true,
+                    "optimization": false,
+                    "watch": true
+                },
                 "production": {
                     "budgets": [
                         {
@@ -83,7 +88,7 @@
                     "buildTarget": "dotcms-binary-field-builder:build:development"
                 }
             },
-            "defaultConfiguration": "development"
+            "defaultConfiguration": "production"
         },
         "extract-i18n": {
             "executor": "@angular-devkit/build-angular:extract-i18n",
