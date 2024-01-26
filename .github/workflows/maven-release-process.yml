@@ -357,8 +357,6 @@ jobs:
       - name: Update Plugins
         working-directory: ${{ github.workspace }}/plugin-seeds
         run: |
-          git config user.name "${{ secrets.CI_MACHINE_USER }}"
-          git config user.email "dotCMS-Machine-User@dotcms.com"
           git config pull.rebase false
           
           release_version=${{ needs.prepare-release.outputs.release_version }}
@@ -409,11 +407,10 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ needs.prepare-release.outputs.release_branch }}
+          token: :${{ secrets.CI_MACHINE_TOKEN }}
 
       - name: Set Next Version
         run: |
-          git config user.name "${{ secrets.CI_MACHINE_USER }}"
-          git config user.email "dotCMS-Machine-User@dotcms.com"
           git config pull.rebase false
           
           next_version=${{ env.NEXT_VERSION }}
