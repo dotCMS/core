@@ -1,0 +1,102 @@
+server:
+  name: jitsu
+  port: '${env.SERVER_PORT|8001}'
+  disable_welcome_page: true
+  strict_auth_tokens: true
+  admin_token: '${env.CLUSTER_ADMIN_TOKEN|env.SERVER_ADMIN_TOKEN|demo___please_provide_value_in_production___}'
+  telemetry:
+    disabled:
+      usage: true
+  #telemetry: '${env.TELEMETRY_URL|}'
+  cache:
+    enabled: '${env.EVENTS_CACHE_ENABLED|true}'
+    events:
+    #default value. Amount of events which are saved per token or destination.
+    #If there are more events, old ones will be replaced with new ones.
+    size: 100
+    #by default Jitsu applies rate limiting for not saving all events into the cache.
+    #Jitsu saves in cache ${size} events per ${time_window_sec}. Other events are skipped.
+    time_window_sec: 60
+    #Every ${trim_interval_ms} value Jitsu will delete events from cache
+    #if size of the cache collection by token or destination is greater than ${size}
+    trim_interval_ms: 500
+    #When Jitsu receives malformed event JSON, event will be cut to ${max_malformed_event_size_bytes} bytes (10KB) and saved to cache
+    max_malformed_event_size_bytes: 10000
+  pool:
+    #number of goroutines which are process events cache
+    size: 10
+  metrics:
+    relay:
+      disabled: '${env.JITSU_EXTENDED_TELEMETRY_DISABLED|false}'
+      deployment_id: '${env.JITSU_EXTENDED_TELEMETRY_DEPLOYMENT_ID|}'
+
+geo:
+  maxmind_path: '${env.MAX_MIND_PATH|}'
+
+configurator:
+  base_url: '${env.JITSU_CONFIGURATOR_URL|}'
+  admin_token: '${env.CLUSTER_ADMIN_TOKEN|env.CONFIGURATOR_ADMIN_TOKEN|demo___please_provide_value_in_production___}'
+
+geo_resolvers: '${env.GEO_RESOLVERS_URL|}'
+
+
+sources: '${env.SOURCES_URL|}'
+
+system: '${env.SYSTEM_URL|}'
+
+notifications:
+  slack:
+    url: '${env.SLACK_NOTIFICATIONS_WEBHOOK|}'
+
+ui:
+  base_url: '${env.JITSU_UI_BASE_URL|}'
+
+users_recognition:
+  enabled: '${env.USER_RECOGNITION_ENABLED|false}'
+  anonymous_id_node: /user/anonymous_id
+  identification_nodes:
+    - /user/id
+    - /user/email
+  redis:
+    host: '${env.USER_RECOGNITION_REDIS_URL|}'
+    tls_skip_verify: '${env.TLS_SKIP_VERIFY|false}'
+    ttl_minutes:
+      anonymous_events: '${env.USER_RECOGNITION_TTL_MINUTES|10080}'
+
+meta:
+  storage:
+    redis:
+      host: '${env.REDIS_URL|}'
+      tls_skip_verify: '${env.TLS_SKIP_VERIFY|false}'
+      ttl_minutes:
+        anonymous_events: '${env.USER_RECOGNITION_TTL_MINUTES|10080}'
+
+events:
+  queue:
+    redis:
+      host: '${env.EVENTS_QUEUE_REDIS_URL|}'
+      tls_skip_verify: '${env.TLS_SKIP_VERIFY|false}'
+
+coordination:
+  type: redis
+
+sql_debug_log:
+  ddl:
+    enabled: '${env.SQL_DDL_LOG_ENABLED|true}'
+  queries:
+    enabled: '${env.SQL_QUERIES_LOG_ENABLED|false}'
+
+singer-bridge:
+  log:
+    enabled: '${env.SINGER_LOG_ENABLED|false}'
+  batch_size: '${env.SOURCES_SYNC_BATCH_SIZE|10000}'
+
+airbyte-bridge:
+  batch_size: '${env.SOURCES_SYNC_BATCH_SIZE|10000}'
+
+google-ads:
+  developer-token: '${env.GOOGLE_ADS_DEVELOPER_TOKEN|}'
+
+api_keys: '${env.API_KEYS_URL|}'
+
+destinations: '${env.DESTINATIONS_URL|}'

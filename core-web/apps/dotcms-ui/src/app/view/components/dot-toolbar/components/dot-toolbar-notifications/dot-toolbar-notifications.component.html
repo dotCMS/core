@@ -1,18 +1,27 @@
 <ng-container *dotShowHideFeature="featureFlagAnnouncements">
     <p-button
-        (click)="op.toggle($event)"
+        [class.dot-toolbar-notifications__button-active]="activeAnnouncements"
+        (click)="toolbarAnnouncements.toggle($event)"
         icon="pi pi-megaphone"
         styleClass="p-button-rounded p-button-text">
     </p-button>
+    <span class="badge" id="dot-toolbar-notifications-badge" *ngIf="showUnreadAnnouncement()">
+        {{ showUnreadAnnouncement() }}
+    </span>
 
-    <p-overlayPanel #op styleClass="toolbar-announcements__container">
-        <dot-toolbar-announcements (hideOverlayPanel)="op.hide()" />
+    <p-overlayPanel
+        #toolbarAnnouncements
+        (onHide)="markAnnocumentsAsRead()"
+        (onShow)="onActiveAnnouncements()"
+        styleClass="toolbar-announcements__container">
+        <dot-toolbar-announcements [showUnreadAnnouncement]="showUnreadAnnouncement()" />
     </p-overlayPanel>
 </ng-container>
 <div class="toolbar-notifications__container">
-    <span class="badge" id="dot-toolbar-notifications-badge" *ngIf="notificationsUnreadCount">{{
-        notificationsUnreadCount
-    }}</span>
+    <span
+        class="badge"
+        id="dot-toolbar-notifications-badge"
+        *ngIf="notificationsUnreadCount"></span>
     <dot-dropdown-component
         id="dot-toolbar-notifications"
         [disabled]="!notifications.length"
