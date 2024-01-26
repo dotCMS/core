@@ -13,6 +13,7 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
 import { EditContentPayload } from '../models/dot-edit-content-form.interface';
@@ -587,16 +588,6 @@ export const BINARY_FIELD_CONTENTLET: DotCMSContentlet = {
     value: '/dA/39de8193694d96c2a6bab783ba9c85b5/binaryField/Screenshot 2023-11-03 at 11.53.40â\u0080¯AM.png'
 };
 
-export const FIELDS_WITH_CONTENTLET_MOCK: {
-    fieldMock: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
-}[] = [
-    {
-        fieldMock: BINARY_FIELD_MOCK,
-        contentlet: BINARY_FIELD_CONTENTLET
-    }
-];
-
 /* HELPER FUNCTIONS */
 
 // This creates a mock FormGroup from an array of fielda
@@ -634,6 +625,8 @@ function getAllFields(data: DotCMSContentTypeLayoutRow[]) {
 }
 
 /* CONSTANTS */
+
+export const DOT_MESSAGE_SERVICE_MOCK = new MockDotMessageService({});
 
 export const CALENDAR_FIELD_TYPES = [FIELD_TYPES.DATE, FIELD_TYPES.DATE_AND_TIME, FIELD_TYPES.TIME];
 

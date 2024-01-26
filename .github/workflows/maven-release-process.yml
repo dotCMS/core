@@ -50,13 +50,13 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          token: ${{ secrets.CI_MACHINE_TOKEN }}
 
       - name: Set Common Vars
         id: set-common-vars
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
+          git config user.name "${{ secrets.CI_MACHINE_USER }}"
+          git config user.email "dotCMS-Machine-User@dotcms.com"
 
           release_version=${{ github.event.inputs.release_version }}
           release_tag=v${release_version}
@@ -139,7 +139,7 @@ jobs:
           
           git status
           git commit -a -m "🏁 Publishing release version [${release_version}]"
-          git push https://${{ secrets.CICD_GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}
+          git push https://${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${GITHUB_REPOSITORY}
           
           release_commit=$(git log -1 --pretty=%H)
           echo "release_commit=${release_commit}" >> $GITHUB_OUTPUT
@@ -226,7 +226,7 @@ jobs:
           curl -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            -H "Authorization: Bearer ${{ secrets.CICD_GITHUB_TOKEN }}" \
+            -H "Authorization: Bearer ${{ secrets.CI_MACHINE_TOKEN }}" \
             https://api.github.com/repos/dotCMS/core/releases \
             -d '{"tag_name": "${{ steps.set-common-vars.outputs.release_tag }}", "name": "Release ${{ steps.set-common-vars.outputs.release_version }}", "target_commitish": "${{ steps.set-release-version.outputs.release_commit }}", "draft": false, "prerelease": false, "generate_release_notes": false}'
         if: success()
@@ -351,14 +351,14 @@ jobs:
           repository: dotCMS/plugin-seeds
           ref: master
           fetch-depth: 0
-          token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          token: ${{ secrets.CI_MACHINE_TOKEN }}
           path: ${{ github.workspace }}/plugin-seeds
 
       - name: Update Plugins
         working-directory: ${{ github.workspace }}/plugin-seeds
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
+          git config user.name "${{ secrets.CI_MACHINE_USER }}"
+          git config user.email "dotCMS-Machine-User@dotcms.com"
           git config pull.rebase false
           
           release_version=${{ needs.prepare-release.outputs.release_version }}
@@ -382,9 +382,9 @@ jobs:
           git commit -a -m "Updating dotcms version to ${release_version}"
           git commit --allow-empty -m "Publish Release ${release_version}"
           git pull origin ${release_branch}
-          git push https://${{ secrets.CICD_GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY_OWNER}/plugin-seeds.git
+          git push https://${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${GITHUB_REPOSITORY_OWNER}/plugin-seeds.git
 
-  build_push_image:
+  build-push-image:
     name: Build/Push Image
     needs: prepare-release
     uses: ./.github/workflows/maven-build-docker-image.yml
@@ -399,7 +399,7 @@ jobs:
   finish-release:
     name: Finish Release
     runs-on: ubuntu-latest
-    needs: [prepare-release, release-process, build_push_image]
+    needs: [prepare-release, release-process, build-push-image]
     if: success()
     env:
       NEXT_VERSION: '1.0.0-SNAPSHOT'
@@ -412,8 +412,8 @@ jobs:
 
       - name: Set Next Version
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
+          git config user.name "${{ secrets.CI_MACHINE_USER }}"
+          git config user.email "dotCMS-Machine-User@dotcms.com"
           git config pull.rebase false
           
           next_version=${{ env.NEXT_VERSION }}
@@ -436,34 +436,34 @@ jobs:
           git status
           git commit -a -m "Setting to next version: [${next_version}]"
           git pull origin ${{ needs.prepare-release.outputs.release_branch }}
-          git push https://${{ secrets.CICD_GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}
+          git push https://${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${GITHUB_REPOSITORY}
 
-      - name: Fetch `Next Release` issues
-        id: fetch-next-release-issues
-        uses: ./.github/actions/issue-fetcher
-        with:
-          fetch_operation: 'WITH_LABELS'
-          fetch_value: ${{ env.FETCH_VALUE }}
-          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-        if: github.event.inputs.update_github_labels == 'true'
-
-      - name: Clear next release issues
-        uses: ./.github/actions/issue-labeler
-        with:
-          issues_json: ${{ steps.fetch-next-release-issues.outputs.issues }}
-          labels: ${{ env.FETCH_VALUE }}
-          operation: 'REMOVE'
-          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-        if: github.event.inputs.update_github_labels == 'true'
-
-      - name: Label current release issues
-        uses: ./.github/actions/issue-labeler
-        with:
-          issues_json: ${{ steps.fetch-next-release-issues.outputs.issues }}
-          labels: 'Release ${{ needs.prepare-release.outputs.release_version }}'
-          operation: 'ADD'
-          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-        if: github.event.inputs.update_github_labels == 'true'
+#      - name: Fetch `Next Release` issues
+#        id: fetch-next-release-issues
+#        uses: ./.github/actions/issue-fetcher
+#        with:
+#          fetch_operation: 'WITH_LABELS'
+#          fetch_value: ${{ env.FETCH_VALUE }}
+#          github_token: ${{ secrets.GITHUB_TOKEN }}
+#        if: github.event.inputs.update_github_labels == 'true'
+#
+#      - name: Clear next release issues
+#        uses: ./.github/actions/issue-labeler
+#        with:
+#          issues_json: ${{ steps.fetch-next-release-issues.outputs.issues }}
+#          labels: ${{ env.FETCH_VALUE }}
+#          operation: 'REMOVE'
+#          github_token: ${{ secrets.GITHUB_TOKEN }}
+#        if: github.event.inputs.update_github_labels == 'true'
+#
+#      - name: Label current release issues
+#        uses: ./.github/actions/issue-labeler
+#        with:
+#          issues_json: ${{ steps.fetch-next-release-issues.outputs.issues }}
+#          labels: 'Release ${{ needs.prepare-release.outputs.release_version }}'
+#          operation: 'ADD'
+#          github_token: ${{ secrets.GITHUB_TOKEN }}
+#        if: github.event.inputs.update_github_labels == 'true'
 
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
