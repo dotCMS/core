@@ -1,15 +1,12 @@
-<tr class="dot-key-value-table-input-row">
+<tr class="dot-key-value-input">
     <td>
         <input
             class="field-key-input"
             #keyCell
-            [(ngModel)]="variable.key"
+            [formControl]="form.get('key')"
             [placeholder]="'keyValue.key_input.placeholder' | dm"
-            (blur)="editFieldInit($event)"
-            (focus)="editFieldInit($event)"
-            (keyup)="editFieldInit($event)"
             (keydown.escape)="onCancel($event)"
-            (keydown.enter)="onPressEnter($event)"
+            (keydown.enter)="valueCell.focus()"
             pInputText
             type="text"
             autocomplete="false" />
@@ -18,31 +15,33 @@
         <input
             class="field-value-input"
             #valueCell
-            [(ngModel)]="variable.value"
-            [type]="variable.hidden ? 'password' : 'text'"
+            [formControl]="form.get('value')"
+            [type]="form.get('hidden').value ? 'password' : 'text'"
             [placeholder]="'keyValue.value_input.placeholder' | dm"
-            (focus)="editFieldInit($event)"
-            (keyup)="editFieldInit($event)"
             (keydown.escape)="onCancel($event)"
-            (keydown.enter)="onPressEnter($event)"
+            (keydown.enter)="saveButton.click()"
             pInputText
             autocomplete="false" />
     </td>
-    <td class="dot-key-value-table-input-row__variables-hidden" *ngIf="showHiddenField">
-        <p-inputSwitch [(ngModel)]="variable.hidden" (click)="editFieldInit()"></p-inputSwitch>
+    @if( showHiddenField ) {
+    <td class="dot-key-value-input__variables-hidden">
+        <p-inputSwitch [formControl]="form.get('hidden')"></p-inputSwitch>
     </td>
-    <td class="dot-key-value-table-input-row__variables-actions">
+    }
+    <td class="dot-key-value-input__variables-actions">
         <button
-            class="dot-key-value-table-input-row__variables-actions-edit-cancel p-button-outlined"
+            class="dot-key-value-input__variables-actions-edit-cancel p-button-outlined"
             [label]="'Cancel' | dm"
             (click)="onCancel($event)"
+            type="button"
             pButton></button>
         <button
-            class="dot-key-value-table-input-row__variables-actions-edit-save"
+            class="dot-key-value-input__variables-actions-edit-save"
             #saveButton
             [label]="'Save' | dm"
-            [disabled]="saveDisabled"
+            [disabled]="form.invalid"
             (click)="saveVariable()"
+            type="button"
             pButton></button>
     </td>
 </tr>

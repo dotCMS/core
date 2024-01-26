@@ -8,7 +8,6 @@ import {
     Output,
     effect,
     forwardRef,
-    input,
     signal
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -50,11 +49,11 @@ export interface DotKeyValue {
 export class DotKeyValueComponent implements OnInit {
     @Input() autoFocus = true;
     @Input() showHiddenField: boolean;
+    @Input() data: Record<string, string>;
+
     @Output() delete: EventEmitter<DotKeyValue> = new EventEmitter(false);
     @Output() save: EventEmitter<DotKeyValue> = new EventEmitter(false);
 
-    // private readonly cd = inject(ChangeDetectorRef);
-    data = input<Record<string, string>>(null);
     value = signal<DotKeyValue[]>([]);
 
     private onChange: (value: DotKeyValue[]) => void;
@@ -67,8 +66,8 @@ export class DotKeyValueComponent implements OnInit {
     }
 
     ngOnInit() {
-        if (this.data()) {
-            this.value.set(this.convertToKeyValue(this.data()));
+        if (this.data) {
+            this.value.set(this.convertToKeyValue(this.data));
         }
     }
 

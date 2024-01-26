@@ -1,5 +1,5 @@
 <tr class="dot-key-value-table-row">
-    <td data-testId="dot-key-value-key">{{ variable().key }}</td>
+    <td data-testId="dot-key-value-key">{{ variable.key }}</td>
 
     @if (isHiddenField) {
     <td data-testId="dot-key-value-label">{{ passwordPlaceholder }}</td>
@@ -41,9 +41,9 @@
     </td>
     }
 
-    <td class="dot-key-value-table-row__variables-hidden" *ngIf="showHiddenField()">
+    <td class="dot-key-value-table-row__variables-hidden" *ngIf="showHiddenField">
         <p-inputSwitch
-            [(ngModel)]="isHiddenField"
+            [formControl]="form.get('hidden')"
             [disabled]="isHiddenField"
             (onChange)="showEditMenu.set(true)"
             data-testId="dot-key-value-hidden-switch"></p-inputSwitch>
@@ -65,7 +65,7 @@
             data-testId="dot-key-value-save-button" />
         } @else {
         <p-button
-            (click)="delete.emit(variable())"
+            (click)="delete.emit(variable)"
             data-testId="dot-key-value-delete-button"
             icon="pi pi-trash"
             styleClass="p-button-text p-button-danger p-button-rounded" />

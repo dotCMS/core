@@ -3,11 +3,10 @@ import {
     Component,
     ElementRef,
     EventEmitter,
-    OnInit,
+    Input,
+    OnChanges,
     Output,
     ViewChild,
-    effect,
-    input,
     signal
 } from '@angular/core';
 import {
@@ -44,25 +43,29 @@ import { DotKeyValue } from '../dot-key-value-ng.component';
         DotMessagePipe
     ]
 })
-export class DotKeyValueTableRowComponent implements OnInit {
+export class DotKeyValueTableRowComponent implements OnChanges {
     @ViewChild('saveButton') saveButton: ElementRef;
     @ViewChild('valueCell') valueCell: ElementRef;
 
     @Output() save: EventEmitter<DotKeyValue> = new EventEmitter(false);
     @Output() delete: EventEmitter<DotKeyValue> = new EventEmitter(false);
 
-    showHiddenField = input<boolean>(false);
-    variable = input.required<DotKeyValue>();
-    protected form: FormGroup;
+    @Input() showHiddenField: boolean = false;
+    @Input() variable: DotKeyValue;
+
+    protected form: FormGroup = new FormGroup({
+        value: new FormControl('', Validators.required),
+        hidden: new FormControl(false)
+    });
     protected readonly showEditMenu = signal(false);
     protected readonly passwordPlaceholder = '*****';
 
     get isHiddenField(): boolean {
-        return this.variable()?.hidden;
+        return this.variable?.hidden;
     }
 
     get initialValue(): string {
-        return this.variable().value;
+        return this.variable.value;
     }
 
     get currentValue(): string {
@@ -70,18 +73,13 @@ export class DotKeyValueTableRowComponent implements OnInit {
     }
 
     get inputType(): string {
-        return this.variable()?.hidden ? 'password' : 'text';
+        return this.variable?.hidden ? 'password' : 'text';
     }
 
-    constructor() {
-        effect(() => {
-            this.form.get('value').setValue(this.initialValue);
-        });
-    }
-
-    ngOnInit(): void {
-        this.form = new FormGroup({
-            value: new FormControl(this.variable()?.value, Validators.required)
+    ngOnChanges(): void {
+        this.form.setValue({
+            value: this.initialValue,
+            hidden: this.isHiddenField
         });
     }
 
@@ -121,7 +119,7 @@ export class DotKeyValueTableRowComponent implements OnInit {
     saveVariable(): void {
         this.showEditMenu.set(false);
         this.save.emit({
-            ...this.variable(),
+            ...this.variable,
             value: this.currentValue
         });
     }

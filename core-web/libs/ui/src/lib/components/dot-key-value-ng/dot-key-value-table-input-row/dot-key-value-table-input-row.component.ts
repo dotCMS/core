@@ -1,14 +1,23 @@
 import { CommonModule } from '@angular/common';
 import {
+    AfterViewInit,
     Component,
     ElementRef,
     EventEmitter,
     Input,
-    OnInit,
     Output,
     ViewChild
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import {
+    AbstractControl,
+    FormControl,
+    FormGroup,
+    FormsModule,
+    ReactiveFormsModule,
+    ValidationErrors,
+    ValidatorFn,
+    Validators
+} from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { InputSwitchModule } from 'primeng/inputswitch';
@@ -19,7 +28,6 @@ import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 
 import { DotMessagePipe } from '../../../dot-message/dot-message.pipe';
 import { DotKeyValue } from '../dot-key-value-ng.component';
-import { DotKeyValueUtil } from '../util/dot-key-value-util';
 
 @Component({
     selector: 'dot-key-value-table-input-row',
@@ -32,12 +40,13 @@ import { DotKeyValueUtil } from '../util/dot-key-value-util';
         InputSwitchModule,
         InputTextModule,
         FormsModule,
+        ReactiveFormsModule,
         DotMessagePipe
     ]
 })
-export class DotKeyValueTableInputRowComponent implements OnInit {
-    @ViewChild('saveButton', { static: true }) saveButton: ElementRef;
+export class DotKeyValueTableInputRowComponent implements AfterViewInit {
     @ViewChild('keyCell', { static: true }) keyCell: ElementRef;
+    @ViewChild('saveButton', { static: true }) saveButton: ElementRef;
     @ViewChild('valueCell', { static: true }) valueCell: ElementRef;
 
     @Input() autoFocus = true;
@@ -46,45 +55,20 @@ export class DotKeyValueTableInputRowComponent implements OnInit {
 
     @Output() save: EventEmitter<DotKeyValue> = new EventEmitter(false);
 
-    saveDisabled = true;
-    elemRef: ElementRef;
-    variable: DotKeyValue = { key: '', hidden: false, value: '' };
+    form = new FormGroup({
+        key: new FormControl('', [Validators.required, this.customValidator()]),
+        value: new FormControl('', Validators.required),
+        hidden: new FormControl(false)
+    });
 
     constructor(
         private dotMessageService: DotMessageService,
         private dotMessageDisplayService: DotMessageDisplayService
     ) {}
 
-    ngOnInit(): void {
+    ngAfterViewInit(): void {
         if (this.autoFocus) {
             this.keyCell.nativeElement.focus();
-        }
-    }
-
-    /**
-     * Sets initial fields properties
-     *
-     * @param {Event} $event
-     * @memberof DotKeyValueTableInputRowComponent
-     */
-    editFieldInit($event?: Event): void {
-        const isKeyVariableDuplicated = DotKeyValueUtil.isFieldVariableKeyDuplicated(
-            this.variable,
-            this.variablesList,
-            true
-        );
-        this.saveDisabled = isKeyVariableDuplicated || DotKeyValueUtil.isEmpty(this.variable);
-
-        if (isKeyVariableDuplicated && DotKeyValueUtil.isEventBlur($event)) {
-            this.dotMessageDisplayService.push({
-                life: 3000,
-                message: this.dotMessageService.get(
-                    'keyValue.error.duplicated.variable',
-                    (<HTMLInputElement>$event.target).value
-                ),
-                severity: DotMessageSeverity.ERROR,
-                type: DotMessageType.SIMPLE_MESSAGE
-            });
         }
     }
 
@@ -95,25 +79,7 @@ export class DotKeyValueTableInputRowComponent implements OnInit {
      */
     onCancel($event: KeyboardEvent): void {
         $event.stopPropagation();
-        this.cleanVariableValues();
-        this.keyCell.nativeElement.focus();
-    }
-
-    /**
-     * Handle Enter key event
-     * @param {KeyboardEvent} $event
-     * @memberof DotKeyValueTableInputRowComponent
-     */
-    onPressEnter($event: KeyboardEvent): void {
-        if (DotKeyValueUtil.keyInputInvalid($event, this.variable)) {
-            this.elemRef = this.keyCell;
-        } else if (this.variable.key !== '') {
-            this.getElementToFocus($event);
-        }
-
-        this.elemRef.nativeElement.type === 'text'
-            ? this.elemRef.nativeElement.focus()
-            : this.elemRef.nativeElement.click();
+        this.resetForm();
     }
 
     /**
@@ -121,21 +87,45 @@ export class DotKeyValueTableInputRowComponent implements OnInit {
      * @memberof DotKeyValueTableInputRowComponent
      */
     saveVariable(): void {
-        this.save.emit(this.variable);
-        this.cleanVariableValues();
+        this.save.emit({
+            ...(this.form.value as DotKeyValue)
+        });
+        this.resetForm();
+    }
+
+    /**
+     * Reset form and focus on key input
+     *
+     * @memberof DotKeyValueTableInputRowComponent
+     */
+    resetForm(): void {
+        this.form.reset();
         this.keyCell.nativeElement.focus();
     }
 
-    private getElementToFocus($event: KeyboardEvent): void {
-        if (DotKeyValueUtil.isKeyInput($event) || this.variable.value === '') {
-            this.elemRef = this.valueCell;
-        } else {
-            this.elemRef = this.saveButton;
-        }
+    private customValidator(): ValidatorFn {
+        return ({ value }: AbstractControl): ValidationErrors | null => {
+            const matchKey = this.variablesList.some((item: DotKeyValue) => item.key === value);
+
+            if (!matchKey) {
+                return null;
+            }
+
+            this.showErrorMessage();
+
+            return { duplicatedKey: true };
+        };
     }
 
-    private cleanVariableValues(): void {
-        this.variable = { key: '', hidden: false, value: '' };
-        this.saveDisabled = true;
+    private showErrorMessage(): void {
+        this.dotMessageDisplayService.push({
+            life: 3000,
+            message: this.dotMessageService.get(
+                'keyValue.error.duplicated.variable',
+                this.form.value.key
+            ),
+            severity: DotMessageSeverity.ERROR,
+            type: DotMessageType.SIMPLE_MESSAGE
+        });
     }
 }
