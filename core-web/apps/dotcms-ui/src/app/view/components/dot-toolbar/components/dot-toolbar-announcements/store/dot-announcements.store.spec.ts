@@ -81,4 +81,14 @@ describe('AnnouncementsStore', () => {
             done();
         });
     });
+
+    it('should update the url when the site changes', (done) => {
+        spectator.service.load();
+        spectator.service.state$.subscribe((state) => {
+            expect(state.announcements[0].url).toBe(
+                'https://www.example.com?utm_source=platform&utm_medium=demo.dotcms.com&utm_campaign=announcement'
+            );
+            done();
+        });
+    });
 });
