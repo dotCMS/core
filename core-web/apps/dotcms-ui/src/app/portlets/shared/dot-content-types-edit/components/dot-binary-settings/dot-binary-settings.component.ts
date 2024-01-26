@@ -1,6 +1,6 @@
 import { forkJoin, of } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { NgFor } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
@@ -32,7 +32,7 @@ import { DotFieldVariablesService } from '../fields/dot-content-type-fields-vari
     selector: 'dot-binary-settings',
     standalone: true,
     imports: [
-        CommonModule,
+        NgFor,
         FormsModule,
         ReactiveFormsModule,
         InputTextModule,
@@ -52,14 +52,14 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
     @Output() valid = new EventEmitter<boolean>();
     @Output() save = new EventEmitter<DotFieldVariable[]>();
 
-    protected form: FormGroup;
+    form: FormGroup;
 
     private fb: FormBuilder = inject(FormBuilder);
     private fieldVariablesService = inject(DotFieldVariablesService);
     private dotMessageService = inject(DotMessageService);
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
 
-    private settingsMap = {
+    settingsMap = {
         accept: {
             key: 'accept',
             variable: null
@@ -77,18 +77,15 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
     protected readonly systemOptions = [
         {
             key: 'allowURLImport',
-            message: 'binary-field.settings.system.options.allow.url.import',
-            variable: null
+            message: 'binary-field.settings.system.options.allow.url.import'
         },
         {
             key: 'allowCodeWrite',
-            message: 'binary-field.settings.system.options.allow.code.write',
-            variable: null
+            message: 'binary-field.settings.system.options.allow.code.write'
         },
         {
             key: 'allowFileNameEdit',
-            message: 'binary-field.settings.system.options.allow.file.name.edit',
-            variable: null
+            message: 'binary-field.settings.system.options.allow.file.name.edit'
         }
     ];
 
