@@ -1,12 +1,16 @@
 import { NgClass, NgForOf, CommonModule } from '@angular/common';
-import { Component, Input, Signal, inject } from '@angular/core';
+import { Component, Input, OnInit, Signal, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+
+import { skip } from 'rxjs/operators';
 
 import {
     Announcement,
     TypesIcons,
     AnnouncementsStore
 } from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
+import { DotMessageService } from '@dotcms/data-access';
+import { SiteService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
@@ -17,32 +21,42 @@ import { DotMessagePipe } from '@dotcms/ui';
     imports: [NgForOf, NgClass, DotMessagePipe, RouterLink, CommonModule],
     providers: [AnnouncementsStore]
 })
-export class DotToolbarAnnouncementsComponent {
+export class DotToolbarAnnouncementsComponent implements OnInit {
     announcementsStore = inject(AnnouncementsStore);
+    dotMessageService = inject(DotMessageService);
+    siteService = inject(SiteService);
 
     @Input() showUnreadAnnouncement: boolean;
     announcements: Signal<Announcement[]> = this.announcementsStore.announcementsSignal;
+    utm_parameters = `utm_source=platform&utm_medium=${this.siteService.currentSite.hostname}&utm_campaign=announcement`;
+
+    ngOnInit(): void {
+        this.siteService.switchSite$.pipe(skip(1)).subscribe(() => {});
+    }
 
     knowledgeCenterLinks = [
         {
-            label: 'Documentation',
-            url: 'https://www.dotcms.com/docs/latest/table-of-contents?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu'
+            label: this.dotMessageService.get('announcements.knowledge.center.documentation'),
+            url: `https://www.dotcms.com/docs/latest/table-of-contents?${this.utm_parameters}`
         },
         {
-            label: 'Blog',
-            url: 'https://www.dotcms.com/blog/?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu'
+            label: this.dotMessageService.get('announcements.knowledge.center.blog'),
+            url: `https://www.dotcms.com/blog/?${this.utm_parameters}`
         },
-        { label: 'User Forums', url: 'https://groups.google.com/g/dotcms' }
+        {
+            label: this.dotMessageService.get('announcements.knowledge.center.knowledge.forum'),
+            url: 'https://groups.google.com/g/dotcms'
+        }
     ];
 
     contactLinks = [
         {
-            label: 'Customer Support',
-            url: 'https://www.dotcms.com/services/support/?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu'
+            label: this.dotMessageService.get('announcements.contact.customer.support'),
+            url: `https://www.dotcms.com/services/support/?${this.utm_parameters}`
         },
         {
-            label: 'Professional Services',
-            url: 'https://www.dotcms.com/services/professional-services/?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu'
+            label: this.dotMessageService.get('announcements.contact.professional.services'),
+            url: `https://www.dotcms.com/services/professional-services/?${this.utm_parameters}`
         }
     ];
 
@@ -52,6 +66,5 @@ export class DotToolbarAnnouncementsComponent {
         announcement: TypesIcons.Announcement
     };
 
-    protected linkToDotCms =
-        'https://dotcms.com/?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu';
+    protected linkToDotCms = `https://dotcms.com/?${this.utm_parameters}`;
 }

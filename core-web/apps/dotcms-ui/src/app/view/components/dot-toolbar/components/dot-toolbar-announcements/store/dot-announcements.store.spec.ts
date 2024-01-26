@@ -47,7 +47,7 @@ describe('AnnouncementsStore', () => {
                 url: 'https://www.example.com?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu'
             }
         ];
-        spectator.service.loadAnnouncements();
+        spectator.service.load();
         spectator.service.state$.subscribe((state) => {
             expect(state.announcements).toEqual(mockAnnouncements);
             done();
@@ -55,9 +55,9 @@ describe('AnnouncementsStore', () => {
     });
 
     it('should not mark announcements as unread when there are no new announcements', (done) => {
-        localStorage.removeItem('dotAnnouncementsData');
-        spectator.service.loadAnnouncements();
+        localStorage.removeItem('announcementsData');
         spectator.service.markAnnouncementsAsRead();
+        spectator.service.load();
 
         spectator.service.state$.subscribe((state) => {
             expect(state.showUnreadAnnouncement).toBe(false);
@@ -68,7 +68,7 @@ describe('AnnouncementsStore', () => {
     it('should mark announcements as unread', (done) => {
         localStorage.removeItem('dotAnnouncementsData');
 
-        spectator.service.loadAnnouncements();
+        spectator.service.load();
         spectator.service.state$.subscribe((state) => {
             expect(state.showUnreadAnnouncement).toBe(true);
             done();
