@@ -6,7 +6,8 @@
             [style]="{ width: '100%' }"
             formControlName="accept"
             placeholder="ex: images/*"
-            pInputText />
+            pInputText
+            data-testId="setting-accept" />
         <small style="display: inline-block; margin-top: 0.5rem">
             <a
                 href="https://www.dotcms.com/docs/latest/field-variables#BinaryField"
@@ -23,7 +24,7 @@
         }"></p-divider>
     <div class="horizontal-field">
         <p class="info" [innerHTML]="option.message | dm"></p>
-        <p-inputSwitch [formControlName]="option.key"></p-inputSwitch>
+        <p-inputSwitch [formControlName]="option.key" data-testId="setting-switch"></p-inputSwitch>
     </div>
 
     }

@@ -1,4 +1,4 @@
-import { Spectator, SpyObject, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, SpyObject, byTestId, createComponentFactory } from '@ngneat/spectator';
 import { of, throwError } from 'rxjs';
 
 import { NgFor } from '@angular/common';
@@ -169,5 +169,28 @@ describe('DotBinarySettingsComponent', () => {
 
         expect(dotFieldVariableService.delete).not.toHaveBeenCalled();
         expect(dotFieldVariableService.save).not.toHaveBeenCalledTimes(2); // One for accept and one for systemOptions, accept should not call save or delete
+    });
+
+    it('should have 3 switches with the corresponding control name', () => {
+        const switches = spectator.queryAll(byTestId('setting-switch'));
+
+        expect(switches.length).toBe(3);
+        expect(
+            switches.find((s) => s.getAttribute('ng-reflect-name') === 'allowURLImport')
+        ).not.toBeNull();
+        expect(
+            switches.find((s) => s.getAttribute('ng-reflect-name') === 'allowCodeWrite')
+        ).not.toBeNull();
+        expect(
+            switches.find((s) => s.getAttribute('ng-reflect-name') === 'allowFileNameEdit')
+        ).not.toBeNull();
+    });
+
+    it('should have 1 input with the control name accept', () => {
+        const [acceptInput] = spectator.queryAll(byTestId('setting-accept'));
+
+        expect(acceptInput).not.toBeNull();
+
+        expect(acceptInput.getAttribute('ng-reflect-name')).toBe('accept');
     });
 });
