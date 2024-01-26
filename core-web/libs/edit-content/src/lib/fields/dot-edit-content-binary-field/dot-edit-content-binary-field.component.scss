@@ -28,6 +28,10 @@
     gap: $spacing-3;
     justify-content: center;
     align-items: flex-start;
+
+    &:empty {
+        display: none;
+    }
 }
 
 .binary-field__actions .p-button {

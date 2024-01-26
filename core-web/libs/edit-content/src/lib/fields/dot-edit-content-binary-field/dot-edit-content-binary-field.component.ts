@@ -90,6 +90,7 @@ export class DotEditContentBinaryFieldComponent
 
     private onChange: (value: string) => void;
     private onTouched: () => void;
+    private tempId = '';
 
     readonly dialogFullScreenStyles = { height: '90%', width: '90%' };
     readonly dialogHeaderMap = {
@@ -99,8 +100,10 @@ export class DotEditContentBinaryFieldComponent
     readonly BinaryFieldStatus = BinaryFieldStatus;
     readonly BinaryFieldMode = BinaryFieldMode;
     readonly vm$ = this.dotBinaryFieldStore.vm$;
-    private tempId = '';
+
     dialogOpen = false;
+
+    protected systemOptions: Record<string, boolean>;
 
     private get variable(): string {
         return this.field.variable;
@@ -158,6 +161,7 @@ export class DotEditContentBinaryFieldComponent
 
     ngAfterViewInit() {
         this.setFieldVariables();
+
         if (this.value) {
             this.dotBinaryFieldStore.setFileFromContentlet({
                 ...this.contentlet,
@@ -283,10 +287,9 @@ export class DotEditContentBinaryFieldComponent
      * Handle file drop
      *
      * @param {DropZoneFileEvent} { validity, file }
-     * @return {*}
      * @memberof DotBinaryFieldComponent
      */
-    handleFileDrop({ validity, file }: DropZoneFileEvent) {
+    handleFileDrop({ validity, file }: DropZoneFileEvent): void {
         if (!validity.valid) {
             this.handleFileDropError(validity);
 
@@ -303,9 +306,11 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotBinaryFieldComponent
      */
     private setFieldVariables() {
-        const { accept, maxFileSize = 0 } = this.getFieldVariables();
+        const { accept, maxFileSize = 0, systemOptions = '{}' } = this.getFieldVariables();
         this.DotBinaryFieldValidatorService.setAccept(accept ? accept.split(',') : []);
         this.DotBinaryFieldValidatorService.setMaxFileSize(Number(maxFileSize));
+
+        this.systemOptions = JSON.parse(systemOptions);
     }
 
     /**
