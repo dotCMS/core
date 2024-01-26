@@ -1,6 +1,6 @@
 <form class="wrapper" [formGroup]="form">
     <div class="field">
-        <label for="allowed-file-type">Allowed File Type</label>
+        <label for="allowed-file-type">{{ 'binary-field.settings.allow.type' | dm }}</label>
         <input
             id="allowed-file-type"
             [style]="{ width: '100%' }"
@@ -19,7 +19,7 @@
             margin: '1rem 0'
         }"></p-divider>
     <div class="horizontal-field">
-        <p class="info" [innerHTML]="option.message"></p>
+        <p class="info" [innerHTML]="option.message | dm"></p>
         <p-inputSwitch [formControlName]="option.key"></p-inputSwitch>
     </div>
 

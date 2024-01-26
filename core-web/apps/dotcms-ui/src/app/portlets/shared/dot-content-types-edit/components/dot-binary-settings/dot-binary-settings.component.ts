@@ -24,6 +24,7 @@ import { catchError, tap, take } from 'rxjs/operators';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 
@@ -36,7 +37,8 @@ import { DotFieldVariablesService } from '../fields/dot-content-type-fields-vari
         ReactiveFormsModule,
         InputTextModule,
         InputSwitchModule,
-        DividerModule
+        DividerModule,
+        DotMessagePipe
     ],
     templateUrl: './dot-binary-settings.component.html',
     styleUrl: './dot-binary-settings.component.scss',
@@ -75,17 +77,17 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
     protected readonly systemOptions = [
         {
             key: 'allowURLImport',
-            message: 'Allow users to create a file by <strong>importing from URL</strong>',
+            message: 'binary-field.settings.system.options.allow.url.import',
             variable: null
         },
         {
             key: 'allowCodeWrite',
-            message: 'Allow users to create a file by <strong>writting code</strong>',
+            message: 'binary-field.settings.system.options.allow.code.write',
             variable: null
         },
         {
             key: 'allowFileNameEdit',
-            message: 'Allow specifying the <strong>file name</strong> in the code editor',
+            message: 'binary-field.settings.system.options.allow.file.name.edit',
             variable: null
         }
     ];
@@ -110,7 +112,6 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
             this.valid.emit(this.form.valid);
         });
 
-        // I have to load here the variables, but first I need to be able to save field variables
         this.fieldVariablesService
             .load(this.field)
             .subscribe((fieldVariables: DotFieldVariable[]) => {
