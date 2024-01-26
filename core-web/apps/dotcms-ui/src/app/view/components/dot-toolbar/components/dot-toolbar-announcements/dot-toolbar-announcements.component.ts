@@ -31,7 +31,10 @@ export class DotToolbarAnnouncementsComponent implements OnInit {
     utm_parameters = `utm_source=platform&utm_medium=${this.siteService.currentSite.hostname}&utm_campaign=announcement`;
 
     ngOnInit(): void {
-        this.siteService.switchSite$.pipe(skip(1)).subscribe(() => {});
+        this.siteService.switchSite$.pipe(skip(1)).subscribe(() => {
+            this.announcementsStore.load();
+            this.utm_parameters = `utm_source=platform&utm_medium=${this.siteService.currentSite.hostname}&utm_campaign=announcement`;
+        });
     }
 
     knowledgeCenterLinks = [

@@ -44,19 +44,21 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
         });
     }
 
-    readonly load = this.effect(() => {
-        return this.http.get<Announcement[]>(this.announcementsUrl).pipe(
-            pluck('entity'),
-            tap((announcements: Announcement[]) => {
-                const modifiedAnnouncements = this.addUtm(announcements);
-                this.setState({
-                    announcements: modifiedAnnouncements,
-                    showUnreadAnnouncement: this.hasUnreadAnnouncements(announcements)
-                });
-            }),
-            catchError(() => EMPTY)
-        );
-    });
+    readonly load = () =>
+        this.effect(() => {
+            return this.http.get<Announcement[]>(this.announcementsUrl).pipe(
+                pluck('entity'),
+                tap((announcements: Announcement[]) => {
+                    const modifiedAnnouncements = this.addUtm(announcements);
+
+                    this.setState({
+                        announcements: modifiedAnnouncements,
+                        showUnreadAnnouncement: this.hasUnreadAnnouncements(announcements)
+                    });
+                }),
+                catchError(() => EMPTY)
+            );
+        });
 
     readonly announcementsSignal: Signal<Announcement[]> = this.selectSignal(
         (state) => state.announcements
