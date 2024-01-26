@@ -17,6 +17,14 @@ import { DotCMSActionSubtype, DotCMSWorkflowAction } from '@dotcms/dotcms-models
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
+type ButtonSize = 'normal' | 'small' | 'large';
+
+const InplaceButtonSizePrimeNg: Record<ButtonSize, string> = {
+    normal: '', // default
+    small: 'p-button-sm',
+    large: 'p-button-lg'
+};
+
 @Component({
     selector: 'dot-workflow-actions',
     standalone: true,
@@ -29,14 +37,17 @@ export class DotWorkflowActionsComponent implements OnChanges {
     @Input({ required: true }) actions: DotCMSWorkflowAction[];
     @Input() loading: boolean = false;
     @Input() groupAction: boolean = false;
+    @Input() size: ButtonSize = 'normal';
     @Output() actionFired = new EventEmitter<DotCMSWorkflowAction>();
 
     protected groupedActions = signal<MenuItem[][]>([]);
+    protected sizeClass: string;
 
     ngOnChanges(): void {
         this.groupedActions.set(
             this.groupAction ? this.groupActions(this.actions) : this.formatActions(this.actions)
         );
+        this.sizeClass = InplaceButtonSizePrimeNg[this.size];
     }
 
     /**

@@ -20,7 +20,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
   cancel-in-progress: true
 env:
-  JVM_TEST_MAVEN_OPTS: "-e -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+  JVM_TEST_MAVEN_OPTS: "-e -B --no-transfer-progress -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
   DOCKER_PLATFORMS: "linux/amd64,linux/arm64"
   REGISTRY: ghcr.io
   IMAGE_NAME: dotcms/dotcms_test
@@ -187,7 +187,6 @@ jobs:
       - name: Setup Context
         id: setup-docker-context
         run: |
-          
           mkdir -p $DOCKER_BUILD_CONTEXT/context
           tar -xvf $DOCKER_BUILD_CONTEXT/docker-build.tar -C $DOCKER_BUILD_CONTEXT/context
       - name: Build base image
@@ -407,7 +406,7 @@ jobs:
         shell: bash
         env:
           NODE_CACHE_HIT: ${{ steps.cache-node-modules.outputs.cache-hit }}
-        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS -Dskip.npm.install=${NODE_CACHE_HIT} $JVM_TEST_MAVEN_OPTS -pl :dotcms-core-web test
+        run: eval ./mvnw -Dprod -Dskip.npm.install=${NODE_CACHE_HIT} $JVM_TEST_MAVEN_OPTS -pl :dotcms-core-web test
       - name: Prepare failure archive (if maven failed)
         if: failure()
         shell: bash
@@ -538,7 +537,7 @@ jobs:
       - id: fetch-core
         name: Fetch Core Repo
         uses: actions/checkout@v3
-      - run: sudo npm install --location=global newman@5.3.2
+      - run: sudo npm install --location=global newman@5.3.2 newman-reporter-htmlextra@1.23.0
       - id: docker-login
         name: Login to GHCR
         uses: docker/login-action@v3.0.0
@@ -551,22 +550,31 @@ jobs:
         with:
           current: ${{ matrix.collection_group }}
       - name: Prepare license
+        id: prepare-license
         run: |
-          mkdir -p dotcms-postman/license
-          touch dotcms-postman/license/license.dat
-          echo "${{ secrets.DOTCMS_LICENSE }}" > dotcms-postman/license/license.dat
-          chmod 777 dotcms-postman/license/license.dat
+          postman_dir=${{ github.workspace }}/dotcms-postman
+          docker_volumes_dir=${postman_dir}/target/docker-volumes
+          [[ -d ${docker_volumes_dir} ]] && rm -rf ${docker_volumes_dir}
+          
+          dotcms_volumes_dir=${docker_volumes_dir}/dotcms
+          license_dir=${dotcms_volumes_dir}/license
+          
+          mkdir -p ${license_dir}
+          
+          license_file=${license_dir}/license.dat
+          touch ${license_file}
+          echo "${{ secrets.DOTCMS_LICENSE }}" > ${license_file}
+          chmod -R 777 ${license_dir}
       - id: run-postman-tests
         name: Run Postman Tests
         timeout-minutes: 90
         run: |
-          ./mvnw $JVM_TEST_MAVEN_OPTS verify \
+          ./mvnw -Dpostman-tests -Dprod $JVM_TEST_MAVEN_OPTS verify \
             -pl :dotcms-postman \
-            -Dpostman.collections=\"${{ steps.resolve-postman-collections.outputs.collections_to_run }}\"
+            -Dpostman.collections="${{ steps.resolve-postman-collections.outputs.collections_to_run }}"
           pec=$?
           [[ pec -eq 0 ]] || exit pec
         env:
-          JVM_TEST_MAVEN_OPTS: "-e -B"
           DOTCMS_IMAGE: ${{ needs.build-jdk11.outputs.docker-tag }}
       - name: Prepare reports archive (if maven failed)
         if: failure()
@@ -587,7 +595,7 @@ jobs:
         with:
           name: "build-reports-test-postman - ${{ matrix.collection_group }}"
           path: |
-            **/target/*-reports/TEST-*.xml
+            **/dotcms-postman/target/postman-reports/TEST-*.xml
             target/build-report.json
             LICENSE
           retention-days: 2
