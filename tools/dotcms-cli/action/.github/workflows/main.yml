@@ -77,8 +77,8 @@ jobs:
         run: |
           saveChanges="${{ steps.dot-workspace.outputs.workspace-updated }}"
           if [ -n "${saveChanges}" ]; then            
-            git config user.name "GitHub Actions"
-            git config user.email "actions@github.com"
+            git config user.name "${{ secrets.CI_MACHINE_USER }}"
+            git config user.email "dotCMS-Machine-User@dotcms.com"
             git add .
             git commit -m "pushing workspace changes"
             git push
