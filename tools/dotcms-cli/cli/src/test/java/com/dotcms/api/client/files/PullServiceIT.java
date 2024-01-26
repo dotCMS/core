@@ -32,7 +32,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
@@ -712,24 +711,101 @@ class PullServiceIT extends FilesTestHelper {
     }
 
     /**
-     * Parses the pattern option string into a set of patterns.
+     * Tests the validation of pulling empty sites with using the empty folders flag as false
+     * and true.
      *
-     * @param patterns the pattern option string containing patterns separated by commas
-     * @return a set of parsed patterns
+     * @throws IOException if there is an error creating the temporary folder or deleting it
      */
-    private Set<String> parsePatternOption(String patterns) {
+    @Test
+    void Test_Empty_Folders_Check() throws IOException {
 
-        var patternsSet = new HashSet<String>();
+        // Create a temporal folder for the pull
+        var tempFolder = createTempFolder();
+        var workspace = workspaceManager.getOrCreate(tempFolder);
 
-        if (patterns == null) {
-            return patternsSet;
+        try {
+
+            // Creating a site, for this test we don't need to create any content
+            final var testSiteName = createSite();
+
+            final var folderPath = String.format("//%s", testSiteName);
+
+            OutputOptionMixin outputOptions = new MockOutputOptionMixin();
+
+            // ===========================================================
+            // Pulling the content with the include empty folders as false
+            // ===========================================================
+            Map<String, Object> customOptions = Map.of(
+                    INCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    INCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    EXCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    EXCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    NON_RECURSIVE, false,
+                    PRESERVE, false,
+                    INCLUDE_EMPTY_FOLDERS, false
+            );
+
+            pullService.pull(
+                    PullOptions.builder().
+                            destination(workspace.files().toAbsolutePath().toFile()).
+                            contentKey(folderPath).
+                            isShortOutput(false).
+                            failFast(true).
+                            maxRetryAttempts(0).
+                            customOptions(customOptions).
+                            build(),
+                    outputOptions,
+                    fileProvider,
+                    filePullHandler
+            );
+
+            var filesSitePath = workspace.files().toAbsolutePath() + "/live/en-us/" + testSiteName;
+            Path sitePath = Path.of(filesSitePath);
+
+            // ============================
+            // Validating the file system
+            // ============================
+            Assertions.assertFalse(Files.exists(sitePath));
+
+            // Cleaning up the files folder
+            deleteTempDirectory(workspace.files().toAbsolutePath());
+
+            // ==============================================================
+            // Now pulling the content with the include empty folders as true
+            // ==============================================================
+            customOptions = Map.of(
+                    INCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    INCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    EXCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    EXCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    NON_RECURSIVE, false,
+                    PRESERVE, false,
+                    INCLUDE_EMPTY_FOLDERS, true
+            );
+
+            pullService.pull(
+                    PullOptions.builder().
+                            destination(workspace.files().toAbsolutePath().toFile()).
+                            contentKey(folderPath).
+                            isShortOutput(false).
+                            failFast(true).
+                            maxRetryAttempts(0).
+                            customOptions(customOptions).
+                            build(),
+                    outputOptions,
+                    fileProvider,
+                    filePullHandler
+            );
+
+            // ============================
+            // Validating the file system
+            // ============================
+            Assertions.assertTrue(Files.exists(sitePath));
+
+        } finally {
+            // Clean up the temporal folder
+            deleteTempDirectory(tempFolder);
         }
-
-        for (String pattern : patterns.split(",")) {
-            patternsSet.add(pattern.trim());
-        }
-
-        return patternsSet;
     }
 
 }
