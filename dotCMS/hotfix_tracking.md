@@ -37,3 +37,4 @@ This maintenance release includes the following code fixes:
 31. https://github.com/dotCMS/core/issues/26825 : Change order of config precidence #26825
 32. https://github.com/dotCMS/core/issues/26439 : Relationship fields not respecting the order identifiers are sent via the workflow API #26439
 33. https://github.com/dotCMS/core/issues/26693 : Edit Permissions Individually stuck when editing folder with legacy ID #26693
+34. https://github.com/dotCMS/core/issues/26640 : Cyrillic URLs encoding issue when configured by Vanity URL Redirect #26640
