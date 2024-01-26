@@ -195,7 +195,10 @@ public class InodeUtils {
                 //Transform the found content type to a Structure
                 inodeObj = new StructureTransformer(foundContentType).asStructure();
             }
-        } else {
+		}else if ( shortOpt.isPresent() && ShortType.FOLDER == shortOpt.get().subType ) {
+			//Folder no longer inherit from inode, returning an empty inode
+			inodeObj = new Inode();
+		} else {
             inodeObj = InodeFactory.getInode(inode, Inode.class);
         }
         return inodeObj;

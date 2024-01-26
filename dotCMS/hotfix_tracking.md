@@ -36,3 +36,4 @@ This maintenance release includes the following code fixes:
 30. https://github.com/dotCMS/core/issues/26706 : Change Default PUBSUB Provider #26706
 31. https://github.com/dotCMS/core/issues/26825 : Change order of config precidence #26825
 32. https://github.com/dotCMS/core/issues/26439 : Relationship fields not respecting the order identifiers are sent via the workflow API #26439
+33. https://github.com/dotCMS/core/issues/26693 : Edit Permissions Individually stuck when editing folder with legacy ID #26693
