@@ -361,21 +361,13 @@ describe('DotEditContentBinaryFieldComponent', () => {
             });
         });
 
-        it("shouldn't show url import button if not setted in settings", async () => {
-            store.setStatus(BinaryFieldStatus.INIT);
-            spectator.detectChanges();
-            await spectator.fixture.whenStable();
-
+        it("shouldn't show url import button if not setted in settings", () => {
             const importFromURLButton = spectator.query(byTestId('action-url-btn'));
 
             expect(importFromURLButton).toBeNull();
         });
 
         it("shouldn't show code editor button if not setted in settings", async () => {
-            store.setStatus(BinaryFieldStatus.INIT);
-            spectator.detectChanges();
-            await spectator.fixture.whenStable();
-
             const codeEditorButton = spectator.query(byTestId('action-editor-btn'));
 
             expect(codeEditorButton).toBeNull();
