@@ -4,13 +4,13 @@
     <parent>
         <groupId>com.dotcms</groupId>
         <artifactId>dotcms-build-parent</artifactId>
-        <version>24.01.26</version>
+        <version>1.0.0-SNAPSHOT</version>
         <relativePath>../build-parent/pom.xml</relativePath>
     </parent>
 
     <packaging>jar</packaging>
     <artifactId>dotcms-postman</artifactId>
-    <version>24.01.26</version>
+    <version>1.0.0-SNAPSHOT</version>
 
     <properties>
         <tomcat.version>9.0.60</tomcat.version>
