@@ -84,8 +84,8 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
         return [
             {
                 id: '1',
-                label: this.dotMessageService.get('announcements.knowledge.center.documentation'),
-                url: `https://www.dotcms.com/docs/latest/table-of-contents?${state.utmParameters}`
+                url: `https://www.dotcms.com/docs/latest/table-of-contents?${state.utmParameters}`,
+                label: this.dotMessageService.get('announcements.knowledge.center.documentation')
             },
             {
                 id: '2',
@@ -93,9 +93,9 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
                 url: `https://www.dotcms.com/blog/?${state.utmParameters}`
             },
             {
+                url: 'https://groups.google.com/g/dotcms',
                 id: '3',
-                label: this.dotMessageService.get('announcements.knowledge.center.forum'),
-                url: 'https://groups.google.com/g/dotcms'
+                label: this.dotMessageService.get('announcements.knowledge.center.forum')
             }
         ];
     });
@@ -103,9 +103,9 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
     readonly selectContactLinks: Signal<AnnouncementLink[]> = this.selectSignal((state) => {
         return [
             {
-                id: '1',
                 label: this.dotMessageService.get('announcements.contact.customer.support'),
-                url: `https://www.dotcms.com/services/support/?${state.utmParameters}`
+                url: `https://www.dotcms.com/services/support/?${state.utmParameters}`,
+                id: '1'
             },
             {
                 id: '2',

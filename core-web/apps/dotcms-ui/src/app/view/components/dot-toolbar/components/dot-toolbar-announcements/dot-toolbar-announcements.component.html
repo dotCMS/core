@@ -31,13 +31,13 @@
 <h5 class="announcements__title">{{ 'announcements_knowledge_center' | dm }}</h5>
 <div class="announcements__about">
     @for (item of knowledgeCenterLinks(); track item.id;) {
-    <a [href]="item.url" target="_blank">{{ item.label }}</a>
+    <a [href]="item.url" target="_blank" rel="noopener">{{ item.label }}</a>
     }
 </div>
 
 <h5 class="announcements__title">{{ 'announcements_knowledge_contact_us' | dm }}</h5>
 <div class="announcements__about">
     @for (item of contactLinks(); track item.id;) {
-    <a [href]="item.url" target="_blank">{{ item.label }}</a>
+    <a [href]="item.url" target="_blank" rel="noopener">{{ item.label }}</a>
     }
 </div>
