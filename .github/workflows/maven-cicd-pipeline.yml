@@ -533,7 +533,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        collection_group: [ 'graphql', 'workflow', 'template', 'page', 'container', 'pp', 'experiment', 'default' ]
+        collection_group: [ 'category-container', 'content', 'experiment', 'graphql', 'page', 'pp', 'template', 'workflow',  'default' ]
     steps:
       - id: fetch-core
         name: Fetch Core Repo

@@ -41,25 +41,26 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
         });
     }
 
-    readonly loadAnnouncements = this.effect(() => {
-        return this.http.get<Announcement[]>(this.announcementsUrl).pipe(
-            pluck('entity'),
-            tap((announcements: Announcement[]) => {
-                const modifiedAnnouncements = announcements.map((announcement) => {
-                    return {
-                        ...announcement,
-                        url: `${announcement.url}?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu`
-                    };
-                });
+    readonly loadAnnouncements = () =>
+        this.effect(() => {
+            return this.http.get<Announcement[]>(this.announcementsUrl).pipe(
+                pluck('entity'),
+                tap((announcements: Announcement[]) => {
+                    const modifiedAnnouncements = announcements.map((announcement) => {
+                        return {
+                            ...announcement,
+                            url: `${announcement.url}?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu`
+                        };
+                    });
 
-                this.setState({
-                    announcements: modifiedAnnouncements,
-                    showUnreadAnnouncement: this.hasUnreadAnnouncements(announcements)
-                });
-            }),
-            catchError(() => EMPTY)
-        );
-    });
+                    this.setState({
+                        announcements: modifiedAnnouncements,
+                        showUnreadAnnouncement: this.hasUnreadAnnouncements(announcements)
+                    });
+                }),
+                catchError(() => EMPTY)
+            );
+        });
 
     readonly announcementsSignal: Signal<Announcement[]> = this.selectSignal(
         (state) => state.announcements
