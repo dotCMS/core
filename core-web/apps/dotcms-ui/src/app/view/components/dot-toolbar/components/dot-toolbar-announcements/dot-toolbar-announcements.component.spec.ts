@@ -6,7 +6,6 @@ import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { SiteService, SiteServiceMock } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -17,16 +16,11 @@ describe('DotToolbarAnnouncementsComponent', () => {
 
     const messageServiceMock = new MockDotMessageService({
         announcements: 'Announcements',
-        'announcements.show.all': 'Show All',
-        'announcements.knowledge.center': 'Knowledge Center',
-        'announcements.knowledge.contact.us': 'Contact Us',
-        'announcements.contact.customer.support': 'Customer Support',
-        'announcements.contact.professional.services': 'Professional Services',
-        'announcements.knowledge.center.documentation': 'Documentation',
-        'announcements.knowledge.center.blog': 'Blog',
-        'announcements.knowledge.center.forum': 'User Forums'
+        announcements_show_all: 'Show All',
+        announcements_knowledge_center: 'Knowledge Center',
+        announcements_knowledge_contact_us: 'Contact Us'
     });
-    const siteServiceMock = new SiteServiceMock();
+
     const createComponent = createComponentFactory({
         component: DotToolbarAnnouncementsComponent,
         providers: [
@@ -46,11 +40,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
                 )
             }),
             DotMessagePipe,
-            { provide: DotMessageService, useValue: messageServiceMock },
-            {
-                provide: SiteService,
-                useValue: siteServiceMock
-            }
+            { provide: DotMessageService, useValue: messageServiceMock }
         ],
         imports: [NgForOf, NgClass, DotMessagePipe, HttpClientTestingModule]
     });

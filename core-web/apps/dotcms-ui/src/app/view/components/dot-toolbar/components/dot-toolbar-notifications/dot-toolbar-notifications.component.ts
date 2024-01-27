@@ -46,7 +46,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
         this.subscribeToNotifications();
 
         this.loginService.watchUser(this.getNotifications.bind(this));
-        this.announcementsStore.load();
+        this.announcementsStore.loadAnnouncements();
     }
 
     dismissAllNotifications(): void {
