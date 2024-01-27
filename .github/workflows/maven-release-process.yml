@@ -18,6 +18,11 @@ on:
         type: boolean
         default: false
         required: false
+      update_plugins:
+        description: 'Update Plugins'
+        type: boolean
+        default: false
+        required: false
 env:
   JAVA_VERSION: 11
   JAVA_DISTRO: temurin
@@ -368,7 +373,8 @@ jobs:
           
           git status
           git commit -a -m "Updating dotcms version to ${release_version}"
-#          git push https://${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${GITHUB_REPOSITORY_OWNER}/plugin-seeds.git
+          git push https://${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${GITHUB_REPOSITORY_OWNER}/plugin-seeds.git
+        if: github.event.inputs.update_plugins == 'true'
 
   build-push-image:
     name: Build/Push Image
