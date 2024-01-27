@@ -339,6 +339,7 @@ jobs:
           repository: dotCMS/plugin-seeds
           ref: master
           fetch-depth: 0
+          token: ${{ secrets.CI_MACHINE_TOKEN }}
           path: ${{ github.workspace }}/plugin-seeds
 
       - name: Update Plugins
@@ -367,7 +368,7 @@ jobs:
           
           git status
           git commit -a -m "Updating dotcms version to ${release_version}"
-          git push origin ${release_branch}
+#          git push https://${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${GITHUB_REPOSITORY_OWNER}/plugin-seeds.git
 
   build-push-image:
     name: Build/Push Image
