@@ -405,6 +405,8 @@ jobs:
 
       - name: Set Next Version
         run: |
+          git config user.name "${{ secrets.CI_MACHINE_USER }}"
+          git config user.email "dotCMS-Machine-User@dotcms.com"
           git config pull.rebase false
           
           next_version=${{ env.NEXT_VERSION }}
