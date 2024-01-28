@@ -14,7 +14,7 @@ import { IframeOverlayService } from '@components/_common/iframe/service/iframe-
 import { AnnouncementsStore } from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
 import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
+import { DotcmsEventsService, LoginService, SiteService, SiteServiceMock } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
@@ -87,6 +87,7 @@ describe('DotToolbarNotificationsComponent', () => {
         notifications_title: 'Notifications',
         notifications_load_more: 'More'
     });
+    const siteServiceMock = new SiteServiceMock();
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -105,6 +106,10 @@ describe('DotToolbarNotificationsComponent', () => {
                 {
                     provide: AnnouncementsStore,
                     useClass: AnnouncementsStore
+                },
+                {
+                    provide: SiteService,
+                    useValue: siteServiceMock
                 }
             ]
         }).compileComponents();
