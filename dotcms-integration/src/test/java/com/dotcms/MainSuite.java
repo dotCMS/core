@@ -75,6 +75,7 @@ import com.dotcms.publishing.manifest.CSVManifestBuilderTest;
 import com.dotcms.publishing.manifest.CSVManifestReaderTest;
 import com.dotcms.publishing.manifest.ManifestReaderFactoryTest;
 import com.dotcms.publishing.manifest.ManifestUtilTest;
+import com.dotcms.rendering.js.JsEngineTest;
 import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
@@ -670,7 +671,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task240102AlterVarcharLengthOfRelationTypeTest.class,
         Task240111AddInodeAndIdentifierLeftIndexesTest.class,
         AnnouncementsHelperIntegrationTest.class,
-        RemoteAnnouncementsLoaderIntegrationTest.class
+        RemoteAnnouncementsLoaderIntegrationTest.class,
+        JsEngineTest.class
 })
 
 public class MainSuite {
