@@ -65,7 +65,7 @@
                     "namedChunks": true
                 },
                 "tomcat": {
-                    "outputPath": "../webapps/ROOT/dotcms-binary-field-builder",
+                    "outputPath": "../../tomcat9/webapps/ROOT/dotcms-binary-field-builder",
                     "sourceMap": true,
                     "optimization": false,
                     "watch": true
