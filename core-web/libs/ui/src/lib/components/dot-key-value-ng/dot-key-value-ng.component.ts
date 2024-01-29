@@ -4,7 +4,7 @@ import {
     Component,
     EventEmitter,
     Input,
-    OnInit,
+    OnChanges,
     Output,
     computed,
     signal
@@ -24,9 +24,9 @@ export interface DotKeyValue {
 }
 
 @Component({
-    selector: 'dot-key-value',
-    styleUrls: ['./dot-key-value.component.scss'],
-    templateUrl: './dot-key-value.component.html',
+    selector: 'dot-key-value-ng',
+    styleUrls: ['./dot-key-value-ng.component.scss'],
+    templateUrl: './dot-key-value-ng.component.html',
     standalone: true,
     imports: [
         CommonModule,
@@ -37,7 +37,7 @@ export interface DotKeyValue {
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotKeyValueComponent implements OnInit {
+export class DotKeyValueComponent implements OnChanges {
     @Input() autoFocus = true;
     @Input() showHiddenField: boolean;
     @Input() variables: DotKeyValue[] = [];
@@ -60,7 +60,7 @@ export class DotKeyValueComponent implements OnInit {
         }, {});
     });
 
-    ngOnInit(): void {
+    ngOnChanges(): void {
         this.variableList.set(this.variables);
     }
 
