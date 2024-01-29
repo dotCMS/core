@@ -59,7 +59,7 @@ export class DotKeyValueTableInputRowComponent implements OnInit, AfterViewInit 
 
     @Output() save: EventEmitter<DotKeyValue> = new EventEmitter(false);
 
-    protected form = new FormGroup({
+    form = new FormGroup({
         key: new FormControl('', [Validators.required, this.keyValidator()]),
         value: new FormControl('', Validators.required),
         hidden: new FormControl(false)
@@ -113,6 +113,26 @@ export class DotKeyValueTableInputRowComponent implements OnInit, AfterViewInit 
      */
     resetForm(): void {
         this.form.reset();
+        this.keyCell.nativeElement.focus();
+    }
+
+    /**
+     * Handle Enter key event on key input
+     * If key control is valid, focus on value input
+     * If key control is invalid, focus on key input
+     *
+     * @return {*}  {void}
+     * @memberof DotKeyValueTableInputRowComponent
+     */
+    handleKeyInputEnter($event): void {
+        $event.stopPropagation();
+
+        if (this.keyControl.valid) {
+            this.valueCell.nativeElement.focus();
+
+            return;
+        }
+
         this.keyCell.nativeElement.focus();
     }
 

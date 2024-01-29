@@ -19,7 +19,7 @@ import { DotKeyValue, DotKeyValueComponent } from '@dotcms/ui';
 })
 export class DotEditContentKeyValueComponent {
     private onChange: (value: Record<string, string>) => void;
-    private onTouched: () => void;
+    private onTouched: () => void = () => {};
     protected initialValue: DotKeyValue[] = [];
 
     updateField(value: DotKeyValue[]): void {

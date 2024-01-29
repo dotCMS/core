@@ -1,229 +1,245 @@
-import { Component, DebugElement, Input } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator';
+import { MockProvider } from 'ng-mocks';
 
-import { InputSwitchModule } from 'primeng/inputswitch';
+import { fakeAsync, tick } from '@angular/core/testing';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
+import { InputSwitch, InputSwitchModule } from 'primeng/inputswitch';
+import { InputText, InputTextModule } from 'primeng/inputtext';
 
 import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotKeyValueTableInputRowComponent } from './dot-key-value-table-input-row.component';
 
-import { DotKeyValue } from '../dot-key-value.component';
+import { DotKeyValue } from '../dot-key-value-ng.component';
 
-export const mockKeyValue = [
+export const mockKeyValue: DotKeyValue[] = [
     {
         key: 'name',
         hidden: false,
         value: 'John'
-    },
-    {
-        key: 'password',
-        hidden: true,
-        value: '123456'
     }
 ];
 
-@Component({
-    selector: 'dot-test-host-component',
-    template: `
-        <dot-key-value-table-input-row
-            [autoFocus]="autoFocus"
-            [showHiddenField]="showHiddenField"
-            [variablesList]="variablesList">
-        </dot-key-value-table-input-row>
-    `
-})
-class TestHostComponent {
-    @Input() autoFocus: boolean;
-    @Input() showHiddenField: boolean;
-    @Input() variablesList: DotKeyValue[];
-}
-
 describe('DotKeyValueTableInputRowComponent', () => {
-    let comp: DotKeyValueTableInputRowComponent;
-    let hostComponent: TestHostComponent;
-    let hostComponentfixture: ComponentFixture<TestHostComponent>;
-    let de: DebugElement;
+    let spectatorHost: SpectatorHost<DotKeyValueTableInputRowComponent>;
     let dotMessageDisplayService: DotMessageDisplayService;
+    const createHost = createHostFactory({
+        component: DotKeyValueTableInputRowComponent,
+        imports: [
+            FormsModule,
+            ReactiveFormsModule,
+            InputSwitchModule,
+            InputTextModule,
+            ButtonModule
+        ],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    'keyValue.key_input.placeholder': 'Enter Key',
+                    'keyValue.value_input.placeholder': 'Enter Value',
+                    Save: 'Save',
+                    Cancel: 'Cancel',
+                    'keyValue.error.duplicated.variable': 'test {0}'
+                })
+            },
+            MockProvider(DotMessageDisplayService)
+        ]
+    });
 
     beforeEach(() => {
-        const messageServiceMock = new MockDotMessageService({
-            'keyValue.key_input.placeholder': 'Enter Key',
-            'keyValue.value_input.placeholder': 'Enter Value',
-            Save: 'Save',
-            Cancel: 'Cancel',
-            'keyValue.error.duplicated.variable': 'test {0}'
-        });
-
-        TestBed.configureTestingModule({
-            declarations: [DotKeyValueTableInputRowComponent, TestHostComponent],
-            imports: [InputSwitchModule, DotMessagePipe],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                DotMessageDisplayService
-            ]
-        });
-
-        hostComponentfixture = TestBed.createComponent(TestHostComponent);
-        hostComponent = hostComponentfixture.componentInstance;
-        comp = hostComponentfixture.debugElement.query(
-            By.css('dot-key-value-table-input-row')
-        ).componentInstance;
-        de = hostComponentfixture.debugElement.query(By.css('dot-key-value-table-input-row'));
-
-        dotMessageDisplayService = de.injector.get(DotMessageDisplayService);
-        hostComponent.variablesList = mockKeyValue;
-        hostComponent.autoFocus = true;
+        spectatorHost = createHost(
+            `<dot-key-value-table-input-row
+            [autoFocus]="autoFocus"
+            [showHiddenField]="showHiddenField"
+            [variablesList]="variablesList"
+            [forbiddenkeys]="forbiddenkeys"
+            >
+        </dot-key-value-table-input-row>`,
+            {
+                hostProps: {
+                    autoFocus: true,
+                    showHiddenField: false,
+                    variablesList: mockKeyValue,
+                    forbiddenkeys: {
+                        name: true
+                    }
+                },
+                detectChanges: false
+            }
+        );
+        dotMessageDisplayService = spectatorHost.inject(DotMessageDisplayService, true);
     });
 
     describe('Without Hidden Fields', () => {
-        it('should load the component', async () => {
-            hostComponentfixture.detectChanges();
-            const inputs = de.queryAll(By.css('input'));
-            const btns = de.queryAll(By.css('button'));
-            de.query(By.css('.field-value-input')).triggerEventHandler('focus', {});
+        it('should load the component', () => {
+            spectatorHost.detectChanges();
+            const inputs = spectatorHost.queryAll(InputText);
+            const saveButton = spectatorHost.query(
+                'button[data-testId="save-button"]'
+            ) as HTMLButtonElement;
+            const cancelButton = spectatorHost.query(
+                'button[data-testId="cancel-button"]'
+            ) as HTMLButtonElement;
+            const element = spectatorHost.query(byTestId('value-input'));
 
-            await hostComponentfixture.whenStable();
+            const keyInput = inputs[0];
+            const valueInput = inputs[1];
 
-            expect(inputs[0].nativeElement.placeholder).toContain('Enter Key');
-            expect(inputs[1].nativeElement.placeholder).toContain('Enter Value');
-            expect(btns[0].nativeElement.innerText).toContain('Cancel');
-            expect(btns[1].nativeElement.innerText).toContain('Save');
-            expect(comp.saveDisabled).toBe(true);
+            element.dispatchEvent(new Event('focus'));
+
+            expect(keyInput.el.nativeElement.placeholder).toContain('Enter Key');
+            expect(valueInput.el.nativeElement.placeholder).toContain('Enter Value');
+            expect(cancelButton.innerText).toContain('Cancel');
+            expect(saveButton.innerText).toContain('Save');
+            expect(saveButton.disabled).toBe(true);
         });
 
-        it('should focus on "Key" input when loaded', async () => {
-            spyOn(comp.keyCell.nativeElement, 'focus');
-
-            hostComponentfixture.detectChanges();
-            hostComponentfixture.whenStable();
-            await expect(comp.keyCell.nativeElement.focus).toHaveBeenCalledTimes(1);
+        it('should focus on "Key" input when loaded', () => {
+            spectatorHost.detectChanges();
+            const keyInputElement = spectatorHost.component.keyCell.nativeElement;
+            expect(document.activeElement).toEqual(keyInputElement); // Check if the element is focused
         });
 
-        it('should not focus on "Key" input when loaded', async () => {
-            hostComponent.autoFocus = false;
-            spyOn(comp.keyCell.nativeElement, 'focus');
-            hostComponentfixture.detectChanges();
-            await hostComponentfixture.whenStable();
-            expect(comp.keyCell.nativeElement.focus).toHaveBeenCalledTimes(0);
+        it('should not focus on "Key" input when loaded', () => {
+            spectatorHost.setHostInput({ autoFocus: false });
+            spectatorHost.detectChanges();
+            const keyInputElement = spectatorHost.component.keyCell.nativeElement;
+            expect(document.activeElement).not.toEqual(keyInputElement); // Check if the element is focused
         });
 
-        it('should focus on "Value" field, if entered valid "Key"', async () => {
-            spyOn(comp.valueCell.nativeElement, 'focus');
-            comp.variable = { key: 'test', value: '' };
-            hostComponentfixture.detectChanges();
-            de.query(By.css('.field-key-input')).nativeElement.dispatchEvent(
-                new KeyboardEvent('keydown', { key: 'Enter' })
-            );
+        it('should focus on "Value" field, if entered a valid "Key"', () => {
+            spectatorHost.detectChanges();
 
-            await hostComponentfixture.whenStable();
-            expect(comp.valueCell.nativeElement.focus).toHaveBeenCalledTimes(1);
+            const element = spectatorHost.query(byTestId('key-input')) as HTMLInputElement;
+            element.value = 'valid-key';
+
+            spectatorHost.dispatchFakeEvent(element, 'input');
+            spectatorHost.detectChanges();
+
+            element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+            const valueInputElement = spectatorHost.component.valueCell.nativeElement;
+            expect(document.activeElement).toEqual(valueInputElement);
         });
 
-        it('should focus on "Key" field, if entered invalid "Key"', async () => {
-            spyOn(comp.keyCell.nativeElement, 'focus');
-            comp.variable = { key: '', value: '' };
-            hostComponentfixture.detectChanges();
-            de.query(By.css('.field-key-input')).nativeElement.dispatchEvent(
-                new KeyboardEvent('keydown', { key: 'Enter' })
-            );
+        it('should focus on "Key" field, if entered an invalid "Key"', () => {
+            spectatorHost.detectChanges();
+            const keyInputElement = spectatorHost.query(byTestId('key-input')) as HTMLInputElement;
 
-            await hostComponentfixture.whenStable();
-            expect(comp.keyCell.nativeElement.focus).toHaveBeenCalledTimes(2);
+            keyInputElement.value = 'name';
+            spectatorHost.dispatchFakeEvent(keyInputElement, 'input');
+
+            spectatorHost.detectChanges();
+
+            keyInputElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+            const valueInputElement = spectatorHost.component.valueCell.nativeElement;
+            expect(document.activeElement).not.toEqual(valueInputElement);
         });
 
-        it('should emit cancel event when press "Escape"', async () => {
-            comp.variable = mockKeyValue[0];
-            hostComponentfixture.detectChanges();
-            hostComponentfixture.detectChanges();
-            de.query(By.css('.field-value-input')).nativeElement.dispatchEvent(
-                new KeyboardEvent('keydown', { key: 'Escape' })
-            );
-
-            await hostComponentfixture.whenStable();
-            expect(comp.variable).toEqual({ key: '', hidden: false, value: '' });
+        it('should reset form when press "Escape"', () => {
+            spectatorHost.detectChanges();
+            const spyForm = spyOn(spectatorHost.component.form, 'reset');
+            const valueInput = spectatorHost.query(byTestId('value-input')) as HTMLInputElement;
+            valueInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+            expect(spyForm).toHaveBeenCalled();
         });
 
-        it('should disabled save button when new variable key added is duplicated', () => {
-            comp.variable = { key: 'name', value: '' };
-            comp.variablesList = [comp.variable, ...mockKeyValue];
-            hostComponentfixture.detectChanges();
-            spyOn(dotMessageDisplayService, 'push');
-            de.query(By.css('.field-key-input')).triggerEventHandler('blur', {
-                type: 'blur',
-                target: { value: 'Key1' }
+        it('should disabled save button when new variable key added is duplicated', fakeAsync(() => {
+            spectatorHost.detectChanges();
+            const spy = spyOn(dotMessageDisplayService, 'push');
+            const element = spectatorHost.query(byTestId('key-input')) as HTMLInputElement;
+
+            element.value = 'name';
+            spectatorHost.dispatchFakeEvent(element, 'input');
+            tick(1000);
+
+            const saveBtn = spectatorHost.query(
+                'button[data-testId="save-button"]'
+            ) as HTMLButtonElement;
+            expect(spy).toHaveBeenCalledWith({
+                life: 3000,
+                message: 'test name',
+                severity: DotMessageSeverity.ERROR,
+                type: DotMessageType.SIMPLE_MESSAGE
             });
-            hostComponentfixture.detectChanges();
-            const saveBtn = de.query(
-                By.css('.dot-key-value-table-input-row__variables-actions-edit-save')
-            ).nativeElement;
-            hostComponentfixture.detectChanges();
-            expect(saveBtn.disabled).toBe(true);
-            expect(dotMessageDisplayService.push).toHaveBeenCalled();
-        });
+            expect(saveBtn.disabled).toBeTruthy();
+        }));
 
-        it('should emit save event when button clicked', async () => {
-            comp.variable = { key: 'Key1', value: 'Value1' };
-            spyOn(comp.save, 'emit');
-            spyOn(comp.keyCell.nativeElement, 'focus');
+        it('should enable save button when new variable key added is valid', () => {
+            spectatorHost.detectChanges();
+            const spy = spyOn(spectatorHost.component.save, 'emit');
+            const keyInput = spectatorHost.query(byTestId('key-input')) as HTMLInputElement;
+            const valueInput = spectatorHost.query(byTestId('value-input')) as HTMLInputElement;
 
-            hostComponentfixture.detectChanges();
-            await hostComponentfixture.whenStable();
+            keyInput.value = 'newKey';
+            spectatorHost.dispatchFakeEvent(keyInput, 'input');
+            valueInput.value = 'newValue';
+            spectatorHost.dispatchFakeEvent(valueInput, 'input');
 
-            de.query(
-                By.css('.dot-key-value-table-input-row__variables-actions-edit-save')
-            ).triggerEventHandler('click', {});
-            expect(comp.keyCell.nativeElement.focus).toHaveBeenCalled();
-            expect(comp.variable).toEqual({ key: '', hidden: false, value: '' });
-            expect(comp.save.emit).toHaveBeenCalledWith({
-                key: 'Key1',
-                value: 'Value1'
+            const saveBtn = spectatorHost.query(
+                'button[data-testId="save-button"]'
+            ) as HTMLButtonElement;
+
+            expect(saveBtn.disabled).toBeFalsy();
+
+            spectatorHost.click(saveBtn);
+
+            expect(spy).toHaveBeenCalledWith({
+                key: 'newKey',
+                value: 'newValue',
+                hidden: false
             });
         });
 
-        it('should emit cancel event when button clicked', async () => {
-            comp.variable = { key: 'Key1', value: 'Value1' };
-            spyOn(comp.save, 'emit');
-            spyOn(comp.keyCell.nativeElement, 'focus');
-            hostComponentfixture.detectChanges();
-            await hostComponentfixture.whenStable();
+        it('should emit reset form when cancel button is clicked', async () => {
+            spectatorHost.detectChanges();
+            const form = spectatorHost.component.form;
+            const spyForm = spyOn(form, 'reset');
+            const keyInput = spectatorHost.query(byTestId('key-input')) as HTMLInputElement;
+            const valueInput = spectatorHost.query(byTestId('value-input')) as HTMLInputElement;
 
-            de.query(
-                By.css('.dot-key-value-table-input-row__variables-actions-edit-cancel')
-            ).triggerEventHandler('click', {
-                stopPropagation: () => {
-                    //
-                }
-            });
-            expect(comp.variable).toEqual({ key: '', hidden: false, value: '' });
-            expect(comp.keyCell.nativeElement.focus).toHaveBeenCalled();
+            keyInput.value = 'newKey';
+            spectatorHost.dispatchFakeEvent(keyInput, 'input');
+            valueInput.value = 'newValue';
+            spectatorHost.dispatchFakeEvent(valueInput, 'input');
+
+            const saveBtn = spectatorHost.query(
+                'button[data-testId="cancel-button"]'
+            ) as HTMLButtonElement;
+
+            expect(saveBtn.disabled).toBeFalsy();
+
+            spectatorHost.click(saveBtn);
+            expect(spyForm).toHaveBeenCalled();
         });
     });
 
     describe('With Hidden Fields', () => {
         beforeEach(() => {
-            hostComponent.showHiddenField = true;
+            spectatorHost.setHostInput({ showHiddenField: true });
         });
 
-        it('should load the component with switch button', async () => {
-            hostComponentfixture.detectChanges();
-            const switchButton = de.query(By.css('p-inputSwitch'));
-            await hostComponentfixture.whenStable();
-            expect(comp.saveDisabled).toBe(true);
+        it('should load the component with switch button', () => {
+            spectatorHost.detectChanges();
+            const switchButton = spectatorHost.query(InputSwitch);
             expect(switchButton).toBeTruthy();
         });
 
         it('should switch to hidden mode when clicked on the hidden switch button', async () => {
-            comp.variable = { key: 'TestKey', hidden: true, value: 'TestValue' };
-            hostComponentfixture.detectChanges();
-            const valueInput = de.query(By.css('.field-value-input'));
-            const switchButton = de.query(By.css('p-inputSwitch')).nativeElement;
-            switchButton.dispatchEvent(new Event('click'));
-            hostComponentfixture.detectChanges();
-            await hostComponentfixture.whenStable();
-            expect(valueInput.nativeElement.type).toBe('password');
+            spectatorHost.detectChanges();
+            const switchButton = spectatorHost.query('.p-inputswitch') as HTMLElement;
+
+            spectatorHost.click(switchButton);
+            spectatorHost.detectChanges();
+
+            const valueInput = spectatorHost.query(byTestId('value-input')) as HTMLInputElement;
+            expect(valueInput.type).toBe('password');
         });
     });
 });
