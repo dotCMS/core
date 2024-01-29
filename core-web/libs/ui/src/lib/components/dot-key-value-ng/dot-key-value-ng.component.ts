@@ -6,11 +6,9 @@ import {
     Input,
     OnInit,
     Output,
-    effect,
-    forwardRef,
+    computed,
     signal
 } from '@angular/core';
-import { NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { TableModule } from 'primeng/table';
 
@@ -37,50 +35,33 @@ export interface DotKeyValue {
         DotKeyValueTableRowComponent,
         DotMessagePipe
     ],
-    providers: [
-        {
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotKeyValueComponent),
-            multi: true
-        }
-    ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotKeyValueComponent implements OnInit {
     @Input() autoFocus = true;
     @Input() showHiddenField: boolean;
-    @Input() data: Record<string, string>;
+    @Input() variables: DotKeyValue[] = [];
 
-    @Output() delete: EventEmitter<DotKeyValue> = new EventEmitter(false);
-    @Output() save: EventEmitter<DotKeyValue> = new EventEmitter(false);
+    @Output() updatedList: EventEmitter<DotKeyValue[]> = new EventEmitter();
 
-    value = signal<DotKeyValue[]>([]);
+    @Output() deletedVariable: EventEmitter<DotKeyValue> = new EventEmitter();
+    @Output() savedVariable: EventEmitter<DotKeyValue> = new EventEmitter();
+    @Output() updatedVariable: EventEmitter<{
+        variable: DotKeyValue;
+        oldVariable: DotKeyValue;
+    }> = new EventEmitter();
 
-    private onChange: (value: DotKeyValue[]) => void;
-    private onTouched: () => void;
+    protected variableList = signal<DotKeyValue[]>([]);
+    protected forbiddenkeys = computed<Record<string, boolean>>(() => {
+        return this.variableList().reduce((acc, variable) => {
+            acc[variable.key] = true;
 
-    constructor() {
-        effect(() => {
-            this.onChange(this.value());
-        });
-    }
+            return acc;
+        }, {});
+    });
 
-    ngOnInit() {
-        if (this.data) {
-            this.value.set(this.convertToKeyValue(this.data));
-        }
-    }
-
-    writeValue(value: Record<string, string>): void {
-        this.value.set(this.convertToKeyValue(value));
-    }
-
-    registerOnChange(fn: (value: DotKeyValue[]) => void) {
-        this.onChange = fn;
-    }
-
-    registerOnTouched(fn: () => void) {
-        this.onTouched = fn;
+    ngOnInit(): void {
+        this.variableList.set(this.variables);
     }
 
     /**
@@ -90,11 +71,14 @@ export class DotKeyValueComponent implements OnInit {
      * @memberof DotKeyValueComponent
      */
     deleteVariable(index: number): void {
-        this.value.update((variables) => {
+        const deletedVariable = this.variableList()[index];
+        this.variableList.update((variables) => {
             variables.splice(index, 1);
 
             return [...variables];
         });
+        this.deletedVariable.emit(deletedVariable);
+        this.updatedList.emit(this.variableList());
     }
 
     /**
@@ -104,9 +88,11 @@ export class DotKeyValueComponent implements OnInit {
      * @memberof DotKeyValueComponent
      */
     saveVariable(variable: DotKeyValue): void {
-        this.value.update((variables) => {
+        this.variableList.update((variables) => {
             return [variable, ...variables];
         });
+        this.savedVariable.emit(variable);
+        this.updatedList.emit(this.variableList());
     }
 
     /**
@@ -116,23 +102,13 @@ export class DotKeyValueComponent implements OnInit {
      * @memberof DotKeyValueComponent
      */
     updateKeyValue(variable: DotKeyValue, index: number): void {
-        this.value.update((variables) => {
+        const oldVariable = this.variableList()[index];
+        this.variableList.update((variables) => {
             variables[index] = variable;
 
             return [...variables];
         });
-    }
-
-    private convertToKeyValue(data: Record<string, string>): DotKeyValue[] {
-        if (!data) {
-            return [];
-        }
-
-        return Object.keys(data).map((key: string) => {
-            return {
-                key: key,
-                value: data[key]
-            };
-        });
+        this.updatedVariable.emit({ variable, oldVariable });
+        this.updatedList.emit(this.variableList());
     }
 }

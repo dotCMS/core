@@ -1,5 +1,5 @@
 <dot-key-value-ng
     [variables]="fieldVariables"
-    (delete)="deleteExistingVariable($event)"
-    (save)="updateExistingVariable($event)"
-></dot-key-value-ng>
+    (deletedVariable)="deleteExistingVariable($event)"
+    (savedVariable)="updateExistingVariable($event)"
+    (updatedVariable)="updateExistingVariable($event.variable)" />

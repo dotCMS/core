@@ -4,7 +4,7 @@ import {
     ElementRef,
     EventEmitter,
     Input,
-    OnChanges,
+    OnInit,
     Output,
     ViewChild,
     signal
@@ -43,25 +43,21 @@ import { DotKeyValue } from '../dot-key-value-ng.component';
         DotMessagePipe
     ]
 })
-export class DotKeyValueTableRowComponent implements OnChanges {
+export class DotKeyValueTableRowComponent implements OnInit {
     @ViewChild('saveButton') saveButton: ElementRef;
     @ViewChild('valueCell') valueCell: ElementRef;
-
     @Output() save: EventEmitter<DotKeyValue> = new EventEmitter(false);
     @Output() delete: EventEmitter<DotKeyValue> = new EventEmitter(false);
 
     @Input() showHiddenField: boolean = false;
     @Input() variable: DotKeyValue;
 
-    protected form: FormGroup = new FormGroup({
-        value: new FormControl('', Validators.required),
-        hidden: new FormControl(false)
-    });
+    protected form;
     protected readonly showEditMenu = signal(false);
     protected readonly passwordPlaceholder = '*****';
 
     get isHiddenField(): boolean {
-        return this.variable?.hidden;
+        return this.variable?.hidden || false;
     }
 
     get initialValue(): string {
@@ -76,10 +72,13 @@ export class DotKeyValueTableRowComponent implements OnChanges {
         return this.variable?.hidden ? 'password' : 'text';
     }
 
-    ngOnChanges(): void {
-        this.form.setValue({
-            value: this.initialValue,
-            hidden: this.isHiddenField
+    ngOnInit(): void {
+        this.form = new FormGroup({
+            value: new FormControl(this.initialValue, Validators.required),
+            hidden: new FormControl({
+                value: this.isHiddenField,
+                disabled: this.isHiddenField
+            })
         });
     }
 
@@ -88,7 +87,7 @@ export class DotKeyValueTableRowComponent implements OnChanges {
      * @param {Event} [$event]
      * @memberof DotKeyValueTableRowComponent
      */
-    focusKeyInput($event: Event): void {
+    focusValueInput($event: Event): void {
         $event.stopPropagation();
         this.valueCell.nativeElement.click();
     }
@@ -98,8 +97,7 @@ export class DotKeyValueTableRowComponent implements OnChanges {
      * @param {KeyboardEvent} $event
      * @memberof DotKeyValueTableRowComponent
      */
-    onCancel($event: KeyboardEvent): void {
-        $event.stopPropagation();
+    onCancel(): void {
         this.showEditMenu.set(false);
         this.form.get('value').setValue(this.initialValue);
     }

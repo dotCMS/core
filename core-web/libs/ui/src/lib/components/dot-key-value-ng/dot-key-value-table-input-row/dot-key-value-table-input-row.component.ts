@@ -5,8 +5,10 @@ import {
     ElementRef,
     EventEmitter,
     Input,
+    OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import {
     AbstractControl,
@@ -22,6 +24,8 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
+
+import { debounceTime } from 'rxjs/operators';
 
 import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
@@ -44,27 +48,38 @@ import { DotKeyValue } from '../dot-key-value-ng.component';
         DotMessagePipe
     ]
 })
-export class DotKeyValueTableInputRowComponent implements AfterViewInit {
+export class DotKeyValueTableInputRowComponent implements OnInit, AfterViewInit {
     @ViewChild('keyCell', { static: true }) keyCell: ElementRef;
     @ViewChild('saveButton', { static: true }) saveButton: ElementRef;
     @ViewChild('valueCell', { static: true }) valueCell: ElementRef;
 
     @Input() autoFocus = true;
     @Input() showHiddenField: boolean;
-    @Input() variablesList: DotKeyValue[] = [];
+    @Input() forbiddenkeys: Record<string, boolean> = {};
 
     @Output() save: EventEmitter<DotKeyValue> = new EventEmitter(false);
 
-    form = new FormGroup({
-        key: new FormControl('', [Validators.required, this.customValidator()]),
+    protected form = new FormGroup({
+        key: new FormControl('', [Validators.required, this.keyValidator()]),
         value: new FormControl('', Validators.required),
         hidden: new FormControl(false)
     });
 
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotMessageDisplayService: DotMessageDisplayService
-    ) {}
+    private dotMessageService = inject(DotMessageService);
+    private dotMessageDisplayService = inject(DotMessageDisplayService);
+
+    get keyControl(): AbstractControl {
+        return this.form.get('key');
+    }
+
+    ngOnInit(): void {
+        this.keyControl.valueChanges.pipe(debounceTime(250)).subscribe((value) => {
+            const { duplicatedKey } = this.keyControl.errors || {};
+            if (duplicatedKey) {
+                this.showErrorMessage(value);
+            }
+        });
+    }
 
     ngAfterViewInit(): void {
         if (this.autoFocus) {
@@ -87,9 +102,7 @@ export class DotKeyValueTableInputRowComponent implements AfterViewInit {
      * @memberof DotKeyValueTableInputRowComponent
      */
     saveVariable(): void {
-        this.save.emit({
-            ...(this.form.value as DotKeyValue)
-        });
+        this.save.emit(this.form.getRawValue());
         this.resetForm();
     }
 
@@ -103,27 +116,20 @@ export class DotKeyValueTableInputRowComponent implements AfterViewInit {
         this.keyCell.nativeElement.focus();
     }
 
-    private customValidator(): ValidatorFn {
+    private keyValidator(): ValidatorFn {
         return ({ value }: AbstractControl): ValidationErrors | null => {
-            const matchKey = this.variablesList.some((item: DotKeyValue) => item.key === value);
-
-            if (!matchKey) {
+            if (!this.forbiddenkeys[value]) {
                 return null;
             }
-
-            this.showErrorMessage();
 
             return { duplicatedKey: true };
         };
     }
 
-    private showErrorMessage(): void {
+    private showErrorMessage(value: string): void {
         this.dotMessageDisplayService.push({
             life: 3000,
-            message: this.dotMessageService.get(
-                'keyValue.error.duplicated.variable',
-                this.form.value.key
-            ),
+            message: this.dotMessageService.get('keyValue.error.duplicated.variable', value),
             severity: DotMessageSeverity.ERROR,
             type: DotMessageType.SIMPLE_MESSAGE
         });

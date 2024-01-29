@@ -1,6 +1,6 @@
 <p-table
     #table
-    [value]="value()"
+    [value]="variableList()"
     (keydown.enter)="$event.stopPropagation()"
     sortField="clazz"
     sortOrder="0"
@@ -23,7 +23,7 @@
         <dot-key-value-table-input-row
             [autoFocus]="autoFocus"
             [showHiddenField]="showHiddenField"
-            [variablesList]="value()"
+            [forbiddenkeys]="forbiddenkeys()"
             (save)="saveVariable($event)">
         </dot-key-value-table-input-row>
     </ng-template>
