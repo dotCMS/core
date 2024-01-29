@@ -1052,6 +1052,14 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 dijit.byId("searchButton").attr("disabled", true);
                 //dijit.byId("clearButton").attr("disabled", false);
 
+                fieldsValues = fieldsValues.map(value => {
+                    if (value.includes('[') || value.includes(']')) {
+                        return encodeURIComponent(value);
+                    } else {
+                    return value;
+                    }
+                });
+
                 document.getElementById('fieldsValues').value = fieldsValues;
                 document.getElementById('categoriesValues').value = categoriesValues;
                 document.getElementById('showDeleted').value = showDeleted;
@@ -1086,7 +1094,11 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                                 href+= "&modDateTo="+dateTo;
                         }
 
-                window.location.href=href;
+                        if (href.length > 6584) {
+                            showDotCMSErrorMessage("Error: The URL has exceeded the size limit due to the large number of content filters. Please reduce them.");
+                        } else {
+                            window.location.href = href;
+                        }
 
         }
 

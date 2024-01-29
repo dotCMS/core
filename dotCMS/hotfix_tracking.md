@@ -39,3 +39,4 @@ This maintenance release includes the following code fixes:
 33. https://github.com/dotCMS/core/issues/26693 : Edit Permissions Individually stuck when editing folder with legacy ID #26693
 34. https://github.com/dotCMS/core/issues/26640 : Cyrillic URLs encoding issue when configured by Vanity URL Redirect #26640
 35. https://github.com/dotCMS/core/issues/26861 : Can not create in rest a new diff lang version #26861
+36. https://github.com/dotCMS/core/issues/27007 : Content export with Publish Date Parameter leads to 400 Bad Request error #27007
