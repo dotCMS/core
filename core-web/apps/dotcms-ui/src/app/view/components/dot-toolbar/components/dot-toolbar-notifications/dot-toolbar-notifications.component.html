@@ -6,13 +6,13 @@
         styleClass="p-button-rounded p-button-text">
     </p-button>
     <span class="badge" id="dot-toolbar-notifications-badge" *ngIf="showUnreadAnnouncement()">
-        {{ showUnreadAnnouncement() }}
     </span>
 
     <p-overlayPanel
         #toolbarAnnouncements
         (onHide)="markAnnocumentsAsRead()"
         (onShow)="onActiveAnnouncements()"
+        appendTo="body"
         styleClass="toolbar-announcements__container">
         <dot-toolbar-announcements [showUnreadAnnouncement]="showUnreadAnnouncement()" />
     </p-overlayPanel>

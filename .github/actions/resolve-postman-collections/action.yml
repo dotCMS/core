@@ -13,20 +13,13 @@ inputs:
     default: |
           [
             {
-              "name": "graphql",
-              "collections": ["GraphQLTests"]
-            },
-            {
-              "name": "workflow",
-              "collections": ["Workflow_Resource_Tests"]
-            },
-            {
-              "name": "template",
-              "collections": ["Template_Resource.postman_collection"]
-            },
-            {
-              "name": "page",
-              "collections": ["PagesResourceTests"]
+              "name": "category-content",
+              "collections": [
+                "Category.postman_collection.json",
+                "ContentResourceV1.postman_collection.json",
+                "ContentTypeResourceTests.json",
+                "Content_Resource.postman_collection.json"
+              ]
             },
             {
               "name": "container",
@@ -37,6 +30,14 @@ inputs:
               "collections": ["Experiments_Resource.postman_collection", "Experiment_Result.postman_collection"]
             },
             {
+              "name": "graphql",
+              "collections": ["GraphQLTests"]
+            },
+            {
+              "name": "page",
+              "collections": ["PagesResourceTests"]
+            },
+            {
               "name": "pp",
               "collections": [
                 "PublishQueueResource",
@@ -44,6 +45,14 @@ inputs:
                 "Push_Publish_JWT_Token_Test.postman_collection",
                 "PushPublishFilterResource.postman_collection"
               ]
+            },
+            {
+              "name": "template",
+              "collections": ["Template_Resource.postman_collection"]
+            },
+            {
+              "name": "workflow",
+              "collections": ["Workflow_Resource_Tests"]
             }
           ]
   current:
