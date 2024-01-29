@@ -24,7 +24,7 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 import { TableModule } from 'primeng/table';
 
 import { DotMessagePipe } from '../../../dot-message/dot-message.pipe';
-import { DotKeyValue } from '../dot-key-value-ng.component';
+import { DotKeyValue } from '../dot-key-value.component';
 
 @Component({
     selector: 'dot-key-value-table-row',

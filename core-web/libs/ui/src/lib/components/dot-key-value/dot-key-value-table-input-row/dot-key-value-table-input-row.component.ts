@@ -31,7 +31,7 @@ import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access
 import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 
 import { DotMessagePipe } from '../../../dot-message/dot-message.pipe';
-import { DotKeyValue } from '../dot-key-value-ng.component';
+import { DotKeyValue } from '../dot-key-value.component';
 
 @Component({
     selector: 'dot-key-value-table-input-row',

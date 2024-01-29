@@ -10,8 +10,20 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotKeyValueTableInputRowComponent } from './dot-key-value-table-input-row.component';
 
-import { DotKeyValue } from '../dot-key-value-ng.component';
-import { mockKeyValue } from '../dot-key-value-ng.component.spec';
+import { DotKeyValue } from '../dot-key-value.component';
+
+export const mockKeyValue = [
+    {
+        key: 'name',
+        hidden: false,
+        value: 'John'
+    },
+    {
+        key: 'password',
+        hidden: true,
+        value: '123456'
+    }
+];
 
 @Component({
     selector: 'dot-test-host-component',
