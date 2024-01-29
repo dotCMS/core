@@ -20,7 +20,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
   cancel-in-progress: true
 env:
-  JVM_TEST_MAVEN_OPTS: "-e -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+  JVM_TEST_MAVEN_OPTS: "-e -B --no-transfer-progress -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
   DOCKER_PLATFORMS: "linux/amd64,linux/arm64"
   REGISTRY: ghcr.io
   IMAGE_NAME: dotcms/dotcms_test
@@ -187,7 +187,6 @@ jobs:
       - name: Setup Context
         id: setup-docker-context
         run: |
-          
           mkdir -p $DOCKER_BUILD_CONTEXT/context
           tar -xvf $DOCKER_BUILD_CONTEXT/docker-build.tar -C $DOCKER_BUILD_CONTEXT/context
       - name: Build base image
@@ -246,7 +245,7 @@ jobs:
         shell: bash
       - name: Restore Maven Repository
         id: cache-maven
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         with:
           path: ~/.m2/repository
           key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
@@ -306,7 +305,7 @@ jobs:
         shell: bash
       - name: Restore Maven Repository
         id: cache-maven
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         with:
           path: ~/.m2/repository
           key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
@@ -377,7 +376,7 @@ jobs:
         shell: bash
       - name: Restore Maven Repository
         id: cache-maven
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         with:
           path: ~/.m2/repository
           key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
@@ -407,7 +406,7 @@ jobs:
         shell: bash
         env:
           NODE_CACHE_HIT: ${{ steps.cache-node-modules.outputs.cache-hit }}
-        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS -Dskip.npm.install=${NODE_CACHE_HIT} $JVM_TEST_MAVEN_OPTS -pl :dotcms-core-web test
+        run: eval ./mvnw -Dprod -Dskip.npm.install=${NODE_CACHE_HIT} $JVM_TEST_MAVEN_OPTS -pl :dotcms-core-web test
       - name: Prepare failure archive (if maven failed)
         if: failure()
         shell: bash
@@ -496,14 +495,14 @@ jobs:
         shell: bash
       - name: Restore Maven Repository
         id: cache-maven
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v3
         with:
           path: ~/.m2/repository
           key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
       - name: Build
         env:
           DOT_DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
-        run: eval ./mvnw -Dit-tests -Dprod $JVM_TEST_MAVEN_OPTS verify -pl :dotcms-integration ${{ matrix.suites.maven_args}} ${{ matrix.java.maven_args}}
+        run: eval ./mvnw -Dprod $JVM_TEST_MAVEN_OPTS verify -pl :dotcms-integration ${{ matrix.suites.maven_args}} ${{ matrix.java.maven_args}}
       - name: Prepare reports archive (if maven failed)
         if: failure()
         shell: bash
@@ -533,12 +532,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        collection_group: [ 'graphql', 'workflow', 'template', 'page', 'container', 'pp', 'experiment', 'default' ]
+        collection_group: [ 'category-container', 'content', 'experiment', 'graphql', 'page', 'pp', 'template', 'workflow',  'default' ]
     steps:
       - id: fetch-core
         name: Fetch Core Repo
         uses: actions/checkout@v3
-      - run: sudo npm install --location=global newman@5.3.2
+      - run: sudo npm install --location=global newman@5.3.2 newman-reporter-htmlextra@1.23.0
       - id: docker-login
         name: Login to GHCR
         uses: docker/login-action@v3.0.0
@@ -551,22 +550,31 @@ jobs:
         with:
           current: ${{ matrix.collection_group }}
       - name: Prepare license
+        id: prepare-license
         run: |
-          mkdir -p dotcms-postman/license
-          touch dotcms-postman/license/license.dat
-          echo "${{ secrets.DOTCMS_LICENSE }}" > dotcms-postman/license/license.dat
-          chmod 777 dotcms-postman/license/license.dat
+          postman_dir=${{ github.workspace }}/dotcms-postman
+          docker_volumes_dir=${postman_dir}/target/docker-volumes
+          [[ -d ${docker_volumes_dir} ]] && rm -rf ${docker_volumes_dir}
+          
+          dotcms_volumes_dir=${docker_volumes_dir}/dotcms
+          license_dir=${dotcms_volumes_dir}/license
+          
+          mkdir -p ${license_dir}
+          
+          license_file=${license_dir}/license.dat
+          touch ${license_file}
+          echo "${{ secrets.DOTCMS_LICENSE }}" > ${license_file}
+          chmod -R 777 ${license_dir}
       - id: run-postman-tests
         name: Run Postman Tests
         timeout-minutes: 90
         run: |
-          ./mvnw $JVM_TEST_MAVEN_OPTS verify \
+          ./mvnw -Dpostman-tests -Dprod $JVM_TEST_MAVEN_OPTS verify \
             -pl :dotcms-postman \
-            -Dpostman.collections=\"${{ steps.resolve-postman-collections.outputs.collections_to_run }}\"
+            -Dpostman.collections="${{ steps.resolve-postman-collections.outputs.collections_to_run }}"
           pec=$?
           [[ pec -eq 0 ]] || exit pec
         env:
-          JVM_TEST_MAVEN_OPTS: "-e -B"
           DOTCMS_IMAGE: ${{ needs.build-jdk11.outputs.docker-tag }}
       - name: Prepare reports archive (if maven failed)
         if: failure()
@@ -587,11 +595,52 @@ jobs:
         with:
           name: "build-reports-test-postman - ${{ matrix.collection_group }}"
           path: |
-            **/target/*-reports/TEST-*.xml
+            **/dotcms-postman/target/postman-reports/TEST-*.xml
             target/build-report.json
             LICENSE
           retention-days: 2
-
+  sonarqube:
+    name: SonarQube Scan
+    runs-on: ubuntu-latest
+    needs: [build-jdk11]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: apt clean
+        shell: bash
+        run: sudo apt-get clean
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: 11
+          distribution: 'temurin'
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
+        shell: bash
+      - name: Restore Maven Repository
+        id: cache-maven
+        uses: actions/cache/restore@v3
+        with:
+          path: ~/.m2/repository
+          key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
+      - name: Cache SonarQube packages
+        uses: actions/cache@v1
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Maven Build No Test
+        shell: bash
+        run: |
+          ./mvnw $JVM_TEST_MAVEN_OPTS compile sonar:sonar -Dsonar.projectKey=dotCMS_core_AYSbIemxK43eThAXTlt- -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
+        env:
+          MAVEN_OPTS: "-Xmx2048m"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
   clean-up:
     name: Clean up
     runs-on: ubuntu-latest
@@ -615,7 +664,7 @@ jobs:
   prepare-report-data:
     name: Prepare Report Data
     runs-on: ubuntu-20.04
-    needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests,linux-cli-tests,linux-postman-tests ]
+    needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests,linux-cli-tests,linux-postman-tests,sonarqube ]
     if: always()
     outputs:
       aggregate_status: ${{ steps.prepare-workflow-data.outputs.aggregate_status }}

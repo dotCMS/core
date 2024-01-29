@@ -19,7 +19,6 @@ env:
   JAVA_DISTRO: temurin
   NEXT_VERSION: '1.0.0-SNAPSHOT'
   GRAALVM_VERSION: '22.1.0'
-  GITHUB_USER: 'victoralfaro-dotcms'
   PACKAGE_TYPE: 'uber-jar'
 
 jobs:
@@ -60,8 +59,8 @@ jobs:
 
       - name: 'Setup git config'
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
+          git config user.name "${{ secrets.CI_MACHINE_USER }}"
+          git config user.email "dotCMS-Machine-User@dotcms.com"
 
       - name: 'Set release version'
         id: version
@@ -74,7 +73,7 @@ jobs:
           ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$RELEASE_VERSION
 
           git commit --allow-empty -a -m "🏁 Releasing version $RELEASE_VERSION"
-          git push https://${{ env.GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}
+          git push https://${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${GITHUB_REPOSITORY}
 
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
           echo "NEXT_VERSION=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
@@ -280,8 +279,8 @@ jobs:
 
       - name: 'Setup git config'
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
+          git config user.name "${{ secrets.CI_MACHINE_USER }}"
+          git config user.email "dotCMS-Machine-User@dotcms.com"
 
       - name: 'Set next version'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli
@@ -293,4 +292,4 @@ jobs:
           ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$NEXT_VERSION
 
           git commit --allow-empty -a -m "⬆️  Next version $NEXT_VERSION"
-          git push https://${{ env.GITHUB_USER }}:${{ secrets.CICD_GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}
+          git push https://${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${GITHUB_REPOSITORY}
