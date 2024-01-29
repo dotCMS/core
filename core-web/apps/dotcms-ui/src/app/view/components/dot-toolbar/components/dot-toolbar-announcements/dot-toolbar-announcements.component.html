@@ -23,19 +23,21 @@
 
 <div class="announcements__container">
     <i class="pi pi-external-link"></i>
-    <a class="announcements__link" [href]="linkToDotCms" data-testId="announcement_link">{{
-        'announcements_show_all' | dm
+    <a class="announcements__link" [href]="linkToDotCms()" data-testId="announcement_link">{{
+        'announcements.show.all' | dm
     }}</a>
 </div>
 
 <h5 class="announcements__title">{{ 'announcements_knowledge_center' | dm }}</h5>
 <div class="announcements__about">
-    <a *ngFor="let link of knowledgeCenterLinks" [href]="link.url" target="_blank">{{
-        link.label
-    }}</a>
+    @for (item of knowledgeCenterLinks(); track item.id;) {
+    <a [href]="item.url" target="_blank" rel="noopener">{{ item.label }}</a>
+    }
 </div>
 
 <h5 class="announcements__title">{{ 'announcements_knowledge_contact_us' | dm }}</h5>
 <div class="announcements__about">
-    <a *ngFor="let link of contactLinks" [href]="link.url" target="_blank">{{ link.label }}</a>
+    @for (item of contactLinks(); track item.id;) {
+    <a [href]="item.url" target="_blank" rel="noopener">{{ item.label }}</a>
+    }
 </div>
