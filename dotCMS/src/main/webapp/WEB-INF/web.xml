@@ -247,6 +247,10 @@
 		<servlet-class>com.dotcms.rendering.velocity.servlet.VelocityServlet</servlet-class>
 	</servlet>
 	<servlet>
+		<servlet-name>JavascriptServlet</servlet-name>
+		<servlet-class>com.dotcms.rendering.js.JsServlet</servlet-class>
+	</servlet>
+	<servlet>
 		<servlet-name>SpeedyAssetServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.SpeedyAssetServlet</servlet-class>
 	</servlet>
@@ -455,6 +459,10 @@
 	<servlet-mapping>
 		<servlet-name>VelocityServlet</servlet-name>
 		<url-pattern>/servlets/VelocityServlet</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>JavascriptServlet</servlet-name>
+		<url-pattern>/servlets/JavascriptServlet</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>SpeedyAssetServlet</servlet-name>
