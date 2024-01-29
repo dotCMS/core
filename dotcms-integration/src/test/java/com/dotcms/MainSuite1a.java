@@ -20,6 +20,7 @@ import com.dotcms.publisher.bundle.business.BundleFactoryImplTest;
 import com.dotcms.publisher.business.PublishQueueElementTransformerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
+import com.dotcms.rendering.js.JsEngineTest;
 import com.dotcms.rendering.velocity.viewtools.XsltToolTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
@@ -97,7 +98,8 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderIntegrityCheckerTest.class,
         HostFactoryImplTest.class,
         BundleFactoryImplTest.class,
-        ExperimentUrlPatternCalculatorIntegrationTest.class
+        ExperimentUrlPatternCalculatorIntegrationTest.class,
+        JsEngineTest.class
 })
 
 public class MainSuite1a {
