@@ -4,24 +4,11 @@
     }"
     (click)="actionFired.emit(app.key)">
     <p-header>
-        <p-avatar
-            *ngIf="app.configurationsCount"
-            [image]="app.iconUrl"
-            [text]="app.name"
-            size="large"
-            dotAvatar></p-avatar>
-        <p-avatar
-            *ngIf="!app.configurationsCount"
-            [image]="app.iconUrl"
-            [text]="app.name"
-            size="large"
-            dotAvatar></p-avatar>
+        <p-avatar [image]="app.iconUrl" [text]="app.name" size="large" dotAvatar></p-avatar>
         <div class="dot-apps-card__label-container">
-            <span class="dot-apps-card__name">
-                {{ app.name }}
-            </span>
-            <span class="dot-apps-card__configurations"
-                >{{
+            <span class="dot-apps-card__name">{{ app.name }}</span>
+            <span class="dot-apps-card__configurations">
+                {{
                     app.configurationsCount
                         ? app.configurationsCount + ' ' + ('apps.configurations' | dm)
                         : ('apps.no.configurations' | dm)
