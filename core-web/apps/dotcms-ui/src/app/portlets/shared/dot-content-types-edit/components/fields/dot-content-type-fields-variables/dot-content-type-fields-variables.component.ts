@@ -17,8 +17,8 @@ import { DotFieldVariablesService } from './services/dot-field-variables.service
     templateUrl: './dot-content-type-fields-variables.component.html'
 })
 export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDestroy {
-    @Input()
-    field: DotCMSContentTypeField;
+    @Input() field: DotCMSContentTypeField;
+    @Input() showTable: boolean = true;
 
     fieldVariables: DotFieldVariable[] = [];
     blackList = {
@@ -36,7 +36,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     ) {}
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.field.currentValue) {
+        if (changes.field?.currentValue) {
             this.initTableData();
         }
     }

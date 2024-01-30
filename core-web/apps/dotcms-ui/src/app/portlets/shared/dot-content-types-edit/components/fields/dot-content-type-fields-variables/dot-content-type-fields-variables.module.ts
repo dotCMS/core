@@ -1,3 +1,4 @@
+import { NgIf } from '@angular/common';
 import { NgModule } from '@angular/core';
 
 import { DotKeyValueComponent } from '@dotcms/ui';
@@ -6,7 +7,7 @@ import { DotContentTypeFieldsVariablesComponent } from './dot-content-type-field
 import { DotFieldVariablesService } from './services/dot-field-variables.service';
 
 @NgModule({
-    imports: [DotKeyValueComponent],
+    imports: [NgIf, DotKeyValueComponent],
     exports: [DotContentTypeFieldsVariablesComponent],
     providers: [DotFieldVariablesService],
     declarations: [DotContentTypeFieldsVariablesComponent]

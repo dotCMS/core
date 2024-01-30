@@ -78,10 +78,12 @@
         </p-tabPanel>
 
         <p-tabPanel
+            #panel
             [header]="'contenttypes.dropzone.tab.variables' | dm"
             [disabled]="!currentField?.id">
             <ng-template pTemplate="content">
                 <dot-content-type-fields-variables
+                    [showTable]="panel.selected"
                     [field]="currentField"></dot-content-type-fields-variables>
             </ng-template>
         </p-tabPanel>
