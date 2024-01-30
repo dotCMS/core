@@ -245,7 +245,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
-          fetch-depth: 0
 
       - name: 'Set up package name and package version'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/
