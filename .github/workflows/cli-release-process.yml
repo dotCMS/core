@@ -85,7 +85,7 @@ jobs:
 
   # Build native executable per runner
   build:
-    needs: [ precheck ]
+#    needs: [ precheck ]
     name: 'Build native image on ${{ matrix.os }}'
     strategy:
       fail-fast: true
