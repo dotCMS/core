@@ -135,7 +135,7 @@ describe('DotKeyValueComponent', () => {
         expect(spyUpdatedList).toHaveBeenCalledWith([newVariable, ...mockKeyValue]);
     });
 
-    it('should delete a variable from the server', () => {
+    it('should delete a variable from the list', () => {
         const spyDeletedVariable = spyOn(spectator.component.deletedVariable, 'emit');
         const spyUpdatedList = spyOn(spectator.component.updatedList, 'emit');
 
