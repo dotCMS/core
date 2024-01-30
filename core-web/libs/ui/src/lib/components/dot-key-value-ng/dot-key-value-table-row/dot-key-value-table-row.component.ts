@@ -68,8 +68,12 @@ export class DotKeyValueTableRowComponent implements OnInit {
         return this.form.get('value').value;
     }
 
+    get currentHiddenValue(): boolean {
+        return this.form?.get('hidden').value;
+    }
+
     get inputType(): string {
-        return this.form?.get('hidden').value ? 'password' : 'text';
+        return this.currentHiddenValue ? 'password' : 'text';
     }
 
     ngOnInit(): void {
@@ -121,7 +125,8 @@ export class DotKeyValueTableRowComponent implements OnInit {
         this.showEditMenu.set(false);
         this.save.emit({
             ...this.variable,
-            value: this.currentValue
+            value: this.currentValue,
+            hidden: this.currentHiddenValue
         });
     }
 }

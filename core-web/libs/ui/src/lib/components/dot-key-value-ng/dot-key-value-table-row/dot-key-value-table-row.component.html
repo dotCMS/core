@@ -24,7 +24,7 @@
                     pInputText />
             </ng-template>
             <ng-template pTemplate="output">
-                @if(isHiddenField) {
+                @if(isHiddenField || currentHiddenValue) {
                 <span data-testId="dot-key-editable-password-placeholder">
                     {{ passwordPlaceholder }}
                 </span>
