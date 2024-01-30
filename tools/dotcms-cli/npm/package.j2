@@ -2,8 +2,8 @@
   "name": "{{ packageName }}",
   "version": "{{ packageVersion }}",
   "scripts": {
-    "postinstall": "node src/postinstall.js.seed install",
-    "postuninstall": "node src/postinstall.js.seed uninstall && npm prune"
+    "postinstall": "node src/postinstall.js install",
+    "postuninstall": "node src/postinstall.js uninstall && npm prune"
   },
   "binaries": {
     "{{ packageName }}-{{ packageVersion }}-darwin-arm64": "bin/{{ packageName }}-{{ packageVersion }}-osx-aarch64",
@@ -14,5 +14,23 @@
   "files": [
     "bin",
     "src"
-  ]
+  ],
+  "description": "Official command-line tool to manage dotCMS content.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dotCMS/core.git#master"
+  },
+  "keywords": [
+    "dotCMS",
+    "CMS",
+    "Content Management",
+    "CLI",
+    "dotCMS CLI",
+    "dotCMS command-line tool",
+  ],
+  "author": "dotcms <dev@dotcms.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dotCMS/core/issues"
+  }
 }
