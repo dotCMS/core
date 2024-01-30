@@ -6,7 +6,8 @@ import { Injectable, Signal, inject } from '@angular/core';
 
 import { catchError, pluck, tap } from 'rxjs/operators';
 
-import { LocalStoreService } from '@dotcms/dotcms-js';
+import { DotMessageService } from '@dotcms/data-access';
+import { LocalStoreService, SiteService } from '@dotcms/dotcms-js';
 
 export type Announcement = {
     title: string;
@@ -17,45 +18,54 @@ export type Announcement = {
     url: string;
 };
 
+export type AnnouncementLink = {
+    label: string;
+    url: string;
+    id: string;
+};
+
 export interface DotAnnouncementsState {
     announcements: Announcement[];
     showUnreadAnnouncement: boolean;
+    utmParameters?: string;
 }
 
 export enum TypesIcons {
-    Comment = 'pi pi-comment',
-    Release = 'pi pi-book',
-    Announcement = 'pi pi-megaphone'
+    Release = 'pi pi-box',
+    Announcement = 'pi pi-megaphone',
+    Article = 'pi pi-book',
+    Important = 'pi pi-bolt',
+    Tip = 'pi pi-comment'
 }
 
 @Injectable()
 export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
     private http = inject(HttpClient);
     private localStoreService = inject(LocalStoreService);
+    private siteService = inject(SiteService);
+    private dotMessageService = inject(DotMessageService);
+
     private announcementsUrl = '/api/v1/announcements';
 
     constructor() {
         super({
             announcements: [],
-            showUnreadAnnouncement: false
+            showUnreadAnnouncement: false,
+            utmParameters: ''
         });
     }
 
-    readonly loadAnnouncements = () =>
+    readonly load = () =>
         this.effect(() => {
             return this.http.get<Announcement[]>(this.announcementsUrl).pipe(
                 pluck('entity'),
                 tap((announcements: Announcement[]) => {
-                    const modifiedAnnouncements = announcements.map((announcement) => {
-                        return {
-                            ...announcement,
-                            url: `${announcement.url}?utm_source=dotcms&utm_medium=application&utm_campaign=announcement_menu`
-                        };
-                    });
+                    const modifiedAnnouncements = this.appendUtmParameters(announcements);
 
                     this.setState({
                         announcements: modifiedAnnouncements,
-                        showUnreadAnnouncement: this.hasUnreadAnnouncements(announcements)
+                        showUnreadAnnouncement: this.hasUnreadAnnouncements(announcements),
+                        utmParameters: this.generateUtmQueryString()
                     });
                 }),
                 catchError(() => EMPTY)
@@ -70,6 +80,45 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
         (state) => state.showUnreadAnnouncement
     );
 
+    readonly selectKnowledgeCenterLinks: Signal<AnnouncementLink[]> = this.selectSignal((state) => {
+        return [
+            {
+                id: '1',
+                url: `https://www.dotcms.com/docs/latest/table-of-contents?${state.utmParameters}`,
+                label: this.dotMessageService.get('announcements.knowledge.center.documentation')
+            },
+            {
+                id: '2',
+                label: this.dotMessageService.get('announcements.knowledge.center.blog'),
+                url: `https://www.dotcms.com/blog/?${state.utmParameters}`
+            },
+            {
+                url: 'https://groups.google.com/g/dotcms',
+                id: '3',
+                label: this.dotMessageService.get('announcements.knowledge.center.forum')
+            }
+        ];
+    });
+
+    readonly selectContactLinks: Signal<AnnouncementLink[]> = this.selectSignal((state) => {
+        return [
+            {
+                label: this.dotMessageService.get('announcements.contact.customer.support'),
+                url: `https://www.dotcms.com/services/support/?${state.utmParameters}`,
+                id: '1'
+            },
+            {
+                id: '2',
+                label: this.dotMessageService.get('announcements.contact.professional.services'),
+                url: `https://www.dotcms.com/services/professional-services/?${state.utmParameters}`
+            }
+        ];
+    });
+
+    readonly selectLinkToDotCms: Signal<string> = this.selectSignal((state) => {
+        return `https://dotcms.com/?${state.utmParameters}`;
+    });
+
     readonly markAnnouncementsAsRead = this.updater((state) => {
         this.localStoreService.storeValue(
             'dotAnnouncementsData',
@@ -81,6 +130,28 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
             showUnreadAnnouncement: this.hasUnreadAnnouncements(state.announcements)
         };
     });
+
+    readonly refreshUtmParameters = this.updater((state) => {
+        return {
+            ...state,
+            utmParameters: this.generateUtmQueryString()
+        };
+    });
+
+    private generateUtmQueryString(): string {
+        return `utm_source=platform&utm_medium=${this.siteService.currentSite.hostname}&utm_campaign=announcement`;
+    }
+
+    private appendUtmParameters(announcements: Announcement[]): Announcement[] {
+        const modifiedAnnouncements = announcements.map((announcement) => {
+            return {
+                ...announcement,
+                url: `${announcement.url}?${this.generateUtmQueryString()}`
+            };
+        });
+
+        return modifiedAnnouncements;
+    }
 
     private hasUnreadAnnouncements(announcements: Announcement[]): boolean {
         const storedAnnouncementsJson = this.localStoreService.getValue('dotAnnouncementsData');

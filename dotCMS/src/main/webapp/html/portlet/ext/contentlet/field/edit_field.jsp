@@ -732,6 +732,22 @@
                 }
             
                 %>
+            
+
+            <div id="confirmReplaceNameDialog" dojoType="dijit.Dialog" >
+                <div dojoType="dijit.layout.ContentPane" style="width:400px;height:120px;text-align:center" class="box" hasShadow="true" id="confirmReplaceNameDialogCP">
+                    <%= LanguageUtil.get(pageContext, "Do-you-want-to-replace-the-existing-asset-name") %> 
+                    "<span id="confirmReplaceNameDialog-oldValue"> </span>" 
+                    <%= LanguageUtil.get(pageContext, "with") %>  
+                    "<span id="confirmReplaceNameDialog-newValue"></span>""
+                    <br>&nbsp;<br>
+                    <div class="buttonRow">
+                        <button dojoType="dijit.form.Button" onClick="confirmReplaceName()" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "yes") %></button>
+
+                        <button dojoType="dijit.form.Button" onClick="closeConfirmReplaceName()" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "no") %></button>
+                    </div>
+                </div>
+            </div>
 
             <div id="container-binary-field-<%=field.getVelocityVarName()%>">
                 <div class="spinner-container">
@@ -740,6 +756,20 @@
             </div>
             <input name="<%=field.getFieldContentlet()%>" id="binary-field-input-<%=field.getFieldContentlet()%>ValueField" type="hidden" />
 
+            <script>
+                function confirmReplaceName(){
+                    let titleField = dijit.byId("title");
+                    let fileNameField = dijit.byId("fileName");
+
+                    titleField?.setValue(newFileName);
+                    fileNameField?.setValue(newFileName);
+                    dijit.byId("confirmReplaceNameDialog").hide();
+                }
+                
+                function closeConfirmReplaceName(){
+                    dijit.byId("confirmReplaceNameDialog").hide();
+                }
+            </script>
             <script>
                 // Create a new scope so that variables defined here can have the same name without being overwritten.
                 (function autoexecute() {
@@ -788,8 +818,16 @@
                             if(contentBaseType === 4){ // FileAsset
                                 let titleField = dijit.byId("title");
                                 let fileNameField = dijit.byId("fileName");
-                                if(!titleField.value ){
+                                window.newFileName = fileName; //To use in confirmReplaceName function 
+                                
+                                if(!fileNameField.value){
                                     titleField?.setValue(fileName);
+                                }
+    
+                                if(fileNameField.value && fileName && fileNameField.value !== fileName) {
+                                    document.getElementById("confirmReplaceNameDialog-oldValue").innerHTML = fileNameField.value;
+                                    document.getElementById("confirmReplaceNameDialog-newValue").innerHTML = fileName;
+                                    dijit.byId("confirmReplaceNameDialog").show();
                                 }
 
                                 if(!fileNameField.value){
@@ -820,7 +858,6 @@
                         binaryFieldContainer.innerHTMl = '<div class="callOutBox">Error loading the binary field</div>';
                     })
                 })();
-
             </script>
         <%}else{%>
 
