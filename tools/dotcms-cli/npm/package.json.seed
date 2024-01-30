@@ -1,0 +1,18 @@
+{
+  "name": "{{ packageName }}",
+  "version": "{{ packageVersion }}",
+  "scripts": {
+    "postinstall": "node src/postinstall.js.seed install",
+    "postuninstall": "node src/postinstall.js.seed uninstall && npm prune"
+  },
+  "binaries": {
+    "{{ packageName }}-{{ packageVersion }}-darwin-arm64": "bin/{{ packageName }}-{{ packageVersion }}-osx-aarch64",
+    "{{ packageName }}-{{ packageVersion }}-darwin-x64": "bin/{{ packageName }}-{{ packageVersion }}-osx-amd64",
+    "{{ packageName }}-{{ packageVersion }}-linux-x64": "bin/{{ packageName }}-{{ packageVersion }}-linux-amd64",
+    "{{ packageName }}-{{ packageVersion }}-win32-x64": "bin/{{ packageName }}-{{ packageVersion }}-windows-amd64.exe"
+  },
+  "files": [
+    "bin",
+    "src"
+  ]
+}
