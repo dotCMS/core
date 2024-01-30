@@ -180,7 +180,7 @@ public abstract class ContentType {
     /**
      * Class id resolver allows us using smaller ClassNames that eventually get mapped to the fully qualified class name
      */
-    static class ClassNameAliasResolver extends ClassNameIdResolver {
+    public static class ClassNameAliasResolver extends ClassNameIdResolver {
 
         static final String IMMUTABLE = "Immutable";
 

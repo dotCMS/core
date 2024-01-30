@@ -63,6 +63,7 @@
     <dot-edit-content-custom-field
         *ngSwitchCase="fieldTypes.CUSTOM_FIELD"
         [field]="field"
+        [contentType]="contentType"
         [attr.data-testId]="'field-' + field.variable" />
 
     <dot-block-editor

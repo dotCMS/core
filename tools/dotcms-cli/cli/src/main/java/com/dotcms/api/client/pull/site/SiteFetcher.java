@@ -3,6 +3,7 @@ package com.dotcms.api.client.pull.site;
 import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.pull.ContentFetcher;
+import com.dotcms.api.client.util.SiteIterator;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.GetSiteByNameRequest;
 import com.dotcms.model.site.Site;
@@ -30,13 +31,7 @@ public class SiteFetcher implements ContentFetcher<SiteView>, Serializable {
     public List<SiteView> fetch(Map<String, Object> customOptions) {
 
         // Fetching the all the existing sites
-        final List<Site> allSites = new ArrayList<>();
-
-        final SiteIterator siteIterator = new SiteIterator(clientFactory, 100);
-        while (siteIterator.hasNext()) {
-            List<Site> sites = siteIterator.next();
-            allSites.addAll(sites);
-        }
+        final List<Site> allSites = allSites();
 
         // Create a ForkJoinPool to process the sites in parallel
         // We need this extra logic because the site API returns when calling all sites an object
@@ -45,6 +40,40 @@ public class SiteFetcher implements ContentFetcher<SiteView>, Serializable {
         var forkJoinPool = ForkJoinPool.commonPool();
         var task = new HttpRequestTask(allSites, this);
         return forkJoinPool.invoke(task);
+    }
+
+    /**
+     * Retrieves all sites.
+     *
+     * @return a list of Site objects containing all the existing sites, including archived sites
+     */
+    private List<Site> allSites() {
+
+        final List<Site> allSites = new ArrayList<>();
+
+        final SiteIterator siteIterator = new SiteIterator(
+                clientFactory,
+                100
+        );
+        while (siteIterator.hasNext()) {
+            List<Site> sites = siteIterator.next();
+            allSites.addAll(sites);
+        }
+
+        // Looking for archived sites
+        final var archivedSiteIterator = new SiteIterator(
+                clientFactory,
+                100,
+                true,
+                false,
+                false
+        );
+        while (archivedSiteIterator.hasNext()) {
+            List<Site> sites = archivedSiteIterator.next();
+            allSites.addAll(sites);
+        }
+
+        return allSites;
     }
 
     @ActivateRequestContext

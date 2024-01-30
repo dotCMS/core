@@ -6,8 +6,7 @@ import { Router } from '@angular/router';
 
 import { catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotContentTypeService } from '@dotcms/data-access';
+import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSAssetDialogFields, DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
 
 export type DotCMSAssetDialogCopyFields = DotCMSAssetDialogFields & {

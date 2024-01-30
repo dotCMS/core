@@ -60,9 +60,10 @@ describe('DotContentletService', () => {
         httpMock = injector.get(HttpTestingController);
     });
 
-    it('should call the BE with correct endpoint url and method for getContentTypes()', () => {
+    it('should call the BE with correct endpoint url and method for getContentTypes()', (done) => {
         dotContentTypeService.getContentTypes({}).subscribe((contentTypes: DotCMSContentType[]) => {
             expect(contentTypes).toEqual(responseData);
+            done();
         });
         const req = httpMock.expectOne(
             '/api/v1/contenttype?filter=&orderby=name&direction=ASC&per_page=40'
@@ -71,12 +72,13 @@ describe('DotContentletService', () => {
         req.flush({ entity: [...responseData] });
     });
 
-    it('should get all content types excluding the RECENT ones for getAllContentTypes()', () => {
+    it('should get all content types excluding the RECENT ones for getAllContentTypes()', (done) => {
         const types = mockDotContentlet.filter(
             (structure: StructureTypeView) => !isRecentContentType(structure)
         );
         dotContentTypeService.getAllContentTypes().subscribe((structures: StructureTypeView[]) => {
             expect(structures).toEqual(types);
+            done();
         });
 
         const req = httpMock.expectOne('v1/contenttype/basetypes');
@@ -84,7 +86,7 @@ describe('DotContentletService', () => {
         req.flush({ entity: [...mockDotContentlet] });
     });
 
-    it('should call the BE with correct endpoint url and method for filterContentTypes()', () => {
+    it('should call the BE with correct endpoint url and method for filterContentTypes()', (done) => {
         const body = {
             filter: {
                 types: 'contant,blog',
@@ -103,6 +105,7 @@ describe('DotContentletService', () => {
             .filterContentTypes(query, types)
             .subscribe((contentTypes: DotCMSContentType[]) => {
                 expect(contentTypes).toEqual(responseData);
+                done();
             });
         const req = httpMock.expectOne('/api/v1/contenttype/_filter');
         expect(req.request.method).toBe('POST');
@@ -111,11 +114,12 @@ describe('DotContentletService', () => {
         req.flush({ entity: [...responseData] });
     });
 
-    it('should get url by id for getUrlById()', () => {
+    it('should get url by id for getUrlById()', (done) => {
         const idSearched = 'banner';
 
         dotContentTypeService.getUrlById(idSearched).subscribe((action: string) => {
             expect(action).toBe(mockDotContentlet[0].types[0].action);
+            done();
         });
 
         const req = httpMock.expectOne('v1/contenttype/basetypes');
@@ -123,7 +127,7 @@ describe('DotContentletService', () => {
         req.flush({ entity: [...mockDotContentlet] });
     });
 
-    it('should get one content type by id or varName', () => {
+    it('should get one content type by id or varName', (done) => {
         const id = '1';
         const contentTypeExpected: DotCMSContentType = {
             ...dotcmsContentTypeBasicMock,
@@ -140,6 +144,7 @@ describe('DotContentletService', () => {
 
         dotContentTypeService.getContentType(id).subscribe((contentType: DotCMSContentType) => {
             expect(contentType).toBe(contentTypeExpected);
+            done();
         });
 
         const req = httpMock.expectOne(`v1/contenttype/id/${id}`);
@@ -147,7 +152,7 @@ describe('DotContentletService', () => {
         req.flush({ entity: contentTypeExpected });
     });
 
-    it('should save a copy of content type selected', () => {
+    it('should save a copy of content type selected', (done) => {
         const variableContentTypeToCopy = 'a1661fbc-9e84-4c00-bd62-76d633170da3';
         const id = '6dd314fe781cd9c3dc346c5d6fc92c90';
 
@@ -174,6 +179,7 @@ describe('DotContentletService', () => {
             .saveCopyContentType(variableContentTypeToCopy, dialogFormFields)
             .subscribe((contentType: DotCMSContentType) => {
                 expect(contentType).toBe(contentTypeExpected);
+                done();
             });
 
         const req = httpMock.expectOne(`/api/v1/contenttype/${variableContentTypeToCopy}/_copy`);
@@ -181,6 +187,37 @@ describe('DotContentletService', () => {
         expect(req.request.body).toEqual(dialogFormFields);
 
         req.flush({ entity: contentTypeExpected });
+    });
+
+    it('should get content by types', (done) => {
+        const contenttypeA: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
+            clazz: 'hello-class-one',
+            defaultType: false,
+            fixed: false,
+            id: '123',
+            owner: 'user',
+            system: false
+        };
+
+        const contentTypeB: DotCMSContentType = {
+            ...contenttypeA,
+            clazz: 'hello-class-two',
+            id: '456',
+            owner: 'user1'
+        };
+
+        dotContentTypeService
+            .getByTypes('contentType', 200)
+            .subscribe((contentType: DotCMSContentType[]) => {
+                expect(contentType).toEqual([contenttypeA, contentTypeB]);
+                done();
+            });
+
+        const req = httpMock.expectOne('/api/v1/contenttype?type=contentType&per_page=200');
+        expect(req.request.method).toBe('GET');
+
+        req.flush({ entity: [contenttypeA, contentTypeB] });
     });
 
     afterEach(() => {

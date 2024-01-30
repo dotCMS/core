@@ -6,11 +6,16 @@ import tippy, { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
 
+import { ConfirmationService } from 'primeng/api';
+
 import { filter, skip, takeUntil, tap } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
-import { DotTiptapNodeInformation, findNodeByType, replaceNodeWithContent } from '../../../shared';
+import { DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
+
+import { findNodeByType, replaceNodeWithContent } from '../../../shared';
 import { NodeTypes } from '../../bubble-menu/models';
 import { AIContentPromptComponent } from '../ai-content-prompt.component';
 import {
@@ -29,7 +34,7 @@ interface AIContentPromptProps {
 }
 
 interface PluginState {
-    open: boolean;
+    aIContentPromptOpen: boolean;
 }
 
 export type AIContentPromptViewProps = AIContentPromptProps & {
@@ -113,10 +118,7 @@ export class AIContentPromptView {
                 filter((state) => state.acceptContent)
             )
             .subscribe((state) => {
-                const nodeInformation: DotTiptapNodeInformation = findNodeByType(
-                    this.editor,
-                    NodeTypes.AI_CONTENT
-                );
+                const nodeInformation = findNodeByType(this.editor, NodeTypes.AI_CONTENT)?.[0];
                 replaceNodeWithContent(this.editor, nodeInformation, state.content);
 
                 this.componentStore.setAcceptContent(false);
@@ -127,13 +129,30 @@ export class AIContentPromptView {
          * template in ai-content-prompt.component.html
          */
 
-        this.componentStore.status$
+        this.componentStore.status$.pipe(skip(1), takeUntil(this.destroy$)).subscribe((status) => {
+            if (status === ComponentStatus.INIT) {
+                this.tippy?.hide();
+            } else if (status === ComponentStatus.LOADING) {
+                this.editor.commands.setLoadingAIContentNode(true);
+            }
+        });
+
+        /**
+         * Subscription to "exit" the tippy since that can happen on escape listener that is in the html
+         */
+        this.componentStore.errorMsg$
             .pipe(
-                skip(1),
-                takeUntil(this.destroy$),
-                filter((status) => status === 'exit')
+                filter((hasError) => !!hasError),
+                takeUntil(this.destroy$)
             )
-            .subscribe(() => {
+            .subscribe((error) => {
+                this.component.injector.get(ConfirmationService).confirm({
+                    key: 'ai-text-prompt-msg',
+                    message: this.component.injector.get(DotMessageService).get(error),
+                    header: 'Error',
+                    rejectVisible: false,
+                    acceptVisible: false
+                });
                 this.tippy?.hide();
             });
 
@@ -148,10 +167,7 @@ export class AIContentPromptView {
                 filter((deleteContent) => deleteContent)
             )
             .subscribe(() => {
-                const nodeInformation: DotTiptapNodeInformation = findNodeByType(
-                    this.editor,
-                    NodeTypes.AI_CONTENT
-                );
+                const nodeInformation = findNodeByType(this.editor, NodeTypes.AI_CONTENT)?.[0];
 
                 if (nodeInformation) {
                     this.editor.commands.deleteRange({
@@ -166,17 +182,20 @@ export class AIContentPromptView {
 
     update(view: EditorView, prevState?: EditorState) {
         const next = this.pluginKey?.getState(view.state);
-        const prev = prevState ? this.pluginKey?.getState(prevState) : { open: false };
+        const prev = prevState
+            ? this.pluginKey?.getState(prevState)
+            : { aIContentPromptOpen: false };
 
-        if (next?.open === prev?.open) {
-            this.tippy?.popperInstance?.forceUpdate();
-
+        if (next?.aIContentPromptOpen === prev?.aIContentPromptOpen) {
             return;
         }
 
-        next.open
+        next.aIContentPromptOpen
             ? this.show()
-            : this.hide(this.storeSate.status === 'open' || this.storeSate.status === 'loaded');
+            : this.hide(
+                  this.storeSate.status === ComponentStatus.IDLE ||
+                      this.storeSate.status === ComponentStatus.LOADED
+              );
     }
 
     createTooltip() {
@@ -221,7 +240,7 @@ export class AIContentPromptView {
         this.manageClickListener(true);
         this.editor.setEditable(false);
         this.tippy?.show();
-        this.componentStore.setStatus('open');
+        this.componentStore.setStatus(ComponentStatus.IDLE);
     }
 
     /**
@@ -231,11 +250,12 @@ export class AIContentPromptView {
      * @param notifyStore
      */
     hide(notifyStore = true) {
+        this.tippy?.hide();
         this.editor.setEditable(true);
 
         this.editor.view.focus();
         if (notifyStore) {
-            this.componentStore.setStatus('close');
+            this.componentStore.setStatus(ComponentStatus.INIT);
         }
 
         this.manageClickListener(false);
@@ -253,7 +273,10 @@ export class AIContentPromptView {
      * and not in a loading state, this function hides the associated Tippy tooltip.
      */
     handleClick(): void {
-        if (this.storeSate.status === 'open' || this.storeSate.status === 'loaded') {
+        if (
+            this.storeSate.status === ComponentStatus.IDLE ||
+            this.storeSate.status === ComponentStatus.LOADED
+        ) {
             this.tippy.hide();
         }
     }
@@ -278,7 +301,7 @@ export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
         state: {
             init(): PluginState {
                 return {
-                    open: false
+                    aIContentPromptOpen: false
                 };
             },
 
@@ -287,11 +310,12 @@ export const aiContentPromptPlugin = (options: AIContentPromptProps) => {
                 value: PluginState,
                 oldState: EditorState
             ): PluginState {
-                const { open } = transaction.getMeta(AI_CONTENT_PROMPT_PLUGIN_KEY) || {};
+                const { aIContentPromptOpen } =
+                    transaction.getMeta(AI_CONTENT_PROMPT_PLUGIN_KEY) || {};
                 const state = AI_CONTENT_PROMPT_PLUGIN_KEY.getState(oldState);
 
-                if (typeof open === 'boolean') {
-                    return { open };
+                if (typeof aIContentPromptOpen === 'boolean') {
+                    return { aIContentPromptOpen };
                 }
 
                 // keep the old state in case we do not receive a new one.

@@ -69,6 +69,51 @@
     String fullScreenHeight=fullScreenField ? "height: 100%;": "";
 %>
 
+<style type="text/css" media="all">
+    .spinner-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 12.5rem;
+        min-width: 12.5rem;
+    }
+    .loader-spinner {
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: inline-block;
+        vertical-align: middle;
+        font-size: 10px;
+        position: relative;
+        text-indent: -9999em;
+        border: 4px solid rgba(107, 77, 226, 0.2);
+        border-left-color: #6b4de2;
+        transform: translateZ(0);
+        animation: load8 1.1s infinite linear;
+        overflow: hidden;
+    }
+    @-webkit-keyframes load8 {
+        0% {
+            -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+        }
+        100% {
+            -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+        }
+    }
+    @keyframes load8 {
+        0% {
+            -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+        }
+        100% {
+            -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
 <div class="fieldWrapper" >
     <div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
         <% if (hint != null) {%>
@@ -654,11 +699,8 @@
                 String accept="";
                 String maxFileLength="0";
                 String helperText="";
-                String binaryMetadata = "''"; // Empty String by default
                 String jsonField = "{}";
                 String mimeType="";
-
-                Contentlet contentletObj = APILocator.getContentletAPI().find(inode, user, false);
 
                 try {
                     java.io.File fileValue = (java.io.File)value;
@@ -668,9 +710,6 @@
                 }
 
                 try{
-                    java.io.File binaryFile = contentletObj.getBinary(field.getVelocityVarName());
-                    com.dotcms.storage.model.Metadata metadata = contentletObj.getBinaryMetadata(field);
-                    binaryMetadata = mapper.writeValueAsString(metadata); // Metadata
                     jsonField = mapper.writeValueAsString(field); // Field
                 } catch(Exception e){
                     Logger.error(this.getClass(), e.getMessage());
@@ -693,66 +732,132 @@
                 }
             
                 %>
+            
 
-            <div id="container-binary-field-<%=field.getVelocityVarName()%>"></div>
+            <div id="confirmReplaceNameDialog" dojoType="dijit.Dialog" >
+                <div dojoType="dijit.layout.ContentPane" style="width:400px;height:120px;text-align:center" class="box" hasShadow="true" id="confirmReplaceNameDialogCP">
+                    <%= LanguageUtil.get(pageContext, "Do-you-want-to-replace-the-existing-asset-name") %> 
+                    "<span id="confirmReplaceNameDialog-oldValue"> </span>" 
+                    <%= LanguageUtil.get(pageContext, "with") %>  
+                    "<span id="confirmReplaceNameDialog-newValue"></span>""
+                    <br>&nbsp;<br>
+                    <div class="buttonRow">
+                        <button dojoType="dijit.form.Button" onClick="confirmReplaceName()" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "yes") %></button>
+
+                        <button dojoType="dijit.form.Button" onClick="closeConfirmReplaceName()" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "no") %></button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="container-binary-field-<%=field.getVelocityVarName()%>">
+                <div class="spinner-container">
+                    <div class="loader-spinner"></div>
+                </div>
+            </div>
             <input name="<%=field.getFieldContentlet()%>" id="binary-field-input-<%=field.getFieldContentlet()%>ValueField" type="hidden" />
 
+            <script>
+                function confirmReplaceName(){
+                    let titleField = dijit.byId("title");
+                    let fileNameField = dijit.byId("fileName");
+
+                    titleField?.setValue(newFileName);
+                    fileNameField?.setValue(newFileName);
+                    dijit.byId("confirmReplaceNameDialog").hide();
+                }
+                
+                function closeConfirmReplaceName(){
+                    dijit.byId("confirmReplaceNameDialog").hide();
+                }
+            </script>
             <script>
                 // Create a new scope so that variables defined here can have the same name without being overwritten.
                 (function autoexecute() {
                     const binaryFieldContainer = document.getElementById("container-binary-field-<%=field.getVelocityVarName()%>");
-                    const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
-                    const variable = "<%=field.getVelocityVarName()%>";
-                    const metaData = <%=binaryMetadata%>;
-                    const contentlet = metaData ? {
-                        inode: "<%=binInode%>",
-                        [variable]: `/dA/<%=contentlet.getIdentifier()%>/${variable}/${metaData.name}`,
-                        [variable+"MetaData"]: {
-                            ...metaData,
-                            contentType: "<%=mimeType%>"
+
+                    /**
+                     * Note: This is a temporary solution.
+                     * This is a workaround to get the contentlet from the API
+                     * because there is no way to get the same contentlet the AP retreive from the dwr call.
+                     */
+                    fetch('/api/v1/content/<%=inode%>', {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
                         }
-                    } : null;
-                    const fielData = {
-                        hint: '<%=hint%>',
-                        ...(<%=jsonField%>),
-                        variable,
-                        fieldVariables: JSON.parse('<%=fieldVariablesContent%>')
-                    }
-
-                    // Setting the value of the field
-                    field.value = "<%=value%>"
-
-                    // Creating the binary field dynamically
-                    // Help us to set inputs before the ngInit is executed.
-                    const binaryField = document.createElement('dotcms-binary-field');
-                    binaryField.id = "binary-field-<%=field.getVelocityVarName()%>";
-                    binaryField.setAttribute("fieldName", "<%=field.getVelocityVarName()%>");
-
-                    binaryField.field = fielData;
-                    binaryField.contentlet = contentlet;
-
-                    binaryField.addEventListener('valueUpdated', ({ detail }) => {
-                        field.value = detail;
-                    });
-
-                    binaryFieldContainer.appendChild(binaryField);
-
-                    document.addEventListener(`binaryField-open-image-editor-${variable}`,({ detail }) => {
-                        const { inode, variable = '', tempId } = detail;
-
-                        const imageEditor = new dotcms.dijit.image.ImageEditor({
-                            inode,
-                            tempId,
+                    })
+                    .then(response => response.json())
+                    .then(({ entity: contentlet }) => {
+                        const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
+                        const variable = "<%=field.getVelocityVarName()%>";
+                        const fieldData = {
+                            ...(<%=jsonField%>),
+                            hint: '<%=hint%>',
                             variable,
-                            fieldName: variable,
-                            binaryFieldId:  variable,
-                            focalPoint: "0.0,0.0",
+                            fieldVariables: JSON.parse('<%=fieldVariablesContent%>')
+                        }
+
+                        // Setting the value of the field
+                        field.value = "<%=value%>"
+
+                        // Creating the binary field dynamically
+                        // Help us to set inputs before the ngInit is executed.
+                        const binaryField = document.createElement('dotcms-binary-field');
+                        binaryField.id = "binary-field-<%=field.getVelocityVarName()%>";
+                        binaryField.setAttribute("fieldName", "<%=field.getVelocityVarName()%>");
+
+                        binaryField.field = fieldData;
+                        binaryField.contentlet = contentlet;
+                        binaryField.imageEditor = true;
+
+                        const contentBaseType = <%= contentlet.getContentType().baseType().getType() %>;
+
+                        binaryField.addEventListener('valueUpdated', ({ detail }) => {
+                            const { value, fileName } = detail;
+                            field.value = value;
+                            if(contentBaseType === 4){ // FileAsset
+                                let titleField = dijit.byId("title");
+                                let fileNameField = dijit.byId("fileName");
+                                window.newFileName = fileName; //To use in confirmReplaceName function 
+                                
+                                if(!fileNameField.value){
+                                    titleField?.setValue(fileName);
+                                }
+    
+                                if(fileNameField.value && fileName && fileNameField.value !== fileName) {
+                                    document.getElementById("confirmReplaceNameDialog-oldValue").innerHTML = fileNameField.value;
+                                    document.getElementById("confirmReplaceNameDialog-newValue").innerHTML = fileName;
+                                    dijit.byId("confirmReplaceNameDialog").show();
+                                }
+
+                                if(!fileNameField.value){
+                                    fileNameField?.setValue(fileName);
+                                }
+                            }
                         });
 
-                        imageEditor.execute();
-                    });
-                })();
+                        binaryFieldContainer.innerHTML = '';
+                        binaryFieldContainer.appendChild(binaryField);
 
+                        document.addEventListener(`binaryField-open-image-editor-${variable}`,({ detail }) => {
+                            const { inode, variable = '', tempId } = detail;
+
+                            const imageEditor = new dotcms.dijit.image.ImageEditor({
+                                inode,
+                                tempId,
+                                variable,
+                                fieldName: variable,
+                                binaryFieldId:  variable,
+                                focalPoint: "0.0,0.0",
+                            });
+
+                            imageEditor.execute();
+                        });
+                    })
+                    .catch(() => {
+                        binaryFieldContainer.innerHTMl = '<div class="callOutBox">Error loading the binary field</div>';
+                    })
+                })();
             </script>
         <%}else{%>
 
@@ -938,6 +1043,7 @@
 
         String bnFlag = Config.getStringProperty("FEATURE_FLAG_NEW_BINARY_FIELD");
         Boolean newBinaryOn = bnFlag != null && bnFlag.equalsIgnoreCase("true");
+
         Boolean isBinaryField = field.getFieldType().equals(Field.FieldType.BINARY.toString());
         Boolean shouldShowEditFileOnBn = isBinaryField && !newBinaryOn; // If the new binary field is on, we don't show the edit field
 

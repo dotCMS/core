@@ -1,24 +1,24 @@
 import {
-    FormGroup,
-    FormControl,
-    FormGroupDirective,
     AsyncValidator,
-    ValidatorFn,
-    Validator
+    FormControl,
+    FormGroup,
+    FormGroupDirective,
+    Validator,
+    ValidatorFn
 } from '@angular/forms';
 
 import {
+    DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
-    DotCMSContentTypeLayoutRow,
-    DotCMSContentlet
+    DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
-import { EditContentFormData } from '../models/dot-edit-content-form.interface';
+import { EditContentPayload } from '../models/dot-edit-content-form.interface';
 
 /* FIELDS MOCK BY TYPE */
-
 export const TEXT_FIELD_MOCK: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
     contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
@@ -584,18 +584,9 @@ export const BINARY_FIELD_CONTENTLET: DotCMSContentlet = {
         '/dA/d135b73a-8c8f-42ce-bd4e-deb3c067cedd/binaryField/Screenshot 2023-11-03 at 11.53.40â\u0080¯AM.png',
     __icon__: 'contentIcon',
     contentTypeIcon: 'event_note',
-    variant: 'DEFAULT'
+    variant: 'DEFAULT',
+    value: '/dA/39de8193694d96c2a6bab783ba9c85b5/binaryField/Screenshot 2023-11-03 at 11.53.40â\u0080¯AM.png'
 };
-
-export const FIELDS_WITH_CONTENTLET_MOCK: {
-    fieldMock: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
-}[] = [
-    {
-        fieldMock: BINARY_FIELD_MOCK,
-        contentlet: BINARY_FIELD_CONTENTLET
-    }
-];
 
 /* HELPER FUNCTIONS */
 
@@ -634,6 +625,8 @@ function getAllFields(data: DotCMSContentTypeLayoutRow[]) {
 }
 
 /* CONSTANTS */
+
+export const DOT_MESSAGE_SERVICE_MOCK = new MockDotMessageService({});
 
 export const CALENDAR_FIELD_TYPES = [FIELD_TYPES.DATE, FIELD_TYPES.DATE_AND_TIME, FIELD_TYPES.TIME];
 
@@ -857,7 +850,8 @@ export const LAYOUT_FIELDS_VALUES_MOCK = {
     date: '2023-11-14 19:27:53'
 };
 
-export const CONTENT_FORM_DATA_MOCK: EditContentFormData = {
+export const CONTENT_FORM_DATA_MOCK: EditContentPayload = {
+    actions: [],
     layout: LAYOUT_MOCK,
     fields: JUST_FIELDS_MOCKS,
     contentlet: {
@@ -1063,4 +1057,11 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
         }
     ],
     nEntries: 0
+};
+
+export const MockResizeObserver = class {
+    constructor() {}
+    observe() {}
+    unobserve() {}
+    disconnect() {}
 };

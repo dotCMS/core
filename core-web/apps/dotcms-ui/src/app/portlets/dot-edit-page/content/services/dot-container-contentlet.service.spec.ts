@@ -3,12 +3,15 @@ import { getTestBed, TestBed } from '@angular/core/testing';
 
 import { DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotCMSContentType, DotPage, DotPageContainer } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentType,
+    DotPage,
+    DotPageContainer,
+    DotPageContent
+} from '@dotcms/dotcms-models';
 import { CoreWebServiceMock, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 
 import { DotContainerContentletService } from './dot-container-contentlet.service';
-
-import { DotPageContent } from '../../shared/models';
 
 describe('DotContainerContentletService', () => {
     let injector: TestBed;

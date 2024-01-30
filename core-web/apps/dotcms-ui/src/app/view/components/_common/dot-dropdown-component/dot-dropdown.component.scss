@@ -6,13 +6,13 @@
     position: relative;
 
     .dropdown-content {
-        @include box_shadow(2);
-        border-radius: $border-radius-xs;
+        box-shadow: $shadow-m;
+        border-radius: $border-radius-md;
         background-color: $white;
         color: $black;
         overflow: hidden;
         position: absolute;
-        top: 25px;
+        top: $spacing-7;
         z-index: 100;
     }
 }

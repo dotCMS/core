@@ -6,10 +6,16 @@ import { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
 
+import { ConfirmationService } from 'primeng/api';
+
 import { filter, skip, takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
+import { DotMessageService } from '@dotcms/data-access';
+
+import { findNodeByType, getAIPlaceholderImage } from '../../../shared';
+import { NodeTypes } from '../../bubble-menu/models';
 import { AIImagePromptComponent } from '../ai-image-prompt.component';
 import { AI_IMAGE_PROMPT_PLUGIN_KEY, DOT_AI_IMAGE_CONTENT_KEY } from '../ai-image-prompt.extension';
 import { DotAiImagePromptStore } from '../ai-image-prompt.store';
@@ -22,12 +28,14 @@ interface AIImagePromptProps {
 }
 
 interface PluginState {
-    open: boolean;
+    aIImagePromptOpen: boolean;
 }
 
 export type AIImagePromptViewProps = AIImagePromptProps & {
     view: EditorView;
 };
+
+export const AI_IMAGE_PLACEHOLDER_PROPERTY = 'isAIPlaceholder';
 
 export class AIImagePromptView {
     public editor: Editor;
@@ -63,8 +71,6 @@ export class AIImagePromptView {
 
         this.store = this.component.injector.get(DotAiImagePromptStore);
 
-        // TODO: handle the error
-
         /**
          * Subscription fired by the store when the dialog change of the state
          * Handle the manual close of the dialog (esc, click outside, x button)
@@ -89,8 +95,48 @@ export class AIImagePromptView {
                 takeUntil(this.destroy$)
             )
             .subscribe(() => {
-                this.store.hideDialog();
-                this.editor.chain().insertLoaderNode().closeImagePrompt().run();
+                const placeholder = getAIPlaceholderImage(this.editor);
+
+                if (placeholder) {
+                    // A regenerate has been requested, so we need to delete the placeholder image
+                    this.editor
+                        .chain()
+                        .deleteRange({
+                            from: placeholder.from,
+                            to: placeholder.to
+                        })
+                        .insertLoaderNode(true, placeholder.from)
+                        .run();
+                } else {
+                    // A new image is being inserted
+                    this.store.hideDialog();
+                    this.editor.chain().insertLoaderNode().closeImagePrompt().run();
+                }
+            });
+
+        /**
+         * Subscription fired by an error and remove the loader node
+         */
+        this.store.errorMsg$
+            .pipe(
+                filter((hasError) => !!hasError),
+                takeUntil(this.destroy$)
+            )
+            .subscribe((error) => {
+                const loaderNodes = findNodeByType(this.editor, NodeTypes.LOADER);
+                this.editor.commands.deleteRange({
+                    from: loaderNodes[0].from,
+                    to: loaderNodes[0].to
+                });
+                // call the confirmation service
+
+                this.component.injector.get(ConfirmationService).confirm({
+                    key: 'ai-image-prompt-msg',
+                    message: this.component.injector.get(DotMessageService).get(error),
+                    header: 'Error',
+                    rejectVisible: false,
+                    acceptVisible: false
+                });
             });
 
         /**
@@ -104,21 +150,28 @@ export class AIImagePromptView {
             .subscribe((contentlets) => {
                 const data = Object.values(contentlets[0])[0];
 
-                this.editor
-                    .chain()
-                    .deleteSelection()
-                    .insertImage(data)
-                    .openAIContentActions(DOT_AI_IMAGE_CONTENT_KEY)
-                    .run();
+                const loaderNodes = findNodeByType(this.editor, NodeTypes.LOADER);
+
+                //Trust in this property to identify the image as a placeholder, until the user accept the content.
+                data[AI_IMAGE_PLACEHOLDER_PROPERTY] = true;
+
+                if (loaderNodes) {
+                    this.editor
+                        .chain()
+                        .deleteRange({ from: loaderNodes[0].from, to: loaderNodes[0].to })
+                        .insertImage(data, loaderNodes[0].from)
+                        .openAIContentActions(DOT_AI_IMAGE_CONTENT_KEY)
+                        .run();
+                }
             });
     }
 
     update(view: EditorView, prevState: EditorState) {
         const next = this.pluginKey?.getState(view.state);
-        const prev = prevState ? this.pluginKey?.getState(prevState) : { open: false };
+        const prev = prevState ? this.pluginKey?.getState(prevState) : { aIImagePromptOpen: false };
 
         // show the dialog
-        if (next.open && prev.open === false) {
+        if (next.aIImagePromptOpen && prev.aIImagePromptOpen === false) {
             this.store.showDialog(this.editor.getText());
         }
 
@@ -138,7 +191,7 @@ export const aiImagePromptPlugin = (options: AIImagePromptProps) => {
         state: {
             init(): PluginState {
                 return {
-                    open: false
+                    aIImagePromptOpen: false
                 };
             },
 
@@ -147,10 +200,10 @@ export const aiImagePromptPlugin = (options: AIImagePromptProps) => {
                 value: PluginState,
                 oldState: EditorState
             ): PluginState {
-                const { open } = transaction.getMeta(AI_IMAGE_PROMPT_PLUGIN_KEY) || {};
+                const { aIImagePromptOpen } = transaction.getMeta(AI_IMAGE_PROMPT_PLUGIN_KEY) || {};
                 const state = AI_IMAGE_PROMPT_PLUGIN_KEY.getState(oldState);
-                if (typeof open === 'boolean') {
-                    return { open };
+                if (typeof aIImagePromptOpen === 'boolean') {
+                    return { aIImagePromptOpen };
                 }
 
                 return state || value;

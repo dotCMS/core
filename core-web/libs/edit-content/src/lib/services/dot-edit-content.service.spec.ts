@@ -13,7 +13,8 @@ import { DotEditContentService } from './dot-edit-content.service';
 
 import { CONTENT_TYPE_MOCK } from '../utils/mocks';
 
-const API_ENDPOINT = '/api/v1/content';
+const CONTENT_API_ENDPOINT = '/api/v1/content';
+const TAGS_API_ENDPOINT = '/api/v2/tags';
 
 describe('DotEditContentService', () => {
     let spectator: SpectatorHttp<DotEditContentService>;
@@ -37,7 +38,13 @@ describe('DotEditContentService', () => {
         it('should get content by id', () => {
             const ID = '1';
             spectator.service.getContentById(ID).subscribe();
-            spectator.expectOne(`${API_ENDPOINT}/${ID}`, HttpMethod.GET);
+            spectator.expectOne(`${CONTENT_API_ENDPOINT}/${ID}`, HttpMethod.GET);
+        });
+
+        it('should get tags', () => {
+            const NAME = 'test';
+            spectator.service.getTags(NAME).subscribe();
+            spectator.expectOne(`${TAGS_API_ENDPOINT}?name=${NAME}`, HttpMethod.GET);
         });
     });
 
@@ -46,7 +53,7 @@ describe('DotEditContentService', () => {
             const CONTENTID_OR_VAR = '456';
             dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
 
-            spectator.service.getContentTypeFormData(CONTENTID_OR_VAR).subscribe(() => {
+            spectator.service.getContentType(CONTENTID_OR_VAR).subscribe(() => {
                 expect(dotContentTypeService.getContentType).toHaveBeenCalledWith(CONTENTID_OR_VAR);
                 done();
             });

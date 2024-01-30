@@ -17,8 +17,12 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotAlertConfirmService, DotMessageService, PaginatorService } from '@dotcms/data-access';
+import {
+    DotAlertConfirmService,
+    DotMessageService,
+    DotRouterService,
+    PaginatorService
+} from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import {

@@ -1000,6 +1000,17 @@ public interface WorkflowAPI {
 	 */
 	List<SystemActionWorkflowActionMapping> findSystemActionsByScheme(final WorkflowScheme workflowScheme, final User user)  throws DotSecurityException, DotDataException;
 
+
+	/**
+	 * Retrieve a system action wf mapping by system action and workflow scheme
+	 * @param systemAction
+	 * @param workflowScheme
+	 * @param user
+	 * @return Opt of SystemActionWorkflowActionMapping
+	 */
+	Optional<SystemActionWorkflowActionMapping> findSystemActionByScheme(SystemAction systemAction, WorkflowScheme workflowScheme, User user)   throws DotSecurityException, DotDataException;
+
+
 	/**
 	 * Tries to find a {@link WorkflowAction} based on a {@link Contentlet} and {@link SystemAction}, first will find a workflow action
 	 * associated to the {@link Contentlet} {@link ContentType}, if there is not any match, will tries to find by {@link WorkflowScheme}
@@ -1162,8 +1173,19 @@ public interface WorkflowAPI {
 			final ConcurrentMap<String,Object> context,
 			final int sleep);
 
-    int countWorkflowSchemes(User user);
 
+	/**
+	 * Returns the count of {@link WorkflowScheme}s in the system.
+	 * @param user the user requesting the count
+	 * @return
+	 */
+	int countWorkflowSchemes(User user);
+
+	/**
+	 * Returns the count of {@link WorkflowScheme}s in the system including archived ones.
+	 * @param user the user requesting the count
+	 * @return
+	 */
 	int countWorkflowSchemesIncludeArchived(User user);
 
     /**

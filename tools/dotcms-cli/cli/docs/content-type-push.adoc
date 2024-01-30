@@ -19,7 +19,7 @@ content-type-push - *Push content types*
 // tag::picocli-generated-man-section-synopsis[]
 == Synopsis
 
-*content-type push* [*-h*] [*--dry-run*] [*-ff*] [*-rct*]
+*content-type push* [*-h*] [*-dau*] [*--dry-run*] [*-ff*] [*-rct*]
                   [*--retry-attempts*=_<retryAttempts>_] [_path_]
 
 // end::picocli-generated-man-section-synopsis[]
@@ -34,6 +34,9 @@ This command enables the pushing of content types to the server. It accommodates
 
 // tag::picocli-generated-man-section-options[]
 == Options
+
+*-dau, --disable-auto-update*::
+  Disable the default behaviour of updating the local file descriptor with the response from the server after a push. When this option is used, the local file will remain in its initial state even after a successful push.
 
 *--dry-run*::
   When this option is enabled, the push process displays information about the changes that would be made on the remote server without actually pushing those changes. No modifications will be made to the remote server. By default, this option is disabled, and the changes will be applied to the remote server.

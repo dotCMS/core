@@ -1,0 +1,43 @@
+<h5 class="announcements__title">{{ 'announcements' | dm }}</h5>
+<ul class="announcements__list">
+    @for (item of announcements(); track item.identifier;) {
+    <li
+        class="announcements__list-item"
+        [class.announcements__list-item--active]="showUnreadAnnouncement">
+        <span class="announcements__badge" *ngIf="showUnreadAnnouncement"></span>
+        <span class="announcements__image pi" [ngClass]="typesIcons[item.type]"></span>
+        <a
+            class="announcements__url"
+            [href]="item.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-labelledby="announcement-label date-label">
+            <div class="announcements__content">
+                <span class="announcements__label">{{ item.title }}</span>
+                <span class="announcements__date">{{ item.announcementDateAsISO8601 | date }}</span>
+            </div>
+        </a>
+    </li>
+    }
+</ul>
+
+<div class="announcements__container">
+    <i class="pi pi-external-link"></i>
+    <a class="announcements__link" [href]="linkToDotCms()" data-testId="announcement_link">{{
+        'announcements.show.all' | dm
+    }}</a>
+</div>
+
+<h5 class="announcements__title">{{ 'announcements.knowledge.center' | dm }}</h5>
+<div class="announcements__about">
+    @for (item of knowledgeCenterLinks(); track item.id;) {
+    <a [href]="item.url" target="_blank" rel="noopener">{{ item.label }}</a>
+    }
+</div>
+
+<h5 class="announcements__title">{{ 'announcements.knowledge.contact.us' | dm }}</h5>
+<div class="announcements__about">
+    @for (item of contactLinks(); track item.id;) {
+    <a [href]="item.url" target="_blank" rel="noopener">{{ item.label }}</a>
+    }
+</div>

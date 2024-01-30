@@ -13,23 +13,23 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Menu, MenuModule } from 'primeng/menu';
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
-import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotEventsService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
     DotMessageService,
+    DotRouterService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
-    DotWorkflowService
+    DotWorkflowService,
+    DotGlobalMessageService,
+    DotIframeService,
+    DotWizardService,
+    DotWorkflowEventHandlerService,
+    PushPublishService,
+    DotFormatDateService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -41,8 +41,7 @@ import {
     LoginService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { DotPage } from '@dotcms/dotcms-models';
-import { DotFormatDateService } from '@dotcms/ui';
+import { DotMessageSeverity, DotMessageType, DotPage } from '@dotcms/dotcms-models';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
@@ -254,11 +253,11 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                             'Workflow Action'
                         );
 
-                        expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith(
-                            component.page.workingInode,
-                            mockWorkflowsActions[0].id,
-                            mappedData
-                        );
+                        expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith({
+                            actionId: mockWorkflowsActions[0].id,
+                            inode: component.page.workingInode,
+                            data: mappedData
+                        });
                     });
 
                     it('should show and alert when there is no environments and push publish action', () => {
@@ -280,18 +279,18 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
 
                 it('should fire actions on click in the menu items', () => {
                     secondButton.click();
-                    expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith(
-                        component.page.workingInode,
-                        mockWorkflowsActions[1].id,
-                        undefined
-                    );
+                    expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith({
+                        actionId: mockWorkflowsActions[1].id,
+                        inode: component.page.workingInode,
+                        data: undefined
+                    });
 
                     thirdButton.click();
-                    expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith(
-                        component.page.workingInode,
-                        mockWorkflowsActions[2].id,
-                        undefined
-                    );
+                    expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith({
+                        actionId: mockWorkflowsActions[2].id,
+                        inode: component.page.workingInode,
+                        data: undefined
+                    });
                 });
 
                 it('should show success message after fired action in the menu items', () => {

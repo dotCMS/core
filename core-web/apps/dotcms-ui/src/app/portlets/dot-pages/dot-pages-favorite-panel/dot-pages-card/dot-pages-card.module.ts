@@ -5,11 +5,10 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotPagesFavoritePageEmptySkeletonComponent } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPagesCardComponent } from './dot-pages-card.component';
-
-import { DotPagesFavoritePageEmptySkeletonComponent } from '../../dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
 
 @NgModule({
     imports: [

@@ -16,6 +16,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotMessageService } from '@dotcms/data-access';
 import {
     DotAutofocusDirective,
     DotFieldValidationMessageComponent,
@@ -56,7 +57,7 @@ export class AiImagePromptInputComponent implements OnChanges {
     @Input()
     isLoading: boolean;
 
-    @Input()
+    @Input({ required: true })
     type: PromptType;
 
     @Output()
@@ -65,6 +66,8 @@ export class AiImagePromptInputComponent implements OnChanges {
     form = inject(FormBuilder).group({
         prompt: ['', Validators.required]
     });
+
+    dotMessageService = inject(DotMessageService);
 
     @Input()
     set selected(isSelected: boolean) {

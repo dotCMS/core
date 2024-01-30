@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "2872cba9-bd34-40e1-9640-b66652bec389",
+		"_postman_id": "13b4e6cd-724d-4b5e-b4cc-9a2b2483b51b",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -5416,6 +5416,165 @@
 			]
 		},
 		{
+			"name": "Check Languages for a Page",
+			"item": [
+				{
+					"name": "Create Test Page in English",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Test Page created successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.collectionVariables.set(\"pageIdentifier\", jsonData.entity.identifier);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const time = new Date().getTime();",
+									"pm.collectionVariables.set(\"testPageTitle\", \"My Test Page \" + time);",
+									"pm.collectionVariables.set(\"testPageUrl\", \"my-test-page-\" + time);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"title\": \"{{testPageTitle}}\",\n        \"url\": \"{{testPageUrl}}\",\n        \"hostFolder\": \"default\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"friendlyName\": \"{{testPageTitle}}\",\n        \"cachettl\": 0\n    }\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check page translation only in English",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check that the test HTML Page is available in English, no matter how many languages there are\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    var isTranslated = false;",
+									"    entity.forEach(function(lang) {",
+									"        if (1 == lang.id && lang.translated) {",
+									"            isTranslated = true;",
+									"        }",
+									"    });",
+									"    pm.expect(isTranslated).to.be.equal(true, 'The test page must be available in English');",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{pageIdentifier}}",
+								"languages"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "These requests are aimed to test the REST Endpoint that takes a Page ID, returns all Languages in the current instance and, for each of them, includes an additional attribute that indicates whether such a page is available in that specific language or not."
+		},
+		{
 			"name": "Put Create Page With CacheTTL 100",
 			"event": [
 				{
@@ -5586,128 +5745,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "serverURL",
-			"value": "http://localhost:8080"
-		},
-		{
-			"key": "siteIdTestHost",
-			"value": ""
-		},
-		{
-			"key": "sitevariableIdTestHost",
-			"value": ""
-		},
-		{
-			"key": "containeridentifier",
-			"value": ""
-		},
-		{
-			"key": "inode",
-			"value": ""
-		},
-		{
-			"key": "templateIdToPublishedHost",
-			"value": ""
-		},
-		{
-			"key": "contentletIdentifier",
-			"value": ""
-		},
-		{
-			"key": "contentletInode",
-			"value": ""
-		},
-		{
-			"key": "fireActionLanguageKey",
-			"value": ""
-		},
-		{
-			"key": "pageUrlHostVariablestest",
-			"value": ""
-		},
-		{
-			"key": "pageIdentifier",
-			"value": ""
-		},
-		{
-			"key": "richContentIdentifier",
-			"value": ""
-		},
-		{
-			"key": "containerId",
-			"value": ""
-		},
-		{
-			"key": "contentId",
-			"value": ""
-		},
-		{
-			"key": "pageId",
-			"value": ""
-		},
-		{
-			"key": "personalization",
-			"value": ""
-		},
-		{
-			"key": "relationType",
-			"value": ""
-		},
-		{
-			"key": "treeOrder",
-			"value": ""
-		},
-		{
-			"key": "variantId",
-			"value": ""
-		},
-		{
-			"key": "copiedRichContentIdentifier",
-			"value": ""
-		},
-		{
-			"key": "pageDeepCopyIdentifier",
-			"value": ""
-		},
-		{
-			"key": "firstPageUrl",
-			"value": ""
-		},
-		{
-			"key": "firstPageIdentifier",
-			"value": ""
-		},
-		{
-			"key": "secondPageUrl",
-			"value": ""
-		},
-		{
-			"key": "secondPageIdentifier",
-			"value": ""
-		},
-		{
-			"key": "defaultSiteId",
-			"value": ""
-		},
-		{
-			"key": "path",
-			"value": ""
-		},
-		{
-			"key": "pageid",
-			"value": ""
-		},
-		{
-			"key": "pagepath",
-			"value": ""
-		},
-		{
-			"key": "host_id",
-			"value": ""
 		}
 	]
 }

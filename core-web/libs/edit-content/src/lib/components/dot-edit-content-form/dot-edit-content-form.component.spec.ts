@@ -1,22 +1,23 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator, mockProvider } from '@ngneat/spectator/jest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Validators } from '@angular/forms';
 
 import { TabView } from 'primeng/tabview';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotFormatDateService } from '@dotcms/ui';
+import { DotMessageService, DotFormatDateService } from '@dotcms/data-access';
 import { DotFormatDateServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
+import { DotEditContentService } from '../../services/dot-edit-content.service';
 import {
     CONTENT_FORM_DATA_MOCK,
     JUST_FIELDS_MOCKS,
     LAYOUT_FIELDS_VALUES_MOCK,
     LAYOUT_MOCK,
     MOCK_DATE,
+    MockResizeObserver,
     TAB_DIVIDER_MOCK
 } from '../../utils/mocks';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
@@ -35,7 +36,8 @@ describe('DotFormComponent', () => {
                     Content: 'content'
                 })
             },
-            { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
+            { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
+            mockProvider(DotEditContentService)
         ]
     });
 
@@ -152,6 +154,8 @@ describe('DotFormComponent', () => {
     });
 
     describe('with data and multiple tabs', () => {
+        const originalResizeObserver = window.ResizeObserver;
+
         beforeEach(() => {
             spectator = createComponent({
                 detectChanges: false,
@@ -163,6 +167,8 @@ describe('DotFormComponent', () => {
                 }
             });
             dotMessageService = spectator.inject(DotMessageService, true);
+
+            window.ResizeObserver = MockResizeObserver;
         });
 
         it('should have a p-tabView', () => {
@@ -172,6 +178,10 @@ describe('DotFormComponent', () => {
             expect(tabViewComponent.scrollable).toBeTruthy();
             expect(tabViewComponent).toExist();
             expect(dotMessageService.get).toHaveBeenCalled();
+        });
+
+        afterEach(() => {
+            window.ResizeObserver = originalResizeObserver;
         });
     });
 });

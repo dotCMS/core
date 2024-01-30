@@ -98,6 +98,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+
 /**
  * Provides different methods to access information about HTML Pages in dotCMS. For example,
  * users of this end-point can get the metadata of an HTML Page (i.e., information about the
@@ -111,9 +113,6 @@ import java.util.stream.Collectors;
 @Tag(name = "Page")
 public class PageResource {
 
-    private static final String LISTING       = "listing";
-    private static final String EDITING       = "editing";
-
     private final PageResourceHelper pageResourceHelper;
     private final WebResource webResource;
     private final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI;
@@ -122,6 +121,7 @@ public class PageResource {
     /**
      * Creates an instance of this REST end-point.
      */
+    @SuppressWarnings("unused")
     public PageResource() {
         this(
                 PageResourceHelper.getInstance(),
@@ -322,17 +322,22 @@ public class PageResource {
         return res;
     }
 
-
     /**
-     * Save a template and link it with a page, If the page already has a anonymous template linked then it is updated,
-     * otherwise a new template is created and the old link template remains unchanged
+     * Saves a Template and links it with an HTML Page. If the page already has an Anonymous
+     * Template linked to it, it will be updated in these new changes. Otherwise, a new Anonymous
+     * Template is created and the previously linked Template will remain unchanged.
      *
-     * @see Template#isAnonymous()
+     * @param request          The current instance of the {@link HttpServletRequest}.
+     * @param response         The current instance of the {@link HttpServletResponse}.
+     * @param pageId           The ID of the page that the Template will be linked to.
+     * @param variantNameParam The name of the Variant associated to the page.
+     * @param form             The {@link PageForm} containing the information of the Template.
      *
-     * @param request The {@link HttpServletRequest} object.
-     * @param pageId page's Id to link the template
-     * @param form The {@link PageForm}
-     * @return
+     * @return The {@link Response} entity containing the updated {@link PageView} object for the
+     * specified page.
+     *
+     * @throws DotSecurityException The currently logged-in user does not have the necessary
+     *                              permissions to perform this action.
      */
     @NoCache
     @POST
@@ -347,18 +352,12 @@ public class PageResource {
         final String variantName = UtilMethods.isSet(variantNameParam) ? variantNameParam :
                 VariantAPI.DEFAULT_VARIANT.name();
 
-        Logger.debug(this, String.format("Saving layout: pageId -> %s layout-> %s variantName -> %s", pageId,
+        Logger.debug(this, () -> String.format("Saving layout: pageId -> %s , layout -> %s , variantName -> %s", pageId,
                 form != null ? form.getLayout() : null, variantName));
-
-        if (form == null) {
-            throw new BadRequestException("Layout is required");
-        }
+        checkNotNull(form, BadRequestException.class, "The 'PageForm' JSON data is required");
 
         final InitDataObject auth = webResource.init(request, response, true);
         final User user = auth.getUser();
-
-        Response res;
-
         try {
             HTMLPageAsset page = (HTMLPageAsset) this.pageResourceHelper.getPage(user, pageId, request);
 
@@ -374,21 +373,18 @@ public class PageResource {
                     response
             );
 
-            res = Response.ok(new ResponseEntityView(renderedPage)).build();
-
-        } catch(DoesNotExistException e) {
-            final String errorMsg = String.format("DoesNotExistException on PageResource.saveLayout, parameters:  %s, %s %s: ",
+            return Response.ok(new ResponseEntityView<>(renderedPage)).build();
+        } catch (final DoesNotExistException e) {
+            final String errorMsg = String.format("DoesNotExistException on PageResource.saveLayout. Parameters: [ %s ], [ %s ], [ %s ]: ",
                     request, pageId, form);
             Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse("", "Unable to find page with Identifier: " + pageId, Response.Status.NOT_FOUND);
-        } catch (BadRequestException | DotDataException e) {
-            final String errorMsg = String.format("%s on PageResource.saveLayout, parameters:  %s, %s %s: ",
+            return ExceptionMapperUtil.createResponse("", "Unable to find page with Identifier: " + pageId, Response.Status.NOT_FOUND);
+        } catch (final BadRequestException | DotDataException e) {
+            final String errorMsg = String.format("%s on PageResource.saveLayout. Parameters: [ %s ], [ %s ], [ %s ]: ",
                     e.getClass().getCanonicalName(), request, pageId, form);
             Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+            return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
         }
-
-        return res;
     }
 
     /**
@@ -1137,4 +1133,41 @@ public class PageResource {
 
         throw new DoesNotExistException("The page: " + findAvailableActionsForm.getPath() + " do not exist");
     } // findAvailableActions.
+
+    /**
+     * Receives the Identifier of an HTML Page, returns all the available languages in dotCMS and,
+     * for each of them, adds a flag indicating whether the page is available in that language or
+     * not. This may be particularly useful when requiring the system to provide a specific action
+     * when a page is NOT available in a given language. Here's an example of how you can use it:
+     * <pre>
+     *     GET <a href="http://localhost:8080/api/v1/page/${PAGE_ID}/languages">http://localhost:8080/api/v1/page/${PAGE_ID}/languages</a>
+     * </pre>
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     * @param pageId   The Identifier of the HTML Page whose available languages will be checked.
+     *
+     * @return A {@link Response} object containing the list of languages and the flag indicating
+     * whether the page is available in such a language or not.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
+    @GET
+    @Path("/{pageId}/languages")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response checkPageLanguageVersions(@Context final HttpServletRequest request,
+                                              @Context final HttpServletResponse response,
+                                              @PathParam("pageId") final String pageId) throws DotDataException {
+        final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredBackendUser(true)
+                .init().getUser();
+        Logger.debug(this, () -> String.format("Check the languages that page '%s' is available on", pageId));
+        final List<ExistingLanguagesForPageView> languagesForPage =
+                this.pageResourceHelper.getExistingLanguagesForPage(pageId, user);
+        return Response.ok(new ResponseEntityView<>(languagesForPage)).build();
+    }
+
 } // E:O:F:PageResource

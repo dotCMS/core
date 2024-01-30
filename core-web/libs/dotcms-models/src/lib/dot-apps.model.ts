@@ -5,26 +5,26 @@ export enum dialogAction {
     EXPORT = 'Export'
 }
 
-export interface DotApps {
+export interface DotApp {
     allowExtraParams: boolean;
     configurationsCount?: number;
     description?: string;
     iconUrl?: string;
     key: string;
     name: string;
-    sites?: DotAppsSites[];
+    sites?: DotAppsSite[];
     sitesWithWarnings?: number;
 }
 
-export interface DotAppsSites {
+export interface DotAppsSite {
     configured?: boolean;
     id: string;
     name: string;
-    secrets?: DotAppsSecrets[];
+    secrets?: DotAppsSecret[];
     secretsWithWarnings?: number;
 }
 
-export interface DotAppsSecrets {
+export interface DotAppsSecret {
     dynamic: boolean;
     hidden: boolean;
     hint: string;
@@ -45,7 +45,7 @@ export interface DotAppsSaveData {
 }
 
 export interface DotAppsListResolverData {
-    apps: DotApps[];
+    apps: DotApp[];
     isEnterpriseLicense: boolean;
 }
 
