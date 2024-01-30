@@ -243,6 +243,9 @@ jobs:
 
       - name: 'Checkout code'
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
 
       - name: 'Set up package name and package version'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/
@@ -256,11 +259,11 @@ jobs:
         run: pip install jinja2-cli
 
       - name: 'Render package.json template'
-        working-directory: ${{ github.workspace }}/tools/dotcms-cli/
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
         run: |
           pwd
           ls -ltr
-#          jinja2 package.json.seed -D packageName=${PACKAGE_NAME} packageVersion=${PACKAGE_VERSION} -o package.json        
+          jinja2 package.json.seed -D packageName=${PACKAGE_NAME} packageVersion=${PACKAGE_VERSION} -o package.json        
 
 #      - name: 'Download all build artifacts'
 #        uses: actions/download-artifact@v4
