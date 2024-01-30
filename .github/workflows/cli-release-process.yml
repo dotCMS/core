@@ -244,7 +244,7 @@ jobs:
       - name: 'Checkout code'
         uses: actions/checkout@v4
         with:
-          ref: 'issue-27416-publishing-cli-package-on-npm-registry'
+          ref: ${{ github.ref }}
           fetch-depth: 0
 
       - name: 'Set up package name and package version'
@@ -259,12 +259,12 @@ jobs:
         run: pip install jinja2-cli
 
       - name: 'Render package.json template'
-        working-directory: ${{ github.workspace }}/tools/dotcms-cli/
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
         run: |
           pwd
           ls -ltr
-          jinja2 npm/package.json.seed -D packageName=${PACKAGE_NAME} packageVersion=${PACKAGE_VERSION} -o npm/package.json
-          rm -f npm/package.json.seed
+          jinja2 package.json.seed -D packageName=${PACKAGE_NAME} packageVersion=${PACKAGE_VERSION} -o package.json
+          rm -f package.json.seed
 
 #      - name: 'Download all build artifacts'
 #        uses: actions/download-artifact@v4
