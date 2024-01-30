@@ -37,7 +37,7 @@ describe('Column', () => {
 
         it('applies the correct width and start classes based on props', () => {
             const columnElement = screen.getByTestId('column');
-            expect(columnElement).toHaveClass('col-span-6');
+            expect(columnElement).toHaveClass('col-end-9');
             expect(columnElement).toHaveClass('col-start-3');
         });
 

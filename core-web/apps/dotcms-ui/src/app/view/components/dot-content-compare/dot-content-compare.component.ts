@@ -2,12 +2,11 @@ import { Observable } from 'rxjs';
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import {
     DotContentCompareState,
     DotContentCompareStore
 } from '@components/dot-content-compare/store/dot-content-compare.store';
-import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { DotAlertConfirmService, DotMessageService, DotIframeService } from '@dotcms/data-access';
 
 export interface DotContentCompareEvent {
     inode: string;

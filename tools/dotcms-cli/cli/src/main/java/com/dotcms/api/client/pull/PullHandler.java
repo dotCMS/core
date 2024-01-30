@@ -82,9 +82,9 @@ public abstract class PullHandler<T> {
                     }
                 }
             }
-        }
 
-        output.info(String.format("%n%n"));
+            output.info(String.format("%n%n"));
+        }
     }
 
 }

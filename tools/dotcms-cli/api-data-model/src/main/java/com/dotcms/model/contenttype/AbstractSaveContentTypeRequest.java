@@ -59,7 +59,7 @@ public abstract class AbstractSaveContentTypeRequest extends ContentType {
      * If we leave this as it is the clazz name attribute would end up have a fixed value like `SaveContentTypeRequest`
      * The Original ContentType class name is required
      */
-    static class ClassNameAliasResolver extends ClassNameIdResolver {
+    public static class ClassNameAliasResolver extends ClassNameIdResolver {
 
         static TypeFactory typeFactory = TypeFactory.defaultInstance();
 

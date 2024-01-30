@@ -12,11 +12,11 @@ import {
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
-    DotRouterService
+    DotRouterService,
+    DotFormatDateService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotFormatDateService } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotMessageDisplayServiceMock,

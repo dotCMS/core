@@ -9,8 +9,6 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { catchError, filter, map, mergeMap, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotEnvironment } from '@dotcms/app/shared/models/dot-environment/dot-environment';
 import {
     DotCMSPageWorkflowState,
@@ -30,7 +28,9 @@ import {
     DotRouterService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
-    ESOrderDirection
+    ESOrderDirection,
+    PushPublishService,
+    DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, SiteService } from '@dotcms/dotcms-js';
 import {

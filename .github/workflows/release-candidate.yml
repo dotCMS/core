@@ -50,7 +50,7 @@ jobs:
           branch: ${{ github.ref_name }}
           initial_sha: ${{ github.event.inputs.initial_sha }}
           last_sha: ${{ github.event.inputs.last_sha }}
-          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
       -
         name: Label issues
         uses: ./.github/actions/issue-labeler
@@ -58,26 +58,25 @@ jobs:
           issues_json: ${{ steps.changelog.outputs.issues_flat }}
           labels: ${{ github.event.inputs.labels }}
           operation: ${{ github.event.inputs.label_operation }}
-          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
         if: github.event.inputs.label_operation != 'None'
       -
         name: Create RC tag
         run: |
-          source ${GITHUB_WORKSPACE}/cicd/local-env.sh
-          source ${GITHUB_WORKSPACE}/cicd/local-cicd.sh
-          
-          executeCmd "git fetch --tags"
-          executeCmd "git reset --hard ${{ github.event.inputs.last_sha }}"
+          git fetch --tags
+          git reset --hard ${{ github.event.inputs.last_sha }}
           if git show-ref --tags "${RELEASE_CANDIDATE_TAG}" --quiet; then
-            executeCmd "git tag -d ${RELEASE_CANDIDATE_TAG}"
-            executeCmd "git push origin :refs/tags/${RELEASE_CANDIDATE_TAG}"
+            git tag -d ${RELEASE_CANDIDATE_TAG}
+            git push origin :refs/tags/${RELEASE_CANDIDATE_TAG}
           fi
-          gitConfig ${GITHUB_USER} ${GITHUB_EMAIL}
-          executeCmd "git tag -a \"${RELEASE_CANDIDATE_TAG}\" -m \"Release candidate tag\""
-          executeCmd "git push origin \"${RELEASE_CANDIDATE_TAG}\""
+          
+          git config user.name "${{ secrets.CI_MACHINE_USER }}"
+          git config user.email "dotCMS-Machine-User@dotcms.com"
+          
+          git tag -a ${RELEASE_CANDIDATE_TAG} -m 'Release candidate tag'
+          git push origin "${RELEASE_CANDIDATE_TAG}"
         env:
           RELEASE_CANDIDATE_TAG: ${{ github.event.inputs.tag_name }}
-          GITHUB_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
         if: env.RELEASE_CANDIDATE_TAG != ''
       -
         name: Changelog report

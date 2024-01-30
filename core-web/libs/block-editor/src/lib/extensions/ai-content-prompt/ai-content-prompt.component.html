@@ -4,8 +4,8 @@
             <input
                 #input
                 [attr.disabled]="vm.status === ComponentStatus.LOADING || null"
-                (keyup.escape)="handleScape($event)"
                 (keydown.escape)="$event.stopPropagation()"
+                (keyup.escape)="handleScape($event)"
                 formControlName="textPrompt"
                 pInputText
                 placeholder="{{
@@ -27,3 +27,8 @@
         </span>
     </form>
 </ng-container>
+<p-confirmDialog
+    [style]="{ width: '500px' }"
+    (onHide)="onHideConfirm()"
+    appendTo="body"
+    key="ai-text-prompt-msg" />

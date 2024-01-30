@@ -3,11 +3,13 @@ import { Observable, of } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { DotAlertConfirmService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { HttpCode, LoginService } from '@dotcms/dotcms-js';
 import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 
+import { DotAlertConfirmService } from '../dot-alert-confirm/dot-alert-confirm.service';
 import { DotMessageDisplayService } from '../dot-message-display/dot-message-display.service';
+import { DotMessageService } from '../dot-messages/dot-messages.service';
+import { DotRouterService } from '../dot-router/dot-router.service';
 
 export interface DotHttpErrorHandled {
     redirected: boolean;

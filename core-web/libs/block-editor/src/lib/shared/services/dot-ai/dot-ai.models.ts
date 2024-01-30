@@ -7,6 +7,7 @@ export interface AiPluginResponse {
     usage: Usage;
     system_fingerprint: null;
     totalTime: string;
+    error?: DotAiError;
 }
 
 interface Choice {
@@ -44,4 +45,11 @@ export interface DotAICompletionsConfig {
     model: string;
     rolePrompt: string;
     textPrompt: string;
+}
+
+export interface DotAiError {
+    code: string;
+    message: string;
+    param: string;
+    type: string;
 }
