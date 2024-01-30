@@ -61,7 +61,7 @@ export class DotKeyValueComponent implements OnChanges {
     });
 
     ngOnChanges(): void {
-        this.variableList.set(this.variables);
+        this.variableList.set([...this.variables]);
     }
 
     /**

@@ -52,7 +52,7 @@ export class DotKeyValueTableRowComponent implements OnInit {
     @Input() showHiddenField: boolean = false;
     @Input() variable: DotKeyValue;
 
-    protected form;
+    form: FormGroup;
     protected readonly showEditMenu = signal(false);
     protected readonly passwordPlaceholder = '*****';
 
@@ -69,7 +69,7 @@ export class DotKeyValueTableRowComponent implements OnInit {
     }
 
     get inputType(): string {
-        return this.variable?.hidden ? 'password' : 'text';
+        return this.form?.get('hidden').value ? 'password' : 'text';
     }
 
     ngOnInit(): void {
@@ -99,7 +99,10 @@ export class DotKeyValueTableRowComponent implements OnInit {
      */
     onCancel(): void {
         this.showEditMenu.set(false);
-        this.form.get('value').setValue(this.initialValue);
+        this.form.reset({
+            value: this.initialValue,
+            hidden: this.isHiddenField
+        });
     }
 
     /**

@@ -227,15 +227,15 @@ describe('DotKeyValueTableInputRowComponent', () => {
 
         it('should load the component with switch button', () => {
             spectatorHost.detectChanges();
-            const switchButton = spectatorHost.query(InputSwitch);
-            expect(switchButton).toBeTruthy();
+            const switchInput = spectatorHost.query(InputSwitch);
+            expect(switchInput).toBeTruthy();
         });
 
         it('should switch to hidden mode when clicked on the hidden switch button', async () => {
             spectatorHost.detectChanges();
-            const switchButton = spectatorHost.query('.p-inputswitch') as HTMLElement;
+            const switchInput = spectatorHost.query('.p-inputswitch') as HTMLElement;
 
-            spectatorHost.click(switchButton);
+            spectatorHost.click(switchInput);
             spectatorHost.detectChanges();
 
             const valueInput = spectatorHost.query(byTestId('value-input')) as HTMLInputElement;
