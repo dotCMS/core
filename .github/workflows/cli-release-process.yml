@@ -263,7 +263,7 @@ jobs:
         run: |
           pwd
           ls -ltr
-          jinja2 package.json.seed -D packageName=${PACKAGE_NAME} packageVersion=${PACKAGE_VERSION} -o package.json
+          jinja2 package.json.seed -D packageName=${PACKAGE_NAME} -D packageVersion=${PACKAGE_VERSION} --format json -o package.json
           rm -f package.json.seed
 
 #      - name: 'Download all build artifacts'
