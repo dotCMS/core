@@ -258,11 +258,12 @@ jobs:
         run: pip install jinja2-cli
 
       - name: 'Render package.json template'
-        working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli/
         run: |
           pwd
           ls -ltr
-          jinja2 package.json.seed -D packageName=${PACKAGE_NAME} packageVersion=${PACKAGE_VERSION} -o package.json        
+          jinja2 npm/package.json.seed -D packageName=${PACKAGE_NAME} packageVersion=${PACKAGE_VERSION} -o npm/package.json
+          rm -f npm/package.json.seed
 
 #      - name: 'Download all build artifacts'
 #        uses: actions/download-artifact@v4
