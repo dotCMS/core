@@ -84,7 +84,7 @@ jobs:
 #          echo "HEAD=$HEAD" >> "$GITHUB_OUTPUT"
 
   # Build native executable per runner
-  build:
+#  build:
 #    needs: [ precheck ]
 #    name: 'Build native image on ${{ matrix.os }}'
 #    strategy:
