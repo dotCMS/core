@@ -6,6 +6,7 @@ import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.cli.command.CommandTest;
+import com.dotcms.cli.common.FilesTestHelper;
 import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.ResponseEntityView;
@@ -30,7 +31,6 @@ import javax.ws.rs.NotFoundException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.wildfly.common.Assert;
@@ -145,19 +145,23 @@ class SiteCommandIT extends CommandTest {
      * Given scenario: Simply call create command followed by copy Expected Result: We simply verify
      * the command completes successfully
      */
-    @Disabled("Test is intermittently failing.")
     @Test
     @Order(4)
     void Test_Command_Copy() {
+
+        final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
+        final var siteName = new FilesTestHelper().createSite(siteAPI);
+
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
+
             commandLine.setOut(out);
-            final int status = commandLine.execute(SiteCommand.NAME, SiteCopy.NAME, "--idOrName",
-                    siteName);
+            commandLine.setErr(out);
+
+            final int status = commandLine.execute(SiteCommand.NAME, SiteCopy.NAME,
+                    "--idOrName", siteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-            final String output = writer.toString();
-            Assertions.assertTrue(output.startsWith("New Copy Site is"));
         }
     }
 

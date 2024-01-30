@@ -18,13 +18,26 @@ public class SiteTestHelper {
      * @return true if the site exists, false otherwise
      */
     protected Boolean siteExist(final String siteName) {
+        final var siteAPI = clientFactory.getClient(SiteAPI.class);
+        return siteExist(siteName, siteAPI);
+    }
+
+    /**
+     * Checks if a site with the given name exists.
+     *
+     * @param siteName the name of the site to check
+     * @param siteAPI  the site api to use
+     * @return true if the site exists, false otherwise
+     */
+    protected Boolean siteExist(final String siteName, final SiteAPI siteAPI) {
 
         long start = System.currentTimeMillis();
         long end = start + 15 * 1000; // 15 seconds * 1000 ms/sec
         while (System.currentTimeMillis() < end) {
             try {
-                var response = clientFactory.getClient(SiteAPI.class)
-                        .findByName(GetSiteByNameRequest.builder().siteName(siteName).build());
+                var response = siteAPI.findByName(
+                        GetSiteByNameRequest.builder().siteName(siteName).build()
+                );
                 if ((response != null && response.entity() != null) &&
                         ((response.entity().isLive() != null &&
                                 response.entity().isLive()) &&

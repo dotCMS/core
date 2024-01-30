@@ -138,8 +138,17 @@ public class FilesTestHelper extends SiteTestHelper {
      * @return The name of the newly created test site.
      */
     protected String createSite() {
-
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
+        return createSite(siteAPI);
+    }
+
+    /**
+     * Creates a new site.
+     *
+     * @param siteAPI The site API to use to create the site.
+     * @return The name of the newly created test site.
+     */
+    public String createSite(final SiteAPI siteAPI) {
 
         // Creating a new test site
         final String newSiteName = String.format("site-%d", System.currentTimeMillis());
@@ -149,7 +158,7 @@ public class FilesTestHelper extends SiteTestHelper {
         Assertions.assertNotNull(createSiteResponse);
         // Publish the new site
         siteAPI.publish(createSiteResponse.entity().identifier());
-        Assertions.assertTrue(siteExist(newSiteName),
+        Assertions.assertTrue(siteExist(newSiteName, siteAPI),
                 String.format("Site %s was not created", newSiteName));
 
         return newSiteName;
