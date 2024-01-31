@@ -6,10 +6,10 @@
     "postuninstall": "node src/postinstall.js uninstall && npm prune"
   },
   "binaries": {
-    "{{ packageName }}-{{ packageVersion }}-darwin-arm64": "bin/{{ packageName }}-{{ packageVersion }}-osx-aarch64",
-    "{{ packageName }}-{{ packageVersion }}-darwin-x64": "bin/{{ packageName }}-{{ packageVersion }}-osx-amd64",
-    "{{ packageName }}-{{ packageVersion }}-linux-x64": "bin/{{ packageName }}-{{ packageVersion }}-linux-amd64",
-    "{{ packageName }}-{{ packageVersion }}-win32-x64": "bin/{{ packageName }}-{{ packageVersion }}-windows-amd64.exe"
+    "{{ packageName }}-{{ packageVersion }}-darwin-arm64": "bin/{{ packageName }}-{{ packageVersion }}-osx-aarch_64",
+    "{{ packageName }}-{{ packageVersion }}-darwin-x64": "bin/{{ packageName }}-{{ packageVersion }}-osx-x86_64",
+    "{{ packageName }}-{{ packageVersion }}-linux-x64": "bin/{{ packageName }}-{{ packageVersion }}-linux-x86_64",
+    "{{ packageName }}-{{ packageVersion }}-win32-x64": "bin/{{ packageName }}-{{ packageVersion }}-windows-x86_64.exe"
   },
   "files": [
     "bin",

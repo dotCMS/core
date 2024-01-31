@@ -5,8 +5,8 @@ const fs = require('fs').promises;
 const os = require('os');
 
 const ARCHITECTURE_MAPPING = {
-    "x64": "amd64",
-    "arm64": "aarch64"
+    "x64": "x86_64",
+    "arm64": "aarch_64"
 };
 
 const PLATFORM_MAPPING = {
