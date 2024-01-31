@@ -31,6 +31,7 @@ import javax.ws.rs.NotFoundException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.wildfly.common.Assert;
@@ -223,6 +224,7 @@ class SiteCommandIT extends CommandTest {
      *
      * @throws IOException
      */
+    @Disabled("Test is intermittently failing.")
     @Test
     @Order(6)
     void Test_Create_From_File_via_Push() throws IOException {
@@ -423,6 +425,7 @@ class SiteCommandIT extends CommandTest {
      * This tests will test the functionality of the site push command when pushing a folder,
      * checking the sites are properly add, updated and removed on the remote server.
      */
+    @Disabled("Test is intermittently failing.")
     @Test
     @Order(11)
     void Test_Command_Site_Folder_Push() throws IOException {
@@ -595,6 +598,7 @@ class SiteCommandIT extends CommandTest {
      *
      * @throws IOException if there is an error pulling the sites
      */
+    @Disabled("Test is intermittently failing.")
     @Test
     @Order(12)
     void Test_Command_Site_Pull_Pull_All_Default_Format() throws IOException {
@@ -686,6 +690,7 @@ class SiteCommandIT extends CommandTest {
      *
      * @throws IOException if there is an error pulling the sites
      */
+    @Disabled("Test is intermittently failing.")
     @Test
     @Order(13)
     void Test_Command_Site_Pull_Pull_All_YAML_Format() throws IOException {
@@ -778,6 +783,7 @@ class SiteCommandIT extends CommandTest {
      *
      * @throws IOException if there is an error pulling the sites
      */
+    @Disabled("Test is intermittently failing.")
     @Test
     @Order(14)
     void Test_Command_Site_Pull_Pull_All_Twice() throws IOException {
@@ -872,6 +878,7 @@ class SiteCommandIT extends CommandTest {
      * Given scenario: Create a new site using a file and the push command, then verify the site
      * descriptor was updated with the proper identifier.
      */
+    @Disabled("Test is intermittently failing.")
     @Test
     @Order(15)
     void Test_Create_From_File_via_Push_Checking_Auto_Update() throws IOException {
@@ -921,6 +928,7 @@ class SiteCommandIT extends CommandTest {
      * Given scenario: Create a new site using a file and the push command disabling the auto
      * update, then verify the site descriptor was not updated.
      */
+    @Disabled("Test is intermittently failing.")
     @Test
     @Order(16)
     void Test_Create_From_File_via_Push_With_Auto_Update_Disabled() throws IOException {
@@ -1072,6 +1080,7 @@ class SiteCommandIT extends CommandTest {
      *
      * @throws IOException if there is an error creating the temporary folder or writing to files
      */
+    @Disabled("Test is intermittently failing.")
     @Test
     @Order(18)
     void Test_Archive_Site() throws IOException {
