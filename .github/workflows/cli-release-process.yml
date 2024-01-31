@@ -20,6 +20,7 @@ env:
   NEXT_VERSION: '1.0.0-SNAPSHOT'
   GRAALVM_VERSION: '22.1.0'
   PACKAGE_TYPE: 'uber-jar'
+  NPM_PACKAGE_NAME: 'dotcms-cli'
   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
   NODE_VERSION: 19
 
@@ -250,8 +251,8 @@ jobs:
       - name: 'Set up package name and package version'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/
         run: |
-          PACKAGE_NAME=$(./mvnw -q -Dexec.executable=echo -Dexec.args='${project.artifactId}' -f ${{ github.workspace }}/tools/dotcms-cli/cli/pom.xml -non-recursive exec:exec)
-          PACKAGE_VERSION=$(./mvnw -q -Dexec.executable=echo -Dexec.args='${project.version}' -f ${{ github.workspace }}/tools/dotcms-cli/cli/pom.xml -non-recursive exec:exec)
+          PACKAGE_NAME=$NPM_PACKAGE_NAME
+          PACKAGE_VERSION=${{ github.event.inputs.version }}
           echo "PACKAGE_NAME=$PACKAGE_NAME" >> "$GITHUB_ENV"
           echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"        
 
