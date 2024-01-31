@@ -60,6 +60,8 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
      */
     JsonNode loadRemoteAnnouncements(final Language language) {
         final String url = buildURL(language);
+        //Let's log the url to retrieve the announcements for debugging purposes on postman
+        Logger.info(AnnouncementsHelperImpl.class, String.format("loading announcements from [%s]", url));
         try {
             final Client client = restClient();
             final WebTarget webTarget = client.target(url);
@@ -71,7 +73,7 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
                 final JsonParser parser = factory.createParser(jsonString);
                 return mapper.readTree(parser);
             } else {
-                Logger.debug(AnnouncementsHelperImpl.class, String.format(" failed to get announcements from [%s] with status: [%d] and  entity: [%s] ", url, response.getStatus(), response.getEntity()));
+                Logger.info(AnnouncementsHelperImpl.class, String.format(" failed to get announcements from [%s] with status: [%d] and  entity: [%s] ", url, response.getStatus(), response.getEntity()));
                 throw new DotRuntimeException(String.format(" failed to get announcements from [%s] with status: [%d]", url, response.getStatus()));
             }
 

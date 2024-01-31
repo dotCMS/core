@@ -13,14 +13,25 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"var jsonData = pm.response.json();",
-							"",
-							"pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
-							"pm.collectionVariables.set(\"contentTypeVar\", jsonData.entity[0].variable);",
 							"",
 							"pm.test(\"Status code should be ok 200\", function () {",
 							"    pm.response.to.have.status(200);",
-							"});"
+							"});",
+							"",
+							"let jsonData = pm.response.json();",
+							"let contentTypeId = jsonData.entity[0].id;",
+							"let contentTypeVar = jsonData.entity[0].variable",
+							"",
+							"pm.collectionVariables.set(\"contentTypeId\", contentTypeId);",
+							"pm.collectionVariables.set(\"contentTypeVar\", contentTypeVar);",
+							"",
+							"pm.test(\"Variable is created\", function () {",
+							"",
+							"   pm.expect(contentTypeId,'Announcement ct Id is set ').not.undefined;  ",
+							"   pm.expect(contentTypeVar,'Announcement ct Var is set ').not.undefined;  ",
+							"",
+							"});",
+							""
 						],
 						"type": "text/javascript"
 					}
@@ -86,9 +97,18 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"var jsonData = pm.response.json();",
+							"const jsonData = pm.response.json();",
 							"pm.test(\"Status code should be 200\", function() {",
 							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const contents = jsonData.entity.results;",
+							"",
+							"console.log(contents);",
+							"",
+							"pm.test(\"Announcements are created\", function() {",
+							"    pm.expect(contents,'contents were created').not.undefined;",
+							"    pm.expect(contents.length,'Verify contents length').to.be.at.least(4);    ",
 							"});"
 						],
 						"type": "text/javascript"
@@ -256,7 +276,7 @@
 							"    }, 24000);",
 							"}",
 							"",
-							"const MAX_CALL_COUNT = 5;",
+							"const MAX_CALL_COUNT = 3;",
 							"",
 							"let callCount = 1;",
 							"",
