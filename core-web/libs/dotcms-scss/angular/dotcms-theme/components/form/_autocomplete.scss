@@ -17,7 +17,6 @@ p-autocomplete.p-inputwrapper-focus {
 .p-fluid .p-autocomplete.p-component:has(.p-icon-wrapper),
 .p-autocomplete.p-component:has(.p-icon-wrapper) {
     grid-template-columns: max-content auto; // When have icon, have 2 grids: icon and tags
-    border: 1px solid red;
 }
 
 .p-autocomplete {
