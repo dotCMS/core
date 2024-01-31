@@ -6,7 +6,7 @@ import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.MapperService;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.cli.command.CommandTest;
-import com.dotcms.cli.common.FilesTestHelper;
+import com.dotcms.cli.common.FilesTestHelperService;
 import com.dotcms.cli.common.InputOutputFormat;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.ResponseEntityView;
@@ -56,6 +56,9 @@ class SiteCommandIT extends CommandTest {
 
     @Inject
     MapperService mapperService;
+
+    @Inject
+    FilesTestHelperService filesTestHelper;
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -150,8 +153,7 @@ class SiteCommandIT extends CommandTest {
     @Order(4)
     void Test_Command_Copy() {
 
-        final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
-        final var siteName = new FilesTestHelper().createSite(siteAPI);
+        final var siteName = filesTestHelper.createSite();
 
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();

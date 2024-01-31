@@ -3,7 +3,7 @@ package com.dotcms.api;
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.model.ServiceManager;
-import com.dotcms.common.SiteTestHelper;
+import com.dotcms.common.SiteTestHelperService;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.ServiceBean;
 import com.dotcms.model.site.CopySiteRequest;
@@ -25,7 +25,7 @@ import org.wildfly.common.Assert;
 
 @QuarkusTest
 @TestProfile(DotCMSITProfile.class)
-class SiteAPIIT extends SiteTestHelper {
+class SiteAPIIT {
 
     @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
     String siteName;
@@ -38,6 +38,9 @@ class SiteAPIIT extends SiteTestHelper {
 
     @Inject
     ServiceManager serviceManager;
+
+    @Inject
+    SiteTestHelperService siteTestHelper;
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -133,11 +136,12 @@ class SiteAPIIT extends SiteTestHelper {
 
         ResponseEntityView<SiteView> archiveSite = clientFactory.getClient(SiteAPI.class).archive(identifier);
         Assertions.assertNotNull(archiveSite.entity());
-        Assertions.assertTrue(checkValidSiteStatus(newSiteName, false, true));
+        Assertions.assertTrue(siteTestHelper.checkValidSiteStatus(newSiteName, false, true));
 
         ResponseEntityView<SiteView> unarchiveSite = clientFactory.getClient(SiteAPI.class).unarchive(identifier);
         Assertions.assertNotNull(unarchiveSite.entity());
-        Assertions.assertTrue(checkValidSiteStatus(newSiteName, false, false));
+        Assertions.assertTrue(
+                siteTestHelper.checkValidSiteStatus(newSiteName, false, false));
     }
 
     @Test
@@ -155,11 +159,12 @@ class SiteAPIIT extends SiteTestHelper {
 
         ResponseEntityView<SiteView> publishedSite = clientFactory.getClient(SiteAPI.class).publish(identifier);
         Assertions.assertNotNull(publishedSite.entity());
-        Assertions.assertTrue(checkValidSiteStatus(newSiteName, true, false));
+        Assertions.assertTrue(siteTestHelper.checkValidSiteStatus(newSiteName, true, false));
 
         ResponseEntityView<SiteView> unPublishedSite = clientFactory.getClient(SiteAPI.class).unpublish(identifier);
         Assertions.assertNotNull(unPublishedSite.entity());
-        Assertions.assertTrue(checkValidSiteStatus(newSiteName, false, false));
+        Assertions.assertTrue(
+                siteTestHelper.checkValidSiteStatus(newSiteName, false, false));
     }
 
     @Test

@@ -1,17 +1,19 @@
 package com.dotcms.cli.common;
 
 import static com.dotcms.common.AssetsUtils.buildRemoteAssetURL;
+import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.FolderAPI;
 import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.model.RestClientFactory;
-import com.dotcms.common.SiteTestHelper;
 import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.ByPathRequest;
 import com.dotcms.model.asset.FileUploadData;
 import com.dotcms.model.asset.FileUploadDetail;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
+import com.dotcms.model.site.GetSiteByNameRequest;
 import com.dotcms.model.site.SiteView;
 import com.google.common.collect.ImmutableList;
 import java.io.IOException;
@@ -21,17 +23,25 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
+import org.testcontainers.shaded.org.awaitility.core.ConditionTimeoutException;
 
-public class FilesTestHelper extends SiteTestHelper {
+@ApplicationScoped
+public class FilesTestHelperService {
 
     @Inject
     RestClientFactory clientFactory;
+
+    private static final Duration MAX_WAIT_TIME = Duration.ofSeconds(15);
+    private static final Duration POLL_INTERVAL = Duration.ofSeconds(2);
 
     /**
      * Prepares data by creating test folders, adding test files, and creating a new test site.
@@ -39,7 +49,7 @@ public class FilesTestHelper extends SiteTestHelper {
      * @return The name of the newly created test site.
      * @throws IOException If an I/O error occurs.
      */
-    protected String prepareData() throws IOException {
+    public String prepareData() throws IOException {
         return prepareData(true);
     }
 
@@ -50,7 +60,7 @@ public class FilesTestHelper extends SiteTestHelper {
      * @return The name of the newly created test site.
      * @throws IOException If an I/O error occurs.
      */
-    protected String prepareData(final boolean includeAssets) throws IOException {
+    public String prepareData(final boolean includeAssets) throws IOException {
 
         final FolderAPI folderAPI = clientFactory.getClient(FolderAPI.class);
 
@@ -137,18 +147,9 @@ public class FilesTestHelper extends SiteTestHelper {
      *
      * @return The name of the newly created test site.
      */
-    protected String createSite() {
-        final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
-        return createSite(siteAPI);
-    }
+    public String createSite() {
 
-    /**
-     * Creates a new site.
-     *
-     * @param siteAPI The site API to use to create the site.
-     * @return The name of the newly created test site.
-     */
-    public String createSite(final SiteAPI siteAPI) {
+        final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
 
         // Creating a new test site
         final String newSiteName = String.format("site-%d", System.currentTimeMillis());
@@ -158,7 +159,7 @@ public class FilesTestHelper extends SiteTestHelper {
         Assertions.assertNotNull(createSiteResponse);
         // Publish the new site
         siteAPI.publish(createSiteResponse.entity().identifier());
-        Assertions.assertTrue(siteExist(newSiteName, siteAPI),
+        Assertions.assertTrue(siteExist(newSiteName),
                 String.format("Site %s was not created", newSiteName));
 
         return newSiteName;
@@ -174,7 +175,7 @@ public class FilesTestHelper extends SiteTestHelper {
      * @param assetName  The name of the asset file
      * @throws IOException If there is an error reading the file or pushing it to the server
      */
-    protected void pushFile(final boolean live, final String language,
+    public void pushFile(final boolean live, final String language,
             final String siteName, String folderPath, final String assetName) throws IOException {
 
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
@@ -205,37 +206,99 @@ public class FilesTestHelper extends SiteTestHelper {
     }
 
     /**
+     * Checks if a site with the given name exists.
+     *
+     * @param siteName the name of the site to check
+     * @return true if the site exists, false otherwise
+     */
+    public Boolean siteExist(final String siteName) {
+
+        try {
+
+            await()
+                    .atMost(MAX_WAIT_TIME)
+                    .pollInterval(POLL_INTERVAL)
+                    .until(() -> {
+                        try {
+                            var response = findSiteByName(siteName);
+                            return (response != null && response.entity() != null) &&
+                                    ((response.entity().isLive() != null &&
+                                            response.entity().isLive()) &&
+                                            (response.entity().isWorking() != null &&
+                                                    response.entity().isWorking()));
+                        } catch (NotFoundException e) {
+                            return false;
+                        }
+                    });
+
+            return true;
+        } catch (ConditionTimeoutException ex) {
+            return false;
+        }
+    }
+
+    /**
      * Checks whether an asset exists at the given remote asset path.
      *
      * @param remoteAssetPath The path to the remote asset
      * @return {@code true} if the asset exists, {@code false} otherwise
      */
-    protected Boolean assetExist(final String remoteAssetPath) {
+    public Boolean assetExist(final String remoteAssetPath) {
 
-        long start = System.currentTimeMillis();
-        long end = start + 15 * 1000; // 15 seconds * 1000 ms/sec
-        while (System.currentTimeMillis() < end) {
-            try {
-                var response = clientFactory.getClient(AssetAPI.class).
-                        assetByPath(
-                                ByPathRequest.builder().assetPath(remoteAssetPath).build());
-                Assertions.assertEquals(1, response.entity().versions().size());
-                if (response.entity().versions().get(0).live() &&
-                        response.entity().versions().get(0).working()) {
-                    return true;
-                }
-            } catch (NotFoundException e) {
-                // Do nothing
-            }
+        try {
 
-            try {
-                Thread.sleep(2000); // Sleep for 2 second
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-            }
+            await()
+                    .atMost(MAX_WAIT_TIME)
+                    .pollInterval(POLL_INTERVAL)
+                    .until(() -> {
+                        try {
+                            var response = findAssetPath(remoteAssetPath);
+                            Assertions.assertEquals(1, response.entity().versions().size());
+                            return (response.entity().versions().get(0).live() &&
+                                    response.entity().versions().get(0).working());
+                        } catch (NotFoundException e) {
+                            return false;
+                        }
+                    });
+
+            return true;
+        } catch (ConditionTimeoutException ex) {
+            return false;
         }
+    }
 
-        return false;
+    /**
+     * Retrieves a site by its name.
+     *
+     * @param siteName The name of the site.
+     * @return The ResponseEntityView containing the SiteView object representing the site.
+     */
+    @ActivateRequestContext
+    public ResponseEntityView<SiteView> findSiteByName(final String siteName) {
+
+        final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
+
+        // Execute the REST call to retrieve folder contents
+        return siteAPI.findByName(
+                GetSiteByNameRequest.builder().siteName(siteName).build()
+        );
+    }
+
+    /**
+     * Retrieves the asset at the given remote path.
+     *
+     * @param remoteAssetPath The path to the remote asset
+     * @return The ResponseEntityView containing the AssetVersionsView object representing the
+     * asset.
+     */
+    @ActivateRequestContext
+    public ResponseEntityView<AssetVersionsView> findAssetPath(final String remoteAssetPath) {
+
+        final AssetAPI assetAPI = clientFactory.getClient(AssetAPI.class);
+
+        return assetAPI.assetByPath(
+                ByPathRequest.builder().assetPath(remoteAssetPath).build()
+        );
     }
 
     /**
@@ -244,7 +307,7 @@ public class FilesTestHelper extends SiteTestHelper {
      * @return The path to the newly created temporary folder
      * @throws IOException If an I/O error occurs while creating the temporary folder
      */
-    protected Path createTempFolder() throws IOException {
+    public Path createTempFolder() throws IOException {
 
         String randomFolderName = "folder-" + UUID.randomUUID();
         return Files.createTempDirectory(randomFolderName);
@@ -256,7 +319,7 @@ public class FilesTestHelper extends SiteTestHelper {
      * @param folderPath The path to the temporary directory to delete
      * @throws IOException If an error occurs while deleting the directory or its contents
      */
-    protected void deleteTempDirectory(Path folderPath) throws IOException {
+    public void deleteTempDirectory(Path folderPath) throws IOException {
         Files.walkFileTree(folderPath, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)

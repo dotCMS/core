@@ -18,7 +18,7 @@ import com.dotcms.api.client.pull.PullService;
 import com.dotcms.api.client.pull.file.FileFetcher;
 import com.dotcms.api.client.pull.file.FilePullHandler;
 import com.dotcms.cli.command.PushContext;
-import com.dotcms.cli.common.FilesTestHelper;
+import com.dotcms.cli.common.FilesTestHelperService;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.ServiceBean;
@@ -45,7 +45,7 @@ import org.junit.jupiter.api.Test;
  */
 @QuarkusTest
 @TestProfile(DotCMSITProfile.class)
-class PushServiceIT extends FilesTestHelper {
+class PushServiceIT {
 
     @Inject
     AuthenticationContext authenticationContext;
@@ -74,6 +74,9 @@ class PushServiceIT extends FilesTestHelper {
     @Inject
     PushContext pushContext;
 
+    @Inject
+    FilesTestHelperService filesTestHelper;
+
     @BeforeEach
     public void setupTest() throws IOException {
         serviceManager.removeAll().persist(
@@ -100,13 +103,13 @@ class PushServiceIT extends FilesTestHelper {
     void Test_Nothing_To_Push() throws IOException {
 
         // Create a temporal folder for the pull
-        var tempFolder = createTempFolder();
+        var tempFolder = filesTestHelper.createTempFolder();
         var workspace = workspaceManager.getOrCreate(tempFolder);
 
         try {
 
             // Preparing the data for the test
-            final var testSiteName = prepareData();
+            final var testSiteName = filesTestHelper.prepareData();
 
             final var folderPath = String.format("//%s", testSiteName);
 
@@ -170,7 +173,7 @@ class PushServiceIT extends FilesTestHelper {
                             .build());
         } finally {
             // Clean up the temporal folder
-            deleteTempDirectory(tempFolder);
+            filesTestHelper.deleteTempDirectory(tempFolder);
         }
     }
 
@@ -187,13 +190,13 @@ class PushServiceIT extends FilesTestHelper {
     void Test_Push_New_Site() throws IOException {
 
         // Create a temporal folder for the pull
-        var tempFolder = createTempFolder();
+        var tempFolder = filesTestHelper.createTempFolder();
         var workspace = workspaceManager.getOrCreate(tempFolder);
 
         try {
 
             // Preparing the data for the test
-            final var testSiteName = prepareData();
+            final var testSiteName = filesTestHelper.prepareData();
 
             final var folderPath = String.format("//%s", testSiteName);
 
@@ -305,7 +308,7 @@ class PushServiceIT extends FilesTestHelper {
 
         } finally {
             // Clean up the temporal folder
-            deleteTempDirectory(tempFolder);
+            filesTestHelper.deleteTempDirectory(tempFolder);
         }
     }
 
@@ -322,13 +325,13 @@ class PushServiceIT extends FilesTestHelper {
     void Test_Push_Modified_Data() throws IOException {
 
         // Create a temporal folder for the pull
-        var tempFolder = createTempFolder();
+        var tempFolder = filesTestHelper.createTempFolder();
         var workspace = workspaceManager.getOrCreate(tempFolder);
 
         try {
 
             // Preparing the data for the test
-            final var testSiteName = prepareData();
+            final var testSiteName = filesTestHelper.prepareData();
 
             final var folderPath = String.format("//%s", testSiteName);
 
@@ -477,7 +480,7 @@ class PushServiceIT extends FilesTestHelper {
 
         } finally {
             // Clean up the temporal folder
-            deleteTempDirectory(tempFolder);
+            filesTestHelper.deleteTempDirectory(tempFolder);
         }
     }
 
@@ -494,13 +497,13 @@ class PushServiceIT extends FilesTestHelper {
     void Test_Delete_Folder() throws IOException {
 
         // Create a temporal folder for the pull
-        var tempFolder = createTempFolder();
+        var tempFolder = filesTestHelper.createTempFolder();
         var workspace = workspaceManager.getOrCreate(tempFolder);
 
         try {
 
             // Preparing the data for the test
-            final var testSiteName = prepareData();
+            final var testSiteName = filesTestHelper.prepareData();
 
             final var folderPath = String.format("//%s", testSiteName);
 
@@ -570,7 +573,7 @@ class PushServiceIT extends FilesTestHelper {
             Assertions.assertEquals(1, treeNodePushInfo2.foldersToDeleteCount());
 
         } finally {
-            deleteTempDirectory(tempFolder);
+            filesTestHelper.deleteTempDirectory(tempFolder);
         }
     }
 
@@ -587,19 +590,13 @@ class PushServiceIT extends FilesTestHelper {
             final String assetName) {
 
         // Validate some pushed data, giving some time to the system to index the new data
-        Assertions.assertTrue(siteExist(siteName),
+        Assertions.assertTrue(filesTestHelper.siteExist(siteName),
                 String.format("Site %s was not created", siteName));
 
         // Building the remote asset path
         final var remoteAssetPath = buildRemoteAssetURL(siteName, folderPath, assetName);
-        Assertions.assertTrue(assetExist(remoteAssetPath),
+        Assertions.assertTrue(filesTestHelper.assetExist(remoteAssetPath),
                 String.format("Asset %s was not created", remoteAssetPath));
-
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            Assertions.fail(e.getMessage());
-        }
     }
 
 }
