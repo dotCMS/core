@@ -131,16 +131,7 @@ public class EventLogWebInterceptor implements WebInterceptor {
         //eventPayload.put("clusterId", ClusterFactory.getClusterId());
 
         try {
-            final Collection<String> runningExperimentIds = experimentsAPI.getRunningExperiments().stream()
-                    .map(experiment -> experiment.getIdentifier())
-                    .collect(Collectors.toSet());
-
-
-            for (final Map<String, Object> experiment : experiments) {
-                if (runningExperimentIds.contains(experiment.get("experiment"))) {
-                    eventPayload.addExperiment(experiment);
-                }
-            }
+            addRunningExperimentAsPayload(experiments, eventPayload);
 
             if (!eventPayload.isEmpty()) {
                 final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
@@ -155,6 +146,19 @@ public class EventLogWebInterceptor implements WebInterceptor {
         } catch(Exception e) {
             Logger.error(this, "Could not submit event log", e);
 
+        }
+    }
+
+    private void addRunningExperimentAsPayload(List<Map<String, Object>> experiments, EventsPayload eventPayload) throws DotDataException {
+        final Collection<String> runningExperimentIds = experimentsAPI.getRunningExperiments().stream()
+                .map(Experiment::getIdentifier)
+                .collect(Collectors.toSet());
+
+
+        for (final Map<String, Object> experiment : experiments) {
+            if (runningExperimentIds.contains(experiment.get("experiment"))) {
+                eventPayload.addExperiment(experiment);
+            }
         }
     }
 
