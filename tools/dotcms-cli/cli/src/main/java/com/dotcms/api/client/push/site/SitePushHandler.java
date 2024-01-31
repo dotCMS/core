@@ -293,11 +293,12 @@ public class SitePushHandler implements PushHandler<SiteView> {
             final String siteName, final boolean isSiteLive,
             final boolean isArchived) {
 
-        final var siteViewResponse = verifyAndReturnSiteAfterCompletion(
+        var siteViewFuture = verifyAndReturnSiteAfterCompletion(
                 siteName,
                 isSiteLive,
                 isArchived
-        ).join();
+        );
+        final var siteViewResponse = siteViewFuture.exceptionally(ex -> null).join();
 
         if (siteViewResponse == null) {
             logger.error(
@@ -334,7 +335,7 @@ public class SitePushHandler implements PushHandler<SiteView> {
         Runnable task = new Runnable() {
 
             final long start = System.currentTimeMillis();
-            final long end = start + 15 * 1000;
+            final long end = start + (15 * 1000);
 
             @Override
             public void run() {
