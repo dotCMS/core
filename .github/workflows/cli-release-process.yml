@@ -7,7 +7,7 @@ on:
         required: true
       skipTests:
         description: 'Skip tests'
-        default: true
+        default: 'true'
         required: false
 
 defaults:
@@ -225,7 +225,7 @@ jobs:
       - name: 'Upload build artifact'
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-${{ matrix.runs-on }}
+          name: artifacts-${{ matrix.os }}
           path: |
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
@@ -250,8 +250,8 @@ jobs:
       - name: 'Set up package name and package version'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/
         run: |
-          PACKAGE_NAME=$(./mvnw -q -Dexec.executable=echo -Dexec.args='${project.artifactId}' --non-recursive exec:exec)
-          PACKAGE_VERSION=$(./mvnw -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
+          PACKAGE_NAME=$(./mvnw -q -Dexec.executable=echo -Dexec.args='${project.artifactId}' -f cli/pom.xml exec:exec)
+          PACKAGE_VERSION=$(./mvnw -q -Dexec.executable=echo -Dexec.args='${project.version}' -f cli/pom.xml exec:exec)
           echo "PACKAGE_NAME=$PACKAGE_NAME" >> "$GITHUB_ENV"
           echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"        
 
@@ -317,8 +317,9 @@ jobs:
 #      - name: 'Download all build artifacts'
 #        uses: actions/download-artifact@v4
 #        with:
-#          name: artifacts
-#          path: ${{ github.workspace }}/artifacts
+#          path: ${{ github.workspace }}/artifacts  
+#          pattern: artifacts-*
+#          merge-multiple: true
 #
 #      - name: 'List artifacts'
 #        run: |
