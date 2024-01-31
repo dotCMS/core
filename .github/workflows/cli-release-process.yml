@@ -278,15 +278,13 @@ jobs:
           mv src/postinstall.js.seed src/postinstall.js
           mkdir -p bin
           cp ${{ github.workspace }}/tools/dotcms-cli/README.md .
-          ls -R ${{ github.workspace }}/artifacts
-#          unzip ${{ github.workspace }}/artifacts/distributions/*.zip -d bin/
+          find ${{ github.workspace }}/artifacts/distributions/ -name "*.zip" -exec unzip -d bin {} \;
+
           
       - name: 'Verify package'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
         run: |
           ls -R
-
-#          tar -xzf ${{ github.workspace }}/artifacts/distributions/*.tar.gz -C bin/
 
 #      - name: Install dependencies
 #        run: npm install
