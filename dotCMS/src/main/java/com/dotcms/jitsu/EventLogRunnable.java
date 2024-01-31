@@ -65,6 +65,7 @@ public class EventLogRunnable implements Runnable {
         for (EventPayload payload : eventPayload.payloads()) {
 
             sendEvent(builder, payload).ifPresent(response -> {
+                System.out.println("response = " + response);
                 if (response.getStatusCode() != HttpStatus.SC_OK) {
                     Logger.warn(
                             this.getClass(),
@@ -92,7 +93,7 @@ public class EventLogRunnable implements Runnable {
     }
 
     private Optional<Response<String>> sendEvent(final CircuitBreakerUrlBuilder builder, final EventPayload payload) {
-
+        System.out.println("payload = " + payload);
         final CircuitBreakerUrl postLog = builder
                 .setRawData(payload.toString())
                 .build();
