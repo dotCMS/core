@@ -62,7 +62,7 @@ export class DotBinaryFieldEditorComponent implements OnInit {
     @Input() fileName = '';
     @Input() fileContent = '';
 
-    languageType = signal(DEFAULT_FILE_TYPE);
+    private readonly languageType = signal(DEFAULT_FILE_TYPE);
     @Output() readonly tempFileUploaded = new EventEmitter<DotCMSTempFile>();
     @Output() readonly cancel = new EventEmitter<void>();
     @ViewChild('editorRef', { static: true }) editorRef!: MonacoEditorComponent;
