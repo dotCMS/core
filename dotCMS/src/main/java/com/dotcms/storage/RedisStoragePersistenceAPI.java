@@ -2,7 +2,9 @@ package com.dotcms.storage;
 
 import com.dotcms.cache.lettuce.RedisCache;
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.util.EnterpriseFeature;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
@@ -23,9 +25,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
 /**
- * Implements a storage based on Redis This implementation is on remote cache and has a filter to
- * avoid to store objects with certain size. This provider can only be used with an Enterprise
- * License.
+ * Provides a Metadata Provider implementation that uses Redis to persist the metadata files. This
+ * implementation uses a remote cache, and has a filter to avoid to store objects with certain
+ * size.
+ * <p>This provider can ONLY be used with an Enterprise License.</p>
  *
  * @author jsanca
  */
@@ -34,6 +37,7 @@ public class RedisStoragePersistenceAPI implements StoragePersistenceAPI {
     private final long maxObjectSize;
     private final RedisCache redisCache = new RedisCache();
     private final Set<String> groups = ConcurrentHashMap.newKeySet();
+    private static final String INVALID_LICENSE = "The Redis Metadata Provider is an Enterprise only feature";
 
     public RedisStoragePersistenceAPI() {
         this(Config.getLongProperty("REDIS_STORAGE_MAX_OBJECT_SIZE", FileUtil.KILO_BYTE * 100));
@@ -44,6 +48,7 @@ public class RedisStoragePersistenceAPI implements StoragePersistenceAPI {
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean existsGroup(final String groupName) {
         // If the group is NOT in the local cache, we try with the remote
         if (!this.groups.contains(groupName)) {
@@ -54,21 +59,25 @@ public class RedisStoragePersistenceAPI implements StoragePersistenceAPI {
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean existsObject(final String groupName, final String objectPath) throws DotDataException {
         return this.existsGroup(groupName) && null != this.redisCache.get(groupName, objectPath);
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean createGroup(final String groupName) throws DotDataException {
         return this.groups.add(groupName);
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean createGroup(final String groupName, final Map<String, Object> extraOptions) throws DotDataException {
         return createGroup(groupName);
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public int deleteGroup(final String groupName) throws DotDataException {
         this.redisCache.remove(groupName);
         this.groups.remove(groupName);
@@ -76,6 +85,7 @@ public class RedisStoragePersistenceAPI implements StoragePersistenceAPI {
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean deleteObjectAndReferences(final String groupName, final String path) {
         if (existsGroup(groupName)) {
             this.redisCache.remove(groupName, path);
@@ -85,11 +95,13 @@ public class RedisStoragePersistenceAPI implements StoragePersistenceAPI {
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean deleteObjectReference(final String groupName, final String path) {
         return this.deleteObjectAndReferences(groupName, path);
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public List<String> listGroups() {
         // Before sending the list, we need to update the local list with the remote data
         groups.addAll(this.redisCache.getGroups());
@@ -97,6 +109,7 @@ public class RedisStoragePersistenceAPI implements StoragePersistenceAPI {
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Object pushFile(final String groupName,
                            final String path, final File file,
                            final Map<String, Serializable> extraMeta) throws DotDataException {
@@ -147,7 +160,7 @@ public class RedisStoragePersistenceAPI implements StoragePersistenceAPI {
                 return stream.size() < this.maxObjectSize;
             }
         } catch (final Exception e) {
-            Logger.debug(this, String.format("Failed to determine size for object '%s': %s",
+            Logger.error(this, String.format("Failed to determine size for object '%s': %s",
                     object, ExceptionUtil.getErrorMessage(e)), e);
             return false;
         }
@@ -155,6 +168,7 @@ public class RedisStoragePersistenceAPI implements StoragePersistenceAPI {
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Object pushObject(final String groupName, final String path,
                              final ObjectWriterDelegate writerDelegate, final Serializable object,
                              final Map<String, Serializable> extraMeta) {
@@ -167,6 +181,7 @@ public class RedisStoragePersistenceAPI implements StoragePersistenceAPI {
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Future<Object> pushFileAsync(final String groupName, final String path,
                                         final File file,
                                         final Map<String, Serializable> extraMeta) {
@@ -176,6 +191,7 @@ public class RedisStoragePersistenceAPI implements StoragePersistenceAPI {
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Future<Object> pushObjectAsync(final String bucketName, final String path,
                                           final ObjectWriterDelegate writerDelegate,
                                           final Serializable object, final Map<String,
@@ -186,6 +202,7 @@ public class RedisStoragePersistenceAPI implements StoragePersistenceAPI {
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public File pullFile(final String groupName, final String path) {
         final MutableObject<File> file = new MutableObject<>(null);
 
@@ -216,6 +233,7 @@ public class RedisStoragePersistenceAPI implements StoragePersistenceAPI {
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Object pullObject(final String groupName, final String path,
                              final ObjectReaderDelegate readerDelegate) {
         Object object = null;
@@ -235,6 +253,7 @@ public class RedisStoragePersistenceAPI implements StoragePersistenceAPI {
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Future<File> pullFileAsync(final String groupName, final String path) {
         return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
                 () -> this.pullFile(groupName, path)
@@ -242,6 +261,7 @@ public class RedisStoragePersistenceAPI implements StoragePersistenceAPI {
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Future<Object> pullObjectAsync(final String groupName, final String path,
                                           final ObjectReaderDelegate readerDelegate) {
         return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
