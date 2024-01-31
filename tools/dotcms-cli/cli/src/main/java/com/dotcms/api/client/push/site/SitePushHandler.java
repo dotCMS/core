@@ -320,6 +320,7 @@ public class SitePushHandler implements PushHandler<SiteView> {
      * @param isArchived whether the site is archived
      * @return A completable future with the site view
      */
+    @ActivateRequestContext
     private CompletableFuture<SiteView> verifyAndReturnSiteAfterCompletion(
             final String siteName, final boolean isSiteLive, final boolean isArchived
     ) {
@@ -328,8 +329,6 @@ public class SitePushHandler implements PushHandler<SiteView> {
         final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
         CompletableFuture<SiteView> future = new CompletableFuture<>();
-
-        final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
 
         // The task we are scheduling (status polling)
         Runnable task = new Runnable() {
@@ -342,9 +341,7 @@ public class SitePushHandler implements PushHandler<SiteView> {
 
                 if (System.currentTimeMillis() < end) {
                     try {
-                        var response = siteAPI.findByName(
-                                GetSiteByNameRequest.builder().siteName(siteName).build()
-                        );
+                        var response = findSiteByName(siteName);
                         if ((response != null && response.entity() != null) &&
                                 ((response.entity().isLive() != null &&
                                         response.entity().isLive().equals(isSiteLive)) &&
@@ -385,6 +382,23 @@ public class SitePushHandler implements PushHandler<SiteView> {
         });
 
         return future;
+    }
+
+    /**
+     * Retrieves a site by its name.
+     *
+     * @param siteName The name of the site.
+     * @return The ResponseEntityView containing the SiteView object representing the site.
+     */
+    @ActivateRequestContext
+    public ResponseEntityView<SiteView> findSiteByName(final String siteName) {
+
+        final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
+
+        // Execute the REST call to retrieve folder contents
+        return siteAPI.findByName(
+                GetSiteByNameRequest.builder().siteName(siteName).build()
+        );
     }
 
 }
