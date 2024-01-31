@@ -16,6 +16,7 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.rekognition.actionlet.RekognitionActionlet;
+import com.dotcms.rendering.js.JsScriptActionlet;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.v1.workflow.ActionFail;
@@ -146,6 +147,7 @@ import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -268,6 +270,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				CopyActionlet.class,
 				MessageActionlet.class,
 				VelocityScriptActionlet.class,
+				JsScriptActionlet.class,
 				LargeMessageActionlet.class,
 				SendFormEmailActionlet.class,
 				ResetApproversActionlet.class,
@@ -4186,6 +4189,25 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         }
 
         return actionsBuilder.build();
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public Optional<SystemActionWorkflowActionMapping> findSystemActionByScheme(final SystemAction systemAction,
+																				final WorkflowScheme workflowScheme,
+																				final User user) throws DotSecurityException, DotDataException {
+
+		final List<Map<String, Object>> mappings = this.workFlowFactory.findSystemActionsByScheme (workflowScheme);
+		for (final Map<String, Object> rowMap : mappings) {
+
+			final SystemActionWorkflowActionMapping mapping =
+					this.toSystemActionWorkflowActionMapping(rowMap, workflowScheme, user);
+			if (Objects.nonNull(mapping) && mapping.getSystemAction().equals(systemAction)) {
+				return Optional.ofNullable(mapping);
+			}
+		}
+
+		return Optional.empty();
 	}
 
 	@Override

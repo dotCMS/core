@@ -165,4 +165,5 @@ public class HostUtil {
 		session.setAttribute(WebKeys.CURRENT_HOST, host);
 	}
 
+
 }

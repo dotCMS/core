@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.vtl;
 
+import com.dotcms.rendering.util.ScriptingReaderParams;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -40,7 +41,7 @@ public class FileVelocityReader implements VelocityReader {
     private static final String FILE_EXTENSION = ".vtl";
 
     @Override
-    public Reader getVelocity(final VTLResource.VelocityReaderParams params) throws DotSecurityException,
+    public Reader getVelocity(final ScriptingReaderParams params) throws DotSecurityException,
             IOException, DotDataException {
 
         final PageMode pageMode        = params.getPageMode();
