@@ -11,6 +11,7 @@ import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
 import java.io.File;
@@ -410,14 +411,17 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      * editable as a text file. If it can, the {@link BasicMetadataFields#EDITABLE_AS_TEXT} property
      * will be added.
      * <p>This is particularly useful in the File's edit mode in the back-end for dotCMS to allow
-     * content authors to edit the contents directly in the Code Editor field.</p>
+     * content authors to edit the contents directly in the Code Editor field. If, for any reason,
+     * the MIME Type cannot be detected, the value of the
+     * the {@link BasicMetadataFields#EDITABLE_AS_TEXT} property will be set to {@code false}.</p>
      *
      * @param metadataMap The File's metadata Map.
      */
     private void checkEditableAsText(final Map<String, Serializable> metadataMap) {
         if (!metadataMap.containsKey(BasicMetadataFields.EDITABLE_AS_TEXT.key())) {
-            metadataMap.put(EDITABLE_AS_TEXT.key(),
-                    FileUtil.isFileEditableAsText(metadataMap.get(CONTENT_TYPE_META_KEY.key()).toString()));
+            final String mimeType =
+                    Try.of(() -> metadataMap.get(CONTENT_TYPE_META_KEY.key()).toString()).getOrElse(StringPool.BLANK);
+            metadataMap.put(EDITABLE_AS_TEXT.key(), FileUtil.isFileEditableAsText(mimeType));
         }
     }
 
