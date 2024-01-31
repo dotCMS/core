@@ -1,9 +1,6 @@
-package com.dotcms.analytics.experience.metric;
+package com.dotcms.analytics.metrics;
 
 import com.dotcms.analytics.app.AnalyticsApp;
-import com.dotcms.analytics.experience.metric.collector.MetricCollectorType;
-import com.dotmarketing.exception.DotSecurityException;
-import com.liferay.portal.model.User;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,28 +42,6 @@ public class MetricsAPIImpl implements MetricsAPI {
                                 MetricsAPI.createAnalyticsAppPayload(
                                         analyticsApp,
                                         payload)));
-    }
-
-    @Override
-    public MetricResult getHotResults(final User user) throws DotSecurityException {
-
-        if (!user.isAdmin()) {
-            throw new DotSecurityException("Not Admin User is not allowed to get Matric Results");
-        }
-
-        final MetricResult.Builder builder = new MetricResult.Builder();
-
-        for (final MetricCollectorType metricCollectorType : MetricCollectorType.values()) {
-
-            metricCollectorType.getCollector().collect(user).ifPresent(value ->
-                    builder.get(metricCollectorType.getCategory())
-                            .get(metricCollectorType.getFeature())
-                            .put(MetricCollectorType.valueOf(metricCollectorType.name()), value)
-            );
-
-        }
-
-        return builder.build();
     }
 
 }

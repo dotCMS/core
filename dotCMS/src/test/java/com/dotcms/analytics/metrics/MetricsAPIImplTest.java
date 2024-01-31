@@ -1,27 +1,11 @@
-package com.dotcms.analytics.experience.metric;
+package com.dotcms.analytics.metrics;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.model.AnalyticsProperties;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowState;
-import com.liferay.portal.model.User;
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.Tuple3;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
-
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.*;
-import static com.dotmarketing.portlets.workflows.model.WorkflowState.UNPUBLISHED;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
