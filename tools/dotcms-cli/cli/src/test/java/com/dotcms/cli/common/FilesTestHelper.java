@@ -53,7 +53,6 @@ public class FilesTestHelper {
     protected String prepareData(final boolean includeAssets) throws IOException {
 
         final FolderAPI folderAPI = clientFactory.getClient(FolderAPI.class);
-        final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
 
         // root folders
         final String folder1 = "folder1";
@@ -104,19 +103,11 @@ public class FilesTestHelper {
         );
 
         // Creating a new test site
-        final String newSiteName = String.format("site-%d", System.currentTimeMillis());
-        CreateUpdateSiteRequest newSiteRequest = CreateUpdateSiteRequest.builder()
-                .siteName(newSiteName).build();
-        ResponseEntityView<SiteView> createSiteResponse = siteAPI.create(newSiteRequest);
-        Assertions.assertNotNull(createSiteResponse);
-        // Publish the new site
-        siteAPI.publish(createSiteResponse.entity().identifier());
-        Assertions.assertTrue(siteExist(newSiteName),
-                String.format("Site %s was not created", newSiteName));
+        final String newSiteName = createSite();
 
         // Creating test folders
-        final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse = folderAPI.makeFolders(
-                paths, newSiteName);
+        final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse =
+                folderAPI.makeFolders(paths, newSiteName);
         Assertions.assertNotNull(makeFoldersResponse.entity());
 
         if (includeAssets) {
@@ -137,6 +128,29 @@ public class FilesTestHelper {
                     String.format("/%s", folder4),
                     "image5.jpg");
         }
+
+        return newSiteName;
+    }
+
+    /**
+     * Creates a new site.
+     *
+     * @return The name of the newly created test site.
+     */
+    protected String createSite() {
+
+        final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
+
+        // Creating a new test site
+        final String newSiteName = String.format("site-%d", System.currentTimeMillis());
+        CreateUpdateSiteRequest newSiteRequest = CreateUpdateSiteRequest.builder()
+                .siteName(newSiteName).build();
+        ResponseEntityView<SiteView> createSiteResponse = siteAPI.create(newSiteRequest);
+        Assertions.assertNotNull(createSiteResponse);
+        // Publish the new site
+        siteAPI.publish(createSiteResponse.entity().identifier());
+        Assertions.assertTrue(siteExist(newSiteName),
+                String.format("Site %s was not created", newSiteName));
 
         return newSiteName;
     }

@@ -16,11 +16,10 @@ jobs:
       release_version: ${{ steps.set-common-vars.outputs.release_version }}
       is_release: ${{ steps.set-common-vars.outputs.is_release }}
       is_lts: ${{ steps.set-common-vars.outputs.is_lts }}
-      release_name: ${{ steps.set-common-vars.outputs.release_name }}
       release_label: ${{ steps.set-common-vars.outputs.release_label }}
     env:
       DOT_CICD_BRANCH: master
-      GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
+      GITHUB_USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
       REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -71,12 +70,12 @@ jobs:
           echo "is_lts=${IS_LTS}" >> $GITHUB_OUTPUT
           echo "release_name=${RELEASE_NAME}" >> $GITHUB_OUTPUT
           echo "release_label=${RELEASE_LABEL}" >> $GITHUB_OUTPUT
-#      - name: Prepare dot-cicd
-#        run: |
-#          sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
-#      - name: Run DotCMS Release Docker Image
-#        run: |
-#          ../dotcicd/library/pipeline.sh runRelease
+      - name: Prepare dot-cicd
+        run: |
+          sh -c "$(curl -fsSL https://raw.githubusercontent.com/dotCMS/dot-cicd/${DOT_CICD_BRANCH}/seed/install-dot-cicd.sh)"
+      - name: Run DotCMS Release Docker Image
+        run: |
+          ../dotcicd/library/pipeline.sh runRelease
 
   publish-release-image:
     name: Publish release image
@@ -84,10 +83,7 @@ jobs:
     needs: release-process
     if: success()
     outputs:
-      discovered_tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
       formatted_tags: ${{ steps.discover-docker-tags.outputs.formatted_tags }}
-    env:
-      GITHUB_USER_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
     steps:
       - name: Checkout core
         uses: actions/checkout@v3
@@ -141,17 +137,17 @@ jobs:
       - name: Pre build
         run: |
           docker system prune --volumes -af
-#      - name: Build and push
-#        uses: docker/build-push-action@v5.0.0
-#        with:
-#          context: ./docker/dotcms
-#          push: ${{ needs.release-process.outputs.is_release == 'true' }}
-#          tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
-#          platforms: ${{ env.PLATFORMS }}
-#          build-args: |
-#            BUILD_FROM=TAG
-#            BUILD_ID=${{ needs.release-process.outputs.build_id }}
-#        if: success()
+      - name: Build and push
+        uses: docker/build-push-action@v5.0.0
+        with:
+          context: ./docker/dotcms
+          push: ${{ needs.release-process.outputs.is_release == 'true' }}
+          tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
+          platforms: ${{ env.PLATFORMS }}
+          build-args: |
+            BUILD_FROM=TAG
+            BUILD_ID=${{ needs.release-process.outputs.build_id }}
+        if: success()
 
   release-wrap:
     name: Release wrap-up
@@ -169,21 +165,21 @@ jobs:
         with:
           fetch_operation: 'WITH_LABELS'
           fetch_value: ${{ env.FETCH_VALUE }}
-          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Clear next release issues
         uses: ./.github/actions/issue-labeler
         with:
           issues_json: ${{ steps.fetch-next-release-issues.outputs.issues }}
           labels: ${{ env.FETCH_VALUE }}
           operation: 'REMOVE'
-          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Label current release issues
         uses: ./.github/actions/issue-labeler
         with:
           issues_json: ${{ steps.fetch-next-release-issues.outputs.issues }}
           labels: 'Release ${{ needs.release-process.outputs.release_version }}'
           operation: 'ADD'
-          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
         env:
