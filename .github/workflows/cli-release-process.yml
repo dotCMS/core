@@ -262,8 +262,6 @@ jobs:
       - name: 'Render package.json template'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
         run: |
-          pwd
-          ls -ltr
           jinja2 package.j2 -D packageName=${PACKAGE_NAME} -D packageVersion=${PACKAGE_VERSION} --format json -o package.json
           rm -f package.j2      
 
@@ -279,9 +277,9 @@ jobs:
         run: |
           mv src/postinstall.js.seed src/postinstall.js
           mkdir -p bin
-          unzip ${{ github.workspace }}/artifacts/distributions/*.zip -d bin/
-          
           cp ${{ github.workspace }}/tools/dotcms-cli/README.md .
+          ls -R ${{ github.workspace }}/artifacts
+#          unzip ${{ github.workspace }}/artifacts/distributions/*.zip -d bin/
           
       - name: 'Verify package'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
