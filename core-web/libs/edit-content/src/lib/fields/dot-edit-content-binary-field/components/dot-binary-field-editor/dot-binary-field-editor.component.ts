@@ -61,8 +61,6 @@ const DEFAULT_FILE_TYPE = 'text';
 export class DotBinaryFieldEditorComponent implements OnInit {
     @Input() fileName = '';
     @Input() fileContent = '';
-
-    private readonly languageType = signal(DEFAULT_FILE_TYPE);
     @Output() readonly tempFileUploaded = new EventEmitter<DotCMSTempFile>();
     @Output() readonly cancel = new EventEmitter<void>();
     @ViewChild('editorRef', { static: true }) editorRef!: MonacoEditorComponent;
@@ -71,6 +69,7 @@ export class DotBinaryFieldEditorComponent implements OnInit {
         content: new FormControl('')
     });
     mimeType = '';
+    private readonly languageType = signal(DEFAULT_FILE_TYPE);
     private readonly cd: ChangeDetectorRef = inject(ChangeDetectorRef);
     private readonly dotUploadService: DotUploadService = inject(DotUploadService);
     private readonly dotMessageService: DotMessageService = inject(DotMessageService);
@@ -81,19 +80,19 @@ export class DotBinaryFieldEditorComponent implements OnInit {
     private invalidFileMessage = '';
     private editor: monaco.editor.IStandaloneCodeEditor;
 
-    private _customMonacoOptions = signal<MonacoEditorConstructionOptions>({});
+    private _userMonacoOptions = signal<MonacoEditorConstructionOptions>({});
 
     monacoOptions = computed(() => {
         return {
             ...DEFAULT_BINARY_FIELD_MONACO_CONFIG,
-            ...this._customMonacoOptions(),
+            ...this._userMonacoOptions(),
             language: this.languageType()
         };
     });
 
     @Input()
-    set customMonacoOptions(customMonacoOptions: MonacoEditorConstructionOptions) {
-        this._customMonacoOptions.set(customMonacoOptions);
+    set userMonacoOptions(customMonacoOptions: MonacoEditorConstructionOptions) {
+        this._userMonacoOptions.set(customMonacoOptions);
     }
 
     get name(): FormControl {

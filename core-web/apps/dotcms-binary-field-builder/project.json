@@ -41,11 +41,6 @@
                 ]
             },
             "configurations": {
-                "localhost": {
-                    "sourceMap": true,
-                    "optimization": false,
-                    "watch": true
-                },
                 "production": {
                     "budgets": [
                         {
@@ -67,7 +62,8 @@
                     "vendorChunk": true,
                     "extractLicenses": false,
                     "sourceMap": true,
-                    "namedChunks": true
+                    "namedChunks": true,
+                    "watch": true
                 },
                 "tomcat": {
                     "outputPath": "../../tomcat9/webapps/ROOT/dotcms-binary-field-builder",

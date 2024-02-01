@@ -83,9 +83,9 @@
                 data-testId="url-mode"></dot-dot-binary-field-url-mode>
             <dot-dot-binary-field-editor
                 *ngSwitchCase="BinaryFieldMode.EDITOR"
-                [customMonacoOptions]="customMonacoOptions()"
                 [fileContent]="vm.tempFile?.content || vm.contentlet?.content"
                 [fileName]="vm.tempFile?.fileName || vm.contentlet?.name"
+                [userMonacoOptions]="customMonacoOptions()"
                 (cancel)="closeDialog()"
                 (tempFileUploaded)="setTempFile($event)"
                 data-testId="editor-mode"></dot-dot-binary-field-editor>

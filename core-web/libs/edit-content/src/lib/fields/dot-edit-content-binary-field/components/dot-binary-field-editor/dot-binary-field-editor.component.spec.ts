@@ -139,8 +139,6 @@ describe('DotBinaryFieldEditorComponent', () => {
                 content: 'test'
             });
 
-            component.form.updateValueAndValidity();
-
             spectator.detectComponentChanges();
 
             tick(355); //due to debounceTime
