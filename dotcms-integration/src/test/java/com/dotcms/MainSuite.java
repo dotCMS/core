@@ -620,7 +620,8 @@ import org.junit.runners.Suite.SuiteClasses;
         AnnouncementsHelperIntegrationTest.class,
         RemoteAnnouncementsLoaderIntegrationTest.class,
         JsEngineTest.class,
-        Task240131UpdateLanguageVariableContentTypeTest.class
+        Task240131UpdateLanguageVariableContentTypeTest.class,
+        Task240112AddMetadataColumnToStructureTableTest.class
 })
 
 public class MainSuite {

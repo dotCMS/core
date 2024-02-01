@@ -40,6 +40,7 @@ public class EventLogRunnable extends BaseMetricsSenderRunnable<EventsPayload>  
     }
 
     private Optional<Response<String>> sendEvent(final CircuitBreakerUrlBuilder builder, final EventPayload payload) {
+
         final CircuitBreakerUrl postLog = builder
                 .setRawData(payload.toString())
                 .build();

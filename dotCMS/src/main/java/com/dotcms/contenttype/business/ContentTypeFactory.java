@@ -16,6 +16,28 @@ import java.util.List;
  */
 public interface ContentTypeFactory {
 
+	String INODE_COLUMN = "inode";
+	String NAME_COLUMN = "name";
+	String DESCRIPTION_COLUMN = "description";
+	String DEFAULT_STRUCTURE_COLUMN = "default_structure";
+	String REVIEW_INTERVAL_COLUMN = "review_interval";
+	String REVIEWER_ROLE_COLUMN = "reviewer_role";
+	String PAGE_DETAIL_COLUMN = "page_detail";
+	String STRUCTURE_TYPE_COLUMN = "structuretype";
+	String SYSTEM_COLUMN = "system";
+	String FIXED_COLUMN = "fixed";
+	String VELOCITY_VAR_NAME_COLUMN = "velocity_var_name";
+	String URL_MAP_PATTERN_COLUMN = "url_map_pattern";
+	String HOST_COLUMN = "host";
+	String FOLDER_COLUMN = "folder";
+	String EXPIRE_DATE_VAR_COLUMN = "expire_date_var";
+	String PUBLISH_DATE_VAR_COLUMN = "publish_date_var";
+	String MOD_DATE_COLUMN = "mod_date";
+	String SORT_ORDER_COLUMN = "sort_order";
+	String ICON_COLUMN = "icon";
+	String MARKED_FOR_DELETION_COLUMN = "marked_for_deletion";
+	String METADATA_COLUMN = "metadata";
+
 	default ContentTypeFactory instance(){
 		return new ContentTypeFactoryImpl();
 	}

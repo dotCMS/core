@@ -11,7 +11,8 @@ import {
     DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
-    DotCMSContentTypeLayoutRow
+    DotCMSContentTypeLayoutRow,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -850,10 +851,17 @@ export const LAYOUT_FIELDS_VALUES_MOCK = {
     date: '2023-11-14 19:27:53'
 };
 
+const metadata = {};
+metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = false;
+
 export const CONTENT_FORM_DATA_MOCK: EditContentPayload = {
     actions: [],
-    layout: LAYOUT_MOCK,
-    fields: JUST_FIELDS_MOCKS,
+    contentType: {
+        metadata,
+        layout: LAYOUT_MOCK,
+        fields: JUST_FIELDS_MOCKS,
+        contentType: 'Test'
+    } as unknown as DotCMSContentType,
     contentlet: {
         // This contentlet is some random mock, if you need you can change the properties
         date: MOCK_DATE, // To add the value to the date field, defaultValue is string and I don't think we should change the whole type just for this
@@ -886,8 +894,7 @@ export const CONTENT_FORM_DATA_MOCK: EditContentPayload = {
         __icon__: 'contentIcon',
         contentTypeIcon: 'event_note',
         variant: 'DEFAULT'
-    },
-    contentType: 'Test'
+    }
 };
 
 /* CONTENT TYPE MOCKS */

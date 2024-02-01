@@ -3,14 +3,29 @@ package com.dotcms.contenttype.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.*;
-import com.dotcms.contenttype.model.type.*;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.Expireable;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.util.DotPreconditions;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DeterministicIdentifierAPI;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.DotValidationException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -20,15 +35,27 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.lang.time.DateUtils;
 
+import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
@@ -558,37 +585,44 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.loadResult();
   }
 
-  private void dbUpdate(ContentType type) throws DotDataException {
-    DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.UPDATE_TYPE);
-    dc.addParam(type.name());
-    dc.addParam(type.description());
-    dc.addParam(type.defaultType());
-    dc.addParam(type.detailPage());
-    dc.addParam(type.baseType().getType());
-    dc.addParam(type.system());
-    dc.addParam(type.fixed());
-    dc.addParam(type.variable());
-    dc.addParam(new CleanURLMap(type.urlMapPattern()).toString());
-    dc.addParam(type.host());
-    dc.addParam(type.folder());
-    dc.addParam(type.expireDateVar());
-    dc.addParam(type.publishDateVar());
-    dc.addParam(type.modDate());
-    dc.addParam(type.icon());
-    dc.addParam(type.sortOrder());
-    dc.addParam(type.markedForDeletion());
+    /**
+     * Updates the specified Content Type.
+     *
+     * @param type The {@link ContentType} to update.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
+  private void dbUpdate(final ContentType type) throws DotDataException {
+    final DotConnect dc = new DotConnect();
+    dc.setSQL(ContentTypeSql.UPDATE_TYPE);
+    updateContentTypeFields(dc, type);
     dc.addParam(type.id());
     dc.loadResult();
   }
 
-  private void dbInsert(ContentType type) throws DotDataException {
-
-
-
-    DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.INSERT_TYPE);
+    /**
+     * Inserts the specified Content Type.
+     *
+     * @param type The {@link ContentType} to insert.
+     *
+     * @throws DotDataException An error occurred when interacting with the database.
+     */
+    private void dbInsert(final ContentType type) throws DotDataException {
+        final DotConnect dc = new DotConnect();
+        dc.setSQL(ContentTypeSql.INSERT_TYPE);
     dc.addParam(type.id());
+        updateContentTypeFields(dc, type);
+        dc.loadResult();
+    }
+
+    /**
+     * Takes the "updateable" attributes of a Content Type and adds them to the {@link DotConnect}
+     * instance to save or update a Content Type.
+     *
+     * @param dc   The {@link DotConnect} instance to add the parameters to.
+     * @param type The {@link ContentType} to get the attributes from.
+     */
+    private void updateContentTypeFields(final DotConnect dc, final ContentType type) {
     dc.addParam(type.name());
     dc.addParam(type.description());
     dc.addParam(type.defaultType());
@@ -606,7 +640,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.addParam(type.icon());
     dc.addParam(type.sortOrder());
     dc.addParam(type.markedForDeletion());
-    dc.loadResult();
+    dc.addJSONParam(type.metadata());
   }
 
   private boolean dbDelete(final ContentType type) throws DotDataException {

@@ -7,7 +7,6 @@ import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.CopySiteRequest;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.SiteView;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
 import picocli.CommandLine;
@@ -83,10 +82,19 @@ public class SiteCopy extends AbstractSiteCommand implements Callable<Integer>, 
     }
 
     private int copy() {
+
         final SiteView site = findSite(siteNameOrId);
+
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
         ResponseEntityView<SiteView> copy = siteAPI.copy(fromSite(site, copySiteName, copyAll));
-        output.info(String.format("New Copy Site is [%s].", copy.entity().hostName()));
+
+        output.info(String.format(
+                "New Copy Site is [%s]. Please note that the full replication of all site elements "
+                        + "is executed as a background job. To confirm the success of the copy "
+                        + "operation, please check the dotCMS server.",
+                copy.entity().hostName()
+        ));
+
         return CommandLine.ExitCode.OK;
     }
 
