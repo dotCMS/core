@@ -1,4 +1,4 @@
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 
 import { NgFor } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -138,6 +138,10 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
                 key,
                 value
             };
+
+            if (!value) {
+                return of({});
+            }
 
             return (
                 value
