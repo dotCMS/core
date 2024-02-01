@@ -362,7 +362,9 @@ jobs:
           
           echo "Adding package.json file"
           jinja2 package.j2 -D packageName=${PACKAGE_NAME} -D packageVersion=${PACKAGE_VERSION} -D packageVersionSuffix=${PACKAGE_VERSION_SUFFIX} --format json -o package.json
-          rm -f package.j2  
+          rm -f package.j2
+          
+          cat package.json
           
       - name: 'NPM Package tree'
         run: ls -R ${{ github.workspace }}/tools/dotcms-cli/npm/
