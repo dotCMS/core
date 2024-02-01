@@ -31,35 +31,28 @@ import javax.ws.rs.core.Response;
  */
 public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
 
-    //The CT varN/ame used to retrieve the Announcements
-    static final Lazy<String>DOT_ANNOUNCEMENT_CT =
-            Lazy.of(()-> Config.getStringProperty("DOT_ANNOUNCEMENT_CT", "Announcement"));
-
     //This is the url to the dotCMS instance set to provide and feed all consumers with announcements
     static final  Lazy<String> ANNOUNCEMENTS_BASE_URL =
             Lazy.of(() -> Config.getStringProperty("ANNOUNCEMENTS_BASE_URL", "https://www.dotcms.com"));
 
-    //The query pattern to retrieve the Announcements
-    static final String ANNOUNCEMENTS_QUERY_PATTERN = "%s/api/content/render/false/query/+contentType:%s +languageId:%d +deleted:false +live:true/orderBy/%s.announcementDate desc";
+    static final String ANNOUNCEMENTS_QUERY_PATTERN = "/api/content/render/false/query/+contentType:Announcement%20+(conhost:8a7d5e23-da1e-420a-b4f0-471e7da8ea2d%20conhost:SYSTEM_HOST)%20+languageId:1%20+deleted:false%20+working:true%20+variant:default/orderby/Announcement.announcementDate%20desc";
 
     /**
      * Load the announcements from the remote dotCMS instance
-     * @param language Language
      * @return List<Announcement>
      */
     @Override
-    public List<Announcement> loadAnnouncements(final Language language) {
-        final JsonNode jsonNode = loadRemoteAnnouncements(language);
+    public List<Announcement> loadAnnouncements() {
+        final JsonNode jsonNode = loadRemoteAnnouncements();
         return toAnnouncements(jsonNode);
     }
 
     /**
      * Load the announcements from the remote dotCMS instance
-     * @param language Language
      * @return JsonNode
      */
-    JsonNode loadRemoteAnnouncements(final Language language) {
-        final String url = buildURL(language);
+    JsonNode loadRemoteAnnouncements() {
+        final String url = buildURL();
         //Let's log the url to retrieve the announcements for debugging purposes on postman
         Logger.info(AnnouncementsHelperImpl.class, String.format("loading announcements from [%s]", url));
         try {
@@ -73,7 +66,7 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
                 final JsonParser parser = factory.createParser(jsonString);
                 return mapper.readTree(parser);
             } else {
-                Logger.info(AnnouncementsHelperImpl.class, String.format(" failed to get announcements from [%s] with status: [%d] and  entity: [%s] ", url, response.getStatus(), response.getEntity()));
+                Logger.debug(AnnouncementsHelperImpl.class, String.format(" failed to get announcements from [%s] with status: [%d] and  entity: [%s] ", url, response.getStatus(), response.getEntity()));
                 throw new DotRuntimeException(String.format(" failed to get announcements from [%s] with status: [%d]", url, response.getStatus()));
             }
 
@@ -85,12 +78,10 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
 
     /**
      * Build the url to retrieve the announcements
-     * @param language Language
      * @return String
      */
-     String buildURL(Language language) {
-        final String raw = String.format(ANNOUNCEMENTS_QUERY_PATTERN, ANNOUNCEMENTS_BASE_URL.get(),
-                DOT_ANNOUNCEMENT_CT.get(), language.getId(), DOT_ANNOUNCEMENT_CT.get());
+    String buildURL() {
+        final String raw = ANNOUNCEMENTS_BASE_URL.get() + ANNOUNCEMENTS_QUERY_PATTERN;
         //clean up double slashes in the url
         return raw.replaceAll("(?<!(http:|https:))//", "/");
     }
@@ -101,23 +92,6 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
      */
     static Client restClient() {
         return RestClientBuilder.newClient();
-    }
-
-    /**
-     * Get the language by id or code, if not found fallback to default language
-     * @param languageIdOrCode String
-     * @return Language
-     */
-    Language getLanguage(final String languageIdOrCode) {
-        final LanguageAPI languageAPI = APILocator.getLanguageAPI();
-        Language language;
-        try {
-            language = languageAPI.getLanguage(languageIdOrCode);
-        } catch (Exception e) {
-            Logger.debug(AnnouncementsHelperImpl.class, String.format(" failed to get lang [%s] with message: [%s] fallback to default language", languageIdOrCode, e.getMessage()));
-            language = languageAPI.getDefaultLanguage();
-        }
-        return language;
     }
 
     DateTimeFormatter formatter = new DateTimeFormatterBuilder()
@@ -131,7 +105,7 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
      * @param root JsonNode
      * @return List<Announcement>
      */
-     List<Announcement> toAnnouncements(final JsonNode root) {
+    List<Announcement> toAnnouncements(final JsonNode root) {
 
         final ImmutableList.Builder<Announcement> announcements = ImmutableList.builder();
         final JsonNode nodes = root.get("contentlets");
@@ -149,9 +123,6 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
             final LocalDateTime date = LocalDateTime.parse(dateString, formatter);
             final LocalDateTime modDate = LocalDateTime.parse(modDateString, formatter);
 
-            final Language language = getLanguage(langId);
-
-
             announcements.add(
                     Announcement.builder()
                             .identifier(identifier)
@@ -161,8 +132,7 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
                             .announcementDateAsISO8601(date.toString())
                             .type(type)
                             .url(url)
-                            .languageId(language.getId())
-                            .languageCode(language.getIsoCode())
+                            .languageId(langId)
                             .modDate(modDate.toInstant(java.time.ZoneOffset.UTC))
                             .modDateAsISO8601(modDate.toString())
                             .description(description)
