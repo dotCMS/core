@@ -230,78 +230,9 @@ jobs:
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.tar.gz
-      
-  # release:
-  #   needs: [ precheck, build ]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: 'Check out repository'
-  #       uses: actions/checkout@v4
-  #       with:
-  #         token: ${{ secrets.CI_MACHINE_TOKEN }}
-  #         ref: ${{ needs.precheck.outputs.HEAD }}
-  #         fetch-depth: 0
-
-  #     - name: 'Create artifacts directory'
-  #       run: |
-  #         mkdir -p ${{ github.workspace }}/artifacts
-  #         echo "artifactsDir=${{ github.workspace }}/artifacts" >> "$GITHUB_ENV"
-
-  #     - name: 'Download all build artifacts'
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         path: ${{ github.workspace }}/artifacts  
-  #         pattern: artifacts-*
-  #         merge-multiple: true
-
-  #     - name: 'List artifacts'
-  #       run: |
-  #         ls -R
-
-  #     - name: 'Set up Java'
-  #       uses: actions/setup-java@v4
-  #       with:
-  #         java-version: ${{ env.JAVA_VERSION }}
-  #         distribution: ${{ env.JAVA_DISTRO }}
-
-  #     - name: 'Cache Maven packages'
-  #       uses: actions/cache@v4
-  #       with:
-  #         path: ~/.m2/repository
-  #         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-  #         restore-keys: ${{ runner.os }}-maven-
-
-  #     - name: 'JReleaser'
-  #       env:
-  #         JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #         JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
-  #         JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
-  #         JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
-  #         JRELEASER_SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
-  #         JRELEASER_SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-  #       working-directory: ${{ github.workspace }}
-  #       run: |
-  #         tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
-
-  #     - name: 'Setup git config'
-  #       run: |
-  #         git config user.name "${{ secrets.CI_MACHINE_USER }}"
-  #         git config user.email "dotCMS-Machine-User@dotcms.com"
-
-  #     - name: 'Set next version'
-  #       working-directory: ${{ github.workspace }}/tools/dotcms-cli
-  #       run: |
-  #         RELEASE_VERSION=${{ needs.precheck.outputs.RELEASE_VERSION }}
-  #         NEXT_VERSION=${{ needs.precheck.outputs.NEXT_VERSION }}
-  #         HEAD=${{ needs.precheck.outputs.HEAD }}
-
-  #         ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$NEXT_VERSION
-
-  #         git commit --allow-empty -a -m "⬆️  Next version $NEXT_VERSION"
-  #         git push https://${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${GITHUB_REPOSITORY}
-
 
   publish-npm-package:
+    name: "Publish NPM Package"
     if: success()
     needs: [ build ] # ,release
     runs-on: ubuntu-latest
@@ -374,5 +305,75 @@ jobs:
       #     NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       #   run: |
       #     echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
-      #     npm publish --access public
+      #     npm publish --access public            
+      
+  # release:
+  #   needs: [ precheck, build ]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: 'Check out repository'
+  #       uses: actions/checkout@v4
+  #       with:
+  #         token: ${{ secrets.CI_MACHINE_TOKEN }}
+  #         ref: ${{ needs.precheck.outputs.HEAD }}
+  #         fetch-depth: 0
+
+  #     - name: 'Create artifacts directory'
+  #       run: |
+  #         mkdir -p ${{ github.workspace }}/artifacts
+  #         echo "artifactsDir=${{ github.workspace }}/artifacts" >> "$GITHUB_ENV"
+
+  #     - name: 'Download all build artifacts'
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         path: ${{ github.workspace }}/artifacts  
+  #         pattern: artifacts-*
+  #         merge-multiple: true
+
+  #     - name: 'List artifacts'
+  #       run: |
+  #         ls -R
+
+  #     - name: 'Set up Java'
+  #       uses: actions/setup-java@v4
+  #       with:
+  #         java-version: ${{ env.JAVA_VERSION }}
+  #         distribution: ${{ env.JAVA_DISTRO }}
+
+  #     - name: 'Cache Maven packages'
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: ~/.m2/repository
+  #         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+  #         restore-keys: ${{ runner.os }}-maven-
+
+  #     - name: 'JReleaser'
+  #       env:
+  #         JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #         JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
+  #         JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+  #         JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+  #         JRELEASER_SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
+  #         JRELEASER_SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+  #       working-directory: ${{ github.workspace }}
+  #       run: |
+  #         tools/dotcms-cli/mvnw -B -Prelease jreleaser:full-release -DartifactsDir=artifacts -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE
+
+  #     - name: 'Setup git config'
+  #       run: |
+  #         git config user.name "${{ secrets.CI_MACHINE_USER }}"
+  #         git config user.email "dotCMS-Machine-User@dotcms.com"
+
+  #     - name: 'Set next version'
+  #       working-directory: ${{ github.workspace }}/tools/dotcms-cli
+  #       run: |
+  #         RELEASE_VERSION=${{ needs.precheck.outputs.RELEASE_VERSION }}
+  #         NEXT_VERSION=${{ needs.precheck.outputs.NEXT_VERSION }}
+  #         HEAD=${{ needs.precheck.outputs.HEAD }}
+
+  #         ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$NEXT_VERSION
+
+  #         git commit --allow-empty -a -m "⬆️  Next version $NEXT_VERSION"
+  #         git push https://${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${GITHUB_REPOSITORY}
+
                     
