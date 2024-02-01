@@ -330,7 +330,18 @@ jobs:
       - name: 'Generate package version suffix'
         if: contains(github.event.inputs.version, 'SNAPSHOT')  
         id: generate-version-suffix
-        run: echo "PACKAGE_VERSION_SUFFIX=-rc-$(date +'%Y%m%d%H%M%S')" >> "$GITHUB_OUTPUT"
+        env:
+          PACKAGE_NAME: ${{ env.NPM_PACKAGE_NAME }}
+        run: |
+          last_rc_version=$(npm view $PACKAGE_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
+          next_rc_version=$(echo "$last_rc_version" | awk -F '-rc' '{print $1 "-rc" $2 + 1}')
+          rc_suffix=$(echo "$version" | sed -n 's/.*-rc\([0-9]*\)/-rc\1/p')
+          echo "PACKAGE_VERSION_SUFFIX=$rc_suffix" >> "$GITHUB_OUTPUT"          
+
+      # - name: 'Generate package version suffix'
+      #   if: contains(github.event.inputs.version, 'SNAPSHOT')  
+      #   id: generate-version-suffix
+      #   run: echo "PACKAGE_VERSION_SUFFIX=-rc-$(date +'%Y%m%d%H%M%S')" >> "$GITHUB_OUTPUT"
 
       - name: 'NPM Package setup'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
