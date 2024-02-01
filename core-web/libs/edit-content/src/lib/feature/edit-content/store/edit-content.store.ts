@@ -43,15 +43,11 @@ export class DotEditContentStore extends ComponentStore<EditContentState> {
     private readonly dotMessageService = inject(DotMessageService);
     private readonly location = inject(Location);
 
-    readonly vm$ = this.select(
-        ({ actions, contentType: { variable, layout, fields }, contentlet }) => ({
-            actions,
-            contentType: contentlet?.contentType || variable,
-            layout: layout || [],
-            fields: fields || [],
-            contentlet
-        })
-    );
+    readonly vm$ = this.select(({ actions, contentType, contentlet }) => ({
+        actions,
+        contentType,
+        contentlet
+    }));
 
     /**
      * Update the state

@@ -344,6 +344,7 @@ public class TaskLocatorUtil {
 		.add(Task240102AlterVarcharLengthOfRelationType.class)
 		.add(Task240111AddInodeAndIdentifierLeftIndexes.class)
 		.add(Task240131UpdateLanguageVariableContentType.class)
+		.add(Task240112AddMetadataColumnToStructureTable.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}

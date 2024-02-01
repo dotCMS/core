@@ -5,11 +5,14 @@ import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.experience.metric.MetricsAPI;
+import com.dotcms.experiments.business.ExperimentsAPI;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.metrics.MetricsSenderSubmitter;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -21,8 +24,9 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
+
 import org.apache.commons.io.IOUtils;
 
 import java.io.BufferedReader;
@@ -52,6 +56,7 @@ public class EventLogWebInterceptor implements WebInterceptor {
 
     private final MetricsSenderSubmitter submitter;
     private final Lazy<String> jitsuLib;
+    private final ExperimentsAPI experimentsAPI = APILocator.getExperimentsAPI();
 
     public EventLogWebInterceptor() {
         submitter = new MetricsSenderSubmitter();
@@ -125,21 +130,35 @@ public class EventLogWebInterceptor implements WebInterceptor {
                 WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(request));
         //eventPayload.put("clusterId", ClusterFactory.getClusterId());
 
-        for (final Map<String, Object> experiment : experiments) {
-            eventPayload.addExperiment(experiment);
-        }
-
         try {
-            final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-            this.submitter.logEvent(
-                    MetricsAPI.createAnalyticsAppPayload(
-                            AnalyticsHelper.get().appFromHost(host),
-                            eventPayload));
+            addRunningExperimentAsPayload(experiments, eventPayload);
+
+            if (!eventPayload.isEmpty()) {
+                final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
+
+                this.submitter.logEvent(
+                        MetricsAPI.createAnalyticsAppPayload(
+                                AnalyticsHelper.get().appFromHost(host),
+                                eventPayload));
+            }
         } catch (DotDataException | DotSecurityException | PortalException | SystemException e) {
             Logger.error(this, "Error resolving current host", e);
         } catch(Exception e) {
             Logger.error(this, "Could not submit event log", e);
 
+        }
+    }
+
+    private void addRunningExperimentAsPayload(List<Map<String, Object>> experiments, EventsPayload eventPayload) throws DotDataException {
+        final Collection<String> runningExperimentIds = experimentsAPI.getRunningExperiments().stream()
+                .map(Experiment::getIdentifier)
+                .collect(Collectors.toSet());
+
+
+        for (final Map<String, Object> experiment : experiments) {
+            if (runningExperimentIds.contains(experiment.get("experiment"))) {
+                eventPayload.addExperiment(experiment);
+            }
         }
     }
 
