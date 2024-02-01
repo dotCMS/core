@@ -1,10 +1,9 @@
 {
 	"info": {
-		"_postman_id": "ec9b06ea-0e55-44b2-8364-6c503499f792",
+		"_postman_id": "611b379f-e7c5-4732-8b92-2d34993515d4",
 		"name": "GraphQL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727",
-		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-ec9b06ea-0e55-44b2-8364-6c503499f792?action=share&source=collection_link&creator=5403727"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -4562,7 +4561,7 @@
 									"    pm.expect(imageFieldJson.fileAsset.mime).to.eql(\"image/jpeg\");",
 									"    ",
 									"    // metaData",
-									"    pm.expect(imageFieldJson.metaData.length).to.eql(12);",
+									"    pm.expect(imageFieldJson.metaData.length).to.eql(13, \"Returned Metadata attributes is \" + imageFieldJson.metaData.length);",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"fileSize\", \"5494\"), 'FAILED:[fileSize]').to.be.true;",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"length\", \"5494\"), 'FAILED:[length]').to.be.true;",
 									"    pm.expect(hasProperty(imageFieldJson.metaData, \"width\", \"139\"), 'FAILED:[width]').to.be.true;",
@@ -10033,84 +10032,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "languageId",
-			"value": ""
-		},
-		{
-			"key": "contentTypeVariable",
-			"value": ""
-		},
-		{
-			"key": "contentIdentifier",
-			"value": ""
-		},
-		{
-			"key": "imageTypeInfo",
-			"value": ""
-		},
-		{
-			"key": "videoTypeInfo",
-			"value": ""
-		},
-		{
-			"key": "fileImageContentTypeVariable",
-			"value": ""
-		},
-		{
-			"key": "imageFieldVariable",
-			"value": ""
-		},
-		{
-			"key": "fileFieldVariable",
-			"value": ""
-		},
-		{
-			"key": "fileContentIdentifier",
-			"value": ""
-		},
-		{
-			"key": "imageContentIdentifier",
-			"value": ""
-		},
-		{
-			"key": "childContentTypeVariable",
-			"value": ""
-		},
-		{
-			"key": "parentContentTypeVariable",
-			"value": ""
-		},
-		{
-			"key": "relFieldVariable",
-			"value": ""
-		},
-		{
-			"key": "childContentIdentifier",
-			"value": ""
-		},
-		{
-			"key": "parentContentIdentifier",
-			"value": ""
-		},
-		{
-			"key": "contentTypeIdWithStoryBlock",
-			"value": ""
-		},
-		{
-			"key": "contentTypeVarNameWithStoryBlock",
-			"value": ""
-		},
-		{
-			"key": "contentletIdWithEmptyStoryBlock",
-			"value": ""
-		},
-		{
-			"key": "dateFieldContentTypeVariable",
-			"value": ""
 		}
 	]
 }
