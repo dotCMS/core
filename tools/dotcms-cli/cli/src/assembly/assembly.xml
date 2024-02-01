@@ -25,15 +25,16 @@
           xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0 http://maven.apache.org/xsd/assembly-2.2.0.xsd">
     <id>dist</id>
     <formats>
-        <format>tar.gz</format>
+<!--        <format>tar.gz</format>-->
         <format>zip</format>
     </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
     <fileSets>
         <fileSet>
             <directory>${project.build.directory}</directory>
-            <outputDirectory>./${project.artifactId}-${project.version}-${os.detected.classifier}</outputDirectory>
+            <outputDirectory>./</outputDirectory>
             <includes>
-                <include>${project.artifactId}-${project.version}-${os.detected.classifier}{executable-suffix}</include>
+                <include>${project.artifactId}-${project.version}-${os.detected.classifier}${executable-suffix}</include>
             </includes>
             <fileMode>0755</fileMode>
         </fileSet>
