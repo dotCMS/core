@@ -3,12 +3,8 @@ package com.dotcms.jitsu;
 import static javax.ws.rs.core.HttpHeaders.CONTENT_LENGTH;
 import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 
-import com.dotcms.analytics.helper.AnalyticsHelper;
-
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.Experiment;
-
-
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.util.JsonUtil;
