@@ -14,7 +14,7 @@ import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.api.client.pull.PullService;
 import com.dotcms.api.client.pull.file.FileFetcher;
 import com.dotcms.api.client.pull.file.FilePullHandler;
-import com.dotcms.cli.common.FilesTestHelper;
+import com.dotcms.cli.common.FilesTestHelperService;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.WorkspaceManager;
 import com.dotcms.model.config.ServiceBean;
@@ -41,7 +41,7 @@ import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 @TestProfile(DotCMSITProfile.class)
-class PullServiceIT extends FilesTestHelper {
+class PullServiceIT {
 
     @Inject
     AuthenticationContext authenticationContext;
@@ -57,6 +57,9 @@ class PullServiceIT extends FilesTestHelper {
 
     @Inject
     FilePullHandler filePullHandler;
+
+    @Inject
+    FilesTestHelperService filesTestHelper;
 
     @Inject
     WorkspaceManager workspaceManager;
@@ -88,15 +91,15 @@ class PullServiceIT extends FilesTestHelper {
     void Test_Sites_Check() throws IOException {
 
         // Create a temporal folder for the pull
-        var tempFolder = createTempFolder();
+        var tempFolder = filesTestHelper.createTempFolder();
         var workspace = workspaceManager.getOrCreate(tempFolder);
 
         try {
 
             // Preparing the data for the test
-            final var testSiteName1 = prepareData();
-            final var testSiteName2 = prepareData();
-            final var testSiteName3 = prepareData();
+            final var testSiteName1 = filesTestHelper.prepareData();
+            final var testSiteName2 = filesTestHelper.prepareData();
+            final var testSiteName3 = filesTestHelper.prepareData();
 
             // Pulling the content
             OutputOptionMixin outputOptions = new MockOutputOptionMixin();
@@ -257,7 +260,7 @@ class PullServiceIT extends FilesTestHelper {
 
         } finally {
             // Clean up the temporal folder
-            deleteTempDirectory(tempFolder);
+            filesTestHelper.deleteTempDirectory(tempFolder);
         }
     }
 
@@ -273,13 +276,13 @@ class PullServiceIT extends FilesTestHelper {
     void Test_Folders_Check() throws IOException {
 
         // Create a temporal folder for the pull
-        var tempFolder = createTempFolder();
+        var tempFolder = filesTestHelper.createTempFolder();
         var workspace = workspaceManager.getOrCreate(tempFolder);
 
         try {
 
             // Preparing the data for the test
-            final var testSiteName = prepareData();
+            final var testSiteName = filesTestHelper.prepareData();
 
             final var folderPath = String.format("//%s", testSiteName);
 
@@ -418,7 +421,7 @@ class PullServiceIT extends FilesTestHelper {
 
         } finally {
             // Clean up the temporal folder
-            deleteTempDirectory(tempFolder);
+            filesTestHelper.deleteTempDirectory(tempFolder);
         }
     }
 
@@ -437,13 +440,13 @@ class PullServiceIT extends FilesTestHelper {
     void Test_Asset_Check() throws IOException {
 
         // Create a temporal folder for the pull
-        var tempFolder = createTempFolder();
+        var tempFolder = filesTestHelper.createTempFolder();
         var workspace = workspaceManager.getOrCreate(tempFolder);
 
         try {
 
             // Preparing the data for the test
-            final var testSiteName = prepareData();
+            final var testSiteName = filesTestHelper.prepareData();
 
             final var folderPath = String.format("//%s/folder3/image 3.png", testSiteName);
 
@@ -561,7 +564,7 @@ class PullServiceIT extends FilesTestHelper {
 
         } finally {
             // Clean up the temporal folder
-            deleteTempDirectory(tempFolder);
+            filesTestHelper.deleteTempDirectory(tempFolder);
         }
     }
 
@@ -580,13 +583,13 @@ class PullServiceIT extends FilesTestHelper {
     void Test_Asset_Check2() throws IOException {
 
         // Create a temporal folder for the pull
-        var tempFolder = createTempFolder();
+        var tempFolder = filesTestHelper.createTempFolder();
         var workspace = workspaceManager.getOrCreate(tempFolder);
 
         try {
 
             // Preparing the data for the test
-            final var testSiteName = prepareData();
+            final var testSiteName = filesTestHelper.prepareData();
 
             final var folderPath = String.format(
                     "//%s/folder2/subFolder2-1/subFolder2-1-1/image2.png", testSiteName);
@@ -706,7 +709,7 @@ class PullServiceIT extends FilesTestHelper {
 
         } finally {
             // Clean up the temporal folder
-            deleteTempDirectory(tempFolder);
+            filesTestHelper.deleteTempDirectory(tempFolder);
         }
     }
 
@@ -720,13 +723,13 @@ class PullServiceIT extends FilesTestHelper {
     void Test_Empty_Folders_Check() throws IOException {
 
         // Create a temporal folder for the pull
-        var tempFolder = createTempFolder();
+        var tempFolder = filesTestHelper.createTempFolder();
         var workspace = workspaceManager.getOrCreate(tempFolder);
 
         try {
 
             // Creating a site, for this test we don't need to create any content
-            final var testSiteName = createSite();
+            final var testSiteName = filesTestHelper.createSite();
 
             final var folderPath = String.format("//%s", testSiteName);
 
@@ -768,7 +771,7 @@ class PullServiceIT extends FilesTestHelper {
             Assertions.assertFalse(Files.exists(sitePath));
 
             // Cleaning up the files folder
-            deleteTempDirectory(workspace.files().toAbsolutePath());
+            filesTestHelper.deleteTempDirectory(workspace.files().toAbsolutePath());
 
             // ==============================================================
             // Now pulling the content with the include empty folders as true
@@ -804,7 +807,7 @@ class PullServiceIT extends FilesTestHelper {
 
         } finally {
             // Clean up the temporal folder
-            deleteTempDirectory(tempFolder);
+            filesTestHelper.deleteTempDirectory(tempFolder);
         }
     }
 
