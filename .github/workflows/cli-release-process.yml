@@ -21,6 +21,7 @@ env:
   GRAALVM_VERSION: '22.1.0'
   PACKAGE_TYPE: 'uber-jar'
   NPM_PACKAGE_NAME: 'dotcli'
+  PROJECT_NAME: 'dotcms-cli'
   NODE_VERSION: 19
 
 jobs:
@@ -180,11 +181,6 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
 
-      - name: 'Get project name'
-        working-directory: ${{ github.workspace }}/tools/dotcms-cli/
-        run: |
-          echo "PROJECT_NAME=$(./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout -f cli/pom.xml)" >> "$GITHUB_ENV"
-
       - name: 'Prepare dotCMS license'
         env:
           DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
@@ -287,6 +283,7 @@ jobs:
       - name: 'NPM Package setup'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
         env:
+          PROJECT_NAME: ${{ env.PROJECT_NAME }}
           PACKAGE_NAME: ${{ env.NPM_PACKAGE_NAME }}
           PACKAGE_VERSION: ${{ github.event.inputs.version }}
           PACKAGE_VERSION_SUFFIX: ${{ steps.generate-version-suffix.outputs.PACKAGE_VERSION_SUFFIX }}
@@ -302,7 +299,7 @@ jobs:
           cp ${{ github.workspace }}/tools/dotcms-cli/README.md .
           
           echo "Adding package.json file"
-          jinja2 package.j2 -D projectName=${PROJECT_NAME} -D npmPackageName=${NPM_PACKAGE_NAME} -D packageVersion=${PACKAGE_VERSION} -D packageVersionSuffix=${PACKAGE_VERSION_SUFFIX} --format json -o package.json
+          jinja2 package.j2 -D projectName=${PROJECT_NAME} -D npmPackageName=${PACKAGE_NAME} -D packageVersion=${PACKAGE_VERSION} -D packageVersionSuffix=${PACKAGE_VERSION_SUFFIX} --format json -o package.json
           rm -f package.j2
           
           cat package.json
