@@ -730,6 +730,7 @@ create table structure (
    sort_order int4,
    icon varchar(255),
    marked_for_deletion bool not null default false,
+   metadata JSONB NULL,
    primary key (inode)
 );
 create table cms_role (
