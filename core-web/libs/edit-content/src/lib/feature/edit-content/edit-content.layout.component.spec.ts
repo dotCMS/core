@@ -1,4 +1,5 @@
 import { expect } from '@jest/globals';
+import { byTestId } from '@ngneat/spectator';
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { MockComponent, MockPipe } from 'ng-mocks';
 import { of } from 'rxjs';
@@ -16,6 +17,7 @@ import {
     DotWorkflowsActionsService,
     DotFormatDateService
 } from '@dotcms/data-access';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { mockWorkflowsActions } from '@dotcms/utils-testing';
 
@@ -57,9 +59,7 @@ describe('EditContentLayoutComponent', () => {
     describe('Existing content', () => {
         const mockData: EditContentPayload = {
             actions: mockWorkflowsActions,
-            contentType: BINARY_FIELD_CONTENTLET.contentType,
-            layout: CONTENT_TYPE_MOCK.layout,
-            fields: CONTENT_TYPE_MOCK.fields,
+            contentType: CONTENT_TYPE_MOCK,
             contentlet: BINARY_FIELD_CONTENTLET
         };
 
@@ -124,7 +124,7 @@ describe('EditContentLayoutComponent', () => {
             const asideComponent = spectator.query(DotEditContentAsideComponent);
             expect(asideComponent).toBeDefined();
             expect(asideComponent.contentLet).toEqual(mockData.contentlet);
-            expect(asideComponent.contentType).toEqual(mockData.contentType);
+            expect(asideComponent.contentType).toEqual(mockData.contentType.variable);
         });
 
         it('should fire workflow action', () => {
@@ -141,14 +141,30 @@ describe('EditContentLayoutComponent', () => {
                 }
             });
         });
+
+        it('should hide the beta topBar if metadata is not present', () => {
+            spectator.detectChanges();
+
+            const betaTopbar = spectator.query(byTestId('topBar'));
+            expect(betaTopbar).toBeNull();
+        });
+
+        it('should show the beta topBar when the metadata is present', () => {
+            spectator.detectChanges();
+            const metadata = {};
+            metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = true;
+
+            dotEditContentStore.patchState({ contentType: { ...CONTENT_TYPE_MOCK, metadata } });
+            spectator.detectChanges();
+            const betaTopbar = spectator.query(byTestId('topBar'));
+            expect(betaTopbar).not.toBeNull();
+        });
     });
 
     describe('New content', () => {
         const mockData: EditContentPayload = {
             actions: mockWorkflowsActions,
-            contentType: CONTENT_TYPE_MOCK.contentType,
-            layout: CONTENT_TYPE_MOCK.layout,
-            fields: CONTENT_TYPE_MOCK.fields,
+            contentType: CONTENT_TYPE_MOCK,
             contentlet: null
         };
 
@@ -214,7 +230,7 @@ describe('EditContentLayoutComponent', () => {
             const asideComponent = spectator.query(DotEditContentAsideComponent);
             expect(asideComponent).toBeDefined();
             expect(asideComponent.contentLet).toEqual(mockData.contentlet);
-            expect(asideComponent.contentType).toEqual(mockData.contentType);
+            expect(asideComponent.contentType).toEqual(mockData.contentType.variable);
         });
     });
 });

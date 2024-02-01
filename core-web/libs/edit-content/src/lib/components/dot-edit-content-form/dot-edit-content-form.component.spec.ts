@@ -162,7 +162,10 @@ describe('DotFormComponent', () => {
                 props: {
                     formData: {
                         ...CONTENT_FORM_DATA_MOCK,
-                        layout: [...LAYOUT_MOCK, TAB_DIVIDER_MOCK]
+                        contentType: {
+                            ...CONTENT_FORM_DATA_MOCK.contentType,
+                            layout: [...LAYOUT_MOCK, TAB_DIVIDER_MOCK]
+                        }
                     }
                 }
             });
