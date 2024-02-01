@@ -244,7 +244,7 @@ public class ContentTypesPaginatorTest {
         // Initialization
         final String DEFAULT_ORDER_BY = "UPPER(name)";
         final String FILTER = "va";
-        final String contentTypeVars = "webPageContent,Vanityurl,DotAsset,htmlpageasset,languagevariable,vanityurl";
+        final String contentTypeVars = "webPageContent,Vanityurl,DotAsset,htmlpageasset,Languagevariable,vanityurl";
         final List<String> typeVarNames = Arrays.asList(contentTypeVars.split(COMMA));
         final Map<String, Object> extraParams = new HashMap<>();
         extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);

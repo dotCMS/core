@@ -26,6 +26,11 @@ public class Task240131UpdateLanguageVariableContentTypeTest {
 
     @Test
     public void testExecuteUpgrade() throws DotDataException, SQLException, DotSecurityException {
+        if(APILocator.getContentTypeAPI(APILocator.systemUser()).find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME) == null) {
+            //Create LanguageVariable Content Type in case doesn't exist
+            Task04210CreateDefaultLanguageVariable upgradeTaskCreateLanguageVariable = new Task04210CreateDefaultLanguageVariable();
+            upgradeTaskCreateLanguageVariable.executeUpgrade();
+        }
         //Update system to true in case it's false
         final DotConnect dc = new DotConnect();
         dc.setSQL("update structure set system = true where velocity_var_name = ?");
