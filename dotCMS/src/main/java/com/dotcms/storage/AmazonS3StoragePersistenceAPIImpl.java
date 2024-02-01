@@ -7,6 +7,8 @@ import com.amazonaws.services.s3.transfer.Transfer;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.services.s3.transfer.model.UploadResult;
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.lock.IdentifierStripedLock;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Configuration;
 import com.dotcms.enterprise.publishing.storage.AWSS3Storage;
 import com.dotcms.enterprise.publishing.storage.Storage;
@@ -15,6 +17,7 @@ import com.dotcms.storage.repository.FileRepositoryManager;
 import com.dotcms.storage.repository.HashedLocalFileRepositoryManager;
 import com.dotcms.storage.repository.LocalFileRepositoryManager;
 import com.dotcms.storage.repository.TempFileRepositoryManager;
+import com.dotcms.util.EnterpriseFeature;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -27,6 +30,7 @@ import io.vavr.control.Try;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
@@ -47,11 +51,11 @@ import static com.liferay.util.StringPool.BLANK;
 import static com.liferay.util.StringPool.FORWARD_SLASH;
 
 /**
- * Provides a Metadata Provider implementation that uses AWS S3 to persist the metadata files. It's
- * very important to take into consideration that any request to check for the existence of a bucket
- * or a file might take a considerable time to complete. Any sort of local caching mechanism is
- * crucial to keep the performance of this provider implementation. This provider can only be used
- * with an Enterprise License.
+ * Provides a Metadata Provider implementation that uses AWS S3 to persist the metadata files.
+ * <p>It's very important to take into consideration that any request to check for the existence of
+ * a bucket or a file might take a considerable time to complete. Any sort of local caching
+ * mechanism is crucial to keep the performance of this provider implementation.<p/>
+ * <p>This provider can ONLY be used with an Enterprise License.</p>
  *
  * @author jsanca
  */
@@ -60,7 +64,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     /**
      * Defines the different ways that can be used to store metadata files in the AWS S3 bucket. By
      * default, folder paths are hashed via SHA-256, but can be persisted using the same folder
-     * pattern used in the dotCMS assets folder.
+     * pattern used in the dotCMS assets folder, i.e., {@code "assets/1/2/1234-1234/"}.
      */
     enum PathEncryptionMode {
         NONE, SHA256
@@ -70,9 +74,11 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     private final FileRepositoryManager fileRepositoryManager = this.getFileRepository();
     private MessageDigest sha256;
     private final Set<String> groups = ConcurrentHashMap.newKeySet();
+    private IdentifierStripedLock lockManager;
 
     private String bucketName;
     private PathEncryptionMode pathEncryptionMode;
+    private static final String INVALID_LICENSE = "The Amazon S3 Metadata Provider is an Enterprise only feature";
     public static final String AWS_S3_BUCKET_NAME_PROP = "storage.file-metadata.s3.bucket-name";
     public static final String AWS_S3_REGION_PROP = "storage.file-metadata.s3.bucket-region";
     public static final String AWS_S3_ACCESS_KEY_PROP = "storage.file-metadata.s3.access-key";
@@ -101,10 +107,11 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     public AmazonS3StoragePersistenceAPIImpl() {
+        this.lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
         // todo: this should be from an app, just need to pass the host name fallback to system
-        final String accessKey  = Config.getStringProperty(AWS_S3_ACCESS_KEY_PROP, null);
+        final String accessKey = Config.getStringProperty(AWS_S3_ACCESS_KEY_PROP, null);
         final String secretAccessKey = Config.getStringProperty(AWS_S3_SECRET_ACCESS_KEY_PROP, null);
-        final String region   = Config.getStringProperty(AWS_S3_REGION_PROP, null);
+        final String region = Config.getStringProperty(AWS_S3_REGION_PROP, null);
         this.bucketName = Config.getStringProperty(AWS_S3_BUCKET_NAME_PROP, null);
         this.pathEncryptionMode =
                 PathEncryptionMode.valueOf(Config.getStringProperty(AWS_S3_PATH_ENCRYPTION_MODE_PROP, PathEncryptionMode.SHA256.name()));
@@ -114,11 +121,13 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
                 new AWSS3Storage(new AWSS3Configuration.Builder().accessKey(accessKey).secretKey(secretAccessKey).endPoint(null).region(region).build());
     }
 
+    @SuppressWarnings("unused")
     public AmazonS3StoragePersistenceAPIImpl(final Storage storage) {
         this.storage = storage;
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean existsGroup(final String groupName) throws DotDataException {
         if (this.groups.contains(groupName)) {
             return true;
@@ -128,28 +137,30 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
             objectExists = !this.storage.listObjects(this.bucketName,
                     METADATA_GROUP_NAME).getObjectSummaries().isEmpty();
             if (!objectExists) {
-                Logger.debug(this, String.format("Group '%s' does not exist", groupName));
+                Logger.debug(this, () -> String.format("Group '%s' does not exist", groupName));
             }
         } else {
-            Logger.debug(this, String.format("Bucket '%s' does not exist", this.bucketName));
+            Logger.debug(this, () -> String.format("Bucket '%s' does not exist", this.bucketName));
         }
         this.groups.add(groupName);
         return objectExists;
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean existsObject(final String groupName, final String objectPath) throws DotDataException {
         final String correctedPath = transformReadPath(groupName, objectPath);
         final boolean exists = this.storage.existsBucket(this.bucketName) && !this.storage.listObjects(this.bucketName,
                 correctedPath).getObjectSummaries().isEmpty();
-        Logger.debug(this, String.format("Object '%s' in group '%s' exists? %s", correctedPath, groupName, exists));
+        Logger.debug(this, () -> String.format("Object '%s' in group '%s' exists? %s", correctedPath, groupName, exists));
         return exists;
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean createGroup(final String groupName) throws DotDataException {
         if (!this.existsGroup(groupName)) {
-            Logger.debug(this, String.format("Creating group with name '%s'", groupName));
+            Logger.debug(this, () -> String.format("Creating group with name '%s'", groupName));
             this.storage.createFolder(this.bucketName, groupName);
         }
         this.groups.add(groupName);
@@ -157,59 +168,119 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean createGroup(final String groupName, final Map<String, Object> extraOptions) throws DotDataException {
         // Extra options Map is not being used for now
         return createGroup(groupName);
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public int deleteGroup(final String groupName) throws DotDataException {
         this.storage.deleteFolder(this.bucketName, groupName);
         return 0;
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean deleteObjectAndReferences(final String groupName, final String path) throws DotDataException {
-        this.storage.deleteFile(groupName, path);
+        this.storage.deleteFile(this.bucketName, groupName + path);
         return true;
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean deleteObjectReference(final String groupName, final String path) throws DotDataException {
-        return this.deleteObjectAndReferences(groupName, path);
+        return this.deleteObjectAndReferences(this.bucketName, groupName + path);
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public List<String> listGroups() {
         return this.storage.listBuckets().stream().map(Bucket::getName).collect(Collectors.toList());
     }
 
     @Override
-    public Object pushFile(final String groupName, final String path, final File file, final Map<String, Serializable> extraMeta) throws DotDataException {
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
+    public Object pushFile(final String groupName, final String path, final File file,
+                           final Map<String, Serializable> extraMeta) throws DotDataException {
         final String pathForS3 = transformWritePath(groupName, path, file.getName());
-        final Upload upload = this.storage.uploadFile(this.bucketName, pathForS3, file);
-        Logger.debug(this, String.format("Pushing file '%s' to group '%s' with path '%s' [ %s ]", file.getName(), groupName, pathForS3, path));
-        final UploadResult result = Try.of(upload::waitForUploadResult).getOrElseThrow(e -> new DotDataException(e.getMessage(), e));
-        Logger.debug(this, String.format("File '%s' in group '%s' with path '%s' [ %s ] was pushed successfully!", file.getName(), groupName, pathForS3, path));
-        return result.getETag();
+        final Upload upload = this.storage.uploadFile(this.bucketName, pathForS3,
+                file);
+        try {
+            return lockManager.tryLock("s3_" + groupName + path, () -> {
+
+                    Logger.debug(this, () -> String.format("Pushing file '%s' to group '%s' with " +
+                            "path '%s' [ %s ]", file.getName(), groupName, pathForS3, path));
+                    final UploadResult result =
+                            Try.of(upload::waitForUploadResult).getOrElseThrow(e -> new DotDataException(e.getMessage(), e));
+                    Logger.debug(this, () -> String.format("File '%s' in group '%s' with path '%s' " +
+                            "[ %s ] was pushed successfully!", file.getName(), groupName,
+                            pathForS3, path));
+                    return result.getETag();
+
+                }
+            );
+        } catch (final Throwable e) {
+            throw new DotRuntimeException(String.format("Failed to push file '%s' to S3 group " +
+                    "'%s': %s", path, groupName, ExceptionUtil.getErrorMessage(e)), e);
+        }
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Object pushObject(final String groupName, final String path, final ObjectWriterDelegate writerDelegate,
                              final Serializable object, final Map<String, Serializable> extraMeta) throws DotDataException {
-        final File file = new File(ConfigUtils.getAssetPath() + path);
-        return this.pushFile(groupName, path, file, extraMeta);
+        final File file = new File(ConfigUtils.getAssetTempPath() + path);
+        try {
+            this.createTempFile(writerDelegate, object, file);
+            return this.pushFile(groupName, path, file, extraMeta);
+        } catch (final Exception e) {
+            Logger.error(this, String.format("Failed to process push of object '%s' to group " +
+                    "'%s': %s", path, groupName, ExceptionUtil.getErrorMessage(e)), e);
+            throw new DotDataException(e);
+        } finally {
+            if (!file.delete()) {
+                Logger.debug(this, () -> String.format("Temp File '%s' could not be deleted", path));
+            }
+        }
+    }
+
+    /**
+     * Creates a temporary file with the metadata object. This is the actual file that will be
+     * uploaded to the AWS S3 bucket.
+     *
+     * @param writerDelegate The {@link ObjectWriterDelegate} that will be used to write the object
+     *                       to the file.
+     * @param object         The {@link Serializable} object that will be written to the file.
+     * @param file           The {@link File} that will be created.
+     *
+     * @throws IOException An error occurred when writing the object to the file.
+     */
+    private void createTempFile(final ObjectWriterDelegate writerDelegate,
+                                final Serializable object, final File file) throws IOException {
+        final File parentFolder = file.getParentFile();
+        if (parentFolder != null && !parentFolder.exists()) {
+            if (!parentFolder.mkdirs()) {
+                Logger.debug(this, () -> String.format("Failed to create one or more folders in " +
+                        "path '%s'", parentFolder.getPath()));
+            }
+        }
+        writeToFile(writerDelegate, object, file);
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Future<Object> pushFileAsync(final String groupName, final String path, final File file, final Map<String, Serializable> extraMeta) {
         final String pathForS3 = transformWritePath(groupName, path, file.getName());
-        Logger.debug(this, String.format("Async pushing file '%s' to group '%s' with path '%s' [ %s ]", file.getName(), groupName, pathForS3, path));
+        Logger.debug(this, () -> String.format("Async pushing file '%s' to group '%s' with path " +
+                "'%s' [ %s ]", file.getName(), groupName, pathForS3, path));
         final Upload upload = this.storage.uploadFile(this.bucketName, pathForS3, file);
-        return new UploadFuture<>(upload);
+        return new UploadFuture<>(upload, file);
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Future<Object> pushObjectAsync(final String bucketName, final String path, final ObjectWriterDelegate writerDelegate,
                                           final Serializable object, final Map<String, Serializable> extraMeta) {
         final File file = new File(ConfigUtils.getAssetPath() + path);
@@ -217,17 +288,21 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public File pullFile(final String groupName, final String path) throws DotDataException {
         final File file = fileRepositoryManager.getOrCreateFile(path);
         final String pathForS3 = transformReadPath(groupName, path);
-        Logger.debug(this, String.format("Pulling file '%s' from group '%s' with path '%s' [ %s ]", file.getName(), groupName, pathForS3, path));
+        Logger.debug(this, () -> String.format("Pulling file '%s' from group '%s' with path '%s' " +
+                "[ %s ]", file.getName(), groupName, pathForS3, path));
         final Download download = this.storage.downloadFile(this.bucketName, pathForS3, file);
         Try.run(download::waitForCompletion).getOrElseThrow(e-> new DotDataException(e.getMessage(), e));
-        Logger.debug(this, String.format("File '%s' in group '%s' with path '%s' [ %s ] was pulled successfully!", file.getName(), groupName, pathForS3, path));
+        Logger.debug(this, () -> String.format("File '%s' in group '%s' with path '%s' [ %s ] " +
+                "was pulled successfully!", file.getName(), groupName, pathForS3, path));
         return file;
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Object pullObject(final String groupName, final String path, final ObjectReaderDelegate readerDelegate) throws DotDataException {
         Object object = null;
         final File file = pullFile(groupName, path);
@@ -244,15 +319,17 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Future<File> pullFileAsync(final String groupName, final String path) {
         final File file = fileRepositoryManager.getOrCreateFile(path);
         final String pathForS3 = transformReadPath(groupName, path);
-        Logger.debug(this, String.format("Async pulling file '%s' from group '%s' with path '%s' [ %s ]", file.getName(), groupName, pathForS3, path));
+        Logger.debug(this, () -> String.format("Async pulling file '%s' from group '%s' with path '%s' [ %s ]", file.getName(), groupName, pathForS3, path));
         final Download download = this.storage.downloadFile(groupName, pathForS3, file);
         return new DownloadFuture<>(download, file, aFile -> aFile);
     }
 
     @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Future<Object> pullObjectAsync(final String groupName, final String path, final ObjectReaderDelegate readerDelegate) {
         final File file = fileRepositoryManager.getOrCreateFile(path);
         final Download download = this.storage.downloadFile(groupName, path, file);
@@ -347,14 +424,21 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     private static class UploadFuture<T> implements Future<T> {
 
         private final Upload upload;
+        private final File file;
 
-        public UploadFuture(final Upload upload) {
+        public UploadFuture(final Upload upload, final File file) {
             this.upload = upload;
+            this.file = file;
         }
+
         @Override
         public boolean cancel(final boolean mayInterruptIfRunning) {
-            this.upload.abort();
-            return true;
+            try {
+                this.upload.abort();
+                return true;
+            } finally {
+                deleteFile();
+            }
         }
 
         @Override
@@ -369,20 +453,40 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
         @Override
         public T get() throws ExecutionException {
-            final UploadResult result = Try.of(upload::waitForUploadResult).getOrElseThrow(e -> new ExecutionException(e.getMessage(), e));
-            return (T) result.getETag();
+            try {
+                final UploadResult result = Try.of(upload::waitForUploadResult).getOrElseThrow(e -> new ExecutionException(e.getMessage(), e));
+                return (T) result.getETag();
+            } finally {
+                deleteFile();
+            }
         }
 
         @Override
         public T get(final long timeout, @NotNull final TimeUnit unit) throws InterruptedException, ExecutionException {
             final Callable<T> objectCallable = () -> {
                 if (upload.getState() == Transfer.TransferState.Completed) {
-                    return (T) upload.waitForUploadResult().getETag();
+                    try {
+                        return (T) upload.waitForUploadResult().getETag();
+                    } finally {
+                        deleteFile();
+                    }
                 }
                 throw new TimeoutException("S3 Upload timed out");
             };
             return DotConcurrentFactory.getScheduledThreadPoolExecutor().schedule(objectCallable, timeout, unit).get();
         }
+
+        /**
+         * Deletes the file that is trying to be uploaded. This is done in case the upload has
+         * either finished correctly or incorrectly, or if the process was aborted.
+         */
+        private void deleteFile() {
+            if (!this.file.delete()) {
+                Logger.debug(this, () -> String.format("Temp File '%s' could not be deleted",
+                        this.file.getName()));
+            }
+        }
+
     }
 
     /**

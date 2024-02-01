@@ -3,6 +3,7 @@ package com.dotcms.api.vtl.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import org.graalvm.polyglot.HostAccess;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -20,14 +21,17 @@ public class DotJSON implements Serializable {
 
     private final Map<String, Object> map = new HashMap<>();
 
+    @HostAccess.Export
     public void put(final String key, final Object value) {
         this.map.put(key, value);
     }
 
+    @HostAccess.Export
     public Object get(final String key) {
         return this.map.get(key);
     }
 
+    @HostAccess.Export
     public int size() {
         return this.map.size();
     }
@@ -63,6 +67,7 @@ public class DotJSON implements Serializable {
         return cacheTTL;
     }
 
+    @HostAccess.Export
     public Map<String, Object> getMap() {
         return map;
     }

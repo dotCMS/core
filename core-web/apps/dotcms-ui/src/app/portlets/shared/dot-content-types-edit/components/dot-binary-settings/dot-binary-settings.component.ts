@@ -1,4 +1,4 @@
-import { forkJoin, of } from 'rxjs';
+import { forkJoin } from 'rxjs';
 
 import { NgFor } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -21,7 +21,7 @@ import { DividerModule } from 'primeng/divider';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { catchError, take } from 'rxjs/operators';
+import { catchError, take, tap } from 'rxjs/operators';
 
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
@@ -61,6 +61,7 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
     private dotMessageService = inject(DotMessageService);
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly destroyRef = inject(DestroyRef);
+    private FIELD_VARIABLES: Record<string, DotFieldVariable> = {};
 
     protected readonly systemOptions = [
         {
@@ -112,6 +113,8 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
                     } else {
                         control.setValue(value);
                     }
+
+                    this.FIELD_VARIABLES = { ...this.FIELD_VARIABLES, [key]: variable };
                 });
             }
         });
@@ -131,20 +134,16 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
                       )
                     : control.value;
             const fieldVariable: DotFieldVariable = {
+                ...this.FIELD_VARIABLES[key],
                 key,
                 value
             };
 
-            // This is to prevent endpoints from breaking.
-            // fieldVariablesService.save -> breaks if there is not current value.
-            // fieldVariablesService.delete -> breaks if there is not previus exinting variable.
-            if (!value) {
-                return of({});
-            }
-
-            return value
-                ? this.fieldVariablesService.save(this.field, fieldVariable)
-                : this.fieldVariablesService.delete(this.field, fieldVariable);
+            return (
+                value
+                    ? this.fieldVariablesService.save(this.field, fieldVariable)
+                    : this.fieldVariablesService.delete(this.field, fieldVariable)
+            ).pipe(tap((variable) => (this.FIELD_VARIABLES[key] = variable))); // Update Variable Reference
         });
 
         forkJoin(updateActions)

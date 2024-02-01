@@ -12,9 +12,12 @@ import {
     ReactiveFormsModule
 } from '@angular/forms';
 
-import { DotEditContentJsonFieldComponent } from './dot-edit-content-json-field.component';
+import {
+    DEFAULT_JSON_FIELD_EDITOR_CONFIG,
+    DotEditContentJsonFieldComponent
+} from './dot-edit-content-json-field.component';
 
-import { JSON_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
+import { createFormGroupDirectiveMock, JSON_FIELD_MOCK } from '../../utils/mocks';
 
 describe('DotEditContentJsonFieldComponent', () => {
     describe('test with value', () => {
@@ -58,21 +61,7 @@ describe('DotEditContentJsonFieldComponent', () => {
 
         it('should have the right editor options', () => {
             const monacoEditorComponent = spectator.query(MonacoEditorComponent);
-
-            expect(monacoEditorComponent.options).toEqual({
-                theme: 'vs',
-                minimap: {
-                    enabled: false
-                },
-                fixedOverflowWidgets: true,
-                cursorBlinking: 'solid',
-                overviewRulerBorder: false,
-                mouseWheelZoom: false,
-                lineNumbers: 'on',
-                roundedSelection: false,
-                automaticLayout: true,
-                language: 'json'
-            });
+            expect(monacoEditorComponent.options).toEqual(DEFAULT_JSON_FIELD_EDITOR_CONFIG);
         });
 
         it('should called markForCheck when the value changes', () => {

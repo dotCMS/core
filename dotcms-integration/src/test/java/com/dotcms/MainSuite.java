@@ -75,6 +75,7 @@ import com.dotcms.publishing.manifest.CSVManifestBuilderTest;
 import com.dotcms.publishing.manifest.CSVManifestReaderTest;
 import com.dotcms.publishing.manifest.ManifestReaderFactoryTest;
 import com.dotcms.publishing.manifest.ManifestUtilTest;
+import com.dotcms.rendering.js.JsEngineTest;
 import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
@@ -218,6 +219,7 @@ import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnS
 import com.dotmarketing.startup.runonce.Task231109AddPublishDateToContentletVersionInfoTest;
 import com.dotmarketing.startup.runonce.Task240102AlterVarcharLengthOfRelationTypeTest;
 import com.dotmarketing.startup.runonce.Task240111AddInodeAndIdentifierLeftIndexesTest;
+import com.dotmarketing.startup.runonce.Task240112AddMetadataColumnToStructureTableTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.ITConfigTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -670,7 +672,9 @@ import org.junit.runners.Suite.SuiteClasses;
         Task240102AlterVarcharLengthOfRelationTypeTest.class,
         Task240111AddInodeAndIdentifierLeftIndexesTest.class,
         AnnouncementsHelperIntegrationTest.class,
-        RemoteAnnouncementsLoaderIntegrationTest.class
+        RemoteAnnouncementsLoaderIntegrationTest.class,
+        JsEngineTest.class,
+        Task240112AddMetadataColumnToStructureTableTest.class
 })
 
 public class MainSuite {

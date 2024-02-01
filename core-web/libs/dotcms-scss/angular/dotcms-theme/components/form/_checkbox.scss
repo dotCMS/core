@@ -9,6 +9,21 @@ p-checkbox.p-element {
             border-color: $color-alert-red;
         }
     }
+
+    &.p-checkbox-sm {
+        .p-checkbox {
+            height: 1.25rem;
+        }
+
+        .p-checkbox-box {
+            height: 1rem;
+        }
+
+        .p-checkbox-icon {
+            width: $font-size-sm;
+            height: $font-size-sm;
+        }
+    }
 }
 
 .p-checkbox {

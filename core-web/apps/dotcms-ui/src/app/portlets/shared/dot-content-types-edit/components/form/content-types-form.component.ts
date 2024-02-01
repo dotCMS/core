@@ -17,6 +17,7 @@ import {
     UntypedFormGroup,
     Validators
 } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 
 import { SelectItem } from 'primeng/api';
 
@@ -30,7 +31,8 @@ import {
     DotCMSSystemAction,
     DotCMSSystemActionMappings,
     DotCMSSystemActionType,
-    DotCMSWorkflow
+    DotCMSWorkflow,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { FieldUtil } from '@dotcms/utils-testing';
 
@@ -63,6 +65,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
     form: UntypedFormGroup;
     nameFieldLabel: string;
     workflowsSelected$: Observable<string[]>;
+    newContentEditorEnabled: boolean;
 
     private originalValue: DotCMSContentType;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -71,7 +74,8 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         private fb: UntypedFormBuilder,
         private dotWorkflowService: DotWorkflowService,
         private dotLicenseService: DotLicenseService,
-        private dotMessageService: DotMessageService
+        private dotMessageService: DotMessageService,
+        private readonly route: ActivatedRoute
     ) {}
 
     ngOnInit(): void {
@@ -81,6 +85,10 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
 
         this.nameFieldLabel = this.setNameFieldLabel();
         this.name.nativeElement.focus();
+        this.newContentEditorEnabled =
+            this.route.snapshot?.data?.featuredFlags[
+                FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
+            ];
     }
 
     ngOnDestroy(): void {
@@ -120,7 +128,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
      */
     submitForm(): void {
         if (this.canSave) {
-            this.send.emit(this.form.value);
+            this.send.emit(this.addMetadataToForm());
         }
     }
 
@@ -189,7 +197,10 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
                         disabled: true
                     }
                 ]
-            })
+            }),
+            newEditContent: !!this.getMetaDataProperty(
+                FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
+            )
         });
 
         this.setBaseTypeContentSpecificFields();
@@ -336,5 +347,22 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
         if (publishDateVar.value === value) {
             publishDateVar.patchValue('');
         }
+    }
+
+    private getMetaDataProperty(_prop: string): string | number | boolean {
+        return this.data?.metadata?.[_prop];
+    }
+
+    private addMetadataToForm(): DotCMSContentType {
+        const metadata = this.data.metadata || {};
+        const newEditContent = this.form.get('newEditContent').value;
+        const form = this.form.value;
+        delete form.newEditContent;
+        metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = newEditContent;
+
+        return {
+            ...form,
+            metadata
+        };
     }
 }
