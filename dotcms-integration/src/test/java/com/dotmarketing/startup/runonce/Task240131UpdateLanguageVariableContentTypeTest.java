@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -26,7 +27,9 @@ public class Task240131UpdateLanguageVariableContentTypeTest {
 
     @Test
     public void testExecuteUpgrade() throws DotDataException, SQLException, DotSecurityException {
-        if(APILocator.getContentTypeAPI(APILocator.systemUser()).find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME) == null) {
+        try {
+            APILocator.getContentTypeAPI(APILocator.systemUser()).find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
+        }catch (NotFoundInDbException e){
             //Create LanguageVariable Content Type in case doesn't exist
             Task04210CreateDefaultLanguageVariable upgradeTaskCreateLanguageVariable = new Task04210CreateDefaultLanguageVariable();
             upgradeTaskCreateLanguageVariable.executeUpgrade();
