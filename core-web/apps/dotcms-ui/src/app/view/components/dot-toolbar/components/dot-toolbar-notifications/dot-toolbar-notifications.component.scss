@@ -17,14 +17,14 @@ $notification-dot-badge-size: 0.625rem;
         border-radius: 50%;
     }
 
-    .dot-toolbar-notifications__badge {
+    .dot-toolbar__badge {
         background-color: $color-accessible-text-fuchsia;
         border-radius: $notification-dot-badge-size;
         color: $white;
         width: $notification-dot-badge-size;
         height: $notification-dot-badge-size;
         position: absolute;
-        left: 30px;
+        left: 28px;
         top: 2px;
     }
 
