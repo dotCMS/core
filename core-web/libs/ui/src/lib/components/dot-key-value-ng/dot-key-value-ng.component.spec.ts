@@ -98,27 +98,27 @@ describe('DotKeyValueComponent', () => {
     });
 
     it('should update an existing variable', () => {
-        const spyUpdatedVariable = spyOn(spectator.component.updatedVariable, 'emit');
+        const spyUpdate = spyOn(spectator.component.update, 'emit');
         const spyUpdatedList = spyOn(spectator.component.updatedList, 'emit');
 
         spectator.detectChanges();
 
         const tableRow = spectator.query(DotKeyValueTableRowComponent);
-        const updatedVariable = {
+        const update = {
             ...mockKeyValue[0],
             value: 'new value'
         };
 
-        tableRow.save.emit(updatedVariable);
-        expect(spyUpdatedVariable).toHaveBeenCalledWith({
-            variable: updatedVariable,
+        tableRow.save.emit(update);
+        expect(spyUpdate).toHaveBeenCalledWith({
+            variable: update,
             oldVariable: mockKeyValue[0]
         });
-        expect(spyUpdatedList).toHaveBeenCalledWith([updatedVariable, mockKeyValue[1]]);
+        expect(spyUpdatedList).toHaveBeenCalledWith([update, mockKeyValue[1]]);
     });
 
     it('should save a new variable', () => {
-        const spySavedVariable = spyOn(spectator.component.savedVariable, 'emit');
+        const spySave = spyOn(spectator.component.save, 'emit');
         const spyUpdatedList = spyOn(spectator.component.updatedList, 'emit');
         const newVariable = {
             key: 'newKey',
@@ -131,12 +131,12 @@ describe('DotKeyValueComponent', () => {
         const tableInput = spectator.query(DotKeyValueTableInputRowComponent);
         tableInput.save.emit(newVariable);
 
-        expect(spySavedVariable).toHaveBeenCalledWith(newVariable);
+        expect(spySave).toHaveBeenCalledWith(newVariable);
         expect(spyUpdatedList).toHaveBeenCalledWith([newVariable, ...mockKeyValue]);
     });
 
     it('should delete a variable from the list', () => {
-        const spyDeletedVariable = spyOn(spectator.component.deletedVariable, 'emit');
+        const spyDelete = spyOn(spectator.component.delete, 'emit');
         const spyUpdatedList = spyOn(spectator.component.updatedList, 'emit');
 
         spectator.detectChanges();
@@ -144,7 +144,7 @@ describe('DotKeyValueComponent', () => {
         const tableRow = spectator.query(DotKeyValueTableRowComponent);
         tableRow.delete.emit(mockKeyValue[0]);
 
-        expect(spyDeletedVariable).toHaveBeenCalledWith(mockKeyValue[0]);
+        expect(spyDelete).toHaveBeenCalledWith(mockKeyValue[0]);
         expect(spyUpdatedList).toHaveBeenCalledWith([mockKeyValue[1]]);
     });
 
@@ -162,7 +162,7 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should save a hidden variable', () => {
-            const spySavedVariable = spyOn(spectator.component.savedVariable, 'emit');
+            const spysave = spyOn(spectator.component.save, 'emit');
             const spyUpdatedList = spyOn(spectator.component.updatedList, 'emit');
 
             const newVariable = {
@@ -176,28 +176,28 @@ describe('DotKeyValueComponent', () => {
             const tableInput = spectator.query(DotKeyValueTableInputRowComponent);
             tableInput.save.emit(newVariable);
 
-            expect(spySavedVariable).toHaveBeenCalledWith(newVariable);
+            expect(spysave).toHaveBeenCalledWith(newVariable);
             expect(spyUpdatedList).toHaveBeenCalledWith([newVariable, ...mockKeyValue]);
         });
 
         it('should update an existing variable', () => {
-            const spyUpdatedVariable = spyOn(spectator.component.updatedVariable, 'emit');
+            const spyupdate = spyOn(spectator.component.update, 'emit');
             const spyUpdatedList = spyOn(spectator.component.updatedList, 'emit');
 
             spectator.detectChanges();
 
             const tableRow = spectator.query(DotKeyValueTableRowComponent);
-            const updatedVariable = {
+            const update = {
                 ...mockKeyValue[0],
                 hidden: true
             };
 
-            tableRow.save.emit(updatedVariable);
-            expect(spyUpdatedVariable).toHaveBeenCalledWith({
-                variable: updatedVariable,
+            tableRow.save.emit(update);
+            expect(spyupdate).toHaveBeenCalledWith({
+                variable: update,
                 oldVariable: mockKeyValue[0]
             });
-            expect(spyUpdatedList).toHaveBeenCalledWith([updatedVariable, mockKeyValue[1]]);
+            expect(spyUpdatedList).toHaveBeenCalledWith([update, mockKeyValue[1]]);
         });
     });
 });

@@ -51,7 +51,11 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
      * @param {DotKeyValue} variable
      * @memberof DotContentTypeFieldsVariablesComponent
      */
-    deleteExistingVariable(variable: DotKeyValue): void {
+    deleteFieldVariable(variable: DotKeyValue): void {
+        if (!this.checkIfVariableExist(variable)) {
+            return;
+        }
+
         this.fieldVariablesService
             .delete(this.field, variable)
             .pipe(take(1))
@@ -72,7 +76,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
      * @param {DotKeyValue} variable
      * @memberof DotContentTypeFieldsVariablesComponent
      */
-    updateExistingVariable(variable: DotKeyValue): void {
+    updateFieldVariable(variable: DotKeyValue): void {
         this.fieldVariablesService
             .save(this.field, variable)
             .pipe(take(1))
@@ -116,5 +120,9 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
                   return item;
               })
             : [savedVariable, ...this.fieldVariables];
+    }
+
+    private checkIfVariableExist(variable: DotKeyValue): boolean {
+        return this.fieldVariables.some((item: DotKeyValue) => item.key === variable.key);
     }
 }

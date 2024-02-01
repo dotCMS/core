@@ -44,9 +44,9 @@ export class DotKeyValueComponent implements OnChanges {
 
     @Output() updatedList: EventEmitter<DotKeyValue[]> = new EventEmitter();
 
-    @Output() deletedVariable: EventEmitter<DotKeyValue> = new EventEmitter();
-    @Output() savedVariable: EventEmitter<DotKeyValue> = new EventEmitter();
-    @Output() updatedVariable: EventEmitter<{
+    @Output() delete: EventEmitter<DotKeyValue> = new EventEmitter();
+    @Output() save: EventEmitter<DotKeyValue> = new EventEmitter();
+    @Output() update: EventEmitter<{
         variable: DotKeyValue;
         oldVariable: DotKeyValue;
     }> = new EventEmitter();
@@ -77,7 +77,7 @@ export class DotKeyValueComponent implements OnChanges {
 
             return [...variables];
         });
-        this.deletedVariable.emit(deletedVariable);
+        this.delete.emit(deletedVariable);
         this.updatedList.emit(this.variableList());
     }
 
@@ -91,7 +91,7 @@ export class DotKeyValueComponent implements OnChanges {
         this.variableList.update((variables) => {
             return [variable, ...variables];
         });
-        this.savedVariable.emit(variable);
+        this.save.emit(variable);
         this.updatedList.emit(this.variableList());
     }
 
@@ -108,7 +108,7 @@ export class DotKeyValueComponent implements OnChanges {
 
             return [...variables];
         });
-        this.updatedVariable.emit({ variable, oldVariable });
+        this.update.emit({ variable, oldVariable });
         this.updatedList.emit(this.variableList());
     }
 }

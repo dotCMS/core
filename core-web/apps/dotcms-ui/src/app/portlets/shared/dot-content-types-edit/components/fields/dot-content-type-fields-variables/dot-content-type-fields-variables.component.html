@@ -1,6 +1,6 @@
 <dot-key-value-ng
     *ngIf="showTable"
     [variables]="fieldVariables"
-    (deletedVariable)="deleteExistingVariable($event)"
-    (savedVariable)="updateExistingVariable($event)"
-    (updatedVariable)="updateExistingVariable($event.variable)" />
+    (delete)="deleteFieldVariable($event)"
+    (save)="updateFieldVariable($event)"
+    (update)="updateFieldVariable($event.variable)" />

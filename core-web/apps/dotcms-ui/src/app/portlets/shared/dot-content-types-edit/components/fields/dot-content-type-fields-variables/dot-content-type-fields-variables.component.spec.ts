@@ -76,7 +76,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         fixtureHost.detectChanges();
 
         const dotKeyValue = de.query(By.css('dot-key-value-ng'));
-        dotKeyValue.triggerEventHandler('savedVariable', response);
+        dotKeyValue.triggerEventHandler('save', response);
 
         expect(dotFieldVariableService.save).toHaveBeenCalledWith(
             comp.field,
@@ -96,7 +96,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         fixtureHost.detectChanges();
 
         const dotKeyValue = de.query(By.css('dot-key-value-ng'));
-        dotKeyValue.triggerEventHandler('updatedVariable', {
+        dotKeyValue.triggerEventHandler('update', {
             variable,
             oldVariable: mockFieldVariables[0]
         });
@@ -115,10 +115,24 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         fixtureHost.detectChanges();
 
         const dotKeyValue = de.query(By.css('dot-key-value-ng'));
-        dotKeyValue.triggerEventHandler('deletedVariable', variableToDelete);
+        dotKeyValue.triggerEventHandler('delete', variableToDelete);
 
         expect(dotFieldVariableService.delete).toHaveBeenCalledWith(comp.field, variableToDelete);
         expect(comp.fieldVariables).toEqual(deletedCollection);
+    });
+
+    it('should  not delete a variable from the server if the variable has not been saved', () => {
+        spyOn<DotFieldVariablesService>(dotFieldVariableService, 'delete').and.returnValue(of([]));
+        fixtureHost.detectChanges();
+
+        const dotKeyValue = de.query(By.css('dot-key-value-ng'));
+        dotKeyValue.triggerEventHandler('delete', {
+            key: 'key-not-exist-test',
+            value: 'value-not-exist-test'
+        });
+
+        expect(dotFieldVariableService.delete).not.toHaveBeenCalled();
+        expect(comp.fieldVariables).toEqual(mockFieldVariables);
     });
 
     describe('Block Editor Field', () => {
