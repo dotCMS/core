@@ -37,7 +37,7 @@ public class RemoteAnnouncementsLoaderIntegrationTest {
      */
     @Test
     public void testAnnouncementRemoteURL() throws JsonProcessingException {
-        String expected = "https://www.dotcms.com/api/content/render/false/query/+contentType:Announcement%20+(conhost:8a7d5e23-da1e-420a-b4f0-471e7da8ea2d%20conhost:SYSTEM_HOST)%20+languageId:1%20+deleted:false%20+working:true%20+variant:default/orderby/Announcement.announcementDate%20desc";
+        String expected = "https://www.dotcms.com/api/content/render/false/query/+contentType:Announcement%20+languageId:1%20+deleted:false%20+live:true%20/orderby/Announcement.announcementDate%20desc";
         final String builtURL = loader.buildURL();
         Assert.assertEquals(expected, builtURL);
     }
