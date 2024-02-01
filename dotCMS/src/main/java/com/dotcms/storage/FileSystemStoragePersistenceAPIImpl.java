@@ -81,26 +81,15 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                     folder, groupName));
         }
         groups.put(groupName.toLowerCase(), folder);
-        Logger.debug(FileSystemStoragePersistenceAPIImpl.class, String.format("Registering new group '%s' mapped to folder '%s' ",groupName, folder));
+        Logger.debug(this, () -> String.format("Registering new group '%s' mapped to folder '%s' ",groupName, folder));
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String} group name
-     * @return
-     */
     @Override
     public boolean existsGroup(final String groupName) throws DotDataException{
         final String groupNameLC = groupName.toLowerCase();
         return groups.containsKey(groupNameLC) && this.groups.get(groupNameLC).exists();
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName  {@link String}
-     * @param path {@link String}
-     * @return
-     */
     @Override
     public boolean existsObject(final String groupName, final String path) throws DotDataException {
         final String groupNameLC = groupName.toLowerCase();
@@ -116,44 +105,33 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String} group name
-     * @return
-     */
     @Override
     public boolean createGroup(final String groupName) throws DotDataException {
         return this.createGroup(groupName, ImmutableMap.of());
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName    {@link String} group name
-     * @param extraOptions {@link Map} depending on the implementation it might need extra options or not.
-     * @return
-     */
     @Override
     public boolean createGroup(final String groupName, final Map<String, Object> extraOptions) throws DotDataException {
         final String groupNameLC = groupName.toLowerCase();
-        final File rootGroup = groups.get(getRootGroupKey());
+        final File groupNamePath = this.groups.get(groupNameLC);
+        if (null != groupNamePath && groupNamePath.exists() && groupNamePath.isAbsolute()) {
+            return true;
+        }
+        // If the group name DOES NOT represent an absolute path, it must be
+        // appended to the path of the root group
+        final File rootGroup = this.groups.get(getRootGroupKey());
         final File destBucketFile = new File(rootGroup, groupNameLC);
         if (!destBucketFile.exists()) {
             final boolean bucketCreated = destBucketFile.mkdirs();
             if (bucketCreated) {
-               groups.put(groupNameLC, destBucketFile);
+               this.groups.put(groupNameLC, destBucketFile);
             }
             return bucketCreated;
         }
-
-        groups.put(groupNameLC, destBucketFile);
+        this.groups.put(groupNameLC, destBucketFile);
         return true; // the bucket already exist
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String} group name
-     * @return
-     */
     @Override
     public int deleteGroup(final String groupName) throws DotDataException {
         final File rootGroup = groups.get(getRootGroupKey());
@@ -166,12 +144,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String} group name
-     * @param path   {   @link String} object path
-     * @return
-     */
     @Override
     public boolean deleteObjectAndReferences(final String groupName, final String path) throws DotDataException {
         return new File(groups.get(groupName.toLowerCase()), path.toLowerCase()).delete();
@@ -182,24 +154,12 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return deleteObjectAndReferences(groupName, path);
     }
 
-    /**
-     * {@inheritDoc}
-     * @return
-     */
     @Override
-    public List<String> listGroups() throws DotDataException {
+    public List<String> listGroups() {
 
         return new ImmutableList.Builder<String>().addAll(groups.keySet()).build();
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName  {@link String} the group to upload
-     * @param path       {@link String} path to upload the file
-     * @param file       {@link File}   the actual file
-     * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
-     * @return
-     */
     @Override
     public Object pushFile(final String groupName,
             final String path,
@@ -233,15 +193,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String} the group to upload
-     * @param path       {@link String} path to upload the file
-     * @param writerDelegate     {@link ObjectWriterDelegate} stream to upload
-     * @param object     {@link Serializable} object to write into the storage
-     * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
-     * @return
-     */
     @Override
     public Object pushObject(final String groupName, final String path,
             final ObjectWriterDelegate writerDelegate,
@@ -258,7 +209,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         if (groupDir.canWrite()) {
 
             try {
-                return lockManager.tryLock(groupName+path,
+                return lockManager.tryLock("fs_" + groupName + path,
                         () -> {
 
                             final File destBucketFile = Paths.get(groupDir.getCanonicalPath(),path.toLowerCase()).toFile();
@@ -310,14 +261,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String} the bucket to push
-     * @param path       {@link String} path to push the file
-     * @param file       {@link File}   the actual file
-     * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
-     * @return
-     */
     @Override
     public Future<Object> pushFileAsync(final String groupName, final String path,
             final File file, final Map<String, Serializable> extraMeta) {
@@ -326,15 +269,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         );
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName
-     * @param path       {@link String} path to upload the file
-     * @param writerDelegate     {@link ObjectWriterDelegate} stream to upload
-     * @param object     {@link Serializable} object to write into the storage
-     * @param extraMeta  {@link Map} optional metadata, this could be null but depending on the implementation it would need some meta info.
-     * @return
-     */
     @Override
     public Future<Object> pushObjectAsync(final String groupName, final String path,
             final ObjectWriterDelegate writerDelegate, final Serializable object,
@@ -344,13 +278,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                 () -> this.pushObject(groupName, path, writerDelegate, object, extraMeta)
         );
     }
-
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String} group name
-     * @param path {@link String}
-     * @return
-     */
 
     @Override
     public File pullFile(final String groupName, final String path) throws DotDataException {
@@ -381,13 +308,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         }
         return clientFile;
     }
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String}  group name to pull
-     * @param path {@link String} path to pull the file
-     * @param readerDelegate {@link ObjectReaderDelegate} to reads the object
-     * @return
-     */
+
     @Override
     public Object pullObject(final String groupName, final String path,
             final ObjectReaderDelegate readerDelegate) throws DotDataException {
@@ -435,12 +356,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return object;
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String} group name
-     * @param path {@link String}
-     * @return
-     */
     @Override
     public Future<File> pullFileAsync(final String groupName, final String path) {
 
@@ -449,13 +364,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         );
     }
 
-    /**
-     * {@inheritDoc}
-     * @param groupName {@link String} group name
-     * @param path {@link String}
-     * @param readerDelegate {@link ObjectReaderDelegate} to reads the object
-     * @return
-     */
     @Override
     public Future<Object> pullObjectAsync(final String groupName, final String path,
             final ObjectReaderDelegate readerDelegate) {

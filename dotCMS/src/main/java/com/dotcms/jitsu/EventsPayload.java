@@ -52,6 +52,10 @@ public class EventsPayload implements Serializable {
         return eventPayloads;
     }
 
+    public boolean isEmpty() {
+        return shortExperiments.isEmpty();
+    }
+
     public static class EventPayload {
         private JSONObject jsonObject;
 

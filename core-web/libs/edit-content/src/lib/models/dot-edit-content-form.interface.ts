@@ -1,14 +1,7 @@
-import {
-    DotCMSContentTypeField,
-    DotCMSContentTypeLayoutRow,
-    DotCMSContentlet,
-    DotCMSWorkflowAction
-} from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSWorkflowAction, DotCMSContentType } from '@dotcms/dotcms-models';
 
 export interface EditContentPayload {
-    layout: DotCMSContentTypeLayoutRow[];
-    fields: DotCMSContentTypeField[];
+    contentType: DotCMSContentType;
     actions: DotCMSWorkflowAction[];
-    contentType: string;
     contentlet?: DotCMSContentlet;
 }
