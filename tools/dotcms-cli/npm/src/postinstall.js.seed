@@ -21,8 +21,8 @@ function getGlobalBinPath() {
 }
 
 function validatePackageConfig(packageJson) {
-    if (!packageJson.version || !packageJson.binaries || typeof packageJson.binaries !== "object") {
-        throw new Error("Invalid package.json. 'version' and 'binaries' must be specified.");
+    if (!packageJson.version || !packageJson.project || !packageJson.binaries || typeof packageJson.binaries !== "object") {
+        throw new Error("Invalid package.json. 'version', 'project' and 'binaries' must be specified.");
     }
 }
 
@@ -46,9 +46,7 @@ async function parsePackageJson() {
         const packageJson = JSON.parse(packageJsonContent.toString());
         validatePackageConfig(packageJson);
 
-
-
-        const packageName = packageJson.name;
+        const packageName = packageJson.project;
         const binaries = packageJson.binaries;
         const binaryKey = `${packageName}-${platform}-${architecture}`;
         const binaryPath = binaries[binaryKey];

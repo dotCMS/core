@@ -1,16 +1,17 @@
 {
-  "name": @dotcms/"{{ packageName }}",
+  "name": "@dotcms/{{ packageName }}",
   "version": "{{ packageVersion }}{{ packageVersionSuffix }}",
   "scripts": {
     "postinstall": "node src/postinstall.js install",
     "postuninstall": "node src/postinstall.js uninstall && npm prune"
   },
   "binaries": {
-    "{{ packageName }}-{{ packageVersion }}-darwin-arm64": "bin/{{ packageName }}-{{ packageVersion }}-osx-aarch_64",
-    "{{ packageName }}-{{ packageVersion }}-darwin-x64": "bin/{{ packageName }}-{{ packageVersion }}-osx-x86_64",
-    "{{ packageName }}-{{ packageVersion }}-linux-x64": "bin/{{ packageName }}-{{ packageVersion }}-linux-x86_64",
-    "{{ packageName }}-{{ packageVersion }}-win32-x64": "bin/{{ packageName }}-{{ packageVersion }}-windows-x86_64.exe"
+    "{{ projectName }}-{{ packageVersion }}-darwin-arm64": "bin/{{ projectName }}-{{ packageVersion }}-osx-aarch_64",
+    "{{ projectName }}-{{ packageVersion }}-darwin-x64": "bin/{{ projectName }}-{{ packageVersion }}-osx-x86_64",
+    "{{ projectName }}-{{ packageVersion }}-linux-x64": "bin/{{ projectName }}-{{ packageVersion }}-linux-x86_64",
+    "{{ projectName }}-{{ packageVersion }}-win32-x64": "bin/{{ projectName }}-{{ packageVersion }}-windows-x86_64.exe"
   },
+  "project": "{{ projectName }}",
   "files": [
     "bin",
     "src"

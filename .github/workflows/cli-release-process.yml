@@ -90,7 +90,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ ubuntu-latest ] # macos-13-xlarge, macOS-latest, ubuntu-latest, windows-latest
+        os: [ macos-13-xlarge, macOS-latest, ubuntu-latest ] # macos-13-xlarge, macOS-latest, ubuntu-latest, windows-latest
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -286,6 +286,8 @@ jobs:
           PACKAGE_VERSION: ${{ github.event.inputs.version }}
           PACKAGE_VERSION_SUFFIX: ${{ steps.generate-version-suffix.outputs.PACKAGE_VERSION_SUFFIX }}
         run: |
+          PROJECT_NAME=$(./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout -f ${{ github.workspace }}/tools/dotcms-cli/cli/pom.xml)
+
           echo "Adding bin folder with all the binaries"
           mkdir -p bin
           find ${{ github.workspace }}/artifacts/distributions/ -name "*.zip" -exec unzip -d bin {} \;
@@ -297,7 +299,7 @@ jobs:
           cp ${{ github.workspace }}/tools/dotcms-cli/README.md .
           
           echo "Adding package.json file"
-          jinja2 package.j2 -D packageName=${PACKAGE_NAME} -D packageVersion=${PACKAGE_VERSION} -D packageVersionSuffix=${PACKAGE_VERSION_SUFFIX} --format json -o package.json
+          jinja2 package.j2 -D projectName=${PROJECT_NAME} -D npmPackageName=${NPM_PACKAGE_NAME} -D packageVersion=${PACKAGE_VERSION} -D packageVersionSuffix=${PACKAGE_VERSION_SUFFIX} --format json -o package.json
           rm -f package.j2
           
           cat package.json
