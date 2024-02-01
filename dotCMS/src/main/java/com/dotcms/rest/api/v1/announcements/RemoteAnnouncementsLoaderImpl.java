@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -18,6 +19,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.util.List;
+import java.util.function.Supplier;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
@@ -29,10 +31,27 @@ import javax.ws.rs.core.Response;
 public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
 
     //This is the url to the dotCMS instance set to provide and feed all consumers with announcements
-    static final  Lazy<String> ANNOUNCEMENTS_BASE_URL =
+    static final  Lazy<String> BASE_URL_LAZY_SUPPLIER =
             Lazy.of(() -> Config.getStringProperty("ANNOUNCEMENTS_BASE_URL", "https://www.dotcms.com"));
 
     static final String ANNOUNCEMENTS_QUERY = "/api/content/render/false/query/+contentType:Announcement%20+languageId:1%20+deleted:false%20+live:true%20/orderby/Announcement.announcementDate%20desc";
+
+    Supplier<String> baseURL = BASE_URL_LAZY_SUPPLIER;
+
+    /**
+     * Default constructor
+     */
+    public RemoteAnnouncementsLoaderImpl() {
+    }
+
+    /**
+     * Constructor
+     * @param baseURL Supplier<String>
+     */
+    @VisibleForTesting
+    public RemoteAnnouncementsLoaderImpl(final Supplier<String> baseURL) {
+        this.baseURL = baseURL;
+    }
 
     /**
      * Load the announcements from the remote dotCMS instance
@@ -78,7 +97,7 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
      * @return String
      */
     String buildURL() {
-        final String raw = ANNOUNCEMENTS_BASE_URL.get() + ANNOUNCEMENTS_QUERY;
+        final String raw = baseURL.get() + ANNOUNCEMENTS_QUERY;
         //clean up double slashes in the url
         return raw.replaceAll("(?<!(http:|https:))//", "/");
     }
