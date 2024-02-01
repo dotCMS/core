@@ -27,14 +27,23 @@
     <formats>
         <format>tar.gz</format>
         <format>zip</format>
-<!--        <format>dir</format>-->
     </formats>
-    <files>
-        <file>
-            <source>${project.build.directory}/${project.artifactId}-${project.version}-runner${executable-suffix}</source>
-            <outputDirectory>./</outputDirectory>
-            <destName>${project.artifactId}-${project.version}-${os.detected.classifier}${executable-suffix}</destName>
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}</directory>
+            <outputDirectory>./${project.artifactId}-${project.version}-${os.detected.classifier}</outputDirectory>
+            <includes>
+                <include>${project.artifactId}-${project.version}-${os.detected.classifier}{executable-suffix}</include>
+            </includes>
             <fileMode>0755</fileMode>
-        </file>
-    </files>
+        </fileSet>
+    </fileSets>
+<!--    <files>-->
+<!--        <file>-->
+<!--            <source>${project.build.directory}/${project.artifactId}-${project.version}-runner${executable-suffix}</source>-->
+<!--            <outputDirectory>./</outputDirectory>-->
+<!--            <destName>${project.artifactId}-${project.version}-${os.detected.classifier}${executable-suffix}</destName>-->
+<!--            <fileMode>0755</fileMode>-->
+<!--        </file>-->
+<!--    </files>-->
 </assembly>
