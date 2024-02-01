@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
+    DestroyRef,
     EventEmitter,
     Input,
     OnChanges,
@@ -13,13 +14,14 @@ import {
     SimpleChanges,
     inject
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { DividerModule } from 'primeng/divider';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { catchError, tap, take } from 'rxjs/operators';
+import { catchError, take } from 'rxjs/operators';
 
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
@@ -58,21 +60,7 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
     private fieldVariablesService = inject(DotFieldVariablesService);
     private dotMessageService = inject(DotMessageService);
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
-
-    settingsMap = {
-        accept: {
-            key: 'accept',
-            variable: null
-        },
-        systemOptions: {
-            key: 'systemOptions',
-            variable: null
-        }
-    };
-
-    get settings() {
-        return Object.values(this.settingsMap);
-    }
+    private readonly destroyRef = inject(DestroyRef);
 
     protected readonly systemOptions = [
         {
@@ -99,77 +87,64 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
     ngOnInit(): void {
         this.form = this.fb.group({
             accept: '',
-            // This is an object called systemOptions, this is going to the backend as a field variable
-            allowURLImport: false,
-            allowCodeWrite: false,
-            allowFileNameEdit: false
+            systemOptions: this.fb.group({
+                allowURLImport: false,
+                allowCodeWrite: false,
+                allowFileNameEdit: false
+            })
         });
 
-        this.form.valueChanges.subscribe(() => {
+        this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
             this.valid.emit(this.form.valid);
         });
 
-        this.fieldVariablesService
-            .load(this.field)
-            .subscribe((fieldVariables: DotFieldVariable[]) => {
+        this.fieldVariablesService.load(this.field).subscribe({
+            next: (fieldVariables: DotFieldVariable[]) => {
                 fieldVariables.forEach((variable) => {
                     const { key, value } = variable;
-
-                    if (key === 'accept') {
-                        this.settingsMap.accept.variable = variable;
-                        this.form.get(key)?.setValue(value);
-                    } else if (key === 'systemOptions') {
-                        this.settingsMap.systemOptions.variable = variable;
+                    const control = this.form.get(key);
+                    if (control instanceof FormGroup) {
                         const systemOptions = JSON.parse(value);
 
                         this.systemOptions.forEach(({ key }) => {
-                            this.form.get(key)?.setValue(systemOptions[key]);
+                            control.get(key)?.setValue(systemOptions[key]);
                         });
+                    } else {
+                        control.setValue(value);
                     }
                 });
-            });
+            }
+        });
     }
 
     saveSettings(): void {
-        const updateActions = this.settings.map(({ variable, key }) => {
-            let fieldVariable: DotFieldVariable;
-            let value: string | boolean;
+        const updateActions = Object.keys(this.form.controls).map((key) => {
+            const control = this.form.get(key);
+            const value =
+                control instanceof FormGroup
+                    ? JSON.stringify(
+                          this.systemOptions.reduce((acc, { key }) => {
+                              acc[key] = control.get(key).value;
 
-            if (key === 'accept') {
-                value = this.form.get(key).value;
-                fieldVariable = {
-                    ...variable,
-                    key,
-                    value
-                };
-            } else if (key === 'systemOptions') {
-                value = JSON.stringify(
-                    this.systemOptions.reduce((acc, { key }) => {
-                        acc[key] = this.form.get(key).value;
-
-                        return acc;
-                    }, {})
-                );
-
-                fieldVariable = {
-                    ...variable,
-                    key,
-                    value
-                };
-            }
+                              return acc;
+                          }, {})
+                      )
+                    : control.value;
+            const fieldVariable: DotFieldVariable = {
+                key,
+                value
+            };
 
             // This is to prevent endpoints from breaking.
             // fieldVariablesService.save -> breaks if there is not current value.
             // fieldVariablesService.delete -> breaks if there is not previus exinting variable.
-            if (!value && !variable) {
+            if (!value) {
                 return of({});
             }
 
-            return (
-                value
-                    ? this.fieldVariablesService.save(this.field, fieldVariable)
-                    : this.fieldVariablesService.delete(this.field, fieldVariable)
-            ).pipe(tap((variable) => (this.settingsMap[key].variable = variable))); // Update Variable Reference
+            return value
+                ? this.fieldVariablesService.save(this.field, fieldVariable)
+                : this.fieldVariablesService.delete(this.field, fieldVariable);
         });
 
         forkJoin(updateActions)

@@ -5,7 +5,7 @@
             id="allowed-file-type"
             [style]="{ width: '100%' }"
             formControlName="accept"
-            placeholder="ex: images/*"
+            placeholder="ex: image/*"
             pInputText
             data-testId="setting-accept" />
         <small style="display: inline-block; margin-top: 0.5rem">
@@ -13,7 +13,7 @@
                 href="https://www.dotcms.com/docs/latest/field-variables#BinaryField"
                 target="_blank"
                 rel="noopener"
-                >Link to documentation</a
+                >{{ 'binary-field-settings.system.link.to.documentation' | dm }}</a
             >
         </small>
     </div>
@@ -22,7 +22,7 @@
         [style]="{
             margin: '1rem 0'
         }"></p-divider>
-    <div class="horizontal-field">
+    <div class="horizontal-field" formGroupName="systemOptions">
         <p class="info" [innerHTML]="option.message | dm"></p>
         <p-inputSwitch [formControlName]="option.key" data-testId="setting-switch"></p-inputSwitch>
     </div>
