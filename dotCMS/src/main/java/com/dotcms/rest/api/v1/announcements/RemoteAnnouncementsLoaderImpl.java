@@ -32,7 +32,7 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
     static final  Lazy<String> ANNOUNCEMENTS_BASE_URL =
             Lazy.of(() -> Config.getStringProperty("ANNOUNCEMENTS_BASE_URL", "https://www.dotcms.com"));
 
-    static final String ANNOUNCEMENTS_QUERY = "/api/content/render/false/query/+contentType:Announcement%20+(conhost:8a7d5e23-da1e-420a-b4f0-471e7da8ea2d%20conhost:SYSTEM_HOST)%20+languageId:1%20+deleted:false%20+working:true%20+variant:default/orderby/Announcement.announcementDate%20desc";
+    static final String ANNOUNCEMENTS_QUERY = "/api/content/render/false/query/+contentType:Announcement%20+languageId:1%20+deleted:false%20+live:true%20/orderby/Announcement.announcementDate%20desc";
 
     /**
      * Load the announcements from the remote dotCMS instance
