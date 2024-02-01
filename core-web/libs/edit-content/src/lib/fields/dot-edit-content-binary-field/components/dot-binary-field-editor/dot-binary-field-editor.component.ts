@@ -10,13 +10,15 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    computed,
     EventEmitter,
     HostListener,
+    inject,
     Input,
     OnInit,
     Output,
-    ViewChild,
-    inject
+    signal,
+    ViewChild
 } from '@angular/core';
 import {
     FormControl,
@@ -33,25 +35,12 @@ import { debounceTime } from 'rxjs/operators';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
+import { DEFAULT_BINARY_FIELD_MONACO_CONFIG } from '@dotcms/edit-content';
 import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotBinaryFieldValidatorService } from '../../service/dot-binary-field-validator/dot-binary-field-validator.service';
 
-const EDITOR_CONFIG: MonacoEditorConstructionOptions = {
-    theme: 'vs',
-    minimap: {
-        enabled: false
-    },
-    cursorBlinking: 'solid',
-    overviewRulerBorder: false,
-    mouseWheelZoom: false,
-    lineNumbers: 'on',
-    roundedSelection: false,
-    automaticLayout: true,
-    language: 'text',
-    fontSize: 14
-};
-
+const DEFAULT_FILE_TYPE = 'text';
 @Component({
     selector: 'dot-dot-binary-field-editor',
     standalone: true,
@@ -72,29 +61,39 @@ const EDITOR_CONFIG: MonacoEditorConstructionOptions = {
 export class DotBinaryFieldEditorComponent implements OnInit {
     @Input() fileName = '';
     @Input() fileContent = '';
-
     @Output() readonly tempFileUploaded = new EventEmitter<DotCMSTempFile>();
     @Output() readonly cancel = new EventEmitter<void>();
-
     @ViewChild('editorRef', { static: true }) editorRef!: MonacoEditorComponent;
-
+    readonly form = new FormGroup({
+        name: new FormControl('', [Validators.required, Validators.pattern(/^[^.]+\.[^.]+$/)]),
+        content: new FormControl('')
+    });
+    mimeType = '';
+    private readonly languageType = signal(DEFAULT_FILE_TYPE);
     private readonly cd: ChangeDetectorRef = inject(ChangeDetectorRef);
     private readonly dotUploadService: DotUploadService = inject(DotUploadService);
     private readonly dotMessageService: DotMessageService = inject(DotMessageService);
     private readonly dotBinaryFieldValidatorService: DotBinaryFieldValidatorService = inject(
         DotBinaryFieldValidatorService
     );
-
     private extension = '';
     private invalidFileMessage = '';
     private editor: monaco.editor.IStandaloneCodeEditor;
-    readonly form = new FormGroup({
-        name: new FormControl('', [Validators.required, Validators.pattern(/^[^.]+\.[^.]+$/)]),
-        content: new FormControl('')
+
+    private _userMonacoOptions = signal<MonacoEditorConstructionOptions>({});
+
+    monacoOptions = computed(() => {
+        return {
+            ...DEFAULT_BINARY_FIELD_MONACO_CONFIG,
+            ...this._userMonacoOptions(),
+            language: this.languageType()
+        };
     });
 
-    editorOptions = EDITOR_CONFIG;
-    mimeType = '';
+    @Input()
+    set userMonacoOptions(customMonacoOptions: MonacoEditorConstructionOptions) {
+        this._userMonacoOptions.set(customMonacoOptions);
+    }
 
     get name(): FormControl {
         return this.form.get('name') as FormControl;
@@ -198,10 +197,7 @@ export class DotBinaryFieldEditorComponent implements OnInit {
     }
 
     private updateEditorLanguage(languageId: string = 'text') {
-        this.editorOptions = {
-            ...this.editorOptions,
-            language: languageId
-        };
+        this.languageType.set(languageId);
     }
 
     private disableEditor() {

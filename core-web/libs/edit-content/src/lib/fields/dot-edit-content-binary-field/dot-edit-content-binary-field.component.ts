@@ -1,4 +1,4 @@
-import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
+import { MonacoEditorConstructionOptions, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
@@ -7,14 +7,17 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    computed,
     ElementRef,
     EventEmitter,
+    forwardRef,
     Input,
     OnDestroy,
     OnInit,
     Output,
-    ViewChild,
-    forwardRef
+    signal,
+    Signal,
+    ViewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -25,7 +28,13 @@ import { InputTextModule } from 'primeng/inputtext';
 import { delay, filter, skip, tap } from 'rxjs/operators';
 
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField, DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotCMSContentTypeField,
+    DotCMSContentTypeFieldVariable,
+    DotCMSTempFile
+} from '@dotcms/dotcms-models';
 import {
     DotDropZoneComponent,
     DotMessagePipe,
@@ -44,6 +53,14 @@ import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-
 import { DotBinaryFieldValidatorService } from './service/dot-binary-field-validator/dot-binary-field-validator.service';
 import { DotBinaryFieldStore } from './store/binary-field.store';
 import { getUiMessage } from './utils/binary-field-utils';
+
+import { DEFAULT_MONACO_CONFIG } from '../../models/dot-edit-content-field.constant';
+import { getFieldVariablesParsed, stringToJson } from '../../utils/functions.util';
+
+export const DEFAULT_BINARY_FIELD_MONACO_CONFIG: MonacoEditorConstructionOptions = {
+    ...DEFAULT_MONACO_CONFIG,
+    language: 'text'
+};
 
 @Component({
     selector: 'dot-edit-content-binary-field',
@@ -81,16 +98,12 @@ import { getUiMessage } from './utils/binary-field-utils';
 export class DotEditContentBinaryFieldComponent
     implements OnInit, AfterViewInit, OnDestroy, ControlValueAccessor
 {
-    @Input() field: DotCMSContentTypeField;
+    contentTypeField = signal<DotCMSContentTypeField>({} as DotCMSContentTypeField);
     @Input() contentlet: DotCMSContentlet;
-    @Input() imageEditor = false;
 
+    @Input() imageEditor = false;
     @Output() valueUpdated = new EventEmitter<{ value: string; fileName: string }>();
     @ViewChild('inputFile') inputFile: ElementRef;
-
-    private onChange: (value: string) => void;
-    private onTouched: () => void;
-
     readonly dialogFullScreenStyles = { height: '90%', width: '90%' };
     readonly dialogHeaderMap = {
         [BinaryFieldMode.URL]: 'dot.binary.field.dialog.import.from.url.header',
@@ -99,15 +112,33 @@ export class DotEditContentBinaryFieldComponent
     readonly BinaryFieldStatus = BinaryFieldStatus;
     readonly BinaryFieldMode = BinaryFieldMode;
     readonly vm$ = this.dotBinaryFieldStore.vm$;
-    private tempId = '';
     dialogOpen = false;
+    customMonacoOptions: Signal<MonacoEditorConstructionOptions> = computed(() => {
+        return {
+            ...this.parseCustomMonacoOptions(this.contentTypeField().fieldVariables)
+        };
+    });
+    private onChange: (value: string) => void;
+    private onTouched: () => void;
+    private tempId = '';
 
-    private get variable(): string {
-        return this.field.variable;
+    constructor(
+        private readonly dotBinaryFieldStore: DotBinaryFieldStore,
+        private readonly dotMessageService: DotMessageService,
+        private readonly dotBinaryFieldEditImageService: DotBinaryFieldEditImageService,
+        private readonly DotBinaryFieldValidatorService: DotBinaryFieldValidatorService,
+        private readonly cd: ChangeDetectorRef
+    ) {
+        this.dotMessageService.init();
+    }
+
+    @Input({ required: true })
+    set field(contentTypeField: DotCMSContentTypeField) {
+        this.contentTypeField.set(contentTypeField);
     }
 
     get value(): string {
-        return this.contentlet?.[this.variable] ?? this.field.defaultValue;
+        return this.contentlet?.[this.variable] ?? this.contentTypeField().defaultValue;
     }
 
     get maxFileSize(): number {
@@ -118,14 +149,15 @@ export class DotEditContentBinaryFieldComponent
         return this.DotBinaryFieldValidatorService.accept;
     }
 
-    constructor(
-        private readonly dotBinaryFieldStore: DotBinaryFieldStore,
-        private readonly dotMessageService: DotMessageService,
-        private readonly dotBinaryFieldEditImageService: DotBinaryFieldEditImageService,
-        private readonly DotBinaryFieldValidatorService: DotBinaryFieldValidatorService,
-        private readonly cd: ChangeDetectorRef
-    ) {
-        this.dotMessageService.init();
+    private get variable(): string {
+        return this.contentTypeField().variable;
+    }
+
+    private get metaDataKey(): string {
+        const { baseType } = this.contentlet;
+        const isFileAsset = baseType === DotCMSBaseTypesContentTypes.FILEASSET;
+
+        return isFileAsset ? 'metaData' : this.variable + 'MetaData';
     }
 
     ngOnInit() {
@@ -189,7 +221,7 @@ export class DotEditContentBinaryFieldComponent
      * Open dialog to create new file or import from url
      *
      * @param {BinaryFieldMode} mode
-     * @memberof DotBinaryFieldComponent
+     * @memberof DotEditContentBinaryFieldComponent
      */
     openDialog(mode: BinaryFieldMode) {
         this.dialogOpen = true;
@@ -199,7 +231,7 @@ export class DotEditContentBinaryFieldComponent
     /**
      * Close dialog
      *
-     * @memberof DotBinaryFieldComponent
+     * @memberof DotEditContentBinaryFieldComponent
      */
     closeDialog() {
         this.dialogOpen = false;
@@ -209,7 +241,7 @@ export class DotEditContentBinaryFieldComponent
     /**
      * Open file picker
      *
-     * @memberof DotBinaryFieldComponent
+     * @memberof DotEditContentBinaryFieldComponent
      */
     openFilePicker() {
         this.inputFile.nativeElement.click();
@@ -219,7 +251,7 @@ export class DotEditContentBinaryFieldComponent
      * Handle file selection
      *
      * @param {Event} event
-     * @memberof DotBinaryFieldComponent
+     * @memberof DotEditContentBinaryFieldComponent
      */
     handleFileSelection(event: Event) {
         const input = event.target as HTMLInputElement;
@@ -230,7 +262,7 @@ export class DotEditContentBinaryFieldComponent
     /**
      * Remove file
      *
-     * @memberof DotBinaryFieldComponent
+     * @memberof DotEditContentBinaryFieldComponent
      */
     removeFile() {
         this.dotBinaryFieldStore.removeFile();
@@ -240,7 +272,7 @@ export class DotEditContentBinaryFieldComponent
      * Set temp file
      *
      * @param {DotCMSTempFile} tempFile
-     * @memberof DotBinaryFieldComponent
+     * @memberof DotEditContentBinaryFieldComponent
      */
     setTempFile(tempFile: DotCMSTempFile) {
         this.dotBinaryFieldStore.setFileFromTemp(tempFile);
@@ -250,7 +282,7 @@ export class DotEditContentBinaryFieldComponent
     /**
      * Open Dialog to edit file in editor
      *
-     * @memberof DotBinaryFieldComponent
+     * @memberof DotEditContentBinaryFieldComponent
      */
     onEditFile() {
         this.openDialog(BinaryFieldMode.EDITOR);
@@ -259,13 +291,13 @@ export class DotEditContentBinaryFieldComponent
     /**
      * Open Image Editor
      *
-     * @memberof DotBinaryFieldComponent
+     * @memberof DotEditContentBinaryFieldComponent
      */
     onEditImage() {
         this.dotBinaryFieldEditImageService.openImageEditor({
             inode: this.contentlet?.inode,
             tempId: this.tempId,
-            variable: this.field.variable
+            variable: this.contentTypeField().variable
         });
     }
 
@@ -273,7 +305,7 @@ export class DotEditContentBinaryFieldComponent
      * Set drop zone active state
      *
      * @param {boolean} value
-     * @memberof DotBinaryFieldComponent
+     * @memberof DotEditContentBinaryFieldComponent
      */
     setDropZoneActiveState(value: boolean) {
         this.dotBinaryFieldStore.setDropZoneActive(value);
@@ -284,7 +316,7 @@ export class DotEditContentBinaryFieldComponent
      *
      * @param {DropZoneFileEvent} { validity, file }
      * @return {*}
-     * @memberof DotBinaryFieldComponent
+     * @memberof DotEditContentBinaryFieldComponent
      */
     handleFileDrop({ validity, file }: DropZoneFileEvent) {
         if (!validity.valid) {
@@ -300,29 +332,16 @@ export class DotEditContentBinaryFieldComponent
      * Set field variables
      *
      * @private
-     * @memberof DotBinaryFieldComponent
+     * @memberof DotEditContentBinaryFieldComponent
      */
     private setFieldVariables() {
-        const { accept, maxFileSize = 0 } = this.getFieldVariables();
+        const { accept, maxFileSize = 0 } = getFieldVariablesParsed<{
+            accept: string;
+            maxFileSize: string;
+        }>(this.contentTypeField().fieldVariables);
+
         this.DotBinaryFieldValidatorService.setAccept(accept ? accept.split(',') : []);
         this.DotBinaryFieldValidatorService.setMaxFileSize(Number(maxFileSize));
-    }
-
-    /**
-     * Get field variables
-     *
-     * @private
-     * @return {*}  {Record<string, string>}
-     * @memberof DotBinaryFieldComponent
-     */
-    private getFieldVariables(): Record<string, string> {
-        return this.field?.fieldVariables.reduce(
-            (prev, { key, value }) => ({
-                ...prev,
-                [key]: value
-            }),
-            {}
-        );
     }
 
     /**
@@ -330,7 +349,7 @@ export class DotEditContentBinaryFieldComponent
      *
      * @private
      * @param {DropZoneFileValidity} { errorsType }
-     * @memberof DotBinaryFieldComponent
+     * @memberof DotEditContentBinaryFieldComponent
      */
     private handleFileDropError({ errorsType }: DropZoneFileValidity): void {
         const messageArgs = {
@@ -341,5 +360,22 @@ export class DotEditContentBinaryFieldComponent
         const uiMessage = getUiMessage(errorType, messageArgs[errorType]);
 
         this.dotBinaryFieldStore.invalidFile(uiMessage);
+    }
+
+    /**
+     * Parses the custom Monaco options for a given field of a DotCMSContentTypeField.
+     *
+     * @returns {Record<string, string>} Returns the parsed custom Monaco options as a key-value pair object.
+     * @private
+     * @param fieldVariables
+     */
+    private parseCustomMonacoOptions(
+        fieldVariables: DotCMSContentTypeFieldVariable[]
+    ): Record<string, string> {
+        const { monacoOptions } = getFieldVariablesParsed<{ monacoOptions: string }>(
+            fieldVariables
+        );
+
+        return stringToJson(monacoOptions);
     }
 }
