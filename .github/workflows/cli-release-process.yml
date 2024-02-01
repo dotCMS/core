@@ -180,6 +180,11 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
 
+      - name: 'Get project name'
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli/
+        run: |
+          echo "PROJECT_NAME=$(./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout -f cli/pom.xml)" >> "$GITHUB_ENV"
+
       - name: 'Prepare dotCMS license'
         env:
           DOTCMS_LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
@@ -285,9 +290,7 @@ jobs:
           PACKAGE_NAME: ${{ env.NPM_PACKAGE_NAME }}
           PACKAGE_VERSION: ${{ github.event.inputs.version }}
           PACKAGE_VERSION_SUFFIX: ${{ steps.generate-version-suffix.outputs.PACKAGE_VERSION_SUFFIX }}
-        run: |
-          PROJECT_NAME=$(./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout -f ${{ github.workspace }}/tools/dotcms-cli/cli/pom.xml)
-
+        run: |          
           echo "Adding bin folder with all the binaries"
           mkdir -p bin
           find ${{ github.workspace }}/artifacts/distributions/ -name "*.zip" -exec unzip -d bin {} \;
