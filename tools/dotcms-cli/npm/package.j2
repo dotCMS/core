@@ -1,6 +1,6 @@
 {
-  "name": "{{ packageName }}",
-  "version": "{{ packageVersion }}",
+  "name": @dotcms/"{{ packageName }}",
+  "version": "{{ packageVersion }}{{ packageVersionSuffix }}",
   "scripts": {
     "postinstall": "node src/postinstall.js install",
     "postuninstall": "node src/postinstall.js uninstall && npm prune"
