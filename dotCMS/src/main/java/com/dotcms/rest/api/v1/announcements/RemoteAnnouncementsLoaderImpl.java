@@ -3,10 +3,7 @@ package com.dotcms.rest.api.v1.announcements;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.system.announcements.Announcement;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -35,7 +32,7 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
     static final  Lazy<String> ANNOUNCEMENTS_BASE_URL =
             Lazy.of(() -> Config.getStringProperty("ANNOUNCEMENTS_BASE_URL", "https://www.dotcms.com"));
 
-    static final String ANNOUNCEMENTS_QUERY_PATTERN = "/api/content/render/false/query/+contentType:Announcement%20+(conhost:8a7d5e23-da1e-420a-b4f0-471e7da8ea2d%20conhost:SYSTEM_HOST)%20+languageId:1%20+deleted:false%20+working:true%20+variant:default/orderby/Announcement.announcementDate%20desc";
+    static final String ANNOUNCEMENTS_QUERY = "/api/content/render/false/query/+contentType:Announcement%20+(conhost:8a7d5e23-da1e-420a-b4f0-471e7da8ea2d%20conhost:SYSTEM_HOST)%20+languageId:1%20+deleted:false%20+working:true%20+variant:default/orderby/Announcement.announcementDate%20desc";
 
     /**
      * Load the announcements from the remote dotCMS instance
@@ -81,7 +78,7 @@ public class RemoteAnnouncementsLoaderImpl implements AnnouncementsLoader{
      * @return String
      */
     String buildURL() {
-        final String raw = ANNOUNCEMENTS_BASE_URL.get() + ANNOUNCEMENTS_QUERY_PATTERN;
+        final String raw = ANNOUNCEMENTS_BASE_URL.get() + ANNOUNCEMENTS_QUERY;
         //clean up double slashes in the url
         return raw.replaceAll("(?<!(http:|https:))//", "/");
     }

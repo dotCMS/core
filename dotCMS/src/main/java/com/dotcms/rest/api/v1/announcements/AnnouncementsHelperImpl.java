@@ -33,8 +33,8 @@ public class AnnouncementsHelperImpl implements AnnouncementsHelper{
      * Get the announcements from the cache or from the remote server
      *
      * @param refreshCache boolean
-     * @param limit        Integer
-     * @param user         User
+     * @param limit Integer
+     * @param user User
      * @return List<Announcement>
      */
     @Override
