@@ -75,8 +75,9 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
         fixtureHost.detectChanges();
 
-        const dotKeyValue = de.query(By.css('dot-key-value-ng')).componentInstance;
-        dotKeyValue.savedVariable.emit(response);
+        const dotKeyValue = de.query(By.css('dot-key-value-ng'));
+        dotKeyValue.triggerEventHandler('savedVariable', response);
+
         expect(dotFieldVariableService.save).toHaveBeenCalledWith(
             comp.field,
             mockFieldVariables[0]
@@ -94,11 +95,12 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
         fixtureHost.detectChanges();
 
-        const dotKeyValue = de.query(By.css('dot-key-value-ng')).componentInstance;
-        dotKeyValue.updatedVariable.emit({
+        const dotKeyValue = de.query(By.css('dot-key-value-ng'));
+        dotKeyValue.triggerEventHandler('updatedVariable', {
             variable,
             oldVariable: mockFieldVariables[0]
         });
+
         expect(dotFieldVariableService.save).toHaveBeenCalledWith(comp.field, variable);
 
         expect(comp.fieldVariables[0]).toEqual(variable);
@@ -112,8 +114,8 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         );
         fixtureHost.detectChanges();
 
-        const dotKeyValue = de.query(By.css('dot-key-value-ng')).componentInstance;
-        dotKeyValue.deletedVariable.emit(variableToDelete);
+        const dotKeyValue = de.query(By.css('dot-key-value-ng'));
+        dotKeyValue.triggerEventHandler('deletedVariable', variableToDelete);
 
         expect(dotFieldVariableService.delete).toHaveBeenCalledWith(comp.field, variableToDelete);
         expect(comp.fieldVariables).toEqual(deletedCollection);

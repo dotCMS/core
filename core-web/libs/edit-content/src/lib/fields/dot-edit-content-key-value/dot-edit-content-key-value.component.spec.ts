@@ -51,8 +51,6 @@ describe('DotEditContentKeyValueComponent', () => {
         const control = spectator.hostComponent.form.get('keyValue');
         control.valueChanges.subscribe((value) => {
             expect(value).toEqual({ key14: 'value14' });
-
-            // expect(spectator.hostComponent.form.get('keyValue').touched).toBeTruthy();
             done();
         });
 
