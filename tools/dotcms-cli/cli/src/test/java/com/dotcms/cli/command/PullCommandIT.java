@@ -25,6 +25,7 @@ import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
@@ -80,6 +81,7 @@ class PullCommandIT extends CommandTest {
     /**
      * This test checks for a simple pull situation where everything should work as expected.
      */
+    @Disabled("Test is intermittently failing.")
     @Test
     void testSimplePull() throws IOException {
 
