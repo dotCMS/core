@@ -1,8 +1,5 @@
 package com.dotcms.storage;
 
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -36,8 +33,6 @@ public final class StoragePersistenceProvider {
         String storageType= Config.getStringProperty(DEFAULT_STORAGE_TYPE, StorageType.DEFAULT_CHAIN.name());
         return Try.of(()->StorageType.valueOf(storageType)).getOrElse(StorageType.DEFAULT_CHAIN);
     });
-
-    private boolean isLicenseInitialized = false;
 
     private final Map<StorageType, StoragePersistenceAPI> storagePersistenceInstances = new ConcurrentHashMap<>();
     
@@ -104,7 +99,7 @@ public final class StoragePersistenceProvider {
                 initializeStorageChain(CHAIN3_PROVIDERS, defaultProvider);
                 break;
             default:
-                throw new IllegalArgumentException(String.format("Storage Type '%s' not supported", storageType));
+                throw new IllegalArgumentException(String.format("Storage Type '%s' is not supported", storageType));
         }
     }
 
@@ -121,18 +116,12 @@ public final class StoragePersistenceProvider {
         final ChainableStoragePersistenceAPIBuilder builder = new ChainableStoragePersistenceAPIBuilder();
         Arrays.stream(storageTypes).iterator().forEachRemaining(storageTypeName -> {
             final StorageType storageType = StorageType.valueOf(storageTypeName);
-            if (isValidLicense()) {
                 builder.add(this.getStorage(storageType));
-            } else {
-                if (StorageType.FILE_SYSTEM.equals(storageType) || StorageType.DB.equals(storageType)) {
-                    builder.add(this.getStorage(storageType));
-                }
-            }
         });
         if (builder.list().isEmpty()) {
             builder.add(this.getStorage(StorageType.FILE_SYSTEM));
         }
-        Logger.info(this, String.format("Initializing Metadata Storage Chain with '%s'", builder.list()));
+        Logger.info(this, String.format("Initializing Metadata Storage Chain with: '%s'", builder.list()));
         addStorageInitializer(StorageType.DEFAULT_CHAIN, builder);
     }
 
@@ -169,7 +158,9 @@ public final class StoragePersistenceProvider {
         final StorageType finalStorageType = storageType;
         Logger.debug(this, ()-> "Retrieving from storage: " + finalStorageType);
         if (!initializers.containsKey(storageType)) {
-            throw new IllegalArgumentException(String.format("Storage type '%s' is not part of the initializers map", storageType));
+            final String errorMsg = String.format("Storage type '%s' is not part of the initializers map", storageType);
+            Logger.error(this, errorMsg);
+            throw new IllegalArgumentException(errorMsg);
         }
         final StoragePersistenceAPI api = storagePersistenceInstances.putIfAbsent(storageType, initializers.get(storageType).get());
         if(null != api){
@@ -192,28 +183,6 @@ public final class StoragePersistenceProvider {
      */
     public void forceInitialize(){
        storagePersistenceInstances.clear();
-    }
-
-    /**
-     * Utility method that verifies if the current dotCMS instance has an Enterprise License or
-     * not.
-     *
-     * @return If the license level is at least {@link LicenseLevel#PROFESSIONAL}, returns
-     * {@code true}.
-     */
-    private boolean isValidLicense() {
-        if (!isLicenseInitialized) {
-            final String serverId = APILocator.getServerAPI().readServerId();
-            if (serverId == null) {
-                // We can continue, probably a first start
-                Logger.warn(this, "Unable to get License level. Server id is null.");
-                return false;
-            }
-            //We can finally call directly the LicenseUtil.getLevel() method, the cluster_server
-            // was finally created!
-            isLicenseInitialized = true;
-        }
-        return LicenseUtil.getLevel() >= LicenseLevel.PROFESSIONAL.level;
     }
 
     public enum INSTANCE {
