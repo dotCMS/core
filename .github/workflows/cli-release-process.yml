@@ -258,21 +258,21 @@ jobs:
           pattern: artifacts-*
           merge-multiple: true
 
-      - name: 'Generate package version suffix'
-        if: contains(github.event.inputs.version, 'SNAPSHOT')  
-        id: generate-version-suffix
-        env:
-          PACKAGE_NAME: ${{ env.NPM_PACKAGE_NAME }}
-        run: |
-          if npm view "$PACKAGE_NAME" &> /dev/null; then
-            echo "Package $PACKAGE_NAME not found."
-          else
-            echo "Package $PACKAGE_NAME found."
-            last_rc_version=$(npm view $PACKAGE_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
-            next_rc_version=$(echo "$last_rc_version" | awk -F '-rc' '{print $1 "-rc" $2 + 1}')
-            rc_suffix=$(echo "$version" | sed -n 's/.*-rc\([0-9]*\)/-rc\1/p')
-            echo "PACKAGE_VERSION_SUFFIX=$rc_suffix" >> "$GITHUB_OUTPUT"              
-          fi;
+      # - name: 'Generate package version suffix'
+      #   if: contains(github.event.inputs.version, 'SNAPSHOT')  
+      #   id: generate-version-suffix
+      #   env:
+      #     PACKAGE_NAME: ${{ env.NPM_PACKAGE_NAME }}
+      #   run: |
+      #     if npm view "$PACKAGE_NAME" &> /dev/null; then
+      #       echo "Package $PACKAGE_NAME not found."
+      #     else
+      #       echo "Package $PACKAGE_NAME found."
+      #       last_rc_version=$(npm view $PACKAGE_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
+      #       next_rc_version=$(echo "$last_rc_version" | awk -F '-rc' '{print $1 "-rc" $2 + 1}')
+      #       rc_suffix=$(echo "$version" | sed -n 's/.*-rc\([0-9]*\)/-rc\1/p')
+      #       echo "PACKAGE_VERSION_SUFFIX=$rc_suffix" >> "$GITHUB_OUTPUT"              
+      #     fi;
 
       # - name: 'Generate package version suffix'
       #   if: contains(github.event.inputs.version, 'SNAPSHOT')  
