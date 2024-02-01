@@ -4,13 +4,11 @@ import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { FactoryProvider, Type } from '@angular/core';
+import { Provider, Type } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { ConfirmationService } from 'primeng/api';
-
-import { DotBlockEditorComponent } from '@dotcms/block-editor';
+import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
@@ -29,10 +27,20 @@ import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import {
+    BINARY_FIELD_CONTENTLET,
     createFormGroupDirectiveMock,
-    FIELDS_MOCK,
-    FIELDS_WITH_CONTENTLET_MOCK
+    DOT_MESSAGE_SERVICE_MOCK,
+    FIELDS_MOCK
 } from '../../utils/mocks';
+
+interface DotEditFieldTestBed {
+    component: Type<unknown>;
+    imports?: Type<unknown>[];
+    providers?: Provider[];
+    declarations?: Type<unknown>[];
+    props?: { [key: string]: unknown }[]; // ContentField Props, that we need to pass to the component inside
+    outsideFormControl?: boolean; //If the component have [formControlName] hardcoded inside this ContentField component
+}
 
 /* We need this declare to dont have import errors from CommandType of Tiptap */
 declare module '@tiptap/core' {
@@ -44,22 +52,9 @@ declare module '@tiptap/core' {
     }
 }
 
-const dotMessageServiceMock = {
-    init: jest.fn().mockImplementation(() => {
-        // mocking init
-    }),
-    get: jest.fn().mockImplementation(() => {
-        // mocking get
-    })
-};
-
 // This holds the mapping between the field type and the component that should be used to render it.
 // We need to hold this record here, because for some reason the references just fall to undefined.
-const FIELD_TYPES_COMPONENTS: Record<
-    FIELD_TYPES,
-    | Type<unknown>
-    | { component: Type<unknown>; providers?: FactoryProvider[]; declarations?: Type<unknown>[] }
-> = {
+const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTestBed> = {
     // We had to use unknown because components have different types.
     [FIELD_TYPES.TEXT]: DotEditContentTextFieldComponent,
     [FIELD_TYPES.TEXTAREA]: DotEditContentTextAreaComponent,
@@ -70,16 +65,49 @@ const FIELD_TYPES_COMPONENTS: Record<
     [FIELD_TYPES.TIME]: DotEditContentCalendarFieldComponent,
     [FIELD_TYPES.TAG]: {
         component: DotEditContentTagFieldComponent,
-        providers: [mockProvider(DotEditContentService)]
+        providers: [{ provide: DotEditContentService, useValue: { getTags: () => of([]) } }]
     },
     [FIELD_TYPES.CHECKBOX]: DotEditContentCheckboxFieldComponent,
     [FIELD_TYPES.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent,
-    [FIELD_TYPES.BLOCK_EDITOR]: DotBlockEditorComponent,
+    [FIELD_TYPES.BLOCK_EDITOR]: {
+        component: DotBlockEditorComponent,
+        declarations: [MockComponent(DotBlockEditorComponent)],
+        imports: [BlockEditorModule],
+        outsideFormControl: true
+    },
     [FIELD_TYPES.CUSTOM_FIELD]: {
         component: DotEditContentCustomFieldComponent,
-        providers: [mockProvider(DotEditContentService)]
+        providers: [
+            mockProvider(DotEditContentService),
+            {
+                provide: DotLicenseService,
+                useValue: {
+                    isEnterprise: () => of(true)
+                }
+            }
+        ]
     },
-    [FIELD_TYPES.BINARY]: DotEditContentBinaryFieldComponent,
+    [FIELD_TYPES.BINARY]: {
+        component: DotEditContentBinaryFieldComponent,
+        providers: [
+            {
+                provide: DotLicenseService,
+                useValue: {
+                    isEnterprise: () => of(true)
+                }
+            },
+            {
+                provide: DotMessageService,
+                useValue: DOT_MESSAGE_SERVICE_MOCK
+            }
+        ],
+        props: [
+            {
+                contentlet: BINARY_FIELD_CONTENTLET
+            }
+        ],
+        outsideFormControl: true
+    },
     [FIELD_TYPES.JSON]: {
         component: DotEditContentJsonFieldComponent,
         declarations: [MockComponent(DotEditContentJsonFieldComponent)]
@@ -99,8 +127,9 @@ describe('FIELD_TYPES and FIELDS_MOCK', () => {
 describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fieldMock) => {
     const fieldTestBed = FIELD_TYPES_COMPONENTS[fieldMock.fieldType];
     let spectator: Spectator<DotEditContentFieldComponent>;
+
     const createComponent = createComponentFactory({
-        imports: [HttpClientTestingModule],
+        imports: [HttpClientTestingModule, ...(fieldTestBed?.imports || [])],
         declarations: [...(fieldTestBed?.declarations || [])],
         component: DotEditContentFieldComponent,
         componentViewProviders: [
@@ -109,27 +138,16 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
                 useValue: createFormGroupDirectiveMock()
             }
         ],
-        providers: [FormGroupDirective, DotEditContentService, ...(fieldTestBed?.providers || [])]
+        providers: [FormGroupDirective]
     });
 
     beforeEach(async () => {
         spectator = createComponent({
             props: {
-                field: fieldMock
+                field: fieldMock,
+                ...(fieldTestBed?.props || {})
             },
-            providers: [
-                {
-                    provide: DotLicenseService,
-                    useValue: {
-                        isEnterprise: () => of(true)
-                    }
-                },
-                {
-                    provide: DotMessageService,
-                    useValue: dotMessageServiceMock
-                },
-                mockProvider(ConfirmationService)
-            ]
+            providers: [...(fieldTestBed?.providers || [])]
         });
     });
 
@@ -154,40 +172,29 @@ describe.each([...FIELDS_MOCK])('DotEditContentFieldComponent all fields', (fiel
             const FIELD_TYPE = fieldTestBed.component ? fieldTestBed.component : fieldTestBed;
             expect(field.componentInstance instanceof FIELD_TYPE).toBeTruthy();
         });
-    });
-});
 
-describe.each([...FIELDS_WITH_CONTENTLET_MOCK])(
-    'DotEditContentFieldComponent all fields with contentlets',
-    ({ fieldMock, contentlet }) => {
-        let spectator: Spectator<DotEditContentFieldComponent>;
-        const createComponent = createComponentFactory({
-            component: DotEditContentFieldComponent,
-            imports: [HttpClientTestingModule],
-            componentViewProviders: [
-                {
-                    provide: ControlContainer,
-                    useValue: createFormGroupDirectiveMock()
-                }
-            ],
-            providers: [mockProvider(DotLicenseService), FormGroupDirective]
-        });
-        beforeEach(async () => {
-            spectator = createComponent({
-                props: {
-                    field: fieldMock,
-                    contentlet
-                }
-            });
-        });
-        describe(`${fieldMock.fieldType} - ${fieldMock.dataType}`, () => {
-            it('should have contentlet', () => {
+        if (fieldTestBed.outsideFormControl) {
+            it('should have a formControlName', () => {
                 spectator.detectChanges();
                 const field = spectator.debugElement.query(
                     By.css(`[data-testId="field-${fieldMock.variable}"]`)
                 );
-                expect(field.componentInstance.contentlet).toEqual(contentlet);
+                expect(field.attributes['ng-reflect-name']).toBe(fieldMock.variable);
             });
-        });
-    }
-);
+        }
+
+        if (fieldTestBed.props) {
+            describe('With props', () => {
+                fieldTestBed.props.forEach((prop) => {
+                    it(`should have ${prop.key} property`, () => {
+                        spectator.detectChanges();
+                        const field = spectator.debugElement.query(
+                            By.css(`[data-testId="field-${fieldMock.variable}"]`)
+                        );
+                        expect(field.componentInstance[prop.key]).toEqual(prop.valueExpected);
+                    });
+                });
+            });
+        }
+    });
+});

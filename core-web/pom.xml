@@ -27,6 +27,7 @@
         <cargo.server.port>8084</cargo.server.port>
         <yarn.install.cmd>install --frozen-lockfile</yarn.install.cmd>
         <skip.npm.install>false</skip.npm.install>
+        <sonar.sources>apps,libs</sonar.sources>
     </properties>
 
     <dependencies>
@@ -147,7 +148,7 @@
                         </goals>
 
                         <!-- optional: the default phase is "generate-resources" -->
-                        <phase>generate-resources</phase>
+                        <phase>compile</phase>
 
                         <configuration>
                             <arguments>run nx build dotcms-ui -- ${nx.build.options}</arguments>
@@ -161,7 +162,7 @@
                         </goals>
 
                         <!-- optional: the default phase is "generate-resources" -->
-                        <phase>generate-resources</phase>
+                        <phase>compile</phase>
 
                         <configuration>
                             <arguments>run nx run dotcms-block-editor:build</arguments>
@@ -175,7 +176,7 @@
                         </goals>
 
                         <!-- optional: the default phase is "generate-resources" -->
-                        <phase>generate-resources</phase>
+                        <phase>compile</phase>
 
                         <configuration>
                             <arguments>run nx run dotcms-binary-field-builder:build</arguments>
@@ -189,7 +190,7 @@
                         </goals>
 
                         <!-- optional: the default phase is "generate-resources" -->
-                        <phase>generate-resources</phase>
+                        <phase>test</phase>
 
                         <configuration>
                             <skip>${skipTests}</skip>

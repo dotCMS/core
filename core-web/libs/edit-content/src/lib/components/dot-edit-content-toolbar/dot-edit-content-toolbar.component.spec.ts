@@ -32,6 +32,7 @@ describe('DotEditContentToolbarComponent', () => {
         expect(component).toBeTruthy();
         expect(component.actions).toEqual(WORKFLOW_ACTIONS_MOCK);
         expect(component.groupAction).toBeTruthy();
+        expect(component.size).toBe('normal');
     });
 
     it('should emit the action dot-workflow-actions emits the fired action', () => {

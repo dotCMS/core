@@ -276,10 +276,12 @@ public class TreeNode {
             if (asset.live()) {
                 nodeInfo.addLiveLanguage(asset.lang());
                 nodeInfo.incrementAssetsCount();
+                nodeInfo.incrementLiveAssetsCountByLanguage(asset.lang());
             }
             if (asset.working()) {
                 nodeInfo.addWorkingLanguage(asset.lang());
                 nodeInfo.incrementAssetsCount();
+                nodeInfo.incrementWorkingAssetsCountByLanguage(asset.lang());
             }
             nodeInfo.addLanguage(asset.lang());
         }

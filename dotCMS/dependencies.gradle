@@ -144,7 +144,9 @@ dependencies {
     implementation (group: 'com.h2database', name: 'h2', version: '2.1.214'){}
     implementation (group: 'com.impossibl.pgjdbc-ng', name: 'pgjdbc-ng', version: '0.8.9'){}
     implementation (group: 'com.impossibl.pgjdbc-ng', name: 'spy', version: '0.8.9'){}
-    implementation (group: 'com.jayway.jsonpath', name: 'json-path', version: '2.4.0'){}
+    implementation (group: 'com.jayway.jsonpath', name: 'json-path', version: '2.4.0') {
+        exclude group: 'net.minidev', module: 'json-smart'
+    }
     implementation (group: 'com.lmax', name: 'disruptor', version: '3.3.4'){}
     implementation (group: 'com.maxmind.db', name: 'maxmind-db', version: '1.0.0'){}
     implementation (group: 'com.maxmind.geoip2', name: 'geoip2', version: '2.1.0'){}
@@ -159,7 +161,7 @@ dependencies {
     implementation (group: 'com.tdunning', name: 't-digest', version: '3.2') {
         transitive=false
     }
-    implementation (group: 'com.thoughtworks.xstream', name: 'xstream', version: '1.4.17') {
+    implementation (group: 'com.thoughtworks.xstream', name: 'xstream', version: '1.4.20') {
         exclude group: 'xpp3', module: 'xpp3_min'
     }
     testImplementation (group: 'com.tngtech.junit.dataprovider', name: 'junit-dataprovider-core', version: '2.6'){}
@@ -206,7 +208,7 @@ dependencies {
     }
     implementation (group: 'fop', name: 'fop', version: '0.20.3'){}
     implementation (group: 'io.github.classgraph', name: 'classgraph', version: '4.8.138'){}
-    implementation (group: 'io.github.x-stream', name: 'mxparser', version: '1.2.1'){}
+    implementation (group: 'io.github.x-stream', name: 'mxparser', version: '1.2.2'){}
     implementation (group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1'){}
     implementation (group: 'io.lettuce', name: 'lettuce-core', version: '6.1.1.RELEASE'){}
     implementation (group: 'io.netty', name: 'netty-buffer', version: '4.1.63.Final'){}
@@ -246,8 +248,8 @@ dependencies {
     implementation (group: 'net.javacrumbs.shedlock', name: 'shedlock-provider-jdbc-internal', version: '4.33.0'){}
     implementation (group: 'net.javacrumbs.shedlock', name: 'shedlock-provider-jdbc', version: '4.33.0'){}
     implementation (group: 'net.jodah', name: 'failsafe', version: '1.1.1'){}
-    implementation (group: 'net.minidev', name: 'accessors-smart', version: '1.2'){}
-    implementation (group: 'net.minidev', name: 'json-smart', version: '2.3'){}
+    implementation (group: 'net.minidev', name: 'accessors-smart', version: '2.4.9'){}
+    implementation (group: 'net.minidev', name: 'json-smart', version: '2.4.9'){}
     implementation (group: 'net.sf.jopt-simple', name: 'jopt-simple', version: '5.0.2') {
         transitive=false
     }
@@ -426,7 +428,7 @@ dependencies {
     implementation (group: 'org.jvnet.mimepull', name: 'mimepull', version: '1.9.6'){}
     testImplementation (group: 'org.mockito', name: 'mockito-core', version: '2.28.2'){}
     testImplementation (group: 'org.objenesis', name: 'objenesis', version: '2.5.1'){}
-    implementation (group: 'org.ow2.asm', name: 'asm', version: '5.0.4'){}
+    implementation (group: 'org.ow2.asm', name: 'asm', version: '9.3'){}
     compileOnly (group: 'org.postgresql', name: 'postgresql', version: '42.5.1') {
         exclude group: 'org.checkerframework', module: 'checker-qual'
     }
