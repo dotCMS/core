@@ -121,20 +121,6 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         expect(comp.fieldVariables).toEqual(deletedCollection);
     });
 
-    it('should  not delete a variable from the server if the variable has not been saved', () => {
-        spyOn<DotFieldVariablesService>(dotFieldVariableService, 'delete').and.returnValue(of([]));
-        fixtureHost.detectChanges();
-
-        const dotKeyValue = de.query(By.css('dot-key-value-ng'));
-        dotKeyValue.triggerEventHandler('delete', {
-            key: 'key-not-exist-test',
-            value: 'value-not-exist-test'
-        });
-
-        expect(dotFieldVariableService.delete).not.toHaveBeenCalled();
-        expect(comp.fieldVariables).toEqual(mockFieldVariables);
-    });
-
     describe('Block Editor Field', () => {
         const BLOCK_EDITOR_FIELD = {
             ...EMPTY_FIELD,
