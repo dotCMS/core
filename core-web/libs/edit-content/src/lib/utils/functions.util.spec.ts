@@ -1,8 +1,9 @@
-import { it, describe, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
 
 import * as functionsUtil from './functions.util';
+import { getFieldVariablesParsed, isValidJson, stringToJson } from './functions.util';
 import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './mocks';
 
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
@@ -445,6 +446,102 @@ describe('Utils Functions', () => {
 
                 expect(res).toEqual(expected);
             });
+        });
+    });
+
+    describe('isValidJson', () => {
+        it('should return true for a valid object JSON', () => {
+            expect(isValidJson('{ "key": "value", "value": "value" }')).toBe(true);
+        });
+
+        it('should return false for a numeric string', () => {
+            expect(isValidJson('1')).toBe(false);
+        });
+
+        it('should return false for an incomplete JSON', () => {
+            expect(isValidJson('{key: value')).toBe(false);
+        });
+
+        it('should return false for a non-JSON string', () => {
+            expect(isValidJson('{{')).toBe(false);
+        });
+
+        it('should return false for an array JSON', () => {
+            expect(isValidJson('["item1", "item2"]')).toBe(false);
+        });
+
+        it('should return false for the string "null"', () => {
+            expect(isValidJson('null')).toBe(false);
+        });
+
+        it('should return true for an empty JSON object', () => {
+            expect(isValidJson('{}')).toBe(true);
+        });
+
+        it('should return true for a valid nested object JSON', () => {
+            expect(isValidJson('{ "key": { "nestedKey": "nestedValue" } }')).toBe(true);
+        });
+
+        it('should return false for a boolean string value', () => {
+            expect(isValidJson('true')).toBe(false);
+        });
+    });
+
+    describe('StringToJson function', () => {
+        it('should return parsed object when provided with valid JSON string', () => {
+            const jsonString = '{ "key": "value" }';
+
+            const result = stringToJson(jsonString);
+
+            expect(result).toEqual({ key: 'value' });
+        });
+
+        it('should return empty object when provided with invalid JSON string', () => {
+            const jsonString = '{ key: value }';
+
+            const result = stringToJson(jsonString);
+
+            expect(result).toEqual({});
+        });
+
+        it('should return empty object when provided JSON string is empty', () => {
+            const jsonString = '';
+
+            const result = stringToJson(jsonString);
+
+            expect(result).toEqual({});
+        });
+    });
+
+    describe('getFieldVariablesParsed function', () => {
+        it('should parse an array of DotCMSContentTypeFieldVariable objects correctly', () => {
+            const fieldVariables: DotCMSContentTypeFieldVariable[] = [
+                {
+                    clazz: 'class1',
+                    fieldId: 'fieldId1',
+                    id: 'id1',
+                    key: 'key1',
+                    value: 'value1'
+                },
+                {
+                    clazz: 'class2',
+                    fieldId: 'fieldId2',
+                    id: 'id2',
+                    key: 'key2',
+                    value: 'value2'
+                }
+            ];
+            const result = getFieldVariablesParsed(fieldVariables);
+            expect(result).toEqual({
+                key1: 'value1',
+                key2: 'value2'
+            });
+        });
+
+        it('should return an empty object when the provided fieldVariables array is undefined', () => {
+            const fieldVariables: DotCMSContentTypeFieldVariable[] | undefined = undefined;
+            const result = getFieldVariablesParsed(fieldVariables);
+            expect(result).toEqual({});
         });
     });
 });

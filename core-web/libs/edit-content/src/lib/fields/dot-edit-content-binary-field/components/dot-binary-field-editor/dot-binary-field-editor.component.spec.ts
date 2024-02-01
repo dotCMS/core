@@ -1,5 +1,5 @@
 import { MonacoEditorComponent, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 import { MockComponent } from 'ng-mocks';
 
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -8,6 +8,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
+import { DEFAULT_BINARY_FIELD_MONACO_CONFIG } from '@dotcms/edit-content';
 import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotBinaryFieldEditorComponent } from './dot-binary-field-editor.component';
@@ -126,17 +127,23 @@ describe('DotBinaryFieldEditorComponent', () => {
 
     describe('Editor', () => {
         it('should set editor language', fakeAsync(() => {
+            const expectedMonacoOptions = {
+                ...DEFAULT_BINARY_FIELD_MONACO_CONFIG,
+                language: 'javascript'
+            };
+
+            spectator.detectChanges();
+
             component.form.setValue({
                 name: 'script.js',
                 content: 'test'
             });
 
-            tick(1000);
+            spectator.detectComponentChanges();
 
-            expect(component.editorOptions).toEqual({
-                ...component.editorOptions,
-                language: 'javascript'
-            });
+            tick(355); //due to debounceTime
+
+            expect(component.monacoOptions()).toEqual(expectedMonacoOptions);
             expect(component.mimeType).toBe('text/javascript');
         }));
 
