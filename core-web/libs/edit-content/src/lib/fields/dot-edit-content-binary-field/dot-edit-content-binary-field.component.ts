@@ -29,7 +29,6 @@ import { delay, filter, skip, tap } from 'rxjs/operators';
 
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import {
-    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
@@ -124,10 +123,6 @@ export class DotEditContentBinaryFieldComponent
 
     protected systemOptions: Record<string, boolean>;
 
-    private get variable(): string {
-        return this.field.variable;
-    }
-
     constructor(
         private readonly dotBinaryFieldStore: DotBinaryFieldStore,
         private readonly dotMessageService: DotMessageService,
@@ -155,11 +150,8 @@ export class DotEditContentBinaryFieldComponent
         return this.DotBinaryFieldValidatorService.accept;
     }
 
-    private get metaDataKey(): string {
-        const { baseType } = this.contentlet;
-        const isFileAsset = baseType === DotCMSBaseTypesContentTypes.FILEASSET;
-
-        return isFileAsset ? 'metaData' : this.variable + 'MetaData';
+    private get variable(): string {
+        return this.contentTypeField().variable;
     }
 
     ngOnInit() {
