@@ -28,8 +28,8 @@ jobs:
       - env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
-      - name: Checkout core
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/cleanup-runner
       - name: Set Common Vars
         id: set-common-vars
         run: |
@@ -79,8 +79,8 @@ jobs:
     outputs:
       formatted_tags: ${{ steps.discover-docker-tags.outputs.formatted_tags }}
     steps:
-      - name: Checkout core
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/cleanup-runner
       - name: Set Common Vars
         run: |
           BUILD_ID=${{ needs.release-process.outputs.build_id }}
@@ -143,8 +143,8 @@ jobs:
 #    env:
 #      FETCH_VALUE: 'Next Release'
 #    steps:
-#      - name: Checkout core
-#        uses: actions/checkout@v3
+#      - uses: actions/checkout@v4
+#      - uses: ./.github/actions/cleanup-runner
 #      - name: Fetch `Next Release` issues
 #        id: fetch-next-release-issues
 #        uses: ./.github/actions/issue-fetcher
