@@ -20,9 +20,9 @@ public class APIEndpoints {
 
     /**
      * Get or instantiate a Rest Client
-     * @param clazz
-     * @return
-     * @param <T>
+     * @param clazz Rest Client class
+     * @return Client Instance
+     * @param <T> Rest Client class Type
      */
     @SuppressWarnings("unchecked")
     <T> T getClient(final Class<T> clazz) {

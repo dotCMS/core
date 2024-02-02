@@ -21,37 +21,16 @@ import org.jboss.logging.Logger;
 @ApplicationScoped
 public class RestClientFactory {
 
-    public static final String NONE = "none";
-
     @Inject
     Logger logger;
 
-    /**
-     * Thread local variable containing API profile name
-     */
-    private final AtomicReference<String> instanceProfile = new AtomicReference<>(NONE);
-
-    @Inject
-    DotCmsClientConfig clientConfig;
 
     @Inject
     ServiceManager serviceManager;
 
-    private final Map<String, APIEndpoints> registry = new ConcurrentHashMap<>();
+    AtomicReference<ServiceBean> value = new AtomicReference<>();
 
-    /**
-     * Get or instantiate a Rest Client depending on its existence on the registry
-     * @param profileName config profile
-     * @param uri API URI
-     * @param clazz RestClient Class
-     * @return RestClient Instance
-     * @param <T> Rest Client class Type
-     */
-    <T> T getClient(final String profileName, final URI uri, final Class<T> clazz) {
-        return registry.computeIfAbsent(profileName, c ->
-                new APIEndpoints(uri)
-        ).getClient(clazz);
-    }
+    private final Map<String, APIEndpoints> registry = new ConcurrentHashMap<>();
 
     /**
      * Given the selected profile this will return or instantiate a Rest Client
@@ -64,46 +43,60 @@ public class RestClientFactory {
         if (registry.containsKey(profileName)) {
             return registry.get(profileName).getClient(clazz);
         } else {
-            if (clientConfig.servers().containsKey(profileName)) {
-                final URI server = clientConfig.servers().get(profileName);
-                return getClient(profileName, server, clazz);
-            } else {
-                throw new APIConfigurationException(profileName);
+            try {
+                final Optional<ServiceBean> service = serviceManager.get(profileName);
+                service.ifPresentOrElse(
+                        serviceBean -> {
+                            registry.put(profileName, new APIEndpoints(serviceBean.uri()));
+                        },
+                        () -> {
+                            throw new APIConfigurationException(String.format(
+                                    "No Service configuration found for profile named [%s]",
+                                    profileName));
+                        }
+                );
+            }catch (IOException e) {
+                throw new APIConfigurationException(
+                        String.format("Unable to get service configuration for profile [%s]", profileName), e);
             }
         }
+        return registry.get(profileName).getClient(clazz);
     }
 
-    /**
-     * Given the selected profile this will return or instantiate a Rest Client
-     * @param clazz
-     * @return
-     * @param <T>
-     */
-    public <T> T getClient(final Class<T> clazz)  {
+        /**
+         * Given the selected profile this will return or instantiate a Rest Client
+         * @param clazz
+         * @return
+         * @param <T>
+         */
+        public <T > T getClient( final Class<T> clazz){
 
-        final Optional<String> profile;
-        try {
-            profile = currentSelectedProfile();
-        } catch (IOException e) {
-            throw new IllegalStateException("Unable to get current selected profile ",e);
+            Optional<ServiceBean> profile;
+            try {
+                profile = getService();
+            } catch (IOException e) {
+                throw new IllegalStateException("Unable to get current selected profile ", e);
+            }
+            if (profile.isEmpty()) {
+                throw new IllegalStateException(
+                        String.format("No dotCMS instance has been activated check your [%s] file.",
+                                YAMLFactoryServiceManagerImpl.DOT_SERVICE_YML)
+                );
+            }
+            return getClient(profile.get().name(), clazz);
         }
-        if(profile.isEmpty()){
-            throw new IllegalStateException(
-                   String.format("No dotCMS instance has been activated check your %s file.", YAMLFactoryServiceManagerImpl.DOT_SERVICE_YML)
-            );
+
+    public Optional<ServiceBean> getService() throws IOException {
+        ServiceBean val = value.get();
+        if (val == null) {
+            val = serviceManager.selected().orElseThrow();
+            // Set the value only if it's currently null
+            if (!value.compareAndSet(null, val)) {
+                // If compareAndSet fails, another thread has already set the value
+                val = value.get();
+            }
         }
-        return getClient(profile.get(), clazz);
+        return Optional.ofNullable(val);
     }
-
-    public Optional<String> currentSelectedProfile() throws IOException {
-        instanceProfile.compareAndSet(NONE, service());
-        return NONE.equals(instanceProfile.get()) ? Optional.empty() : Optional.of(instanceProfile.get());
-    }
-
-    final String service() throws IOException {
-        final Optional<ServiceBean> selected = serviceManager.selected();
-        return selected.map(ServiceBean::name).orElse(NONE);
-    };
-
 
 }

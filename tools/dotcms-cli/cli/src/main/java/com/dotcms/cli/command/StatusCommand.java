@@ -2,7 +2,6 @@ package com.dotcms.cli.command;
 
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.UserAPI;
-import com.dotcms.api.client.model.DotCmsClientConfig;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.common.HelpOptionMixin;
@@ -51,9 +50,6 @@ public class StatusCommand implements Callable<Integer>, DotCommand {
     @Inject
     AuthenticationContext authenticationContext;
 
-    @Inject
-    DotCmsClientConfig clientConfig;
-
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
@@ -72,8 +68,7 @@ public class StatusCommand implements Callable<Integer>, DotCommand {
                     InstanceCommand.NAME));
         } else {
             final ServiceBean serviceBean = optional.get();
-            final String suffix = serviceBean.name();
-            final URI uri = clientConfig.servers().get(suffix);
+            final URI uri = serviceBean.uri();
             if (null == serviceBean.credentials()) {
                 output.info(String.format(
                         "Active instance is [@|bold,underline,blue %s|@] API is [@|bold,underline,blue %s|@] @|bold,underline No active user|@ Use %s Command.",

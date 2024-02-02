@@ -12,6 +12,11 @@ public interface ServiceManager {
 
     List<ServiceBean> services() throws IOException;
 
+    /**
+     * Get the selected service
+     * @return the selected service or empty if none is selected
+     * @throws IOException if an error occurs
+     */
     default Optional<ServiceBean> selected() throws IOException {
         final List<ServiceBean> beans = services().stream().filter(ServiceBean::active)
                 .collect(Collectors.toList());
@@ -24,6 +29,21 @@ public interface ServiceManager {
         return !beans.isEmpty() ? Optional.of(beans.get(0)) : Optional.empty();
     }
 
+    /**
+     * Get a service by name
+     * @param name service name
+     * @return the service or empty if not found
+     * @throws IOException if an error occurs
+     */
+    default Optional<ServiceBean> get(final String name) throws IOException {
+        return services().stream().filter(serviceBean -> name.equals(serviceBean.name())).findFirst();
+    }
+
+    /**
+     * Remove all services
+     * @return the service manager
+     * @throws IOException if an error occurs
+     */
     ServiceManager removeAll() throws IOException;
 
 }
