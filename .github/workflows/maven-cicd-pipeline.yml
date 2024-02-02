@@ -25,12 +25,17 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: dotcms/dotcms_test
 jobs:
+  clean-up-runner:
+    name: Github Runner Cleanup
+    uses: ./.github/workflows/cleanup-runner.yml
+
   #
   # Detect Code that has changed and create outputs to uses as conditionals
   #
   changes:
     name: Check Changed Files
     runs-on: ubuntu-latest
+    needs: clean-up-runner
     permissions:
       pull-requests: read
     outputs:
