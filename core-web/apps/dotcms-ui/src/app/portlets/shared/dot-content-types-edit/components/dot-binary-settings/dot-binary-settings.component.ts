@@ -124,15 +124,7 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
         const updateActions = Object.keys(this.form.controls).map((key) => {
             const control = this.form.get(key);
             const value =
-                control instanceof FormGroup
-                    ? JSON.stringify(
-                          this.systemOptions.reduce((acc, { key }) => {
-                              acc[key] = control.get(key).value;
-
-                              return acc;
-                          }, {})
-                      )
-                    : control.value;
+                control instanceof FormGroup ? JSON.stringify(control.value) : control.value;
             const fieldVariable: DotFieldVariable = {
                 ...this.FIELD_VARIABLES[key],
                 key,
