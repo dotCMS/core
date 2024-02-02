@@ -735,12 +735,14 @@
             
 
             <div id="confirmReplaceNameDialog" dojoType="dijit.Dialog" >
-                <div dojoType="dijit.layout.ContentPane" style="width:400px;height:120px;text-align:center" class="box" hasShadow="true" id="confirmReplaceNameDialogCP">
-                    <%= LanguageUtil.get(pageContext, "Do-you-want-to-replace-the-existing-asset-name") %> 
-                    "<span id="confirmReplaceNameDialog-oldValue"> </span>" 
-                    <%= LanguageUtil.get(pageContext, "with") %>  
-                    "<span id="confirmReplaceNameDialog-newValue"></span>""
-                    <br>&nbsp;<br>
+                <div dojoType="dijit.layout.ContentPane" style="text-align:center;height:auto;" class="box" hasShadow="true" id="confirmReplaceNameDialogCP">
+                    <p style="margin:0;max-width:600px;word-wrap: break-word">
+                        <%= LanguageUtil.get(pageContext, "Do-you-want-to-replace-the-existing-asset-name") %> 
+                        "<span id="confirmReplaceNameDialog-oldValue"> </span>" 
+                        <%= LanguageUtil.get(pageContext, "with") %>  
+                        "<span id="confirmReplaceNameDialog-newValue"></span>""
+                        <br>&nbsp;<br>
+                    </p>
                     <div class="buttonRow">
                         <button dojoType="dijit.form.Button" onClick="confirmReplaceName()" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "yes") %></button>
 
