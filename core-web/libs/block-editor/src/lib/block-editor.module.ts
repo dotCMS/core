@@ -12,6 +12,7 @@ import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 //Editor
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
+import { DotBlockEditorToolbarComponent } from './components/dot-block-editor-toolbar/dot-block-editor-toolbar.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import {
     AIContentActionsComponent,
@@ -49,7 +50,8 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         UploadPlaceholderComponent,
         DotMessagePipe,
         ConfirmDialogModule,
-        AIImagePromptComponent
+        AIImagePromptComponent,
+        DotBlockEditorToolbarComponent
     ],
     declarations: [
         EditorDirective,

@@ -1,0 +1,10 @@
+@for(item of items; track $index;) { @if( !item?.divider ) {
+<p-button (click)="item.command()" styleClass="p-button-toolbar">
+    <span
+        class="material-icons"
+        [style]="{ fontSize: '18px' }"
+        [innerHTML]="item.icon | safeHtml"></span>
+</p-button>
+} @else {
+<div class="divider"></div>
+} }

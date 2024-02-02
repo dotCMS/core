@@ -12,6 +12,10 @@ export class DotAiServiceMock {
         ).pipe(delay(DEFAULT_DELAY));
     }
 
+    checkPluginInstallation(): Observable<boolean> {
+        return of(false).pipe(delay(DEFAULT_DELAY));
+    }
+
     generateAndPublishImage() {
         return of({
             originalPrompt: 'cow in the snow',

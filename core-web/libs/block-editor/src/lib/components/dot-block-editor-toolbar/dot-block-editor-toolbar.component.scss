@@ -1,0 +1,16 @@
+@use "variables" as *;
+
+:host {
+    background-color: $black;
+    display: flex;
+    width: 100%;
+    min-height: 40px;
+    align-items: center;
+    // border-radius: $border-radius-sm $border-radius-sm 0 0;
+}
+
+.divider {
+    border-left: 1px solid white;
+    height: 1rem;
+    margin: 0 $spacing-1;
+}

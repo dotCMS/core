@@ -6,6 +6,7 @@
             'editor-wrapper--default': isFullscreen !== 'true'
         }"
         [style]="customStyles">
+        <dot-block-editor-toolbar [editor]="editor" />
         <tiptap-editor
             [editor]="editor"
             [ngClass]="{ 'overflow-hidden': freezeScroll }"

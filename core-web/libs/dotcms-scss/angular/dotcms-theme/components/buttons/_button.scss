@@ -74,6 +74,12 @@
         border: transparent;
     }
 
+    // Toolbar buttons
+    &.p-button-toolbar {
+        color: $white;
+        background: transparent;
+    }
+
     &.p-button-link.p-button-secondary {
         @extend #outlined-secondary-severity;
         border: transparent;

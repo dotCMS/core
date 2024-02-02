@@ -35,12 +35,9 @@ import {
 } from '../../shared';
 import { DotMessageServiceMock } from '../../shared/mocks/dot-message.service.mock';
 import { DotAiServiceMock } from '../../shared/services/dot-ai/dot-ai-service.mock';
+import { DotBlockEditorToolbarComponent } from '../dot-block-editor-toolbar/dot-block-editor-toolbar.component';
 
 export default {
-    title: 'Library/Block Editor'
-};
-
-export const Primary = () => ({
     title: 'Library/Block Editor',
     component: DotBlockEditorComponent,
     decorators: [
@@ -51,7 +48,8 @@ export const Primary = () => ({
                 FormsModule,
                 BlockEditorModule,
                 OrderListModule,
-                ListboxModule
+                ListboxModule,
+                DotBlockEditorToolbarComponent
             ],
             providers: [
                 {
@@ -218,4 +216,13 @@ export const Primary = () => ({
             ]
         })
     ]
+};
+
+const Template = (args: DotBlockEditorComponent) => ({
+    props: args,
+    template: `
+        <dot-block-editor> </dot-block-editor>
+    `
 });
+
+export const Primary = Template.bind({});
