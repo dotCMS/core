@@ -5,8 +5,7 @@ import { Validators } from '@angular/forms';
 
 import { TabView } from 'primeng/tabview';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotFormatDateService } from '@dotcms/ui';
+import { DotMessageService, DotFormatDateService } from '@dotcms/data-access';
 import { DotFormatDateServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
@@ -163,7 +162,10 @@ describe('DotFormComponent', () => {
                 props: {
                     formData: {
                         ...CONTENT_FORM_DATA_MOCK,
-                        layout: [...LAYOUT_MOCK, TAB_DIVIDER_MOCK]
+                        contentType: {
+                            ...CONTENT_FORM_DATA_MOCK.contentType,
+                            layout: [...LAYOUT_MOCK, TAB_DIVIDER_MOCK]
+                        }
                     }
                 }
             });

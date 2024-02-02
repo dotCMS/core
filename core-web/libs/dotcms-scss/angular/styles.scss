@@ -113,4 +113,5 @@ code {
     background-color: $color-accessible-text-purple-bg;
     padding: $spacing-0 $spacing-1;
     font-family: $font-code;
+    line-break: anywhere;
 }

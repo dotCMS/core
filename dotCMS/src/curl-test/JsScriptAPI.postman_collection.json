@@ -1,0 +1,375 @@
+{
+	"info": {
+		"_postman_id": "89a4aa43-148d-43f1-b2b1-3bcaa79614f2",
+		"name": "JsScriptAPI",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "781456"
+	},
+	"item": [
+		{
+			"name": "CreateRichTextDyna",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 \", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Checking the body\", function () {",
+							"   pm.expect(jsonData.contentType).to.eql('webPageContent');",
+							"   pm.expect(jsonData.title).to.eql('Test7');",
+							"   pm.expect(jsonData.body).to.eql('This is a body text');",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.identifier);",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\":\"Test7\",\n    \"body\":\"This is a body text\",\n    \"javascript\":\"\n    (function post(context) {\n\n    const request= context.request;\n    const response = context.response;\n    const dotlogger = context.dotlogger;\n    const title = request.json().get('title');\n    const body = request.json().get('body');\n    const contentJson = {\n        'title': title,\n        'contentType':'webPageContent',\n        'contentHost': 'default',\n        'body': body\n    };\n\n    const workflowOptions = {\n        \\\"comments\\\": \\\"This is an example fired NEW by js api engine\\\",\n    };\n\n    const contentOut = workflows.fireNew(contentJson, workflowOptions);\n\n    if (null == contentOut) {\n\n        return response.status(404).text(`Contentlet could not be created`);\n    }\n\n\n\n    return response.status(200).json(contentOut);\n})\n\n    \"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/js/dynamic",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"js",
+						"dynamic"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "EditRichTextDyna",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Checking the body\", function () {",
+							"   pm.expect(jsonData.contentType).to.eql('webPageContent');",
+							"   pm.expect(jsonData.title).to.eql('Test3 has Changed');",
+							"   pm.expect(jsonData.body).to.eql('This is a body text <b>Changed</b>');",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.identifier);",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"identifier\": \"{{contentletIdentifier}}\",\n    \"title\":\"Test3 has Changed\",\n    \"body\":\"This is a body text <b>Changed</b>\",\n    \"javascript\":\"(function put(context) {\n\n    const request= context.request;\n    const response = context.response;\n    const dotlogger = context.dotlogger;\n    const id = request.json().get('identifier');\n    const title = request.json().get('title');\n    const body = request.json().get('body');\n    const contentJson = {\n        'identifier': id,\n        'title': title,\n        'contentType':'webPageContent',\n        'contentHost': 'default',\n        'body': body\n    };\n\n    const workflowOptions = {\n        'comments': 'This is an example fired EDIT by js api engine',\n    };\n\n    const contentOut = workflows.fireEdit(contentJson, workflowOptions);\n\n    if (null == contentOut) {\n\n        return response.status(404).text(`Contentlet could not be created`);\n    }\n\n   \n\n    return response.status(200).json(contentOut);\n})\n\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/js/dynamic",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"js",
+						"dynamic"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetByIdRichTextDyna",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Checking the body\", function () {",
+							"   pm.expect(jsonData.contentType).to.eql('webPageContent');",
+							"   pm.expect(jsonData.title).to.eql('Test3 has Changed');",
+							"   pm.expect(jsonData.body).to.eql('This is a body text <b>Changed</b>');",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.identifier);",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "(async function get(context) {\n\n    const request = context.request;\n    const response = context.response;\n    const dotlogger = context.dotlogger;\n\n    const identifier = request.getParameter('id');\n    const lang = request.getParameter('lang') || languagewebapi.getDefaultLanguage().getId();\n\n    dotlogger.info(\"identifier = \" + identifier);\n    dotlogger.info(\"lang = \" + lang);\n\n\n    \n\n    function findById(id) {\n\n        const cacheContentlet = dotcache.get(id);\n        if (!cacheContentlet) {\n\n            const contentlet = dotcontent.find(id);\n            dotlogger.info(\"The contentlet = \" + contentlet);\n            if (null == contentlet) {\n\n                dotlogger.info(\"Throwing NotFoundError\");\n                throw new Error(`Contentlet ${id} not found`);\n            }\n\n            dotcache.put (id, contentlet);\n\n            dotlogger.info(\"The id = \" + id + \" has been put on the cache\");\n\n            return contentlet;\n        }\n\n        dotlogger.info(\"The id = \" + id + \" has found on the cache\");\n        return cacheContentlet;\n    }\n\n    \n    try {\n        const result = findById(identifier);\n\n        return response.ok().json(result);\n        \n    } catch (err) {\n\n        dotlogger.info(\"Error on getting contentlet\" + err);\n\n        return response.status(500).text(`Error on getting contentlet` + err);\n    }\n})\n",
+					"options": {
+						"raw": {
+							"language": "text"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/js/dynamic?id={{contentletIdentifier}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"js",
+						"dynamic"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{contentletIdentifier}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetByIdRichTextFromCacheDyna",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Checking the body\", function () {",
+							"   pm.expect(jsonData.contentType).to.eql('webPageContent');",
+							"   pm.expect(jsonData.title).to.eql('Test3 has Changed');",
+							"   pm.expect(jsonData.body).to.eql('This is a body text <b>Changed</b>');",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.identifier);",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "(async function get(context) {\n\n    const request = context.request;\n    const response = context.response;\n    const dotlogger = context.dotlogger;\n\n    const identifier = request.getParameter('id');\n    const lang = request.getParameter('lang') || languagewebapi.getDefaultLanguage().getId();\n\n    dotlogger.info(\"identifier = \" + identifier);\n    dotlogger.info(\"lang = \" + lang);\n\n\n    \n\n    function findById(id) {\n\n        const cacheContentlet = dotcache.get(id);\n        if (!cacheContentlet) {\n\n            const contentlet = dotcontent.find(id);\n            dotlogger.info(\"The contentlet = \" + contentlet);\n            if (null == contentlet) {\n\n                dotlogger.info(\"Throwing NotFoundError\");\n                throw new Error(`Contentlet ${id} not found`);\n            }\n\n            dotcache.put (id, contentlet);\n\n            dotlogger.info(\"The id = \" + id + \" has been put on the cache\");\n\n            return contentlet;\n        }\n\n        dotlogger.info(\"The id = \" + id + \" has found on the cache\");\n        return cacheContentlet;\n    }\n\n    \n    try {\n        const result = findById(identifier);\n\n        return response.ok().json(result);\n        \n    } catch (err) {\n\n        dotlogger.info(\"Error on getting contentlet\" + err);\n\n        return response.status(500).text(`Error on getting contentlet` + err);\n    }\n})\n",
+					"options": {
+						"raw": {
+							"language": "text"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/js/dynamic?id={{contentletIdentifier}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"js",
+						"dynamic"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{contentletIdentifier}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PublishRichTextDyna",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"var jsonData = pm.response.json();",
+							"pm.test(\"Checking the body\", function () {",
+							"   pm.expect(jsonData.contentType).to.eql('webPageContent');",
+							"   pm.expect(jsonData.title).to.eql('Test3 Published');",
+							"   pm.expect(jsonData.body).to.eql('This is a body text <b> Has been published</b>');",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.identifier);",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"body\": \"This is a body text <b> Has been published</b>\",\n    \"identifier\": \"{{contentletIdentifier}}\",\n    \"title\": \"Test3 Published\",\n    \"javascript\":\"(function patch(context) {\n\n    const request= context.request;\n    const response = context.response;\n    const dotlogger = context.dotlogger;\n\n    const id = request.json().get('identifier');\n    const title = request.json().get('title');\n    const body = request.json().get('body');\n    const contentJson = {\n        'identifier': id,\n        'title': title,\n        'contentType':'webPageContent',\n        'contentHost': 'default',\n        'body': body\n    };\n\n    \n    const workflowOptions = {\n        'comments': `This is an example fired publish by js api engine`,\n    };\n    \n    try {\n\n        const contentOut = workflows.firePublish(contentJson, workflowOptions);\n\n        if (null == contentOut) {\n\n            return response.status(404).text(`Contentlet could not be processed`);\n        }\n\n        \n        return response.status(200).json(contentOut);\n    } catch (err) {\n\n        \n        return response.status(500).text(`Error on getting contentlet` + err);\n    }\n})\n\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/js/dynamic/",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"js",
+						"dynamic",
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "contentletIdentifier",
+			"value": ""
+		}
+	]
+}

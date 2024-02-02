@@ -5,8 +5,7 @@ import { of } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotMessageService, DotWorkflowService } from '@dotcms/data-access';
-import { DotFormatDateService } from '@dotcms/ui';
+import { DotMessageService, DotWorkflowService, DotFormatDateService } from '@dotcms/data-access';
 
 import { DotEditContentAsideComponent } from './dot-edit-content-aside.component';
 
@@ -59,7 +58,7 @@ describe('DotEditContentAsideComponent', () => {
 
     it('should render aside information data', () => {
         spectator.setInput('contentLet', CONTENT_FORM_DATA_MOCK.contentlet);
-        spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType);
+        spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType.contentType);
         spectator.detectChanges();
         expect(spectator.query(byTestId('modified-by')).textContent.trim()).toBe('Admin User');
         expect(spectator.query(byTestId('last-modified')).textContent.trim()).toBe('11/07/2023');
@@ -72,7 +71,7 @@ describe('DotEditContentAsideComponent', () => {
         const CONTENT_WITHOUT_CONTENTLET = { ...CONTENT_FORM_DATA_MOCK };
         delete CONTENT_WITHOUT_CONTENTLET.contentlet;
         spectator.setInput('contentLet', CONTENT_WITHOUT_CONTENTLET.contentlet);
-        spectator.setInput('contentType', CONTENT_WITHOUT_CONTENTLET.contentType);
+        spectator.setInput('contentType', CONTENT_WITHOUT_CONTENTLET.contentType.contentType);
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('modified-by')).textContent).toBe('');
@@ -82,7 +81,7 @@ describe('DotEditContentAsideComponent', () => {
 
     it('should render aside workflow data', () => {
         spectator.setInput('contentLet', CONTENT_FORM_DATA_MOCK.contentlet);
-        spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType);
+        spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType.contentType);
         spectator.detectChanges();
 
         expect(spectator.component.workflow$).toBeDefined();
@@ -95,7 +94,7 @@ describe('DotEditContentAsideComponent', () => {
 
     it('should render New as status when dont have contentlet', () => {
         spectator.setInput('contentLet', null);
-        spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType);
+        spectator.setInput('contentType', CONTENT_FORM_DATA_MOCK.contentType.contentType);
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('workflow-step')).textContent).toBe('New');

@@ -37,7 +37,7 @@ export interface DotProcessedWorkflowPayload {
     pushActionSelected?: string;
     timezoneId: string;
     pathToMove: string;
-    contentlet: Record<string, unknown>;
+    contentlet?: Record<string, unknown>;
 }
 
 export interface DotCMSWorkflowStatus {

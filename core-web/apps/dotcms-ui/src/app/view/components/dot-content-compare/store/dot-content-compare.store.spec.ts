@@ -3,9 +3,12 @@ import { of } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 
 import { DotContentCompareStore } from '@components/dot-content-compare/store/dot-content-compare.store';
-import { DotContentletService, DotContentTypeService } from '@dotcms/data-access';
+import {
+    DotContentletService,
+    DotContentTypeService,
+    DotFormatDateService
+} from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
-import { DotFormatDateService } from '@dotcms/ui';
 
 const getContentTypeMOCKResponse = {
     baseType: 'CONTENT',

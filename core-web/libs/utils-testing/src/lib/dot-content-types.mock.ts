@@ -3,6 +3,7 @@ import {
     DotCMSContentType,
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
+
 import { EMPTY_FIELD } from './field-util';
 
 export const dotcmsContentTypeBasicMock: DotCMSContentType = {
@@ -29,7 +30,8 @@ export const dotcmsContentTypeBasicMock: DotCMSContentType = {
     urlMapPattern: null,
     variable: null,
     versionable: false,
-    workflows: []
+    workflows: [],
+    metadata: {}
 };
 
 export const dotcmsContentTypeFieldBasicMock: DotCMSContentTypeField = {

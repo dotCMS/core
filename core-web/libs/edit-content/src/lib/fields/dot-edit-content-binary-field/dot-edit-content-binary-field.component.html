@@ -12,16 +12,16 @@
             <dot-drop-zone
                 [accept]="accept"
                 [maxFileSize]="maxFileSize"
-                (fileDragOver)="setDropZoneActiveState(true)"
                 (fileDragLeave)="setDropZoneActiveState(false)"
+                (fileDragOver)="setDropZoneActiveState(true)"
                 (fileDropped)="handleFileDrop($event)"
                 data-testId="dropzone">
                 <dot-binary-field-ui-message [uiMessage]="vm.uiMessage">
                     <button
                         class="binary-field__drop-zone-btn"
                         (click)="openFilePicker()"
-                        type="button"
-                        data-testId="choose-file-btn">
+                        data-testId="choose-file-btn"
+                        type="button">
                         {{ 'dot.binary.field.action.choose.file' | dm }}
                     </button>
                 </dot-binary-field-ui-message>
@@ -30,8 +30,8 @@
                 #inputFile
                 [accept]="accept.join(',')"
                 (change)="handleFileSelection($event)"
-                type="file"
-                data-testId="binary-field__file-input" />
+                data-testId="binary-field__file-input"
+                type="file" />
         </div>
 
         <div class="binary-field__actions">
@@ -39,14 +39,14 @@
                 [label]="'dot.binary.field.action.import.from.url' | dm"
                 (click)="openDialog(BinaryFieldMode.URL)"
                 data-testId="action-url-btn"
-                styleClass="p-button-link p-button-secondary p-button-sm"
-                icon="pi pi-link"></p-button>
+                icon="pi pi-link"
+                styleClass="p-button-link p-button-secondary p-button-sm"></p-button>
             <p-button
                 [label]="'dot.binary.field.action.create.new.file' | dm"
                 (click)="openDialog(BinaryFieldMode.EDITOR)"
                 data-testId="action-editor-btn"
-                styleClass="p-button-link p-button-secondary p-button-sm"
-                icon="pi pi-code"></p-button>
+                icon="pi pi-code"
+                styleClass="p-button-link p-button-secondary p-button-sm"></p-button>
         </div>
     </ng-container>
 
@@ -57,36 +57,37 @@
     <dot-binary-field-preview
         *ngIf="vm.status === BinaryFieldStatus.PREVIEW"
         [contentlet]="vm.contentlet"
-        [tempFile]="vm.tempFile"
         [editableImage]="vm.isEnterprise && imageEditor"
-        (removeFile)="removeFile()"
+        [tempFile]="vm.tempFile"
         (editFile)="onEditFile()"
         (editImage)="onEditImage()"
+        (removeFile)="removeFile()"
         data-testId="preview"></dot-binary-field-preview>
 
     <p-dialog
         [(visible)]="dialogOpen"
-        [keepInViewport]="false"
-        [modal]="true"
-        [header]="dialogHeaderMap[vm.mode] | dm"
-        [draggable]="false"
-        [resizable]="false"
-        [closeOnEscape]="false"
         [appendTo]="'body'"
+        [closeOnEscape]="false"
+        [draggable]="false"
+        [header]="dialogHeaderMap[vm.mode] | dm"
+        [keepInViewport]="false"
         [maskStyleClass]="'p-dialog-mask-transparent'"
+        [modal]="true"
+        [resizable]="false"
         [style]="vm.mode === BinaryFieldMode.EDITOR ? dialogFullScreenStyles : {}">
         <ng-container [ngSwitch]="vm.mode">
             <dot-dot-binary-field-url-mode
                 *ngSwitchCase="BinaryFieldMode.URL"
-                (tempFileUploaded)="setTempFile($event)"
                 (cancel)="closeDialog()"
+                (tempFileUploaded)="setTempFile($event)"
                 data-testId="url-mode"></dot-dot-binary-field-url-mode>
             <dot-dot-binary-field-editor
                 *ngSwitchCase="BinaryFieldMode.EDITOR"
-                [fileName]="vm.tempFile?.fileName || vm.contentlet?.name"
                 [fileContent]="vm.tempFile?.content || vm.contentlet?.content"
-                (tempFileUploaded)="setTempFile($event)"
+                [fileName]="vm.tempFile?.fileName || vm.contentlet?.name"
+                [userMonacoOptions]="customMonacoOptions()"
                 (cancel)="closeDialog()"
+                (tempFileUploaded)="setTempFile($event)"
                 data-testId="editor-mode"></dot-dot-binary-field-editor>
         </ng-container>
     </p-dialog>

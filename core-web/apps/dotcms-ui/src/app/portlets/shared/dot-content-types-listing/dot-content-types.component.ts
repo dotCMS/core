@@ -7,7 +7,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map, pluck, take, takeUntil } from 'rxjs/operators';
 
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -15,7 +14,8 @@ import {
     DotCrudService,
     DotHttpErrorManagerService,
     DotLicenseService,
-    DotMessageService
+    DotMessageService,
+    PushPublishService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {

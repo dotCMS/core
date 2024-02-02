@@ -159,7 +159,10 @@ describe('DotBinaryFieldStore', () => {
 
                 // Skip initial state
                 store.value$.pipe(skip(1)).subscribe((value) => {
-                    expect(value).toBe(TEMP_FILE_MOCK.id);
+                    expect(value).toEqual({
+                        value: TEMP_FILE_MOCK.id,
+                        fileName: TEMP_FILE_MOCK.fileName
+                    });
                     done();
                 });
 
@@ -197,7 +200,7 @@ describe('DotBinaryFieldStore', () => {
 
                 const NEW_BINARY_FIELD_CONTENTLET = {
                     ...BINARY_FIELD_CONTENTLET,
-                    fileAsset: '12345',
+                    fileAssetVersion: '12345',
                     metaData
                 };
 
