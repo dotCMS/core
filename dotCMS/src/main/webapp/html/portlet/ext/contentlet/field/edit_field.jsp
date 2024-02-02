@@ -790,13 +790,23 @@
                     .then(({ entity: contentlet }) => {
                         const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
                         const variable = "<%=field.getVelocityVarName()%>";
-                        const fieldData = {
-                            ...(<%=jsonField%>),
-                            hint: '<%=hint%>',
-                            variable,
-                            fieldVariables: JSON.parse('<%=fieldVariablesContent%>')
-                        }
 
+                        let fieldData;
+                        try {
+                            fieldData = {
+                                ...(<%=jsonField%>),
+                                hint: '<%=hint%>',
+                                variable,
+                                fieldVariables: <%=fieldVariablesContent%>
+                            }
+                        } catch (error) {
+                            fieldData = {
+                                 ...(<%=jsonField%>),
+                                 hint: '<%=hint%>',
+                                 variable
+                            }
+                            console.warn('Error parsing the field variables', error);
+                        }
                         // Setting the value of the field
                         field.value = "<%=value%>"
 
