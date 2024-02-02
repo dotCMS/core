@@ -56,7 +56,6 @@ runs:
         removeIfExists /imagegeneration/installers/python-*
         
         removeIfExists /home/runner/work/_temp/*
-        removeIfExists /home/runner/work/_actions/*
         removeIfExists /home/runner/work/_tool/*
         removeIfExists /home/runner/work/_config/*
 
