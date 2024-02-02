@@ -95,9 +95,7 @@ describe('DotEditContentStore', () => {
             spectator.service.vm$.pipe(skip(1)).subscribe((state) => {
                 expect(state).toEqual({
                     actions: [],
-                    fields: CONTENT_TYPE_MOCK.fields,
-                    layout: CONTENT_TYPE_MOCK.layout,
-                    contentType: BINARY_FIELD_CONTENTLET.contentType,
+                    contentType: CONTENT_TYPE_MOCK,
                     contentlet: BINARY_FIELD_CONTENTLET
                 });
                 done();

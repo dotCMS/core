@@ -83,7 +83,7 @@ export class DotEditContentFormComponent implements OnInit {
             this.onFormChange(value);
         });
 
-        this.formData.fields.forEach((field) => {
+        this.formData.contentType.fields.forEach((field) => {
             if (Object.values(FILTERED_TYPES).includes(field.fieldType as FILTERED_TYPES)) {
                 return;
             }
@@ -133,7 +133,7 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     onFormChange(value) {
-        this.formData.fields.forEach(({ variable, fieldType }) => {
+        this.formData.contentType.fields.forEach(({ variable, fieldType }) => {
             // Shorthand for conditional assignment
 
             if (FLATTENED_FIELD_TYPES.includes(fieldType as FIELD_TYPES)) {
@@ -158,7 +158,7 @@ export class DotEditContentFormComponent implements OnInit {
     private setLayoutTabs() {
         this.tabs = transformLayoutToTabs(
             this.dotMessageService.get('Content'),
-            this.formData.layout
+            this.formData.contentType.layout
         );
     }
 }
