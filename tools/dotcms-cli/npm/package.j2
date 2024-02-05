@@ -10,9 +10,9 @@
     "{{ packageName }}-{{ packageVersion }}-darwin-x64": "bin/{{ packageName }}-{{ packageVersion }}-osx-x86_64",
     "{{ packageName }}-{{ packageVersion }}-linux-x64": "bin/{{ packageName }}-{{ packageVersion }}-linux-x86_64"
   },
-  "alias": {{ npmPackageName }},
+  "alias": "{{ npmPackageName }}",
   "packageName": "{{ packageName }}",
-  "fullPackageName": "{{ packageName }}-{{ packageVersion }}",
+  "packageNameWithVersion": "{{ packageName }}-{{ packageVersion }}",
   "files": [
     "bin",
     "src"
