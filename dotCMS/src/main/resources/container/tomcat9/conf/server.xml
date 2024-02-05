@@ -4,7 +4,7 @@
     <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
     <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
     <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
-
+    <!-- Este es el archivo que se usa -->
     <Service name="Catalina">
 
         <Executor
