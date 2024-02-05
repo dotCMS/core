@@ -1,25 +1,37 @@
 import { MonacoEditorConstructionOptions, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { Subject } from 'rxjs';
 
+import { JsonPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    computed,
+    inject,
     Input,
     OnDestroy,
     OnInit,
-    inject
+    signal,
+    Signal
 } from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
+
+import { DEFAULT_MONACO_CONFIG } from '../../models/dot-edit-content-field.constant';
+import { getFieldVariablesParsed, stringToJson } from '../../utils/functions.util';
+
+export const DEFAULT_JSON_FIELD_EDITOR_CONFIG: MonacoEditorConstructionOptions = {
+    ...DEFAULT_MONACO_CONFIG,
+    language: 'json'
+};
 
 @Component({
     selector: 'dot-edit-content-json-field',
     standalone: true,
-    imports: [FormsModule, ReactiveFormsModule, MonacoEditorModule],
+    imports: [FormsModule, ReactiveFormsModule, MonacoEditorModule, JsonPipe],
     templateUrl: './dot-edit-content-json-field.component.html',
     styleUrls: ['./dot-edit-content-json-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,30 +43,26 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
     ]
 })
 export class DotEditContentJsonFieldComponent implements OnInit, OnDestroy {
-    @Input() field!: DotCMSContentTypeField;
-
+    contentTypeField = signal<DotCMSContentTypeField>({} as DotCMSContentTypeField);
+    // Monaco options
+    monacoEditorOptions: Signal<MonacoEditorConstructionOptions> = computed(() => {
+        return {
+            ...DEFAULT_JSON_FIELD_EDITOR_CONFIG,
+            ...this.parseCustomMonacoOptions(this.contentTypeField().fieldVariables)
+        };
+    });
     private readonly cd = inject(ChangeDetectorRef);
     private readonly controlContainer = inject(ControlContainer);
     private readonly destroy$: Subject<boolean> = new Subject<boolean>();
 
-    public readonly editorOptions: MonacoEditorConstructionOptions = {
-        theme: 'vs',
-        minimap: {
-            enabled: false
-        },
-        fixedOverflowWidgets: true,
-        cursorBlinking: 'solid',
-        overviewRulerBorder: false,
-        mouseWheelZoom: false,
-        lineNumbers: 'on',
-        roundedSelection: false,
-        automaticLayout: true,
-        language: 'json'
-    };
+    @Input({ required: true })
+    set field(contentTypeField: DotCMSContentTypeField) {
+        this.contentTypeField.set(contentTypeField);
+    }
 
     ngOnInit(): void {
         const form = this.controlContainer.control;
-        const control = form.get(this.field.variable);
+        const control = form.get(this.contentTypeField().variable);
 
         /*
          * This is a workaround to force the change detection to run when the value of the control changes.
@@ -66,5 +74,22 @@ export class DotEditContentJsonFieldComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    /**
+     * Parses the custom Monaco options for a given field of a DotCMSContentTypeField.
+     *
+     * @returns {Record<string, string>} Returns the parsed custom Monaco options as a key-value pair object.
+     * @private
+     * @param fieldVariables
+     */
+    private parseCustomMonacoOptions(
+        fieldVariables: DotCMSContentTypeFieldVariable[]
+    ): Record<string, string> {
+        const { monacoOptions } = getFieldVariablesParsed<{ monacoOptions: string }>(
+            fieldVariables
+        );
+
+        return stringToJson(monacoOptions);
     }
 }

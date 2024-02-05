@@ -1,5 +1,6 @@
 import {
     DotCMSContentTypeField,
+    DotCMSContentTypeFieldVariable,
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutTab
 } from '@dotcms/dotcms-models';
@@ -112,4 +113,60 @@ export const transformLayoutToTabs = (
     }, initialTab);
 
     return tabs;
+};
+
+/**
+ * Checks if a given value is a valid JSON string
+ *
+ * @param {string} value - The value to be checked
+ * @returns {boolean} - True if the value is a valid JSON string, false otherwise
+ */
+export const isValidJson = (value: string): boolean => {
+    try {
+        const json = JSON.parse(value);
+
+        return json !== null && typeof json === 'object' && !Array.isArray(json);
+    } catch (e) {
+        console.warn(`${value} is not a valid JSON`);
+
+        return false;
+    }
+};
+
+/**
+ * Parses an array of `DotCMSContentTypeFieldVariable` objects and returns a new object
+ * with key-value pairs.
+ *
+ * @template T - The type of the resulting object.
+ * @param {DotCMSContentTypeFieldVariable[]} fieldVariables - The array of field variables to be parsed.
+ * @return {T} - The parsed object with key-value pairs.
+ */
+export const getFieldVariablesParsed = <T extends Record<string, string>>(
+    fieldVariables: DotCMSContentTypeFieldVariable[]
+): T => {
+    if (!fieldVariables) {
+        return {} as T;
+    }
+
+    const result: Record<string, string> = {};
+    fieldVariables.forEach(({ key, value }) => {
+        result[key] = value;
+    });
+
+    return result as T;
+};
+
+/**
+ * Converts a JSON string into a JavaScript object.
+ *
+ * @param {string} value - The JSON string to be converted.
+ * @return {Object} - The converted JavaScript object. If the input string is
+ *       not valid JSON, an empty object will be returned.
+ */
+export const stringToJson = (value: string) => {
+    if (value && isValidJson(value)) {
+        return JSON.parse(value);
+    }
+
+    return {};
 };
