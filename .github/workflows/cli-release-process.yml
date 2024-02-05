@@ -288,10 +288,10 @@ jobs:
           fi;
 
           VERSION=$(echo "$PACKAGE_VERSION" | sed 's/-SNAPSHOT//I')
-          echo "$NPM_PACKAGE_VERSION=$VERSION" >> $GITHUB_ENV
-          echo "PACKAGE_VERSION_SUFFIX=$rc_suffix" >> $GITHUB_ENV
+          echo "NPM_PACKAGE_VERSION=${VERSION}${$rc_suffix}" >> $GITHUB_ENV
           echo "PACKAGE_VERSION_TAG=$tag" >> $GITHUB_ENV
-
+#          echo "PACKAGE_VERSION_SUFFIX=$rc_suffix" >> $GITHUB_ENV
+          
       - name: 'NPM Package setup'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
         env:
@@ -309,7 +309,7 @@ jobs:
           cp ${{ github.workspace }}/tools/dotcms-cli/README.md .
           
           echo "Adding package.json file"
-          jinja2 package.j2 -D fullPackageName=${PACKAGE_NAME}-${PACKAGE_VERSION} -D packageName=${PACKAGE_NAME} -D npmPackageName=${NPM_PACKAGE_NAME} -D packageVersion=${VERSION} -D packageVersionSuffix=${PACKAGE_VERSION_SUFFIX} --format json -o package.json
+          jinja2 package.j2 -D fullPackageName=${PACKAGE_NAME}-${PACKAGE_VERSION} -D packageName=${PACKAGE_NAME} -D npmPackageName=${NPM_PACKAGE_NAME} -D npmPackageVersion=${NPM_PACKAGE_VERSION} --format json -o package.json
           rm -f package.j2
           
           cat package.json
