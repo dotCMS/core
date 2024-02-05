@@ -10,8 +10,13 @@ p-autocomplete.p-inputwrapper-focus {
 .p-fluid .p-autocomplete.p-component, // To override the default behavior
 .p-autocomplete.p-component {
     display: grid;
-    align-items: center;
+    align-items: baseline;
     grid-template-columns: auto repeat(3, max-content); // This will make the grid to remove the columns that are not in the grid
+}
+
+.p-fluid .p-autocomplete.p-component:has(.p-icon-wrapper),
+.p-autocomplete.p-component:has(.p-icon-wrapper) {
+    grid-template-columns: max-content auto; // When have icon, have 2 grids: icon and tags
 }
 
 .p-autocomplete {

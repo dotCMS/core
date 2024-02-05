@@ -19,7 +19,7 @@ function Banner({ title, image, caption, buttonText, link }) {
                 <h2 className="mb-2 text-6xl font-bold text-shadow">{title}</h2>
                 <p className="mb-4 text-xl text-shadow">{caption}</p>
                 <Link
-                    className="p-4 text-xl transition duration-300 bg-blue-500 rounded hover:bg-blue-600"
+                    className="p-4 text-xl transition duration-300 bg-purple-500 rounded hover:bg-purple-600"
                     href={link || '#'}>
                     {buttonText}
                 </Link>

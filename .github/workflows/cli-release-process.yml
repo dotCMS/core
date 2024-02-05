@@ -42,6 +42,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.CI_MACHINE_TOKEN }}
+          fetch-depth: 0
 
       - name: 'Setup Java'
         uses: actions/setup-java@v4
@@ -231,7 +232,7 @@ jobs:
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.tar.gz     
-      
+
   release:
     needs: [ precheck, build ]
     runs-on: ubuntu-latest
@@ -251,7 +252,7 @@ jobs:
       - name: 'Download all build artifacts'
         uses: actions/download-artifact@v4
         with:
-          path: ${{ github.workspace }}/artifacts  
+          path: ${{ github.workspace }}/artifacts
           pattern: artifacts-*
           merge-multiple: true
 
@@ -304,14 +305,14 @@ jobs:
   publish-npm-package:
     name: "Publish NPM Package"
     if: success()
-    needs: [ build, release ]  
+    needs: [ build, release ]
     runs-on: ubuntu-latest
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
-          fetch-depth: 0   
+          fetch-depth: 0
 
       - name: 'Set up Node.js'
         uses: actions/setup-node@v4
@@ -319,7 +320,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: 'Install Jinja2'
-        run: pip install jinja2-cli 
+        run: pip install jinja2-cli
 
       - name: 'Download all build artifacts'
         uses: actions/download-artifact@v4
@@ -358,7 +359,7 @@ jobs:
           VERSION=$(echo "$MVN_PACKAGE_VERSION" | sed 's/-SNAPSHOT//I')
           echo "NPM_PACKAGE_VERSION=${VERSION}${RC_SUFFIX}" >> $GITHUB_ENV
           echo "NPM_PACKAGE_VERSION_TAG=$TAG" >> $GITHUB_ENV
-          
+
       - name: 'NPM Package setup'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
         env:
@@ -380,7 +381,7 @@ jobs:
           
           cat package.json
           cat src/postinstall.js
-          
+
       - name: 'NPM Package tree'
         run: ls -R ${{ github.workspace }}/tools/dotcms-cli/npm/
 
@@ -390,4 +391,3 @@ jobs:
         run: |
           echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
           npm publish --access public --tag ${NPM_PACKAGE_VERSION_TAG}
-                                    

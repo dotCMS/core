@@ -58,14 +58,31 @@ import org.glassfish.jersey.server.JSONP;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
 import static com.liferay.util.StringPool.COMMA;
 
 /**
@@ -118,7 +135,7 @@ public class ContentTypeResource implements Serializable {
 
 		final InitDataObject initData = this.webResource.init(null, req, res, true, null);
 		final User user = initData.getUser();
-		Response response = null;
+		Response response;
 
 		try {
 
@@ -146,20 +163,25 @@ public class ContentTypeResource implements Serializable {
 				session.removeAttribute(SELECTED_STRUCTURE_KEY);
 			}
 
-			response = Response.ok(new ResponseEntityView(responseMap)).build();
-		} catch (IllegalArgumentException e) {
-			Logger.error(this, e.getMessage(), e);
-			response = ExceptionMapperUtil
-					.createResponse(null, "Content-type is not valid (" + e.getMessage() + ")");
-		}catch (DotStateException | DotDataException e) {
-			Logger.error(this, e.getMessage(), e);
-			response = ExceptionMapperUtil
-					.createResponse(null, "Content-type is not valid (" + e.getMessage() + ")");
-		} catch (DotSecurityException e) {
+			response = Response.ok(new ResponseEntityView<>(responseMap)).build();
+		} catch (final IllegalArgumentException e) {
+			final String errorMsg = String.format("Missing required information when copying Content Type " +
+					"'%s': %s", baseVariableName, ExceptionUtil.getErrorMessage(e));
+			Logger.error(this, errorMsg, e);
+			response = ExceptionMapperUtil.createResponse(null, errorMsg);
+		} catch (final DotStateException | DotDataException e) {
+			final String errorMsg = String.format("Failed to copy Content Type '%s': %s",
+					baseVariableName, ExceptionUtil.getErrorMessage(e));
+			Logger.error(this, errorMsg, e);
+			response = ExceptionMapperUtil.createResponse(null, errorMsg);
+		} catch (final DotSecurityException e) {
+			Logger.error(this, String.format("User '%s' does not have permission to copy Content Type " +
+					"'%s'", user.getUserId(), baseVariableName), e);
 			throw new ForbiddenException(e);
-
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
+		} catch (final Exception e) {
+			final String errorMsg = String.format("An error occurred when copying Content Type " +
+					"'%s': %s", baseVariableName, ExceptionUtil.getErrorMessage(e));
+			Logger.error(this, errorMsg, e);
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
 
@@ -227,6 +249,20 @@ public class ContentTypeResource implements Serializable {
 				.build();
 	}
 
+	/**
+	 * Creates one or more Content Types specified in the Content Type Form parameter. This allows
+	 * users to easily create more than one Content Type in a single request.
+	 *
+	 * @param req  The current instance of the {@link HttpServletRequest}.
+	 * @param res  The current instance of the {@link HttpServletResponse}.
+	 * @param form The {@link ContentTypeForm} containing the required information to create the
+	 *             Content Type(s).
+	 *
+	 * @return The JSON response with the Content Type(s) created.
+	 *
+	 * @throws DotDataException An error occurs when persisting the Content Type(s) in the
+	 *                          database.
+	 */
 	@POST
 	@JSONP
 	@NoCache
@@ -236,68 +272,79 @@ public class ContentTypeResource implements Serializable {
 									 @Context final HttpServletResponse res,
 									 final ContentTypeForm form)
 			throws DotDataException {
-		final InitDataObject initData = this.webResource.init(null, req, res, true, null);
+		final InitDataObject initData =
+				new WebResource.InitBuilder(webResource)
+						.requestAndResponse(req, res)
+						.requiredBackendUser(false)
+						.requiredFrontendUser(false)
+						.rejectWhenNoUser(true)
+						.init();
 		final User user = initData.getUser();
-
-		Response response = null;
-
 		try {
-
-			Logger.debug(this, ()->String.format("Saving new content type '%s' ", form.getRequestJson()));
+			checkNotNull(form, "The 'form' parameter is required");
+			Logger.debug(this, ()->String.format("Creating Content Type(s): %s", form.getRequestJson()));
 			final HttpSession session = req.getSession(false);
 			final Iterable<ContentTypeForm.ContentTypeFormEntry> typesToSave = form.getIterable();
-			final List<Map<Object, Object>> retTypes = new ArrayList<>();
+			final List<Map<Object, Object>> savedContentTypes = new ArrayList<>();
 
-			// Validate input
 			for (final ContentTypeForm.ContentTypeFormEntry entry : typesToSave) {
-
 				final ContentType type = entry.contentType;
 				final Set<String> workflowsIds = new HashSet<>(entry.workflowsIds);
 
 				if (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id())) {
-					return ExceptionMapperUtil.createResponse(null, "ContentType 'id' if set, should be a uuid");
+					return ExceptionMapperUtil.createResponse(null, String.format("Content Type ID " +
+							"'%s' is either not set, or is not a valid UUID", type.id()));
 				}
 
 				final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>>  tuple2 =
 						this.saveContentTypeAndDependencies(type, initData.getUser(), workflowsIds,
 							form.getSystemActions(), APILocator.getContentTypeAPI(user, true), true);
 				final ContentType contentTypeSaved = tuple2._1;
-
-				ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
+				final ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
 							.putAll(new JsonContentTypeTransformer(contentTypeSaved).mapObject())
 						.put("workflows", this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(), initData.getUser()))
 						.put("systemActionMappings", tuple2._2.stream()
-								.collect(Collectors.toMap(mapping-> mapping.getSystemAction(), mapping->mapping)))
+								.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction, mapping->mapping)))
 						.build();
-				retTypes.add(responseMap);
-
+				savedContentTypes.add(responseMap);
 				// save the last one to the session to be compliant with #13719
 				if(null != session){
                   session.removeAttribute(SELECTED_STRUCTURE_KEY);
 				}
 			}
-
-			response = Response.ok(new ResponseEntityView<>(retTypes)).build();
-		} catch (IllegalArgumentException e) {
-			Logger.error(this, e.getMessage(), e);
-			response = ExceptionMapperUtil
-					.createResponse(null, "Content-type is not valid (" + e.getMessage() + ")");
-		}catch (DotStateException | DotDataException e) {
-			Logger.error(this, e.getMessage(), e);
-			response = ExceptionMapperUtil
-					.createResponse(null, "Content-type is not valid (" + e.getMessage() + ")");
-		} catch (DotSecurityException e) {
+			return Response.ok(new ResponseEntityView<>(savedContentTypes)).build();
+		} catch (final IllegalArgumentException e) {
+			final String errorMsg = String.format("Missing required information when creating Content Type(s): " +
+					"%s", ExceptionUtil.getErrorMessage(e));
+			Logger.error(this, errorMsg, e);
+			return ExceptionMapperUtil.createResponse(null, errorMsg);
+		}catch (final DotStateException | DotDataException e) {
+			final String errorMsg = String.format("Failed to create Content Type(s): %s", ExceptionUtil.getErrorMessage(e));
+			Logger.error(this, errorMsg, e);
+			return ExceptionMapperUtil.createResponse(null, errorMsg);
+		} catch (final DotSecurityException e) {
+			Logger.error(this, String.format("User '%s' does not have permission to create " +
+					"Content Type(s)", user.getUserId()), e);
 			throw new ForbiddenException(e);
-
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		} catch (final Exception e) {
+			final String errorMsg = String.format("An error occurred when creating Content Type(s): " +
+					"%s", ExceptionUtil.getErrorMessage(e));
+			Logger.error(this, errorMsg, e);
+			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
-
-		return response;
 	}
 
-
+	/**
+	 * Updates the Content Type based on the given ID or Velocity variable name.
+	 *
+	 * @param idOrVar The ID or Velocity variable name of the Content Type to update.
+	 * @param form    The {@link ContentTypeForm} containing the required information to update the
+	 *                Content Type.
+	 * @param req     The current instance of the {@link HttpServletRequest}.
+	 * @param res     The current instance of the {@link HttpServletResponse}.
+	 *
+	 * @return The JSON response with the updated information of the Content Type.
+	 */
 	@PUT
 	@Path("/id/{idOrVar}")
 	@JSONP
@@ -305,31 +352,25 @@ public class ContentTypeResource implements Serializable {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response updateType(@PathParam("idOrVar") final String idOrVar, final ContentTypeForm form,
-							   @Context final HttpServletRequest req, @Context final HttpServletResponse res) throws DotDataException {
-
-		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
+							   @Context final HttpServletRequest req, @Context final HttpServletResponse res) {
+		final InitDataObject initData =
+				new WebResource.InitBuilder(webResource)
+						.requestAndResponse(req, res)
+						.requiredBackendUser(false)
+						.requiredFrontendUser(false)
+						.rejectWhenNoUser(true)
+						.init();
 		final User user = initData.getUser();
 		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
-
-		Response response = null;
-
 		try {
+			checkNotNull(form, "The 'form' parameter is required");
 			final ContentType contentType = form.getContentType();
-
-			Logger.debug(this, String.format("Updating content type  '%s' ", form.getRequestJson()));
-
-			if (!UtilMethods.isSet(contentType.id())) {
-
-				response = ExceptionMapperUtil.createResponse(null, "Field 'id' should be set");
-
-			} else {
-
+			Logger.debug(this, String.format("Updating content type: '%s'", form.getRequestJson()));
+			checkNotEmpty(contentType.id(), BadRequestException.class, "Content Type 'id' attribute must be set");
 				final ContentType currentContentType = contentTypeAPI.find(idOrVar);
 
 				if (!currentContentType.id().equals(contentType.id())) {
-
-					response = ExceptionMapperUtil.createResponse(null, "Field id '"+ idOrVar +"' does not match a content-type with id '"+ contentType.id() +"'");
-
+					return ExceptionMapperUtil.createResponse(null, "Field id '"+ idOrVar +"' does not match the Content Type with id '"+ contentType.id() +"'");
 				} else {
 
 					final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> tuple2 = this.saveContentTypeAndDependencies(contentType, user,
@@ -339,30 +380,50 @@ public class ContentTypeResource implements Serializable {
 							.putAll(new JsonContentTypeTransformer(contentTypeAPI.find(tuple2._1.variable())).mapObject())
 							.put("workflows", this.workflowHelper.findSchemesByContentType(contentType.id(), initData.getUser()))
 							.put("systemActionMappings", tuple2._2.stream()
-									.collect(Collectors.toMap(mapping-> mapping.getSystemAction(), mapping->mapping)));
-
-					response = Response.ok(new ResponseEntityView(builderMap.build())).build();
+								.collect(Collectors.toMap(SystemActionWorkflowActionMapping::getSystemAction, mapping->mapping)));
+				return Response.ok(new ResponseEntityView<>(builderMap.build())).build();
 				}
-			}
-		} catch (NotFoundInDbException e) {
-
-			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
-
-		} catch ( DotStateException | DotDataException e) {
-
-			response = ExceptionMapperUtil.createResponse(null, "Content-type is not valid ("+ e.getMessage() +")");
-
-		} catch (DotSecurityException e) {
+		} catch (final NotFoundInDbException e) {
+			Logger.error(this, String.format("Content Type with ID or var name '%s' was not found", idOrVar), e);
+			return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+		} catch (final DotStateException | DotDataException e) {
+			final String errorMsg = String.format("Failed to update Content Type with ID or var name " +
+					"'%s': %s", idOrVar, ExceptionUtil.getErrorMessage(e));
+			Logger.error(this, errorMsg, e);
+			return ExceptionMapperUtil.createResponse(null, errorMsg);
+		} catch (final DotSecurityException e) {
+			Logger.error(this, String.format("User '%s' does not have permission to update Content Type with ID or var name " +
+					"'%s'", user.getUserId(), idOrVar), e);
 			throw new ForbiddenException(e);
-
-		} catch (Exception e) {
-
-			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		} catch (final Exception e) {
+			Logger.error(this, String.format("An error occurred when updating Content Type with ID or var name " +
+					"'%s': %s", idOrVar, ExceptionUtil.getErrorMessage(e)), e);
+			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
-
-		return response;
 	}
 
+	/**
+	 * Saves the specified Content Type and properly handles additional data associated to it, such
+	 * as Workflow information.
+	 *
+	 * @param contentType          The {@link ContentType} to save.
+	 * @param user                 The {@link User} executing this action.
+	 * @param workflowsIds         The {@link Set} of Workflow IDs to associate to the Content
+	 *                             Type.
+	 * @param systemActionMappings The {@link List} of {@link Tuple2} containing the
+	 *                             {@link WorkflowAPI.SystemAction} and the {@link String}
+	 *                             representing the Workflow Action ID.
+	 * @param contentTypeAPI       The {@link ContentTypeAPI} instance to use.
+	 * @param isNew                A {@link Boolean} indicating if the Content Type is new or not.
+	 *
+	 * @return A {@link Tuple2} containing the saved {@link ContentType} and the {@link List} of
+	 * {@link SystemActionWorkflowActionMapping} associated to it.
+	 *
+	 * @throws DotSecurityException The specified User doesn't have the required permissions to
+	 *                              perform this action.
+	 * @throws DotDataException     An error occurs when persisting the Content Type in the
+	 *                              database.
+	 */
 	@WrapInTransaction
 	private Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> saveContentTypeAndDependencies (final ContentType contentType,
 																								   final User user,
@@ -509,16 +570,15 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public Response deleteType(@PathParam("idOrVar") final String idOrVar, @Context final HttpServletRequest req, @Context final HttpServletResponse res)
-			throws DotDataException, JSONException {
+			throws JSONException {
 
 		final InitDataObject initData = this.webResource.init(null, req, res, true, null);
 		final User user = initData.getUser();
 
-		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
 
 		try {
-
-			ContentType type = null;
+			ContentType type;
 			try {
 				type = contentTypeAPI.find(idOrVar);
 			} catch (NotFoundInDbException nfdb) {
@@ -530,12 +590,10 @@ public class ContentTypeResource implements Serializable {
 			JSONObject joe = new JSONObject();
 			joe.put("deleted", type.id());
 
-			Response response = Response.ok(new ResponseEntityView(joe.toString())).build();
-			return response;
-
-		} catch (DotSecurityException e) {
+			return Response.ok(new ResponseEntityView<>(joe.toString())).build();
+		} catch (final DotSecurityException e) {
 			throw new ForbiddenException(e);
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			Logger.error(this, String.format("Error deleting content type identified by (%s) ",idOrVar), e);
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
@@ -558,8 +616,7 @@ public class ContentTypeResource implements Serializable {
 		final User user = initData.getUser();
 		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
 		Response response = Response.status(404).build();
-		final Map<String, Object> resultMap = new HashMap<>();
-		final HttpSession session = req.getSession(false);
+        final HttpSession session = req.getSession(false);
 		try {
 
 			Logger.debug(this, ()-> "Getting the Type: " + idOrVar);
@@ -571,12 +628,12 @@ public class ContentTypeResource implements Serializable {
 			}
 
 			final boolean live = paramLive == null ?
-					(PageMode.get(Try.of(() -> HttpServletRequestThreadLocal.INSTANCE.getRequest()).getOrNull())).showLive
+					(PageMode.get(Try.of(HttpServletRequestThreadLocal.INSTANCE::getRequest).getOrNull())).showLive
 					: paramLive;
 
 			final ContentTypeInternationalization contentTypeInternationalization = languageId != null ?
 					new ContentTypeInternationalization(languageId, live, user) : null;
-			resultMap.putAll(new JsonContentTypeTransformer(type, contentTypeInternationalization).mapObject());
+            final Map<String, Object> resultMap = new HashMap<>(new JsonContentTypeTransformer(type, contentTypeInternationalization).mapObject());
 
 			resultMap.put("workflows", this.workflowHelper.findSchemesByContentType(type.id(), initData.getUser()));
 			resultMap.put("systemActionMappings",
@@ -584,11 +641,11 @@ public class ContentTypeResource implements Serializable {
 							.stream().collect(Collectors.toMap(mapping -> mapping.getSystemAction(),mapping -> mapping)));
 
 			response = ("true".equalsIgnoreCase(req.getParameter("include_permissions")))?
-					Response.ok(new ResponseEntityView(resultMap, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()))).build():
-					Response.ok(new ResponseEntityView(resultMap)).build();
-		} catch (DotSecurityException e) {
+					Response.ok(new ResponseEntityView<>(resultMap, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()))).build():
+					Response.ok(new ResponseEntityView<>(resultMap)).build();
+		} catch (final DotSecurityException e) {
 			throw new ForbiddenException(e);
-		} catch (NotFoundInDbException nfdb2) {
+		} catch (final NotFoundInDbException nfdb2) {
 			// nothing to do here, will throw a 404
 		}
 
@@ -668,9 +725,7 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response getRecentBaseTypes(@Context final HttpServletRequest request) {
-
-		Response response = null;
-
+		Response response;
 		try {
 			final List<BaseContentTypesView> types = contentTypeHelper.getTypes(request);
 			response = Response.ok(new ResponseEntityView<>(types)).build();
@@ -727,9 +782,7 @@ public class ContentTypeResource implements Serializable {
 										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) final String hostId) throws DotDataException {
 
 		final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true, null);
-
-		Response response = null;
-
+		Response response;
 		final String orderBy = getOrderByRealName(orderbyParam);
 		final User user = initData.getUser();
 

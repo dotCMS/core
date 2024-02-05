@@ -3,9 +3,6 @@ package com.dotcms.rest.api.v1.announcements;
 import com.dotcms.system.announcements.Announcement;
 import com.dotcms.system.announcements.AnnouncementsCache;
 import com.dotcms.system.announcements.AnnouncementsCacheImpl;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.util.List;
@@ -15,75 +12,46 @@ import java.util.List;
  */
 public class AnnouncementsHelperImpl implements AnnouncementsHelper{
 
-    private final LanguageAPI languageAPI;
-
     private final AnnouncementsCache announcementsCache;
 
     private final AnnouncementsLoader loader;
 
-
     public AnnouncementsHelperImpl() {
-        this(APILocator.getLanguageAPI(), new RemoteAnnouncementsLoaderImpl(), new AnnouncementsCacheImpl());
+        this(new RemoteAnnouncementsLoaderImpl(), new AnnouncementsCacheImpl());
     }
 
     /**
      * Constructor
-     * @param languageAPI LanguageAPI
      * @param announcementsCache AnnouncementsCache
      */
-    public AnnouncementsHelperImpl(LanguageAPI languageAPI, AnnouncementsLoader loader, AnnouncementsCache announcementsCache) {
-        this.languageAPI = languageAPI;
+    public AnnouncementsHelperImpl(AnnouncementsLoader loader, AnnouncementsCache announcementsCache) {
         this.announcementsCache = announcementsCache;
         this.loader = loader;
     }
 
-
-    /**
-     * Get the language by id or code, if not found fallback to default language
-     * @param languageIdOrCode String
-     * @return Language
-     */
-    Language getLanguage(final String languageIdOrCode) {
-        Language language;
-        try {
-            final String[] split = languageIdOrCode.split("-");
-            if(split.length > 1) {
-                language = languageAPI.getLanguage(split[0], split[1]);
-            } else {
-                language = languageAPI.getLanguage(languageIdOrCode);
-            }
-        } catch (Exception e) {
-            Logger.debug(AnnouncementsHelperImpl.class, String.format(" failed to get lang [%s] with message: [%s] fallback to default language", languageIdOrCode, e.getMessage()));
-            language = languageAPI.getDefaultLanguage();
-        }
-        return language;
-    }
-
-
     /**
      * Get the announcements from the cache or from the remote server
-     * @param languageIdOrCode String
+     *
      * @param refreshCache boolean
      * @param limit Integer
      * @param user User
      * @return List<Announcement>
      */
     @Override
-    public List<Announcement> getAnnouncements( final String languageIdOrCode, final boolean refreshCache, final Integer limit, final User user) {
+    public List<Announcement> getAnnouncements(final boolean refreshCache, final Integer limit, final User user) {
 
-        Logger.debug(AnnouncementsHelperImpl.class,String.format("Getting announcements for language: %s refreshCache: %s limit: %d, user: %s ", languageIdOrCode, refreshCache, limit, user.getUserId()));
-        final Language language = getLanguage(languageIdOrCode);
+        Logger.debug(AnnouncementsHelperImpl.class,String.format("Getting announcements refreshCache: %s limit: %d, user: %s ", refreshCache, limit, user.getUserId()));
         final int limitValue = getLimit(limit);
         if(!refreshCache) {
-            Logger.debug(this, "Getting announcements from cache for language: " + language.getId() + " limit: " + limitValue);
-            final List<Announcement> announcements = announcementsCache.get(language);
+            Logger.debug(this, "Getting announcements from cache for limit: " + limitValue);
+            final List<Announcement> announcements = announcementsCache.get();
             if (announcements != null && !announcements.isEmpty()) {
                 return getSubList(limitValue, announcements);
             }
         }
-        final List<Announcement> announcements = loader.loadAnnouncements(language);
+        final List<Announcement> announcements = loader.loadAnnouncements();
         if(!announcements.isEmpty()){
-            announcementsCache.put(language, announcements);
+            announcementsCache.put(announcements);
             return getSubList(limitValue, announcements);
         }
         return List.of();

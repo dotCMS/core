@@ -9,7 +9,12 @@ import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
-import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotLicenseService,
+    DotMessageDisplayService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { DotKeyValueComponent } from '@dotcms/ui';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
@@ -18,6 +23,7 @@ import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-cont
 import { DotEditContentCheckboxFieldComponent } from '../../fields/dot-edit-content-checkbox-field/dot-edit-content-checkbox-field.component';
 import { DotEditContentCustomFieldComponent } from '../../fields/dot-edit-content-custom-field/dot-edit-content-custom-field.component';
 import { DotEditContentJsonFieldComponent } from '../../fields/dot-edit-content-json-field/dot-edit-content-json-field.component';
+import { DotEditContentKeyValueComponent } from '../../fields/dot-edit-content-key-value/dot-edit-content-key-value.component';
 import { DotEditContentMultiSelectFieldComponent } from '../../fields/dot-edit-content-multi-select-field/dot-edit-content-multi-select-field.component';
 import { DotEditContentRadioFieldComponent } from '../../fields/dot-edit-content-radio-field/dot-edit-content-radio-field.component';
 import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-content-select-field/dot-edit-content-select-field.component';
@@ -111,6 +117,11 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
     [FIELD_TYPES.JSON]: {
         component: DotEditContentJsonFieldComponent,
         declarations: [MockComponent(DotEditContentJsonFieldComponent)]
+    },
+    [FIELD_TYPES.KEY_VALUE]: {
+        component: DotEditContentKeyValueComponent,
+        declarations: [MockComponent(DotKeyValueComponent)],
+        providers: [mockProvider(DotMessageDisplayService)]
     }
 };
 

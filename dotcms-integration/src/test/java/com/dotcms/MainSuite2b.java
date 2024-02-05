@@ -148,12 +148,13 @@ import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableB
 import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest;
 import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByColTest;
 import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentletIntegrationTest;
-import com.dotmarketing.startup.runonce.Task231109AddPublishDateToContentletVersionInfoTest;
 import com.dotmarketing.startup.runonce.Task230701AddHashIndicesToWorkflowTablesTest;
 import com.dotmarketing.startup.runonce.Task230707CreateSystemTableTest;
 import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnSizeTest;
+import com.dotmarketing.startup.runonce.Task231109AddPublishDateToContentletVersionInfoTest;
 import com.dotmarketing.startup.runonce.Task240102AlterVarcharLengthOfRelationTypeTest;
 import com.dotmarketing.startup.runonce.Task240111AddInodeAndIdentifierLeftIndexesTest;
+import com.dotmarketing.startup.runonce.Task240112AddMetadataColumnToStructureTableTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.UtilMethodsITest;
@@ -329,7 +330,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task240102AlterVarcharLengthOfRelationTypeTest.class,
         Task240111AddInodeAndIdentifierLeftIndexesTest.class,
         AnnouncementsHelperIntegrationTest.class,
-        RemoteAnnouncementsLoaderIntegrationTest.class
+        RemoteAnnouncementsLoaderIntegrationTest.class,
+        Task240112AddMetadataColumnToStructureTableTest.class
 })
 
 public class MainSuite2b {
