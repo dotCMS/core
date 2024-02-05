@@ -11,9 +11,8 @@ public interface AnnouncementsLoader {
 
     /**
      * Load the announcements for the given language
-     * @param language Language
      * @return List<Announcement>
      */
-    List<Announcement> loadAnnouncements(Language language);
+    List<Announcement> loadAnnouncements();
 
 }
