@@ -91,8 +91,8 @@ public class EventLogRunnable implements Runnable {
             .setThrowWhenNot2xx(false);
     }
 
-    private Optional<Response<String>> sendEvent(final CircuitBreakerUrlBuilder builder, final EventPayload payload) {
 
+    public Optional<Response<String>> sendEvent(final CircuitBreakerUrlBuilder builder, final EventPayload payload) {
         final CircuitBreakerUrl postLog = builder
                 .setRawData(payload.toString())
                 .build();
