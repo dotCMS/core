@@ -1,46 +1,39 @@
 <p-table
     #table
-    [value]="variablesBackup"
-    sortField="clazz"
+    [value]="variableList()"
     (keydown.enter)="$event.stopPropagation()"
+    sortField="clazz"
     sortOrder="0"
-    dataKey="id"
->
+    dataKey="id">
     <ng-template pTemplate="header" let-columns>
         <tr data-testId="header">
-            <th class="dot-key-value__header-keyValue-label">
+            <th class="dot-key-value__header-keyValue-label" scope="col">
                 {{ 'keyValue.key_header.label' | dm }}
             </th>
-            <th class="dot-key-value__header-keyValue-label">
+            <th class="dot-key-value__header-keyValue-label" scope="col">
                 {{ 'keyValue.value_header.label' | dm }}
             </th>
-            <th *ngIf="showHiddenField" class="dot-key-value__header-hidden-label">
+            <th *ngIf="showHiddenField" scope="col" cclass="dot-key-value__header-hidden-label">
                 {{ 'keyValue.hidden_header.label' | dm }}
             </th>
-            <th class="dot-key-value__header-actions-label">
+            <th class="dot-key-value__header-actions-label" scope="col">
                 {{ 'keyValue.actions_header.label' | dm }}
             </th>
         </tr>
         <dot-key-value-table-input-row
             [autoFocus]="autoFocus"
             [showHiddenField]="showHiddenField"
-            [variablesList]="variables"
-            (save)="saveVariable($event)"
-        >
+            [forbiddenkeys]="forbiddenkeys()"
+            (save)="saveVariable($event)">
         </dot-key-value-table-input-row>
     </ng-template>
     <ng-template pTemplate="body" let-variable let-rowIndex="rowIndex">
         <dot-key-value-table-row
             #tableRow
             [showHiddenField]="showHiddenField"
-            [isHiddenField]="variables[rowIndex].hidden"
             [variable]="variable"
-            [variableIndex]="rowIndex"
-            [variablesList]="variables"
-            (cancel)="onCancel($event)"
-            (delete)="deleteVariable($event)"
-            (save)="saveVariable($event)"
-        >
+            (delete)="deleteVariable(rowIndex)"
+            (save)="updateKeyValue($event, rowIndex)">
         </dot-key-value-table-row>
     </ng-template>
     <ng-template pTemplate="emptymessage" let-variables>

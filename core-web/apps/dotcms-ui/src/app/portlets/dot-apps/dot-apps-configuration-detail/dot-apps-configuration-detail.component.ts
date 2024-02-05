@@ -1,11 +1,8 @@
-import * as _ from 'lodash';
-
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { pluck, take } from 'rxjs/operators';
 
-import { DotKeyValueUtil } from '@components/dot-key-value-ng/util/dot-key-value-util';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotRouterService } from '@dotcms/data-access';
 import { DotApp, DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
@@ -19,7 +16,7 @@ import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.mo
 export class DotAppsConfigurationDetailComponent implements OnInit {
     apps: DotApp;
 
-    dynamicVariables: DotKeyValue[];
+    dynamicVariables: DotKeyValue[] = [];
     formData: { [key: string]: string };
     formFields: DotAppsSecret[];
     formValid = false;
@@ -69,32 +66,13 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
     }
 
     /**
-     * Handle Save event doing if new a prepend, otherwise a replace
-     * to the local collection
-     * @param {DotKeyValue} variable
+     *
+     *
+     * @param {DotKeyValue[]} variable
      * @memberof DotAppsConfigurationDetailComponent
      */
-    saveDynamicVariable(variable: DotKeyValue): void {
-        const indexChanged = DotKeyValueUtil.getVariableIndexChanged(
-            variable,
-            this.dynamicVariables
-        );
-        if (indexChanged !== null) {
-            this.dynamicVariables[indexChanged] = _.cloneDeep(variable);
-        } else {
-            this.dynamicVariables = [variable, ...this.dynamicVariables];
-        }
-    }
-
-    /**
-     * Handle Delete event doing a removing the variable from the local collection
-     * @param {DotKeyValue} variable
-     * @memberof DotAppsConfigurationDetailComponent
-     */
-    deleteDynamicVariable(variable: DotKeyValue): void {
-        this.dynamicVariables = this.dynamicVariables.filter(
-            (item: DotKeyValue) => item.key !== variable.key
-        );
+    updateVariables(variables: DotKeyValue[]): void {
+        this.dynamicVariables = [...variables];
     }
 
     private getTransformedFormData(): DotAppsSaveData {
