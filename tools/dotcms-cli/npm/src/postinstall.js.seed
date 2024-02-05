@@ -11,8 +11,7 @@ const ARCHITECTURE_MAPPING = {
 
 const PLATFORM_MAPPING = {
     "darwin": "osx",
-    "linux": "linux",
-    "win32": "windows"
+    "linux": "linux"
 };
 
 function getGlobalBinPath() {
@@ -21,8 +20,8 @@ function getGlobalBinPath() {
 }
 
 function validatePackageConfig(packageJson) {
-    if (!packageJson.version || !packageJson.project || !packageJson.binaries || typeof packageJson.binaries !== "object") {
-        throw new Error("Invalid package.json. 'version', 'project' and 'binaries' must be specified.");
+    if (!packageJson.version || !packageJson.packageName || !packageJson.fullPackageName || !packageJson.bin || typeof packageJson.bin !== "object") {
+        throw new Error("Invalid package.json. 'version', 'packageName', 'fullPackageName' and 'bin' must be specified.");
     }
 }
 
@@ -46,12 +45,13 @@ async function parsePackageJson() {
         const packageJson = JSON.parse(packageJsonContent.toString());
         validatePackageConfig(packageJson);
 
-        const packageName = packageJson.project;
-        const binaries = packageJson.binaries;
-        const binaryKey = `${packageName}-${platform}-${architecture}`;
-        const binaryPath = binaries[binaryKey];
+        const fullPackageName = packageJson.fullPackageName;
+        const packageName = packageJson.packageName;
+        const binaries = packageJson.bin;
         const packageVersion = packageJson.version.replace(/^v/, "");
         const extension = platform === "win32" ? ".exe" : "";
+        const binaryKey = `${fullPackageName}-${platform}-${architecture}`;
+        const binaryPath = binaries[binaryKey];
 
         if (binaryPath) {
             console.log(`Binary found for your platform ${platform}-${architecture}: ${binaryPath}`);
@@ -60,6 +60,7 @@ async function parsePackageJson() {
         }
 
         return {
+            fullPackageName,
             packageName,
             binaryKey,
             binaryPath,

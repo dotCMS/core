@@ -21,7 +21,7 @@ env:
   GRAALVM_VERSION: '22.1.0'
   PACKAGE_TYPE: 'uber-jar'
   NPM_PACKAGE_NAME: 'dotcli'
-  PROJECT_NAME: 'dotcms-cli'
+  PACKAGE_NAME: 'dotcms-cli'
   NODE_VERSION: 19
 
 jobs:
@@ -259,32 +259,35 @@ jobs:
           pattern: artifacts-*
           merge-multiple: true
 
-      # - name: 'Generate package version suffix'
-      #   if: contains(github.event.inputs.version, 'SNAPSHOT')  
-      #   id: generate-version-suffix
-      #   env:
-      #     PACKAGE_NAME: ${{ env.NPM_PACKAGE_NAME }}
-      #   run: |
-      #     if npm view "$PACKAGE_NAME" &> /dev/null; then
-      #       echo "Package $PACKAGE_NAME not found."
-      #     else
-      #       echo "Package $PACKAGE_NAME found."
-      #       last_rc_version=$(npm view $PACKAGE_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
-      #       next_rc_version=$(echo "$last_rc_version" | awk -F '-rc' '{print $1 "-rc" $2 + 1}')
-      #       rc_suffix=$(echo "$version" | sed -n 's/.*-rc\([0-9]*\)/-rc\1/p')
-      #       echo "PACKAGE_VERSION_SUFFIX=$rc_suffix" >> "$GITHUB_OUTPUT"              
-      #     fi;
-
-      # - name: 'Generate package version suffix'
-      #   if: contains(github.event.inputs.version, 'SNAPSHOT')  
-      #   id: generate-version-suffix
-      #   run: echo "PACKAGE_VERSION_SUFFIX=-rc-$(date +'%Y%m%d%H%M%S')" >> "$GITHUB_OUTPUT"
+      - name: 'Generate package version suffix'
+        id: generate-version-suffix
+        env:
+          PACKAGE_NAME: ${{ env.NPM_PACKAGE_NAME }}
+          SNAPSHOT_VERSION: ${{ contains(github.event.inputs.version, 'SNAPSHOT') }}
+        run: |
+          if [ "$SNAPSHOT_VERSION" = "true" ]; then
+              if npm view $PACKAGE_NAME &> /dev/null; then
+                      echo "${PACKAGE_NAME} found.";
+                      last_rc_version=$(npm view $PACKAGE_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
+                      echo $last_rc_version
+                      next_rc_version=$(echo "$last_rc_version" | awk -F '-rc' '{print $1 "-rc" $2 + 1}')
+                      echo $next_rc_version
+                      rc_suffix=$(echo "$next_rc_version" | sed -n 's/.*-rc\([0-9]*\)/-rc\1/p')
+                      echo $rc_suffix
+                      tag="rc"
+              else
+                      echo "${PACKAGE_NAME} not found.";
+              fi;
+          else
+              rc_suffix=""
+              tag="latest"
+          fi;
+          echo "PACKAGE_VERSION_SUFFIX=$rc_suffix" >> $GITHUB_ENV
+          echo "PACKAGE_VERSION_TAG=$tag" >> $GITHUB_ENV
 
       - name: 'NPM Package setup'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
         env:
-          PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          PACKAGE_NAME: ${{ env.NPM_PACKAGE_NAME }}
           PACKAGE_VERSION: ${{ github.event.inputs.version }}
           PACKAGE_VERSION_SUFFIX: ${{ steps.generate-version-suffix.outputs.PACKAGE_VERSION_SUFFIX }}
         run: |          
@@ -299,7 +302,7 @@ jobs:
           cp ${{ github.workspace }}/tools/dotcms-cli/README.md .
           
           echo "Adding package.json file"
-          jinja2 package.j2 -D projectName=${PROJECT_NAME} -D npmPackageName=${PACKAGE_NAME} -D packageVersion=${PACKAGE_VERSION} -D packageVersionSuffix=${PACKAGE_VERSION_SUFFIX} --format json -o package.json
+          jinja2 package.j2 -D fullPackageName=${PACKAGE_NAME}-${PACKAGE_VERSION} -D packageName=${PACKAGE_NAME} -D npmPackageName=${NPM_PACKAGE_NAME} -D packageVersion=${PACKAGE_VERSION} -D packageVersionSuffix=${PACKAGE_VERSION_SUFFIX} --format json -o package.json
           rm -f package.j2
           
           cat package.json
@@ -312,7 +315,7 @@ jobs:
       #     NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       #   run: |
       #     echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
-      #     npm publish --access public            
+      #     npm publish --access public --tag ${PACKAGE_VERSION_TAG}           
       
   # release:
   #   needs: [ precheck, build ]

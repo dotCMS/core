@@ -5,13 +5,13 @@
     "postinstall": "node src/postinstall.js install",
     "postuninstall": "node src/postinstall.js uninstall && npm prune"
   },
-  "binaries": {
-    "{{ projectName }}-{{ packageVersion }}-darwin-arm64": "bin/{{ projectName }}-{{ packageVersion }}-osx-aarch_64",
-    "{{ projectName }}-{{ packageVersion }}-darwin-x64": "bin/{{ projectName }}-{{ packageVersion }}-osx-x86_64",
-    "{{ projectName }}-{{ packageVersion }}-linux-x64": "bin/{{ projectName }}-{{ packageVersion }}-linux-x86_64",
-    "{{ projectName }}-{{ packageVersion }}-win32-x64": "bin/{{ projectName }}-{{ packageVersion }}-windows-x86_64.exe"
+  "bin": {
+    "{{ packageName }}-{{ packageVersion }}-darwin-arm64": "bin/{{ packageName }}-{{ packageVersion }}-osx-aarch_64",
+    "{{ packageName }}-{{ packageVersion }}-darwin-x64": "bin/{{ packageName }}-{{ packageVersion }}-osx-x86_64",
+    "{{ packageName }}-{{ packageVersion }}-linux-x64": "bin/{{ packageName }}-{{ packageVersion }}-linux-x86_64"
   },
-  "project": "{{ projectName }}",
+  "packageName": "{{ packageName }}",
+  "fullPackageName": "{{ packageName }}-{{ packageVersion }}",
   "files": [
     "bin",
     "src"
@@ -27,7 +27,7 @@
     "Content Management",
     "CLI",
     "dotCMS CLI",
-    "dotCMS command-line tool",
+    "dotCMS command-line tool"
   ],
   "author": "dotcms <dev@dotcms.com>",
   "license": "MIT",
