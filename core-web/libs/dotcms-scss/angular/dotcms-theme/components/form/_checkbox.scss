@@ -31,6 +31,7 @@ p-checkbox.p-element {
     aspect-ratio: 1/1;
     border-radius: $border-radius-sm;
     border: $select-border-size solid $color-palette-gray-400;
+    background-color: $white;
 
     &.p-checkbox-checked,
     &:has(.p-highlight) {
