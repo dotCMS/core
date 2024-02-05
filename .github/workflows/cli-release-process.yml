@@ -266,6 +266,8 @@ jobs:
           SNAPSHOT_VERSION: ${{ contains(github.event.inputs.version, 'SNAPSHOT') }}
         run: |
           if [ "$SNAPSHOT_VERSION" = "true" ]; then
+              echo "Snapshot version found.";
+              tag="rc"
               if npm view $PACKAGE_NAME &> /dev/null; then
                       echo "${PACKAGE_NAME} found.";
                       last_rc_version=$(npm view $PACKAGE_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
@@ -274,13 +276,15 @@ jobs:
                       echo $next_rc_version
                       rc_suffix=$(echo "$next_rc_version" | sed -n 's/.*-rc\([0-9]*\)/-rc\1/p')
                       echo $rc_suffix
-                      tag="rc"
               else
                       echo "${PACKAGE_NAME} not found.";
+                      rc_suffix="-rc1"
               fi;
           else
-              rc_suffix=""
+              echo "Release version found.";
               tag="latest"
+              rc_suffix=""
+              
           fi;
           echo "PACKAGE_VERSION_SUFFIX=$rc_suffix" >> $GITHUB_ENV
           echo "PACKAGE_VERSION_TAG=$tag" >> $GITHUB_ENV
