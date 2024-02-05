@@ -14,7 +14,7 @@ import Navigation from './layout/navigation';
 
 export function MyPage({ data, nav }) {
     return (
-        <div className="flex flex-col min-h-screen gap-6">
+        <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
             {data.layout.header && (
                 <Header>
                     <Navigation items={nav} />

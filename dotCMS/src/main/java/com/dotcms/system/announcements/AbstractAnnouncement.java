@@ -14,9 +14,7 @@ public interface AbstractAnnouncement {
 
     String inode();
 
-    String languageCode();
-
-    long languageId();
+    String languageId();
 
     String type();
 

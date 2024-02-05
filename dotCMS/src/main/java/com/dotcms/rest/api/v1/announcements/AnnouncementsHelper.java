@@ -15,7 +15,7 @@ public interface AnnouncementsHelper {
             Lazy.of(() -> Config.getIntProperty("ANNOUNCEMENTS_LIMIT", 5));
 
 
-    List<Announcement> getAnnouncements(String languageIdOrCode, boolean refreshCache,
+    List<Announcement> getAnnouncements(boolean refreshCache,
             Integer limit, User user);
 
 }

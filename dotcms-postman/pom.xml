@@ -79,7 +79,7 @@
                                     <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>
                                     <DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>600</DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>
                                     <DOT_ENABLE_SCRIPTING>true</DOT_ENABLE_SCRIPTING>
-
+                                    <DOT_ANNOUNCEMENTS_BASE_URL>http://localhost:8080</DOT_ANNOUNCEMENTS_BASE_URL>
                                     <WAIT_FOR_DEPS>15</WAIT_FOR_DEPS>
                                     <JVM_ENDPOINT_TEST_PASS>obfuscate_me</JVM_ENDPOINT_TEST_PASS>
                                 </env>

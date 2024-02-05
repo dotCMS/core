@@ -5,7 +5,10 @@
         icon="pi pi-megaphone"
         styleClass="p-button-rounded p-button-text">
     </p-button>
-    <span class="badge" id="dot-toolbar-notifications-badge" *ngIf="showUnreadAnnouncement()">
+    <span
+        class="dot-toolbar__badge"
+        id="dot-toolbar-notifications-badge"
+        *ngIf="showUnreadAnnouncement()">
     </span>
 
     <p-overlayPanel
@@ -19,7 +22,7 @@
 </ng-container>
 <div class="toolbar-notifications__container">
     <span
-        class="badge"
+        class="dot-toolbar__badge"
         id="dot-toolbar-notifications-badge"
         *ngIf="notificationsUnreadCount"></span>
     <dot-dropdown-component
