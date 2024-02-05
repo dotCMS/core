@@ -67,7 +67,14 @@ describe('DotToolbarAnnouncementsComponent', () => {
 
     it('should have a "Show All" link', () => {
         spectator.detectChanges();
-        const showAllLink = spectator.query(byTestId('announcement_link'));
+        const showAllLink = spectator.query(byTestId('announcement_link_all'));
         expect(showAllLink).toBeTruthy();
+        expect(showAllLink.getAttribute('target')).toBe('_blank');
+    });
+
+    it('should have a target blank on the announcements link', () => {
+        spectator.detectChanges();
+        const announcementLink = spectator.query(byTestId('announcement_link'));
+        expect(announcementLink.getAttribute('target')).toBe('_blank');
     });
 });

@@ -12,6 +12,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.util.List;
+import java.util.function.Supplier;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -21,6 +22,7 @@ import org.junit.Test;
  */
 public class RemoteAnnouncementsLoaderIntegrationTest {
 
+    public static final String DOTCMS_COM = "https://www.dotcms.com";
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -28,19 +30,26 @@ public class RemoteAnnouncementsLoaderIntegrationTest {
         IntegrationTestInitService.getInstance().init();
     }
 
-    RemoteAnnouncementsLoaderImpl loader = new RemoteAnnouncementsLoaderImpl();
-
     /**
-     * Given scenario: We have a list of 10 elements
-     * Expected result: We test that the sublist is always the same size or smaller than the original list*
+     * Given scenario: We validate the URL that is built
+     * Expected result: Simply test that the url is what expect it to be
      * @throws JsonProcessingException
      */
     @Test
     public void testAnnouncementRemoteURL() throws JsonProcessingException {
-        String expected = "https://www.dotcms.com/api/content/render/false/query/+contentType:Announcement +languageId:1 +deleted:false +live:true/orderBy/Announcement.announcementDate desc";
-        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
-        final String builtURL = loader.buildURL(defaultLanguage);
-        Assert.assertEquals(expected, builtURL);
+        final RemoteAnnouncementsLoaderImpl defaultLoader = new RemoteAnnouncementsLoaderImpl();
+        final String expected = "/api/content/render/false/query/+contentType:Announcement%20+languageId:1%20+deleted:false%20+live:true%20/orderby/Announcement.announcementDate%20desc";
+        final String builtURL = defaultLoader.buildURL();
+        Assert.assertTrue(builtURL.endsWith(expected));
+
+        final RemoteAnnouncementsLoaderImpl urlSupplied = new RemoteAnnouncementsLoaderImpl(
+                () -> DOTCMS_COM);
+
+        final String prodURL = DOTCMS_COM + expected;
+
+        final String builtURL2 = urlSupplied.buildURL();
+        Assert.assertEquals(prodURL, builtURL2);
+
     }
 
     /**
@@ -50,9 +59,9 @@ public class RemoteAnnouncementsLoaderIntegrationTest {
      */
     @Test
     public void testAnnouncementConversion() throws JsonProcessingException {
-
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode node = mapper.readTree(jsonString);
+        final RemoteAnnouncementsLoaderImpl loader = new RemoteAnnouncementsLoaderImpl();
+        final ObjectMapper mapper = new ObjectMapper();
+        final JsonNode node = mapper.readTree(jsonString);
         final List<Announcement> announcements = loader.toAnnouncements(node);
         Assert.assertNotNull(announcements);
         Assert.assertEquals(1, announcements.size());
@@ -138,6 +147,21 @@ public class RemoteAnnouncementsLoaderIntegrationTest {
 
          LocalDateTime localDateTime6 = LocalDateTime.parse(dateTimeString6, formatter);
          Assert.assertNotNull(localDateTime6.toInstant(java.time.ZoneOffset.UTC));
+
+    }
+
+    /**
+     * Given scenario: We want to make sure we can hit the remote server and get a response
+     * Expected result: We test that the loader can hit prod and get a response back that's it no announcement validation is performed
+     */
+    @Test
+    public void TestAnnouncementsLoader() {
+
+        final RemoteAnnouncementsLoaderImpl urlSupplied = new RemoteAnnouncementsLoaderImpl(
+                () -> DOTCMS_COM);
+
+        final List<Announcement> announcements = urlSupplied.loadAnnouncements();
+        Assert.assertNotNull(announcements);
 
     }
 
