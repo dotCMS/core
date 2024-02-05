@@ -91,7 +91,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ macos-13-xlarge, macOS-latest, ubuntu-latest ] # macos-13-xlarge, macOS-latest, ubuntu-latest, windows-latest
+        os: [ ubuntu-latest ] # macos-13-xlarge, macOS-latest, ubuntu-latest, windows-latest
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -286,6 +286,9 @@ jobs:
               rc_suffix=""
               
           fi;
+
+          VERSION=$(echo "$PACKAGE_VERSION" | sed 's/-SNAPSHOT//I')
+          echo "$NPM_PACKAGE_VERSION=$VERSION" >> $GITHUB_ENV
           echo "PACKAGE_VERSION_SUFFIX=$rc_suffix" >> $GITHUB_ENV
           echo "PACKAGE_VERSION_TAG=$tag" >> $GITHUB_ENV
 
@@ -306,7 +309,7 @@ jobs:
           cp ${{ github.workspace }}/tools/dotcms-cli/README.md .
           
           echo "Adding package.json file"
-          jinja2 package.j2 -D fullPackageName=${PACKAGE_NAME}-${PACKAGE_VERSION} -D packageName=${PACKAGE_NAME} -D npmPackageName=${NPM_PACKAGE_NAME} -D packageVersion=${PACKAGE_VERSION} -D packageVersionSuffix=${PACKAGE_VERSION_SUFFIX} --format json -o package.json
+          jinja2 package.j2 -D fullPackageName=${PACKAGE_NAME}-${PACKAGE_VERSION} -D packageName=${PACKAGE_NAME} -D npmPackageName=${NPM_PACKAGE_NAME} -D packageVersion=${VERSION} -D packageVersionSuffix=${PACKAGE_VERSION_SUFFIX} --format json -o package.json
           rm -f package.j2
           
           cat package.json
