@@ -16,6 +16,7 @@
     &Checked {
         border: $check-checked-border;
         background: url($check-checked-icon) center center no-repeat;
+        background-color: $white;
     }
 
     &Hover:not(.dijitCheckBoxDisabled, .dijitCheckBoxCheckedDisabled) {
