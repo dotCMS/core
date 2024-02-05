@@ -20,8 +20,8 @@ function getGlobalBinPath() {
 }
 
 function validatePackageConfig(packageJson) {
-    if (!packageJson.version || !packageJson.packageName || !packageJson.packageNameWithVersion || !packageJson.alias || !packageJson.bin || typeof packageJson.bin !== "object") {
-        throw new Error("Invalid package.json. 'version', 'packageName', 'packageNameWithVersion', 'alias' and 'bin' must be specified.");
+    if (!packageJson.version || !packageJson.packageName || !packageJson.alias || !packageJson.bin || typeof packageJson.bin !== "object") {
+        throw new Error("Invalid package.json. 'version', 'packageName', 'alias' and 'bin' must be specified.");
     }
 }
 
@@ -45,13 +45,11 @@ async function parsePackageJson() {
         const packageJson = JSON.parse(packageJsonContent.toString());
         validatePackageConfig(packageJson);
 
-        const packageNameWithVersion = packageJson.packageNameWithVersion;
         const packageName = packageJson.packageName;
         const alias = packageJson.alias;
         const binaries = packageJson.bin;
-        const packageVersion = packageJson.version.replace(/^v/, "");
         const extension = platform === "win32" ? ".exe" : "";
-        const binaryKey = `${packageNameWithVersion}-${platform}-${architecture}`;
+        const binaryKey = `${packageName}-${platform}-${architecture}`;
         const binaryPath = binaries[binaryKey];
 
         if (binaryPath) {
@@ -61,12 +59,8 @@ async function parsePackageJson() {
         }
 
         return {
-            packageNameWithVersion,
-            packageName,
             alias,
-            binaryKey,
             binaryPath,
-            packageVersion,
             extension
         };
     } catch (error) {
