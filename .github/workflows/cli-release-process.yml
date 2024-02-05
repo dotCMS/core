@@ -267,36 +267,34 @@ jobs:
         run: |
           if [ "$SNAPSHOT_VERSION" = "true" ]; then
               echo "Snapshot version found.";
-              tag="rc"
+              TAG="rc"
               if npm view $PACKAGE_NAME &> /dev/null; then
                       echo "${PACKAGE_NAME} found.";
-                      last_rc_version=$(npm view $PACKAGE_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
-                      echo $last_rc_version
-                      next_rc_version=$(echo "$last_rc_version" | awk -F '-rc' '{print $1 "-rc" $2 + 1}')
-                      echo $next_rc_version
-                      rc_suffix=$(echo "$next_rc_version" | sed -n 's/.*-rc\([0-9]*\)/-rc\1/p')
-                      echo $rc_suffix
+                      LAST_RC_VERSION=$(npm view $PACKAGE_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
+                      echo $LAST_RC_VERSION
+                      NEXT_RC_VERSION=$(echo "$LAST_RC_VERSION" | awk -F '-rc' '{print $1 "-rc" $2 + 1}')
+                      echo $NEXT_RC_VERSION
+                      RC_SUFFIX=$(echo "$NEXT_RC_VERSION" | sed -n 's/.*-rc\([0-9]*\)/-rc\1/p')
+                      echo $RC_SUFFIX
               else
                       echo "${PACKAGE_NAME} not found.";
-                      rc_suffix="-rc1"
+                      RC_SUFFIX="-rc1"
               fi;
           else
               echo "Release version found.";
-              tag="latest"
-              rc_suffix=""
+              TAG="latest"
+              RC_SUFFIX=""
               
           fi;
 
           VERSION=$(echo "$PACKAGE_VERSION" | sed 's/-SNAPSHOT//I')
-          echo "NPM_PACKAGE_VERSION=${VERSION}${$rc_suffix}" >> $GITHUB_ENV
-          echo "PACKAGE_VERSION_TAG=$tag" >> $GITHUB_ENV
-#          echo "PACKAGE_VERSION_SUFFIX=$rc_suffix" >> $GITHUB_ENV
+          echo "NPM_PACKAGE_VERSION=${VERSION}${RC_SUFFIX}" >> $GITHUB_ENV
+          echo "PACKAGE_VERSION_TAG=$TAG" >> $GITHUB_ENV
           
       - name: 'NPM Package setup'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
         env:
           PACKAGE_VERSION: ${{ github.event.inputs.version }}
-          PACKAGE_VERSION_SUFFIX: ${{ steps.generate-version-suffix.outputs.PACKAGE_VERSION_SUFFIX }}
         run: |          
           echo "Adding bin folder with all the binaries"
           mkdir -p bin
@@ -309,7 +307,7 @@ jobs:
           cp ${{ github.workspace }}/tools/dotcms-cli/README.md .
           
           echo "Adding package.json file"
-          jinja2 package.j2 -D fullPackageName=${PACKAGE_NAME}-${PACKAGE_VERSION} -D packageName=${PACKAGE_NAME} -D npmPackageName=${NPM_PACKAGE_NAME} -D npmPackageVersion=${NPM_PACKAGE_VERSION} --format json -o package.json
+          jinja2 package.j2 -D fullPackageName=${PACKAGE_NAME}-${PACKAGE_VERSION} -D packageName=${PACKAGE_NAME} -D npmPackageName=${NPM_PACKAGE_NAME} -D npmPackageVersion=${NPM_PACKAGE_VERSION} -D packageVersion=${PACKAGE_VERSION} --format json -o package.json
           rm -f package.j2
           
           cat package.json
