@@ -1,5 +1,5 @@
 'use client';
-// TODO: meter esto en otro lugar
+// TODO: move this to sdk/next/ or sdk/experiments/next/components
 
 import ExperimentContent from '@/components/experiments/experimentContent';
 import { createClient, JitsuProvider } from '@jitsu/react';
