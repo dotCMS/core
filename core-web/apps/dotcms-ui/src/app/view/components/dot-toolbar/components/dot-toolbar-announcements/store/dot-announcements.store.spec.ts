@@ -51,7 +51,7 @@ describe('AnnouncementsStore', () => {
                 announcementDateAsISO8601: '2024-01-31T17:51',
                 identifier: 'test-announcement-id',
                 inode: '123',
-                url: 'https://www.example.com?utm_source=platform&utm_medium=demo.dotcms.com&utm_campaign=announcement'
+                url: 'https://www.example.com?utm_source=platform&utm_medium=announcement&utm_campaign=demo.dotcms.com'
             }
         ];
         spectator.service.load();
@@ -86,7 +86,7 @@ describe('AnnouncementsStore', () => {
         spectator.service.load();
         spectator.service.state$.subscribe((state) => {
             expect(state.announcements[0].url).toBe(
-                'https://www.example.com?utm_source=platform&utm_medium=demo.dotcms.com&utm_campaign=announcement'
+                'https://www.example.com?utm_source=platform&utm_medium=announcement&utm_campaign=demo.dotcms.com'
             );
             done();
         });
