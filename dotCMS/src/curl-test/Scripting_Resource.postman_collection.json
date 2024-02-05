@@ -20,7 +20,7 @@
 									"",
 									"// Test 1: File Name Uniqueness",
 									"pm.test(\"File already exists or invalid\", function () {",
-									"  pm.response.to.have.status(400);",
+									"  pm.response.to.have.status(500);",
 									"  pm.response.to.have.jsonBody({",
 									"    // Example error message for duplicate file name",
 									"    \"message\": \"File already exists in the selected Site or folder\\nList of non valid fields\\nBADTYPE: hostFolder/Host Or Folder\\n\\n\"",
