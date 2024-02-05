@@ -263,6 +263,7 @@ jobs:
         id: generate-version-suffix
         env:
           PACKAGE_NAME: ${{ env.NPM_PACKAGE_NAME }}
+          PACKAGE_VERSION: ${{ github.event.inputs.version }}
           SNAPSHOT_VERSION: ${{ contains(github.event.inputs.version, 'SNAPSHOT') }}
         run: |
           if [ "$SNAPSHOT_VERSION" = "true" ]; then
@@ -311,6 +312,7 @@ jobs:
           rm -f package.j2
           
           cat package.json
+          cat src/postinstall.js
           
       - name: 'NPM Package tree'
         run: ls -R ${{ github.workspace }}/tools/dotcms-cli/npm/
