@@ -20,8 +20,8 @@ function getGlobalBinPath() {
 }
 
 function validatePackageConfig(packageJson) {
-    if (!packageJson.version || !packageJson.packageName || !packageJson.fullPackageName || !packageJson.bin || typeof packageJson.bin !== "object") {
-        throw new Error("Invalid package.json. 'version', 'packageName', 'fullPackageName' and 'bin' must be specified.");
+    if (!packageJson.version || !packageJson.packageName || !packageJson.fullPackageName || !packageJson.alias || !packageJson.bin || typeof packageJson.bin !== "object") {
+        throw new Error("Invalid package.json. 'version', 'packageName', 'fullPackageName', 'alias' and 'bin' must be specified.");
     }
 }
 
@@ -47,6 +47,7 @@ async function parsePackageJson() {
 
         const fullPackageName = packageJson.fullPackageName;
         const packageName = packageJson.packageName;
+        const alias = packageJson.alias;
         const binaries = packageJson.bin;
         const packageVersion = packageJson.version.replace(/^v/, "");
         const extension = platform === "win32" ? ".exe" : "";
@@ -62,6 +63,7 @@ async function parsePackageJson() {
         return {
             fullPackageName,
             packageName,
+            alias,
             binaryKey,
             binaryPath,
             packageVersion,
@@ -113,7 +115,7 @@ async function installCli() {
     const currentDir = __dirname;
     const targetDir = path.join(currentDir, '..');
     const binarySource = path.join(targetDir, config.binaryPath);
-    const binaryDestination = config.packageName;
+    const binaryDestination = config.alias;
 
     console.info("Installing cli:", binarySource, binaryDestination);
 
@@ -125,7 +127,7 @@ async function uninstallCli() {
 
     try {
         const globalBinPath = getGlobalBinPath();
-        const symlinkPath = path.join(globalBinPath, config.packageName + config.extension);
+        const symlinkPath = path.join(globalBinPath, config.alias + config.extension);
 
         console.info("Removing symlink:", symlinkPath);
 
