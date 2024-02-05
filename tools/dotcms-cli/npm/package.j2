@@ -5,7 +5,7 @@
     "postinstall": "node src/postinstall.js install",
     "postuninstall": "node src/postinstall.js uninstall && npm prune"
   },
-  "bin": {
+  "binaries": {
     "{{ packageName }}-darwin-arm64": "bin/{{ packageName }}-{{ packageVersion }}-osx-aarch_64",
     "{{ packageName }}-darwin-x64": "bin/{{ packageName }}-{{ packageVersion }}-osx-x86_64",
     "{{ packageName }}-linux-x64": "bin/{{ packageName }}-{{ packageVersion }}-linux-x86_64"
