@@ -262,23 +262,22 @@ jobs:
       - name: 'Generate package version suffix'
         id: generate-version-suffix
         env:
-          PACKAGE_NAME: ${{ env.NPM_PACKAGE_NAME }}
           PACKAGE_VERSION: ${{ github.event.inputs.version }}
           SNAPSHOT_VERSION: ${{ contains(github.event.inputs.version, 'SNAPSHOT') }}
         run: |
           if [ "$SNAPSHOT_VERSION" = "true" ]; then
               echo "Snapshot version found.";
               TAG="rc"
-              if npm view $PACKAGE_NAME &> /dev/null; then
-                      echo "${PACKAGE_NAME} found.";
-                      LAST_RC_VERSION=$(npm view $PACKAGE_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
+              if npm view $NPM_PACKAGE_NAME &> /dev/null; then
+                      echo "${NPM_PACKAGE_NAME} found.";
+                      LAST_RC_VERSION=$(npm view $NPM_PACKAGE_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
                       echo $LAST_RC_VERSION
                       NEXT_RC_VERSION=$(echo "$LAST_RC_VERSION" | awk -F '-rc' '{print $1 "-rc" $2 + 1}')
                       echo $NEXT_RC_VERSION
                       RC_SUFFIX=$(echo "$NEXT_RC_VERSION" | sed -n 's/.*-rc\([0-9]*\)/-rc\1/p')
                       echo $RC_SUFFIX
               else
-                      echo "${PACKAGE_NAME} not found.";
+                      echo "${NPM_PACKAGE_NAME} not found.";
                       RC_SUFFIX="-rc1"
               fi;
           else
@@ -308,7 +307,7 @@ jobs:
           cp ${{ github.workspace }}/tools/dotcms-cli/README.md .
           
           echo "Adding package.json file"
-          jinja2 package.j2 -D fullPackageName=${PACKAGE_NAME}-${PACKAGE_VERSION} -D packageName=${PACKAGE_NAME} -D npmPackageName=${NPM_PACKAGE_NAME} -D npmPackageVersion=${NPM_PACKAGE_VERSION} -D packageVersion=${PACKAGE_VERSION} --format json -o package.json
+          jinja2 package.j2 -D fullPackageName=${PACKAGE_NAME}-${PACKAGE_VERSION} -D packageName=${NPM_PACKAGE_NAME} -D npmPackageName=${NPM_PACKAGE_NAME} -D npmPackageVersion=${NPM_PACKAGE_VERSION} -D packageVersion=${PACKAGE_VERSION} --format json -o package.json
           rm -f package.j2
           
           cat package.json
