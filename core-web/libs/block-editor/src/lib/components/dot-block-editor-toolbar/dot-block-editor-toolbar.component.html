@@ -1,10 +1,18 @@
-@for(item of items; track $index;) { @if( !item?.divider ) {
-<p-button (click)="item.command()" styleClass="p-button-toolbar">
-    <span
-        class="material-icons"
-        [style]="{ fontSize: '18px' }"
-        [innerHTML]="item.icon | safeHtml"></span>
-</p-button>
-} @else {
-<div class="divider"></div>
-} }
+<div class="toolbar-container">
+    @for( group of groups; track $index; let last = $last) { @for(item of group; track $index;) {
+    <p-button
+        [styleClass]="
+            activeMarks[item.key]
+                ? 'p-editor-button-toolbar p-editor-button-toolbar-active'
+                : 'p-editor-button-toolbar'
+        "
+        (click)="item.command()">
+        <span
+            class="material-icons"
+            [style]="{ fontSize: '18px' }"
+            [innerHTML]="item.icon | safeHtml"></span>
+    </p-button>
+    } @if (!last) {
+    <div class="divider"></div>
+    } }
+</div>

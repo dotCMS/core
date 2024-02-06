@@ -75,9 +75,16 @@
     }
 
     // Toolbar buttons
-    &.p-button-toolbar {
+    &.p-editor-button-toolbar {
+        border-radius: $border-radius-xs;
         color: $white;
         background: transparent;
+
+        &:focus,
+        &:hover,
+        &.p-editor-button-toolbar-active {
+            background: $color-palette-gray-400;
+        }
     }
 
     &.p-button-link.p-button-secondary {

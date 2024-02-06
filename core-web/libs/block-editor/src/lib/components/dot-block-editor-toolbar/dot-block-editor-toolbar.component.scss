@@ -3,10 +3,21 @@
 :host {
     background-color: $black;
     display: flex;
+    justify-content: center;
     width: 100%;
-    min-height: 40px;
+    border: $color-palette-gray-500 solid 1px;
+    border-bottom: 0;
+    border-radius: $border-radius-sm $border-radius-sm 0 0;
+    overflow: hidden;
+}
+
+.toolbar-container {
     align-items: center;
-    // border-radius: $border-radius-sm $border-radius-sm 0 0;
+    background-color: $black;
+    display: flex;
+    min-height: 40px;
+    width: fit-content;
+    flex-wrap: wrap;
 }
 
 .divider {

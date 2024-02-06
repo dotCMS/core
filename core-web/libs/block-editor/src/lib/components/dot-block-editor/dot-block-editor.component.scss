@@ -8,11 +8,11 @@
 
     .editor-wrapper {
         display: block;
-        border-radius: $border-radius-sm;
+        border: $color-palette-gray-500 solid 1px;
+        border-radius: 0 0 $border-radius-sm $border-radius-sm;
         overflow: hidden;
         position: relative;
         resize: vertical;
-        outline: $color-palette-gray-500 solid 1px;
     }
 
     .editor-wrapper--default {
