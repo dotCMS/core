@@ -13,7 +13,7 @@
     }
 }
 
-.dot-key-value-table-input-row {
+.dot-key-value-input {
     border-bottom: 1px solid $color-palette-gray-200;
 
     &:hover {
@@ -26,7 +26,7 @@
     }
 }
 
-.dot-key-value-table-input-row td {
+.dot-key-value-input td {
     padding: 0;
     height: 4rem;
     vertical-align: middle;
@@ -40,13 +40,13 @@
     }
 }
 
-.dot-key-value-table-input-row__variables-actions {
+.dot-key-value-input__variables-actions {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: $spacing-1;
 }
 
-.dot-key-value-table-input-row__variables-hidden {
+.dot-key-value-input__variables-hidden {
     text-align: center;
 }

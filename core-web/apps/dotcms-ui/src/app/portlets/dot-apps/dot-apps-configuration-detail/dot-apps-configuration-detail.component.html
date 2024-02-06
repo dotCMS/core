@@ -10,16 +10,14 @@
                     (click)="goToApps(apps.key)"
                     pButton
                     data-testid="cancelBtn"
-                    type="button"
-                ></button>
+                    type="button"></button>
                 <button
                     [label]="'Save' | dm"
                     [disabled]="!formValid"
                     (click)="onSubmit()"
                     pButton
                     data-testid="saveBtn"
-                    type="button"
-                ></button>
+                    type="button"></button>
             </div>
         </div>
     </div>
@@ -29,17 +27,14 @@
                 [appConfigured]="apps.sites[0].configured"
                 [formFields]="formFields"
                 (data)="formData = $event"
-                (valid)="formValid = $event"
-            ></dot-apps-configuration-detail-form>
+                (valid)="formValid = $event"></dot-apps-configuration-detail-form>
             <div *ngIf="apps.allowExtraParams">
                 <h5>{{ 'apps.custom.properties' | dm }}</h5>
                 <dot-key-value-ng
                     [autoFocus]="false"
                     [showHiddenField]="true"
                     [variables]="dynamicVariables"
-                    (delete)="deleteDynamicVariable($event)"
-                    (save)="saveDynamicVariable($event)"
-                ></dot-key-value-ng>
+                    (updatedList)="updateVariables($event)" />
             </div>
         </div>
     </div>
