@@ -22,9 +22,13 @@ describe('DotToolbarAnnouncementsComponent', () => {
         'announcements.knowledge.contact.us': 'Contact Us',
         'announcements.contact.customer.support': 'Customer Support',
         'announcements.contact.professional.services': 'Professional Services',
+        'announcements.contact.request.feature': 'Request a Feature',
+        'announcements.contact.report.bug': 'Report a Bug',
         'announcements.knowledge.center.documentation': 'Documentation',
         'announcements.knowledge.center.blog': 'Blog',
-        'announcements.knowledge.center.forum': 'User Forums'
+        'announcements.knowledge.center.github': 'GitHub Repository',
+        'announcements.knowledge.center.training': 'Online Training',
+        'announcements.knowledge.center.forum': 'Forum'
     });
     const siteServiceMock = new SiteServiceMock();
     const createComponent = createComponentFactory({
