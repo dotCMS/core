@@ -1,4 +1,4 @@
-package com.dotcms.cli.common;
+package com.dotcms.cli.exception;
 
 import static org.apache.commons.lang3.StringUtils.*;
 

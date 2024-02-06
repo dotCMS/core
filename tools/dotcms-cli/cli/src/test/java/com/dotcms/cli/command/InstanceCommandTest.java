@@ -5,6 +5,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.URI;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -16,7 +17,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
-public class InstanceCommandTest extends CommandTest {
+class InstanceCommandTest extends CommandTest {
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -24,12 +25,14 @@ public class InstanceCommandTest extends CommandTest {
     }
 
     /**
-     * Scenario: Only pass the param list
+     * Scenario: Build a yml file with available profiles then Only pass the param list
      * Expected: We should be able to see the list of available instances
      */
     @Test
     @Order(2)
-    void Test_Command_Instance_Pass_Only_List_Param() {
+    void Test_Command_Instance_Pass_Only_List_Param() throws IOException {
+
+            resetServiceProfiles().persist(ServiceBean.builder().name("demo").active(false).uri(URI.create("https://demo.dotcms.com/api")).build());
 
             final CommandLine commandLine = createCommand();
             final StringWriter writer = new StringWriter();

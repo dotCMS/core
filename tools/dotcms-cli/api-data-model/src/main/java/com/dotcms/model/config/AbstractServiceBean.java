@@ -17,7 +17,8 @@ public interface AbstractServiceBean {
     default boolean active() {return  false;}
 
     @NotNull
-    default URI uri() {return URI.create("http://localhost:8080");}
+    @Value.Default
+    default URI uri() {return URI.create("http://localhost:8080/api");}
 
     @Nullable
     CredentialsBean credentials();

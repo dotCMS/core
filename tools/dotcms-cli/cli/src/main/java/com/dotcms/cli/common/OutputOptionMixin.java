@@ -4,6 +4,7 @@ import static io.quarkus.devtools.messagewriter.MessageIcons.ERROR_ICON;
 import static io.quarkus.devtools.messagewriter.MessageIcons.WARN_ICON;
 import static org.apache.commons.lang3.StringUtils.abbreviate;
 
+import com.dotcms.cli.exception.ExceptionHandler;
 import io.quarkus.arc.Arc;
 import io.quarkus.devtools.messagewriter.MessageWriter;
 import io.quarkus.logging.Log;
@@ -14,6 +15,7 @@ import java.util.List;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.ColorScheme;
 import picocli.CommandLine.Model.CommandSpec;
+import picocli.CommandLine.ParameterException;
 
 public class OutputOptionMixin implements MessageWriter {
 
@@ -177,10 +179,13 @@ public class OutputOptionMixin implements MessageWriter {
 
         final ExceptionHandler exHandler = getExceptionHandler();
 
-        if (ex instanceof CommandLine.ParameterException) {
+        // Handle ParameterException
+        if (ex instanceof ParameterException) {
             CommandLine.UnmatchedArgumentException.printSuggestions(
                     (CommandLine.ParameterException) ex, out());
         }
+
+        //Handle ExecutionException
 
         final Exception unwrappedEx = exHandler.unwrap(ex);
 

@@ -3,8 +3,6 @@ package com.dotcms.api.client.model;
 
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationAPI;
-import com.dotcms.api.client.model.RestClientFactory;
-import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.authentication.APITokenRequest;
 import com.dotcms.model.authentication.TokenEntity;
@@ -35,10 +33,14 @@ class RestClientFactoryIT {
         serviceManager.removeAll().persist(ServiceBean.builder().name("default").active(true).build());
     }
 
+    /**
+     * Given scenario: We build a RestClientFactory using the default profile
+     * Expected result: The RestClientFactory should be able to create a client for the AuthenticationAPI and get a token
+     */
     @Test
-    public void Config_Test() {
+    void TestAPIClientFactorySetup() {
         final AuthenticationAPI authenticationApi = apiClientFactory.getClient(AuthenticationAPI.class);
-        APITokenRequest request = APITokenRequest.builder().user("admin@DOTcms.com").password("admin".toCharArray()).expirationDays(1).build();
+        APITokenRequest request = APITokenRequest.builder().user("admin@dotCMS.com").password("admin".toCharArray()).expirationDays(1).build();
         ResponseEntityView<TokenEntity> tokenResponse = authenticationApi.getToken(request);
         JsonObject token = JWT.parse(new String(tokenResponse.entity().token()));
         JsonPath path = JsonPath.from(token.encode());

@@ -1,13 +1,15 @@
 package com.dotcms.cli.command;
 
 import com.dotcms.api.client.model.AuthenticationParam;
+import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.command.contenttype.ContentTypeCommand;
 import com.dotcms.cli.command.files.FilesCommand;
 import com.dotcms.cli.command.language.LanguageCommand;
 import com.dotcms.cli.command.site.SiteCommand;
-import com.dotcms.cli.common.ExceptionHandlerImpl;
-import com.dotcms.cli.common.LoggingExecutionStrategy;
+import com.dotcms.cli.exception.ExceptionHandlerImpl;
+import com.dotcms.cli.common.DotExecutionStrategy;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.model.annotation.SecuredPassword;
 import io.quarkus.arc.Unremovable;
 import io.quarkus.picocli.runtime.PicocliCommandLineFactory;
 import io.quarkus.picocli.runtime.annotations.TopCommand;
@@ -33,8 +35,9 @@ import picocli.CommandLine.ParameterException;
         header = "dotCMS cli",
         subcommands = {
                 //-- Miscellaneous stuff
-                StatusCommand.class,
+                InitCommand.class,
                 InstanceCommand.class,
+                StatusCommand.class,
                 LoginCommand.class,
                 PushCommand.class,
                 PullCommand.class,
@@ -49,17 +52,31 @@ import picocli.CommandLine.ParameterException;
                 FilesCommand.class
         }
 )
-public class EntryCommand  {
+public class EntryCommand  implements DotCommand{
 
     // Declared here, so we have an instance available via Arc container
-    @Unremovable
     @Inject
     ExceptionHandlerImpl exceptionHandler;
 
-    @Unremovable
     @Inject
     AuthenticationParam authenticationParam;
 
+    @SecuredPassword
+    @Inject
+    ServiceManager serviceManager;
+
+    @CommandLine.Mixin(name = "output")
+    protected OutputOptionMixin output;
+
+    @Override
+    public String getName() {
+        return null;
+    }
+
+    @Override
+    public OutputOptionMixin getOutput() {
+        return output;
+    }
 }
 
 @ApplicationScoped
@@ -122,7 +139,7 @@ class CustomConfigurationUtil {
 
         cmdLine.setCaseInsensitiveEnumValuesAllowed(true)
                 .setExecutionStrategy(
-                        new LoggingExecutionStrategy(new CommandLine.RunLast()))
+                        new DotExecutionStrategy(new CommandLine.RunLast()))
                 .setExecutionExceptionHandler((ex, commandLine, parseResult) -> {
                     final Object object = commandLine.getCommand();
                     if (object instanceof DotCommand) {

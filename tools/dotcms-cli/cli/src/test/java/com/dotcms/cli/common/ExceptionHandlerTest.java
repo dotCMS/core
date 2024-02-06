@@ -1,6 +1,8 @@
 package com.dotcms.cli.common;
 
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
+import com.dotcms.cli.exception.ExceptionHandlerImpl;
+import com.dotcms.cli.exception.ExceptionMappingConfig;
 import io.quarkus.test.junit.QuarkusTest;
 import java.util.concurrent.CompletionException;
 import javax.inject.Inject;
