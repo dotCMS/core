@@ -400,9 +400,9 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 var editRef = '';
 
             if(structure_id == '<%=calendarEventInode %>'){
-              editRef = " editEvent('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ") ";
+              editRef = " editEvent('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + typeVariable + "') ";
             }else{
-              editRef = " editContentlet('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", ,'" + typeVariable + "') ";
+              editRef = " editContentlet('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + typeVariable + "') ";
             }
 
             var ref = "<a onMouseOver=\"style.cursor='pointer'\" href=\"javascript: " + editRef + "\">";
@@ -1934,7 +1934,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 			var typeVariable = data.typeVariable;
 
 			if (data.structureInode == '<%=calendarEventInode %>') {
-				editEvent(inode, '<%=user.getUserId()%>', '<%= referer %>', liveSt, workingSt, write);
+				editEvent(inode, '<%=user.getUserId()%>', '<%= referer %>', liveSt, workingSt, write, typeVariable);
 			}else{
 				editContentlet(inode, '<%=user.getUserId()%>', '<%= referer %>', liveSt, workingSt, write, typeVariable);
 			}
@@ -1964,7 +1964,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 			if ((live || working) && (read=="1") && (!deleted)) {
 				if(structure_id == '<%=calendarEventInode %>'){
 					actions.push({ label: write === '1' ? '<%=LanguageUtil.get(pageContext, "Edit") %>' : '<%=LanguageUtil.get(pageContext, "View") %>',
-						action: () => { editEvent(data.inode, '<%= user.getUserId() %>', '<%= referer %>', liveSt, workingSt, write)}
+						action: () => { editEvent(data.inode, '<%= user.getUserId() %>', '<%= referer %>', liveSt, workingSt, write, typeVariable)}
 					});
 				} else {
 					actions.push({ label: write === '1' ? '<%=LanguageUtil.get(pageContext, "Edit") %>' : '<%=LanguageUtil.get(pageContext, "View") %>',
@@ -2141,9 +2141,10 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                     holderDiv.setAttribute('data-live', liveSt);
                     holderDiv.setAttribute('data-working', workingSt);
                     holderDiv.setAttribute('data-write', write);
+                    holderDiv.setAttribute('data-typevariable', typeVariable);
                     holderDiv.addEventListener('click', function(e){
                         let dataSet =  e.currentTarget.dataset;
-                        editContentlet(dataSet["inode"],'<%= user.getUserId() %>','<%= referer %>', dataSet["live"] , dataSet["working"] , dataSet["write"], dataSet["typeVariable"] );
+                        editContentlet(dataSet["inode"],'<%= user.getUserId() %>','<%= referer %>', dataSet["live"] , dataSet["working"] , dataSet["write"], dataSet["typevariable"] );
                     }, false);
 
 
@@ -2238,9 +2239,9 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                     if ((live || working) && (read=="1") && (!deleted)) {
                             if(structure_id == '<%=calendarEventInode %>'){
                                 if (write=="1"){
-                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
+                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ",'" + typeVariable + "');\"><%=LanguageUtil.get(pageContext, "Edit") %></div>";
                                 }else{
-                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "View") %></div>";
+                                popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\"editIcon\" onClick=\"editEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ",'" + typeVariable + "');\"><%=LanguageUtil.get(pageContext, "View") %></div>";
                                 }
                             }else{
                                 if (write=="1"){
