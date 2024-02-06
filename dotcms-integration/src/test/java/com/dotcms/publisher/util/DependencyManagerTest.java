@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -461,7 +462,6 @@ public class DependencyManagerTest {
 
     }
 
-
     private void createBundle(final PushPublisherConfig config, final Contentlet contentlet)
             throws DotDataException {
         createBundle(config,contentlet,"");
@@ -538,6 +538,14 @@ public class DependencyManagerTest {
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
     }
 
+    private static void createShallowPushFilter(){
+        final Map<String,Object> filtersMap =
+                ImmutableMap.of("dependencies",false,"relationships",false,"forcePush",false);
+        final FilterDescriptor filterDescriptor =
+                new FilterDescriptor("ShallowPush.yml","Only Selected Items",filtersMap,false,"DOTCMS_BACK_END_USER");
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
+    }
+
     /**
      * <b>Method to test:</b> PushPublishigDependencyProcesor.tryToAdd(PusheableAsset, Object, String) <p>
      * <b>Given Scenario:</b> Push publish a page with the filter 'Only Selected Items' selected.<p>
@@ -553,7 +561,11 @@ public class DependencyManagerTest {
         final Host host = new SiteDataGen().nextPersisted();
         final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
         //Create a bundle with filter 'Only Selected Items'
-        createBundle(config, htmlPageAsset, "ShallowPush.yml");
+        final String filterKey = "ShallowPush.yml";
+        if(!APILocator.getPublisherAPI().existsFilterDescriptor(filterKey)){
+            createShallowPushFilter();
+        }
+        createBundle(config, htmlPageAsset, filterKey);
         DependencyManager dependencyManager = new DependencyManager(DependencyManagerTest.user, config);
         dependencyManager.setDependencies();
 
@@ -577,6 +589,11 @@ public class DependencyManagerTest {
         final Host host = new SiteDataGen().nextPersisted();
         final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
         //Create a bundle with filter 'Only Selected Items'
+        final String filterKey = "ShallowPush.yml";
+        if(!APILocator.getPublisherAPI().existsFilterDescriptor(filterKey)){
+            createShallowPushFilter();
+        }
+        createBundle(config, htmlPageAsset, filterKey);
         createBundle(config, htmlPageAsset, "ShallowPush.yml");
         DependencyManager dependencyManager = new DependencyManager(DependencyManagerTest.user, config);
         dependencyManager.setDependencies();
