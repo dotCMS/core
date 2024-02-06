@@ -71,10 +71,11 @@
 }
 
 .announcements__about {
-    display: flex;
+    display: grid;
     flex-direction: column;
     gap: $spacing-3;
-    margin: $spacing-3 0;
+    margin: $spacing-3;
+    grid-template-columns: 1fr 1fr;
 }
 
 .announcements__link {
