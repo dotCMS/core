@@ -11,6 +11,7 @@
             [href]="item.url"
             target="_blank"
             rel="noopener noreferrer"
+            data-testId="announcement_link"
             aria-labelledby="announcement-label date-label">
             <div class="announcements__content">
                 <span class="announcements__label">{{ item.title }}</span>
@@ -23,21 +24,30 @@
 
 <div class="announcements__container">
     <i class="pi pi-external-link"></i>
-    <a class="announcements__link" [href]="linkToDotCms()" data-testId="announcement_link">{{
-        'announcements.show.all' | dm
-    }}</a>
+    <a
+        class="announcements__link"
+        [href]="linkToDotCms()"
+        target="_blank"
+        data-testId="announcement_link_all"
+        rel="noopener"
+        >{{ 'announcements.show.all' | dm }}</a
+    >
 </div>
 
 <h5 class="announcements__title">{{ 'announcements.knowledge.center' | dm }}</h5>
 <div class="announcements__about">
     @for (item of knowledgeCenterLinks(); track item.id;) {
-    <a [href]="item.url" target="_blank" rel="noopener">{{ item.label }}</a>
+    <a [href]="item.url" data-testId="announcement_link" target="_blank" rel="noopener">{{
+        item.label
+    }}</a>
     }
 </div>
 
 <h5 class="announcements__title">{{ 'announcements.knowledge.contact.us' | dm }}</h5>
 <div class="announcements__about">
     @for (item of contactLinks(); track item.id;) {
-    <a [href]="item.url" target="_blank" rel="noopener">{{ item.label }}</a>
+    <a [href]="item.url" data-testId="announcement_link" target="_blank" rel="noopener">{{
+        item.label
+    }}</a>
     }
 </div>

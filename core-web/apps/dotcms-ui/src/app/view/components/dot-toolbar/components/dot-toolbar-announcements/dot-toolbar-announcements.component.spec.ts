@@ -22,9 +22,13 @@ describe('DotToolbarAnnouncementsComponent', () => {
         'announcements.knowledge.contact.us': 'Contact Us',
         'announcements.contact.customer.support': 'Customer Support',
         'announcements.contact.professional.services': 'Professional Services',
+        'announcements.contact.request.feature': 'Request a Feature',
+        'announcements.contact.report.bug': 'Report a Bug',
         'announcements.knowledge.center.documentation': 'Documentation',
         'announcements.knowledge.center.blog': 'Blog',
-        'announcements.knowledge.center.forum': 'User Forums'
+        'announcements.knowledge.center.github': 'GitHub Repository',
+        'announcements.knowledge.center.training': 'Online Training',
+        'announcements.knowledge.center.forum': 'Forum'
     });
     const siteServiceMock = new SiteServiceMock();
     const createComponent = createComponentFactory({
@@ -67,7 +71,14 @@ describe('DotToolbarAnnouncementsComponent', () => {
 
     it('should have a "Show All" link', () => {
         spectator.detectChanges();
-        const showAllLink = spectator.query(byTestId('announcement_link'));
+        const showAllLink = spectator.query(byTestId('announcement_link_all'));
         expect(showAllLink).toBeTruthy();
+        expect(showAllLink.getAttribute('target')).toBe('_blank');
+    });
+
+    it('should have a target blank on the announcements link', () => {
+        spectator.detectChanges();
+        const announcementLink = spectator.query(byTestId('announcement_link'));
+        expect(announcementLink.getAttribute('target')).toBe('_blank');
     });
 });
