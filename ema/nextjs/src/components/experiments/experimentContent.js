@@ -2,16 +2,17 @@
 // TODO: Pass this to sdk/nextjs
 
 import { useEffect } from 'react';
-import { ExperimentHelper } from '../../../public/experiment_logic';
+
 import { useJitsu } from '@jitsu/react';
 import { useRouter } from 'next/navigation';
+import ExperimentHelper from '../../../public/experiment_logic';
 
 const helper = new ExperimentHelper();
 
 function ExperimentContent({ children }) {
     const router = useRouter();
 
-    const { trackPageView, id, set, unset } = useJitsu();
+    const { trackPageView, id, set, unset, track } = useJitsu();
     useEffect(() => {
         set(helper.getExperimentJitsuData());
         async function checkExperiments() {

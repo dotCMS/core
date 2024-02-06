@@ -247,4 +247,4 @@ class ExperimentHelper {
     }
 }
 
-module.exports = { ExperimentHelper };
+export default ExperimentHelper;
