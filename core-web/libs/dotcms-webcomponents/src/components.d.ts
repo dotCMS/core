@@ -350,6 +350,7 @@ export namespace Components {
         "alt": string;
         "contentlet": DotContentletItem;
         "cover": boolean;
+        "fieldVariable": string;
         "height": string;
         "iconSize": string;
         "playableVideo": boolean;
@@ -1126,6 +1127,11 @@ export namespace Components {
           * @memberof DotVideoThumbnail
          */
         "playable": boolean;
+        /**
+          * @type {string}
+          * @memberof variable
+         */
+        "variable": string;
     }
     interface KeyValueForm {
         /**
@@ -2001,6 +2007,7 @@ declare namespace LocalJSX {
         "alt"?: string;
         "contentlet"?: DotContentletItem;
         "cover"?: boolean;
+        "fieldVariable"?: string;
         "height"?: string;
         "iconSize"?: string;
         "playableVideo"?: boolean;
@@ -2758,6 +2765,11 @@ declare namespace LocalJSX {
           * @memberof DotVideoThumbnail
          */
         "playable"?: boolean;
+        /**
+          * @type {string}
+          * @memberof variable
+         */
+        "variable"?: string;
     }
     interface KeyValueForm {
         /**
