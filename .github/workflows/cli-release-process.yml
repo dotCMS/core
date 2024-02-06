@@ -20,7 +20,7 @@ env:
   NEXT_VERSION: '1.0.0-SNAPSHOT'
   GRAALVM_VERSION: '22.1.0'
   MVN_PACKAGE_TYPE: 'uber-jar'
-  NPM_PACKAGE_NAME: 'dotcli-test'
+  NPM_PACKAGE_NAME: 'dotcli'
   MVN_PACKAGE_NAME: 'dotcms-cli'
   NODE_VERSION: 19
 
