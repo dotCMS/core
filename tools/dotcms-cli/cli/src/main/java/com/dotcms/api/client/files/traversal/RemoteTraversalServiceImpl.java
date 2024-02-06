@@ -9,15 +9,16 @@ import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.common.AssetsUtils;
 import com.dotcms.model.asset.FolderView;
 import io.quarkus.arc.DefaultBean;
-import org.apache.commons.lang3.tuple.Pair;
-import org.jboss.logging.Logger;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
+import javax.enterprise.context.Dependent;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
+import org.apache.commons.lang3.tuple.Pair;
+import org.eclipse.microprofile.context.ManagedExecutor;
+import org.jboss.logging.Logger;
 
 /**
  * Service for traversing a dotCMS remote location and building a hierarchical tree representation of
@@ -32,10 +33,13 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
     Logger logger;
 
     @Inject
-    protected Retriever retriever;
+    Retriever retriever;
 
     @Inject
-    protected Pusher pusher;
+    Pusher pusher;
+
+    @Inject
+    ManagedExecutor executor;
 
     /**
      * Traverses the dotCMS remote location at the specified remote path and builds a hierarchical tree
@@ -82,25 +86,28 @@ public class RemoteTraversalServiceImpl implements RemoteTraversalService {
                 excludeAssetPatterns);
 
         // ---
-        var forkJoinPool = ForkJoinPool.commonPool();
-
         var task = new RemoteFolderTraversalTask(
                 logger,
-                retriever,
-                filter,
-                dotCMSPath.site(),
-                FolderView.builder()
+                executor,
+                retriever
+        );
+
+        task.setTraversalParams(RemoteFolderTraversalTaskParams.builder()
+                .filter(filter)
+                .siteName(dotCMSPath.site())
+                .folder(FolderView.builder()
                         .host(dotCMSPath.site())
                         .path(dotCMSPath.folderPath().toString())
                         .name(dotCMSPath.folderName())
                         .level(0)
-                        .build(),
-                true,
-                depthToUse,
-                failFast
+                        .build())
+                .isRoot(true)
+                .depth(depthToUse)
+                .failFast(failFast)
+                .build()
         );
 
-        return forkJoinPool.invoke(task);
+        return task.compute();
     }
 
     /**
