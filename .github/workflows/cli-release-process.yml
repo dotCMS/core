@@ -7,7 +7,7 @@ on:
         required: true
       skipTests:
         description: 'Skip tests'
-        default: true
+        default: 'true'
         required: false
 
 defaults:
@@ -37,6 +37,9 @@ jobs:
 
       - name: 'Checkout'
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.CI_MACHINE_TOKEN }}
+          fetch-depth: 0
 
       - name: 'Setup Java'
         uses: actions/setup-java@v4
@@ -52,7 +55,7 @@ jobs:
 
       - name: 'Restore Maven Repository'
         id: cache-maven
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           key: mavencore-${{ steps.get-date.outputs.date }}-${{ github.run_id }}
@@ -170,7 +173,7 @@ jobs:
           gu.cmd install native-image          
 
       - name: 'Cache Maven packages'
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -219,9 +222,9 @@ jobs:
           ls -ltr cli/target/distributions
 
       - name: 'Upload build artifact'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: artifacts
+          name: artifacts-${{ matrix.os }}
           path: |
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
@@ -234,6 +237,7 @@ jobs:
       - name: 'Check out repository'
         uses: actions/checkout@v4
         with:
+          token: ${{ secrets.CI_MACHINE_TOKEN }}
           ref: ${{ needs.precheck.outputs.HEAD }}
           fetch-depth: 0
 
@@ -243,11 +247,12 @@ jobs:
           echo "artifactsDir=${{ github.workspace }}/artifacts" >> "$GITHUB_ENV"
 
       - name: 'Download all build artifacts'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: artifacts
+          pattern: artifacts-*
           path: ${{ github.workspace }}/artifacts
-
+          merge-multiple: true
+          
       - name: 'List artifacts'
         run: |
           ls -R
@@ -259,7 +264,7 @@ jobs:
           distribution: ${{ env.JAVA_DISTRO }}
 
       - name: 'Cache Maven packages'
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -268,7 +273,7 @@ jobs:
       - name: 'JReleaser'
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.VERSION }}
+          JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
           JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
           JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
           JRELEASER_SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}

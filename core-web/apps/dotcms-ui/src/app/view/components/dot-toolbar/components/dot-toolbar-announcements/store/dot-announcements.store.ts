@@ -84,18 +84,28 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
         return [
             {
                 id: '1',
-                url: `https://www.dotcms.com/docs/latest/table-of-contents?${state.utmParameters}`,
+                url: `https://www.dotcms.com/announcement-menu-documentation?${state.utmParameters}`,
                 label: this.dotMessageService.get('announcements.knowledge.center.documentation')
             },
             {
+                url: `https://www.dotcms.com/announcement-menu-user-forum?${state.utmParameters}`,
                 id: '2',
-                label: this.dotMessageService.get('announcements.knowledge.center.blog'),
-                url: `https://www.dotcms.com/blog/?${state.utmParameters}`
+                label: this.dotMessageService.get('announcements.knowledge.center.forum')
             },
             {
-                url: 'https://groups.google.com/g/dotcms',
+                url: `https://www.dotcms.com/announcement-menu-online-training?${state.utmParameters}`,
                 id: '3',
-                label: this.dotMessageService.get('announcements.knowledge.center.forum')
+                label: this.dotMessageService.get('announcements.knowledge.center.training')
+            },
+            {
+                id: '4',
+                label: this.dotMessageService.get('announcements.knowledge.center.blog'),
+                url: `https://www.dotcms.com/announcement-menu-dotcms-blog?${state.utmParameters}`
+            },
+            {
+                url: `https://www.dotcms.com/announcement-menu-github-repository?${state.utmParameters}`,
+                id: '5',
+                label: this.dotMessageService.get('announcements.knowledge.center.github')
             }
         ];
     });
@@ -104,19 +114,29 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
         return [
             {
                 label: this.dotMessageService.get('announcements.contact.customer.support'),
-                url: `https://www.dotcms.com/services/support/?${state.utmParameters}`,
+                url: `https://www.dotcms.com/announcement-menu-customer-support?${state.utmParameters}`,
                 id: '1'
             },
             {
                 id: '2',
                 label: this.dotMessageService.get('announcements.contact.professional.services'),
-                url: `https://www.dotcms.com/services/professional-services/?${state.utmParameters}`
+                url: `https://www.dotcms.com/announcement-menu-professional-services?${state.utmParameters}`
+            },
+            {
+                label: this.dotMessageService.get('announcements.contact.request.feature'),
+                url: `https://www.dotcms.com/announcement-menu-request-a-feature?${state.utmParameters}`,
+                id: '3'
+            },
+            {
+                id: '4',
+                label: this.dotMessageService.get('announcements.contact.report.bug'),
+                url: `https://www.dotcms.com/announcement-menu-report-a-bug?${state.utmParameters}`
             }
         ];
     });
 
     readonly selectLinkToDotCms: Signal<string> = this.selectSignal((state) => {
-        return `https://dotcms.com/?${state.utmParameters}`;
+        return `https://www.dotcms.com/announcement-menu-show-all?${state.utmParameters}`;
     });
 
     readonly markAnnouncementsAsRead = this.updater((state) => {
@@ -139,7 +159,7 @@ export class AnnouncementsStore extends ComponentStore<DotAnnouncementsState> {
     });
 
     private generateUtmQueryString(): string {
-        return `utm_source=platform&utm_medium=${this.siteService.currentSite.hostname}&utm_campaign=announcement`;
+        return `utm_source=platform&utm_medium=announcement&utm_campaign=${this.siteService.currentSite.hostname}`;
     }
 
     private appendUtmParameters(announcements: Announcement[]): Announcement[] {

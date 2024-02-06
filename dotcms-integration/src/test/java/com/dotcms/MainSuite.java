@@ -219,6 +219,7 @@ import com.dotmarketing.startup.runonce.Task230713IncreaseDisabledWysiwygColumnS
 import com.dotmarketing.startup.runonce.Task231109AddPublishDateToContentletVersionInfoTest;
 import com.dotmarketing.startup.runonce.Task240102AlterVarcharLengthOfRelationTypeTest;
 import com.dotmarketing.startup.runonce.Task240111AddInodeAndIdentifierLeftIndexesTest;
+import com.dotmarketing.startup.runonce.Task240112AddMetadataColumnToStructureTableTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.ITConfigTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -672,7 +673,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task240111AddInodeAndIdentifierLeftIndexesTest.class,
         AnnouncementsHelperIntegrationTest.class,
         RemoteAnnouncementsLoaderIntegrationTest.class,
-        JsEngineTest.class
+        JsEngineTest.class,
+        Task240112AddMetadataColumnToStructureTableTest.class
 })
 
 public class MainSuite {

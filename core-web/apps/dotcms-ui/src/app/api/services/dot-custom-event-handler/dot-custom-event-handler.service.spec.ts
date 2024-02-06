@@ -13,6 +13,7 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
+    DotContentTypeService,
     DotCurrentUserService,
     DotEventsService,
     DotGenerateSecurePasswordService,
@@ -42,7 +43,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     CoreWebServiceMock,
@@ -67,6 +68,7 @@ describe('DotCustomEventHandlerService', () => {
     let dotWorkflowEventHandlerService: DotWorkflowEventHandlerService;
     let dotEventsService: DotEventsService;
     let dotLicenseService: DotLicenseService;
+    let dotContentTypeService: DotContentTypeService;
     let router: Router;
 
     const createFeatureFlagResponse = (
@@ -119,7 +121,8 @@ describe('DotCustomEventHandlerService', () => {
                 LoginService,
                 DotLicenseService,
                 { provide: DotPropertiesService, useValue: dotPropertiesMock },
-                Router
+                Router,
+                DotContentTypeService
             ],
             imports: [RouterTestingModule, HttpClientTestingModule]
         });
@@ -135,8 +138,14 @@ describe('DotCustomEventHandlerService', () => {
         dotWorkflowEventHandlerService = TestBed.inject(DotWorkflowEventHandlerService);
         dotEventsService = TestBed.inject(DotEventsService);
         dotLicenseService = TestBed.inject(DotLicenseService);
+        dotContentTypeService = TestBed.inject(DotContentTypeService);
         router = TestBed.inject(Router);
     };
+
+    const metadata = {};
+    const metadata2 = {};
+    metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = true;
+    metadata2[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = false;
 
     beforeEach(() => {
         setup({
@@ -390,6 +399,9 @@ describe('DotCustomEventHandlerService', () => {
             });
 
             spyOn(router, 'navigate');
+            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+                of({ metadata } as DotCMSContentType)
+            );
         });
 
         it('should create a contentlet', () => {
@@ -449,6 +461,9 @@ describe('DotCustomEventHandlerService', () => {
         });
 
         it('should create a contentlet', () => {
+            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+                of({ metadata } as DotCMSContentType)
+            );
             spyOn(dotContentletEditorService, 'create');
 
             service.handle(
@@ -464,6 +479,9 @@ describe('DotCustomEventHandlerService', () => {
         });
 
         it('should edit a a workflow task', () => {
+            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+                of({ metadata } as DotCMSContentType)
+            );
             service.handle(
                 new CustomEvent('ng-event', {
                     detail: {
@@ -480,6 +498,9 @@ describe('DotCustomEventHandlerService', () => {
         });
 
         it('should edit a contentlet', () => {
+            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+                of({ metadata } as DotCMSContentType)
+            );
             service.handle(
                 new CustomEvent('ng-event', {
                     detail: {
@@ -495,6 +516,9 @@ describe('DotCustomEventHandlerService', () => {
         });
 
         it('should not create a contentlet', () => {
+            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+                of({ metadata: metadata2 } as DotCMSContentType)
+            );
             spyOn(dotContentletEditorService, 'create');
 
             service.handle(
@@ -510,6 +534,10 @@ describe('DotCustomEventHandlerService', () => {
         });
 
         it('should not edit a a workflow task', () => {
+            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+                of({ metadata: metadata2 } as DotCMSContentType)
+            );
+
             service.handle(
                 new CustomEvent('ng-event', {
                     detail: {
@@ -526,6 +554,9 @@ describe('DotCustomEventHandlerService', () => {
         });
 
         it('should not edit a contentlet', () => {
+            spyOn(dotContentTypeService, 'getContentType').and.returnValue(
+                of({ metadata: metadata2 } as DotCMSContentType)
+            );
             service.handle(
                 new CustomEvent('ng-event', {
                     detail: {

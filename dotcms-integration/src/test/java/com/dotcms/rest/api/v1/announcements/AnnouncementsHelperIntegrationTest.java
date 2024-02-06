@@ -69,10 +69,10 @@ public class AnnouncementsHelperIntegrationTest {
         //Since we don't have a running dotCMS instance during Integration Testing, we need to mock the loader
         final AnnouncementsLoader loader = new RemoteAnnouncementsLoaderImpl(){
             @Override
-            public List<Announcement> loadAnnouncements(final Language language) {
+            public List<Announcement> loadAnnouncements() {
                try {
                    loadCount.incrementAndGet();
-                   final JsonNode jsonNode = generateJson(seed, language);
+                   final JsonNode jsonNode = generateJson(seed);
                    return toAnnouncements(jsonNode);
                }catch (JsonProcessingException e) {
                    fail(e.getMessage());
@@ -82,26 +82,26 @@ public class AnnouncementsHelperIntegrationTest {
         };
         final User user = APILocator.systemUser();
         final AnnouncementsCacheImpl cache = new AnnouncementsCacheImpl();
-        AnnouncementsHelperImpl announcementsHelper = new AnnouncementsHelperImpl(APILocator.getLanguageAPI(), loader, cache);
-        final List<Announcement> announcements = announcementsHelper.getAnnouncements(language.getIsoCode(), false, -1, user);
+        AnnouncementsHelperImpl announcementsHelper = new AnnouncementsHelperImpl(loader, cache);
+        final List<Announcement> announcements = announcementsHelper.getAnnouncements(false, -1, user);
         Assert.assertNotNull(announcements);
         Assert.assertEquals((int)AnnouncementsHelper.ANNOUNCEMENTS_LIMIT.get(), announcements.size());
-        final List<Announcement> cached = cache.get(language);
+        final List<Announcement> cached = cache.get();
         Assert.assertNotNull(cached);
         Assert.assertEquals(seed, cached.size());
         Assert.assertEquals(1, loadCount.get());
 
         //Try another call but this time loadCount should be 1 again since we are using the cache
-        final List<Announcement> announcements2 = announcementsHelper.getAnnouncements(language.getIsoCode(), false, -1, user);
+        final List<Announcement> announcements2 = announcementsHelper.getAnnouncements(false, -1, user);
         Assert.assertNotNull(announcements2);
         Assert.assertEquals((int)AnnouncementsHelper.ANNOUNCEMENTS_LIMIT.get(), announcements2.size());
         Assert.assertEquals(1, loadCount.get());
 
-        final List<Announcement> announcements3 = announcementsHelper.getAnnouncements(language.getIsoCode(), true, -1, user);
+        final List<Announcement> announcements3 = announcementsHelper.getAnnouncements(true, -1, user);
         Assert.assertNotNull(announcements3);
         Assert.assertEquals(2, loadCount.get());
 
-        final List<Announcement> announcements4 = announcementsHelper.getAnnouncements(language.getIsoCode(), false, 5, user);
+        final List<Announcement> announcements4 = announcementsHelper.getAnnouncements(false, 5, user);
         Assert.assertNotNull(announcements4);
         Assert.assertEquals(5, announcements4.size());
     }
@@ -115,7 +115,7 @@ public class AnnouncementsHelperIntegrationTest {
      * @return JsonNode
      * @throws JsonProcessingException
      */
-    public  JsonNode generateJson(final int n, final Language lang) throws JsonProcessingException {
+    public  JsonNode generateJson(final int n) throws JsonProcessingException {
 
         ObjectMapper objectMapper = new ObjectMapper();
         ArrayNode contentletsArray = objectMapper.createArrayNode();
@@ -144,7 +144,7 @@ public class AnnouncementsHelperIntegrationTest {
             contentletObject.put("live", true);
             contentletObject.put("owner", "dotcms.org.1");
             contentletObject.put("identifier", java.util.UUID.randomUUID().toString());
-            contentletObject.put("languageId", lang.getId());
+            contentletObject.put("languageId",1);
             contentletObject.put("type1", "Announcement");
             contentletObject.put("url", url);
             contentletObject.put("titleImage", "TITLE_IMAGE_NOT_FOUND");
@@ -173,23 +173,22 @@ public class AnnouncementsHelperIntegrationTest {
      */
     @Test
     public void testAnnouncementCache() throws JsonProcessingException, InterruptedException {
-        final Language language = new LanguageDataGen().nextPersisted();
         //Create a cache
         AnnouncementsCacheImpl cache = new AnnouncementsCacheImpl();
         //Seed the cache
         RemoteAnnouncementsLoaderImpl loader = new RemoteAnnouncementsLoaderImpl();
-        final JsonNode jsonNode = generateJson(100, language);
+        final JsonNode jsonNode = generateJson(100);
         final List<Announcement> announcements = loader.toAnnouncements(jsonNode);
         //Here we are using a TTL of 10 seconds
-        cache.put(language, announcements, 10);
+        cache.put( announcements, 10);
         //Get the cache and verify that it contains 100 elements
-        final List<Announcement> cached = cache.get(language);
+        final List<Announcement> cached = cache.get();
         Assert.assertNotNull(cached);
         Assert.assertEquals(100, cached.size());
         //Wait for the cache to expire sleeping for 11 seconds
         Thread.sleep(TimeUnit.SECONDS.toMillis(11));
         //Get the cache again
-        final List<Announcement> cached2 = cache.get(language);
+        final List<Announcement> cached2 = cache.get();
         Assert.assertNotNull(cached2);
         //Verify that the cache is empty
         Assert.assertEquals(0, cached2.size());

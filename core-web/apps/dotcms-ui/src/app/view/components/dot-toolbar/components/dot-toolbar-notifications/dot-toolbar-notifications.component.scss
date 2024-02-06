@@ -1,6 +1,7 @@
 @use "variables" as *;
 
 $notification-padding: $spacing-3;
+$notification-dot-badge-size: 0.625rem;
 
 :host {
     display: flex;
@@ -16,16 +17,15 @@ $notification-padding: $spacing-3;
         border-radius: 50%;
     }
 
-    .badge {
+    .dot-toolbar__badge {
         background-color: $color-accessible-text-fuchsia;
-        border-radius: 50%;
+        border-radius: $notification-dot-badge-size;
         color: $white;
-        font-size: $font-size-sm;
-        line-height: $font-size-sm;
-        padding: $spacing-0;
+        width: $notification-dot-badge-size;
+        height: $notification-dot-badge-size;
         position: absolute;
-        left: 25px;
-        top: 0;
+        left: 28px;
+        top: 2px;
     }
 
     .toolbar-notifications {

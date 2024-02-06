@@ -22,42 +22,13 @@ public class LettuceCacheTest {
     public static void startup() throws Exception {
         cache = new RedisCache();
     }
-    
-    
-    /**
-     * all key values that are put into redis are prefixed by a random key.
-     * When a flushall is called, this key is cycled, which basically invalidates
-     * all cached entries.  The prefix key is stored in redis itself so multiple 
-     * servers in the cluster
-     */
-    @Test
-    public void test_prefix_key_cycling() {
 
-        if (RedisClientFactory.getClient("cache").ping()) {
-
-
-            final String prefix1 = cache.loadPrefix();
-            assert (prefix1 != null && prefix1.length() > 3);
-
-            cache.cycleKey();
-
-            final String prefix2 = cache.loadPrefix();
-            assert (prefix2 != null);
-
-            // keys don't match after they have been cycled
-            assert (!prefix1.equals(prefix2));
-
-            // getting the key again and the keys match
-            final String prefix3 = cache.loadPrefix();
-            assert (prefix2.equals(prefix3));
-        }
-    }
 
     @Test
     public void test_cache_key_generation() {
 
         if (RedisClientFactory.getClient("cache").ping()) {
-            final String prefix = cache.loadPrefix();
+            final String prefix = cache.REDIS_PREFIX_KEY;
             assert (prefix != null && prefix.length() > 3);
             String group = "group";
             String key = "key";

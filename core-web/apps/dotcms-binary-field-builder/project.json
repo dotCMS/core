@@ -62,7 +62,8 @@
                     "vendorChunk": true,
                     "extractLicenses": false,
                     "sourceMap": true,
-                    "namedChunks": true
+                    "namedChunks": true,
+                    "watch": true
                 },
                 "tomcat": {
                     "outputPath": "../../tomcat9/webapps/ROOT/dotcms-binary-field-builder",
@@ -83,7 +84,7 @@
                     "buildTarget": "dotcms-binary-field-builder:build:development"
                 }
             },
-            "defaultConfiguration": "development"
+            "defaultConfiguration": "production"
         },
         "extract-i18n": {
             "executor": "@angular-devkit/build-angular:extract-i18n",

@@ -486,7 +486,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         final Map<String, Serializable> metaData = hashFile(file, extraMeta);
         final String fileHash = (String) metaData.get(SHA256_META_KEY.key());
         final String hashRef = (String)extraMeta.get(HASH_REF);
-        Logger.debug(DataBaseStoragePersistenceAPIImpl.class, " fileHash is : " + fileHash);
+        Logger.debug(this, () -> "FileHash is : " + fileHash);
 
             return wrapInTransaction(
                     () -> {
@@ -526,7 +526,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                             }
                     ).getOrElse(0);
         final boolean found = results.intValue() > 0;
-        Logger.debug(DataBaseStoragePersistenceAPIImpl.class, String.format(" is HashReference [%s] found [%s] ", fileHash,
+        Logger.debug(this, () -> String.format(" is HashReference [%s] found [%s] ", fileHash,
                 BooleanUtils.toStringYesNo(found)));
         exists.setValue(found);
         return exists.getValue();
@@ -535,7 +535,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
     private Object pushFileReference(final String groupName, final String path, final String fileHash, final String hashRef, final Connection connection) throws DotDataException {
         final String groupNameLC = groupName.toLowerCase();
         final String pathLC = path.toLowerCase();
-        Logger.debug(DataBaseStoragePersistenceAPIImpl.class, String.format("Pushing new reference for group [%s] path [%s] hash [%s]", groupNameLC, pathLC, hashRef));
+        Logger.debug(this, () -> String.format("Pushing new reference for group [%s] path [%s] hash [%s]", groupNameLC, pathLC, hashRef));
         try {
             UpsertDelegate.newInstance().pushObjectReference(connection, fileHash, pathLC, groupNameLC, hashRef);
             return true;
@@ -651,18 +651,6 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             if(null != file){
                file.delete();
             }
-        }
-    }
-
-    /**
-     * This will write directly from the Serializer delegate right into a file. No in memory loading
-     * takes place like this.
-     */
-    private void writeToFile(final ObjectWriterDelegate writerDelegate,
-            final Serializable object, File file) throws IOException {
-
-        try (final OutputStream outputStream = Files.newOutputStream(file.toPath())) {
-            writerDelegate.write(outputStream, object);
         }
     }
 
@@ -851,7 +839,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             final int rows = dotConnect.executeUpdate(connection,
                     storageInsertSQL.get(),
                     objectHash, path, groupName, hashRef);
-            Logger.debug(DataBaseStoragePersistenceAPIImpl.class,"pushObjectReference inserted rows "+rows);
+            Logger.debug(this,() -> "pushObjectReference inserted rows "+rows);
         }
 
         /**
@@ -865,7 +853,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                 throws DotDataException {
             final int rows = dotConnect.executeUpdate(connection,
                     dataInsertSQL.get(), chunkHash, data);
-            Logger.debug(DataBaseStoragePersistenceAPIImpl.class,"pushDataChunk inserted rows "+rows);
+            Logger.debug(this,() -> "pushDataChunk inserted rows "+rows);
         }
 
         /**
@@ -881,7 +869,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             int order = 1;
             for (final String chunkHash : chunkHashes) {
                 final int rows = dotConnect.executeUpdate(connection, sql, objectHash, chunkHash, order++);
-                Logger.debug(DataBaseStoragePersistenceAPIImpl.class,"pushHashReference inserted rows "+rows);
+                Logger.debug(this,() -> "pushHashReference inserted rows "+rows);
             }
         }
 

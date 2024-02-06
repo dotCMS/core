@@ -5,16 +5,15 @@
         }}</label>
         <input
             id="file-name"
-            type="text"
-            pInputText
-            formControlName="name"
             autocomplete="off"
+            formControlName="name"
             pInputText
-            placeholder="Ex. template.html" />
+            placeholder="Ex. template.html"
+            type="text" />
         <div class="error-message">
             <dot-field-validation-message
-                [patternErrorMessage]="'dot.binary.field.error.type.file.not.extension'"
                 [field]="form.get('name')"
+                [patternErrorMessage]="'dot.binary.field.error.type.file.not.extension'"
                 data-testId="error-message"></dot-field-validation-message>
         </div>
     </div>
@@ -23,10 +22,10 @@
             class="binary-field__code-editor"
             #editorRef
             [ngClass]="{ 'binary-field__code-editor--disabled': form.disabled }"
-            [options]="editorOptions"
+            [options]="monacoOptions()"
             (init)="onEditorInit()"
-            formControlName="content"
-            data-testId="code-editor"></ngx-monaco-editor>
+            data-testId="code-editor"
+            formControlName="content"></ngx-monaco-editor>
 
         <div class="editor-mode__helper" [ngClass]="{ 'editor-mode__helper--visible': mimeType }">
             <i class="pi pi-info-circle"></i>
@@ -37,15 +36,15 @@
         <p-button
             [label]="'dot.common.cancel' | dm"
             (click)="cancel.emit()"
-            styleClass="p-button-outlined"
-            type="button"
             aria-label="Cancel button"
-            data-testId="cancel-button"></p-button>
+            data-testId="cancel-button"
+            styleClass="p-button-outlined"
+            type="button"></p-button>
 
         <p-button
             [label]="'dot.common.save' | dm"
-            type="submit"
             aria-label="Import button"
-            data-testId="import-button"></p-button>
+            data-testId="import-button"
+            type="submit"></p-button>
     </div>
 </form>
