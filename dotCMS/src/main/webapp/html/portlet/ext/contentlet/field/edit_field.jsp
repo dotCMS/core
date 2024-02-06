@@ -817,7 +817,7 @@
                         const binaryField = document.createElement('dotcms-binary-field');
                         binaryField.id = "binary-field-<%=field.getVelocityVarName()%>";
                         binaryField.setAttribute("fieldName", "<%=field.getVelocityVarName()%>");
-                        console.log(contentlet);
+
                         binaryField.field = fieldData;
                         binaryField.contentlet = contentlet;
                         binaryField.imageEditor = true;

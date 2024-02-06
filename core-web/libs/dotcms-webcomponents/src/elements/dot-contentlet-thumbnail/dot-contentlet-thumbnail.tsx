@@ -86,13 +86,13 @@ export class DotContentletThumbnail {
             ? `/contentAsset/image/${this.contentlet.inode}/${
                   this.fieldVariable || this.contentlet.titleImage
               }/pdf_page/1/resize_w/250/quality_q/45`
-            : `/dA/${this.contentlet.inode}/${this.variablePath()}500w/50q?r=${
+            : `/dA/${this.contentlet.inode}/${this.fieldVariablePath()}500w/50q?r=${
                   this.contentlet.modDateMilis || this.contentlet.modDate
               }`;
     }
 
-    private variablePath(): string {
-        if (!this.fieldVariable || this.fieldVariable === this.contentlet.titleImage) {
+    private fieldVariablePath(): string {
+        if (!this.fieldVariable) {
             return '';
         }
 
