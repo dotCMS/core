@@ -22,6 +22,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.liferay.util.Xss;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -38,6 +39,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -61,6 +64,8 @@ public class CMSUrlUtil {
 	private static final String FOLDER = "folder";
 	private static final String NOT_FOUND = "NOTFOUND";
 	private static final String UNABLE_TO_FIND = "Unable to find ";
+
+	private static final Pattern INODE_PATTERN = Pattern.compile("/[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+-[a-f0-9]+/");
 
 	public static final Set<String> BACKEND_FILTERED_COLLECTION =
 			Stream.of("/api", "/webdav", "/dA", "/c/", "/contentAsset", "/DOTSASS", "/DOTLESS",
@@ -590,6 +595,8 @@ public class CMSUrlUtil {
 	 * @return The Inode of the Contentlet.
 	 */
 	public String getInodeFromUrlPath(final String urlPath) {
+
+		// tries the edit mode first
 		final PageMode[] modes = PageMode.values();
 		for (final PageMode mode : modes) {
 			if (urlPath.startsWith(FORWARD_SLASH + mode.name() + FORWARD_SLASH)) {
@@ -597,7 +604,27 @@ public class CMSUrlUtil {
 				return urlPathWithoutMode.substring(0, urlPathWithoutMode.indexOf(FORWARD_SLASH));
 			}
 		}
+
+		// tries the fe mode: /data/shared/assets/c/e/ce837ff5-dc6f-427a-8f60-d18afc395be9/fileAsset/openai-summarize.vtl
+		final Optional<String> inodeOPt = findInodeFromString(urlPath);
+		if (inodeOPt.isPresent()) {
+			return inodeOPt.get();
+		}
+
+		// tries the content mode: CONTENT/27e8f845c3bd21ad1c601b8fe005caa6_1695072095296.content
 		return urlPath.substring(urlPath.indexOf(FORWARD_SLASH) + 1, urlPath.indexOf(UNDERLINE));
+	}
+
+	private Optional<String> findInodeFromString(final String someString) {
+
+		final Matcher matcher = INODE_PATTERN.matcher(someString);
+
+		if (matcher.find()) {
+			final String inode = matcher.group().replace(FORWARD_SLASH, StringPool.BLANK);
+			return Optional.ofNullable(inode);
+		}
+
+		return Optional.empty();
 	}
 
 }
