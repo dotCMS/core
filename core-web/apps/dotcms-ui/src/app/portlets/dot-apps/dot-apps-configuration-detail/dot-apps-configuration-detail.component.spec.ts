@@ -113,8 +113,7 @@ class MockDotKeyValueComponent {
     @Input() autoFocus: boolean;
     @Input() showHiddenField: string;
     @Input() variables: DotKeyValue[];
-    @Output() delete = new EventEmitter<DotKeyValue>();
-    @Output() save = new EventEmitter<DotKeyValue>();
+    @Output() updatedList = new EventEmitter<DotKeyValue[]>();
 }
 
 @Component({
@@ -334,15 +333,14 @@ describe('DotAppsConfigurationDetailComponent', () => {
         it('should update local collection with saved value', () => {
             const variableEmitted = { key: 'custom', hidden: false, value: 'changed' };
             const keyValue = fixture.debugElement.query(By.css('dot-key-value-ng'));
-            keyValue.componentInstance.save.emit(variableEmitted);
+            keyValue.componentInstance.updatedList.emit([variableEmitted]);
             expect(component.dynamicVariables[0]).toEqual(variableEmitted);
             expect(component.dynamicVariables.length).toEqual(1);
         });
 
         it('should delete from local collection', () => {
-            const variableEmitted = { key: 'custom', hidden: false, value: 'test' };
             const keyValue = fixture.debugElement.query(By.css('dot-key-value-ng'));
-            keyValue.componentInstance.delete.emit(variableEmitted);
+            keyValue.componentInstance.updatedList.emit([]);
             expect(component.dynamicVariables.length).toEqual(0);
         });
 

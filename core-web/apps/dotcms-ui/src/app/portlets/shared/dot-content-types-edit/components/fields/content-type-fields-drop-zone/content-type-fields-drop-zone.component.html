@@ -69,14 +69,14 @@
             ('com.dotcms.contenttype.model.field.ImmutableStoryBlockField') {
             <dot-block-editor-settings
                 [field]="currentField"
-                [isVisible]="panel._selected"
+                [isVisible]="panel.selected"
                 (changeControls)="changesDialogActions($event)"
                 (save)="toggleDialog()"
                 (valid)="setDialogOkButtonState($event)"></dot-block-editor-settings>
             } @case("com.dotcms.contenttype.model.field.ImmutableBinaryField") {
             <dot-binary-settings
                 [field]="currentField"
-                [isVisible]="panel._selected"
+                [isVisible]="panel.selected"
                 (save)="toggleDialog()"
                 (valid)="setDialogOkButtonState($event)"
                 (changeControls)="changesDialogActions($event)"></dot-binary-settings>
@@ -85,10 +85,12 @@
         }
 
         <p-tabPanel
+            #panel
             [header]="'contenttypes.dropzone.tab.variables' | dm"
             [disabled]="!currentField?.id">
             <ng-template pTemplate="content">
                 <dot-content-type-fields-variables
+                    [showTable]="panel.selected"
                     [field]="currentField"></dot-content-type-fields-variables>
             </ng-template>
         </p-tabPanel>

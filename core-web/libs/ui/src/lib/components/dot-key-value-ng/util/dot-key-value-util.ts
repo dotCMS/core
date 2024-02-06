@@ -1,4 +1,4 @@
-import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
+import { DotKeyValue } from '../dot-key-value-ng.component';
 
 export class DotKeyValueUtil {
     /**
