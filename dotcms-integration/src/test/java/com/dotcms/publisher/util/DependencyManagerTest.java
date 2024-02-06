@@ -461,46 +461,19 @@ public class DependencyManagerTest {
 
     }
 
-    /**
-     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
-     * <b>Given Scenario:</b> A Page using a Template as a File Advanced<p>
-     * <b>ExpectedResult:</b> Should include the template files as dependencies
-     * @throws DotSecurityException
-     * @throws DotBundleException
-     * @throws DotDataException
-     */
-    private void createBundle(final PushPublisherConfig config, final Contentlet contentlet, final String bundleFilterKey)
+
+    private void createBundle(final PushPublisherConfig config, final Contentlet contentlet)
             throws DotDataException {
-        final String bundleName = "testDependencyManagerBundle" + System.currentTimeMillis();
-        Bundle bundle = new Bundle(bundleName, new Date(), null, user.getUserId());
-        bundle.setFilterKey(bundleFilterKey);
-        bundleAPI.saveBundle(bundle);
-        bundle = bundleAPI.getBundleByName(bundleName);
-
-        final PublishQueueElement publishQueueElement = new PublishQueueElement();
-        publishQueueElement.setId(1);
-        publishQueueElement.setOperation(Operation.PUBLISH.ordinal());
-        publishQueueElement.setAsset(contentlet.getInode());
-        publishQueueElement.setEnteredDate(new Date());
-        publishQueueElement.setPublishDate(new Date());
-        publishQueueElement.setBundleId(bundle.getId());
-        publishQueueElement.setType(PusheableAsset.CONTENTLET.getType());
-
-        config.setAssets(Lists.newArrayList(publishQueueElement));
-        config.setId(bundle.getId());
-        config.setOperation(Operation.PUBLISH);
-        config.setDownloading(true);
-        config.setLuceneQueries(Lists.newArrayList("+identifier:" + contentlet.getIdentifier()));
+        createBundle(config,contentlet,"");
     }
-
 
     /**
      * Creates a bundle with one contentlet
      */
-    private void createBundle(final PushPublisherConfig config, final Contentlet contentlet)
+    private void createBundle(final PushPublisherConfig config, final Contentlet contentlet,final String filterKey)
             throws DotDataException {
         final String bundleName = "testDependencyManagerBundle" + System.currentTimeMillis();
-        Bundle bundle = new Bundle(bundleName, new Date(), null, user.getUserId());
+        Bundle bundle = new Bundle(bundleName, new Date(), null, user.getUserId(),false,filterKey);
         bundleAPI.saveBundle(bundle);
         bundle = bundleAPI.getBundleByName(bundleName);
 
@@ -584,7 +557,8 @@ public class DependencyManagerTest {
         DependencyManager dependencyManager = new DependencyManager(DependencyManagerTest.user, config);
         dependencyManager.setDependencies();
 
-        assertFalse(dependencyManager.getTemplates().contains(template.getIdentifier()));
+        assertFalse(APILocator.getPublisherAPI().getFilterDescriptorByKey("ShallowPush.yml").toString(),
+                dependencyManager.getTemplates().contains(template.getIdentifier()));
     }
 
     /**
