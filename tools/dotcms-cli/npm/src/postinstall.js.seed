@@ -1,0 +1,154 @@
+"use strict";
+
+const path = require('path');
+const fs = require('fs').promises;
+const os = require('os');
+
+const ARCHITECTURE_MAPPING = {
+    "x64": "x86_64",
+    "arm64": "aarch_64"
+};
+
+const PLATFORM_MAPPING = {
+    "darwin": "osx",
+    "linux": "linux"
+};
+
+function getGlobalBinPath() {
+    const npmGlobalPrefix = process.env.PREFIX || process.env.npm_config_prefix || process.env.HOME;
+    return path.join(npmGlobalPrefix, 'bin');
+}
+
+function validatePackageConfig(packageJson) {
+    if (!packageJson.version || !packageJson.packageName || !packageJson.alias || !packageJson.binaries || typeof packageJson.binaries !== "object") {
+        throw new Error("Invalid package.json. 'version', 'packageName', 'alias' and 'binaries' must be specified.");
+    }
+}
+
+async function parsePackageJson() {
+
+    console.log("Installing CLI");
+    const platform = os.platform();
+    const architecture = os.arch();
+
+    console.log("Platform: " + platform);
+    console.log("Architecture: " + architecture);
+
+    if (!(os.arch() in ARCHITECTURE_MAPPING) || !(os.platform() in PLATFORM_MAPPING)) {
+        throw new Error(`Installation is not supported for this ${platform}/${architecture} combination.`);
+    }
+
+    const packageJsonPath = path.join(".", "package.json");
+
+    try {
+        const packageJsonContent = await fs.readFile(packageJsonPath, "utf-8");
+        const packageJson = JSON.parse(packageJsonContent.toString());
+        validatePackageConfig(packageJson);
+
+        const packageName = packageJson.packageName;
+        const alias = packageJson.alias;
+        const binaries = packageJson.binaries;
+        const extension = platform === "win32" ? ".exe" : "";
+        const binaryKey = `${packageName}-${platform}-${architecture}`;
+        const binaryPath = binaries[binaryKey];
+
+        if (binaryPath) {
+            console.log(`Binary found for your platform ${platform}-${architecture}: ${binaryPath}`);
+        } else {
+            throw new Error(`No binary found for your platform ${platform}-${architecture}.`);
+        }
+
+        return {
+            alias,
+            binaryKey,
+            binaryPath,
+            extension
+        };
+    } catch (error) {
+        throw new Error("Unable to read or parse package.json. Please run this script at the root of the package you want to be installed.");
+    }
+}
+
+
+async function createSymlink(binarySource, binaryDestination) {
+    const globalBinPath = getGlobalBinPath();
+    const symlinkPath = path.join(globalBinPath, binaryDestination);
+
+    try {
+        try {
+            await fs.access(symlinkPath, fs.constants.F_OK);
+            // If the symlink exists, remove it.
+            await fs.unlink(symlinkPath);
+            console.log(`Existing symlink ${symlinkPath} found and removed.`);
+        } catch (error) {
+            // The symlink does not exist, continue.
+        }
+
+        if (os.platform() === "win32") {
+            // Create a junction for the binary for Windows.
+            // await fs.symlink(binarySource, symlinkPath, "junction");
+        } else {
+            // Create a symlink for the binary for macOS and Linux.
+            await fs.symlink(binarySource, symlinkPath);
+        }
+        console.info(`Created symlink ${symlinkPath} pointing to ${binarySource}`);
+    } catch (error) {
+        console.error("Error while creating symlink:", error);
+        throw new Error("Failed to create symlink.");
+    }
+}
+
+async function installCli() {
+    const config = await parsePackageJson();
+
+    console.log({
+        config
+    });
+
+    console.info(`Creating symlink for the relevant binary for your platform ${os.platform()}-${os.arch()}`);
+
+    const currentDir = __dirname;
+    const targetDir = path.join(currentDir, '..');
+    const binarySource = path.join(targetDir, config.binaryPath);
+    const binaryDestination = config.alias;
+
+    console.info("Installing cli:", binarySource, binaryDestination);
+
+    await createSymlink(binarySource, binaryDestination + config.extension);
+}
+
+async function uninstallCli() {
+    const config = await parsePackageJson();
+
+    try {
+        const globalBinPath = getGlobalBinPath();
+        const symlinkPath = path.join(globalBinPath, config.alias + config.extension);
+
+        console.info("Removing symlink:", symlinkPath);
+
+        await fs.unlink(symlinkPath);
+    } catch (ex) {
+        console.error("Error while uninstalling:", ex);
+    }
+
+    console.info("Uninstalled cli successfully");
+}
+
+const actions = {
+    "install": installCli,
+    "uninstall": uninstallCli
+};
+
+const [cmd] = process.argv.slice(2);
+if (cmd && actions[cmd]) {
+    actions[cmd]().then(
+        () => process.exit(0),
+        (err) => {
+            console.error(err);
+            process.exit(1);
+        }
+    );
+} else {
+    console.log("Invalid command. `install` and `uninstall` are the only supported commands");
+    process.exit(1);
+}

@@ -109,6 +109,17 @@
 							"pm.test(\"Announcements are created\", function() {",
 							"    pm.expect(contents,'contents were created').not.undefined;",
 							"    pm.expect(contents.length,'Verify contents length').to.be.at.least(3);    ",
+							"",
+							"});",
+							"",
+							"pm.test(\"Announcements are error free\", function() {",
+							"   for(let i in contents){",
+							"       const content = contents[i];",
+							"       const key = Object.keys(content)[0];",
+							"       const object = content[key];       ",
+							"       // humoring QA ",
+							"       pm.expect(object.errorMessage,'No error should be reported back').to.be.undefined;",
+							"   }",
 							"});"
 						],
 						"type": "text/javascript"

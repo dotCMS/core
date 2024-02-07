@@ -19,7 +19,10 @@ env:
   JAVA_DISTRO: temurin
   NEXT_VERSION: '1.0.0-SNAPSHOT'
   GRAALVM_VERSION: '22.1.0'
-  PACKAGE_TYPE: 'uber-jar'
+  MVN_PACKAGE_TYPE: 'uber-jar'
+  NPM_PACKAGE_NAME: 'dotcli'
+  MVN_PACKAGE_NAME: 'dotcms-cli'
+  NODE_VERSION: 19
 
 jobs:
   precheck:
@@ -75,7 +78,7 @@ jobs:
 
           ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$RELEASE_VERSION
 
-          git commit --allow-empty -a -m "🏁 Releasing version $RELEASE_VERSION"
+          git commit --allow-empty -a -m "🏁 Releasing CLI version $RELEASE_VERSION"
           git push https://${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${GITHUB_REPOSITORY}
 
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
@@ -89,7 +92,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ macos-13-xlarge, macOS-latest, ubuntu-latest, windows-latest ] #
+        os: [ macos-13-xlarge, macOS-latest, ubuntu-latest ]
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -104,12 +107,12 @@ jobs:
         run: |
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
             echo "GraalVM on Linux (AMD64)"
-          
+
             ARCH=amd64
             PLATFORM=linux
             INSTALLATION_PATH=/usr/lib/jvm
-          
-          else          
+
+          else
             if [ "${{ matrix.os }}" == "macos-13-xlarge" ]; then
               echo "GraalVM on Mac (AARCH64)"
               ARCH=aarch64
@@ -117,27 +120,27 @@ jobs:
               echo "GraalVM on Mac (AMD64)"
               ARCH=amd64
             fi
-          
+
             PLATFORM=darwin
-            INSTALLATION_PATH=/Library/Java/JavaVirtualMachines          
-          fi 
-          
+            INSTALLATION_PATH=/Library/Java/JavaVirtualMachines
+          fi
+
           echo "PLATFORM=$PLATFORM"
           echo "ARCH=$ARCH"
           echo "INSTALLATION_PATH=$INSTALLATION_PATH"
-          
+
           wget https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${{ env.GRAALVM_VERSION }}/graalvm-ce-java11-${PLATFORM}-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
           sudo mkdir -p $INSTALLATION_PATH
-          tar -xzf graalvm-ce-java11-${PLATFORM}-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz 
+          tar -xzf graalvm-ce-java11-${PLATFORM}-${ARCH}-${{ env.GRAALVM_VERSION }}.tar.gz
           sudo mv graalvm-ce-java11-${{ env.GRAALVM_VERSION }} $INSTALLATION_PATH
-          
+
           if [ "${{ matrix.os }}" != "ubuntu-latest" ]; then
-            sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home        
+            sudo xattr -r -d com.apple.quarantine /Library/Java/JavaVirtualMachines/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home
             GRAALVM_HOME="${INSTALLATION_PATH}/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}/Contents/Home"
           else
             GRAALVM_HOME="${INSTALLATION_PATH}/graalvm-ce-java11-${{ env.GRAALVM_VERSION }}"
           fi
-          
+
           echo "GRAALVM_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
           echo "JAVA_HOME=$GRAALVM_HOME" >> $GITHUB_ENV
           PATH="$GRAALVM_HOME/bin:$PATH"
@@ -170,7 +173,7 @@ jobs:
           echo "JAVA_HOME=${env:JAVA_HOME}" >> "$env:GITHUB_ENV"
           echo "Path=${env:Path}" >> "$env:GITHUB_ENV"
 
-          gu.cmd install native-image          
+          gu.cmd install native-image
 
       - name: 'Cache Maven packages'
         uses: actions/cache@v4
@@ -196,7 +199,7 @@ jobs:
       - name: 'Build uber-jar'
         working-directory: ${{ github.workspace }}
         run: |
-          ./mvnw package -Dquarkus.package.type=${{ env.PACKAGE_TYPE }} -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
+          ./mvnw package -Dquarkus.package.type=${{ env.MVN_PACKAGE_TYPE }} -DskipTests=${{ github.event.inputs.skipTests }} -pl :dotcms-cli
 
       - name: 'Build Native Image (Linux/MacOS)'
         if: ${{ matrix.os != 'windows-latest' }}
@@ -228,7 +231,7 @@ jobs:
           path: |
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/*-runner.jar
             ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.zip
-            ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.tar.gz
+            ${{ github.workspace }}/tools/dotcms-cli/cli/target/distributions/*.tar.gz     
 
   release:
     needs: [ precheck, build ]
@@ -249,10 +252,10 @@ jobs:
       - name: 'Download all build artifacts'
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-*
           path: ${{ github.workspace }}/artifacts
+          pattern: artifacts-*
           merge-multiple: true
-          
+
       - name: 'List artifacts'
         run: |
           ls -R
@@ -296,5 +299,95 @@ jobs:
 
           ./mvnw -B -ntp versions:set versions:commit -DnewVersion=$NEXT_VERSION
 
-          git commit --allow-empty -a -m "⬆️  Next version $NEXT_VERSION"
+          git commit --allow-empty -a -m "⬆️  Next CLI version $NEXT_VERSION"
           git push https://${{ secrets.CI_MACHINE_USER }}:${{ secrets.CI_MACHINE_TOKEN }}@github.com/${GITHUB_REPOSITORY}
+
+  publish-npm-package:
+    name: "Publish NPM Package"
+    if: success()
+    needs: [ build, release ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: 'Set up Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 'Install Jinja2'
+        run: pip install jinja2-cli
+
+      - name: 'Download all build artifacts'
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ github.workspace }}/artifacts
+          pattern: artifacts-*
+          merge-multiple: true
+
+      - name: 'Generate package version suffix'
+        id: generate-version-suffix
+        env:
+          MVN_PACKAGE_VERSION: ${{ github.event.inputs.version }}
+          IS_SNAPSHOT_VERSION: ${{ contains(github.event.inputs.version, 'SNAPSHOT') }}
+        run: |
+          if [ "$IS_SNAPSHOT_VERSION" = "true" ]; then
+              echo "Snapshot version found.";
+              TAG="rc"
+              if npm view $NPM_PACKAGE_NAME &> /dev/null; then
+                echo "${NPM_PACKAGE_NAME} found.";
+                LAST_RC_VERSION=$(npm view $NPM_PACKAGE_NAME versions --json | jq -r 'map(select(test("-rc\\d+$"))) | max')
+                echo $LAST_RC_VERSION
+                NEXT_RC_VERSION=$(echo "$LAST_RC_VERSION" | awk -F '-rc' '{print $1 "-rc" $2 + 1}')
+                echo $NEXT_RC_VERSION
+                RC_SUFFIX=$(echo "$NEXT_RC_VERSION" | sed -n 's/.*-rc\([0-9]*\)/-rc\1/p')
+                echo $RC_SUFFIX
+              else
+                echo "${NPM_PACKAGE_NAME} not found.";
+                RC_SUFFIX="-rc1"
+              fi;
+          else
+            echo "Release version found.";
+            TAG="latest"
+            RC_SUFFIX=""              
+          fi;
+
+          VERSION=$(echo "$MVN_PACKAGE_VERSION" | sed 's/-SNAPSHOT//I')
+          echo "NPM_PACKAGE_VERSION=${VERSION}${RC_SUFFIX}" >> $GITHUB_ENV
+          echo "NPM_PACKAGE_VERSION_TAG=$TAG" >> $GITHUB_ENV
+
+      - name: 'NPM Package setup'
+        working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
+        env:
+          MVN_PACKAGE_VERSION: ${{ github.event.inputs.version }}
+        run: |          
+          echo "Adding bin folder with all the binaries"
+          mkdir -p bin
+          find ${{ github.workspace }}/artifacts/distributions/ -name "*.zip" -exec unzip -d bin {} \;
+
+          echo "Adding wrapper script"
+          mv src/postinstall.js.seed src/postinstall.js
+          
+          echo "Adding README.md file"
+          cp ${{ github.workspace }}/tools/dotcms-cli/README.md .
+          
+          echo "Adding package.json file"
+          jinja2 package.j2 -D packageName=${MVN_PACKAGE_NAME} -D npmPackageName=${NPM_PACKAGE_NAME} -D npmPackageVersion=${NPM_PACKAGE_VERSION} -D packageVersion=${MVN_PACKAGE_VERSION} --format json -o package.json
+          rm -f package.j2
+          
+          cat package.json
+          cat src/postinstall.js
+
+      - name: 'NPM Package tree'
+        run: ls -R ${{ github.workspace }}/tools/dotcms-cli/npm/
+
+      - name: 'Publish to NPM registry'
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
+          npm publish --access public --tag ${NPM_PACKAGE_VERSION_TAG}
