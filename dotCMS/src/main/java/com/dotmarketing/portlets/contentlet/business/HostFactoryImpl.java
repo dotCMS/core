@@ -119,8 +119,7 @@ public class HostFactoryImpl implements HostFactory {
 
     private static final String SITE_IS_LIVE = "cvi.live_inode IS NOT NULL";
     @VisibleForTesting
-    protected static final String SITE_IS_LIVE_OR_STOPPED = "cvi.live_inode IS NOT null or " +
-            "(cvi.live_inode IS NULL AND cvi.deleted = false )";
+    protected static final String SITE_IS_LIVE_OR_STOPPED = "cvi.deleted = false";
     private static final String SITE_IS_STOPPED = "cvi.live_inode IS NULL AND cvi" +
             ".deleted = " +
             getDBFalse();
@@ -137,7 +136,7 @@ public class HostFactoryImpl implements HostFactory {
 
     // query that Exact matches should be at the top of the search results.
     private static final String PRIORITIZE_EXACT_MATCHES =
-            "ORDER BY CASE WHEN LOWER(%s) = ? THEN 0 ELSE 1 END";
+            "ORDER BY length(%s) ";
 
     /**
      * Default class constructor.
@@ -771,9 +770,8 @@ public class HostFactoryImpl implements HostFactory {
         dc.setSQL(sqlQuery.toString());
         if (UtilMethods.isSet(siteNameFilter)) {
             // Add the site name filter parameter
-            dc.addParam("%" + siteNameFilter.trim() + "%");
-            // Add the site name filter parameter again, but this time for the exact match
-            dc.addParam(siteNameFilter.trim().replace("%", ""));
+            dc.addParam(("%" + siteNameFilter.trim() + "%").replace("%%", "%"));
+
         }
         if (limit > 0) {
             dc.setMaxRows(limit);
