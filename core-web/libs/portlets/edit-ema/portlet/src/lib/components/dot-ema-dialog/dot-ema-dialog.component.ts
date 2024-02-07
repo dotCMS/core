@@ -1,0 +1,193 @@
+import { fromEvent } from 'rxjs';
+
+import { NgIf, NgStyle, NgSwitch, NgSwitchCase } from '@angular/common';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    DestroyRef,
+    ElementRef,
+    EventEmitter,
+    Output,
+    ViewChild,
+    inject
+} from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+
+import { DialogModule } from 'primeng/dialog';
+
+import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
+import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
+
+import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
+
+import { ActionPayload } from '../../shared/models';
+import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector.component';
+
+@Component({
+    selector: 'dot-edit-ema-dialog',
+    standalone: true,
+    templateUrl: './dot-ema-dialog.component.html',
+    styleUrl: './dot-ema-dialog.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        NgIf,
+        NgSwitch,
+        NgSwitchCase,
+        NgStyle,
+        SafeUrlPipe,
+        EmaFormSelectorComponent,
+        DialogModule,
+        DotSpinnerModule
+    ],
+    providers: [DotEmaDialogStore]
+})
+export class DotEmaDialogComponent {
+    @ViewChild('iframe') iframe: ElementRef<HTMLIFrameElement>;
+
+    @Output() customEvent = new EventEmitter<{ event: CustomEvent; payload: ActionPayload }>();
+    @Output() formSelected = new EventEmitter<{ identifier: string; payload: ActionPayload }>();
+
+    private readonly destroyRef$ = inject(DestroyRef);
+    private readonly store = inject(DotEmaDialogStore);
+
+    protected readonly dialogState = toSignal(this.store.dialogState$);
+
+    get ds() {
+        return this.dialogState();
+    }
+
+    /**
+     *
+     * @memberof DotEmaDialogComponent
+     */
+    resetDialog() {
+        this.store.resetDialog();
+    }
+
+    /**
+     * Add contentlet
+     *
+     * @param {ActionPayload} payload
+     * @memberof EditEmaEditorComponent
+     */
+    addContentlet(payload: ActionPayload): void {
+        this.store.openAddIframe({
+            containerId: payload.container.identifier,
+            acceptTypes: payload.container.acceptTypes ?? '*',
+            language_id: payload.language_id,
+            payload
+        });
+    }
+
+    /**
+     * Add Form
+     *
+     * @param {ActionPayload} _payload
+     * @memberof EditEmaEditorComponent
+     */
+    addForm(payload: ActionPayload): void {
+        this.store.openAddFormIframe(payload);
+    }
+
+    /**
+     * Add Widget
+     *
+     * @param {ActionPayload} payload
+     * @memberof EditEmaEditorComponent
+     */
+    addWidget(payload: ActionPayload): void {
+        this.store.openAddIframe({
+            containerId: payload.container.identifier,
+            acceptTypes: DotCMSBaseTypesContentTypes.WIDGET,
+            language_id: payload.language_id,
+            payload
+        });
+    }
+    /**
+     * Edit contentlet
+     *
+     * @param {ActionPayload} payload
+     * @memberof EditEmaEditorComponent
+     */
+    editContentlet(payload: Partial<ActionPayload>) {
+        this.store.openEditIframe({
+            inode: payload.contentlet.inode,
+            title: payload.contentlet.title
+        });
+    }
+
+    /**
+     * Create contentlet form
+     *
+     * @param {{ url: string; contentType: string }} { url, contentType }
+     * @memberof DotEmaDialogComponent
+     */
+    createContentlet({ url, contentType }: { url: string; contentType: string }) {
+        this.store.openCreateIframe({
+            url,
+            contentType
+        });
+    }
+
+    /**
+     * Create contentlet from palette
+     *
+     * @param {{
+     *         variable: string;
+     *         name: string;
+     *         payload: ActionPayload;
+     *     }} {
+     *         variable,
+     *         name,
+     *         payload
+     *     }
+     * @memberof DotEmaDialogComponent
+     */
+    createContentletFromPalette({
+        variable,
+        name,
+        payload
+    }: {
+        variable: string;
+        name: string;
+        payload: ActionPayload;
+    }) {
+        this.store.createContentFromPalette({
+            variable,
+            name,
+            payload
+        });
+    }
+
+    /**
+     * Iframe load event
+     *
+     * @protected
+     * @memberof DotEmaDialogComponent
+     */
+    protected onIframeLoad() {
+        this.store.setLoading(false);
+        // This event is destroyed when you close the dialog
+
+        fromEvent(
+            // The events are getting sended to the document
+            this.iframe.nativeElement.contentWindow.document,
+            'ng-event'
+        )
+            .pipe(takeUntilDestroyed(this.destroyRef$))
+            .subscribe((event: CustomEvent) => {
+                this.customEvent.emit({ event, payload: this.dialogState().payload });
+            });
+    }
+
+    /**
+     * Form selected event
+     *
+     * @protected
+     * @param {string} identifier
+     * @memberof DotEmaDialogComponent
+     */
+    protected onFormSelected(identifier: string) {
+        this.formSelected.emit({ identifier, payload: this.dialogState().payload });
+    }
+}
