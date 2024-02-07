@@ -29,7 +29,7 @@ public abstract class ContentTypeSql {
 
 	public static String SELECT_ALL_STRUCTURE_FIELDS = "select  inode.inode as inode, owner, idate as idate, name, "
 			+ "description, default_structure, page_detail, structuretype, system, fixed, velocity_var_name , "
-			+ "url_map_pattern , host, folder, expire_date_var , publish_date_var , mod_date, icon, marked_for_deletion, sort_order "
+			+ "url_map_pattern , host, folder, expire_date_var , publish_date_var , mod_date, icon, marked_for_deletion, sort_order, metadata "
 			+ "from inode, structure  where inode.type='structure' and inode.inode = structure.inode ";
 
 	public static String SELECT_ALL_STRUCTURE_FIELDS_EXCLUDE_MARKED_FOR_DELETE = SELECT_ALL_STRUCTURE_FIELDS + NON_MARKED_FOR_DELETION;
@@ -49,8 +49,8 @@ public abstract class ContentTypeSql {
 	public static String INSERT_TYPE_INODE = "insert into inode (inode, idate, owner, type) values (?,?,?,'structure')";
 
 	public static String INSERT_TYPE = "insert into structure(inode,name,description,default_structure,page_detail,"
-			+ "structuretype,system,fixed,velocity_var_name,url_map_pattern,host,folder,expire_date_var,publish_date_var,mod_date,icon,sort_order,marked_for_deletion) "
-			+ "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+			+ "structuretype,system,fixed,velocity_var_name,url_map_pattern,host,folder,expire_date_var,publish_date_var,mod_date,icon,sort_order,marked_for_deletion,metadata) "
+			+ "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
 	public static String UPDATE_TYPE = "update structure set "
 			+ "name=?, "
@@ -68,7 +68,8 @@ public abstract class ContentTypeSql {
 			+ "mod_date=?,"
 			+ "icon=?,"
 			+ "sort_order=?, "
-			+ "marked_for_deletion=? "
+			+ "marked_for_deletion=?, "
+			+ "metadata=? "
 			+ "where inode=?";
 
 	public static String SELECT_QUERY_CONDITION = SELECT_ALL_STRUCTURE_FIELDS_EXCLUDE_MARKED_FOR_DELETE

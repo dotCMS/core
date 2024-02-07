@@ -1,4 +1,3 @@
-import { expect, it } from '@jest/globals';
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import {
     byTestId,
@@ -6,32 +5,29 @@ import {
     createHostFactory,
     Spectator,
     SpectatorHost
-} from '@ngneat/spectator';
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, NgZone } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
 import { DotLicenseService, DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
+import { DotEditContentBinaryFieldComponent } from '@dotcms/edit-content';
 import { DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
 import { dotcmsContentletMock } from '@dotcms/utils-testing';
 
-import { DotBinaryFieldUiMessageComponent } from './components/dot-binary-field-ui-message/dot-binary-field-ui-message.component';
-import { DotEditContentBinaryFieldComponent } from './dot-edit-content-binary-field.component';
 import { BinaryFieldMode, BinaryFieldStatus } from './interfaces';
 import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
 import { DotBinaryFieldValidatorService } from './service/dot-binary-field-validator/dot-binary-field-validator.service';
 import { DotBinaryFieldStore } from './store/binary-field.store';
 import { getUiMessage } from './utils/binary-field-utils';
-import { CONTENTTYPE_FIELDS_MESSAGE_MOCK, FIELD } from './utils/mock';
+import { CONTENTTYPE_FIELDS_MESSAGE_MOCK, FIELD, fileMetaData } from './utils/mock';
 
 const TEMP_FILE_MOCK: DotCMSTempFile = {
     fileName: 'image.png',
@@ -42,7 +38,8 @@ const TEMP_FILE_MOCK: DotCMSTempFile = {
     referenceUrl:
         'https://images.unsplash.com/photo-1575936123452-b67c3203c357?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aW1hZ2V8ZW58MHx8MHx8fDA%3D',
     thumbnailUrl: 'image.png',
-    mimeType: 'mimeType'
+    mimeType: 'mimeType',
+    metadata: fileMetaData
 };
 
 const file = new File([''], 'filename');
@@ -59,6 +56,13 @@ const DROP_ZONE_FILE_EVENT: DropZoneFileEvent = {
     validity
 };
 
+const MOCK_DOTCMS_FILE = {
+    ...dotcmsContentletMock,
+    binaryField: '12345',
+    baseType: 'CONTENT',
+    binaryFieldMetaData: fileMetaData
+};
+
 describe('DotEditContentBinaryFieldComponent', () => {
     let spectator: Spectator<DotEditContentBinaryFieldComponent>;
     let store: DotBinaryFieldStore;
@@ -68,14 +72,6 @@ describe('DotEditContentBinaryFieldComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotEditContentBinaryFieldComponent,
-        imports: [
-            NoopAnimationsModule,
-            ButtonModule,
-            DialogModule,
-            MonacoEditorModule,
-            DotBinaryFieldUiMessageComponent,
-            HttpClientTestingModule
-        ],
         componentProviders: [DotBinaryFieldStore],
         providers: [
             DotBinaryFieldEditImageService,
@@ -106,10 +102,31 @@ describe('DotEditContentBinaryFieldComponent', () => {
     });
 
     beforeEach(() => {
+        const systemOptions = {
+            allowURLImport: true,
+            allowCodeWrite: true
+        };
+
+        const JSONString = JSON.stringify(systemOptions);
+
+        const newField = {
+            ...FIELD,
+            fieldVariables: [
+                ...FIELD.fieldVariables,
+                {
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                    fieldId: '5df3f8fc49177c195740bcdc02ec2db7',
+                    id: '1ff1ff05-b9fb-4239-ad3d-b2cfaa9a8406',
+                    key: 'systemOptions',
+                    value: JSONString
+                }
+            ]
+        };
+
         spectator = createComponent({
             detectChanges: false,
             props: {
-                field: FIELD,
+                field: newField,
                 contentlet: null
             }
         });
@@ -122,7 +139,18 @@ describe('DotEditContentBinaryFieldComponent', () => {
         const spyEmit = jest.spyOn(spectator.component.valueUpdated, 'emit');
         spectator.detectChanges();
         store.setTempFile(TEMP_FILE_MOCK);
-        expect(spyEmit).toHaveBeenCalledWith(TEMP_FILE_MOCK.id);
+        expect(spyEmit).toHaveBeenCalledWith({
+            value: TEMP_FILE_MOCK.id,
+            fileName: TEMP_FILE_MOCK.fileName
+        });
+    });
+
+    it('should not emit new value is is equal to current value', () => {
+        spectator.setInput('contentlet', MOCK_DOTCMS_FILE);
+        const spyEmit = jest.spyOn(spectator.component.valueUpdated, 'emit');
+        spectator.detectChanges();
+        store.setValue(MOCK_DOTCMS_FILE.binaryField);
+        expect(spyEmit).not.toHaveBeenCalled();
     });
 
     describe('Dropzone', () => {
@@ -133,7 +161,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should show dropzone when statust is INIT', () => {
+        it('should show dropzone when status is INIT', () => {
             expect(spectator.query('dot-drop-zone')).toBeTruthy();
         });
 
@@ -218,18 +246,19 @@ describe('DotEditContentBinaryFieldComponent', () => {
 
         it('should remove file and set INIT status when remove file ', async () => {
             const spyRemoveFile = jest.spyOn(store, 'removeFile');
-            const dotBinarPreviewFile = spectator.fixture.debugElement.query(
+            const dotBinaryPreviewFile = spectator.fixture.debugElement.query(
                 By.css('[data-testId="preview"]')
             );
 
-            dotBinarPreviewFile.componentInstance.removeFile.emit();
+            dotBinaryPreviewFile.componentInstance.removeFile.emit();
 
             store.vm$.subscribe((state) => {
                 expect(state).toEqual({
                     ...state,
                     status: BinaryFieldStatus.INIT,
                     value: '',
-                    file: null
+                    contentlet: null,
+                    tempFile: null
                 });
             });
 
@@ -257,7 +286,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 ngZone.run(
                     fakeAsync(() => {
                         const spy = jest.spyOn(dotBinaryFieldEditImageService, 'openImageEditor');
-                        const spyTempFile = jest.spyOn(store, 'setTempFile');
+                        const spyTempFile = jest.spyOn(store, 'setFileFromTemp');
                         const dotBinaryFieldPreviewComponent = spectator.fixture.debugElement.query(
                             By.css('dot-binary-field-preview')
                         );
@@ -300,7 +329,6 @@ describe('DotEditContentBinaryFieldComponent', () => {
         });
 
         it('should show preview when status is PREVIEW', async () => {
-            store.setStatus(BinaryFieldStatus.PREVIEW);
             store.setTempFile(TEMP_FILE_MOCK);
             spectator.detectChanges();
 
@@ -310,9 +338,33 @@ describe('DotEditContentBinaryFieldComponent', () => {
         });
     });
 
+    describe('No systemOptions', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                detectChanges: false,
+                props: {
+                    field: FIELD,
+                    contentlet: null
+                }
+            });
+        });
+
+        it("shouldn't show url import button if not setted in settings", () => {
+            const importFromURLButton = spectator.query(byTestId('action-url-btn'));
+
+            expect(importFromURLButton).toBeNull();
+        });
+
+        it("shouldn't show code editor button if not setted in settings", async () => {
+            const codeEditorButton = spectator.query(byTestId('action-editor-btn'));
+
+            expect(codeEditorButton).toBeNull();
+        });
+    });
+
     describe('Dialog', () => {
         beforeEach(async () => {
-            jest.spyOn(store, 'setFileAndContent').mockReturnValue(of(null).subscribe());
+            jest.spyOn(store, 'setFileFromContentlet').mockReturnValue(of(null).subscribe());
             spectator.detectChanges();
             await spectator.fixture.whenStable();
             spectator.detectChanges();
@@ -334,7 +386,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
             expect(spySetMode).toHaveBeenCalledWith(BinaryFieldMode.EDITOR);
         });
 
-        it('should open dialog with url componet component when click on url button', async () => {
+        it('should open dialog with url component component when click on url button', async () => {
             const spySetMode = jest.spyOn(store, 'setMode');
             const urlBtn = spectator.query(byTestId('action-url-btn')) as HTMLButtonElement;
             urlBtn.click();
@@ -355,24 +407,19 @@ describe('DotEditContentBinaryFieldComponent', () => {
         describe('Contentlet - BaseTyp FILEASSET', () => {
             it('should set the correct file asset', () => {
                 const spy = jest
-                    .spyOn(store, 'setFileAndContent')
+                    .spyOn(store, 'setFileFromContentlet')
                     .mockReturnValue(of(null).subscribe());
-                const mockFileAsset = {
-                    ...dotcmsContentletMock,
+                const mock = {
+                    ...MOCK_DOTCMS_FILE,
                     baseType: 'FILEASSET',
-                    metaData: {
-                        mimeType: 'text/html'
-                    }
+                    metaData: fileMetaData
                 };
-                const { inode, titleImage, contentType: mimeType } = mockFileAsset;
-                spectator.setInput('contentlet', mockFileAsset);
+                spectator.setInput('contentlet', mock);
                 spectator.detectChanges();
                 expect(spy).toHaveBeenCalledWith({
-                    inode,
-                    titleImage,
-                    mimeType,
-                    url: mockFileAsset[FIELD.variable],
-                    ...mockFileAsset.metaData
+                    ...mock,
+                    fieldVariable: FIELD.variable,
+                    value: mock[FIELD.variable]
                 });
             });
         });
@@ -380,25 +427,15 @@ describe('DotEditContentBinaryFieldComponent', () => {
         describe('Contentlet - BaseTyp CONTENT', () => {
             it('should set the correct file asset', () => {
                 const spy = jest
-                    .spyOn(store, 'setFileAndContent')
+                    .spyOn(store, 'setFileFromContentlet')
                     .mockReturnValue(of(null).subscribe());
-                const metaDataKey = `${FIELD.variable}MetaData`;
-                const mockFileAsset = {
-                    ...dotcmsContentletMock,
-                    baseType: 'CONTENT',
-                    [metaDataKey]: {
-                        mimeType: 'text/html'
-                    }
-                };
-                const { inode, titleImage, contentType: mimeType } = mockFileAsset;
-                spectator.setInput('contentlet', mockFileAsset);
+                const variable = FIELD.variable;
+                spectator.setInput('contentlet', MOCK_DOTCMS_FILE);
                 spectator.detectChanges();
                 expect(spy).toHaveBeenCalledWith({
-                    inode,
-                    titleImage,
-                    mimeType,
-                    url: mockFileAsset[FIELD.variable],
-                    ...mockFileAsset[metaDataKey]
+                    ...MOCK_DOTCMS_FILE,
+                    fieldVariable: variable,
+                    value: MOCK_DOTCMS_FILE[variable]
                 });
             });
         });
@@ -424,7 +461,7 @@ class MockFormComponent {
     });
 }
 
-describe('DotEditContentBinaryFieldComponent - ControlValueAccesor', () => {
+describe('DotEditContentBinaryFieldComponent - ControlValueAccessor', () => {
     let spectator: SpectatorHost<DotEditContentBinaryFieldComponent, MockFormComponent>;
     const createHost = createHostFactory({
         component: DotEditContentBinaryFieldComponent,
@@ -445,7 +482,7 @@ describe('DotEditContentBinaryFieldComponent - ControlValueAccesor', () => {
     });
 
     it('should set form value when binary file changes', () => {
-        // Call the onChange method from ControlValueAccesor
+        // Call the onChange method from ControlValueAccessor
         spectator.component.setTempFile(TEMP_FILE_MOCK);
         const formValue = spectator.hostComponent.form.get('binaryField').value; // Get the form value
         expect(formValue).toBe(TEMP_FILE_MOCK.id); // Check if the form value was set

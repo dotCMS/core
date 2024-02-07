@@ -17,13 +17,17 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DotEventsService, DotMessageService, DotThemesService } from '@dotcms/data-access';
+import {
+    DotEventsService,
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotRouterService,
+    DotThemesService,
+    DotGlobalMessageService
+} from '@dotcms/data-access';
 import { DotTemplateDesigner, DotTheme } from '@dotcms/dotcms-models';
 import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 import {

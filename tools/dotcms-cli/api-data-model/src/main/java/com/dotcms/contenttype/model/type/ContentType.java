@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
@@ -163,6 +164,12 @@ public abstract class ContentType {
     @Nullable
     public abstract String urlMapPattern();
 
+    @Nullable
+    @Value.Default
+    public Map<String, ? extends Object> metadata() {
+        return null;
+    }
+
     @Value.Default
     public List<Workflow> workflows() {
         return Collections.emptyList();
@@ -180,7 +187,7 @@ public abstract class ContentType {
     /**
      * Class id resolver allows us using smaller ClassNames that eventually get mapped to the fully qualified class name
      */
-    static class ClassNameAliasResolver extends ClassNameIdResolver {
+    public static class ClassNameAliasResolver extends ClassNameIdResolver {
 
         static final String IMMUTABLE = "Immutable";
 

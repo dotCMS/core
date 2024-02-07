@@ -1,12 +1,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { useContext } from 'react';
-import { GlobalContext } from '@/lib/providers/global';
+import { useDotcmsPageContext } from '@dotcms/react';
 
 function Banner({ title, image, caption, buttonText, link }) {
     const {
         viewAs: { language }
-    } = useContext(GlobalContext);
+    } = useDotcmsPageContext();
 
     return (
         <div className="relative w-full p-4 bg-gray-200 h-96">
@@ -20,7 +19,7 @@ function Banner({ title, image, caption, buttonText, link }) {
                 <h2 className="mb-2 text-6xl font-bold text-shadow">{title}</h2>
                 <p className="mb-4 text-xl text-shadow">{caption}</p>
                 <Link
-                    className="p-4 text-xl transition duration-300 bg-blue-500 rounded hover:bg-blue-600"
+                    className="p-4 text-xl transition duration-300 bg-purple-500 rounded hover:bg-purple-600"
                     href={link || '#'}>
                     {buttonText}
                 </Link>

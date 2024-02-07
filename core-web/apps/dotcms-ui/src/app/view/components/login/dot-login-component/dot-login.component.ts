@@ -10,11 +10,9 @@ import { SelectItem } from 'primeng/api';
 import { take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotRouterService, DotFormatDateService } from '@dotcms/data-access';
 import { DotLoginParams, HttpCode, LoggerService, LoginService, User } from '@dotcms/dotcms-js';
 import { DotLoginInformation, DotLoginLanguage } from '@dotcms/dotcms-models';
-import { DotFormatDateService } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 @Component({

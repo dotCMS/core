@@ -33,7 +33,7 @@ jobs:
         with:
           fetch_operation: 'WITH_LABELS'
           fetch_value: ${{ github.event.inputs.labels }}
-          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Apply label operation
         uses: ./.github/actions/issue-labeler
@@ -41,4 +41,4 @@ jobs:
           issues_json: ${{ steps.fetch-next-release-issues.outputs.issues }}
           labels: ${{ github.event.inputs.applying_labels }}
           operation: ${{ github.event.inputs.operation }}
-          github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}

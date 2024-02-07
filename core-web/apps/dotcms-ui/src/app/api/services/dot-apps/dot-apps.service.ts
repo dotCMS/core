@@ -5,10 +5,10 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck, take } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import {
-    DotApps,
+    DotApp,
     DotAppsExportConfiguration,
     DotAppsImportConfiguration,
     DotAppsSaveData
@@ -35,11 +35,11 @@ export class DotAppsService {
      * @returns Observable<DotApps[]>
      * @memberof DotAppsService
      */
-    get(filter?: string): Observable<DotApps[] | null> {
+    get(filter?: string): Observable<DotApp[] | null> {
         const url = filter ? `${appsUrl}?filter=${filter}` : appsUrl;
 
         return this.coreWebService
-            .requestView<DotApps[]>({
+            .requestView<DotApp[]>({
                 url
             })
             .pipe(
@@ -59,7 +59,7 @@ export class DotAppsService {
      * @returns Observable<DotApps>
      * @memberof DotAppsService
      */
-    getConfigurationList(appKey: string): Observable<DotApps | null> {
+    getConfigurationList(appKey: string): Observable<DotApp | null> {
         return this.coreWebService
             .requestView({
                 url: `${appsUrl}/${appKey}`
@@ -82,7 +82,7 @@ export class DotAppsService {
      * @returns Observable<DotApps>
      * @memberof DotAppsService
      */
-    getConfiguration(appKey: string, id: string): Observable<DotApps | null> {
+    getConfiguration(appKey: string, id: string): Observable<DotApp | null> {
         return this.coreWebService
             .requestView({
                 url: `${appsUrl}/${appKey}/${id}`

@@ -6,7 +6,7 @@
     "prefix": "dotcms",
     "targets": {
         "build": {
-            "executor": "@angular-devkit/build-angular:browser",
+            "executor": "@nx/angular:browser-esbuild",
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "dist/apps/dotcms-binary-field-builder",
@@ -54,7 +54,7 @@
                             "maximumError": "400kb"
                         }
                     ],
-                    "outputHashing": "all"
+                    "outputHashing": "none"
                 },
                 "development": {
                     "buildOptimizer": false,
@@ -62,7 +62,14 @@
                     "vendorChunk": true,
                     "extractLicenses": false,
                     "sourceMap": true,
-                    "namedChunks": true
+                    "namedChunks": true,
+                    "watch": true
+                },
+                "tomcat": {
+                    "outputPath": "../../tomcat9/webapps/ROOT/dotcms-binary-field-builder",
+                    "sourceMap": true,
+                    "optimization": false,
+                    "watch": true
                 }
             },
             "defaultConfiguration": "production"
@@ -71,42 +78,29 @@
             "executor": "@angular-devkit/build-angular:dev-server",
             "configurations": {
                 "production": {
-                    "browserTarget": "dotcms-binary-field-builder:build:production"
+                    "buildTarget": "dotcms-binary-field-builder:build:production"
                 },
                 "development": {
-                    "browserTarget": "dotcms-binary-field-builder:build:development"
+                    "buildTarget": "dotcms-binary-field-builder:build:development"
                 }
             },
-            "defaultConfiguration": "development"
+            "defaultConfiguration": "production"
         },
         "extract-i18n": {
             "executor": "@angular-devkit/build-angular:extract-i18n",
             "options": {
-                "browserTarget": "dotcms-binary-field-builder:build"
+                "buildTarget": "dotcms-binary-field-builder:build"
             }
         },
         "lint": {
-            "executor": "@nrwl/linter:eslint",
-            "outputs": ["{options.outputFile}"],
-            "options": {
-                "lintFilePatterns": [
-                    "apps/dotcms-binary-field-builder/**/*.ts",
-                    "apps/dotcms-binary-field-builder/**/*.html"
-                ]
-            }
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"]
         },
         "test": {
-            "executor": "@nrwl/jest:jest",
+            "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
-                "jestConfig": "apps/dotcms-binary-field-builder/jest.config.ts",
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "codeCoverage": true
-                }
+                "jestConfig": "apps/dotcms-binary-field-builder/jest.config.ts"
             }
         }
     },

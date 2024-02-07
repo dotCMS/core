@@ -5,21 +5,20 @@ import { Injectable } from '@angular/core';
 import { map, switchMap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-
-import { DotSeoMetaTagsUtilService } from './dot-seo-meta-tags-util.service';
-
 import {
-    SeoMetaTags,
-    SEO_LIMITS,
-    SEO_OPTIONS,
-    SeoRulesResult,
+    SEO_MEDIA_TYPES,
     SeoMetaTagsResult,
     SeoMediaKeys,
-    ImageMetaData,
+    SEO_OPTIONS,
     OpenGraphOptions,
-    SEO_MEDIA_TYPES,
+    SeoMetaTags,
+    SeoRulesResult,
+    ImageMetaData,
+    SEO_LIMITS,
     IMG_NOT_FOUND_KEY
-} from '../dot-edit-content-html/models/meta-tags-model';
+} from '@dotcms/dotcms-models';
+
+import { DotSeoMetaTagsUtilService } from './dot-seo-meta-tags-util.service';
 
 @Injectable()
 export class DotSeoMetaTagsService {
@@ -270,7 +269,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (description?.length < SEO_LIMITS.MIN_DESCRIPTION_LENGTH) {
+        if (description?.length < SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.description.less')
@@ -278,7 +277,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (description?.length > SEO_LIMITS.MAX_DESCRIPTION_LENGTH) {
+        if (description?.length > SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.description.greater')
@@ -288,8 +287,8 @@ export class DotSeoMetaTagsService {
 
         if (
             description &&
-            description?.length >= SEO_LIMITS.MIN_DESCRIPTION_LENGTH &&
-            description?.length <= SEO_LIMITS.MAX_DESCRIPTION_LENGTH
+            description?.length >= SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH &&
+            description?.length <= SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH
         ) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getDoneItem(
@@ -333,7 +332,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (title?.length > SEO_LIMITS.MAX_TITLE_LENGTH) {
+        if (title?.length > SEO_LIMITS.MAX_OG_TITLE_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.title.greater')
@@ -341,7 +340,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (title?.length < SEO_LIMITS.MIN_TITLE_LENGTH) {
+        if (title?.length < SEO_LIMITS.MIN_OG_TITLE_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.title.less')
@@ -351,8 +350,8 @@ export class DotSeoMetaTagsService {
 
         if (
             titleElements?.length === SEO_LIMITS.MAX_TITLES &&
-            title?.length <= SEO_LIMITS.MAX_TITLE_LENGTH &&
-            title?.length >= SEO_LIMITS.MIN_TITLE_LENGTH
+            title?.length <= SEO_LIMITS.MAX_OG_TITLE_LENGTH &&
+            title?.length >= SEO_LIMITS.MIN_OG_TITLE_LENGTH
         ) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getDoneItem(

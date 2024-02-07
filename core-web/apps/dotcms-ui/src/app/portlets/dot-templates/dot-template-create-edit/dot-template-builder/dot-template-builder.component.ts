@@ -13,9 +13,8 @@ import {
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
-import { DotPropertiesService } from '@dotcms/data-access';
+import { DotPropertiesService, DotRouterService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotTemplateItem } from '../store/dot-template.store';
 

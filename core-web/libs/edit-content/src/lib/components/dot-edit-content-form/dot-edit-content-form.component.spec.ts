@@ -1,21 +1,23 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator, mockProvider } from '@ngneat/spectator/jest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Validators } from '@angular/forms';
 
 import { TabView } from 'primeng/tabview';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService, DotFormatDateService } from '@dotcms/data-access';
+import { DotFormatDateServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
+import { DotEditContentService } from '../../services/dot-edit-content.service';
 import {
     CONTENT_FORM_DATA_MOCK,
     JUST_FIELDS_MOCKS,
     LAYOUT_FIELDS_VALUES_MOCK,
     LAYOUT_MOCK,
     MOCK_DATE,
+    MockResizeObserver,
     TAB_DIVIDER_MOCK
 } from '../../utils/mocks';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
@@ -33,7 +35,9 @@ describe('DotFormComponent', () => {
                     Save: 'Save',
                     Content: 'content'
                 })
-            }
+            },
+            { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
+            mockProvider(DotEditContentService)
         ]
     });
 
@@ -105,32 +109,69 @@ describe('DotFormComponent', () => {
             expect(tabViewComponent).toBeNull();
             expect(formRow).toExist();
         });
-    });
 
-    describe('no data', () => {
-        beforeEach(() => {
-            spectator = createComponent({});
+        it('should initialize the form controls', () => {
+            expect(spectator.component.form.value).toEqual({
+                name1: 'Placeholder',
+                text2: null,
+                text3: null,
+                someTag: ['some', 'tags', 'separated', 'by', 'comma'],
+                date: new Date(MOCK_DATE)
+            });
         });
 
-        it('should have form undefined', () => {
-            jest.spyOn(spectator.component, 'initilizeForm');
-            expect(spectator.component.form).toEqual(undefined);
-            expect(spectator.component.initilizeForm).not.toHaveBeenCalled();
+        it('should initialize the form validators', () => {
+            expect(
+                spectator.component.form.controls['name1'].hasValidator(Validators.required)
+            ).toBe(true);
+            expect(
+                spectator.component.form.controls['text2'].hasValidator(Validators.required)
+            ).toBe(true);
+            expect(
+                spectator.component.form.controls['text3'].hasValidator(Validators.required)
+            ).toBe(false);
+        });
+
+        it('should validate regex', () => {
+            expect(spectator.component.form.controls['text2'].valid).toBeFalsy();
+
+            spectator.component.form.controls['text2'].setValue('dot@gmail.com');
+            expect(spectator.component.form.controls['text2'].valid).toBeTruthy();
+        });
+
+        it('should have 1 row, 2 columns and 3 fields', () => {
+            expect(spectator.queryAll(byTestId('row'))).toHaveLength(1);
+            expect(spectator.queryAll(byTestId('column'))).toHaveLength(2);
+            expect(spectator.queryAll(byTestId('field'))).toHaveLength(5);
+        });
+
+        it('should pass field to attr to dot-edit-content-field', () => {
+            const fields = spectator.queryAll(DotEditContentFieldComponent);
+            JUST_FIELDS_MOCKS.forEach((field, index) => {
+                expect(fields[index].field).toEqual(field);
+            });
         });
     });
 
     describe('with data and multiple tabs', () => {
+        const originalResizeObserver = window.ResizeObserver;
+
         beforeEach(() => {
             spectator = createComponent({
                 detectChanges: false,
                 props: {
                     formData: {
                         ...CONTENT_FORM_DATA_MOCK,
-                        layout: [...LAYOUT_MOCK, TAB_DIVIDER_MOCK]
+                        contentType: {
+                            ...CONTENT_FORM_DATA_MOCK.contentType,
+                            layout: [...LAYOUT_MOCK, TAB_DIVIDER_MOCK]
+                        }
                     }
                 }
             });
             dotMessageService = spectator.inject(DotMessageService, true);
+
+            window.ResizeObserver = MockResizeObserver;
         });
 
         it('should have a p-tabView', () => {
@@ -140,6 +181,10 @@ describe('DotFormComponent', () => {
             expect(tabViewComponent.scrollable).toBeTruthy();
             expect(tabViewComponent).toExist();
             expect(dotMessageService.get).toHaveBeenCalled();
+        });
+
+        afterEach(() => {
+            window.ResizeObserver = originalResizeObserver;
         });
     });
 });

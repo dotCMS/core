@@ -20,7 +20,7 @@ export interface DotAiImagePromptComponentState {
     editorContent: string | null;
     contentlets: DotCMSContentlet[] | [];
     status: ComponentStatus;
-    error: string | null;
+    error: string;
 }
 
 export interface VmAiImagePrompt {
@@ -36,20 +36,21 @@ const initialState: DotAiImagePromptComponentState = {
     contentlets: [],
     prompt: null,
     editorContent: null,
-    error: null
+    error: ''
 };
 
 @Injectable({ providedIn: 'root' })
 export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptComponentState> {
+    //Selectors
     readonly isOpenDialog$ = this.select(this.state$, ({ showDialog }) => showDialog);
-
     readonly isLoading$ = this.select(
         this.state$,
         ({ status }) => status === ComponentStatus.LOADING
     );
-
+    readonly errorMsg$ = this.select(this.state$, ({ error }) => error);
     readonly getContentlets$ = this.select(this.state$, ({ contentlets }) => contentlets);
 
+    //Updaters
     readonly setPromptType = this.updater((state, selectedPromptType: PromptType) => ({
         ...state,
         selectedPromptType
@@ -60,6 +61,11 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         showDialog: true,
         selectedPromptType: DEFAULT_INPUT_PROMPT,
         editorContent
+    }));
+
+    readonly cleanError = this.updater((state) => ({
+        ...state,
+        error: ''
     }));
 
     readonly hideDialog = this.updater((state) => ({
@@ -77,6 +83,8 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         })
     );
 
+    // Effects
+
     /**
      * The `generateImage` variable is a function that generates an image based on a given prompt.
      *
@@ -93,7 +101,12 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                     selectedPromptType === 'auto' && editorContent
                         ? `${cleanPrompt} to illustrate the following content: ${editorContent}`
                         : cleanPrompt;
-                this.patchState({ status: ComponentStatus.LOADING, prompt: finalPrompt });
+
+                this.patchState({
+                    status: ComponentStatus.LOADING,
+                    prompt: finalPrompt,
+                    error: ''
+                });
 
                 return this.dotAiService.generateAndPublishImage(finalPrompt).pipe(
                     tapResponse(
@@ -103,8 +116,10 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                                 contentlets: contentLets
                             });
                         },
-                        () => {
-                            this.patchState({ status: ComponentStatus.IDLE });
+                        (error: string) => {
+                            this.patchState({ status: ComponentStatus.IDLE, error });
+
+                            return of(null);
                         }
                     )
                 );

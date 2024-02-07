@@ -12,6 +12,7 @@ import { Observable, Subject, combineLatest } from 'rxjs';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
+    ChangeDetectorRef,
     Component,
     ElementRef,
     EventEmitter,
@@ -110,13 +111,17 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     private themeId$ = this.store.themeId$;
 
+    private dotLayout: DotLayout;
+
     public readonly rowIcon = rowIcon;
     public readonly colIcon = colIcon;
     public readonly boxWidth = BOX_WIDTH;
     public readonly rowDisplayHeight = `${GRID_STACK_ROW_HEIGHT - 1}${GRID_STACK_UNIT}`; // setting a lower height to have space between rows
     public readonly rowOptions = rowInitialOptions;
     public readonly boxOptions = boxInitialOptions;
-    private dotLayout: DotLayout;
+    public customStyles = {
+        opacity: '0'
+    };
 
     public draggingElement: HTMLElement | null;
     public scrollDirection: SCROLL_DIRECTION = SCROLL_DIRECTION.NONE;
@@ -179,7 +184,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     constructor(
         private store: DotTemplateBuilderStore,
         private dialogService: DialogService,
-        private dotMessage: DotMessageService
+        private dotMessage: DotMessageService,
+        private cd: ChangeDetectorRef
     ) {
         this.rows$ = this.store.rows$.pipe(map((rows) => parseFromGridStackToDotObject(rows)));
 
@@ -219,6 +225,13 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     ngAfterViewInit() {
+        setTimeout(() => {
+            this.customStyles = {
+                opacity: '1'
+            };
+            this.cd.detectChanges();
+        }, 250);
+
         this.grid = GridStack.init(gridOptions).on('change', (_: Event, nodes: GridStackNode[]) => {
             this.store.moveRow(nodes as DotGridStackWidget[]);
         });

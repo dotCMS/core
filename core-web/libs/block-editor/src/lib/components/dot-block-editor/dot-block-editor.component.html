@@ -7,17 +7,17 @@
         }"
         [style]="customStyles">
         <tiptap-editor
-            [ngModel]="content"
             [editor]="editor"
             [ngClass]="{ 'overflow-hidden': freezeScroll }"
-            (ngModelChange)="onBlockEditorChange($event)"
-            (keyup)="subject.next()"></tiptap-editor>
+            [ngModel]="content"
+            (keyup)="subject.next()"
+            (ngModelChange)="onBlockEditorChange($event)"></tiptap-editor>
     </div>
 
     <dot-editor-count-bar
         *ngIf="showCharData"
-        [characterCount]="characterCount"
         [charLimit]="charLimit"
+        [characterCount]="characterCount"
         [readingTime]="readingTime">
     </dot-editor-count-bar>
 </ng-container>

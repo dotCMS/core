@@ -38,6 +38,14 @@
             @extend #small;
         }
     }
+
+    .p-icon-wrapper {
+        display: flex;
+        width: 20px;
+        height: 20px;
+        align-items: center;
+        justify-content: center;
+    }
 }
 
 // Shared disabled styles
