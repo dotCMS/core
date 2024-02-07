@@ -121,6 +121,8 @@ export class DotEditContentBinaryFieldComponent
     private onTouched: () => void;
     private tempId = '';
 
+    protected systemOptions: Record<string, boolean>;
+
     constructor(
         private readonly dotBinaryFieldStore: DotBinaryFieldStore,
         private readonly dotMessageService: DotMessageService,
@@ -182,6 +184,7 @@ export class DotEditContentBinaryFieldComponent
 
     ngAfterViewInit() {
         this.setFieldVariables();
+
         if (this.value) {
             this.dotBinaryFieldStore.setFileFromContentlet({
                 ...this.contentlet,
@@ -310,7 +313,7 @@ export class DotEditContentBinaryFieldComponent
      * @return {*}
      * @memberof DotEditContentBinaryFieldComponent
      */
-    handleFileDrop({ validity, file }: DropZoneFileEvent) {
+    handleFileDrop({ validity, file }: DropZoneFileEvent): void {
         if (!validity.valid) {
             this.handleFileDropError(validity);
 
@@ -327,13 +330,20 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     private setFieldVariables() {
-        const { accept, maxFileSize = 0 } = getFieldVariablesParsed<{
+        const {
+            accept,
+            maxFileSize = 0,
+            systemOptions = '{}'
+        } = getFieldVariablesParsed<{
             accept: string;
             maxFileSize: string;
+            systemOptions: string;
         }>(this.contentTypeField().fieldVariables);
 
         this.DotBinaryFieldValidatorService.setAccept(accept ? accept.split(',') : []);
         this.DotBinaryFieldValidatorService.setMaxFileSize(Number(maxFileSize));
+
+        this.systemOptions = JSON.parse(systemOptions);
     }
 
     /**
