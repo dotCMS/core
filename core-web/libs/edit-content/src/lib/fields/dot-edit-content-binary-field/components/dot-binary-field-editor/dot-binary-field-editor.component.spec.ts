@@ -90,7 +90,10 @@ describe('DotBinaryFieldEditorComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
-            detectChanges: false
+            detectChanges: false,
+            props: {
+                allowFileNameEdit: true
+            }
         });
 
         component = spectator.component;
@@ -116,12 +119,27 @@ describe('DotBinaryFieldEditorComponent', () => {
         expect(stopPropagationSpy).toHaveBeenCalled();
     });
 
-    describe('label', () => {
+    describe('input', () => {
         it('should set label and have css class required', () => {
             const label = spectator.query(byTestId('editor-label'));
 
             expect(label.innerHTML.trim()).toBe('File Name');
             expect(label.className).toBe('p-label-input-required');
+        });
+
+        it('should show the file name editor', () => {
+            const input = spectator.query(byTestId('editor-file-name'));
+
+            expect(input).not.toBeNull();
+        });
+
+        it('should not show the file name editor', () => {
+            spectator.setInput('allowFileNameEdit', false);
+            spectator.detectChanges();
+
+            const input = spectator.query(byTestId('editor-file-name'));
+
+            expect(input).toBeNull();
         });
     });
 
